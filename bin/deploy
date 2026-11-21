@@ -71,6 +71,10 @@ report() {
         row "  slot wait" "$(phase_of build.out slot-wait)"
         row "  docker build" "$(phase_of build.out docker-build)"
         ;;
+      "image transfer")
+        row "  registry up, tunnel" "$(phase_of ship.out registry-up-and-tunnel)"
+        row "  docker push" "$(phase_of ship.out push)"
+        ;;
       rollout)
         row "  migrate" "$(phase_of rollout.out migrate)"
         row "  start and health check" "$(phase_of rollout.out start-health)"
@@ -99,7 +103,8 @@ registry_url=127.0.0.1:$registry_port
 registry_data_kb='docker exec scarlet-web-registry-1 du -sk /var/lib/registry | cut -f1'
 
 ship_new_layers() {
-  local tag=$1 tunnel before after ready= rc=0 at=$registry_url
+  local tag=$1 tunnel before after ready= rc=0 at=$registry_url t0 t1
+  t0=$(now)
   before=$(srv "/srv/scarlet-web/deploy/dc up -d --no-deps --wait registry >&2 && $registry_data_kb") || return 1
   ssh "${ssh_opts[@]}" -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$tunnel_port:127.0.0.1:$registry_port" "ops@$host" &
   tunnel=$!
@@ -108,6 +113,8 @@ ship_new_layers() {
     sleep 0.2
   done
   [ -n "$ready" ] || { kill "$tunnel" 2>/dev/null || true; return 1; }
+  t1=$(now)
+  echo "phase registry-up-and-tunnel $(span "$t0" "$t1")" >> "$timing/ship.out"
   [ "$build_host" = local ] && at=127.0.0.1:$tunnel_port
   local push="sudo -n docker tag scarlet-web-app:$tag $at/scarlet-web-app:$tag && sudo -n docker push -q $at/scarlet-web-app:$tag >/dev/null; rc=\$?; sudo -n docker rmi $at/scarlet-web-app:$tag >/dev/null 2>&1; exit \$rc"
   if [ "$build_host" = local ]; then
@@ -118,6 +125,7 @@ ship_new_layers() {
   kill "$tunnel" 2>/dev/null || true
   [ "$rc" = 0 ] || return 1
   now > "$timing/sent"
+  echo "phase push $(span "$t1" "$(cat "$timing/sent")")" >> "$timing/ship.out"
   after=$(srv "docker pull -q $registry_url/scarlet-web-app:$tag >/dev/null && docker tag $registry_url/scarlet-web-app:$tag scarlet-web-app:$tag && docker rmi $registry_url/scarlet-web-app:$tag >/dev/null && $registry_data_kb") || return 1
   echo $((after - before)) > "$timing/sent_kb"
 }
