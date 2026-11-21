@@ -36,6 +36,9 @@ class DeleteFactRows
         if ($group === SharingGroup::SOCIAL && $sessionStart === null) {
             $deleted += DB::table('pseudonyms')->whereIn('character_id', $characterIds)->delete();
         }
+        if ($sessionStart === null && ($group === null || $group === SharingGroup::BUILD)) {
+            DB::table('characters')->whereIn('id', $characterIds)->update(['spec_tab_id' => null, 'talent_points' => null, 'build_hash' => null]);
+        }
         if ($group === null && $sessionStart === null) {
             $deleted += DB::table('character_levels')->whereIn('character_id', $characterIds)->delete();
         }

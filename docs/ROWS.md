@@ -199,6 +199,64 @@ attribution for logs that have no item list.
 `creature_type` (string or null), `family` (string or null), `reaction` (int or null), `map`, `cell_x`, `cell_y`
 (int or null; cells are 0.015 of the map).
 
+### `talent_changes` (build: `TA`)
+
+A talent point picked, refunded or moved after the first read of the session (`TA` with why `c`). The baseline `TA`
+lines of why `s` are the ranks held at the first read: they have no order, so they write no row; they set the ranks
+the later rows count from. Keys after the common ones:
+
+| Key | Type | |
+| --- | --- | --- |
+| `spec_group` | int | the talent group, `1` or `2` |
+| `node_id`, `entry_id` | int or null | the node and the entry it holds |
+| `rank`, `old_rank` | int | rank after and before |
+| `max_ranks`, `spell_id` | int or null | |
+| `kind` | string | `pick` (rank rose), `refund` (rank fell), `swap` (a choice node changed entry at the same rank) |
+| `point_no` | int or null | for a pick: the points the group holds after it, so the ordinal of the point in the build. Null when the session had no baseline of the group first |
+| `respec_index` | int or null | the respec of this session the row belongs to (below); null for a point earned by levelling |
+
+### `talent_respecs` (build: `TA`, `TQ`)
+
+Refunds that came in one read (same `at`) are one respec; the picks that follow, at the same level, belong to it until
+the group holds the points it held before. A level up ends it. One row per respec, written at the end of the session.
+
+| Key | Type | |
+| --- | --- | --- |
+| `spec_group` | int | |
+| `kind` | string | `reset` (a `TQ r` within 60 s before), `spec` (a `TQ i` within 60 s before), else `refund` |
+| `cost_copper` | int or null | the cost of a `TQ p` offer within 10 minutes before |
+| `points_moved` | int | points refunded |
+| `hash_before`, `hash_after` | string | the build hash before the refunds and when the respec ended (the points were back, a level up, or the session ended) |
+| `respec_index` | int | order in the session, from 0; the same number as on `talent_changes` |
+
+### `talent_snapshots` (build: `TG`, `TA`)
+
+One row per `TG` line whose build or loadout differs from the group's last row of the session (the first `TG` of a
+group always writes one). A `TG` whose group is not a number (older logs) writes none.
+
+| Key | Type | |
+| --- | --- | --- |
+| `spec_group`, `groups` | int or null | the active group and how many exist |
+| `spec_id`, `spec` | int, string or null | |
+| `tree_id` | int | |
+| `tab_points` | string or null | the `TG` tabs field, `groupID:spent:available` comma-joined |
+| `spec_tab_id` | int or null | the tab with the most points spent; null when none or two tie |
+| `class_points`, `spec_points`, `config_id` | int or null | |
+| `build_hash` | string | 16 hex digits, FNV-1a of the sorted `node:entry:rank` list. Equal ranks give equal hashes |
+| `ranks` | string | `node:entry:rank` for every node with a rank, comma-joined, sorted by node, from the `TA` lines read so far |
+| `loadout`, `why` | string or null, string | the `TG` fields |
+
+### `talent_trees`, `talent_nodes` (build: `TV`, `TD`; names group)
+
+The layout of a class tree, which is the same for every player of a client build. Like `names`, these rows carry
+`session` only. `build` is the client version of the `S` line (a string such as `1.60.1`, null when the line has none). A `TD` whose tree has no `TV` earlier in the session is
+skipped. `layout_hash` is the `TV` hash.
+
+`talent_trees`: `build`, `tree_id`, `class_id`, `node_count`, `layout_hash`.
+`talent_nodes`: `build`, `tree_id`, `layout_hash`, `node_id`, `pos_x`, `pos_y` (the client's raw numbers, drawn at
+`pos_x / 10` and `-pos_y / 10`), `node_type`, `max_ranks`, `tab_id`, `entries` (`entryID:spellID:maxRanks`
+comma-joined), `edges` (`targetNode:type` comma-joined).
+
 ### `zones` (core: `Z`)
 
 One row per distinct (zone id, zone name) in the session. `at` is the session start, `level` and `zone_id` are null.

@@ -27,4 +27,6 @@ final class SharingGroup
     public const string PROFESSIONS = 'professions';
 
     public const string SOCIAL = 'social';
+
+    public const string BUILD = 'build';
 }

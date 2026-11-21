@@ -13,6 +13,8 @@ class StoreDecodedSession
         private readonly DeleteFactRows $deleteRows,
         private readonly InsertFactRows $insertRows,
         private readonly UpsertDictionaries $dictionaries,
+        private readonly UpsertTalentLayouts $layouts,
+        private readonly SummarizeTalents $talents,
         private readonly RebuildCharacterLevels $levels,
         private readonly ResolveDungeonJoins $joins,
         private readonly SummarizeCharacter $summaries,
@@ -45,6 +47,7 @@ class StoreDecodedSession
             $range = $this->union($range, $this->levels->handle($characterId));
             $this->joins->handle($characterId, $sessionStart);
             $this->summaries->handle($characterId);
+            $this->talents->handle($characterId);
 
             return $range;
         });
@@ -68,6 +71,7 @@ class StoreDecodedSession
         $span = $this->sessionRows->write($characterId, $sessionStart, $rulesetId, $counted, $decoded->summary);
         $this->distance->handle($characterId, $sessionStart);
         $this->dictionaries->handle($characterId, $decoded, countVotes: ! $namesCounted);
+        $this->layouts->handle($decoded, countUpload: ! $namesCounted);
         DB::table('parts')->where('character_id', $characterId)->where('session_start', $sessionStart)->update(['decoded_at' => now()]);
 
         return $span;

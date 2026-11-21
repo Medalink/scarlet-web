@@ -4,7 +4,7 @@ namespace App\Support;
 
 /**
  * What `scarlet-part decode` wrote for one session (docs/ROWS.md): fact rows per table, the dictionaries,
- * the pseudonyms and the session's own summary row.
+ * the talent layouts, the pseudonyms and the session's own summary row.
  */
 final class DecodedSession
 {
@@ -22,6 +22,12 @@ final class DecodedSession
 
     /** @var list<array<string, mixed>> */
     public array $pseudonyms = [];
+
+    /** @var list<array<string, mixed>> */
+    public array $talentTrees = [];
+
+    /** @var list<array<string, mixed>> */
+    public array $talentNodes = [];
 
     /** @var array<string, mixed>|null */
     public ?array $summary = null;
@@ -47,6 +53,8 @@ final class DecodedSession
                 'items' => $decoded->items[] = $row,
                 'zones' => $decoded->zones[] = $row,
                 'pn' => $decoded->pseudonyms[] = $row,
+                'talent_trees' => $decoded->talentTrees[] = $row,
+                'talent_nodes' => $decoded->talentNodes[] = $row,
                 'sessions' => $decoded->summary = $row,
                 default => FactTable::tryFrom($table) !== null ? $decoded->facts[$table][] = $row : null,
             };

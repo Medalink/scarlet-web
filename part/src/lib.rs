@@ -11,4 +11,5 @@ pub mod payload;
 pub mod pseudo;
 pub mod rows;
 pub mod tables;
+pub mod talents;
 pub mod wire;

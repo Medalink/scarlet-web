@@ -8,6 +8,7 @@
 use crate::build::parse_header;
 use crate::rows::Rows;
 use crate::tables::{Groups, NameRefs, leading_id};
+use crate::talents::{Ctx, Talents};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A dungeon left less than this long ago is the same run when it is entered again.
@@ -192,6 +193,7 @@ struct Dec<'o> {
     names: BTreeMap<(u8, u64), String>,
     items: BTreeMap<u64, ItemAcc>,
     pn: BTreeMap<String, String>,
+    talents: Talents,
 }
 
 fn prefix(
@@ -501,6 +503,7 @@ impl Dec<'_> {
                     r.bosses += 1;
                 }
             }
+            "TA" | "TG" | "TQ" | "TV" | "TD" => self.on_talent(code, t, &f),
             "TP" => {
                 self.tp_total = num(&f, 0);
                 self.tp_level = num(&f, 1);
@@ -560,6 +563,22 @@ impl Dec<'_> {
         }
     }
 
+    fn on_talent(&mut self, code: &str, t: i64, f: &[&str]) {
+        let ctx = Ctx {
+            session: self.session,
+            at: t,
+            level: self.lvl(),
+            zone_id: self.zone_id,
+        };
+        match code {
+            "TA" => self.talents.on_ta(&ctx, &mut self.w, f),
+            "TG" => self.talents.on_tg(&ctx, &mut self.w, f),
+            "TQ" => self.talents.on_tq(&ctx, f),
+            "TV" => self.talents.on_tv(&ctx, &mut self.w, f),
+            _ => self.talents.on_td(&ctx, &mut self.w, f),
+        }
+    }
+
     fn define(&mut self, code: &str, kind: u8, f: &[&str]) {
         let Some(id) = leading_id(field(f, 0)) else {
             return;
@@ -584,6 +603,7 @@ impl Dec<'_> {
             return;
         }
         self.started = true;
+        self.talents.set_build(field(f, 0));
         self.start_ms = t;
         self.end_ms = self.end_ms.max(t);
         for (slot, i) in self.s_fields.iter_mut().zip([0, 1, 2, 4, 5]) {
@@ -822,6 +842,7 @@ impl Dec<'_> {
             self.leave_run(i, end);
         }
         let s = self.session;
+        self.talents.finish(s, &mut self.w);
         for d in std::mem::take(&mut self.death_list) {
             prefix(&mut self.w, "deaths", s, d.t, d.level, d.zone_id);
             let (m, x, y) = d
@@ -1170,6 +1191,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         names: BTreeMap::new(),
         items: BTreeMap::new(),
         pn: BTreeMap::new(),
+        talents: Talents::default(),
     };
     for l in &lines {
         d.line(l);

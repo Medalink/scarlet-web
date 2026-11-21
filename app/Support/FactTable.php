@@ -22,6 +22,9 @@ enum FactTable: string
     case Crafts = 'crafts';
     case PathPoints = 'path_points';
     case CreatureSightings = 'creature_sightings';
+    case TalentChanges = 'talent_changes';
+    case TalentSnapshots = 'talent_snapshots';
+    case TalentRespecs = 'talent_respecs';
 
     /** `money_changes.src` of a balance carried over from the `S` line (core), against `M` money lines (economy). */
     public const string MONEY_LINE = 'M';
@@ -39,6 +42,7 @@ enum FactTable: string
             self::SkillUps, self::Crafts => SharingGroup::PROFESSIONS,
             self::PathPoints => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,
+            self::TalentChanges, self::TalentSnapshots, self::TalentRespecs => SharingGroup::BUILD,
         };
     }
 
