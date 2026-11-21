@@ -9,8 +9,6 @@
 .top-find input { font: 400 0.95rem/1.2 var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line2); border-radius: 3px; padding: 0.5rem 0.7rem; width: 100%; }
 .top-find input::placeholder { color: var(--muted); opacity: 1; }
 .top-find input:focus-visible { outline-offset: 0; border-color: var(--soft); }
-.acct { font-size: 0.97rem; color: var(--fg); text-decoration: none; padding: 0.5rem 0.8rem; border: 1px solid var(--line2); border-radius: 3px; white-space: nowrap; }
-.acct:hover { border-color: var(--accent); color: var(--soft); }
 @media (max-width: 900px) { .top-find { display: none; } }
 
 /* Page head: a name as large as the character page's, one line of facts, the filters on the right. */

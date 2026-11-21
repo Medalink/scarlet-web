@@ -75,6 +75,8 @@ code, .mono { font-family: var(--mono); font-stretch: 85%; font-size: 0.82em; co
 .nav a:hover { color: var(--fg); border-bottom-color: var(--line2); }
 .nav a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); }
 @media (max-width: 720px) { .nav .jump { display: none; } }
+.acct { font-size: 0.97rem; color: var(--fg); text-decoration: none; padding: 0.5rem 0.8rem; border: 1px solid var(--line2); border-radius: 3px; white-space: nowrap; }
+.acct:hover { border-color: var(--accent); color: var(--soft); }
 
 .btn {
   display: inline-flex; align-items: center; gap: 0.55rem;

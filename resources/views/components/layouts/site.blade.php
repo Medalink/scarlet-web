@@ -22,11 +22,12 @@
       <a class="jump" href="{{ $jump }}#events">Events</a>
       <a class="jump" href="{{ $jump }}#never">Never recorded</a>
       <a class="jump" href="{{ $jump }}#capture">Capture map</a>
-      <a href="/demo"@if ($demo) aria-current="page"@endif>Character overview</a>
+      <a class="demo" href="/demo"@if ($demo) aria-current="page"@endif>Character overview</a>
       @foreach ($items as [$label, $path, $class])
       <a @if ($class) class="{{ $class }}" @endif href="{{ $path }}">{{ $label }}</a>
       @endforeach
     </nav>
+    <a class="acct" href="{{ auth()->check() ? '/account' : '/login' }}">{{ auth()->check() ? 'Account' : 'Sign in' }}</a>
   </div>
 </header>
 
