@@ -17,6 +17,7 @@ class StoreDecodedSession
         private readonly SummarizeTalents $talents,
         private readonly MarkSessionJoins $joins,
         private readonly RebuildCharacterLevels $levels,
+        private readonly FlagCompleteLevelMoney $moneyLevels,
         private readonly ResolveDungeonJoins $dungeonJoins,
         private readonly SummarizeCharacter $summaries,
         private readonly SessionRows $sessionRows,
@@ -47,6 +48,7 @@ class StoreDecodedSession
             $range = $this->union($old, $this->replace($characterId, $sessionStart, $ruleset?->id, $decoded, $namesCounted));
             $this->joins->handle($characterId);
             $range = $this->union($range, $this->levels->handle($characterId));
+            $range = $this->union($range, $this->moneyLevels->handle($characterId));
             $this->dungeonJoins->handle($characterId, $sessionStart);
             $this->summaries->handle($characterId);
             $this->talents->handle($characterId);

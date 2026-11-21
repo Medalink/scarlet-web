@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Ingest\FlagCompleteLevelMoney;
 use App\Actions\Ingest\MarkSessionJoins;
 use App\Actions\Ingest\RebuildCharacterLevels;
 use App\Actions\Ingest\SummarizeCharacter;
@@ -15,16 +16,23 @@ use Illuminate\Support\Facades\DB;
 #[Description('Marks how every session follows the one before it, rebuilds every character\'s level rows and summary from its stored rows, then refreshes the aggregates over the days that changed')]
 class RebuildLevelsCommand extends Command
 {
-    public function handle(MarkSessionJoins $joins, RebuildCharacterLevels $levels, SummarizeCharacter $summaries, RefreshAggregates $refresh): int
+    public function handle(MarkSessionJoins $joins, RebuildCharacterLevels $levels, FlagCompleteLevelMoney $moneyLevels, SummarizeCharacter $summaries, RefreshAggregates $refresh): int
     {
         $from = null;
         $until = null;
         foreach (DB::table('characters')->orderBy('id')->pluck('id') as $id) {
-            $extent = DB::transaction(function () use ($joins, $levels, $summaries, $id): ?array {
+            $extent = DB::transaction(function () use ($joins, $levels, $moneyLevels, $summaries, $id): ?array {
                 $joins->handle((int) $id);
                 $summaries->handle((int) $id);
+                $range = $levels->handle((int) $id);
+                $money = $moneyLevels->handle((int) $id);
+                if ($money === null) {
+                    return $range;
+                }
 
-                return $levels->handle((int) $id);
+                return $range === null
+                    ? $money
+                    : ['from' => min($range['from'], $money['from']), 'until' => max($range['until'], $money['until'])];
             });
             if ($extent === null) {
                 continue;

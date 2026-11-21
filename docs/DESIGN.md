@@ -255,13 +255,18 @@ two, and an observed number says "since <first seen date>" wherever a lifetime t
 - **Complete levels.** A level counts for durations, medians and the time-to-level boards only when its ding in and its
   ding out were seen and no `gap` or `unknown` join lies between them. Decoder `L` repeats of the same level are not
   dings: `level_ups.ding` is false for them. Time to reach level X is the lifetime /played at the ding into X.
+  Money rows carry `level_complete`, set by ingest from the character's rebuilt level rows: a level the character was
+  first seen at, the level it is still in, and any level with unrecorded play in it are not complete, and their money
+  stays out of the public gold-by-level means (`money_daily_ruleset`). The character's own gold rollup reads every
+  row, like `counted`.
 - **Characters.** `played_known`, `recorded_seconds`, `first_level` and `whole_life` (first session from level 1, no
   broken join) are set by `SummarizeCharacter`. `highest-without-dying` lists whole-life characters only; the other
   boards say "since" on the date a character was first recorded.
 - **Talents.** Order and unspent-point facts use picks seen live between two seen dings. Talents held at the first
   snapshot have no order and no level.
 - **Re-decode.** `php artisan ingest:redecode` queues every session for a fresh decode (decoder version change), then
-  `php artisan levels:rebuild` recomputes joins, summaries and levels and refreshes the aggregates.
+  `php artisan levels:rebuild` recomputes joins, summaries, levels and the money rows' `level_complete` flags and
+  refreshes the aggregates.
 - **Dungeon runs across sessions.** The decoder's rows are stored as written. A run that carries on the last run of the
   session before (ROWS.md, joining sessions) has `continues_previous` set; ingest sets it for the first run of the
   session it decodes and again for the first run of the next session, so the upload order does not matter. Counts of
@@ -275,7 +280,9 @@ stored parts, with nothing re-uploaded.
 **3. Rollups, continuous aggregates.** Each exists twice where both are needed: by character for character pages, by
 ruleset for the public dashboards. Global numbers are the ruleset rows summed. Ruleset rollups also keep a
 hyperloglog of characters, so a page can refuse to show a bucket that fewer than `SCARLET_MIN_CHARACTERS` characters
-contributed to (5 on a public deploy, 1 in development).
+contributed to (5 on a public deploy, 1 in development). A ruleset view reads `counted` rows only;
+`money_daily_ruleset` additionally reads `level_complete` rows only, so a character's partial level never enters the
+public gold-by-level means, while `money_daily_character` reads every row.
 
 | Aggregate | Bucket | Keys | Values |
 | --- | --- | --- | --- |
