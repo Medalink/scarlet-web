@@ -15,7 +15,9 @@ const USAGE: &str = "usage:
   scarlet-part groups --json
   scarlet-part pack --out-dir <dir> --payloads <dir> [--addon-payloads <dir>] [--groups a,b,c] [--name-key-hex <64 hex>]
   scarlet-part batch --parts-dir <dir> --out <file> [--split]
-  scarlet-part unbatch --in <file> --out-dir <dir>";
+  scarlet-part unbatch --in <file> --out-dir <dir>
+  scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin
+  scarlet-part check-overview --parts-dir <dir> --overview <overview.json>";
 
 type Flags = BTreeMap<String, String>;
 
@@ -89,6 +91,8 @@ fn run(mut args: Vec<OsString>) -> Result<(), String> {
         "pack" => pack(args),
         "batch" => batch(args),
         "unbatch" => unbatch(args),
+        "decode" => decode(args),
+        "check-overview" => check_overview(args),
         _ => Err(USAGE.into()),
     }
 }
@@ -247,6 +251,122 @@ fn unbatch(args: Vec<OsString>) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
     }
     eprintln!("{} parts written to {}", parts.len(), out.display());
+    Ok(())
+}
+
+/// A part file: plain text, or the storage form (zstd).
+fn read_part_file(path: &Path) -> Result<String, String> {
+    let bytes = fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    if bytes.starts_with(&[0x28, 0xB5, 0x2F, 0xFD]) {
+        return wire::read_stored(&bytes);
+    }
+    String::from_utf8(bytes).map_err(|_| format!("{}: not UTF-8", path.display()))
+}
+
+/// Parts grouped by session, in session order.
+fn by_session(texts: Vec<String>) -> Result<BTreeMap<i64, Vec<String>>, String> {
+    let mut map: BTreeMap<i64, Vec<String>> = BTreeMap::new();
+    for t in texts {
+        let (_, session, _) =
+            scarlet_part::build::parse_header(&t).ok_or("a part has no valid header")?;
+        map.entry(session).or_default().push(t);
+    }
+    Ok(map)
+}
+
+fn decode(args: Vec<OsString>) -> Result<(), String> {
+    use std::io::{Read, Write};
+    let (f, files) = flags(args, &["parts-dir", "session"], &["stdin"])?;
+    let mut texts: Vec<String> = Vec::new();
+    if f.contains_key("stdin") {
+        let mut raw = Vec::new();
+        std::io::stdin()
+            .read_to_end(&mut raw)
+            .map_err(|e| e.to_string())?;
+        let mut pos = 0;
+        while pos < raw.len() {
+            let head = raw.get(pos..pos + 4).ok_or("cut length prefix")?;
+            let len = u32::from_le_bytes([head[0], head[1], head[2], head[3]]) as usize;
+            pos += 4;
+            let body = raw
+                .get(pos..pos + len)
+                .ok_or("a length prefix runs past the end")?;
+            pos += len;
+            texts.push(wire::read_stored(body)?);
+        }
+    }
+    if let Some(dir) = f.get("parts-dir") {
+        let mut names: Vec<PathBuf> = fs::read_dir(dir)
+            .map_err(|e| format!("{dir}: {e}"))?
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| p.extension().is_some_and(|x| x == "part"))
+            .collect();
+        names.sort();
+        for p in names {
+            texts.push(read_part_file(&p)?);
+        }
+    }
+    for file in files {
+        texts.push(read_part_file(Path::new(&file))?);
+    }
+    let want: Option<i64> = f
+        .get("session")
+        .map(|s| s.parse())
+        .transpose()
+        .map_err(|_| "bad --session")?;
+    let sessions = by_session(texts)?;
+    let mut out = String::new();
+    let stdout = std::io::stdout();
+    let mut lock = stdout.lock();
+    for (s, parts) in &sessions {
+        if want.is_some_and(|w| w != *s) {
+            continue;
+        }
+        let refs: Vec<&str> = parts.iter().map(String::as_str).collect();
+        out.clear();
+        scarlet_part::decode::decode_session(&refs, &mut out)?;
+        lock.write_all(out.as_bytes()).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+fn check_overview(args: Vec<OsString>) -> Result<(), String> {
+    let (f, _) = flags(args, &["parts-dir", "overview"], &[])?;
+    let dir = need(&f, "parts-dir")?;
+    let mut texts = Vec::new();
+    for e in fs::read_dir(dir).map_err(|e| format!("{dir}: {e}"))? {
+        let p = e.map_err(|e| e.to_string())?.path();
+        if p.extension().is_some_and(|x| x == "part") {
+            texts.push(read_part_file(&p)?);
+        }
+    }
+    let mut decoded = Vec::new();
+    for (_, parts) in by_session(texts)? {
+        let refs: Vec<&str> = parts.iter().map(String::as_str).collect();
+        let mut out = String::new();
+        scarlet_part::decode::decode_session(&refs, &mut out)?;
+        decoded.push(out);
+    }
+    let overview = fs::read_to_string(need(&f, "overview")?).map_err(|e| e.to_string())?;
+    let rep = scarlet_part::compare::compare(&decoded, &overview)?;
+    println!(
+        "sessions decoded: {}, compared with the overview: {}",
+        rep.sessions, rep.compared
+    );
+    for (name, (ok, bad)) in &rep.fields {
+        println!("{name}: {ok} match, {} differ", bad.len());
+        for b in bad.iter().take(12) {
+            println!("  {b}");
+        }
+        if bad.len() > 12 {
+            println!("  ... {} more", bad.len() - 12);
+        }
+    }
+    println!("in decoder only: {:?}", rep.missing_in_overview);
+    println!("in overview only: {:?}", rep.missing_in_parts);
+    for n in &rep.notes {
+        println!("note: {n}");
+    }
     Ok(())
 }
 
