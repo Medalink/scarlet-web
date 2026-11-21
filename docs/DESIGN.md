@@ -367,7 +367,7 @@ headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figure
 | `/developers` | The public API reference |
 | `/release-notes` | Public. The running build (version, build number, commit, lines, files, and the lines added and removed by the last commit, this build and all time), a rail of released versions, and one release with its changes grouped by area. Filters by New, Improved or Fixed are query parameters (`?v=0.1.0&only=fixed`), so the page needs no script. The footer of every page shows `v<version>.<build>` and links here |
 | `/login`, `/link` | Sign in, link the app |
-| `/account` | Characters and their public switches, installs and revoking them, sharing groups, removals, API keys |
+| `/account` | Characters and their public switches, installs and revoking them, recent uploads and when each install last contacted the site, sharing groups, removals, API keys |
 
 A dungeon is `/zones/{id}` with the negative instance id (`/zones/-90`).
 

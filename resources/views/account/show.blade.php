@@ -15,6 +15,9 @@
       <livewire:account.installs />
       <livewire:account.sign-in-methods />
     </x-module>
+    <x-module span="w12" :first="true" :last="true" id="h-u" heading="Recent uploads">
+      <livewire:account.upload-log />
+    </x-module>
     <x-module span="w12" :first="true" :last="true" id="h-s" heading="What you share">
       <x-slot:controls><x-state>Switches change what the app sends next. Recording and the app on your PC are never affected.</x-state></x-slot:controls>
       <livewire:account.sharing />

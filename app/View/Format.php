@@ -108,6 +108,24 @@ final class Format
         return preg_replace('/([gs])(?=\d)/', '$1 ', $plain) ?? $plain;
     }
 
+    /** A byte count as "812 B", "14.2 KB", "3.4 MB" (1,024 to the step). */
+    public static function bytes(int|float $bytes): string
+    {
+        if ($bytes < 1024) {
+            return self::number($bytes).' B';
+        }
+
+        $units = ['KB', 'MB', 'GB', 'TB'];
+        $value = $bytes;
+        $unit = -1;
+        while ($value >= 1024 && $unit < count($units) - 1) {
+            $value /= 1024;
+            $unit++;
+        }
+
+        return number_format($value, $value < 10 ? 1 : 0).' '.$units[$unit];
+    }
+
     /** The races whose client file name differs from the name a player knows. */
     private const array RACES = ['Scourge' => 'Undead', 'Undead' => 'Undead', 'NightElf' => 'Night Elf', 'BloodElf' => 'Blood Elf'];
 
