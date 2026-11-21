@@ -1,0 +1,75 @@
+# The database host of scarletweb.io: PostgreSQL with TimescaleDB on its own droplet, data on a block volume. Run it
+# through deploy/dc-db, which adds the env file /srv/scarlet-db/.env (DB_PASSWORD, DB_LISTEN, DB_NAME). deploy/server-setup-db.sh
+# writes everything this file mounts under /srv/scarlet-db/etc.
+#
+# Postgres runs on the host network and listens on the droplet's VPC address and loopback only, so pg_hba sees the real
+# address of each client. The cloud firewall (tag scarlet-db) lets in tcp 5432 from the app droplet's tag and nothing else.
+name: scarlet-db
+
+services:
+  postgres:
+    image: timescale/timescaledb-ha:pg18.6-ts2.32.0-r599.1@sha256:96b6033e7e54c26099f29cb46f634953b749b8c2c92c77bfb715cd630cdadf2e
+    restart: unless-stopped
+    network_mode: host
+    shm_size: 768mb
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-scarlet}
+      TIMESCALEDB_TELEMETRY: "off"
+      PGBACKREST_CONFIG: /etc/scarlet-db/pgbackrest.conf
+      PGBACKREST_STANZA: scarlet
+    command:
+      - postgres
+      - -c
+      - listen_addresses=${DB_LISTEN}
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=80
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/etc/scarlet-db/tls/server.crt
+      - -c
+      - ssl_key_file=/etc/scarlet-db/tls/server.key
+      - -c
+      - hba_file=/etc/scarlet-db/pg_hba.conf
+      - -c
+      - password_encryption=scram-sha-256
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - max_slot_wal_keep_size=10GB
+      - -c
+      - hot_standby=on
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=pgbackrest archive-push %p
+      - -c
+      - archive_timeout=60
+    volumes:
+      # Only the folder on the volume is bound, and it is never created here: when the volume is not mounted the folder is
+      # missing, the container does not start, and Postgres cannot run initdb into the root disk.
+      - type: bind
+        source: /mnt/scarlet-db-data/pgdata
+        target: /home/postgres/pgdata
+        bind:
+          create_host_path: false
+      - /srv/scarlet-db/etc:/etc/scarlet-db:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    stop_grace_period: 60s

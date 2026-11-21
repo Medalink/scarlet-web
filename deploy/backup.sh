@@ -6,7 +6,8 @@
 #                             newest daily copy is older than 26 hours
 #   backup.sh prune <prefix> <keep>   keep the newest <keep> objects under <prefix> in the bucket, delete the rest
 #
-# The systemd timer scarlet-backup runs it every night at 03:15 UTC; `bin/deploy backup` starts that same unit. The unit
+# The systemd timer scarlet-backup runs it every night at 03:15 UTC, on the database host once the database has moved there
+# (deploy/systemd-db sets SCARLET_BASE=/srv/scarlet-db and SCARLET_DC=deploy/dc-db; the app droplet then has no timer); `bin/deploy backup` starts that same unit. The unit
 # loads /etc/scarlet-web/r2.env (root-only), which holds the R2 credentials and the bucket as rclone's own settings
 # (RCLONE_CONFIG_R2_*) plus R2_BUCKET. Only the public age key, deploy/backup-age.pub, is on this machine: the private
 # key stays with the owner, so a copy of this server cannot read the backups.
@@ -111,7 +112,7 @@ name="scarlet-$stamp.dump"
 file="backups/$name"
 trap 'rm -f "$file.part" "$file.age.part"' EXIT
 
-deploy/dc exec -T postgres pg_dump -U postgres -d scarlet -Fc > "$file.part" || fail "pg_dump"
+${SCARLET_DC:-deploy/dc} exec -T postgres pg_dump -U postgres -d scarlet -Fc > "$file.part" || fail "pg_dump"
 mv "$file.part" "$file"
 find backups -name 'scarlet-*.dump' -mmin +10080 -delete
 echo "backup: $file $(du -h "$file" | cut -f1) (local copy kept 7 days)"

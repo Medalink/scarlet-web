@@ -9,16 +9,22 @@
 #   bin/deploy logs [service]   follow the logs (web, app-blue, app-green, horizon-a, horizon-b, horizon-c, schedule, postgres, redis, registry)
 #   bin/deploy backup           a backup now: dump, encrypt, copy to R2 (starts the nightly unit; exits 1 when it fails)
 #   bin/deploy backups          the newest local and R2 copies with their ages; exits 1 when stale or the last run failed
-#   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env (run before `server`)
+#   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env on the app droplet and
+#                               the database host (run before `server` and `db-server`)
 #   bin/deploy cache-rules      write Cloudflare's Cache Rules for the public API, the public pages and the map manifest
 #   bin/deploy maps <folder>    copy map tiles (a folder with manifest.json) to the droplet's disk, outside the image
 #   bin/deploy bootstrap [ref]  first install: server, DNS, certificate, release, strict TLS, origin pulls
 #   bin/deploy server | tls | dns | strict | aop     the steps of bootstrap, each safe to run again
 #   bin/deploy ssh [command]    a shell on the droplet
+#   bin/deploy db-server        install the database host (deploy/server-setup-db.sh)
+#   bin/deploy db-move [rollback|abort|retire|finish]   move the database to the database host, or back; see deploy/db-move.sh
+#   bin/deploy db status        the database host: role, archiver, last pgBackRest backup, volume, replication
+#   bin/deploy db upgrade       push this checkout's deploy/ to the database host and recreate Postgres if its pin changed
 #
 # Settings (environment): SCARLET_SECRETS (folder with ops_ed25519, cloudflare-token), DEPLOY_HOST (default
 # scarlet-web, its tailnet name), DEPLOY_BUILD_HOST (default medaware; `local` builds on this machine),
-# DEPLOY_REPO (default the GitHub repository).
+# DEPLOY_REPO (default the GitHub repository), DEPLOY_DB_HOST (default scarlet-db), DEPLOY_PGBR_NAME (the pgBackRest folder in
+# the bucket and the prefix of its passphrase file in the secrets folder; default pgbackrest).
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -29,12 +35,15 @@ esac
 secrets=${SCARLET_SECRETS:-$default_secrets}
 host=${DEPLOY_HOST:-scarlet-web}
 build_host=${DEPLOY_BUILD_HOST:-medaware}
+db_host=${DEPLOY_DB_HOST:-scarlet-db}
+pgbr_name=${DEPLOY_PGBR_NAME:-pgbackrest}
 repo=${DEPLOY_REPO:-https://github.com/Medalink/scarlet-web.git}
 cf="node $here/deploy/cloudflare.mjs"
 export SCARLET_SECRETS=$secrets
 
 ssh_opts=(-i "$secrets/ops_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30)
 srv() { ssh "${ssh_opts[@]}" "ops@$host" "$@"; }
+dsrv() { ssh "${ssh_opts[@]}" "ops@$db_host" "$@"; }
 on_build() {
   if [ "$build_host" = local ]; then bash -c "$1"; else ssh -o ServerAliveInterval=30 "$build_host" "$1"; fi
 }
@@ -228,31 +237,37 @@ step_aop() {
 # The R2 credentials go from the secrets folder to /etc/scarlet-web/r2.env (root:root, mode 600) as rclone settings.
 # The values are read inside this command and pass through the ssh pipe only: no argument, log or file here holds them.
 step_r2() {
-  local f
+  local f run=${1:-srv}
   for f in r2-access-key-id r2-secret-access-key r2-endpoint; do
     [ -s "$secrets/$f" ] || { echo "deploy: $secrets/$f is missing" >&2; exit 1; }
   done
-  srv 'sudo install -d -m 755 /etc/scarlet-web'
+  $run 'sudo install -d -m 755 /etc/scarlet-web'
   {
     printf 'RCLONE_CONFIG_R2_TYPE=s3\nRCLONE_CONFIG_R2_PROVIDER=Cloudflare\n'
     printf 'R2_BUCKET=%s\n' "${R2_BUCKET:-scarlet-web-backups}"
     printf 'RCLONE_CONFIG_R2_ACCESS_KEY_ID=%s\n' "$(tr -d '\r\n' < "$secrets/r2-access-key-id")"
     printf 'RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=%s\n' "$(tr -d '\r\n' < "$secrets/r2-secret-access-key")"
     printf 'RCLONE_CONFIG_R2_ENDPOINT=%s\n' "$(tr -d '\r\n' < "$secrets/r2-endpoint")"
-  } | srv 'sudo sh -c "umask 077 && cat > /etc/scarlet-web/r2.env.new && chown root:root /etc/scarlet-web/r2.env.new && mv /etc/scarlet-web/r2.env.new /etc/scarlet-web/r2.env"'
-  echo "deploy: wrote /etc/scarlet-web/r2.env (root:root, mode 600)"
+  } | $run 'sudo sh -c "umask 077 && cat > /etc/scarlet-web/r2.env.new && chown root:root /etc/scarlet-web/r2.env.new && mv /etc/scarlet-web/r2.env.new /etc/scarlet-web/r2.env"'
+  echo "deploy: wrote /etc/scarlet-web/r2.env on $([ "$run" = srv ] && echo the app droplet || echo the database host) (root:root, mode 600)"
 }
 
 # The nightly unit's last result, then the newest local and R2 copies with their ages. Exits 1 when the last run
-# failed, R2 cannot be read or its newest daily copy is more than 26 hours old.
+# failed, R2 cannot be read or its newest daily copy is more than 26 hours old. The unit runs where the database is; with the
+# database on its own host the report adds the WAL archive: it also fails when the last archived segment is older than 5
+# minutes, when the archiver's last attempt failed or when pgBackRest has no backup (deploy/db-host.sh status).
 backups_report() {
-  local result rc=0
-  result=$(srv 'systemctl show -p Result --value scarlet-backup.service')
-  echo "backup unit: last result $result; $(srv 'systemctl list-timers scarlet-backup.timer --no-pager | sed -n 2p' | awk '{print "next run", $1, $2, $3}')"
+  local result rc=0 run=srv base=/srv/scarlet-web
+  if db_moved; then run=dsrv base=/srv/scarlet-db; fi
+  result=$($run 'systemctl show -p Result --value scarlet-backup.service')
+  echo "backup unit on $([ "$run" = srv ] && echo "$host" || echo "$db_host"): last result $result; $($run 'systemctl list-timers scarlet-backup.timer --no-pager | sed -n 2p' | awk '{print "next run", $1, $2, $3}')"
   [ "$result" = success ] || rc=1
-  srv 'sudo sh -c "set -a; . /etc/scarlet-web/r2.env; set +a; exec /srv/scarlet-web/deploy/backup.sh status"' || rc=1
+  $run "sudo sh -c \"set -a; . /etc/scarlet-web/r2.env; set +a; export SCARLET_BASE=$base; exec $base/deploy/backup.sh status\"" || rc=1
+  if [ "$run" = dsrv ]; then dsrv /srv/scarlet-db/deploy/db-host.sh status || rc=1; fi
   return "$rc"
 }
+
+. "$here/deploy/db-move.sh"
 
 case "${1:-release}" in
   release) release "${2:-main}" ;;
@@ -260,12 +275,38 @@ case "${1:-release}" in
   status)
     srv '/srv/scarlet-web/deploy/dc ps; cat /srv/scarlet-web/release.env'
     $cf status
+    db_moved && db_status
     backups_report
     ;;
   logs) srv "/srv/scarlet-web/deploy/dc logs --tail 100 -f ${2:-}" ;;
-  backup) srv 'sudo systemctl start scarlet-backup.service; rc=$?; journalctl -u scarlet-backup.service -n 12 --no-pager -o cat; exit $rc' ;;
+  backup)
+    run=srv
+    ! db_moved || run=dsrv
+    $run 'sudo systemctl start scarlet-backup.service; rc=$?; journalctl -u scarlet-backup.service -n 12 --no-pager -o cat; exit $rc'
+    ;;
   backups) backups_report ;;
-  r2) step_r2 ;;
+  r2)
+    step_r2 srv
+    ! db_moved || step_r2 dsrv
+    ;;
+  db-server) db_server ;;
+  db-move)
+    case "${2:-move}" in
+      move) db_move ;;
+      rollback) db_rollback ;;
+      abort) take_lock; db_abort ;;
+      retire) db_retire ;;
+      finish) take_lock; db_finish "$(db_private_address)" ;;
+      *) echo "deploy: db-move [rollback|abort|retire|finish]" >&2; exit 2 ;;
+    esac
+    ;;
+  db)
+    case "${2:-status}" in
+      status) db_status ;;
+      upgrade) db_upgrade ;;
+      *) echo "deploy: db [status|upgrade]" >&2; exit 2 ;;
+    esac
+    ;;
   maps)
     [ -f "${2:?folder with manifest.json}/manifest.json" ] || { echo "deploy: no manifest.json in $2" >&2; exit 1; }
     tar -C "$2" -cf - . | srv 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf - && chmod -R a+rX /srv/scarlet-web/maps'
@@ -292,6 +333,6 @@ case "${1:-release}" in
     curl -s -o /dev/null -w 'through Cloudflare (origin pulls): %{http_code}\n' https://scarletweb.io/up
     ;;
   ssh) shift; srv "$@" ;;
-  help | -h | --help) sed -n '2,24p' "$0" ;;
+  help | -h | --help) sed -n '2,26p' "$0" ;;
   *) release "$1" ;;
 esac

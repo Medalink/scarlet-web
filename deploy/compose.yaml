@@ -18,10 +18,12 @@ x-app: &app
 
 x-after-databases: &after-databases
   depends_on:
-    postgres: {condition: service_healthy}
     redis: {condition: service_healthy}
 
 services:
+  # The local Postgres runs until `bin/deploy db-move` moves the database to its own host (deploy/compose.db.yaml). Then it
+  # stays as a replica of the new one for 48 hours (the way back) and `bin/deploy db-move retire` removes it. No app
+  # container waits for it, and deploy/rollout.sh starts it only when it is missing and DB_HOST is `postgres`.
   postgres:
     image: timescale/timescaledb-ha:pg18.6-ts2.32.0-r599.1@sha256:96b6033e7e54c26099f29cb46f634953b749b8c2c92c77bfb715cd630cdadf2e
     restart: unless-stopped

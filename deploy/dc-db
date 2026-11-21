@@ -1,0 +1,10 @@
+#!/bin/sh
+# docker compose for the database host: deploy/dc-db ps, deploy/dc-db logs -f postgres, deploy/dc-db exec postgres psql -U postgres.
+# A command that starts the container refuses when the data volume is not mounted.
+cd /srv/scarlet-db/deploy || exit 1
+case "${1:-}" in
+  up | start | restart | run | create)
+    mountpoint -q /mnt/scarlet-db-data || { echo "dc-db: /mnt/scarlet-db-data is not mounted; the data volume is missing" >&2; exit 1; }
+    ;;
+esac
+exec docker compose -f compose.db.yaml --env-file ../.env "$@"

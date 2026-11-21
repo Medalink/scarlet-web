@@ -1,0 +1,9 @@
+[Unit]
+Description=One WAL record a minute so an idle scarlet database still archives a segment (archive_timeout=60)
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=ops
+ExecStart=/srv/scarlet-db/deploy/dc-db exec -T postgres psql -U postgres -d scarlet -Atq -c "select case when pg_is_in_recovery() then 0 else (select 1 from pg_logical_emit_message(false, 'scarlet', 'heartbeat')) end"

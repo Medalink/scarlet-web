@@ -102,11 +102,15 @@ sync_assets() {
   chmod -R a+rX public
 }
 
-activate() {
-  release=$1
+slots() {
   cur=$(active_slot)
   nxt=blue
-  [ "$cur" = blue ] && nxt=green
+  if [ "$cur" = blue ]; then nxt=green; fi
+}
+
+start_slot() {
+  release=$1
+  slots
   docker image inspect "scarlet-web-app:$release" >/dev/null
 
   t_start=$(date +%s.%N)
@@ -123,6 +127,11 @@ activate() {
   fi
 
   phase start-health "$t_start"
+}
+
+switch_slot() {
+  release=$1
+  slots
   t_switch=$(date +%s.%N)
   wait "$assets_job" || { echo "rollout: copying the assets of $release failed; $cur keeps serving"; return 1; }
   cp state/upstream.conf state/upstream.conf.prev
@@ -168,6 +177,11 @@ activate() {
   phase switch "$t_switch"
 }
 
+activate() {
+  start_slot "$1" || return 1
+  switch_slot "$1"
+}
+
 prune_images() {
   keep=" $(get BLUE_RELEASE) $(get GREEN_RELEASE) $(get SCARLET_RELEASE) $(tail -n 3 releases | tr '\n' ' ')"
   for tag in $(docker images scarlet-web-app --format '{{.Tag}}'); do
@@ -190,6 +204,30 @@ prune_registry() {
   [ "$deleted" -eq 0 ] || $dc exec -T registry registry garbage-collect --delete-untagged /etc/distribution/config.yml >/dev/null 2>&1
 }
 
+if [ "${1:-}" = --prepare ]; then
+  slots
+  start_slot "$(get SCARLET_RELEASE)" || exit 1
+  wait "$assets_job"
+  echo "$nxt" > state/prepared
+  echo "rollout: $nxt is ready beside $cur"
+  exit 0
+fi
+if [ "${1:-}" = --switch ]; then
+  [ -s state/prepared ] || { echo "rollout: no slot is prepared"; exit 1; }
+  sync_assets "$(get SCARLET_RELEASE)" &
+  assets_job=$!
+  switch_slot "$(get SCARLET_RELEASE)" || exit 1
+  rm -f state/prepared
+  exit 0
+fi
+if [ "${1:-}" = --unprepare ]; then
+  slots
+  $dc stop "app-$nxt" >/dev/null 2>&1 || true
+  $dc rm -f "app-$nxt" >/dev/null 2>&1 || true
+  rm -f state/prepared
+  exit 0
+fi
+
 if [ "${1:-}" = --rollback ]; then
   now=$(get SCARLET_RELEASE)
   previous=$(grep -v "^$now\$" releases | tail -n 1 || true)
@@ -202,8 +240,9 @@ fi
 new=$1
 docker image inspect "scarlet-web-app:$new" >/dev/null
 t_migrate=$(date +%s.%N)
-$dc pull --quiet --policy missing postgres redis web
-$dc up -d --wait postgres redis web
+$dc pull --quiet --policy missing redis web
+if grep -qx "DB_HOST=postgres" .env; then $dc up -d --no-recreate --wait postgres; fi
+$dc up -d --wait redis web
 [ "$nginx_changed" -eq 0 ] || reload_nginx
 phase compose-up "$t_migrate"
 t_migrate=$(date +%s.%N)

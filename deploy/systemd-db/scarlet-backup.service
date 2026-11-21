@@ -1,0 +1,13 @@
+[Unit]
+Description=Nightly pg_dump of the scarlet database, encrypted and copied to Cloudflare R2 (database host)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ops
+Environment=SCARLET_BASE=/srv/scarlet-db SCARLET_DC=deploy/dc-db
+# Root reads this file before the service drops to ops, so the credentials stay unreadable to ops and to containers.
+EnvironmentFile=/etc/scarlet-web/r2.env
+ExecStart=/srv/scarlet-db/deploy/backup.sh

@@ -1,0 +1,10 @@
+[Unit]
+Description=pgBackRest diff backup of the scarlet database to R2
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ops
+ExecStart=/srv/scarlet-db/deploy/dc-db exec -T postgres pgbackrest backup --type=diff

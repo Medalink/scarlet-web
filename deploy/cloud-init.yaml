@@ -1,7 +1,7 @@
 #cloud-config
 # First boot of the scarlet-web droplet (DigitalOcean nyc3, s-2vcpu-4gb, Ubuntu 24.04).
-# deploy/provision.mjs fills the two double-underscore placeholders below at create time: the public half of the
-# server-only ops key and a one-use, pre-approved Tailscale auth key. A filled copy never goes in git.
+# deploy/provision.mjs fills the double-underscore placeholders below at create time: the public half of the
+# server-only ops key, a Tailscale auth key and the tailnet host name. A filled copy never goes in git.
 
 disable_root: true
 ssh_pwauth: false
@@ -66,7 +66,7 @@ runcmd:
   - [sh, -c, "curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list -o /etc/apt/sources.list.d/tailscale.list"]
   - [apt-get, update]
   - [apt-get, install, -y, tailscale]
-  - [sh, -c, "tailscale up --authkey='__TAILSCALE_AUTHKEY__' --hostname=scarlet-web"]
+  - [sh, -c, "tailscale up --authkey='__TAILSCALE_AUTHKEY__' --hostname=__HOSTNAME__"]
   - [install, -d, -o, ops, -g, ops, -m, "0750", /srv/scarlet-web]
   - [systemctl, restart, ssh]
   - [touch, /var/lib/cloud/instance/scarlet-ready]
