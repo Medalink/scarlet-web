@@ -30,6 +30,8 @@ final class CharacterPage
         /** @var list<array<string, mixed>> $sessions */
         $sessions = $r['sessions'];
         $economy = (bool) $r['economy'];
+        /** @var array{level: int, seconds_at_cap: int}|null $cap */
+        $cap = $r['cap'];
         /** @var array<string, mixed> $totals */
         $totals = $r['totals'];
 
@@ -43,14 +45,16 @@ final class CharacterPage
                 $character->faction,
                 $ruleset['label'] ?? null,
             ])),
-            'figures' => [
+            'figures' => array_values(array_filter([
                 ['label' => 'Level', 'value' => (string) $character->level],
                 ['label' => 'Played', 'value' => Format::duration($character->played_seconds)],
+                $cap === null ? null : ['label' => 'Time at level '.$cap['level'], 'value' => Format::duration($cap['seconds_at_cap'])],
                 ['label' => 'Kills', 'value' => Format::number($totals['kills'])],
                 ['label' => 'Deaths', 'value' => Format::number($totals['deaths'])],
                 ['label' => 'Quests', 'value' => Format::number($totals['quests'])],
                 ['label' => 'World widths walked', 'value' => Format::number($totals['distance'], 1)],
-            ],
+            ])),
+            'rows' => CharacterLayout::rows($cap !== null, $r['gold'] !== null),
             'map' => MapSpec::levelled($r['heat']['cells'], [], $r['heat']['fit'], [], $r['marks']),
             'hasMap' => $r['heat']['cells'] !== [],
             'deathCount' => count($r['marks']),

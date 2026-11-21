@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public;
 
+use App\Actions\Public\Character\CapState;
 use App\Actions\Public\Character\DeathLog;
 use App\Actions\Public\Character\DungeonRuns;
 use App\Actions\Public\Character\HeatCells;
@@ -51,6 +52,7 @@ class CharacterOverview
         private readonly DungeonRuns $dungeonRuns,
         private readonly HourlyPlay $hourlyPlay,
         private readonly HeatCells $heatCells,
+        private readonly CapState $capState,
     ) {}
 
     /**
@@ -80,6 +82,7 @@ class CharacterOverview
             'owner' => $owner,
             'economy' => $economy,
             'ruleset' => $ruleset,
+            'cap' => $this->capState->handle($id),
             'heat' => $this->heatCells->handle($id),
             'marks' => $this->marks($id),
             'week' => $this->week($id, $last === null ? null : Carbon::parse((string) $last->end_at, 'UTC'), $economy),
