@@ -55,8 +55,21 @@ ship_images() {
   on_build "sudo -n docker save scarlet-web-app:$tag | zstd -T2 -3" | srv 'zstd -d | docker load'
 }
 
+# One deploy at a time, build included: every deploy builds in the same clone on the build host and unpacks into the
+# same folders on the server. The lock is a folder on the server; one older than 40 minutes is a crashed deploy's.
+lock=/srv/scarlet-web/state/deploy.lock
+take_lock() {
+  until srv "mkdir -p /srv/scarlet-web/state && mkdir $lock 2>/dev/null && date +%s > $lock/at"; do
+    srv "[ -f $lock/at ] && [ \$(( \$(date +%s) - \$(cat $lock/at) )) -gt 2400 ] && rm -rf $lock" || true
+    echo "deploy: another deploy is running; waiting for it"
+    sleep 20
+  done
+  trap 'srv "rm -rf '"$lock"'"' EXIT
+}
+
 release() {
   local ref=${1:-main} sha
+  take_lock
   sha=$(build "$ref")
   [ -n "$sha" ] || { echo "deploy: the build gave no sha" >&2; exit 1; }
   echo "deploy: built $sha"
