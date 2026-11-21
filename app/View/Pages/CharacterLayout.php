@@ -24,8 +24,8 @@ final class CharacterLayout
                 [self::m('deaths', 'w12')],
                 [self::m('items', 'w8'), self::m('skills')],
                 [self::m('killed'), self::m('runs', 'w8')],
-                [self::m('days', 'w8'), self::m('crafted')],
-                [self::m('hours', 'w12')],
+                [self::m('days'), self::m('hours', 'w8')],
+                [self::m('crafted', 'w12')],
                 [self::m('history', 'w12')],
             ];
         }
@@ -35,8 +35,8 @@ final class CharacterLayout
             [self::m('deaths', 'w12')],
             [self::m('items', 'w8'), self::m('skills')],
             [self::m('crafted', 'w5'), self::m('zones', 'w7')],
-            [self::m('days', 'w12')],
-            $gold ? [self::m('hours', 'w8'), self::m('gold')] : [self::m('hours', 'w12')],
+            [self::m('days'), self::m('hours', 'w8')],
+            ...($gold ? [[self::m('gold', 'w12')]] : []),
             [self::m(self::LEVELLING, 'w12')],
             [self::m('level-times', 'w12', 3)],
             [self::m('xp', 'w12', 3)],

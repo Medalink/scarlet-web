@@ -378,15 +378,19 @@ final class StatsPage
         $names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         $words = ['Quiet', 'Light', 'Moderate', 'Busy', 'Busiest'];
         $levels = $say = [];
+        $busiest = null;
         foreach ($names as $d => $name) {
             for ($h = 0; $h < 24; $h++) {
                 $value = $cell[($d + 1) % 7][$h] ?? 0.0;
+                $busiest ??= $value > 0 && $value === $top ? $d * 24 + $h : null;
                 $level = $value <= 0 ? 0 : max(1, (int) ceil($value / $top * 4));
                 $levels[$d][] = $level;
                 $say[] = Format::line($name.' '.str_pad((string) $h, 2, '0', STR_PAD_LEFT).':00', ', '.$words[$level].($value > 0 ? ', '.Format::duration($value).' played' : ''));
             }
         }
 
-        return Charts::hours($levels, $say, 'hours-out');
+        $summary = $busiest === null ? null : Format::line('Busiest hour', ': '.$names[intdiv($busiest, 24)].' '.str_pad((string) ($busiest % 24), 2, '0', STR_PAD_LEFT).':00 UTC');
+
+        return Charts::hours($levels, $say, 'hours-out', $busiest, $summary);
     }
 }

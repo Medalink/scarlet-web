@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 class QuestRecord
 {
     /** The event of a quest turned in (quest_events.event). */
-    private const string TURNED_IN = 'turned_in';
+    public const string TURNED_IN = 'turned_in';
 
     public function __construct(
         private readonly RollupRead $read,

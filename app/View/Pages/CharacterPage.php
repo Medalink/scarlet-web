@@ -133,6 +133,7 @@ final class CharacterPage
         }
         $first = Carbon::parse((string) array_key_first($days))->startOfWeek();
         $end = Carbon::parse((string) array_key_last($days));
+        $busiest = Carbon::parse((string) array_search(max($days), $days));
         $cells = $say = $months = [];
         $previous = null;
         for ($day = $first->copy(); $day <= $end->copy()->endOfWeek(); $day->addDay()) {
@@ -152,7 +153,9 @@ final class CharacterPage
             }
         }
 
-        return ['spec' => Charts::days($cells, $months, $say, 'days-out'), 'line' => ['Hover a day', ' to read it.']];
+        $summary = Format::line('Busiest day', ': '.$busiest->format('D j M').', '.Format::duration($days[$busiest->toDateString()]));
+
+        return ['spec' => Charts::days($cells, $months, $say, 'days-out', (int) $first->diffInDays($busiest), $summary), 'line' => $summary];
     }
 
     /**

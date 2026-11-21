@@ -80,7 +80,7 @@
     <x-module span="w7" :last="true" id="h-when" heading="When people play">
       @if ($d['hours'])
       <x-hours-grid id="hours" label="Play time by weekday and hour of day, in UTC" :spec="$d['hours']" />
-      <x-readout id="hours-out" :line="['Hover a cell', ' to read it.']" />
+      <x-readout id="hours-out" :line="$d['hours']['summary'] ?? ['', '']" />
       <x-heat-key low="Quiet" high="Busiest" :zero="true" extra="Hours are UTC" />
       @else
       <x-note>No play time recorded yet.</x-note>

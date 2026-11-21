@@ -25,30 +25,36 @@ const clamp = (value, lo, hi) => Math.max(lo, Math.min(hi, value));
 // A readout line: a bold lead and the rest, set as text so no markup from data is ever parsed.
 function say(spec, index) {
     const out = spec.out ? document.getElementById(spec.out) : null;
-    const line = spec.say?.[index];
+    const line = index == null ? spec.summary : spec.say?.[index];
     if (!out || !line) return;
     out.replaceChildren(htmlEl('b', '', line[0]), document.createTextNode(line[1] ?? ''));
 }
 
 // Pointer and keyboard reading, the way static-site/assets/character.js reads the XP bars.
-// count: how many readable steps; at(event): the step under the pointer; show(index, live): paint it.
-function reader(target, spec, { count, at, show }, signal) {
-    let pinned = spec.rest ?? count - 1;
+function reader(target, spec, { count, at, show, keys = { ArrowLeft: -1, ArrowRight: 1 } }, signal) {
+    let pinned = spec.summary ? null : (spec.rest ?? count - 1);
     let shown = pinned;
     const read = (index, live) => {
         shown = index;
         show(index, live);
         say(spec, index);
     };
-    target.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') read(at(e), true); }, { signal });
+    const pick = (e, pin) => {
+        const index = at(e);
+        if (index == null) return;
+        if (pin) pinned = index;
+        read(index, true);
+    };
+    target.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') pick(e, false); }, { signal });
     target.addEventListener('pointerleave', () => read(pinned, false), { signal });
-    target.addEventListener('click', (e) => { pinned = at(e); read(pinned, true); }, { signal });
+    target.addEventListener('click', (e) => pick(e, true), { signal });
+    target.addEventListener('focus', () => { if (target.matches(':focus-visible') && shown == null) read(spec.rest ?? 0, true); }, { signal });
     target.addEventListener('blur', () => read(pinned, false), { signal });
     target.addEventListener('keydown', (e) => {
-        const step = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
+        const step = keys[e.key] ?? 0;
         if (!step) return;
         e.preventDefault();
-        pinned = clamp(shown + step, 0, count - 1);
+        pinned = clamp((shown ?? spec.rest ?? 0) + step, 0, count - 1);
         read(pinned, true);
     }, { signal });
     read(pinned, false);
@@ -208,10 +214,16 @@ const draw = {
         });
         if (!spec.say) return;
         const cells = [...box.querySelectorAll('i')];
-        box.addEventListener('pointerover', (e) => {
-            const i = cells.indexOf(e.target.closest('i'));
-            if (i >= 0) say(spec, i);
-        }, { signal });
+        box.setAttribute('tabindex', '0');
+        reader(box, spec, {
+            count: cells.length,
+            at: (e) => {
+                const i = cells.indexOf(e.target.closest('i'));
+                return i < 0 ? null : i;
+            },
+            show: (i, live) => cells.forEach((cell, k) => cell.classList.toggle('on', live && k === i)),
+            keys: { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -24, ArrowDown: 24 },
+        }, signal);
     },
 
     // Play time by day: a column per week from Monday. days: [[level 0 to 4, hidden]], months: one label per week.
@@ -230,15 +242,17 @@ const draw = {
         });
         box.replaceChildren(head, grid);
         if (!spec.say) return;
-        const pick = (e) => {
-            const cell = e.target.closest('i[data-i]');
-            if (!cell) return;
-            box.querySelector('i.on')?.classList.remove('on');
-            cell.classList.add('on');
-            say(spec, Number(cell.dataset.i));
-        };
-        box.addEventListener('pointerover', pick, { signal });
-        box.addEventListener('click', pick, { signal });
+        const cells = [...grid.querySelectorAll('i:not(.off)')];
+        box.setAttribute('tabindex', '0');
+        reader(box, spec, {
+            count: cells.length,
+            at: (e) => {
+                const cell = e.target.closest('i[data-i]');
+                return cell ? Number(cell.dataset.i) : null;
+            },
+            show: (i, live) => cells.forEach((cell, k) => cell.classList.toggle('on', live && k === i)),
+            keys: { ArrowLeft: -7, ArrowRight: 7, ArrowUp: -1, ArrowDown: 1 },
+        }, signal);
     },
 
     // The survey map with heat cells and death crosses. cells: [[cell x, cell y, level 1 to 4]], deaths: [[x, y]].

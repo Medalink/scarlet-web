@@ -4,6 +4,7 @@ namespace App\View\Pages;
 
 use App\Actions\Public\Character\DeathLog;
 use App\Actions\Public\Character\SkillRanks;
+use App\Support\ItemOrigin;
 use App\Support\ItemQuality;
 use App\Support\Profession;
 use App\View\Charts;
@@ -68,13 +69,16 @@ final class CharacterSections
     }
 
     /**
+     * The looted items by quality, then the best items received from any source except crafting, then what the log let the
+     * page attribute.
+     *
      * @param  array{qualities: array<int, int>, best: list<array<string, mixed>>}  $items
      * @return array<string, mixed>|null
      */
     public static function items(array $items): ?array
     {
         $found = array_sum($items['qualities']);
-        if ($found === 0) {
+        if ($found === 0 && $items['best'] === []) {
             return null;
         }
         $segments = $key = [];
@@ -89,13 +93,16 @@ final class CharacterSections
         $top = max(1, (int) max([0, ...array_column($items['best'], 'item_level')]));
 
         return [
-            'segments' => $segments,
-            'key' => $key,
-            'say' => Format::number($found).' items looted: '.implode(', ', array_column($segments, 'say')).'.',
-            'total' => Format::number($found).' items looted.',
+            'looted' => $found === 0 ? null : [
+                'segments' => $segments,
+                'key' => $key,
+                'say' => Format::number($found).' items looted: '.implode(', ', array_column($segments, 'say')).'.',
+                'total' => Format::number($found).' items looted',
+            ],
             'best' => array_map(fn (array $row): array => [
                 'label' => (string) $row['name'], 'href' => '/items/'.$row['item_id'], 'quality' => ItemTypes::quality($row['quality']),
-                'value' => ($row['quantity'] > 1 ? '×'.Format::number($row['quantity']).', ' : '').($row['item_level'] === null ? ItemQuality::from($row['quality'])->label() : 'item level '.$row['item_level']),
+                'value' => ($row['quantity'] > 1 ? '×'.Format::number($row['quantity']).', ' : '')
+                    .($row['item_level'] === null ? ItemQuality::from($row['quality'])->label() : 'item level '.$row['item_level']).', '.ItemOrigin::from($row['origin'])->label(),
                 'share' => ($row['item_level'] ?? 0) / $top * 100, 'class' => ItemQuality::from($row['quality'])->fill(),
             ], $items['best']),
         ];

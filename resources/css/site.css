@@ -245,7 +245,7 @@ figure figcaption { margin-top: 0.8rem; font-size: 0.9rem; color: var(--muted); 
 .lanes .lane-name { fill: var(--text); }
 .scroll-x { overflow-x: auto; scrollbar-width: thin; }
 
-.heat { width: fit-content; max-width: 100%; margin-top: 1.1rem; --cell: clamp(1.05rem, 5.4vw, 1.4rem); }
+.heat { width: fit-content; max-width: 100%; overflow-x: auto; padding: 3px; margin: 1.1rem -3px 0; scrollbar-width: thin; --cell: clamp(1.05rem, 5.4vw, 1.4rem); }
 .heat-months, .heat-cells { display: grid; grid-auto-flow: column; grid-template-columns: 2.1rem; grid-auto-columns: var(--cell); gap: 4px; font-size: 0.78rem; color: var(--muted); }
 .heat-months { margin-bottom: 4px; }
 .heat-cells { grid-template-rows: repeat(7, var(--cell)); }
@@ -397,6 +397,7 @@ figure figcaption { margin-top: 0.8rem; font-size: 0.9rem; color: var(--muted); 
 .money .g { color: var(--gold); } .money .s { color: var(--silver); } .money .c { color: var(--copper); }
 .big { font: 750 3.4rem/1 var(--display); color: var(--fg); margin-top: 0.9rem; }
 .sub { font-size: 0.95rem; color: var(--text); margin-top: 0.35rem; }
+.sub.gap { margin-top: 1.6rem; }
 .gold-plot { position: relative; margin-top: 1.2rem; }
 .gold-plot svg { display: block; width: 100%; height: 8.5rem; overflow: visible; cursor: crosshair; }
 .gold-axis { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); padding-top: 0.35rem; }

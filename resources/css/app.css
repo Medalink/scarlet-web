@@ -57,6 +57,7 @@
 .hours i { display: block; aspect-ratio: 1; border-radius: 2px; background: rgba(255, 255, 255, 0.055); }
 .hours i[data-l="1"] { background: #4b1626; } .hours i[data-l="2"] { background: #861a34; } .hours i[data-l="3"] { background: #cf1f45; } .hours i[data-l="4"] { background: #ff5d7e; }
 .hours span { align-self: center; }
+.hours i.on { outline: 2px solid var(--fg); outline-offset: 1px; }
 .hours .h { text-align: center; }
 
 /* Tables that link somewhere. */

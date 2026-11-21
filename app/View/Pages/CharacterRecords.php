@@ -47,7 +47,7 @@ final class CharacterRecords
         if ($items['gear'] !== null) {
             $best = $items['gear'];
             $quality = ItemQuality::from($best['quality']);
-            $tiles[] = self::tile($best['name'], 'Best gear found', $quality->label().($best['item_level'] === null ? '' : ', item level '.$best['item_level']), '/items/'.$best['item_id'], ItemTypes::quality($best['quality']), true);
+            $tiles[] = self::tile($best['name'], 'Best gear', $quality->label().($best['item_level'] === null ? '' : ', item level '.$best['item_level']), '/items/'.$best['item_id'], ItemTypes::quality($best['quality']), true);
         }
         if ($records['nodes'] > 0) {
             $tiles[] = self::tile(Format::number($records['nodes']), 'Herbs and ore gathered');

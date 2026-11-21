@@ -1,10 +1,15 @@
 <x-module :span="$span" :first="$first" :last="$last" id="h-items" heading="Items found">
   @if ($d['items'])
-  <x-stack-bar :segments="$d['items']['segments']" :label="$d['items']['say']" />
-  <x-key :items="$d['items']['key']" />
-  @if ($d['items']['best'])<x-rank :rows="$d['items']['best']" />@endif
-  <p class="total">{{ $d['items']['total'] }}</p>
+  @if ($d['items']['looted'])
+  <p class="sub">{{ $d['items']['looted']['total'] }}</p>
+  <x-stack-bar :segments="$d['items']['looted']['segments']" :label="$d['items']['looted']['say']" />
+  <x-key :items="$d['items']['looted']['key']" />
+  @endif
+  @if ($d['items']['best'])
+  <p @class(['sub', 'gap' => $d['items']['looted']])>Best items received</p>
+  <x-rank :rows="$d['items']['best']" />
+  @endif
   @else
-  <x-note>No looted items recorded.</x-note>
+  <x-note>No items recorded.</x-note>
   @endif
 </x-module>

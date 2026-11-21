@@ -79,26 +79,31 @@ final class Charts
     /**
      * Play time by weekday and hour: $levels is 7 rows of 24 levels from 0 to 4, Monday first; $say has one line per cell, a day at a time.
      *
+     * $rest is the cell the keyboard starts on and $summary the line the readout shows while no cell is read.
+     *
      * @param  list<list<int>>  $levels
      * @param  list<array{0: string, 1: string}>|null  $say
+     * @param  array{0: string, 1: string}|null  $summary
      * @return array<string, mixed>
      */
-    public static function hours(array $levels, ?array $say = null, ?string $out = null): array
+    public static function hours(array $levels, ?array $say = null, ?string $out = null, ?int $rest = null, ?array $summary = null): array
     {
-        return self::reading(['kind' => 'hours', 'days' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 'levels' => $levels], $say, null, $out);
+        return self::reading(['kind' => 'hours', 'days' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 'levels' => $levels], $say, $rest, $out, $summary);
     }
 
     /**
      * Play time by day: $days is [[level 0 to 4, hidden]] a week at a time from Monday; $months has one label per week.
      *
      * @param  list<array{0: int, 1: int}>  $days
+     *                                             $rest is the cell the keyboard starts on and $summary the line the readout shows while no cell is read.
      * @param  list<string>  $months
      * @param  list<array{0: string, 1: string}>|null  $say
+     * @param  array{0: string, 1: string}|null  $summary
      * @return array<string, mixed>
      */
-    public static function days(array $days, array $months, ?array $say = null, ?string $out = null): array
+    public static function days(array $days, array $months, ?array $say = null, ?string $out = null, ?int $rest = null, ?array $summary = null): array
     {
-        return self::reading(['kind' => 'days', 'days' => $days, 'months' => $months], $say, null, $out);
+        return self::reading(['kind' => 'days', 'days' => $days, 'months' => $months], $say, $rest, $out, $summary);
     }
 
     /**
@@ -118,11 +123,12 @@ final class Charts
     /**
      * @param  array<string, mixed>  $spec
      * @param  list<array{0: string, 1: string}>|null  $say
+     * @param  array{0: string, 1: string}|null  $summary
      * @return array<string, mixed>
      */
-    private static function reading(array $spec, ?array $say, ?int $rest, ?string $out): array
+    private static function reading(array $spec, ?array $say, ?int $rest, ?string $out, ?array $summary = null): array
     {
-        return array_filter([...$spec, 'say' => $say, 'rest' => $rest, 'out' => $out], fn (mixed $value): bool => $value !== null);
+        return array_filter([...$spec, 'say' => $say, 'rest' => $rest, 'out' => $out, 'summary' => $summary], fn (mixed $value): bool => $value !== null);
     }
 
     /**
