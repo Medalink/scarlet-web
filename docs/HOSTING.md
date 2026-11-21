@@ -203,10 +203,11 @@ disabled, and `/auth/<provider>/redirect` answers `503` with "Sign in with <prov
 
 Proven without client ids, in a running app: the redirect to each provider's authorization URL (`scope=openid`, a
 `state`, Google's PKCE challenge, the redirect URI), the disabled buttons, and everything after the provider answers
-(account and identity rows, linking, unlinking, the account page) through the development sign-in. Not proven: a real
-round trip with Google or Battle.net (the code exchange and the subject id each returns), that either provider accepts
-an `http://127.0.0.1:<port>` redirect URL for a local client, and the Battle.net region hosts. Check these with the
-first real client ids before announcing sign-in.
+(account and identity rows, linking, unlinking, the account page) through the development sign-in.
+
+Proven on https://scarletweb.io on 2026-11-21: a real round trip with Google and with Battle.net (region `us`, through
+`us.battle.net`), each ending signed in on `/account` with both identities linked to one account. Not proven: that
+either provider accepts an `http://127.0.0.1:<port>` redirect URL for a local client.
 
 ## Version numbers and release notes
 
