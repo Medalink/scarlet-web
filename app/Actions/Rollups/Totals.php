@@ -23,7 +23,7 @@ class Totals
         $ms = $this->sum(Rollup::PlayHourlyRuleset, 'ms', $rulesetId);
 
         return [
-            'characters' => $this->characters(Rollup::XpDailyRuleset, $rulesetId),
+            'characters' => $this->characters($rulesetId),
             'xp' => $this->sum(Rollup::XpDailyRuleset, 'xp', $rulesetId),
             'played_seconds' => $ms === null ? null : $ms / 1000,
             'kills' => $this->kills($rulesetId),
@@ -42,7 +42,7 @@ class Totals
      */
     private function kills(int|array|null $rulesetId): int|float|null
     {
-        if ($this->characters(Rollup::PlayHourlyRuleset, $rulesetId) === null) {
+        if ($this->characters($rulesetId) === null) {
             return null;
         }
 
@@ -52,10 +52,15 @@ class Totals
             ->sum('kills') + 0;
     }
 
-    /** @param  int|list<int>|null  $rulesetId */
-    private function characters(Rollup $rollup, int|array|null $rulesetId): ?int
+    /**
+     * The characters that played, which every total of the scope rests on: a total of nothing (no deaths yet) is 0,
+     * not too few characters.
+     *
+     * @param  int|list<int>|null  $rulesetId
+     */
+    private function characters(int|array|null $rulesetId): ?int
     {
-        $count = (int) $this->read->from($rollup, $rulesetId)->selectRaw('distinct_count(rollup(characters)) as characters')->value('characters');
+        $count = (int) $this->read->from(Rollup::PlayHourlyRuleset, $rulesetId)->selectRaw('distinct_count(rollup(characters)) as characters')->value('characters');
 
         return $count < (int) config('scarlet.min_characters') ? null : $count;
     }
@@ -63,7 +68,7 @@ class Totals
     /** @param  int|list<int>|null  $rulesetId */
     private function sum(Rollup $rollup, string $column, int|array|null $rulesetId): int|float|null
     {
-        if ($this->characters($rollup, $rulesetId) === null) {
+        if ($this->characters($rulesetId) === null) {
             return null;
         }
 
