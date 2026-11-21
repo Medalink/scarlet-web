@@ -20,6 +20,14 @@ final class Format
         return number_format($value, $decimals);
     }
 
+    /** 1 → "1 death", 22 → "22 deaths"; an irregular plural is given. */
+    public static function count(int|float|string $value, string $singular, ?string $plural = null): string
+    {
+        $number = (float) $value;
+
+        return self::number($number).' '.($number === 1.0 ? $singular : ($plural ?? $singular.'s'));
+    }
+
     /** A share of 1 as a percentage: 0.412 → "41.2%" with one decimal. */
     public static function percent(int|float $share, int $decimals = 0): string
     {

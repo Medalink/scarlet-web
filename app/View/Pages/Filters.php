@@ -12,6 +12,34 @@ final class Filters
     private const int SEG_LIMIT = 3;
 
     /**
+     * The same filters for a page whose path stays and whose ruleset and server are query parameters.
+     *
+     * @param  list<array{id: int, slug: string, label: string}>  $rulesets
+     * @param  array<string, string>  $keep  other query parameters to carry over
+     * @return array{rulesets: list<array<string, mixed>>, rulesetsPick: list<array{0: string, 1: string}>|null, rulesetSelected: string|null, servers: list<array<string, mixed>>|null}
+     */
+    public static function onPage(PageScope $scope, array $rulesets, string $path, array $keep = []): array
+    {
+        $link = fn (array $query): string => $path.(($query = array_filter([...$keep, ...$query])) === [] ? '' : '?'.http_build_query($query));
+        $items = [['label' => 'All', 'href' => $link([]), 'on' => $scope->ruleset === null && $scope->server === Server::All]];
+        foreach ($rulesets as $ruleset) {
+            $items[] = ['label' => $ruleset['label'], 'href' => $link(['ruleset' => $ruleset['slug']]), 'on' => $scope->ruleset?->id === $ruleset['id']];
+        }
+        $many = count($rulesets) > self::SEG_LIMIT;
+
+        return [
+            'rulesets' => $many ? [] : $items,
+            'rulesetsPick' => $many ? array_map(fn (array $item): array => [$item['label'], $item['href']], $items) : null,
+            'rulesetSelected' => $many ? ($scope->ruleset?->label() ?? 'All') : null,
+            'servers' => $scope->ruleset === null ? array_map(fn (Server $server): array => [
+                'label' => $server->label(),
+                'href' => $link($server === Server::All ? [] : ['server' => $server->value]),
+                'on' => $server === $scope->server,
+            ], Server::cases()) : null,
+        ];
+    }
+
+    /**
      * @param  list<array{id: int, slug: string, label: string}>  $rulesets
      * @param  string  $statsPath  the page for every ruleset, with the server as a query
      * @return array{rulesets: list<array<string, mixed>>, rulesetsPick: list<array{0: string, 1: string}>|null, rulesetSelected: string|null, servers: list<array<string, mixed>>|null}

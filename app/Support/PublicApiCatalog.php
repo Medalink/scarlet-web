@@ -4,6 +4,8 @@ namespace App\Support;
 
 use App\Http\Controllers\Api\V1\Public\LeaderboardController;
 use App\Http\Controllers\Api\V1\Public\MapController;
+use App\Http\Controllers\Api\V1\Public\RecordController;
+use App\Http\Controllers\Api\V1\Public\SearchController;
 use App\Http\Controllers\Api\V1\Public\StatsController;
 
 /**
@@ -23,7 +25,7 @@ final class PublicApiCatalog
     ];
 
     /**
-     * @return list<array{name: string, path: string, group: string, action: array{0: class-string, 1: string}, summary: string, params: list<string|array{0: string, 1: string, 2: string, 3: string}>, returns: string, example: string, where: array<string, string>}>
+     * @return list<array{name: string, path: string, group: string, action: class-string|array{0: class-string, 1: string}, summary: string, params: list<string|array{0: string, 1: string, 2: string, 3: string}>, returns: string, example: string, where: array<string, string>}>
      */
     public static function endpoints(): array
     {
@@ -69,6 +71,41 @@ final class PublicApiCatalog
                 'params' => [['board', 'path', 'string', 'A board name from `/leaderboards`.'], 'ruleset', 'server', 'class', 'cursor', 'limit'],
                 'returns' => '`data`: rows with `rank`, `name`, `race`, `class`, `value`, `ruleset`, `hardcore`, `deaths` and `at`. `meta.next_cursor`, `meta.total`.',
                 'example' => '/leaderboards/most-quests?limit=2', 'where' => ['board' => '[a-z0-9-]+'],
+            ],
+            [
+                'name' => 'search', 'group' => 'Search', 'path' => '/search', 'action' => SearchController::class,
+                'summary' => 'Characters (only those made public), creatures, items, zones and quests whose name contains the text, best match first.',
+                'params' => ['q', ['kind', 'query', 'string', '`characters`, `creatures`, `items`, `zones` or `quests`. Leave out for the first hits of every kind.'], 'cursor', 'limit'],
+                'returns' => 'Without `kind`: `data` has one entry per kind with `count` and `hits`. With `kind`: `data` is the list of hits, paged with `meta.next_cursor`. A hit has `kind`, `id`, `name`, `path` and the numbers of its kind.',
+                'example' => '/search?q=ash&kind=zones', 'where' => [],
+            ],
+            [
+                'name' => 'creature', 'group' => 'Records', 'path' => '/creatures/{id}', 'action' => [RecordController::class, 'creature'],
+                'summary' => 'One creature: its level range and kind, kills, deaths to it, drops under each loot rule and the world cells where it was met.',
+                'params' => [['id', 'path', 'integer', 'The creature id, as in the address of its page.'], 'ruleset', 'server'],
+                'returns' => '`data`: `facts`, `kills`, `deaths`, `deaths_by_level`, `drops` (item, loot rule, drops, opens, rate) and `cells`. Drop rates cover every ruleset.',
+                'example' => '/creatures/257926', 'where' => ['id' => '[0-9]+'],
+            ],
+            [
+                'name' => 'item', 'group' => 'Records', 'path' => '/items/{id}', 'action' => [RecordController::class, 'item'],
+                'summary' => 'One item: what it is and where it drops, by source and loot rule.',
+                'params' => [['id', 'path', 'integer', 'The item id, as in the address of its page.']],
+                'returns' => '`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `dropped`, `source_count`, `best_rate`, `first_at`.',
+                'example' => '/items/1465', 'where' => ['id' => '[0-9]+'],
+            ],
+            [
+                'name' => 'zone', 'group' => 'Records', 'path' => '/zones/{id}', 'action' => [RecordController::class, 'zone'],
+                'summary' => 'One zone: time played, deaths, what killed characters there and the creatures met. A dungeon has a negative id.',
+                'params' => [['id', 'path', 'integer', 'The zone id, as in the address of its page.'], 'ruleset', 'server'],
+                'returns' => '`data`: `rect` (the zone on the world map), `played`, `deaths`, `killers`, `creatures`.',
+                'example' => '/zones/1446', 'where' => ['id' => '-?[0-9]+'],
+            ],
+            [
+                'name' => 'quest', 'group' => 'Records', 'path' => '/quests/{id}', 'action' => [RecordController::class, 'quest'],
+                'summary' => 'One quest: accepts, turn-ins, abandons, experience, and the levels and zones where it is turned in.',
+                'params' => [['id', 'path', 'integer', 'The quest id, as in the address of its page.'], 'ruleset', 'server'],
+                'returns' => '`data`: `totals`, `levels` (level, turn-ins) and `zones`.',
+                'example' => '/quests/6521', 'where' => ['id' => '[0-9]+'],
             ],
             [
                 'name' => 'map-heat', 'group' => 'Map', 'path' => '/map/heat', 'action' => [MapController::class, 'heat'],
