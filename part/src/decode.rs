@@ -616,11 +616,15 @@ impl Dec<'_> {
         };
         self.charge(t, false);
         let since = t - self.last_level_t;
-        if self.level > 0 && l > self.level + 1 {
-            self.level_skip = true;
+        // An `L` line that repeats the level (an import writes one at its start, the client may after a
+        // reload) gains nothing, so it must not count toward the "levels too fast" flag.
+        if self.level > 0 && l > self.level {
+            self.levels_gained += l - self.level;
+            if l > self.level + 1 {
+                self.level_skip = true;
+            }
         }
         self.level = l;
-        self.levels_gained += 1;
         self.last_level_t = t;
         self.charge(t, false);
         self.fact("level_ups", t);
@@ -1065,6 +1069,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         keys.insert(gi);
         let skip = group == "addons";
         let mut t = session * 1000;
+        let mut after_line = false;
         for line in text.split('\n').skip(1) {
             if line.is_empty() {
                 continue;
@@ -1079,9 +1084,13 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
             if skip {
                 continue;
             }
-            if dt < 0 {
+            // The first line of a part counts from the session's start, not from a line before it: a line
+            // the addon wrote just before the session began (a statistic after the last session's end)
+            // has a negative first `dt` and is not a step back.
+            if dt < 0 && after_line {
                 backsteps += 1;
             }
+            after_line = true;
             t += dt;
             lines.push(DLine {
                 t,

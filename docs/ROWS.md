@@ -268,11 +268,11 @@ flags stop; thresholds are the decoder's):
 
 | Flag | Raised when |
 | --- | --- |
-| `time_order` | a part has a line earlier than the one before it (a negative `dt`) |
+| `time_order` | a part has a line earlier than the one before it (a negative `dt`). The first line of a part has none before it: its `dt` counts from the session's start, and a line from just before the session began is not a step back |
 | `session_over_24h` | `played_ms` is more than 24 hours |
 | `xp_over_level` | the XP gained at one level (below 60) is more than 1.5 times the XP that level needs (OVERVIEW.md table) |
 | `level_skip` | an `L` line raises the level by more than 1 |
-| `levels_too_fast` | `played_ms` divided by the levels gained in the session is under 20 seconds |
+| `levels_too_fast` | `played_ms` divided by the levels gained in the session is under 20 seconds. An `L` line that repeats the current level gains none |
 | `ruleset_changed` | a later `GR`, `PB`, `XD`, `GA` or `RU` (record) line differs from the first one |
 
 ## Missing groups
