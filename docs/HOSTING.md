@@ -193,6 +193,23 @@ nginx serves `/map-tiles/` straight from that folder (mounted into `web` at `/va
 cookie, so Cloudflare caches the tiles. The site reads `manifest.json` for the current version, so a new build is live
 once it is copied. Never commit the tiles.
 
+## Edge cache
+
+Cloudflare caches three kinds of answer, each only for a visitor with no credentials. A request with an `Authorization`
+header, a `scarlet_session` cookie or a `remember_web_*` cookie is never cached and never served from cache; the rules
+and the origin use the same test.
+
+| What | Origin sends | Edge result |
+| --- | --- | --- |
+| `/map-tiles/` | nginx from disk, `public, immutable`, no cookie | cached for a year |
+| `/api/v1/public/*` | `public, max-age=300, s-maxage=300` (`private` with an `Authorization` header) | cached 5 minutes |
+| The public pages (`routes/pages.php`, `/`, `/demo`) | `App\Http\Middleware\EdgeCacheable`: no session, no cookie, `s-maxage=60` | cached 1 minute |
+
+`node deploy/cloudflare.mjs cache-rules` writes the two Cache Rules (Free plan: `http.cookie` and header names work in
+them) and `status` lists them. Their edge TTL is `bypass_by_default`: the origin's `Cache-Control` decides, so an
+answer with no `public` marker, an error or a `Set-Cookie` is not stored. A character who switches their page to private
+stays visible in the edge for up to a minute.
+
 ## Setting up again from nothing
 
 Needs the secrets folder (`SCARLET_SECRETS`, default `E:/Dev/secrets/scarlet-web` on Windows): `do-token`,

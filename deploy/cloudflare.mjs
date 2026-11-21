@@ -7,6 +7,7 @@
 //   node deploy/cloudflare.mjs settings                     always use https, minimum TLS 1.2, TLS 1.3, HSTS untouched
 //   node deploy/cloudflare.mjs ssl off|flexible|full|strict the zone's SSL mode
 //   node deploy/cloudflare.mjs aop on|off                   Authenticated Origin Pulls for the zone
+//   node deploy/cloudflare.mjs cache-rules                  the Cache Rules: the public API and the public pages, for visitors without a session
 //   node deploy/cloudflare.mjs origin-cert <csr> <out.pem>  an Origin CA certificate for the apex and *.scarletweb.io
 //   node deploy/cloudflare.mjs status                       the settings above, as the zone has them
 //
@@ -59,7 +60,27 @@ async function record(type, name, content) {
   return api('POST', `zones/${zone}/dns_records`, body);
 }
 
+const HOST = `http.host eq "${ZONE}"`;
+const NO_CREDENTIALS = 'not any(lower(http.request.headers.names[*])[*] eq "authorization") and not http.cookie contains "scarlet_session" and not http.cookie contains "remember_web_"';
+const PAGES = ['/', '/demo', '/stats', '/map', '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/talents', '/rulesets'];
+const PAGE_PREFIXES = ['/c/', '/creatures/', '/items/', '/zones/', '/quests/', '/leaderboards/', '/talents/', '/rulesets/'];
+const CACHE_RULES = [
+  {
+    description: 'Public API for callers without credentials',
+    expression: `${HOST} and starts_with(http.request.uri.path, "/api/v1/public/") and ${NO_CREDENTIALS}`,
+  },
+  {
+    description: 'Public pages for visitors without a session',
+    expression: `${HOST} and (http.request.uri.path in {${PAGES.map((path) => `"${path}"`).join(' ')}} or ${PAGE_PREFIXES.map((prefix) => `starts_with(http.request.uri.path, "${prefix}")`).join(' or ')}) and ${NO_CREDENTIALS}`,
+  },
+].map((rule) => ({ ...rule, action: 'set_cache_settings', action_parameters: { cache: true, edge_ttl: { mode: 'bypass_by_default' }, browser_ttl: { mode: 'respect_origin' } }, enabled: true }));
+
 switch (command) {
+  case 'cache-rules': {
+    const result = await api('PUT', `zones/${zone}/rulesets/phases/http_request_cache_settings/entrypoint`, { rules: CACHE_RULES });
+    console.log(`cache-rules: ${result.rules.length} rules in ruleset ${result.id}, version ${result.version}`);
+    break;
+  }
   case 'dns': {
     const [v4, v6] = args;
     for (const name of [ZONE, `www.${ZONE}`]) {
@@ -101,10 +122,12 @@ switch (command) {
       const s = await api('GET', `zones/${zone}/settings/${name}`);
       console.log(`${name} = ${JSON.stringify(s.value)}`);
     }
+    const cache = await api('GET', `zones/${zone}/rulesets/phases/http_request_cache_settings/entrypoint`).catch(() => ({ rules: [] }));
+    for (const r of cache.rules ?? []) console.log(`cache rule: ${r.description} enabled=${r.enabled}`);
     for (const r of await api('GET', `zones/${zone}/dns_records`)) console.log(`${r.type} ${r.name} -> ${r.content} proxied=${r.proxied}`);
     break;
   }
   default:
-    console.error('usage: cloudflare.mjs ips | dns <ipv4> <ipv6> | settings | ssl <mode> | aop on|off | origin-cert <csr> <out> | status');
+    console.error('usage: cloudflare.mjs ips | dns <ipv4> <ipv6> | settings | ssl <mode> | aop on|off | cache-rules | origin-cert <csr> <out> | status');
     process.exit(2);
 }

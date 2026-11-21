@@ -5,8 +5,8 @@ use App\Http\Controllers\Web\MapViewerDesignController;
 use App\View\Design\Gallery;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'landing');
-Route::view('/demo', 'demo');
+Route::view('/', 'landing')->middleware('scarlet.edge');
+Route::view('/demo', 'demo')->middleware('scarlet.edge');
 
 // The component gallery rebuilds every comp from invented data; it is not part of the site.
 if (app()->environment('local')) {
@@ -17,4 +17,4 @@ if (app()->environment('local')) {
 
 require __DIR__.'/maps.php';
 require __DIR__.'/accounts.php';
-require __DIR__.'/pages.php';
+Route::middleware('scarlet.edge')->group(__DIR__.'/pages.php');

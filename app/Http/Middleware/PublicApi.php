@@ -12,7 +12,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * What every /api/v1/public answer shares: the rate limit (per address, or per token when a personal access
- * token with the `public:read` ability is sent as a bearer token), open CORS, and HTTP caching with an ETag.
+ * token with the `public:read` ability is sent as a bearer token), open CORS, and HTTP caching with an ETag. An answer
+ * to an anonymous caller may sit in a shared cache (Cloudflare) for `scarlet.edge.api_seconds`; one to a caller with
+ * credentials is private.
  */
 class PublicApi
 {
@@ -82,7 +84,9 @@ class PublicApi
 
         $etag = '"'.md5((string) $response->getContent()).'"';
         $response->headers->set('ETag', $etag);
-        $response->headers->set('Cache-Control', 'public, max-age='.self::MAX_AGE);
+        $response->headers->set('Cache-Control', $request->headers->has('Authorization')
+            ? 'private, max-age='.self::MAX_AGE
+            : 'public, max-age='.self::MAX_AGE.', s-maxage='.(int) config('scarlet.edge.api_seconds'));
         if ($request->headers->get('If-None-Match') === $etag) {
             $response->setNotModified();
         }
