@@ -17,7 +17,7 @@ final class CharacterLayout
      */
     public static function rows(bool $capped, bool $gold, bool $talents): array
     {
-        $build = $talents ? [[self::m('talents', 'w8'), self::m('respecs')], [self::m('talent-order', 'w12')]] : [];
+        $build = $talents ? [[self::m('talents', 'w8'), self::m('respecs')], [self::m('talent-order', 'w12')], [self::m('talent-facts', 'w12')]] : [];
 
         if (! $capped) {
             return [

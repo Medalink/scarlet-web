@@ -2,6 +2,7 @@
 
 namespace App\View\Pages;
 
+use App\Actions\Public\Character\TalentFacts;
 use App\Support\RespecKind;
 use App\View\Format;
 use App\View\TalentTree;
@@ -30,6 +31,52 @@ final class CharacterTalents
             'groups' => array_map(fn (array $group): array => self::group($group, $group['group'] === $talents['active'], count($groups) > 1, $talents['names']['spell']), $groups),
             'order' => self::order($order),
             'respecs' => self::respecs($respecs, count($groups) > 1),
+            'facts' => self::facts($talents['facts'], $respecs, $talents['names']['spell']),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $facts
+     * @param  list<array<string, mixed>>  $respecs
+     * @param  array<int, string>  $spells
+     * @return array{columns: list<array<string, mixed>>, rows: list<array<string, mixed>>}
+     */
+    private static function facts(array $facts, array $respecs, array $spells): array
+    {
+        /** @var array{same: int, total: int, level: int}|null $sharing */
+        $sharing = $facts['sharing'];
+        /** @var array{node: int, spell: int|null, taken: int, total: int}|null $least */
+        $least = $facts['least'];
+        /** @var array{level: int|null, first_read: bool}|null $deep */
+        $deep = $facts['first_deep'];
+        /** @var array{points: int, longest_s: float, median_s: float}|null $unspent */
+        $unspent = $facts['unspent'];
+        /** @var array{refunded: int, picks: int} $takenBack */
+        $takenBack = $facts['taken_back'];
+        $costs = array_filter(array_column($respecs, 'cost'), fn (mixed $cost): bool => $cost !== null);
+        $rows = [];
+        if ($sharing !== null) {
+            $rows[] = ['Characters with your exact build at level '.$sharing['level'], Format::number($sharing['same']), 'of '.Format::count($sharing['total'], 'other character').' at that level'];
+        }
+        $rows[] = ['Respecs', Format::number(count($respecs)), 'recorded'];
+        if ($costs !== []) {
+            $rows[] = ['Gold spent on respecs', Format::moneyText((int) array_sum($costs)), 'from '.Format::count(count($costs), 'respec').' with a recorded cost'];
+        }
+        if ($least !== null) {
+            $rows[] = ['Your least picked talent', ($least['spell'] === null ? null : ($spells[$least['spell']] ?? null)) ?? 'Node '.$least['node'], 'held by '.Format::number($least['taken']).' of '.Format::count($least['total'], 'other character').' of your class and spec'];
+        }
+        if ($deep !== null) {
+            $rows[] = ['First build with '.TalentFacts::DEEP_POINTS.' points in one tree', $deep['level'] === null ? '' : 'Level '.$deep['level'], $deep['first_read'] ? 'already held when the build was first read' : 'when that build was read'];
+        }
+        if ($unspent !== null) {
+            $rows[] = ['Longest a point sat unspent', Format::duration($unspent['longest_s']), 'of '.Format::count($unspent['points'], 'point').' seen being taken after their level-up'];
+            $rows[] = ['Median wait to spend a point', Format::duration($unspent['median_s']), 'of '.Format::count($unspent['points'], 'point')];
+        }
+        $rows[] = ['Picks refunded within '.TalentFacts::TAKEN_BACK_MINUTES.' minutes', Format::number($takenBack['refunded']), 'of '.Format::count($takenBack['picks'], 'pick').' seen'];
+
+        return [
+            'columns' => [['label' => 'Fact'], ['label' => 'Value', 'numeric' => true], ['label' => 'Based on']],
+            'rows' => array_map(fn (array $row): array => ['cells' => $row], $rows),
         ];
     }
 

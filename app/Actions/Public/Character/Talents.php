@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class Talents
 {
-    public function __construct(private readonly TalentLayout $layouts) {}
+    public function __construct(private readonly TalentLayout $layouts, private readonly TalentFacts $facts) {}
 
     /**
      * What a character's talents look like on a page: the latest build of each talent group, the order the points were
@@ -23,7 +23,7 @@ class Talents
      * listed. A build with fewer points than the one before it, and no respec recorded between them, is a respec
      * between sessions.
      *
-     * @return array{active: int, groups: list<array<string, mixed>>, names: array{spell: array<int, string>, tab: array<int, string>}, order: list<array<string, mixed>>, respecs: list<array<string, mixed>>}|null
+     * @return array{active: int, groups: list<array<string, mixed>>, names: array{spell: array<int, string>, tab: array<int, string>}, order: list<array<string, mixed>>, respecs: list<array<string, mixed>>, facts: array<string, mixed>}|null
      */
     public function handle(int $characterId): ?array
     {
@@ -61,6 +61,7 @@ class Talents
             $layouts[$tree] ??= $this->layouts->handle($tree);
         }
         $names = $this->names($latest, $order, $layouts);
+        $facts = $this->facts->handle($characterId, $snapshots);
 
         return [
             'active' => (int) $snapshots[count($snapshots) - 1]->spec_group,
@@ -68,6 +69,7 @@ class Talents
             'names' => $names,
             'order' => array_map(fn (array $row): array => [...$row, 'name' => $names['spell'][$row['spell']] ?? null], $order),
             'respecs' => $respecs,
+            'facts' => $facts,
         ];
     }
 
@@ -76,7 +78,7 @@ class Talents
     {
         return array_values(DB::select(
             <<<'SQL'
-            select at, level, spec_group, tree_id, tab_points, spec_tab_id, build_hash, ranks from (
+            select at, level, ruleset_id, spec_group, tree_id, tab_points, spec_tab_id, build_hash, ranks from (
                 select *, lag(build_hash) over (partition by spec_group order by at) as before_hash
                 from talent_snapshots where character_id = ?
             ) s where before_hash is distinct from build_hash order by at
