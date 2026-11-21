@@ -64,6 +64,8 @@ class ClaimCharacter
                     'name_key' => Character::keyFor($name),
                     'first_install_id' => $install->id,
                     'account_id' => $install->account_id,
+                    // Public from the first upload; gold and trades stay behind show_economy.
+                    'is_public' => true,
                 ]);
                 $this->attach($install, $character);
 

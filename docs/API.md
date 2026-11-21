@@ -250,7 +250,7 @@ Everything the public pages show, as read-only JSON. No sign-in. Paths are under
 
 Every answer is UTF-8 JSON: `{"data": ..., "meta": {...}}`. Times are ISO 8601 in UTC, durations are seconds and money
 is copper. A number that fewer than `meta.min_characters` characters contributed to is `null`, or its row is left out,
-so a single player cannot be read from a statistic. A character answers only when its owner made it public; any other
+so a single player cannot be read from a statistic. A character answers unless its owner made it private; any other
 character is `404 not_found`, the same as one that does not exist. Money of a character is in the answer only when its
 owner shares the economy. The name of another player is shown only when that player's own character is public.
 

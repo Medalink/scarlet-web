@@ -333,7 +333,8 @@ design says so plainly instead of pretending:
 
 - The first install to upload a name holds it. A second install can upload the same name only when both belong to one
   account.
-- A character page is private until its owner makes it public.
+- A character page is public from its first upload; its owner can make it private. Gold and trades stay hidden
+  unless the owner switches "show economy" on.
 - Each decode runs plausibility checks (time order, session length against the clock, experience against the level
   table, level gains against played time). A character that fails is kept but left out of leaderboards and rollups
   until the data stops failing.
