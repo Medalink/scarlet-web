@@ -6,6 +6,9 @@
 <meta name="description" content="{{ $description }}">
 @endif
 <meta name="theme-color" content="#141416">
+{{-- Cross-page transitions. Chromium decides at each sheet load whether the page opted in, so the opt-in sits inline
+     ahead of every stylesheet: site.css, the fonts sheet and the page sheets can arrive in any order without cancelling it. --}}
+<style>@media (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }</style>
 <link rel="icon" href="/mark.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
