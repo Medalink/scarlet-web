@@ -141,6 +141,7 @@ services:
       - /srv/scarlet-web/state:/etc/nginx/state:ro
       - /srv/scarlet-web/tls:/etc/nginx/tls:ro
       - /srv/scarlet-web/public:/var/www/public:ro
+      - /srv/scarlet-web/maps:/var/www/map-tiles:ro
 
 networks:
   backend:

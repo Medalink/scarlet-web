@@ -182,8 +182,9 @@ at `/maps`, `MAPS_ROOT=/maps`), so a deploy never touches them. Build them as DE
 bin/deploy maps <folder with manifest.json>     # normally storage/app/maps of a dev checkout
 ```
 
-The site reads `manifest.json` for the current version, so a new build is live once it is copied. Never commit the
-tiles.
+nginx serves `/map-tiles/` straight from that folder (mounted into `web` at `/var/www/map-tiles`): no PHP and no
+cookie, so Cloudflare caches the tiles. The site reads `manifest.json` for the current version, so a new build is live
+once it is copied. Never commit the tiles.
 
 ## Setting up again from nothing
 
