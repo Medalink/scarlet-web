@@ -69,6 +69,26 @@ fresh Windows install with `E:\Dev\tools\evict-c\evict-c.ps1` (report mode). The
 the two per worktree. `.env`, `storage/` and `public/build` are in the checkout. `bin/dev infra down` keeps all of
 it; `wslc volume remove <name>` deletes a volume for good.
 
+## Version numbers
+
+`VERSION` holds the version; the build number counts commits since it last changed. To cut a version, change `VERSION`
+in a ship of its own. Do not run `app:version:set` (it tags) or `app:version:install-hooks`.
+
+`storage/app/version.json` and `storage/app/release-notes.json` are generated, ignored and read by the footer and
+`/release-notes`. To fill them locally, from the checkout the containers can read the `.git` of:
+
+```sh
+bin/artisan app:version --strict
+bin/artisan app:release-notes:backfill --all --output=storage/app/release-notes.json
+bin/artisan app:release-notes:publish --from-file=storage/app/release-notes.json
+```
+
+In a `ws` worktree the `.git` file names a Windows path the container cannot read, so `--strict` fails (without it the
+numbers are zero and the commit is `unknown`). Point git at a bare copy of the history instead: `git init --bare
+<folder>`, `git fetch <worktree> +HEAD:refs/heads/main` into it, and run the commands with `GIT_DIR` set to that folder
+as seen from the container. Commit first: the snapshot is the committed history, and the import refuses a snapshot
+from another build.
+
 ## Dependencies
 
 The rule: every package and image is the newest release that has been public for at least 7 days.
@@ -78,6 +98,8 @@ The rule: every package and image is the newest release that has been public for
   list holds `>=x.y.z` for each transitive package whose newest release was younger than 7 days when it was added.
   When `scripts/deps-age` reports a package, add a `conflict` line for the reported version, run
   `bin/composer update`, and remove the line once that version is old enough.
+- A package from a `vcs` repository in `composer.json` is not on Packagist. `scripts/deps-age` reads its release time
+  from the `time` the lock file records for the tag, so the 7-day rule covers it too.
 - Images: `docker/pins.tsv` and the `FROM` lines of `docker/dev.Dockerfile` name each image as `name:tag@sha256:digest`
   with the date it was pushed. Compare tags with Docker Hub's `tag_last_pushed`.
 - `bin/composer deps:age` (or `bin/php scripts/deps-age`) checks `composer.lock`, `pnpm-lock.yaml`,

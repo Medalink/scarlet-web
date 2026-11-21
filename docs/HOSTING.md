@@ -81,6 +81,28 @@ round trip with Google or Battle.net (the code exchange and the subject id each 
 an `http://127.0.0.1:<port>` redirect URL for a local client, and the Battle.net region hosts. Check these with the
 first real client ids before announcing sign-in.
 
+## Version numbers and release notes
+
+The page footer and `/release-notes` read two files the build writes while it has the full git history. Neither is in
+git. Run these in the build, before the image is made, from a checkout that is not shallow:
+
+```sh
+php artisan app:version --strict --no-interaction
+php artisan app:release-notes:backfill --all --output=storage/app/release-notes.json --no-interaction
+```
+
+Ship `storage/app/version.json` and `storage/app/release-notes.json` in the image. After `php artisan migrate`, run:
+
+```sh
+php artisan app:release-notes:publish --from-file=storage/app/release-notes.json --no-interaction
+```
+
+The import reads no git, rejects a snapshot from another build, and keeps each release's date and every account's read
+state when it runs again. Flat mode is not used: it needs a commit of the generated file after every commit. Git hooks
+are not installed (`app:version:install-hooks`): PHP exists only in the dev containers, so a host hook would fail on
+Windows and on the ship machine. Without `version.json` the site shows the `VERSION` file with build `0`. Published
+notes are cached for an hour; `php artisan cache:clear` after the import shows them at once.
+
 ## The static website
 
 The landing page and the demo character page move into the app unchanged. Until the app has a public home, the

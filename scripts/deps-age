@@ -85,10 +85,37 @@ function composerPackages(string $path): array
     $lock = json_decode((string) file_get_contents($path), associative: true, flags: JSON_THROW_ON_ERROR);
     $rows = [];
     foreach ([...($lock['packages'] ?? []), ...($lock['packages-dev'] ?? [])] as $package) {
-        $rows[] = ['packagist', strtolower($package['name']), $package['version']];
+        $name = strtolower($package['name']);
+        // A package from a vcs repository in composer.json is not on Packagist; the lock records the tag's commit time.
+        if (isVcsSource($path, $package['source']['url'] ?? '')) {
+            $GLOBALS['vcsTimes'][$name.'@'.$package['version']] = $package['time'] ?? null;
+            $rows[] = ['vcs', $name, $package['version']];
+
+            continue;
+        }
+        $rows[] = ['packagist', $name, $package['version']];
     }
 
     return $rows;
+}
+
+/** Whether the url is one of the vcs repositories that composer.json beside the lock file lists. */
+function isVcsSource(string $lockPath, string $url): bool
+{
+    static $urls = null;
+    $urls ??= (function () use ($lockPath): array {
+        $manifest = json_decode((string) file_get_contents(dirname($lockPath).'/composer.json'), associative: true, flags: JSON_THROW_ON_ERROR);
+        $found = [];
+        foreach ($manifest['repositories'] ?? [] as $repository) {
+            if (($repository['type'] ?? null) === 'vcs') {
+                $found[] = rtrim(preg_replace('/\.git$/', '', (string) $repository['url']), '/');
+            }
+        }
+
+        return $found;
+    })();
+
+    return in_array(rtrim(preg_replace('/\.git$/', '', $url), '/'), $urls, strict: true);
 }
 
 /** @return list<array{string, string, string}> */
@@ -197,6 +224,7 @@ function publishedAt(string $registry, string $name, string $version): int
 {
     return match ($registry) {
         'packagist' => packagistTime($name, $version),
+        'vcs' => timestamp($GLOBALS['vcsTimes']["{$name}@{$version}"] ?? null, "{$name} {$version}"),
         'npm' => npmTime($name, $version),
         'crates' => cratesTime($name, $version),
         'docker' => dockerTime($name, $version),

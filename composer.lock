@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d312dd7bf26ccc1141fef92abd421cc3",
+    "content-hash": "7f721ec92a7f3215def922ad79f09c8a",
     "packages": [
         {
             "name": "brick/math",
@@ -2568,6 +2568,80 @@
             ],
             "time": "2026-10-21T12:53:46+00:00",
             "published-time": "2026-10-21T14:02:22+00:00"
+        },
+        {
+            "name": "medalink/laravel-app-version",
+            "version": "v0.1.23",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Medalink/laravel-app-version",
+                "reference": "7f24cf4d3f265b3c842966587e6443777d5bed18"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Medalink/laravel-app-version/zipball/7f24cf4d3f265b3c842966587e6443777d5bed18",
+                "reference": "7f24cf4d3f265b3c842966587e6443777d5bed18",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/console": "^12.0|^13.0",
+                "illuminate/contracts": "^12.0|^13.0",
+                "illuminate/database": "^12.0|^13.0",
+                "illuminate/process": "^12.0|^13.0",
+                "illuminate/support": "^12.0|^13.0",
+                "php": "^8.4"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "orchestra/testbench": "^11.0",
+                "pestphp/pest": "^5.0",
+                "pestphp/pest-plugin-laravel": "^5.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Medalink\\AppVersion\\AppVersionServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Medalink\\AppVersion\\": "src/",
+                    "Medalink\\AppVersion\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Medalink\\AppVersion\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "vendor/bin/pest"
+                ],
+                "lint": [
+                    "vendor/bin/pint"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Eric Percifield",
+                    "email": "medalink7@gmail.com"
+                }
+            ],
+            "description": "Git-derived application versions (VERSION file + semver tags + build counts + diff stats) and commit-driven release notes with per-user read state for Laravel.",
+            "keywords": [
+                "changelog",
+                "git",
+                "laravel",
+                "release-notes",
+                "version"
+            ],
+            "time": "2026-10-15T18:24:29+00:00"
         },
         {
             "name": "monolog/monolog",

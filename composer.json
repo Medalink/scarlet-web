@@ -19,6 +19,7 @@
         "laravel/socialite": "5.33.0",
         "laravel/tinker": "3.2.0",
         "livewire/livewire": "4.4.8",
+        "medalink/laravel-app-version": "0.1.23",
         "socialiteproviders/battlenet": "4.1.1"
     },
     "require-dev": {
@@ -114,5 +115,11 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [{
+        "name": "laravel-app-version",
+        "type": "vcs",
+        "url": "https://github.com/Medalink/laravel-app-version",
+        "no-api": true
+    }]
 }
