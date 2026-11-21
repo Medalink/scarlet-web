@@ -30,7 +30,7 @@ class RulesetSummaries
             ->selectRaw('coalesce(sum(xp) filter (where source = ?), 0) as quest_xp', [XpSource::Quest->value])
             ->groupBy('ruleset_id')->get()->keyBy('ruleset_id');
         $played = $this->read->from(Rollup::PlayHourlyRuleset, null)
-            ->selectRaw('ruleset_id, (sum(ms) / 1000.0)::float as seconds')
+            ->selectRaw('ruleset_id, (sum(ms) / 1000.0)::float as seconds, distinct_count(rollup(characters)) as characters')
             ->groupBy('ruleset_id')->get()->keyBy('ruleset_id');
         $deaths = $this->read->from(Rollup::DeathsDailyRuleset, null)
             ->selectRaw('ruleset_id, sum(deaths) as deaths')
@@ -53,15 +53,16 @@ class RulesetSummaries
         }
 
         $rows = [];
-        foreach ($xp as $id => $row) {
-            $shown = (int) $row->characters >= $min;
+        foreach ($played as $id => $row) {
+            $characters = (int) $row->characters;
+            $shown = $characters >= $min;
             $rows[] = [
                 'ruleset_id' => (int) $id,
-                'characters' => $shown ? (int) $row->characters : null,
-                'seconds' => $shown ? (float) ($played[$id]->seconds ?? 0) : null,
+                'characters' => $shown ? $characters : null,
+                'seconds' => $shown ? (float) $row->seconds : null,
                 'deaths' => $shown ? (int) ($deaths[$id]->deaths ?? 0) : null,
-                'xp' => $shown ? (int) $row->xp : null,
-                'quest_xp' => $shown ? (int) $row->quest_xp : null,
+                'xp' => $shown ? (int) ($xp[$id]->xp ?? 0) : null,
+                'quest_xp' => $shown ? (int) ($xp[$id]->quest_xp ?? 0) : null,
                 'reached' => $shown ? ($reached[(int) $id]['characters'] ?? 0) : null,
                 'median_to_target' => $shown ? ($reached[(int) $id]['median'] ?? null) : null,
             ];
