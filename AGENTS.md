@@ -66,6 +66,16 @@ made unused.
 3. Every command runs in a wslc container through `bin/composer`, `bin/artisan`, `bin/pnpm`, `bin/php`, `bin/psql`.
    Nothing runs on Windows PHP.
 
+## Landing changes
+
+This repo is in the owner's continuous flow. Every change lands with `ship`, run on medaware from a `ws` worktree
+(`ws open scarlet-web --for <workload>`): the PHP 8.5 gates run there, and a ship from another machine stops at the
+first gate. Open no pull request and run no `git push` by hand.
+
+The commit message is the ship note: a plain title that names the outcome, one to three sentences on what changed
+for the user and what stays the same, then `What changes` (concrete identifiers, old to new), `Unchanged on purpose`
+(what was left alone) and `Verification` (what ran, with counts, and what did not run and why).
+
 ## Local development
 
 wslc containers only; DEV.md has the steps. The app is at `http://127.0.0.1:<port>`; `bin/dev status` prints the
