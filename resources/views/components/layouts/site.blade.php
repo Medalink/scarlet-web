@@ -2,7 +2,8 @@
 @props(['title', 'description', 'demo' => false])
 @php
     $jump = $demo ? '/' : '';
-    $items = ['stats' => ['Stats', '/stats'], 'world' => ['Map', '/map'], 'rulesets' => ['Rulesets', '/rulesets'], 'leaderboards' => ['Leaderboards', '/leaderboards'], 'search' => ['Search', '/search'], 'developers' => ['API', '/developers']];
+    // Stats and Map stay in the header on a phone; the other pages drop out first (site.css, landing.css).
+    $items = ['stats' => ['Stats', '/stats', ''], 'world' => ['Map', '/map', ''], 'rulesets' => ['Rulesets', '/rulesets', 'jump app'], 'leaderboards' => ['Leaderboards', '/leaderboards', 'jump app'], 'search' => ['Search', '/search', 'jump app'], 'developers' => ['API', '/developers', 'jump app']];
 @endphp
 <!doctype html>
 <html lang="en">
@@ -22,8 +23,8 @@
       <a class="jump" href="{{ $jump }}#never">Never recorded</a>
       <a class="jump" href="{{ $jump }}#capture">Capture map</a>
       <a href="/demo"@if ($demo) aria-current="page"@endif>Character overview</a>
-      @foreach ($items as [$label, $path])
-      <a class="jump app" href="{{ $path }}">{{ $label }}</a>
+      @foreach ($items as [$label, $path, $class])
+      <a @if ($class) class="{{ $class }}" @endif href="{{ $path }}">{{ $label }}</a>
       @endforeach
     </nav>
   </div>

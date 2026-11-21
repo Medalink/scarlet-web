@@ -194,3 +194,8 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
   .week.n6 > :nth-child(even) { border-left: 1px solid var(--line) !important; padding-left: 0.9rem; }
   .week.n6 dd { font-size: 2rem; white-space: normal; }
 }
+
+/* /developers on a phone: a long path in an endpoint title or a code span wraps instead of widening the page. */
+.ref > div { min-width: 0; }
+.ep h2, .ep > p, .ep td { overflow-wrap: anywhere; }
+.ref-nav > *, .ref-nav a { min-width: 0; overflow-wrap: anywhere; }

@@ -127,7 +127,8 @@ final class CharacterPage
         $compare = isset($curve[$final['level']]) ? (float) $curve[$final['level']]['median'] - $final['seconds'] : null;
 
         return [
-            'spec' => Charts::line(['x0' => $first, 'x1' => $end, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread($first, $end))], $series, $say, $last, 'pace-out'),
+            // The readout steps along the character's own levels (series 1), not the median, which can miss a level.
+            'spec' => Charts::line(['x0' => $first, 'x1' => $end, 'y1' => $axis['max'], 'lead' => 1, 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread($first, $end))], $series, $say, $last, 'pace-out'),
             'line' => [
                 'Reached level '.$final['level'],
                 ' in '.Format::hours($final['seconds']).' played'.($compare === null ? '.' : ($compare >= 0 ? ', '.Format::hours($compare).' faster than the median.' : ', '.Format::hours(-$compare).' slower than the median.')),

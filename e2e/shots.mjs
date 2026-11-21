@@ -73,18 +73,72 @@ async function shoot(context, url, file) {
 // record (a character, a creature, an item, a zone, a quest) are found through the public API, so no name is written here.
 // Output page-<name>-<width>.png; the report has no comp diff, only overflow, console errors and page errors.
 async function realPages() {
-  const get = async (route) => (await fetch(base + route, { headers: { Accept: "application/json" } })).json();
-  const first = async (kind) => (await get(`/api/v1/public/search?kind=${kind}&q=${kind === "character" ? "a" : "e"}&limit=1`)).data?.[0]?.path;
-  const board = (await get("/api/v1/public/leaderboards/most-quests")).data?.[0]?.path;
+  const api = "/api/v1/public";
+  const get = async (route) => (await fetch(base + api + route, { headers: { Accept: "application/json" } })).json();
+  // The ruleset with the most characters, a record of each kind that has data, and the top character of a board.
+  const rulesets = (await get("/rulesets")).data ?? [];
+  const busiest = [...rulesets].sort((a, b) => (b.characters ?? 0) - (a.characters ?? 0))[0]?.slug;
+  const hit = async (kind, q, pick = () => true) => (await get(`/search?kind=${kind}&q=${q}&limit=25`)).data?.find(pick)?.path;
+  const board = (await get("/leaderboards/most-quests?limit=1")).data?.[0]?.name;
+  const zone = (await get("/rulesets/all/series/deaths")).data?.zones?.[0]?.zone_id;
   const pages = [
-    ["stats", "/stats"], ["stats-ruleset", "/rulesets/p1-std-pve-xp-g1"], ["rulesets", "/rulesets"], ["map", "/map"],
-    ["leaderboards", "/leaderboards/most-quests"], ["search", "/search?q=a"], ["developers", "/developers"], ["landing", "/"], ["demo", "/demo"],
+    ["stats", "/stats"], ["rulesets", "/rulesets"], ["map", "/map"], ["developers", "/developers"], ["landing", "/"], ["demo", "/demo"],
+    ["leaderboards", "/leaderboards/most-quests"], ["leaderboards-fastest", "/leaderboards/fastest-to-60"], ["leaderboards-class", "/leaderboards/most-quests?class=WARLOCK"],
+    ["search", "/search?q=th"], ["search-items", "/search?q=th&kind=items"],
   ];
-  for (const [name, kind] of [["creature", "creature"], ["item", "item"], ["zone", "zone"], ["quest", "quest"], ["character", "character"]]) {
-    const route = name === "character" ? board : await first(kind);
-    if (route) pages.push([name, route]);
-  }
+  if (busiest) pages.push(["stats-ruleset", "/rulesets/" + busiest]);
+  const found = [
+    ["character", board ? "/c/" + encodeURIComponent(board) : null],
+    ["creature", await hit("creatures", "sc", (h) => h.kills > 0)],
+    ["item", await hit("items", "th")],
+    ["quest", await hit("quests", "th")],
+    ["zone", zone === undefined ? null : "/zones/" + zone],
+  ];
+  for (const [name, route] of found) if (route) pages.push([name, route]);
   return pages.filter(([name]) => !only || only.includes(name));
+}
+
+// Plain link clicks with motion allowed: a cross-page transition only starts on a click, never on goto, so this is the
+// pass that shows whether a transition throws. Prints the page errors and console errors of each click.
+const CLICKS = [["/", "a.btn[href='/demo']"], ["/demo", "a.brand"], ["/", ".nav a[href='/stats']"], ["/stats", "a.brand"], ["/stats", ".nav a[href='/map']"], ["/map", "a.brand"]];
+async function clickPass() {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "no-preference" });
+  let failures = 0;
+  for (const [from, selector] of CLICKS) {
+    const page = await context.newPage();
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (m) => { if (m.type() === "error" && !/fonts\.g/.test(m.text())) errors.push(m.text()); });
+    await page.goto(base + from, { waitUntil: "load" });
+    await page.waitForTimeout(800);
+    const link = await page.$(selector);
+    if (!link) { errors.push("no link " + selector); } else { await link.click(); await page.waitForTimeout(1500); }
+    failures += errors.length;
+    console.log("click".padEnd(14), (from + " " + selector).slice(0, 38).padEnd(40), errors.length ? errors.join(" | ") : "none");
+    await page.close();
+  }
+  await context.close();
+  return failures;
+}
+
+// The width of the map stage on a sign-in or link page and on its gallery copy must agree (not a 1 px column).
+async function stagePass() {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  let failures = 0;
+  for (const name of ["login", "link"]) {
+    const widths = [];
+    for (const route of ["/" + name, "/design/" + name]) {
+      const page = await context.newPage();
+      await page.goto(base + route, { waitUntil: "load" });
+      widths.push(await page.evaluate(() => Math.round(document.querySelector(".stage")?.getBoundingClientRect().width ?? -1)));
+      await page.close();
+    }
+    const ok = widths[0] > 100 && widths[0] === widths[1];
+    failures += ok ? 0 : 1;
+    console.log("stage".padEnd(14), `/${name} ${widths[0]}px, /design/${name} ${widths[1]}px`.padEnd(40), ok ? "same" : "DIFFERENT");
+  }
+  await context.close();
+  return failures;
 }
 
 if (process.argv.includes("--real")) {
@@ -100,6 +154,8 @@ if (process.argv.includes("--real")) {
     }
     await context.close();
   }
+  failures += await clickPass();
+  failures += await stagePass();
   await browser.close();
   process.exit(failures ? 1 : 0);
 }
