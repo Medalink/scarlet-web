@@ -362,11 +362,34 @@ headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figure
 | `/leaderboards` | Fastest to a level, fewest deaths, most quests, hardcore survivors, per ruleset |
 | `/search` | Characters that are public, creatures, items, zones, quests |
 | `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths. Public when its owner says so; the owner sees the private parts too |
-| `/creatures/{id}`, `/items/{id}`, `/zones/{slug}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels |
+| `/creatures/{id}`, `/items/{id}`, `/zones/{id}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels |
 | `/map` | The world map: one seamless map, zoomable down to a zone, with heat from paths, deaths and kills (see Maps) |
 | `/developers` | The public API reference |
 | `/login`, `/link` | Sign in, link the app |
 | `/account` | Characters and their public switches, installs and revoking them, sharing groups, removals, API keys |
+
+A dungeon is `/zones/{id}` with the negative instance id (`/zones/-90`).
+
+### Where the built pages differ from the comps
+
+- **Ruleset names** are "Standard, PvE, Experience on". The recording carries the preset and the game mode as bare
+  numbers that nothing names, so they are not in a label; two rulesets that differ only in them are told apart by a
+  count, "(2)". The ruleset with no recorded rules is "Rules not recorded", last in every list, and left out of the
+  filter chips while a named ruleset exists.
+- **Class filter**: leaderboards filter by class (`characters.class`). The dashboards and result pages do not: no
+  aggregate carries the class.
+- **Reach**: "Characters that reached each level" in place of the comp's wording; the chart counts characters.
+- **Dungeon table**: "Bosses a run" replaces "Median level"; "Skills" replaces "Professions"; the gold chart is the mean
+  earned and spent per character, not the median carried.
+- **Map layers**: the third layer is creatures met; kills carry no position. The map has no Hours/Days toggle.
+- **Aggregates without a ruleset**: item and drop-rate figures cover every ruleset, as the drop aggregates have none.
+- **Not built**: Played with and the progress bar on the character page (the decoder yields no group membership), Distance
+  by how you moved (no per-mode distance), "How it kills" and "Rolls in groups" on creature and item pages.
+- **Distance** is in world widths; a step longer than 0.05 of the world is a teleport and is not counted.
+- **Phone header**: Stats and Map stay in the landing and demo header on a phone; the other pages drop out first.
+- **View transitions**: the `@view-transition` opt-in is also inline in the head, ahead of every stylesheet. Chromium
+  re-checks the opt-in as each sheet loads, and with the rule only in site.css a click was cancelled with an unhandled
+  rejection whenever another sheet arrived first.
 
 ## Maps
 

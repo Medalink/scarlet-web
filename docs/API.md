@@ -240,3 +240,241 @@ with one ability, `public:read`, for the public read API under `/api/v1/public`.
 for the higher rate limit. The text of a key is shown once when it is made; the server stores only its hash. An account
 holds at most 10 keys, lists them with the day each was made and last used, and deletes one at any time. Upload
 requests do not use keys: they are signed by the install.
+
+# Public API, version 1
+
+Everything the public pages show, as read-only JSON. No sign-in. Paths are under `https://<host>/api/v1/public`. The
+`/developers` page is written from the same list as the routes (`App\Support\PublicApiCatalog`), so the two agree.
+
+## Answers
+
+Every answer is UTF-8 JSON: `{"data": ..., "meta": {...}}`. Times are ISO 8601 in UTC, durations are seconds and money
+is copper. A number that fewer than `meta.min_characters` characters contributed to is `null`, or its row is left out,
+so a single player cannot be read from a statistic. A character answers only when its owner made it public; any other
+character is `404 not_found`, the same as one that does not exist. Money of a character is in the answer only when its
+owner shares the economy. The name of another player is shown only when that player's own character is public.
+
+Rulesets are named by slug (`p1-std-pve`): every signal the client reported has a part, so two rulesets never share a
+slug. Take the slugs from `GET /public/rulesets`.
+
+## Limits, keys and caching
+
+- Without a key: 60 requests a minute per IP address. With a key: 600 a minute. A key is a personal access token with the
+  `public:read` ability, made on the account page (see "API keys" above) and sent as `Authorization: Bearer <key>`.
+- A key that is unknown, expired or lacks the ability is `401 invalid_token`; it is not treated as no key.
+- Over the limit the answer is `429 rate_limited` with `Retry-After` in seconds and `retry_after` in the body.
+  `X-RateLimit-Limit` and `X-RateLimit-Remaining` are on every answer.
+- `Cache-Control: public, max-age=300` and an `ETag` on every successful answer. Send the tag back as `If-None-Match`:
+  an unchanged answer is `304` with no body. `Vary: Authorization`.
+- CORS is open: `Access-Control-Allow-Origin: *` for `GET` and `OPTIONS`, with `ETag`, `Retry-After` and the rate-limit
+  headers exposed to scripts.
+
+## Pagination
+
+A list answers its rows in `data` and `meta.next_cursor`. Pass the cursor back as `?cursor=` with the same other
+parameters. A `null` cursor is the end. The cursor is opaque; do not build one. `limit` is 1 to 100 (25 by default).
+
+```
+curl 'https://<host>/api/v1/public/search?kind=quests&q=th&limit=40'
+curl 'https://<host>/api/v1/public/search?kind=quests&q=th&limit=40&cursor=bzQw'
+```
+
+## Errors
+
+`{"error": {"code": "...", "message": "..."}}` with the HTTP status; codes never change within a version, messages are
+for people. `404 not_found` (also for an unknown path under `/api`), `422 invalid_request` (with `fields`),
+`401 invalid_token`, `429 rate_limited`. Errors are `Cache-Control: no-store`.
+
+## Endpoints
+
+### Statistics
+
+#### `GET /public/stats`
+
+Headline numbers: characters, experience, time played, kills, deaths, quests and money, with when the data starts and was last updated.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
+
+`data.totals`, `data.coverage`, `data.rulesets`. A total is `null` while fewer than `meta.min_characters` characters contributed to it.
+
+Example: `curl https://<host>/api/v1/public/stats`
+
+#### `GET /public/rulesets`
+
+Every ruleset with the numbers of the comparison table and its levelling curve.
+
+`data`: a list of rulesets with `slug`, `label`, `hardcore`, `war_mode`, `recorded` (false for the ruleset of sessions whose rules were not recorded), `characters`, `seconds`, `deaths`, `xp`, `quest_xp`, `reached`, `median_to_target` and `levelling` (level, median seconds, characters).
+
+Example: `curl https://<host>/api/v1/public/rulesets`
+
+#### `GET /public/rulesets/{slug}`
+
+The headline numbers of one ruleset.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `slug` | path | string | A ruleset slug from `/rulesets`. |
+
+The same as `/stats`, for this ruleset.
+
+Example: `curl https://<host>/api/v1/public/rulesets/p1-std-pve`
+
+#### `GET /public/rulesets/{slug}/series/{series}`
+
+One series of a ruleset: `levels`, `xp`, `deaths`, `dungeons`, `professions`, `gold` or `activity`. Use `all` as the slug for every ruleset.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `slug` | path | string | A ruleset slug, or `all`. |
+| `series` | path | string | The series name. |
+
+`data`: the rows of the series. Buckets with fewer than `meta.min_characters` characters are left out.
+
+Example: `curl https://<host>/api/v1/public/rulesets/all/series/levels`
+
+### Leaderboards
+
+#### `GET /public/leaderboards`
+
+The boards: fastest to level 20, 40 and 60, highest level without dying, most quests, most dungeon runs and most distance.
+
+`data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).
+
+Example: `curl https://<host>/api/v1/public/leaderboards`
+
+#### `GET /public/leaderboards/{board}`
+
+One board, best first. Only public characters with counted sessions are listed.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `board` | path | string | A board name from `/leaderboards`. |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
+| `class` | query | string | A class file name such as `WARRIOR`. |
+| `cursor` | query | string | The `next_cursor` of the previous page. |
+| `limit` | query | integer | Rows per page, 1 to 100. Default 25. |
+
+`data`: rows with `rank`, `name`, `race`, `class`, `value`, `ruleset`, `hardcore`, `deaths` and `at`. `meta.next_cursor`, `meta.total`.
+
+Example: `curl https://<host>/api/v1/public/leaderboards/most-quests?limit=2`
+
+### Search
+
+#### `GET /public/search`
+
+Characters (only those made public), creatures, items, zones and quests whose name contains the text, best match first.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `q` | query | string | The text to search for, 2 to 80 characters. |
+| `kind` | query | string | `characters`, `creatures`, `items`, `zones` or `quests`. Leave out for the first hits of every kind. |
+| `cursor` | query | string | The `next_cursor` of the previous page. |
+| `limit` | query | integer | Rows per page, 1 to 100. Default 25. |
+
+Without `kind`: `data` has one entry per kind with `count` and `hits`. With `kind`: `data` is the list of hits, paged with `meta.next_cursor`. A hit has `kind`, `id`, `name`, `path` and the numbers of its kind.
+
+Example: `curl https://<host>/api/v1/public/search?q=ash&kind=zones`
+
+### Characters
+
+#### `GET /public/characters/{name}`
+
+A public character: race, class, level, ruleset, time played, this week and distance walked. A character that is not public answers 404.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `name` | path | string | The character name, `Name-Surname`. |
+
+`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds`, `ruleset`, `last_seen_at`, `week`, `distance`. `meta.economy` says whether the owner shows money.
+
+Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane`
+
+#### `GET /public/characters/{name}/series/{series}`
+
+One series of a public character: `levelling` (played time before each level, with the ruleset median and middle half), `xp`, `deaths`, `dungeons`, `activity`, `sessions`, and `gold` when the owner shows money.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `name` | path | string | The character name. |
+| `series` | path | string | The series name. |
+
+`data`: the rows of the series.
+
+Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/series/levelling`
+
+### Records
+
+#### `GET /public/creatures/{id}`
+
+One creature: its level range and kind, kills, deaths to it, drops under each loot rule and the world cells where it was met.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `id` | path | integer | The creature id, as in the address of its page. |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
+
+`data`: `facts`, `kills`, `deaths`, `deaths_by_level`, `drops` (item, loot rule, drops, opens, rate) and `cells`. Drop rates cover every ruleset.
+
+Example: `curl https://<host>/api/v1/public/creatures/257926`
+
+#### `GET /public/items/{id}`
+
+One item: what it is and where it drops, by source and loot rule.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `id` | path | integer | The item id, as in the address of its page. |
+
+`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `dropped`, `source_count`, `best_rate`, `first_at`.
+
+Example: `curl https://<host>/api/v1/public/items/1465`
+
+#### `GET /public/zones/{id}`
+
+One zone: time played, deaths, what killed characters there and the creatures met. A dungeon has a negative id.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `id` | path | integer | The zone id, as in the address of its page. |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
+
+`data`: `rect` (the zone on the world map), `played`, `deaths`, `killers`, `creatures`.
+
+Example: `curl https://<host>/api/v1/public/zones/1446`
+
+#### `GET /public/quests/{id}`
+
+One quest: accepts, turn-ins, abandons, experience, and the levels and zones where it is turned in.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `id` | path | integer | The quest id, as in the address of its page. |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
+
+`data`: `totals`, `levels` (level, turn-ins) and `zones`.
+
+Example: `curl https://<host>/api/v1/public/quests/6521`
+
+### Map
+
+#### `GET /public/map/heat`
+
+Heat on the world grid: the cells where characters walked, died or met creatures, each with a level from 1 to 4.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `layer` | query | string | `paths`, `deaths` or `creatures`. Default `paths`. |
+| `creature` | query | integer | A creature id: narrows `creatures` to one creature. |
+
+`data.cells`: `i`, `j`, `level`, `value`, `characters`. `meta.grid` gives the grid size.
+
+Example: `curl https://<host>/api/v1/public/map/heat?layer=deaths`
+

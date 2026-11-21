@@ -131,7 +131,12 @@ final class CharacterPage
             'spec' => Charts::line(['x0' => $first, 'x1' => $end, 'y1' => $axis['max'], 'lead' => 1, 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread($first, $end))], $series, $say, $last, 'pace-out'),
             'line' => [
                 'Reached level '.$final['level'],
-                ' in '.Format::hours($final['seconds']).' played'.($compare === null ? '.' : ($compare >= 0 ? ', '.Format::hours($compare).' faster than the median.' : ', '.Format::hours(-$compare).' slower than the median.')),
+                ' in '.Format::hours($final['seconds']).' played'.match (true) {
+                    $compare === null => '.',
+                    abs($compare) < 300 => ', level with the median.',
+                    $compare > 0 => ', '.Format::hours($compare).' faster than the median.',
+                    default => ', '.Format::hours(-$compare).' slower than the median.',
+                },
             ],
             'key' => [['label' => $name, 'class' => 'k-line', 'style' => 'background:var(--fg)'], ['label' => 'Median', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Middle half', 'style' => 'background:rgba(255,45,85,.3)']],
         ];
