@@ -25,3 +25,5 @@ Homestead.yaml
 Thumbs.db
 /storage/deps-age
 /storage/phpstan
+/storage/app/maps
+/tools/map-tiles/node_modules

@@ -80,8 +80,8 @@ The rule: every package and image is the newest release that has been public for
   `bin/composer update`, and remove the line once that version is old enough.
 - Images: `docker/pins.tsv` and the `FROM` lines of `docker/dev.Dockerfile` name each image as `name:tag@sha256:digest`
   with the date it was pushed. Compare tags with Docker Hub's `tag_last_pushed`.
-- `bin/composer deps:age` (or `bin/php scripts/deps-age`) checks `composer.lock`, `pnpm-lock.yaml`, `part/Cargo.lock`
-  when it exists and the images, asks Packagist, npm, crates.io and Docker Hub, and caches the answers under
+- `bin/composer deps:age` (or `bin/php scripts/deps-age`) checks `composer.lock`, `pnpm-lock.yaml`,
+  `tools/map-tiles/pnpm-lock.yaml`, `part/Cargo.lock` when it exists and the images, asks Packagist, npm, crates.io and Docker Hub, and caches the answers under
   `storage/deps-age/`. It fails on a package younger than 7 days, and on a registry that does not answer.
 
 Two things the Dockerfile installs without a lockfile: pnpm 12.21.0 (2026-11-13) and phpredis 6.3.0 (2025-11-06).
@@ -92,6 +92,36 @@ The migration `2026_11_20_000000_enable_database_extensions` enables `timescaled
 `pg_trgm`. The image creates the first two in `template1`, so every new database already has them and the migration
 only records the fact. A continuous aggregate cannot be created inside a transaction: its migration sets
 `public $withinTransaction = false`.
+
+## Map tiles
+
+The world map's art is not in git. `tools/map-tiles` reads an installed copy of the OpenMap addon and writes the
+tile pyramid of docs/DESIGN.md, Maps. It runs on the dev PC with Node 24 and pnpm, not in the containers, and
+needs about 2 GB of free memory.
+
+```sh
+cd tools/map-tiles
+pnpm install --frozen-lockfile
+node build.mjs "<WoW folder>/_forever_/Interface/AddOns/OpenMap"     # about 20 seconds
+```
+
+It writes `storage/app/maps/<version>/{game,survey}/<z>/<x>/<y>.webp` and `manifest.json` (also copied to
+`storage/app/maps/manifest.json`, the file the site reads to find the current version). `<version>` is a hash of the
+art and the tool's settings, so a URL never changes its bytes. `--out <folder>` writes elsewhere; `--force` builds a
+version that is already there. For OpenMap v0.8.11 that is 1,106 tiles per look in zoom 0 to 6 and about 13 MiB.
+
+The `maps` disk is `storage/app/maps` by default. The containers bind-mount the checkout at `/app`, so the folder is
+already there and nothing is mounted or copied. `MAPS_ROOT` points the disk at another folder inside the container.
+The site serves `/map-tiles/manifest.json` (cached 5 minutes) and `/map-tiles/{version}/{look}/{z}/{x}/{y}.webp`
+(cached a year, `immutable`); `/design/map-viewer` shows the viewer over invented data in the local environment.
+In production the disk is object storage: `MAPS_DISK_DRIVER=s3` with `MAPS_ACCESS_KEY_ID`, `MAPS_SECRET_ACCESS_KEY`,
+`MAPS_REGION`, `MAPS_BUCKET`, `MAPS_ENDPOINT` and `MAPS_USE_PATH_STYLE_ENDPOINT`, and `league/flysystem-aws-s3-v3`
+in composer, which is not installed yet. Upload the folder that `node build.mjs` wrote.
+
+The zone rectangles are `docs/map-rects.tsv`, derived from the game's map tables with the same arithmetic OpenMap
+uses (`node rects.mjs <folder of the UiMap and UiMapAssignment tables as CSV>`). `bin/artisan maps:load-rects` loads
+the file into `map_rects`; it can run again at any time. `node check-rects.mjs <OpenMap folder> <tables folder>
+<events.csv>...` compares the table with recorded flight points and border crossings.
 
 ## Troubleshooting
 

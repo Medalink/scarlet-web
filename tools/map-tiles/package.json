@@ -1,0 +1,18 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "name": "scarlet-map-tiles",
+    "private": true,
+    "type": "module",
+    "license": "GPL-3.0-only",
+    "packageManager": "pnpm@12.21.0",
+    "engines": {
+        "node": ">=24"
+    },
+    "scripts": {
+        "tiles": "node build.mjs",
+        "rects": "node rects.mjs"
+    },
+    "dependencies": {
+        "sharp": "0.35.5"
+    }
+}

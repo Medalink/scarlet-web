@@ -365,9 +365,9 @@ headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figure
 
 ## Maps
 
-Every map on the site is one viewer over one world: the stitched Azeroth of the OpenMap addon, a square where a
-point is `u, v` from 0 to 1 across and down. A zone page, a character's paths and a creature's sightings are the same
-viewer opened on a rectangle of that world.
+Every map on the site is one viewer over one world: the stitched Azeroth of the OpenMap addon, a rectangle of
+1002 x 668 world units (3:2) where a point is `u, v` from 0 to 1 across and down. A zone page, a character's paths
+and a creature's sightings are the same viewer opened on a rectangle of that world.
 
 **Art.** OpenMap bakes every zone's art into world tiles (`Media/Textures/Forever/MapZones/<i>_<j>.blp`: 512 px,
 of which 510 are the tile's own and the rest its neighbours' edge, 16 px per world unit; `Data/Forever/ZoneArt.lua`
@@ -388,8 +388,8 @@ map, with OpenMap linked. Data or code copied from OpenMap into this repo carrie
 position needs that zone's rectangle on the world, which the game computes. `map_rects(ui_map_id, u0, v0, u1, v1)`
 holds one row per zone map, loaded from `docs/map-rects.tsv`. Ingest stores `u, v` next to the zone position on
 `path_points`, `deaths` and `creature_sightings` (null for a map that is not on the world, such as a dungeon), and
-the heat rollups are keyed by a world cell: `u, v` on a 4096 grid. A rectangle that arrives later fills the nulls
-with one update; nothing is uploaded again.
+the heat rollups are keyed by a world cell: `u, v` on a 4096 grid (a cell is 3:2, like the world). A rectangle that arrives later
+fills the nulls with one update; nothing is uploaded again.
 
 **The viewer** is the site's own canvas module, with no map library: tiles by zoom, drag and wheel and pinch to move,
 plus and minus keys, a heat layer of world cells in the heat palette, death crosses, a character's paths as scarlet

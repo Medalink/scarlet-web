@@ -4,7 +4,7 @@
 /**
  * Lists every locked package younger than seven days and exits 1 when there is one.
  *
- * Reads composer.lock, pnpm-lock.yaml, part/Cargo.lock and the container images in
+ * Reads composer.lock, pnpm-lock.yaml, tools/map-tiles/pnpm-lock.yaml, part/Cargo.lock and the container images in
  * docker/ (every FROM line and docker/pins.tsv) when they exist, asks each registry
  * when the locked version was published, and caches the answers in
  * storage/deps-age/times.json (a publish time never changes). A lookup that fails
@@ -28,6 +28,7 @@ foreach (array_slice($argv, 1) as $argument) {
 $packages = [
     ...composerPackages($root.'/composer.lock'),
     ...pnpmPackages($root.'/pnpm-lock.yaml'),
+    ...pnpmPackages($root.'/tools/map-tiles/pnpm-lock.yaml'),
     ...cargoPackages($root.'/part/Cargo.lock'),
     ...dockerPackages($root.'/docker'),
 ];
