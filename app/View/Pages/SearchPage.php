@@ -98,7 +98,7 @@ final class SearchPage
     {
         $low = $hit['level_min'] ?? null;
         $high = $hit['level_max'] ?? null;
-        $level = $low === null ? '' : ($low === $high ? 'Level '.$low : 'Level '.$low.' to '.$high);
+        $level = Format::creatureLevel($low, $high);
 
         return trim($level.($hit['type'] ?? null ? ' '.strtolower((string) $hit['type']) : ''), ' ') ?: 'Creature';
     }

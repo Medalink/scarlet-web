@@ -58,6 +58,8 @@
 /* Tables that link somewhere. */
 .data a { text-decoration-thickness: 1px; }
 .data .rk { color: var(--muted); width: 2.6rem; font-family: var(--mono); font-stretch: 85%; font-size: 0.82em; }
+/* A text column after a number column keeps its distance from the digits. */
+.data .n + :not(.n) { padding-left: 1.6rem; }
 .data td .bar { display: inline-block; height: 0.4rem; background: var(--accent); border-radius: 2px; vertical-align: 0.12em; margin-right: 0.5rem; min-width: 2px; }
 .data tr.me td { background: rgba(255, 45, 85, 0.08); }
 .tag { display: inline-block; font: 500 0.66rem/1 var(--mono); font-stretch: 85%; color: var(--text); border: 1px solid var(--line2); border-radius: 2px; padding: 0.22rem 0.4rem; vertical-align: 0.1em; margin-left: 0.4rem; }

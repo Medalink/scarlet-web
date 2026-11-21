@@ -215,7 +215,7 @@ final class RecordPages
     {
         $low = $facts['level_min'];
         $high = $facts['level_max'];
-        $level = $low === null ? 'Creature' : ($low === $high ? 'Level '.$low : 'Level '.$low.' to '.$high);
+        $level = Format::creatureLevel($low, $high) ?: 'Creature';
         $kind = trim(strtolower(implode(' ', array_filter([(string) ($facts['type'] ?? ''), $facts['family'] ? '('.strtolower((string) $facts['family']).')' : '']))));
         $class = $facts['classification'] && $facts['classification'] !== 'normal' ? ', '.strtolower((string) $facts['classification']) : '';
 

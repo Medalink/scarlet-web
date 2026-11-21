@@ -141,6 +141,19 @@ final class Format
         return trim(implode(' ', array_filter([$level === null ? '' : 'Level '.$level, self::raceName($race), self::className($class)])));
     }
 
+    /** A creature's level as the game shows it: -1 is a boss, whose level the client hides. */
+    public static function creatureLevel(?int $low, ?int $high): string
+    {
+        if ($low === null) {
+            return '';
+        }
+        if ($low < 0 || ($high !== null && $high < 0)) {
+            return 'Boss';
+        }
+
+        return $high === null || $low === $high ? 'Level '.$low : 'Level '.$low.' to '.$high;
+    }
+
     /** Level ranges and counts that read "Levels 18 to 27". */
     public static function range(int $from, int $to): string
     {
