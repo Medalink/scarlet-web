@@ -13,7 +13,7 @@
       <x-note>No character has a build at these levels yet.</x-note>
       @else
       @if ($d['tree'])
-      <x-talent-tree :tree="$d['tree']" :label="'Pick rate of each talent of '.$d['title'].' among '.$d['n'].' characters'" />
+      <x-talent-tree :tree="$d['tree']" :label="'Pick rate of each talent of '.$d['title'].' among '.$d['n'].' characters'" id="spec-tree" />
       <x-heat-key low="Few took it" high="Most took it" />
       @endif
       <x-table :rows="$d['nodes']['rows']" :columns="$d['nodes']['columns']" style="margin-top:1rem" />

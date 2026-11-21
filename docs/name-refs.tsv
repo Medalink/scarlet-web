@@ -30,6 +30,7 @@ LS	1	spell		id
 LN	8	spell		id	
 TW	2	spell		id	
 TA	7	spell		id	
+TD	8	spell		part2	entries are entryID:spellID:maxRanks, so every spell of a sent tree keeps its name
 AR	2	spell		id	
 SO	2	spell		id	
 MO	2	spell		id	

@@ -397,12 +397,14 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
   .ch-legend { top: 0.8rem; right: 1rem; bottom: auto; }
 }
 
-.tree { display: block; width: 100%; height: auto; max-height: 52rem; margin-top: 1.2rem; }
+.tree-box { overflow: auto; max-height: 52rem; margin-top: 1.2rem; }
+.tree { display: block; width: 100%; height: auto; }
 .tree .edge { stroke: var(--line2); stroke-width: calc(var(--r) * 0.16); }
 .tree .edge.on { stroke: var(--accent); }
 .tree .node circle { fill: var(--panel); stroke: var(--line2); stroke-width: calc(var(--r) * 0.1); }
 .tree .node.part circle { fill: rgba(255, 45, 85, 0.2); stroke: var(--accent); }
 .tree .node.full circle { fill: var(--accent); stroke: var(--soft); }
+.tree .node.on circle { stroke: var(--ink); stroke-width: calc(var(--r) * 0.16); }
 .tree .node.h1 circle { fill: #4b1626; stroke: transparent; }
 .tree .node.h2 circle { fill: #861a34; stroke: transparent; }
 .tree .node.h3 circle { fill: #cf1f45; stroke: transparent; }

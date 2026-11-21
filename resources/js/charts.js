@@ -280,6 +280,30 @@ const draw = {
         }, signal);
     },
 
+    tree(svg, spec, signal) {
+        const nodes = [...svg.querySelectorAll('.node')];
+        if (!nodes.length || !spec.say || !spec.out) return;
+        svg.setAttribute('tabindex', '0');
+        const at = (e) => {
+            const box = svg.getBoundingClientRect();
+            const ux = ((e.clientX - box.left) / box.width) * spec.w;
+            const uy = ((e.clientY - box.top) / box.height) * spec.h;
+            let best = 0;
+            let gap = Infinity;
+            nodes.forEach((node, i) => {
+                const c = node.querySelector('circle');
+                const d = (c.getAttribute('cx') - ux) ** 2 + (c.getAttribute('cy') - uy) ** 2;
+                if (d < gap) { gap = d; best = i; }
+            });
+            return best;
+        };
+        reader(svg, spec, {
+            count: nodes.length,
+            at,
+            show: (i) => nodes.forEach((node, k) => node.classList.toggle('on', k === i)),
+        }, signal);
+    },
+
     // Stacked share bars in the page's own .xp-bars markup. rows: [kill, dungeon, quest, explore, other] as shares.
     shares(box, spec, signal) {
         const cls = ['c-kill', 'c-dungeon', 'c-quest', 'c-explore', 'c-other'];

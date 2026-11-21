@@ -4,7 +4,7 @@
     @if ($group['label'])<h3 class="sub">{{ $group['label'] }}</h3>@endif
     <p class="total">{{ $group['summary'] }}</p>
     @if ($group['tabs'])<x-rank :rows="$group['tabs']" />@endif
-    @if ($group['tree'])<x-talent-tree :tree="$group['tree']" :label="'Talent tree of '.$d['name'].', group '.$loop->iteration" />@endif
+    @if ($group['tree'])<x-talent-tree :tree="$group['tree']" :label="'Talent tree of '.$d['name'].', group '.$loop->iteration" :id="'talents-tree-'.$loop->iteration" />@endif
     @foreach ($group['sections'] as $section)
     @if ($section['heading'])<h4 class="sub">{{ $section['heading'] }}</h4>@endif
     <x-table :rows="$section['rows']" :columns="$group['columns']" style="margin-top:.6rem" />

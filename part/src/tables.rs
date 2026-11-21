@@ -195,6 +195,8 @@ pub enum Shape {
     Id,
     /// Comma-separated elements; the id is the leading digits of each.
     List,
+    /// Comma-separated `a:b:c` elements; the id is the leading digits of the Nth colon part of each.
+    Part(usize),
     /// A loot window's items: `itemIDxN`, `mxN` (coin, skipped), `c<currencyID>xN`.
     Lo,
     /// The field is the id of a name line (the line defines the name).
@@ -239,7 +241,11 @@ impl NameRefs {
                 "list" => Shape::List,
                 "lo" => Shape::Lo,
                 "def" => Shape::Def,
-                _ => Shape::Id,
+                part => part
+                    .strip_prefix("part")
+                    .and_then(|n| n.parse::<usize>().ok())
+                    .filter(|n| *n > 0)
+                    .map_or(Shape::Id, Shape::Part),
             };
             let code = cell(&r, 0).to_string();
             if shape == Shape::Def {
@@ -302,6 +308,13 @@ impl NameRefs {
                 Shape::List => {
                     for el in value.split(',') {
                         if let Some(id) = leading_id(el) {
+                            out(rule.kind, id);
+                        }
+                    }
+                }
+                Shape::Part(n) => {
+                    for el in value.split(',') {
+                        if let Some(id) = el.split(':').nth(n - 1).and_then(leading_id) {
                             out(rule.kind, id);
                         }
                     }
