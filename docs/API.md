@@ -232,3 +232,11 @@ lower-case letters.
 3. `POST /upload/manifest` with every part. Read `need`.
 4. `POST /upload/parts`, one request per batch of `need`, each within the size limits.
 5. Next day, repeat from 2. A day with nothing new costs one request.
+
+## API keys
+
+A signed-in player makes API keys on the account page (`/account`, API keys). A key is a Sanctum personal access token
+with one ability, `public:read`, for the public read API under `/api/v1/public`. Send it as `Authorization: Bearer <key>`
+for the higher rate limit. The text of a key is shown once when it is made; the server stores only its hash. An account
+holds at most 10 keys, lists them with the day each was made and last used, and deletes one at any time. Upload
+requests do not use keys: they are signed by the install.

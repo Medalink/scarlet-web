@@ -6,6 +6,8 @@ use App\Http\Controllers\Web\AuthDevelopmentController;
 use App\Http\Controllers\Web\AuthLoginController;
 use App\Http\Controllers\Web\AuthLogoutController;
 use App\Http\Controllers\Web\AuthRedirectController;
+use App\Http\Controllers\Web\LinkConfirmController;
+use App\Http\Controllers\Web\LinkShowController;
 use App\Models\IdentityProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -22,4 +24,6 @@ if (IdentityProvider::developmentAllowed()) {
 
 Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account', AccountController::class);
+    Route::get('/link', LinkShowController::class);
+    Route::post('/link', LinkConfirmController::class);
 });

@@ -10,6 +10,9 @@ class SharingGroups
     /** @var array<string, bool>|null  group key => switchable, in the order of the table */
     private static ?array $groups = null;
 
+    /** @var array<string, string>|null  group key => label */
+    private static ?array $labels = null;
+
     public function __construct(private readonly PartTool $tool) {}
 
     /** @return list<string> */
@@ -21,6 +24,29 @@ class SharingGroups
     public function has(string $key): bool
     {
         return array_key_exists($key, $this->all());
+    }
+
+    /**
+     * The groups for a settings page, in the order of the table.
+     *
+     * @return array<string, string> group key => label
+     */
+    public function labels(): array
+    {
+        if (self::$labels === null) {
+            self::$labels = [];
+            foreach ($this->tool->groups() as $group) {
+                self::$labels[$group['key']] = $group['label'];
+            }
+        }
+
+        return self::$labels;
+    }
+
+    /** True for a group the owner may switch off (every group but `core` and `names`). */
+    public function isSwitchable(string $key): bool
+    {
+        return ($this->all()[$key] ?? false) === true;
     }
 
     /** A group key a client may switch off or remove; anything else is refused with the reason. */
