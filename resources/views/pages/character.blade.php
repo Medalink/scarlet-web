@@ -19,7 +19,7 @@
   </section>
   @endif
   <x-sheet>
-    <x-module :span="$d['gold'] ? 'w8' : 'w12'" :first="true" :last="! $d['gold']" id="h-pace" heading="Levelling against other characters of the same ruleset">
+    <x-module :span="$d['gold'] ? 'w8' : 'w12'" :first="true" :last="! $d['gold']" id="h-pace" :heading="$d['paceTitle']">
       @if ($d['pace'])
       <x-plot id="pace" label="Hours played before each level for {{ $d['name'] }}, against the median and the middle half of characters of the same ruleset" :spec="$d['pace']['spec']" />
       <x-key :items="$d['pace']['key']" />

@@ -44,6 +44,7 @@ final class CharacterPage
                 $ruleset['label'] ?? null,
                 Format::duration($character->played_seconds).' played',
             ])),
+            'paceTitle' => isset($ruleset['label']) ? 'Levelling against other '.$ruleset['label'].' characters' : 'Levelling against other characters of the same ruleset',
             'map' => MapSpec::build($r['heat'], [], null, [], $r['marks']),
             'hasMap' => $r['heat'] !== [],
             'deathCount' => count($r['marks']),
