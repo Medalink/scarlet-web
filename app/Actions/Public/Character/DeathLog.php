@@ -28,7 +28,7 @@ class DeathLog
             ->selectRaw('level, zone_id, (select z.name from zones z where z.id = deaths.zone_id) as zone, killer_kind, killer, damage')->get();
         $pseudonyms = [];
         foreach ($rows as $row) {
-            if ($row->killer !== null && $row->killer_kind === KillerKind::Player->value) {
+            if ($row->killer !== null && ($row->killer_kind === KillerKind::Player->value || PlayerNameShape::isPseudonym((string) $row->killer))) {
                 $pseudonyms[] = (string) $row->killer;
             }
         }
@@ -52,7 +52,7 @@ class DeathLog
         if ($killer === null) {
             return null;
         }
-        if ($kind === KillerKind::Player->value) {
+        if ($kind === KillerKind::Player->value || PlayerNameShape::isPseudonym($killer)) {
             return $names[$killer] ?? ResolvePlayerName::UNKNOWN;
         }
 

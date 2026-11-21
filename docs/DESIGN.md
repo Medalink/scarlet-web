@@ -79,6 +79,10 @@ Lines in many groups name another player (`LT`, `DP`, `PK`, `TR`, `ML`, `QA` and
 secret of the install and is never sent. The same player gets the same pseudonym in every part from that install, so
 "who got which drop" still works without the name. Guild names of other players are treated the same way.
 
+A killing blow (`DR`) whose source the game did not identify (no killer kind) still names it in field 3. When that
+name has a player's `First-Last` shape, it is replaced like a player's, so a player who lands an unidentified killing
+blow never reaches the server under their own name.
+
 Names appear in clear only in `social` parts. With `social` on, each social part also carries the pseudonyms that
 session used, as `pn` lines (`<dt>\tpn\t<pseudonym>\t<Name-Surname>`; lower-case codes are written by the app, never
 by the addon), so the uploader's own private view can show names. Turning `social` off and removing it leaves the

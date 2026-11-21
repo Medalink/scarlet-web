@@ -2,6 +2,7 @@
 //! and the name references. All three are TSV with a header row; `\r` is
 //! trimmed so a Windows checkout reads the same.
 
+use crate::pseudo::player_shaped;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::OnceLock;
 
@@ -21,25 +22,64 @@ fn cell<'a>(row: &[&'a str], i: usize) -> &'a str {
     row.get(i).copied().unwrap_or("")
 }
 
-/// `field N is V`: a condition on another field of the same line. N is 1-based.
+/// Conditions on a line's fields, joined by `and`. Each clause is
+/// `field N is V`, `field N is empty` or `field N is player-shaped`; N is 1-based.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct When {
-    pub field: usize,
-    pub value: String,
+    clauses: Vec<Clause>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Clause {
+    Is {
+        field: usize,
+        value: String,
+    },
+    Empty {
+        field: usize,
+    },
+    /// A player's `First-Last` name shape.
+    PlayerShaped {
+        field: usize,
+    },
 }
 
 impl When {
     fn parse(text: &str) -> Option<When> {
-        let rest = text.trim().strip_prefix("field ")?;
-        let (n, v) = rest.split_once(" is ")?;
-        Some(When {
-            field: n.trim().parse::<usize>().ok()?.checked_sub(1)?,
-            value: v.trim().to_string(),
-        })
+        let clauses = text
+            .trim()
+            .split(" and ")
+            .map(Clause::parse)
+            .collect::<Option<Vec<_>>>()?;
+        (!clauses.is_empty()).then_some(When { clauses })
     }
 
     pub fn holds(&self, fields: &[&str]) -> bool {
-        fields.get(self.field).is_some_and(|v| *v == self.value)
+        self.clauses.iter().all(|c| c.holds(fields))
+    }
+}
+
+impl Clause {
+    fn parse(text: &str) -> Option<Clause> {
+        let rest = text.trim().strip_prefix("field ")?;
+        let (n, v) = rest.split_once(" is ")?;
+        let field = n.trim().parse::<usize>().ok()?.checked_sub(1)?;
+        Some(match v.trim() {
+            "empty" => Clause::Empty { field },
+            "player-shaped" => Clause::PlayerShaped { field },
+            value => Clause::Is {
+                field,
+                value: value.to_string(),
+            },
+        })
+    }
+
+    fn holds(&self, fields: &[&str]) -> bool {
+        match self {
+            Clause::Is { field, value } => fields.get(*field).is_some_and(|v| *v == value),
+            Clause::Empty { field } => fields.get(*field).is_none_or(|v| v.is_empty()),
+            Clause::PlayerShaped { field } => fields.get(*field).is_some_and(|v| player_shaped(v)),
+        }
     }
 }
 

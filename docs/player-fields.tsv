@@ -14,4 +14,5 @@ RW	5	field 1 is l	winner
 ML	2		sender or recipient
 TR	2		trade partner
 DR	3	field 11 is p	killer, when a player
+DR	3	field 11 is empty and field 3 is player-shaped	killer, when the game did not identify the source
 DR	15		killer guild

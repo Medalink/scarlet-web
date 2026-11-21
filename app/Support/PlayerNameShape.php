@@ -16,4 +16,10 @@ final class PlayerNameShape
     {
         return preg_match(self::NAME, $text) === 1 || preg_match(self::PSEUDONYM, $text) === 1;
     }
+
+    /** A `~` pseudonym the app wrote for another player's name. */
+    public static function isPseudonym(string $text): bool
+    {
+        return preg_match(self::PSEUDONYM, $text) === 1;
+    }
 }

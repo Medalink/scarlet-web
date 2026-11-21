@@ -173,7 +173,7 @@ class CharacterOverview
             ->selectRaw('killer_kind as kind, killer, count(*) as deaths')->orderByRaw('count(*) desc')->orderBy('killer')->limit(6)->get();
         $pseudonyms = [];
         foreach ($killers as $killer) {
-            if ($killer->kind === KillerKind::Player->value) {
+            if ($killer->kind === KillerKind::Player->value || PlayerNameShape::isPseudonym((string) $killer->killer)) {
                 $pseudonyms[] = (string) $killer->killer;
             }
         }
@@ -185,7 +185,7 @@ class CharacterOverview
             'total' => (int) DB::table('deaths')->where('character_id', $id)->count(),
             'killers' => array_values($killers->map(fn (object $row): array => [
                 'kind' => $row->kind, 'killer' => match (true) {
-                    $row->kind === KillerKind::Player->value => $names[(string) $row->killer] ?? ResolvePlayerName::UNKNOWN,
+                    $row->kind === KillerKind::Player->value || PlayerNameShape::isPseudonym((string) $row->killer) => $names[(string) $row->killer] ?? ResolvePlayerName::UNKNOWN,
                     PlayerNameShape::matches((string) $row->killer) => ResolvePlayerName::UNKNOWN,
                     default => (string) $row->killer,
                 }, 'deaths' => (int) $row->deaths,

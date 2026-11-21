@@ -50,3 +50,21 @@ pub fn unhex<const N: usize>(s: &str) -> Option<[u8; N]> {
     }
     Some(out)
 }
+
+/// A player's `First-Last` name shape, as the app's PlayerNameShape sees it:
+/// a capital, then lower-case letters or apostrophes, on both sides of one
+/// hyphen. Creature and environment names do not look like this.
+pub fn player_shaped(name: &str) -> bool {
+    let (first, last) = match name.split_once('-') {
+        Some((first, last)) if !last.contains('-') => (first, last),
+        _ => return false,
+    };
+    shaped_part(first) && shaped_part(last)
+}
+
+fn shaped_part(part: &str) -> bool {
+    let b = part.as_bytes();
+    b.len() >= 2
+        && b[0].is_ascii_uppercase()
+        && b[1..].iter().all(|c| c.is_ascii_lowercase() || *c == b'\'')
+}
