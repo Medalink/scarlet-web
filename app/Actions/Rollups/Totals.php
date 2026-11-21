@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Actions\Rollups;
+
+use App\Support\Rollup;
+use App\Support\RollupRead;
+
+class Totals
+{
+    public function __construct(private readonly RollupRead $read) {}
+
+    /**
+     * Headline numbers for one ruleset or all, from the aggregates only. A total is null while fewer than
+     * `config('scarlet.min_characters')` characters contributed to it.
+     *
+     * @return array{characters: int|float|null, xp: int|float|null, played_seconds: int|float|null, kills: int|float|null, deaths: int|float|null, quests: int|float|null, copper_earned: int|float|null, copper_spent: int|float|null}
+     */
+    public function handle(?int $rulesetId = null): array
+    {
+        $ms = $this->sum(Rollup::PlayHourlyRuleset, 'ms', $rulesetId);
+
+        return [
+            'characters' => $this->characters(Rollup::XpDailyRuleset, $rulesetId),
+            'xp' => $this->sum(Rollup::XpDailyRuleset, 'xp', $rulesetId),
+            'played_seconds' => $ms === null ? null : $ms / 1000,
+            'kills' => $this->sum(Rollup::KillsDailyRuleset, 'kills', $rulesetId),
+            'deaths' => $this->sum(Rollup::DeathsDailyRuleset, 'deaths', $rulesetId),
+            'quests' => $this->sum(Rollup::QuestsDailyRuleset, 'turn_ins', $rulesetId),
+            'copper_earned' => $this->sum(Rollup::MoneyDailyRuleset, 'earned', $rulesetId),
+            'copper_spent' => $this->sum(Rollup::MoneyDailyRuleset, 'spent', $rulesetId),
+        ];
+    }
+
+    private function characters(Rollup $rollup, ?int $rulesetId): ?int
+    {
+        $count = (int) $this->read->from($rollup, $rulesetId)->selectRaw('distinct_count(rollup(characters)) as characters')->value('characters');
+
+        return $count < (int) config('scarlet.min_characters') ? null : $count;
+    }
+
+    private function sum(Rollup $rollup, string $column, ?int $rulesetId): int|float|null
+    {
+        if ($this->characters($rollup, $rulesetId) === null) {
+            return null;
+        }
+
+        return $this->read->from($rollup, $rulesetId)->sum($column) + 0;
+    }
+}
