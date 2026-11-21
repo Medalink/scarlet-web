@@ -15,6 +15,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/landing.js',
                 'resources/js/demo.js',
+                'resources/js/map/design.js',
             ],
             refresh: true,
         }),
