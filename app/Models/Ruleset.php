@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool|null $xp_off
  * @property int|null $game_mode
  * @property int|null $mode_record
+ * @property string|null $kind
  */
 class Ruleset extends Model
 {
@@ -92,7 +93,8 @@ class Ruleset extends Model
     /** The ruleset of WoW Forever this row is, or null while no checked signal names it. */
     public function kind(): ?RulesetKind
     {
-        return RulesetKind::of($this->hardcore, $this->mode_record);
+        return RulesetKind::of($this->hardcore, $this->mode_record)
+            ?? ($this->kind === null ? null : RulesetKind::tryFrom($this->kind));
     }
 
     /** The name a page shows: the ruleset's name, or "Not identified" for a row no checked signal names. */

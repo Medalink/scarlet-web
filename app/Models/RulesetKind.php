@@ -46,7 +46,8 @@ enum RulesetKind: string
     /**
      * The kind a combination of signals belongs to, or null when none can be told. Only the hardcore flag is
      * known to name a ruleset. The others wait for an in game check of one signal on a character of each ruleset
-     * (the `RU` line: game mode record, server number, war mode locks); add the checked values here, nowhere else.
+     * (the `RU` line: game mode record, server number, war mode locks); add the checked values here. A row
+     * its players confirmed by hand carries `rulesets.kind` instead (`rulesets:kind`), used when no signal names it.
      */
     public static function of(?bool $hardcore, ?int $modeRecord): ?self
     {
