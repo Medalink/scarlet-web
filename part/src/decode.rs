@@ -101,7 +101,7 @@ struct Run {
     left: Option<i64>,
     inside_ms: i64,
     entries: i64,
-    bosses: i64,
+    bosses: BTreeSet<(Option<i64>, String)>,
     deaths: i64,
     group_size: Option<i64>,
     /// Start of the stay in progress.
@@ -500,7 +500,10 @@ impl Dec<'_> {
             }
             "B" => {
                 if let Some(r) = self.run_inside.and_then(|i| self.runs.get_mut(i)) {
-                    r.bosses += 1;
+                    r.bosses.insert(match num(&f, 0) {
+                        Some(id) => (Some(id), String::new()),
+                        None => (None, field(&f, 1).to_string()),
+                    });
                 }
             }
             "TA" | "TG" | "TQ" | "TV" | "TD" => self.on_talent(code, t, &f),
@@ -723,7 +726,7 @@ impl Dec<'_> {
             left: None,
             inside_ms: 0,
             entries: 1,
-            bosses: 0,
+            bosses: BTreeSet::new(),
             deaths: 0,
             group_size: self.group_size,
             stay: t,
@@ -902,7 +905,7 @@ impl Dec<'_> {
                 .bool("left_by_session_end", r.left == Some(end) && r.at_end)
                 .int("inside_ms", r.inside_ms)
                 .int("entries", r.entries)
-                .int("bosses", r.bosses)
+                .int("bosses", r.bosses.len() as i64)
                 .int("deaths", r.deaths)
                 .opt("group_size", r.group_size);
             self.w.end();

@@ -118,7 +118,7 @@ the same run: `entries` counts the stays). `at` is the first entry; level and zo
 | `left_by_session_end` | bool | the session ended inside; `left_at` is then the session end |
 | `inside_ms` | int | time spent inside, all stays |
 | `entries` | int | stays |
-| `bosses` | int | `B` lines while inside |
+| `bosses` | int | distinct bosses among the `B` lines while inside, by the line's id or, when it has none, its name |
 | `deaths` | int | `D` lines while inside |
 | `group_size` | int or null | group size at the first entry (`GP`, `LM`) |
 
