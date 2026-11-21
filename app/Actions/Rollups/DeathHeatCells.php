@@ -12,9 +12,11 @@ class DeathHeatCells
     /**
      * Where characters died on one zone map (uiMap id), in the same 100 by 100 cells as PathHeatCells.
      *
+     *
+     * @param  int|list<int>|null  $rulesetId
      * @return list<array<string, mixed>> cell_x, cell_y, deaths, characters
      */
-    public function handle(int $map, ?int $rulesetId = null): array
+    public function handle(int $map, int|array|null $rulesetId = null): array
     {
         $query = $this->read->from(Rollup::DeathHeatDailyRuleset, $rulesetId)
             ->selectRaw('cell_x, cell_y, sum(deaths) as deaths, distinct_count(rollup(characters)) as characters')

@@ -13,9 +13,10 @@ class Totals
      * Headline numbers for one ruleset or all, from the aggregates only. A total is null while fewer than
      * `config('scarlet.min_characters')` characters contributed to it.
      *
+     * @param  int|list<int>|null  $rulesetId
      * @return array{characters: int|float|null, xp: int|float|null, played_seconds: int|float|null, kills: int|float|null, deaths: int|float|null, quests: int|float|null, copper_earned: int|float|null, copper_spent: int|float|null}
      */
-    public function handle(?int $rulesetId = null): array
+    public function handle(int|array|null $rulesetId = null): array
     {
         $ms = $this->sum(Rollup::PlayHourlyRuleset, 'ms', $rulesetId);
 
@@ -31,14 +32,16 @@ class Totals
         ];
     }
 
-    private function characters(Rollup $rollup, ?int $rulesetId): ?int
+    /** @param  int|list<int>|null  $rulesetId */
+    private function characters(Rollup $rollup, int|array|null $rulesetId): ?int
     {
         $count = (int) $this->read->from($rollup, $rulesetId)->selectRaw('distinct_count(rollup(characters)) as characters')->value('characters');
 
         return $count < (int) config('scarlet.min_characters') ? null : $count;
     }
 
-    private function sum(Rollup $rollup, string $column, ?int $rulesetId): int|float|null
+    /** @param  int|list<int>|null  $rulesetId */
+    private function sum(Rollup $rollup, string $column, int|array|null $rulesetId): int|float|null
     {
         if ($this->characters($rollup, $rulesetId) === null) {
             return null;

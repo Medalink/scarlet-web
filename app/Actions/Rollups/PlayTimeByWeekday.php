@@ -12,9 +12,11 @@ class PlayTimeByWeekday
     /**
      * Played seconds by weekday (0 is Sunday) and hour of the day, in UTC. AFK time is reported apart.
      *
+     *
+     * @param  int|list<int>|null  $rulesetId
      * @return list<array<string, mixed>> weekday, hour, seconds, afk_seconds, characters
      */
-    public function handle(?int $rulesetId = null): array
+    public function handle(int|array|null $rulesetId = null): array
     {
         $query = $this->read->from(Rollup::PlayHourlyRuleset, $rulesetId)
             ->selectRaw("extract(dow from bucket at time zone 'UTC')::int as weekday, extract(hour from bucket at time zone 'UTC')::int as hour")

@@ -17,3 +17,4 @@ if (app()->environment('local')) {
 
 require __DIR__.'/maps.php';
 require __DIR__.'/accounts.php';
+require __DIR__.'/pages.php';

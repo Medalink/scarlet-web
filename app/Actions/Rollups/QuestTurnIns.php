@@ -9,8 +9,11 @@ class QuestTurnIns
 {
     public function __construct(private readonly RollupRead $read) {}
 
-    /** @return list<array<string, mixed>> quest_id, name, turn_ins, accepts, abandons, xp, characters */
-    public function handle(?int $rulesetId = null, int $limit = 50): array
+    /**
+     * @param  int|list<int>|null  $rulesetId
+     * @return list<array<string, mixed>> quest_id, name, turn_ins, accepts, abandons, xp, characters
+     */
+    public function handle(int|array|null $rulesetId = null, int $limit = 50): array
     {
         $query = $this->read->from(Rollup::QuestsDailyRuleset, $rulesetId)
             ->selectRaw("quest_id, (select n.name from names n where n.kind = 'quest' and n.id = quest_id order by n.votes desc, n.name limit 1) as name")

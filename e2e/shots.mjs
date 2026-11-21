@@ -61,10 +61,47 @@ async function shoot(context, url, file) {
   await page.goto(url, { waitUntil: "load" });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(1500);
+  // A world map loads its tiles after the page; wait until the first screenful is in.
+  if (await page.$("canvas[data-world-map]")) await page.waitForTimeout(3500);
   const buffer = await page.screenshot({ path: file, fullPage: true });
   const overflow = await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - innerWidth));
   await page.close();
   return { buffer, errors, overflow };
+}
+
+// The real pages (--real): every public page on the data the server holds, with motion allowed. The routes that name a
+// record (a character, a creature, an item, a zone, a quest) are found through the public API, so no name is written here.
+// Output page-<name>-<width>.png; the report has no comp diff, only overflow, console errors and page errors.
+async function realPages() {
+  const get = async (route) => (await fetch(base + route, { headers: { Accept: "application/json" } })).json();
+  const first = async (kind) => (await get(`/api/v1/public/search?kind=${kind}&q=${kind === "character" ? "a" : "e"}&limit=1`)).data?.[0]?.path;
+  const board = (await get("/api/v1/public/leaderboards/most-quests")).data?.[0]?.path;
+  const pages = [
+    ["stats", "/stats"], ["stats-ruleset", "/rulesets/p1-std-pve-xp-g1"], ["rulesets", "/rulesets"], ["map", "/map"],
+    ["leaderboards", "/leaderboards/most-quests"], ["search", "/search?q=a"], ["developers", "/developers"], ["landing", "/"], ["demo", "/demo"],
+  ];
+  for (const [name, kind] of [["creature", "creature"], ["item", "item"], ["zone", "zone"], ["quest", "quest"], ["character", "character"]]) {
+    const route = name === "character" ? board : await first(kind);
+    if (route) pages.push([name, route]);
+  }
+  return pages.filter(([name]) => !only || only.includes(name));
+}
+
+if (process.argv.includes("--real")) {
+  console.log("page".padEnd(14), "width".padEnd(6), "overflow".padEnd(9), "console and page errors");
+  let failures = 0;
+  for (const width of WIDTHS) {
+    const context = await browser.newContext({ viewport: { width, height: width > 600 ? 800 : 844 }, reducedMotion: "no-preference" });
+    for (const [name, route] of await realPages()) {
+      const built = await shoot(context, base + route, path.join(out, `page-${name}-${width}.png`));
+      const errors = [...new Set(built.errors)].filter((e) => !/fonts\.g/.test(e));
+      failures += errors.length + (built.overflow > 0 ? 1 : 0);
+      console.log(name.padEnd(14), String(width).padEnd(6), (built.overflow + "px").padEnd(9), errors.length ? errors.join(" | ") : "none");
+    }
+    await context.close();
+  }
+  await browser.close();
+  process.exit(failures ? 1 : 0);
 }
 
 console.log("page".padEnd(13), "width".padEnd(6), "overflow".padEnd(9), "diff".padEnd(8), "height built/comp".padEnd(18), "console errors");

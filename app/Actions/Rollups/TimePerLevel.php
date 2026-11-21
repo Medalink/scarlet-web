@@ -12,9 +12,11 @@ class TimePerLevel
     /**
      * Played seconds spent at each level the character has left: median and quartiles.
      *
+     *
+     * @param  int|list<int>|null  $rulesetId
      * @return list<array<string, mixed>> level, characters, q1, median, q3
      */
-    public function handle(?int $rulesetId = null): array
+    public function handle(int|array|null $rulesetId = null): array
     {
         $query = $this->read->from(Rollup::LevelTimeRuleset, $rulesetId)
             ->selectRaw('level, distinct_count(rollup(characters)) as characters, sum(completed_levels) as completed')

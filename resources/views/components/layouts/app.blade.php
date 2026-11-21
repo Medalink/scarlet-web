@@ -2,6 +2,7 @@
      prefix, which the design gallery uses to stay inside /design. --}}
 @props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => ''])
 @php
+    $signedIn = $signedIn || auth()->check();
     $items = ['stats' => ['Stats', '/stats'], 'world' => ['Map', '/map'], 'rulesets' => ['Rulesets', '/rulesets'], 'leaderboards' => ['Leaderboards', '/leaderboards'], 'search' => ['Search', '/search'], 'developers' => ['API', '/developers']];
 @endphp
 <!doctype html>

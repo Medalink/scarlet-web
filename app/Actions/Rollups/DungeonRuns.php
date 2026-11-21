@@ -13,9 +13,11 @@ class DungeonRuns
      * Runs per instance with the time inside as median and quartiles. A run that carries on the run before it
      * is not counted as a run, but its time and bosses are.
      *
+     *
+     * @param  int|list<int>|null  $rulesetId
      * @return list<array<string, mixed>> instance_id, name, runs, characters, deaths, bosses, q1, median, q3
      */
-    public function handle(?int $rulesetId = null): array
+    public function handle(int|array|null $rulesetId = null): array
     {
         $query = $this->read->from(Rollup::DungeonsDailyRuleset, $rulesetId)
             ->selectRaw('instance_id, (select z.name from zones z where z.instance_id = dungeons_daily_ruleset.instance_id order by z.id limit 1) as name')

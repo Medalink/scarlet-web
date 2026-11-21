@@ -9,8 +9,11 @@ class XpSourcesByLevel
 {
     public function __construct(private readonly RollupRead $read) {}
 
-    /** @return list<array<string, mixed>> level, source, xp, gains, characters */
-    public function handle(?int $rulesetId = null): array
+    /**
+     * @param  int|list<int>|null  $rulesetId
+     * @return list<array<string, mixed>> level, source, xp, gains, characters
+     */
+    public function handle(int|array|null $rulesetId = null): array
     {
         $query = $this->read->from(Rollup::XpDailyRuleset, $rulesetId)
             ->selectRaw('level, source, sum(xp) as xp, sum(gains) as gains, distinct_count(rollup(characters)) as characters')

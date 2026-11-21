@@ -12,9 +12,11 @@ class CreatureKills
     /**
      * Kills per creature. `own` counts the kills the character got credit for.
      *
+     *
+     * @param  int|list<int>|null  $rulesetId
      * @return list<array<string, mixed>> npc_id, name, kills, own, characters
      */
-    public function handle(?int $rulesetId = null, int $limit = 50): array
+    public function handle(int|array|null $rulesetId = null, int $limit = 50): array
     {
         $query = $this->read->from(Rollup::KillsDailyRuleset, $rulesetId)
             ->selectRaw("npc_id, (select n.name from names n where n.kind = 'npc' and n.id = npc_id order by n.votes desc, n.name limit 1) as name")

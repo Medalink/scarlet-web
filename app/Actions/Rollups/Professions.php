@@ -12,9 +12,11 @@ class Professions
     /**
      * Skill-ups and the highest rank seen, by skill. `kind` is the decoder's skill kind (profession, weapon, ...).
      *
+     *
+     * @param  int|list<int>|null  $rulesetId
      * @return list<array<string, mixed>> kind, skill, skill_id, ups, best_rank, characters
      */
-    public function handle(?int $rulesetId = null): array
+    public function handle(int|array|null $rulesetId = null): array
     {
         $query = $this->read->from(Rollup::SkillsDailyRuleset, $rulesetId)
             ->selectRaw('kind, skill, skill_id, sum(ups) as ups, max(best_rank) as best_rank, distinct_count(rollup(characters)) as characters')

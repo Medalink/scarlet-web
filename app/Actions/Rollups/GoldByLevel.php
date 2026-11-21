@@ -12,9 +12,11 @@ class GoldByLevel
     /**
      * Copper earned and spent at each level, from the character's own purse (not a transfer from a mail or a trade).
      *
+     *
+     * @param  int|list<int>|null  $rulesetId
      * @return list<array<string, mixed>> level, earned, spent, characters
      */
-    public function handle(?int $rulesetId = null): array
+    public function handle(int|array|null $rulesetId = null): array
     {
         $query = $this->read->from(Rollup::MoneyDailyRuleset, $rulesetId)
             ->selectRaw('level, sum(earned) as earned, sum(spent) as spent, distinct_count(rollup(characters)) as characters')
