@@ -107,7 +107,18 @@ activate() {
   # Running jobs finish (SIGTERM is Horizon's own terminate), then the new release takes over.
   put SCARLET_RELEASE "$release"
   $dc stop horizon schedule >/dev/null 2>&1 || true
+  # rm clears a container an interrupted rollout left behind: a recreate of it dies on
+  # "container name already in use" and horizon or schedule would keep running the old release.
+  $dc rm -f horizon schedule >/dev/null 2>&1 || true
   $dc up -d --no-deps horizon schedule
+  # A failed recreate can still print nothing on compose's side or exit 0, so check the state itself.
+  for svc in horizon schedule; do
+    if ! $dc ps --services --status running "$svc" | grep -qx "$svc"; then
+      echo "rollout: $svc is not running on $release" >&2
+      $dc logs --no-log-prefix --tail 40 "$svc" >&2 || true
+      return 1
+    fi
+  done
 }
 
 prune_images() {
