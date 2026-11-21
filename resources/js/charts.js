@@ -3,10 +3,13 @@
 // All text a chart shows (axis labels, readout lines, cell titles) comes in the spec already formatted
 // by App\View\Format, so numbers are formatted in one place. No chart library.
 import './site/map.js';
+import { drawPlay } from './play.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAP_CELL = 83;
 const HEAT = ['#4b1626', '#861a34', '#cf1f45', '#ff5d7e'];
+const SOURCES = ['kill', 'dungeon', 'quest', 'explore', 'other'];
+const DEATH_ROW = 52;
 
 const svgEl = (name, attrs, text) => {
     const node = document.createElementNS(NS, name);
@@ -20,6 +23,7 @@ const htmlEl = (name, className, text) => {
     if (text != null) node.textContent = text;
     return node;
 };
+const UNCOUNTED = 14;
 const clamp = (value, lo, hi) => Math.max(lo, Math.min(hi, value));
 
 // A readout line: a bold lead and the rest, set as text so no markup from data is ever parsed.
@@ -51,10 +55,11 @@ function reader(target, spec, { count, at, show, keys = { ArrowLeft: -1, ArrowRi
     target.addEventListener('focus', () => { if (target.matches(':focus-visible') && shown == null) read(spec.rest ?? 0, true); }, { signal });
     target.addEventListener('blur', () => read(pinned, false), { signal });
     target.addEventListener('keydown', (e) => {
+        const ends = { Home: 0, End: count - 1 }[e.key];
         const step = keys[e.key] ?? 0;
-        if (!step) return;
+        if (!step && ends == null) return;
         e.preventDefault();
-        pinned = clamp((shown ?? spec.rest ?? 0) + step, 0, count - 1);
+        pinned = ends ?? clamp((shown ?? spec.rest ?? 0) + step, 0, count - 1);
         read(pinned, true);
     }, { signal });
     read(pinned, false);
@@ -71,7 +76,7 @@ function plotBox(node, spec) {
 
 function frame(svg, spec) {
     const { w: W, h: H } = plotBox(svg, spec);
-    const L = 42, B = 22, T = 8, R = 6;
+    const L = 42, B = spec.b ?? 22, T = 8, R = 6;
     svg.replaceChildren();
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const x = (v) => L + ((v - spec.x0) / (spec.x1 - spec.x0)) * (W - L - R);
@@ -131,9 +136,32 @@ const draw = {
         }, signal);
     },
 
+    steps(svg, spec, signal) {
+        const f = frame(svg, spec);
+        const lines = spec.series.map((s) => {
+            const path = s.pts.map(([a, b], i) => (i ? `H${f.x(a)}V${f.y(b)}` : `M${f.x(a)} ${f.y(b)}`)).join('') + `H${f.x(spec.x1)}`;
+            svg.append(svgEl('path', { class: 'ln ' + s.cls, d: path }));
+            return s;
+        });
+        const cursor = svgEl('line', { class: 'cursor', y1: f.T, y2: f.H - f.B, visibility: 'hidden' });
+        const follow = lines.map((s) => svgEl('circle', { class: 'dot ' + s.cls, r: 4, visibility: 'hidden' }));
+        svg.append(cursor, ...follow);
+        readable(svg, spec, f, spec.samples.length, (i) => f.x(spec.samples[i][0]), (i, live) => {
+            const shown = live ? 'visible' : 'hidden';
+            const [at, ranks] = spec.samples[i];
+            cursor.setAttribute('visibility', shown);
+            cursor.setAttribute('x1', f.x(at));
+            cursor.setAttribute('x2', f.x(at));
+            follow.forEach((dot, k) => {
+                dot.setAttribute('visibility', ranks[k] == null ? 'hidden' : shown);
+                if (ranks[k] != null) { dot.setAttribute('cx', f.x(at)); dot.setAttribute('cy', f.y(ranks[k])); }
+            });
+        }, signal);
+    },
+
     bars(svg, spec, signal) {
         const f = frame(svg, spec);
-        const bw = ((f.W - f.L - 6) / (spec.x1 - spec.x0)) * 0.72;
+        const bw =((f.W - f.L - 6) / (spec.x1 - spec.x0)) * 0.72;
         const rects = [];
         spec.data.forEach(([a, v, lo, hi, mark], i) => {
             const rect = svgEl('rect', { class: 'bar ' + (spec.cls || ''), x: f.x(a) - bw / 2, width: bw, y: f.y(v), height: Math.max(0, f.y(0) - f.y(v)), rx: 1.5 });
@@ -167,6 +195,88 @@ const draw = {
         });
         readable(svg, spec, f, spec.data.length, (i) => f.x(spec.data[i][0]), (i, live) => {
             groups.forEach((group, k) => group.classList.toggle('dim', live && k !== i));
+        }, signal);
+    },
+
+    levels(svg, spec, signal) {
+        const width = svg.getBoundingClientRect().width || spec.w;
+        const narrow = width / spec.w < 0.85;
+        const W = narrow ? Math.round(width) : spec.w;
+        const H = narrow ? 300 : spec.h;
+        const f = frame(svg, { ...spec, w: W, h: H, b: DEATH_ROW });
+        const pitch = (W - f.L - f.R) / (spec.x1 - spec.x0);
+        const bw = pitch * 0.72;
+        const floor = f.y(0);
+        const groups = spec.data.map(([level, hours, shares, median, deaths], i) => {
+            const group = svgEl('g');
+            const cx = f.x(level);
+            if (hours != null) {
+                const total = floor - f.y(hours);
+                let base = floor;
+                (shares || [1]).forEach((share, k) => {
+                    if (share <= 0) return;
+                    base -= share * total;
+                    group.append(svgEl('rect', { class: 'lv-' + (shares ? SOURCES[k] : 'none'), x: cx - bw / 2, width: bw, y: base, height: share * total }));
+                });
+            }
+            if (hours == null && shares) {
+                group.append(svgEl('rect', { class: 'lv-uncounted', x: cx - bw / 2, width: bw, y: floor - UNCOUNTED, height: UNCOUNTED }));
+            }
+            if (median != null) {
+                const y = f.y(median);
+                group.append(svgEl('line', { class: 'lv-halo', x1: cx - bw / 2 - 1.5, x2: cx + bw / 2 + 1.5, y1: y, y2: y }));
+                group.append(svgEl('line', { class: 'lv-tick', x1: cx - bw / 2 - 1.5, x2: cx + bw / 2 + 1.5, y1: y, y2: y }));
+            }
+            if (deaths > 0) {
+                const r = Math.min(2.2 + Math.min(deaths, 5) * 0.5, Math.max(2.5, pitch * 0.55), 6);
+                const cy = floor + 14;
+                group.append(svgEl('path', { class: 'lv-x', 'stroke-width': deaths > 1 ? 1.9 : 1.4, d: `M${cx - r} ${cy - r}l${2 * r} ${2 * r}M${cx + r} ${cy - r}l${-2 * r} ${2 * r}` }));
+                if (deaths > 1 && pitch >= 13) group.append(svgEl('text', { class: 'lv-n', x: cx, y: cy + r + 9, 'text-anchor': 'middle' }, String(deaths)));
+            }
+            const line = spec.say?.[i];
+            if (line) group.append(svgEl('title', {}, line[0] + (line[1] ?? '')));
+            svg.append(group);
+            return group;
+        });
+        readable(svg, spec, f, groups.length, (i) => f.x(spec.data[i][0]), (i, live) => {
+            groups.forEach((group, k) => group.classList.toggle('dim', live && k !== i));
+        }, signal);
+    },
+
+    dots(svg, spec, signal) {
+        const width = svg.getBoundingClientRect().width || spec.w;
+        const W = width / spec.w >= 0.85 ? spec.w : Math.round(width);
+        const pitchX = (W - 48) / (spec.x1 - spec.x0);
+        const rMax = clamp(pitchX * 0.6, 3.5, 14);
+        const rMin = Math.min(3, rMax);
+        const pitchY = rMax * 2 + 3;
+        const H = 30 + pitchY * spec.rows;
+        const f = frame(svg, { ...spec, w: W, h: H, y1: spec.rows, yt: [[0, '']] });
+        const marks = spec.data.map(([level, row, size]) => {
+            const r = size > 0 ? rMin + (rMax - rMin) * Math.sqrt(size / spec.peak) : rMin;
+            return svgEl('circle', { class: 'skull' + (size > 0 ? '' : ' unk'), cx: f.x(level), cy: f.y(row + 0.5), r });
+        });
+        svg.append(...marks);
+        svg.setAttribute('tabindex', '0');
+        const at = (e) => {
+            const box = svg.getBoundingClientRect();
+            const ux = ((e.clientX - box.left) / box.width) * f.W;
+            const uy = ((e.clientY - box.top) / box.height) * f.H;
+            let best = 0;
+            let gap = Infinity;
+            marks.forEach((mark, i) => {
+                const d = (mark.getAttribute('cx') - ux) ** 2 + (mark.getAttribute('cy') - uy) ** 2;
+                if (d < gap) { gap = d; best = i; }
+            });
+            return best;
+        };
+        reader(svg, spec, {
+            count: marks.length,
+            at,
+            show: (i, live) => marks.forEach((mark, k) => {
+                mark.classList.toggle('on', k === i);
+                mark.classList.toggle('dim', live && k !== i);
+            }),
         }, signal);
     },
 
@@ -255,6 +365,10 @@ const draw = {
         }, signal);
     },
 
+    play(box, spec, signal) {
+        drawPlay(box, spec, signal, { reader, htmlEl, draw });
+    },
+
     // The survey map with heat cells and death crosses. cells: [[cell x, cell y, level 1 to 4]], deaths: [[x, y]].
     map(canvas, spec) {
         const M = window.ScarletMap;
@@ -292,7 +406,7 @@ function mount(node) {
     };
     render();
     if (spec.kind === 'map') document.fonts?.ready.then(render);
-    if (spec.kind !== 'line' && spec.kind !== 'bars' && spec.kind !== 'stack' && spec.kind !== 'map') return;
+    if (!['line', 'steps', 'bars', 'stack', 'levels', 'dots', 'map'].includes(spec.kind)) return;
     // Svg plots and maps are laid out for their width, so they draw again when it changes.
     let width = node.getBoundingClientRect().width;
     new ResizeObserver(() => {

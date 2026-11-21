@@ -14,7 +14,7 @@ class DungeonRuns
 
     /**
      * The counted runs of a character, newest first. A row that continues the run before it in the same instance (the
-     * run went on into the next session) is part of that run: its time, bosses and deaths are added to it.
+     * run went on into the next session) is part of that run: its time, bosses and deaths are added to it, and its group size is the largest of its rows.
      *
      * @return list<array{instance_id: int, name: string|null, at: string, seconds: float, bosses: int, deaths: int, group_size: int|null}>
      */
@@ -29,7 +29,7 @@ class DungeonRuns
                 $runs[$last]['seconds'] += $row->inside_ms / 1000;
                 $runs[$last]['bosses'] += (int) $row->bosses;
                 $runs[$last]['deaths'] += (int) $row->deaths;
-                $runs[$last]['group_size'] ??= $row->group_size === null ? null : (int) $row->group_size;
+                $runs[$last]['group_size'] = $row->group_size === null ? $runs[$last]['group_size'] : max($runs[$last]['group_size'] ?? 0, (int) $row->group_size);
 
                 continue;
             }

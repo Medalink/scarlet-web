@@ -3,7 +3,6 @@
 namespace App\Actions\Public\Character;
 
 use App\Actions\Public\QuestRecord;
-use App\Support\ItemClass;
 use App\Support\ItemOrigin;
 use App\Support\ItemQuality;
 use App\Support\LootVia;
@@ -14,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 class ItemsFound
 {
     /** Best items the page lists. */
-    public const int SHOWN = 8;
+    public const int SHOWN = 5;
 
     /** Seconds around an item receipt in which a quest turn-in counts as its source. */
     public const int QUEST_WINDOW = 5;
@@ -30,12 +29,11 @@ class ItemsFound
      *
      * Received: the looted items, plus every receipt with no loot source (quest rewards, purchases, mail, trades, group
      * rolls), minus any item the character crafted. `best` lists the uncommon or better of them by quality and then item
-     * level, and `gear` is the best weapon or armour among them, the first one in that same order.
+     * level.
      *
      * @return array{
      *     qualities: array<int, int>,
-     *     best: list<array{item_id: int, name: string, quality: int, item_level: int|null, quantity: int, origin: int}>,
-     *     gear: array{item_id: int, name: string, quality: int, item_level: int|null, quantity: int, origin: int}|null
+     *     best: list<array{item_id: int, name: string, quality: int, item_level: int|null, quantity: int, origin: int}>
      * }
      */
     public function handle(int $characterId): array
@@ -43,23 +41,19 @@ class ItemsFound
         $qualities = $this->looted($characterId)->whereBetween('i.quality', [ItemQuality::Poor->value, ItemQuality::Epic->value])
             ->groupBy('i.quality')->selectRaw('i.quality as quality, sum(d.quantity) as items')->pluck('items', 'quality');
         $best = $this->finds($this->received($characterId))->limit(self::SHOWN)->get();
-        $gears = [ItemClass::Weapon->value, ItemClass::Armor->value];
-        $gear = $best->first(fn (\stdClass $row): bool => in_array((int) $row->class_id, $gears, true))
-            ?? ($best->count() < self::SHOWN ? null : $this->finds($this->received($characterId)->whereIn('i.class_id', $gears))->first());
 
         return [
             'qualities' => array_map(fn (mixed $count): int => (int) $count, $qualities->all()),
             'best' => array_values($best->map(fn (\stdClass $row): array => $this->find($row))->all()),
-            'gear' => $gear === null ? null : $this->find($gear),
         ];
     }
 
     /** Uncommon or better items of a query from `received()`, best first, with where the best copy of each came from. */
     private function finds(Builder $received): Builder
     {
-        return $received->where('i.quality', '>=', ItemQuality::Uncommon->value)->groupBy('d.item_id', 'i.quality', 'i.item_level', 'i.class_id')
+        return $received->where('i.quality', '>=', ItemQuality::Uncommon->value)->groupBy('d.item_id', 'i.quality', 'i.item_level')
             ->selectRaw('d.item_id, (select n.name from names n where n.kind = ? and n.id = d.item_id order by n.votes desc, n.name limit 1) as name', [NameKind::Item->value])
-            ->selectRaw('i.quality, i.item_level, i.class_id, sum(d.quantity) as quantity')
+            ->selectRaw('i.quality, i.item_level, sum(d.quantity) as quantity')
             ->selectRaw(
                 'min(case when d.via = ? or d.source_kind is not null then ? when '.self::QUEST_NEAR.' then ? else ? end) as origin',
                 [LootVia::Window->value, ItemOrigin::Looted->value, ...$this->questBindings(), ItemOrigin::Quest->value, ItemOrigin::Other->value],

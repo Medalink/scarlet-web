@@ -32,8 +32,9 @@ export function flatCells(cells) {
     return flat;
 }
 
-export function drawHeat(ctx, view, flat, alpha = 0.9) {
-    if (flat.length === 0) {
+export function drawHeat(ctx, view, flat, alpha = 0.9, cells = flat.length / 3) {
+    const end = Math.min(flat.length, cells * 3);
+    if (end === 0) {
         return;
     }
     const cw = (view.W / GRID_COLUMNS) * view.s;
@@ -44,7 +45,7 @@ export function drawHeat(ctx, view, flat, alpha = 0.9) {
     for (let level = 1; level <= HEAT.length; level++) {
         ctx.fillStyle = HEAT[level - 1];
         ctx.beginPath();
-        for (let n = 0; n < flat.length; n += 3) {
+        for (let n = 0; n < end; n += 3) {
             if (flat[n + 2] !== level) {
                 continue;
             }
@@ -57,6 +58,26 @@ export function drawHeat(ctx, view, flat, alpha = 0.9) {
         }
         ctx.fill();
     }
+    ctx.restore();
+}
+
+export function drawHead(ctx, view, flat, cells) {
+    if (cells < 1 || cells * 3 > flat.length) {
+        return;
+    }
+    const n = (cells - 1) * 3;
+    const [x0, y0] = view.toScreen(0, 0);
+    const x = x0 + (flat[n] + 0.5) * (view.W / GRID_COLUMNS) * view.s;
+    const y = y0 + (flat[n + 1] + 0.5) * (view.H / GRID_ROWS) * view.s;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,45,85,0.28)';
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = FG;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
 }
 

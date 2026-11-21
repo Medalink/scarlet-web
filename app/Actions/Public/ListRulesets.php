@@ -10,9 +10,9 @@ class ListRulesets
     /**
      * Every ruleset that has sessions filed under it, for filters and links: the identified ones in the order of the rulesets,
      * then the ones no checked signal names yet, and last the one whose sessions recorded no rules at all. Two
-     * rows of one label are told apart by a count, "(2)".
+     * rows of one label are told apart by a count, "(2)", in `label`; `name` keeps the label alone.
      *
-     * @return list<array{id: int, slug: string, label: string, kind: string|null, hardcore: bool, war_mode: string, recorded: bool}>
+     * @return list<array{id: int, slug: string, name: string, label: string, kind: string|null, hardcore: bool, war_mode: string, recorded: bool}>
      */
     public function handle(): array
     {
@@ -23,6 +23,7 @@ class ListRulesets
             $rows[] = [
                 'id' => $ruleset->id,
                 'slug' => $ruleset->slug(),
+                'name' => $ruleset->label(),
                 'label' => $ruleset->label(),
                 'kind' => $ruleset->kind()?->value,
                 'hardcore' => $ruleset->hardcore === true,

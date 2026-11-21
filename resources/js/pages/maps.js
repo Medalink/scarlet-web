@@ -3,6 +3,7 @@
 // Text the readout shows comes in the spec already formatted, so nothing is formatted here.
 
 import { mountMap } from '../map/index.js';
+import { bindReplay, replayPlan } from '../replay.js';
 
 const MANIFEST = '/map-tiles/manifest.json';
 const HEAT_URL = '/api/v1/public/map/heat';
@@ -24,7 +25,9 @@ function readout(config, fallback) {
 function mount(canvas) {
     const config = JSON.parse(canvas.dataset.worldMap);
     const paint = readout(config, 'World');
+    const plan = config.replay && !document.hidden && !matchMedia('(prefers-reduced-motion: reduce)').matches ? replayPlan(config) : null;
     const map = mountMap(canvas, {
+        reveal: plan?.at(0),
         manifestUrl: MANIFEST,
         zones: config.zones,
         layers: config.layers,
@@ -34,6 +37,9 @@ function mount(canvas) {
     });
     maps.set(canvas.id, { map, config });
     paint(null);
+    if (plan) {
+        bindReplay(map, plan, document.querySelector('[data-count]'), document.querySelector('.ch-replay'));
+    }
 }
 
 async function showLayer(canvasId, layer, button) {

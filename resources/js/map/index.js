@@ -9,6 +9,7 @@
 //                 paths [{ points: [[u, v], ...], mode }]; marks [{ kind: kill|death|quest|level, u, v }]
 //   zones         [{ id, name, u0, v0, u1, v1, href? }]: the zone rectangles, for the pointer readout, `fit(id)` and
 //                 the zone names drawn on the map; a zone with an href is a link
+//   reveal        { cells, marks }: draw only that many heat cells and marks, from the first, as a replay does; default all
 //   look          'survey' or 'game'; default is the last one chosen on this device, else survey
 //   fit           a rectangle or zone id to open on; default is the whole world
 //   onPointer     ({ u, v, zone } | null) => void, as the pointer moves over the map
@@ -19,11 +20,11 @@
 //   chrome        false to leave out the zoom buttons and the credit line (the page then draws its own and uses the
 //                 returned controls)
 //   label         the canvas's accessible name
-// returns { fit, fitWorld, zoomBy, setLayers, setLook, look, view, pending, destroy }
+// returns { fit, fitWorld, zoomBy, setLayers, setReveal, setLook, look, view, pending, destroy }
 
 import { addLookSwitch, addZoomAndCredit, LOOKS } from './chrome.js';
 import { attachInput, ZOOM_STEP } from './input.js';
-import { drawHeat, drawMarks, drawPaths, drawZoneNames, flatCells } from './layers.js';
+import { drawHead, drawHeat, drawMarks, drawPaths, drawZoneNames, flatCells } from './layers.js';
 import { loadManifest, TileSource } from './tiles.js';
 import { TILE, View } from './view.js';
 
@@ -67,6 +68,7 @@ export function mountMap(canvas, options) {
     const unbind = [];
 
     let layers = normalise(options.layers);
+    let reveal = options.reveal ?? null;
     let look = options.look ?? savedLook() ?? DEFAULT_LOOK;
     if (!LOOKS.some((l) => l.look === look)) {
         look = DEFAULT_LOOK;
@@ -237,9 +239,12 @@ export function mountMap(canvas, options) {
             drawTiles();
         }
         ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
-        drawHeat(ctx, view, layers.heat);
+        drawHeat(ctx, view, layers.heat, 0.9, reveal?.cells);
         drawPaths(ctx, view, layers.paths);
-        drawMarks(ctx, view, layers.marks);
+        drawMarks(ctx, view, reveal ? layers.marks.slice(0, reveal.marks) : layers.marks);
+        if (reveal) {
+            drawHead(ctx, view, layers.heat, reveal.cells);
+        }
         boxes = drawZoneNames(ctx, view, zones);
         options.onView?.({ u: view.cx / view.W, v: view.cy / view.H, scale: view.s, bounds: view.bounds() });
     }
@@ -332,6 +337,10 @@ export function mountMap(canvas, options) {
         zoomBy,
         setLayers: (next) => {
             layers = normalise(next);
+            schedule();
+        },
+        setReveal: (next) => {
+            reveal = next;
             schedule();
         },
         setLook,

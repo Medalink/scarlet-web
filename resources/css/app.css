@@ -40,13 +40,24 @@
 .plot .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .plot .ln.a { stroke: var(--accent); } .plot .ln.b { stroke: var(--fg); } .plot .ln.c { stroke: var(--s-dungeon); } .plot .ln.g { stroke: var(--gold); }
 .plot .ln.thin { stroke-width: 1.4; }
-.plot .dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
+:root { --p1: var(--accent); --p2: var(--s-dungeon); --p3: var(--s-explore); --p4: var(--gold); --p5: #4fb286; --p6: var(--silver); --p7: #e07b39; --p8: #d66bc9; }
+.plot .ln.p1 { stroke: var(--p1); } .plot .ln.p2 { stroke: var(--p2); } .plot .ln.p3 { stroke: var(--p3); } .plot .ln.p4 { stroke: var(--p4); }
+.plot .ln.p5 { stroke: var(--p5); } .plot .ln.p6 { stroke: var(--p6); } .plot .ln.p7 { stroke: var(--p7); } .plot .ln.p8 { stroke: var(--p8); }
+.plot .dot.p1 { fill: var(--p1); } .plot .dot.p2 { fill: var(--p2); } .plot .dot.p3 { fill: var(--p3); } .plot .dot.p4 { fill: var(--p4); }
+.plot .dot.p5 { fill: var(--p5); } .plot .dot.p6 { fill: var(--p6); } .plot .dot.p7 { fill: var(--p7); } .plot .dot.p8 { fill: var(--p8); }.plot .dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
 .plot .bar { fill: var(--accent); } .plot .bar.t { fill: var(--fg); } .plot .bar.dim { fill: rgba(255, 255, 255, 0.16); }
 :root { --c-s1: var(--s-kill); --c-s2: var(--s-dungeon); --c-s3: var(--s-quest); --c-s4: var(--s-explore); --c-s5: var(--silver); --c-o: var(--s-other); }
 .plot .stk.s1 { fill: var(--c-s1); } .plot .stk.s2 { fill: var(--c-s2); } .plot .stk.s3 { fill: var(--c-s3); } .plot .stk.s4 { fill: var(--c-s4); } .plot .stk.s5 { fill: var(--c-s5); } .plot .stk.o { fill: var(--c-o); }
 .plot g.dim { opacity: 0.35; }
 .chart-name { font: 750 1.3rem/1 var(--display); color: var(--fg); margin-top: 1.8rem; }
 .plot .tick { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+.plot .lv-kill { fill: var(--s-kill); } .plot .lv-dungeon { fill: var(--s-dungeon); } .plot .lv-quest { fill: var(--s-quest); } .plot .lv-explore { fill: var(--s-explore); } .plot .lv-other { fill: var(--s-other); } .plot .lv-none { fill: rgba(255, 255, 255, 0.28); }
+.plot .lv-uncounted { fill: none; stroke: var(--text); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.55; }
+.plot .lv-halo { stroke: var(--bg); stroke-width: 4.5; stroke-linecap: round; } .plot .lv-tick { stroke: var(--fg); stroke-width: 2; stroke-linecap: round; }
+.plot .lv-x { fill: none; stroke: var(--fg); stroke-linecap: round; } .plot text.lv-n { fill: var(--text); font-size: 9px; }
+.key .k-cross { position: relative; background: none; }
+.key .k-cross::before, .key .k-cross::after { content: ""; position: absolute; left: -1px; right: -1px; top: calc(50% - 0.75px); height: 1.5px; background: var(--fg); border-radius: 1px; transform: rotate(45deg); }
+.key .k-cross::after { transform: rotate(-45deg); }
 .plot .whisk { stroke: var(--muted); stroke-width: 1; }
 .plot .lab { fill: var(--fg); }
 .k-line { width: 1.1rem !important; height: 2px !important; border-radius: 0 !important; }
@@ -292,39 +303,57 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 /* Item quality: the game's colours for a bar, a key swatch and a name. */
 :root { --q0: #9d9d9d; --q1: #f0f1f3; --q2: #6cc24a; --q3: #4a9eff; --q4: #b77bff; }
 .q0 { color: var(--q0); }
+.rank .track i.c-p1 { background: var(--p1); } .rank .track i.c-p2 { background: var(--p2); } .rank .track i.c-p3 { background: var(--p3); } .rank .track i.c-p4 { background: var(--p4); }
+.rank .track i.c-p5 { background: var(--p5); } .rank .track i.c-p6 { background: var(--p6); } .rank .track i.c-p7 { background: var(--p7); } .rank .track i.c-p8 { background: var(--p8); }
 .c-q0, .rank .track i.c-q0 { background: var(--q0); } .c-q1, .rank .track i.c-q1 { background: var(--q1); } .c-q2, .rank .track i.c-q2 { background: var(--q2); }
 .c-q3, .rank .track i.c-q3 { background: var(--q3); } .c-q4, .rank .track i.c-q4 { background: var(--q4); }
 .stack { display: flex; gap: 2px; height: 1.1rem; margin-top: 1.3rem; }
 .stack i { flex: 1 1 0; min-width: 3px; border-radius: 2px; }
 .stack i:first-child { border-radius: 3px 2px 2px 3px; } .stack i:last-child { border-radius: 2px 3px 3px 2px; }
 
-/* Deaths by level: one cell per level, a cross on a level with deaths. */
-.lvls { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr)); gap: 3px; margin-top: 1.3rem; }
-.lvls li { position: relative; display: grid; grid-template-rows: auto 1fr; justify-items: center; align-items: center; min-height: 2.9rem; padding: 0.3rem 0 0.35rem; border-radius: 2px; background: rgba(255, 255, 255, 0.055); }
-.lvls b { font: 400 0.72rem/1 var(--mono); font-stretch: 85%; color: var(--muted); }
-.lvls svg { width: 0.9rem; height: 0.9rem; fill: none; stroke: var(--accent); stroke-width: 1.9; stroke-linecap: round; }
-.lvls small { position: absolute; right: 0.3rem; bottom: 0.2rem; font: 600 0.68rem/1 var(--mono); color: var(--fg); }
-.lvls li.dead { background: rgba(255, 45, 85, 0.13); }
-.lvls li.dead b { color: var(--text); }
+.plot .skull { fill: var(--accent); fill-opacity: 0.5; stroke: var(--accent); stroke-width: 1.2; }
+.plot .skull.unk { fill: none; }
+.plot .skull.on { fill-opacity: 1; stroke: var(--fg); stroke-width: 2; }
+.plot .skull.dim { opacity: 0.25; }
+.key .k-dot { border-radius: 50%; background: var(--accent); }
+.all { margin-top: 1.3rem; }
+.all summary { cursor: pointer; width: fit-content; font: 500 0.95rem/1.4 var(--body); color: var(--fg); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 0.24em; }
+.all .scroll-x { margin-top: 0.9rem; max-height: 28rem; overflow-y: auto; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.4rem; }
+.met { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 1.2rem; margin-top: 1.2rem; }
+.met div { display: flex; flex-direction: column-reverse; gap: 0.3rem; }
+.met dt { font-size: 0.92rem; color: var(--muted); }
+.met dd { font: 750 2.4rem/1 var(--display); color: var(--fg); }
+.data td.viz { width: 6.6rem; }
+@media (max-width: 900px) { .pair { grid-template-columns: minmax(0, 1fr); gap: 1.6rem; } }
+.best { margin-top: 1.1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1rem 2.4rem; }
+.best li { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr); grid-template-areas: "lvl who" "lvl val"; column-gap: 0.9rem; align-items: center; }
+.best .lvl { grid-area: lvl; font: 750 2.6rem/1 var(--display); color: var(--fg); text-align: right; }
+.best .who { grid-area: who; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.best .val { grid-area: val; font-size: 0.92rem; color: var(--text); }
+.best .q0 { color: var(--q0); } .best .q2 { color: var(--q2); } .best .q3 { color: var(--q3); } .best .q4 { color: var(--q4); }
 .rank .who.q0 { color: var(--q0); } .rank .who.q2 { color: var(--q2); } .rank .who.q3 { color: var(--q3); } .rank .who.q4 { color: var(--q4); }
 @media (max-width: 900px) { .mod + .mod { border-left: 0; } }
 
-/* Records on the character page: a tile for each fact the character holds a record in. */
 .recs { padding-block: 1.5rem 1.8rem; border-bottom: 1px solid var(--line2); }
 .recs h2 { font-size: 1.9rem; }
 .rec-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 1.1rem; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
 .rec-grid li { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; padding: 1.1rem 1.1rem 1.2rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.rec-v { font: 750 2.6rem/1 var(--display); color: var(--fg); }
-.rec-v.txt { font-size: 1.6rem; line-height: 1.1; overflow-wrap: anywhere; }
-a.rec-v { text-decoration: none; }
-a.rec-v:hover { text-decoration: underline; }
+.rec-grid li.c2 { grid-column: span 2; } .rec-grid li.c4 { grid-column: span 4; } .rec-grid li.r2 { grid-row: span 2; }
+.rec-grid li.rec-lead { grid-column: span 2; grid-row: span 2; justify-content: center; gap: 0.5rem; padding: 1.6rem; background: var(--accent); border-color: var(--accent); color: var(--ink); }
+.rec-v { font: 750 2.6rem/1 var(--display); color: var(--fg); overflow-wrap: anywhere; }
+.rec-lead .rec-v { font-size: 5.5rem; line-height: 0.9; color: var(--ink); }
 .rec-l { font-size: 0.92rem; color: var(--muted); }
 .rec-d { font-size: 0.92rem; color: var(--text); overflow-wrap: anywhere; }
+.rec-lead .rec-l { font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+.rec-lead .rec-d { font-size: 1rem; color: var(--ink); }
 @media (max-width: 820px) {
   .rec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rec-grid li { padding: 0.9rem 0.8rem 1rem; }
+  .rec-grid li.rec-lead { grid-row: span 1; padding: 1.2rem 0.8rem; }
+  .rec-grid li.c4, .rec-grid li.r2 { grid-column: span 2; grid-row: span 1; }
   .rec-v { font-size: 2.1rem; }
-  .rec-v.txt { font-size: 1.3rem; }
+  .rec-lead .rec-v { font-size: 3.8rem; }
 }
 
 /* Dungeon runs on the character page: name and date, the time inside as a bar, then bosses, deaths and group size. */
@@ -353,10 +382,15 @@ a.rec-v:hover { text-decoration: underline; }
 .ch-figs > div { display: flex; flex-direction: column-reverse; gap: 0.35rem; }
 .ch-figs dt { font-size: 0.86rem; color: var(--text); }
 .ch-figs dd { font: 750 clamp(2.1rem, 3.4vw, 3rem)/0.95 var(--display); color: var(--fg); white-space: nowrap; }
+.ch-head.ch-bare { min-height: 0; background: linear-gradient(0deg, rgba(255, 45, 85, 0.07) 0, rgba(255, 45, 85, 0) 70%); }
+.ch-sub a { color: inherit; text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 0.2em; }
+.ch-sub a:hover { text-decoration-color: currentColor; }
+.ch-hide { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .ch-legend { position: absolute; right: 1rem; bottom: 0.8rem; z-index: 1; font-size: 0.74rem; color: var(--text); background: rgba(20, 20, 22, 0.8); padding: 0.25rem 0.6rem; border-radius: 2px; }
 .ch-legend svg { width: 1.2rem; height: 0.75rem; }
 @media (max-width: 820px) {
   .ch-head.ch-rich { padding-top: 0; }
+  .ch-head.ch-bare { padding-top: 4.75rem; }
   .ch-rich .ch-sub { font-size: 1rem; }
   .ch-figs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem 1rem; }
   .ch-figs dd { font-size: 2.2rem; }
@@ -376,3 +410,23 @@ a.rec-v:hover { text-decoration: underline; }
 .tree text { fill: var(--fg); font-family: var(--mono); pointer-events: none; }
 .tree .node.full text, .tree .node.h4 text { fill: var(--ink); }
 .tree .head { fill: var(--fg); font-family: var(--display); letter-spacing: 0.02em; }
+
+.ch-band { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 1.8rem 3rem; align-items: start; margin-top: 1.4rem; }
+.ch-band .chart-name { margin-top: 0; font-size: 1.1rem; }
+.pt-plot { position: relative; margin-top: 1rem; padding-top: 1.2rem; }
+.pt-max { position: absolute; top: 0; left: 0; font: 400 0.74rem/1 var(--mono); font-stretch: 85%; color: var(--muted); }
+.pt-bars { display: grid; grid-template-columns: repeat(21, minmax(0, 1fr)); gap: 3px; height: 9rem; border-top: 1px dashed var(--line2); border-bottom: 1px solid var(--line2); }
+.pt-bars span { display: flex; align-items: flex-end; min-width: 0; }
+.pt-bars i { display: block; width: 100%; min-height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
+.pt-bars .z i { background: rgba(255, 255, 255, 0.07); }
+.pt-bars .peak i { background: var(--soft); }
+.pt-bars .on i { outline: 2px solid var(--fg); outline-offset: 1px; }
+.pt-bars:focus-visible { outline-offset: 4px; }
+.pt-x { display: flex; justify-content: space-between; margin-top: 0.35rem; font-size: 0.78rem; color: var(--muted); }
+.pair.steps { margin-top: 1.6rem; }
+.cols .rank { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem 2.4rem; }
+@media (max-width: 900px) { .ch-band { grid-template-columns: minmax(0, 1fr); } .cols .rank { grid-template-columns: minmax(0, 1fr); } }
+
+.ch-replay { position: absolute; z-index: 3; top: 5.6rem; right: var(--gut); font: 500 0.82rem/1 var(--body); color: var(--fg); background: rgba(20, 20, 22, 0.8); border: 1px solid var(--line2); border-radius: 3px; padding: 0.45rem 0.8rem; cursor: pointer; }
+.ch-replay:hover { border-color: var(--soft); }
+@media (max-width: 820px) { .ch-replay { top: calc(4.75rem + min(62vw, 20rem) - 2.7rem); } }

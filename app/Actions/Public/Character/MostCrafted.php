@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class MostCrafted
 {
     /** Items the page lists. */
-    public const int SHOWN = 6;
+    public const int SHOWN = 3;
 
     /**
      * The items a character crafted most, by the quantity made.

@@ -2,36 +2,38 @@
 
 namespace App\View\Pages;
 
-use App\Support\ItemQuality;
 use App\View\Format;
-use App\View\ItemTypes;
 use Illuminate\Support\Carbon;
 
-/** The Records strip of the character page: one tile for each fact the character holds a record in. */
+/**
+ * The Records strip of the character page: a lead tile and the tiles of the other facts the character holds a record in.
+ * A fact the page shows in a list or a figure elsewhere is not a tile.
+ */
 final class CharacterRecords
 {
-    /** Tiles shown; the ones listed last drop first. */
-    public const int SHOWN = 8;
+    /** Tiles beside the lead. */
+    public const int SHOWN = 6;
 
-    /** Tiles a strip needs to be worth a section. */
+    /** Tiles that fill the two rows beside the lead. */
+    private const int BESIDE = 4;
+
+    /** Tiles, the lead included, a strip needs to be worth a section. */
     private const int LEAST = 3;
 
     /**
      * @param  array<string, mixed>  $records  the answer of App\Actions\Public\Character\Records
      * @param  array<string, mixed>  $totals  the answer of App\Actions\Public\Character\SessionTotals
-     * @param  array<string, mixed>  $items  the answer of App\Actions\Public\Character\ItemsFound
-     * @param  list<array{id: int, name: string, kills: int}>  $killed  the answer of App\Actions\Public\Character\MostKilled
-     * @return list<array{value: string, label: string, detail: string|null, href: string|null, class: string|null}>
+     * @return array{lead: array<string, string|null>, tiles: list<array<string, string|null>>}|null
      */
-    public static function tiles(array $records, array $totals, array $items, array $killed, string $since = ''): array
+    public static function tiles(array $records, array $totals, string $since = ''): ?array
     {
         $since = ltrim($since);
         $tiles = [];
         if ($records['blow'] !== null) {
             $blow = $records['blow'];
-            $tiles[] = self::tile(Format::number($blow['damage']), 'Biggest killing blow taken', ucfirst(implode(', ', array_filter([
-                $blow['killer'], $blow['level'] === null ? null : 'level '.$blow['level'], $blow['zone'],
-            ]))));
+            $tiles[] = self::tile(Format::number($blow['damage']), 'Biggest killing blow taken', implode(', ', array_filter([
+                'Killed by '.$blow['killer'], $blow['level'] === null ? null : 'level '.$blow['level'], $blow['zone'],
+            ])));
         }
         if ($totals['longest'] !== null) {
             $tiles[] = self::tile(Format::duration($totals['longest']['seconds']), 'Longest session', self::day($totals['longest']['at']));
@@ -39,37 +41,58 @@ final class CharacterRecords
         if ($totals['busiest'] !== null) {
             $tiles[] = self::tile(Format::number($totals['busiest']['kills']), 'Most kills in one session', self::day($totals['busiest']['at']));
         }
-        if ($records['slowest'] !== null) {
-            $tiles[] = self::tile(Format::duration($records['slowest']['seconds']), 'Slowest level', 'Level '.$records['slowest']['level']);
-        }
-        if ($killed !== []) {
-            $tiles[] = self::tile(Format::number($killed[0]['kills']), 'Most killed creature', $killed[0]['name'], '/creatures/'.$killed[0]['id'], since: $since);
-        }
-        if ($items['gear'] !== null) {
-            $best = $items['gear'];
-            $quality = ItemQuality::from($best['quality']);
-            $tiles[] = self::tile($best['name'], 'Best gear', $quality->label().($best['item_level'] === null ? '' : ', item level '.$best['item_level']), '/items/'.$best['item_id'], ItemTypes::quality($best['quality']), true);
+        if ($totals['questiest'] !== null) {
+            $tiles[] = self::tile(Format::number($totals['questiest']['quests']), 'Most quests in one session', self::day($totals['questiest']['at']));
         }
         if ($records['nodes'] > 0) {
-            $tiles[] = self::tile(Format::number($records['nodes']), 'Herbs and ore gathered', $since);
+            $tiles[] = self::tile(Format::number($records['nodes']), 'Nodes gathered', $since, self::taken('Most gathered', $records['topNode']));
         }
         if ($records['fish'] > 0) {
-            $tiles[] = self::tile(Format::number($records['fish']), 'Fish caught', $since);
+            $tiles[] = self::tile(Format::number($records['fish']), 'Fish caught', $since, self::taken('Most caught', $records['topFish']));
         }
-        if ($records['afk'] > 0) {
-            $tiles[] = self::tile(Format::duration($records['afk']), 'Away from keyboard', $since);
+        if (count($tiles) < self::LEAST) {
+            return null;
         }
+        $lead = array_shift($tiles);
         $tiles = array_slice($tiles, 0, self::SHOWN);
 
-        return count($tiles) < self::LEAST ? [] : $tiles;
+        return ['lead' => $lead, 'tiles' => self::spans($tiles)];
     }
 
-    /** @return array{value: string, label: string, detail: string|null, href: string|null, class: string|null, text: bool} */
-    private static function tile(string $value, string $label, ?string $detail = null, ?string $href = null, ?string $class = null, bool $text = false, string $since = ''): array
+    /**
+     * Gives each tile its width on a 4-column strip whose lead takes two columns and two rows: the first four tiles fill
+     * the rows beside it, the rest share a row of their own, and a short strip stretches its last tiles.
+     *
+     * @param  list<array<string, string|null>>  $tiles
+     * @return list<array<string, string|null>>
+     */
+    private static function spans(array $tiles): array
     {
-        $detail = $since === '' ? $detail : trim(($detail ?? '').' '.$since);
+        $beside = min(count($tiles), self::BESIDE);
+        $below = count($tiles) - $beside;
+        foreach ($tiles as $i => $tile) {
+            $tiles[$i]['span'] = match (true) {
+                $i >= self::BESIDE => $below === 1 ? 'c4' : 'c2',
+                $beside === 1 => 'c2 r2',
+                $beside === 2 => 'c2',
+                $beside === 3 && $i === 2 => 'c2',
+                default => null,
+            };
+        }
 
-        return ['value' => $value, 'label' => $label, 'detail' => $detail === '' ? null : $detail, 'href' => $href, 'class' => $class, 'text' => $text];
+        return $tiles;
+    }
+
+    /** @param  array{item_id: int, name: string, quantity: int}|null  $taken */
+    private static function taken(string $label, ?array $taken): ?string
+    {
+        return $taken === null ? null : $label.': '.$taken['name'].', '.Format::number($taken['quantity']);
+    }
+
+    /** @return array<string, string|null> */
+    private static function tile(string $value, string $label, ?string $detail = null, ?string $extra = null): array
+    {
+        return ['value' => $value, 'label' => $label, 'detail' => $detail === '' ? null : $detail, 'extra' => $extra, 'span' => null];
     }
 
     private static function day(string $at): string

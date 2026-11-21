@@ -1,4 +1,4 @@
-<x-module :span="$span" :first="$first" :last="$last" id="h-talents" heading="Talents">
+<x-module :span="$span" :first="$first" :last="$last" id="h-talents" heading="Latest builds">
   @foreach ($d['talents']['groups'] as $group)
   <div @class(['talent-group', 'first' => $loop->first])>
     @if ($group['label'])<h3 class="sub">{{ $group['label'] }}</h3>@endif

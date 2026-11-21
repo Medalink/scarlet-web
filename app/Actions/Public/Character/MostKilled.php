@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class MostKilled
 {
     /** Creatures the page lists. */
-    public const int SHOWN = 8;
+    public const int SHOWN = 5;
 
     /**
      * The creatures a character killed most, from the daily kill aggregate. A creature nobody has named is left out.

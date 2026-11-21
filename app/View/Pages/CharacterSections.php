@@ -2,7 +2,6 @@
 
 namespace App\View\Pages;
 
-use App\Actions\Public\Character\DeathLog;
 use App\Actions\Public\Character\SkillRanks;
 use App\Support\ItemOrigin;
 use App\Support\ItemQuality;
@@ -16,6 +15,8 @@ final class CharacterSections
 {
     /** Characters that completed a level before the ruleset's median time in it is shown. */
     private const int MEDIAN_FROM = 2;
+
+    private const int DEATH_ZONES = 3;
 
     /**
      * @param  array{zones: list<array<string, mixed>>, others: int, other_seconds: float}  $hours
@@ -35,36 +36,66 @@ final class CharacterSections
     }
 
     /**
-     * One cell per level from 1 to the character's level, and every logged death as a table row.
-     *
-     * @param  array{levels: array<int, int>, rows: list<array<string, mixed>>}  $log
+     * @param  array{rows: list<array<string, mixed>>}  $log
      * @param  array{total: int, zones: list<array<string, mixed>>}  $deaths
      * @return array<string, mixed>
      */
     public static function deaths(array $log, array $deaths, int $level): array
     {
-        $top = max($level, $log['levels'] === [] ? 0 : max(array_keys($log['levels'])));
-        $strip = [];
-        for ($n = 1; $n <= $top; $n++) {
-            $count = $log['levels'][$n] ?? 0;
-            $strip[] = ['level' => $n, 'count' => $count, 'say' => $count === 0 ? 'Level '.$n.': no deaths' : 'Level '.$n.': '.Format::count($count, 'death')];
-        }
         $rows = array_map(fn (array $row): array => ['cells' => [
             $row['level'] === null ? '' : (string) $row['level'],
             $row['zone_id'] !== null && $row['zone'] !== null ? ['text' => (string) $row['zone'], 'href' => '/zones/'.$row['zone_id']] : (string) ($row['zone'] ?? ''),
             $row['killer'] ?? 'Killer not recorded',
             $row['damage'] === null ? '' : Format::number($row['damage']),
         ]], $log['rows']);
-        $zones = array_map(fn (array $row): string => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']).' '.$row['deaths'], $deaths['zones']);
+        $zones = array_map(fn (array $row): string => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']).' '.$row['deaths'], array_slice($deaths['zones'], 0, self::DEATH_ZONES));
         $shown = count($log['rows']);
 
         return [
-            'strip' => $deaths['total'] === 0 ? [] : $strip,
+            ...self::deathMarks($log['rows'], $level),
             'columns' => [['label' => 'Level', 'numeric' => true], ['label' => 'Zone'], ['label' => 'Killer'], ['label' => 'Killing blow', 'numeric' => true]],
             'rows' => $rows,
+            'all' => $shown < $deaths['total'] ? 'Latest '.$shown.' of '.Format::number($deaths['total']).' deaths' : 'All '.Format::count($deaths['total'], 'death'),
             'total' => ($deaths['total'] === 0 ? 'No deaths recorded.' : Format::count($deaths['total'], 'death').' recorded.')
-                .($shown < $deaths['total'] ? ' The latest '.DeathLog::SHOWN.' are listed.' : '')
                 .($zones === [] ? '' : ' Most in '.implode(', ', $zones).'.'),
+        ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return array{spec: array<string, mixed>|null, key: list<array<string, mixed>>}
+     */
+    private static function deathMarks(array $rows, int $level): array
+    {
+        $dated = array_values(array_filter(array_reverse($rows), fn (array $row): bool => $row['level'] !== null));
+        if ($dated === []) {
+            return ['spec' => null, 'key' => []];
+        }
+        usort($dated, fn (array $a, array $b): int => $a['level'] <=> $b['level']);
+        $blows = array_values(array_filter(array_map(fn (array $row): int => (int) $row['damage'], $dated), fn (int $damage): bool => $damage > 0));
+        $peak = $blows === [] ? 0 : max($blows);
+        $least = $blows === [] ? 0 : min($blows);
+        $heights = $data = $say = [];
+        $biggest = 0;
+        foreach ($dated as $i => $row) {
+            $height = $heights[$row['level']] ?? 0;
+            $heights[$row['level']] = $height + 1;
+            $damage = (int) $row['damage'];
+            $data[] = [$row['level'], $height, $damage];
+            $biggest = $damage > (int) $dated[$biggest]['damage'] ? $i : $biggest;
+            $say[] = Format::line(
+                'Level '.$row['level'].($row['zone'] === null ? '' : ', '.$row['zone']),
+                ': '.($row['killer'] ?? 'Killer not recorded').($damage > 0 ? ', '.Format::number($damage) : ''),
+            );
+        }
+        $top = max($level, ...array_map(fn (array $row): int => (int) $row['level'], $dated));
+
+        return [
+            'spec' => Charts::dots(['w' => 1100, 'x0' => 0, 'x1' => $top + 1, 'rows' => max($heights), 'peak' => $peak, 'xt' => Charts::ticks(Axis::spread(1, $top))], $data, $say, $biggest),
+            'key' => $peak > $least ? [
+                ['label' => 'Killing blow '.Format::number($least), 'class' => 'k-dot', 'style' => 'width:0.45rem;height:0.45rem'],
+                ['label' => Format::number($peak), 'class' => 'k-dot', 'style' => 'width:0.95rem;height:0.95rem'],
+            ] : [],
         ];
     }
 
@@ -90,20 +121,17 @@ final class CharacterSections
             $segments[] = ['class' => $quality->fill(), 'count' => $count, 'say' => $quality->label().' '.Format::number($count)];
             $key[] = ['label' => $quality->label().' '.Format::number($count), 'class' => $quality->fill()];
         }
-        $top = max(1, (int) max([0, ...array_column($items['best'], 'item_level')]));
 
         return [
             'looted' => $found === 0 ? null : [
                 'segments' => $segments,
                 'key' => $key,
                 'say' => Format::number($found).' items looted: '.implode(', ', array_column($segments, 'say')).'.',
-                'total' => Format::number($found).' items looted',
             ],
             'best' => array_map(fn (array $row): array => [
                 'label' => (string) $row['name'], 'href' => '/items/'.$row['item_id'], 'quality' => ItemTypes::quality($row['quality']),
-                'value' => ($row['quantity'] > 1 ? '×'.Format::number($row['quantity']).', ' : '')
-                    .($row['item_level'] === null ? ItemQuality::from($row['quality'])->label() : 'item level '.$row['item_level']).', '.ItemOrigin::from($row['origin'])->label(),
-                'share' => ($row['item_level'] ?? 0) / $top * 100, 'class' => ItemQuality::from($row['quality'])->fill(),
+                'level' => $row['item_level'] === null ? '–' : (string) $row['item_level'],
+                'value' => ($row['quantity'] > 1 ? '×'.Format::number($row['quantity']).', ' : '').ItemQuality::from($row['quality'])->label().', '.ItemOrigin::from($row['origin'])->label(),
             ], $items['best']),
         ];
     }
@@ -149,14 +177,15 @@ final class CharacterSections
      * Professions first, then the weapon and armour skills, each longest rank first.
      *
      * @param  list<array{skill: string, rank: int, cap: int}>  $skills
+     * @param  array<string, string>  $classes  the bar class of each skill the skills chart draws a line for
      * @return list<array<string, mixed>>
      */
-    public static function skills(array $skills): array
+    public static function skills(array $skills, array $classes = []): array
     {
         usort($skills, fn (array $a, array $b): int => [Profession::tryFrom($a['skill']) === null, $b['rank'], $a['skill']] <=> [Profession::tryFrom($b['skill']) === null, $a['rank'], $b['skill']]);
 
         return array_map(fn (array $row): array => [
-            'label' => $row['skill'], 'value' => Format::number($row['rank']), 'share' => $row['rank'] / max(1, $row['cap'] ?: SkillRanks::CAP) * 100,
+            'label' => $row['skill'], 'class' => $classes[$row['skill']] ?? null, 'value' => Format::number($row['rank']), 'share' => $row['rank'] / max(1, $row['cap'] ?: SkillRanks::CAP) * 100,
         ], $skills);
     }
 }

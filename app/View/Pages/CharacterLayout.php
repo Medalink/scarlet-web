@@ -3,56 +3,82 @@
 namespace App\View\Pages;
 
 /**
- * The order of the modules of the character page under the records and the week: one row per list entry, each entry a
- * module of resources/views/pages/character/ with its width on the 12-column sheet (null is a third) and the level of
- * its heading. A character at the level cap leads with what it did there and moves the levelling under its own heading.
- * The levelling modules (time in each level, experience by level) are left out when the character has nothing in them:
- * one first seen at the cap has no levelling to show.
+ * The chapters of the character page under the records and the week. A chapter is a heading, a lead module at the full
+ * width of the 12-column sheet, and the rest packed into rows of 12, the last row stretched to fill it. A character with
+ * an hour at the level cap leads with what it did there and moves the levelling chapter down.
  */
 final class CharacterLayout
 {
-    /** The module that draws the heading of the levelling section. */
-    public const string LEVELLING = 'levelling';
+    private const int FULL = 12;
 
     /**
-     * @return list<list<array{module: string, span: string|null, level: int}>>
+     * @param  bool  $steps  the skills module leads with its step lines and takes eight columns
+     * @param  bool  $talents  the character has a stored talent build, which gets a chapter after combat
+     * @param  bool  $levels  the character has a Levels figure; without one, quests lead the levelling chapter or it is left out
+     * @return list<array{id: string, title: string, rows: list<list<array{module: string, span: string|null, level: int}>>}>
      */
-    public static function rows(bool $capped, bool $gold, bool $talents, bool $levelTimes = true, bool $xp = true): array
+    public static function chapters(bool $capped, bool $gold, bool $quests, bool $creatures, bool $steps, bool $talents, bool $levels): array
     {
-        $build = $talents ? [[self::m('talents', 'w8'), self::m('respecs')], [self::m('talent-order', 'w12')], [self::m('talent-facts', 'w12')]] : [];
+        $levelling = match (true) {
+            $levels => self::chapter('Levelling', 'levelling', 'levels', $quests ? [['quests', 8]] : []),
+            $quests => self::chapter('Levelling', 'levelling', 'quests', []),
+            default => null,
+        };
+        $combat = self::chapter('Combat', 'combat', 'deaths', [['killed', 4], ['runs', 8], ...($creatures ? [['creatures', 4]] : [])]);
+        $loot = self::chapter('Loot and skills', 'loot', 'items', [['skills', $steps ? 8 : 4], ...($gold ? [['gold', 4]] : [])]);
+        $build = self::chapter('Talents', 'talents', 'talents', [['respecs', 4], ['talent-order', 12], ['talent-facts', 12]]);
+        $time = self::chapter('Play time', 'time', 'hours', [['zones', 12], ['history', 12]]);
 
-        if (! $capped) {
-            return array_values(array_filter([
-                $levelTimes || $gold ? [...($levelTimes ? [self::m('level-times', $gold ? 'w8' : 'w12')] : []), ...($gold ? [self::m('gold', $levelTimes ? null : 'w12')] : [])] : null,
-                $xp ? [self::m('xp', 'w8'), self::m('zones')] : [self::m('zones', 'w12')],
-                [self::m('deaths', 'w12')],
-                [self::m('items', 'w8'), self::m('skills')],
-                [self::m('killed'), self::m('runs', 'w8')],
-                [self::m('days'), self::m('hours', 'w8')],
-                [self::m('crafted', 'w12')],
-                ...$build,
-                [self::m('history', 'w12')],
-            ]));
+        $chapters = $capped ? [$combat, $loot, $time, $levelling] : [$levelling, $combat, $loot, $time];
+        if ($talents) {
+            array_splice($chapters, 2, 0, [$build]);
         }
 
-        return array_values(array_filter([
-            [self::m('killed'), self::m('runs', 'w8')],
-            [self::m('deaths', 'w12')],
-            [self::m('items', 'w8'), self::m('skills')],
-            [self::m('crafted', 'w5'), self::m('zones', 'w7')],
-            [self::m('days'), self::m('hours', 'w8')],
-            ...($gold ? [[self::m('gold', 'w12')]] : []),
-            ...$build,
-            $levelTimes || $xp ? [self::m(self::LEVELLING, 'w12')] : null,
-            $levelTimes ? [self::m('level-times', 'w12', 3)] : null,
-            $xp ? [self::m('xp', 'w12', 3)] : null,
-            [self::m('history', 'w12')],
-        ]));
+        return array_values(array_filter($chapters));
     }
 
-    /** @return array{module: string, span: string|null, level: int} */
-    private static function m(string $module, ?string $span = null, int $level = 2): array
+    /**
+     * @param  list<array{0: string, 1: int}>  $rest  the modules after the lead with their width in columns
+     * @return array{id: string, title: string, rows: list<list<array{module: string, span: string|null, level: int}>>}
+     */
+    private static function chapter(string $title, string $id, string $lead, array $rest): array
     {
-        return ['module' => $module, 'span' => $span, 'level' => $level];
+        $rows = [[['module' => $lead, 'span' => 'w12', 'level' => 3]]];
+        $row = [];
+        $used = 0;
+        foreach ($rest as [$module, $width]) {
+            if ($used + $width > self::FULL) {
+                $rows[] = self::filled($row, self::FULL - $used);
+                $row = [];
+                $used = 0;
+            }
+            $row[] = ['module' => $module, 'width' => $width];
+            $used += $width;
+        }
+        if ($row !== []) {
+            $rows[] = self::filled($row, self::FULL - $used);
+        }
+
+        return ['id' => 'h-ch-'.$id, 'title' => $title, 'rows' => $rows];
+    }
+
+    /**
+     * @param  list<array{module: string, width: int}>  $row
+     * @param  int  $spare  the columns of the row no module takes, which the last module takes
+     * @return list<array{module: string, span: string|null, level: int}>
+     */
+    private static function filled(array $row, int $spare): array
+    {
+        $last = count($row) - 1;
+        $modules = [];
+        foreach ($row as $i => $m) {
+            $modules[] = ['module' => $m['module'], 'span' => match ($m['width'] + ($i === $last ? $spare : 0)) {
+                4 => null,
+                8 => 'w8',
+                default => 'w12',
+            }, 'level' => 3];
+        }
+
+        return $modules;
     }
 }

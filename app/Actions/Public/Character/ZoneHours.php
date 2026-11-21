@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 class ZoneHours
 {
     /** Zones the page lists; the rest are counted. */
-    public const int SHOWN = 8;
+    public const int SHOWN = 5;
 
     /** Zones read at most: a character plays in far fewer. */
     private const int READ = 500;

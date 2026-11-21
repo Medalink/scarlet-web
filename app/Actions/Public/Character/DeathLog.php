@@ -10,20 +10,19 @@ use Illuminate\Support\Facades\DB;
 class DeathLog
 {
     /** Deaths the log lists, newest first. */
-    public const int SHOWN = 50;
+    public const int SHOWN = 400;
 
     public function __construct(private readonly ResolvePlayerName $players) {}
 
     /**
-     * Every death of a character by level, and its latest deaths with where and by what. `killer` is a creature's name,
+     * `killer` is a creature's name,
      * a player's name only when ResolvePlayerName may show it, `ResolvePlayerName::UNKNOWN` for any other player, or
      * null when the death has no killer. A guild is never read.
      *
-     * @return array{levels: array<int, int>, rows: list<array{level: int|null, zone_id: int|null, zone: string|null, killer: string|null, damage: int|null}>}
+     * @return array{rows: list<array{level: int|null, zone_id: int|null, zone: string|null, killer: string|null, damage: int|null}>}
      */
     public function handle(int $characterId, bool $owner): array
     {
-        $levels = DB::table('deaths')->where('character_id', $characterId)->whereNotNull('level')->groupBy('level')->selectRaw('level, count(*) as deaths')->pluck('deaths', 'level');
         $rows = DB::table('deaths')->where('character_id', $characterId)->orderByDesc('at')->limit(self::SHOWN)
             ->selectRaw('level, zone_id, (select z.name from zones z where z.id = deaths.zone_id) as zone, killer_kind, killer, damage')->get();
         $pseudonyms = [];
@@ -35,7 +34,6 @@ class DeathLog
         $names = $this->players->handle($characterId, $owner, $pseudonyms);
 
         return [
-            'levels' => array_map(fn (mixed $count): int => (int) $count, $levels->all()),
             'rows' => array_values($rows->map(fn (object $row): array => [
                 'level' => $row->level === null ? null : (int) $row->level,
                 'zone_id' => $row->zone_id === null ? null : (int) $row->zone_id,

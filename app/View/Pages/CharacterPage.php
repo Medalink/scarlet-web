@@ -11,6 +11,10 @@ use Illuminate\Support\Carbon;
 /** The data of docs/comps/character.html and the overview of /demo from the answer of App\Actions\Public\CharacterOverview. */
 final class CharacterPage
 {
+    private const int RATE_FROM = 600;
+
+    private const float BAR_REM = 6.0;
+
     /**
      * @param  array<string, mixed>  $r
      * @return array<string, mixed>
@@ -35,8 +39,11 @@ final class CharacterPage
         /** @var array<string, mixed> $totals */
         $totals = $r['totals'];
         $since = self::since($character);
-        $levelTimes = CharacterSections::levelTimes($r['levelTimes']);
-        $xp = StatsPage::xp($r['xp']);
+        $levels = CharacterLevels::figure($r['levelTimes'], $r['xp'], $r['deathLevels']);
+
+        $quests = CharacterLists::quests($r['questsDone']);
+        $creatures = CharacterLists::creatures($r['creaturesMet']);
+        $steps = CharacterSkills::chart($r['skillHistory'], $r['playBuckets']);
 
         return [
             'id' => $character->id,
@@ -45,13 +52,13 @@ final class CharacterPage
             'economy' => $economy,
             'since' => $since,
             'facts' => array_values(array_filter([
-                Format::character(null, $character->race, $character->class),
-                $character->faction,
-                $ruleset['label'] ?? null,
-                $character->whole_life || $character->first_level === null ? null : 'First recorded at level '.$character->first_level,
-            ])),
+                ['text' => Format::character(null, $character->race, $character->class), 'href' => null],
+                ['text' => $character->faction, 'href' => null],
+                $ruleset === null ? null : ['text' => $ruleset['name'], 'href' => '/rulesets/'.$ruleset['slug']],
+                $character->whole_life || $character->first_level === null ? null : ['text' => 'First recorded at level '.$character->first_level, 'href' => null],
+            ], fn (?array $fact): bool => $fact !== null && (string) $fact['text'] !== '')),
             'figures' => array_values(array_filter([
-                ['label' => 'Level', 'value' => (string) $character->level],
+                ['label' => 'Level', 'value' => (string) $character->level, 'count' => $character->level],
                 $character->played_known
                     ? ['label' => 'Played', 'value' => Format::duration($character->played_seconds)]
                     : ['label' => 'Recorded'.$since, 'value' => Format::duration($character->recorded_seconds)],
@@ -59,27 +66,27 @@ final class CharacterPage
                 ['label' => 'Kills'.$since, 'value' => Format::number($totals['kills'])],
                 ['label' => 'Deaths'.$since, 'value' => Format::number($totals['deaths'])],
                 ['label' => 'Quests'.$since, 'value' => Format::number($totals['quests'])],
-                ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1)],
+                round($totals['distance'], 1) > 0 ? ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1)] : null,
             ])),
-            'rows' => CharacterLayout::rows($cap !== null, $r['gold'] !== null, $r['talents'] !== null, $levelTimes !== null, $xp !== null),
-            'map' => MapSpec::levelled($r['heat']['cells'], [], $r['heat']['fit'], [], $r['marks']),
+            'chapters' => CharacterLayout::chapters($cap !== null, $r['gold'] !== null, $quests !== null, $creatures !== null, $steps !== null, $r['talents'] !== null, $levels !== null),
+            'map' => CharacterReplay::map($r['heat'], $r['marks']),
             'hasMap' => $r['heat']['cells'] !== [],
             'deathCount' => count($r['marks']),
             'week' => $week === null ? null : self::week($week, $economy),
-            'levelTimes' => $levelTimes,
-            'records' => CharacterRecords::tiles($r['records'], $totals, $r['items'], $r['killed'], $since),
-            'xp' => $xp,
+            'levels' => $levels,
+            'records' => CharacterRecords::tiles($r['records'], $totals, $since),
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
+            'quests' => $quests,
+            'creatures' => $creatures,
             'runs' => CharacterLists::runs($r['dungeonRuns'], $dungeons),
             'killed' => CharacterLists::killed($r['killed']),
             'crafted' => CharacterLists::crafted($r['crafted']),
-            'hours' => StatsPage::hours($r['hours']),
+            'play' => CharacterPlay::band($r['playBuckets'], Carbon::now()),
             'zoneHours' => CharacterSections::zones($r['zoneHours']),
             'deaths' => CharacterSections::deaths($r['deathLog'], $deaths, (int) $character->level),
             'items' => CharacterSections::items($r['items']),
-            'skills' => CharacterSections::skills($r['skills']),
+            'skills' => ['rows' => CharacterSections::skills($r['skills'], $steps['classes'] ?? []), 'steps' => $steps],
             'talents' => CharacterTalents::data($r['talents']),
-            'days' => self::days($r['days']),
             'sessions' => self::sessions($sessions, $economy),
             'more' => count($sessions) >= $r['history'] && $r['history'] < CharacterRequest::MAX_HISTORY ? '/c/'.$character->name.'?sessions='.min($r['history'] * 4, CharacterRequest::MAX_HISTORY) : null,
         ];
@@ -134,42 +141,9 @@ final class CharacterPage
         ];
     }
 
-    /**
-     * Play time by day from the first played day to the last, a column per week from Monday.
-     *
-     * @param  array<string, float>  $days
-     * @return array<string, mixed>|null
-     */
-    private static function days(array $days): ?array
+    private static function xpPerHour(int $xp, int $seconds): string
     {
-        if ($days === []) {
-            return null;
-        }
-        $first = Carbon::parse((string) array_key_first($days))->startOfWeek();
-        $end = Carbon::parse((string) array_key_last($days));
-        $busiest = Carbon::parse((string) array_search(max($days), $days));
-        $cells = $say = $months = [];
-        $previous = null;
-        for ($day = $first->copy(); $day <= $end->copy()->endOfWeek(); $day->addDay()) {
-            $seconds = $days[$day->toDateString()] ?? 0.0;
-            $hours = $seconds / 3600;
-            $cells[] = [match (true) {
-                $seconds <= 0 => 0,
-                $hours < 1 => 1,
-                $hours < 2 => 2,
-                $hours < 4 => 3,
-                default => 4,
-            }, $day > $end ? 1 : 0];
-            $say[] = Format::line($day->format('D j M'), $seconds > 0 ? ': '.Format::duration($seconds).' played.' : ': not played.');
-            if ($day->dayOfWeekIso === 1) {
-                $months[] = $day->format('M') === $previous ? '' : $day->format('M');
-                $previous = $day->format('M');
-            }
-        }
-
-        $summary = Format::line('Busiest day', ': '.$busiest->format('D j M').', '.Format::duration($days[$busiest->toDateString()]));
-
-        return ['spec' => Charts::days($cells, $months, $say, 'days-out', (int) $first->diffInDays($busiest), $summary), 'line' => $summary];
+        return $xp > 0 && $seconds >= self::RATE_FROM ? Format::number($xp / $seconds * 3600) : '';
     }
 
     /**
@@ -178,16 +152,17 @@ final class CharacterPage
      */
     private static function sessions(array $sessions, bool $economy): array
     {
-        $columns = [['label' => 'Started'], ['label' => 'Played', 'numeric' => true], ['label' => 'Levels', 'numeric' => true], ['label' => 'XP', 'numeric' => true], ['label' => 'Kills', 'numeric' => true], ['label' => 'Deaths', 'numeric' => true], ['label' => 'Quests', 'numeric' => true]];
+        $longest = max([1, ...array_column($sessions, 'seconds')]);
+        $columns = [['label' => 'Started'], ['label' => 'Played', 'numeric' => true], ['label' => 'Played, to scale', 'hide' => true, 'class' => 'viz'], ['label' => 'XP per hour', 'numeric' => true], ['label' => 'Levels', 'numeric' => true], ['label' => 'XP', 'numeric' => true], ['label' => 'Kills', 'numeric' => true], ['label' => 'Deaths', 'numeric' => true], ['label' => 'Quests', 'numeric' => true]];
         if ($economy) {
             $columns[] = ['label' => 'Gold', 'numeric' => true];
         }
 
         return [
             'columns' => $columns,
-            'rows' => array_map(function (array $row) use ($economy): array {
+            'rows' => array_map(function (array $row) use ($economy, $longest): array {
                 $levels = $row['level_start'] === null ? '' : ($row['level_start'] === $row['level_end'] ? (string) $row['level_start'] : $row['level_start'].' to '.$row['level_end']);
-                $cells = [Carbon::parse((string) $row['at'])->format('j M H:i'), Format::duration($row['seconds']), $levels, Format::number($row['xp'] ?? 0), Format::number($row['kills'] ?? 0), Format::number($row['deaths'] ?? 0), Format::number($row['quests'] ?? 0)];
+                $cells = [Carbon::parse((string) $row['at'])->format('j M H:i'), Format::duration($row['seconds']), ['text' => '', 'bar' => round($row['seconds'] / $longest * self::BAR_REM, 2).'rem'], self::xpPerHour((int) ($row['xp'] ?? 0), (int) $row['seconds']), $levels, Format::number($row['xp'] ?? 0), Format::number($row['kills'] ?? 0), Format::number($row['deaths'] ?? 0), Format::number($row['quests'] ?? 0)];
                 if ($economy) {
                     $cells[] = Format::moneyText($row['gold'] ?? 0, true);
                 }

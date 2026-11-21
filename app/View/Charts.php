@@ -38,6 +38,24 @@ final class Charts
     }
 
     /**
+     * Step lines: a value that holds until it changes. $series: [['cls' => 'p1', 'pts' => [[x, y]]]], each line starting at its
+     * first point and holding its last value to $axes' x1; $samples: [[x, [y of each series, or null before its first point]]],
+     * the positions the reader steps through, one $say line each.
+     *
+     * @param  array<string, mixed>  $axes
+     * @param  list<array<string, mixed>>  $series
+     * @param  list<array{0: float, 1: list<int|null>}>  $samples
+     * @param  list<array{0: string, 1: string}>  $say
+     * @return array<string, mixed>
+     */
+    public static function steps(array $axes, array $series, array $samples, array $say, int $rest, string $out): array
+    {
+        $series = array_map(fn (array $s): array => [...$s, 'pts' => self::points($s['pts'])], $series);
+
+        return self::reading(['kind' => 'steps', ...$axes, 'series' => $series, 'samples' => $samples], $say, $rest, $out);
+    }
+
+    /**
      * A bar chart. $data: [[x, value, lo, hi, tick]]; lo and hi draw a whisker, tick a mark across the bar at that value.
      *
      * @param  array<string, mixed>  $axes
@@ -65,6 +83,17 @@ final class Charts
     }
 
     /**
+     * @param  array{w: int, x0: int, x1: int, rows: int, peak: int, xt: list<array{0: int|float, 1: string}>}  $axes
+     * @param  list<array{0: int, 1: int, 2: int}>  $data
+     * @param  list<array{0: string, 1: string}>|null  $say
+     * @return array<string, mixed>
+     */
+    public static function dots(array $axes, array $data, ?array $say = null, ?int $rest = null, ?string $out = null): array
+    {
+        return self::reading(['kind' => 'dots', ...$axes, 'data' => $data], $say, $rest, $out);
+    }
+
+    /**
      * Stacked shares, one row per step: [kill, dungeon, quest, explore, other], each a share of 1.
      *
      * @param  list<list<int|float>>  $rows
@@ -74,6 +103,20 @@ final class Charts
     public static function shares(array $rows, ?array $say = null, ?int $rest = null): array
     {
         return self::reading(['kind' => 'shares', 'rows' => self::points($rows)], $say, $rest, null);
+    }
+
+    /**
+     * Hours by level. $data: [[level, hours or null, [kill, dungeon, quest, explore, other] shares or null, ruleset median hours or null, deaths]],
+     * one row per level from the first to the last; the bar of a level is split by its shares.
+     *
+     * @param  array<string, mixed>  $axes
+     * @param  list<array{0: int, 1: float|null, 2: list<float>|null, 3: float|null, 4: int}>  $data
+     * @param  list<array{0: string, 1: string}>|null  $say
+     * @return array<string, mixed>
+     */
+    public static function levels(array $axes, array $data, ?array $say = null, ?int $rest = null, ?string $out = null): array
+    {
+        return self::reading(['kind' => 'levels', ...$axes, 'data' => array_map(fn (array $row): array => [$row[0], $row[1] === null ? null : round($row[1], 3), $row[2], $row[3] === null ? null : round($row[3], 3), $row[4]], $data)], $say, $rest, $out);
     }
 
     /**

@@ -1,4 +1,4 @@
-<x-module :span="$span" :first="$first" :last="$last" id="h-hist" heading="Play history">
+<x-module :span="$span" :first="$first" :last="$last" :level="$level" id="h-hist" heading="Play history">
   @if ($d['sessions']['rows'])
   <x-table :rows="$d['sessions']['rows']" :columns="$d['sessions']['columns']" />
   @if ($d['more'])<p class="note"><a href="{{ $d['more'] }}">Show more sessions</a></p>@endif

@@ -3,6 +3,7 @@
 namespace App\Actions\Public;
 
 use App\Actions\Public\Character\CapState;
+use App\Actions\Public\Character\CreaturesMet;
 use App\Actions\Public\Character\DeathLog;
 use App\Actions\Public\Character\DungeonRuns;
 use App\Actions\Public\Character\HeatCells;
@@ -10,8 +11,10 @@ use App\Actions\Public\Character\HourlyPlay;
 use App\Actions\Public\Character\ItemsFound;
 use App\Actions\Public\Character\MostCrafted;
 use App\Actions\Public\Character\MostKilled;
+use App\Actions\Public\Character\QuestsDone;
 use App\Actions\Public\Character\Records;
 use App\Actions\Public\Character\SessionTotals;
+use App\Actions\Public\Character\SkillHistory;
 use App\Actions\Public\Character\SkillRanks;
 use App\Actions\Public\Character\Talents;
 use App\Actions\Public\Character\ZoneHours;
@@ -55,6 +58,9 @@ class CharacterOverview
         private readonly HeatCells $heatCells,
         private readonly CapState $capState,
         private readonly Talents $talents,
+        private readonly QuestsDone $questsDone,
+        private readonly CreaturesMet $creaturesMet,
+        private readonly SkillHistory $skillHistory,
     ) {}
 
     /**
@@ -93,6 +99,7 @@ class CharacterOverview
             'xp' => $this->xp($id),
             'dungeons' => $this->dungeons($id),
             'deaths' => $this->deaths($id, $owner),
+            'deathLevels' => $this->deathLevels($id),
             'zoneHours' => $this->zoneHours->handle($id),
             'deathLog' => $this->deathLog->handle($id, $owner),
             'items' => $this->itemsFound->handle($id),
@@ -102,9 +109,12 @@ class CharacterOverview
             'killed' => $this->mostKilled->handle($id),
             'crafted' => $this->mostCrafted->handle($id),
             'dungeonRuns' => $this->dungeonRuns->handle($id),
+            'questsDone' => $this->questsDone->handle($id),
+            'creaturesMet' => $this->creaturesMet->handle($id),
             'totals' => $totals,
             'days' => $play['days'],
-            'hours' => $play['hours'],
+            'playBuckets' => $play['buckets'],
+            'skillHistory' => $this->skillHistory->handle($id, $play['buckets']),
             'gold' => $economy ? $this->gold($id) : null,
             'sessions' => $this->sessions($id, $economy, $history),
             'distance' => $totals['distance'],
@@ -112,11 +122,11 @@ class CharacterOverview
         ];
     }
 
-    /** @return list<array{kind: string, u: float, v: float}> */
+    /** @return list<array{kind: string, u: float, v: float, day: string}> the deaths on the map, oldest first, each with its UTC day */
     private function marks(int $id): array
     {
-        return array_values(DB::table('deaths')->where('character_id', $id)->whereNotNull('u')->orderBy('at')->limit(500)->get(['u', 'v'])
-            ->map(fn (object $row): array => ['kind' => 'death', 'u' => round((float) $row->u, 5), 'v' => round((float) $row->v, 5)])->all());
+        return array_values(DB::table('deaths')->where('character_id', $id)->whereNotNull('u')->orderBy('at')->limit(500)->get(['u', 'v', 'at'])
+            ->map(fn (object $row): array => ['kind' => 'death', 'u' => round((float) $row->u, 5), 'v' => round((float) $row->v, 5), 'day' => Carbon::parse((string) $row->at)->utc()->toDateString()])->all());
     }
 
     /**
@@ -204,6 +214,13 @@ class CharacterOverview
             ])->all()),
             'zones' => array_values($zones->map(fn (object $row): array => ['zone_id' => (int) $row->zone_id, 'zone' => $row->zone, 'deaths' => (int) $row->deaths])->all()),
         ];
+    }
+
+    /** @return array<int, int> the deaths at each level the character died at */
+    private function deathLevels(int $id): array
+    {
+        return array_map(fn (mixed $count): int => (int) $count, DB::table('deaths')->where('character_id', $id)->whereNotNull('level')->groupBy('level')
+            ->orderBy('level')->selectRaw('level, count(*) as deaths')->pluck('deaths', 'level')->all());
     }
 
     /** @return list<array{at: string, balance: int}> the balance at the end of the last sessions, oldest first */
