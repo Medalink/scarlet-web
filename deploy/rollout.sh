@@ -182,7 +182,7 @@ prune_registry() {
     digest=$(curl -sfI -H "Accept: $accept" "$api/manifests/$tag" | tr -d '\r' | sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: //p')
     [ -n "$digest" ] && curl -sf -X DELETE "$api/manifests/$digest" >/dev/null && deleted=$((deleted + 1))
   done
-  [ "$deleted" -eq 0 ] || $dc exec -T registry registry garbage-collect --delete-untagged /etc/distribution/config.yml >/dev/null
+  [ "$deleted" -eq 0 ] || $dc exec -T registry registry garbage-collect --delete-untagged /etc/distribution/config.yml >/dev/null 2>&1
 }
 
 if [ "${1:-}" = --rollback ]; then

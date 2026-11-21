@@ -161,7 +161,7 @@ take_lock() {
     echo "deploy: another deploy is running; waiting for it"
     sleep 3
   done
-  trap 'report; [ -z "$registry_job" ] || kill "$registry_job" 2>/dev/null; srv "rm -rf '"$lock"'"' EXIT
+  trap 'report; [ -z "$registry_job" ] || kill "$registry_job" 2>/dev/null || true; srv "rm -rf '"$lock"'"' EXIT
 }
 
 release() {
