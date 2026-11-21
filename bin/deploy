@@ -124,7 +124,7 @@ ship_new_layers() {
   local tag=$1 after ready= rc=0 at=$registry_url t0 t1
   t0=$(now)
   for _ in $(seq 1 150); do
-    if [ -s "$timing/before_kb" ] && curl -sf -o /dev/null "http://127.0.0.1:$tunnel_port/v2/"; then ready=1; break; fi
+    if [ -s "$timing/before_kb" ] && curl -sf --max-time 2 -o /dev/null "http://127.0.0.1:$tunnel_port/v2/"; then ready=1; break; fi
     kill -0 "$registry_job" 2>/dev/null || break
     sleep 0.1
   done
