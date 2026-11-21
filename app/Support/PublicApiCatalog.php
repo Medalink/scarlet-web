@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Http\Controllers\Api\V1\Public\LeaderboardController;
 use App\Http\Controllers\Api\V1\Public\MapController;
 use App\Http\Controllers\Api\V1\Public\StatsController;
 
@@ -15,6 +16,7 @@ final class PublicApiCatalog
     public const array PARAMS = [
         'ruleset' => ['ruleset', 'query', 'string', 'A ruleset slug from `/rulesets`. Leave out for all rulesets.'],
         'server' => ['server', 'query', 'string', '`all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given.'],
+        'class' => ['class', 'query', 'string', 'A class file name such as `WARRIOR`.'],
         'cursor' => ['cursor', 'query', 'string', 'The `next_cursor` of the previous page.'],
         'limit' => ['limit', 'query', 'integer', 'Rows per page, 1 to 100. Default 25.'],
         'q' => ['q', 'query', 'string', 'The text to search for, 2 to 80 characters.'],
@@ -53,6 +55,20 @@ final class PublicApiCatalog
                 'params' => [['slug', 'path', 'string', 'A ruleset slug, or `all`.'], ['series', 'path', 'string', 'The series name.']],
                 'returns' => '`data`: the rows of the series. Buckets with fewer than `meta.min_characters` characters are left out.',
                 'example' => '/rulesets/all/series/levels', 'where' => ['slug' => '[a-z0-9-]+', 'series' => '[a-z]+'],
+            ],
+            [
+                'name' => 'leaderboards', 'group' => 'Leaderboards', 'path' => '/leaderboards', 'action' => [LeaderboardController::class, 'index'],
+                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests, most dungeon runs and most distance.',
+                'params' => [],
+                'returns' => '`data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).',
+                'example' => '/leaderboards', 'where' => [],
+            ],
+            [
+                'name' => 'leaderboard', 'group' => 'Leaderboards', 'path' => '/leaderboards/{board}', 'action' => [LeaderboardController::class, 'show'],
+                'summary' => 'One board, best first. Only public characters with counted sessions are listed.',
+                'params' => [['board', 'path', 'string', 'A board name from `/leaderboards`.'], 'ruleset', 'server', 'class', 'cursor', 'limit'],
+                'returns' => '`data`: rows with `rank`, `name`, `race`, `class`, `value`, `ruleset`, `hardcore`, `deaths` and `at`. `meta.next_cursor`, `meta.total`.',
+                'example' => '/leaderboards/most-quests?limit=2', 'where' => ['board' => '[a-z0-9-]+'],
             ],
             [
                 'name' => 'map-heat', 'group' => 'Map', 'path' => '/map/heat', 'action' => [MapController::class, 'heat'],

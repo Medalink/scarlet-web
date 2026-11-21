@@ -2,6 +2,7 @@
 
 namespace App\Actions\Maps;
 
+use App\Actions\Ingest\MeasureDistance;
 use App\Actions\Rollups\RefreshAggregates;
 use Illuminate\Support\Facades\DB;
 
@@ -22,7 +23,7 @@ class PlaceWorldPoints
         'creature_sightings' => ['map', '(t.cell_x + 0.5) * 0.015', '(t.cell_y + 0.5) * 0.015'],
     ];
 
-    public function __construct(private readonly RefreshAggregates $refresh) {}
+    public function __construct(private readonly RefreshAggregates $refresh, private readonly MeasureDistance $distance) {}
 
     /** @return array<string, int> rows placed per table */
     public function handle(): array
@@ -58,6 +59,13 @@ class PlaceWorldPoints
 
         if ($from !== null && $until !== null) {
             $this->refresh->handle($from, $until);
+        }
+
+        // Sessions stored before their points could be placed have no distance yet.
+        $placed['sessions'] = 0;
+        foreach (DB::table('sessions')->whereNull('distance')->get(['character_id', 'session_start']) as $session) {
+            $this->distance->handle((int) $session->character_id, (int) $session->session_start);
+            $placed['sessions']++;
         }
 
         return $placed;

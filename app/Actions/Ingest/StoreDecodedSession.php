@@ -17,6 +17,7 @@ class StoreDecodedSession
         private readonly ResolveDungeonJoins $joins,
         private readonly SummarizeCharacter $summaries,
         private readonly SessionRows $sessionRows,
+        private readonly MeasureDistance $distance,
     ) {}
 
     /**
@@ -65,6 +66,7 @@ class StoreDecodedSession
         $counted = ($decoded->summary['flags'] ?? []) === [];
         $this->insertRows->handle($characterId, $sessionStart, $rulesetId, $counted, $decoded);
         $span = $this->sessionRows->write($characterId, $sessionStart, $rulesetId, $counted, $decoded->summary);
+        $this->distance->handle($characterId, $sessionStart);
         $this->dictionaries->handle($characterId, $decoded, countVotes: ! $namesCounted);
         DB::table('parts')->where('character_id', $characterId)->where('session_start', $sessionStart)->update(['decoded_at' => now()]);
 

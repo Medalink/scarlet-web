@@ -28,6 +28,7 @@ class PublicRequest extends FormRequest
             'ruleset' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9-]+$/'],
             'server' => ['nullable', Rule::enum(Server::class)],
             'layer' => ['nullable', Rule::enum(WorldLayer::class)],
+            'class' => ['nullable', 'string', 'max:32', 'regex:/^[A-Za-z]+$/'],
             'creature' => ['nullable', 'integer', 'min:1'],
             'cursor' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:'.Cursor::MAX_LIMIT],
@@ -53,6 +54,14 @@ class PublicRequest extends FormRequest
         $server = $this->validated('server');
 
         return is_string($server) ? Server::from($server) : Server::All;
+    }
+
+    /** A class file name such as `WARRIOR`, any case. */
+    public function characterClass(): ?string
+    {
+        $class = $this->validated('class');
+
+        return is_string($class) ? strtoupper($class) : null;
     }
 
     public function layer(): WorldLayer
