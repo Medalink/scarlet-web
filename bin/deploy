@@ -1,7 +1,7 @@
 #!/bin/bash
 # Builds, ships and rolls out scarletweb.io. Run it from medaviper (Git Bash) or from medaware.
 #
-#   bin/deploy [ref]            build ref (default main) on the build host, load the images on the droplet,
+#   bin/deploy [ref]            build ref (a sha, branch or tag; default main) on the build host, load the images on the droplet,
 #                               migrate and start them, check the health. A failed check restarts the old release.
 #   bin/deploy rollback         start the release before the current one (code only: migrations are forward-only)
 #   bin/deploy status           the containers, the release and the zone settings
@@ -125,5 +125,6 @@ case "${1:-release}" in
     curl -s -o /dev/null -w 'through Cloudflare (origin pulls): %{http_code}\n' https://scarletweb.io/up
     ;;
   ssh) shift; srv "$@" ;;
-  *) sed -n '2,19p' "$0"; exit 2 ;;
+  help | -h | --help) sed -n '2,19p' "$0" ;;
+  *) release "$1" ;;
 esac
