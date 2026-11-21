@@ -12,15 +12,16 @@ final class MapSpec
      * @param  list<array<string, mixed>>  $cells  heat rows: cell_i, cell_j, value
      * @param  list<array<string, mixed>>  $zones  the answer of App\Actions\Public\MapZones
      * @param  array<string, mixed>  $extra  readout, ruleset, lookSwitch, layer: ids and names the page controls use
+     * @param  list<array{kind: string, u: float, v: float}>  $marks  crosses and dots on the map, in world coordinates
      * @return array<string, mixed>
      */
-    public static function build(array $cells, array $zones, ?int $fit = null, array $extra = []): array
+    public static function build(array $cells, array $zones, ?int $fit = null, array $extra = [], array $marks = []): array
     {
         return [
             ...$extra,
             'fit' => $fit,
             'zones' => self::zones($zones),
-            'layers' => ['heat' => ['cells' => HeatLevels::assign($cells)]],
+            'layers' => ['heat' => ['cells' => HeatLevels::assign($cells)], 'marks' => $marks],
         ];
     }
 

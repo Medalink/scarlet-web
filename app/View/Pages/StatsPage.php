@@ -176,7 +176,7 @@ final class StatsPage
      * @param  list<array<string, mixed>>  $rows
      * @return array{spec: array<string, mixed>, line: array{0: string, 1: string}, x: list<int>}|null
      */
-    private static function xp(array $rows): ?array
+    public static function xp(array $rows): ?array
     {
         $byLevel = [];
         foreach ($rows as $row) {

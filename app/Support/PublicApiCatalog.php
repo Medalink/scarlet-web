@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Http\Controllers\Api\V1\Public\CharacterController;
 use App\Http\Controllers\Api\V1\Public\LeaderboardController;
 use App\Http\Controllers\Api\V1\Public\MapController;
 use App\Http\Controllers\Api\V1\Public\RecordController;
@@ -78,6 +79,20 @@ final class PublicApiCatalog
                 'params' => ['q', ['kind', 'query', 'string', '`characters`, `creatures`, `items`, `zones` or `quests`. Leave out for the first hits of every kind.'], 'cursor', 'limit'],
                 'returns' => 'Without `kind`: `data` has one entry per kind with `count` and `hits`. With `kind`: `data` is the list of hits, paged with `meta.next_cursor`. A hit has `kind`, `id`, `name`, `path` and the numbers of its kind.',
                 'example' => '/search?q=ash&kind=zones', 'where' => [],
+            ],
+            [
+                'name' => 'character', 'group' => 'Characters', 'path' => '/characters/{name}', 'action' => [CharacterController::class, 'show'],
+                'summary' => 'A public character: race, class, level, ruleset, time played, this week and distance walked. A character that is not public answers 404.',
+                'params' => [['name', 'path', 'string', 'The character name, `Name-Surname`.']],
+                'returns' => '`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds`, `ruleset`, `last_seen_at`, `week`, `distance`. `meta.economy` says whether the owner shows money.',
+                'example' => '/characters/Tolvir-Greane', 'where' => ['name' => '[^/]+'],
+            ],
+            [
+                'name' => 'character-series', 'group' => 'Characters', 'path' => '/characters/{name}/series/{series}', 'action' => [CharacterController::class, 'series'],
+                'summary' => 'One series of a public character: `levelling` (played time before each level, with the ruleset median and middle half), `xp`, `deaths`, `dungeons`, `activity`, `sessions`, and `gold` when the owner shows money.',
+                'params' => [['name', 'path', 'string', 'The character name.'], ['series', 'path', 'string', 'The series name.']],
+                'returns' => '`data`: the rows of the series.',
+                'example' => '/characters/Tolvir-Greane/series/levelling', 'where' => ['name' => '[^/]+', 'series' => '[a-z]+'],
             ],
             [
                 'name' => 'creature', 'group' => 'Records', 'path' => '/creatures/{id}', 'action' => [RecordController::class, 'creature'],

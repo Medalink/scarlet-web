@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Web\CharacterController;
+use App\Http\Controllers\Web\DevelopersController;
 use App\Http\Controllers\Web\LeaderboardController;
 use App\Http\Controllers\Web\MapController;
 use App\Http\Controllers\Web\RecordController;
@@ -12,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/stats', StatsController::class);
 Route::get('/map', MapController::class);
 Route::get('/search', SearchController::class);
+Route::get('/developers', DevelopersController::class);
+Route::get('/c/{name}', CharacterController::class)->where('name', '[^/]+');
 Route::get('/creatures/{id}', [RecordController::class, 'creature'])->whereNumber('id');
 Route::get('/items/{id}', [RecordController::class, 'item'])->whereNumber('id');
 Route::get('/zones/{id}', [RecordController::class, 'zone'])->where('id', '-?[0-9]+');
