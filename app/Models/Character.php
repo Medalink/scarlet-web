@@ -61,6 +61,18 @@ class Character extends Model
         });
     }
 
+    /**
+     * Lock the rows, lowest id first, for the rest of the transaction. This is the lock a decode takes in
+     * StoreDecodedSession, so a removal that holds it cannot deadlock with a decode on the fact rows.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeLockedInOrder(Builder $query): Builder
+    {
+        return $query->orderBy('characters.id')->lockForUpdate();
+    }
+
     /** @return BelongsTo<Install, $this> */
     public function firstInstall(): BelongsTo
     {

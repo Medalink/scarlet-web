@@ -153,6 +153,8 @@ Server-side removal:
   marks the group refused, so a later sync with that group still on is answered with `group_refused` and the app
   switches it off. `PUT /groups/{key}` from the app clears the refusal.
 - `DELETE /` removes everything the owner uploaded.
+- Both removals lock the owner's character rows, lowest id first, before they delete anything: the same lock a decode
+  takes, so a removal waits for a running decode instead of deadlocking with it on the fact rows.
 
 The same two removals are on the account page of the web app.
 

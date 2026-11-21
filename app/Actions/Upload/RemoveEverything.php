@@ -27,6 +27,8 @@ class RemoveEverything
         $window = RefreshWindow::ofCharacters($characterIds);
 
         [$characters, $parts, $rows] = DB::transaction(function () use ($characterIds): array {
+            // Wait for a running decode of these characters first; both take the row lock before the fact rows.
+            Character::query()->whereIn('id', $characterIds)->lockedInOrder()->pluck('id');
             $parts = Part::query()->whereIn('character_id', $characterIds)->count();
             $rows = $this->deleteRows->handle($characterIds);
             // Parts, sessions, pseudonyms and the install links go with the character.

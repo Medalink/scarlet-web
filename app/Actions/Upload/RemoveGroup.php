@@ -36,6 +36,8 @@ class RemoveGroup
         $window = RefreshWindow::ofCharacters($characterIds);
 
         [$parts, $rows] = DB::transaction(function () use ($install, $group, $characterIds): array {
+            // Wait for a running decode of these characters first; both take the row lock before the fact rows.
+            Character::query()->whereIn('id', $characterIds)->lockedInOrder()->pluck('id');
             $parts = Part::query()->whereIn('character_id', $characterIds)->where('group_key', $group)->delete();
             $rows = $this->deleteRows->handle($characterIds, $group);
             $this->forgetInSessions($characterIds, $group);
