@@ -32,7 +32,6 @@ final class CharacterPage
         $economy = (bool) $r['economy'];
         /** @var array<string, mixed> $totals */
         $totals = $r['totals'];
-        $topRuns = $dungeons === [] ? 1 : max(1, (int) $dungeons[0]['runs']);
 
         return [
             'id' => $character->id,
@@ -52,19 +51,18 @@ final class CharacterPage
                 ['label' => 'Quests', 'value' => Format::number($totals['quests'])],
                 ['label' => 'World widths walked', 'value' => Format::number($totals['distance'], 1)],
             ],
-            'map' => MapSpec::build($r['heat'], [], MapSpec::around($r['heat']), [], $r['marks']),
-            'hasMap' => $r['heat'] !== [],
+            'map' => MapSpec::levelled($r['heat']['cells'], [], $r['heat']['fit'], [], $r['marks']),
+            'hasMap' => $r['heat']['cells'] !== [],
             'deathCount' => count($r['marks']),
             'week' => $week === null ? null : self::week($week, $economy),
             'levelTimes' => CharacterSections::levelTimes($r['levelTimes']),
-            'records' => CharacterRecords::tiles($r['records'], $totals, $r['items']),
+            'records' => CharacterRecords::tiles($r['records'], $totals, $r['items'], $r['killed']),
             'xp' => StatsPage::xp($r['xp']),
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
-            'dungeons' => array_map(fn (array $row): array => [
-                'label' => (string) ($row['name'] ?? 'Instance '.$row['instance_id']), 'value' => Format::count($row['runs'], 'run').', '.Format::duration($row['inside_seconds']),
-                'share' => (int) $row['runs'] / $topRuns * 100,
-            ], $dungeons),
-            'dungeonTotal' => $dungeons === [] ? null : Format::count(array_sum(array_column($dungeons, 'runs')), 'dungeon run').' in all.',
+            'runs' => CharacterLists::runs($r['dungeonRuns'], $dungeons),
+            'killed' => CharacterLists::killed($r['killed']),
+            'crafted' => CharacterLists::crafted($r['crafted']),
+            'hours' => StatsPage::hours($r['hours']),
             'zoneHours' => CharacterSections::zones($r['zoneHours']),
             'deaths' => CharacterSections::deaths($r['deathLog'], $deaths, (int) $character->level),
             'items' => CharacterSections::items($r['items']),

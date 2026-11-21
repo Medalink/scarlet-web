@@ -35,4 +35,40 @@ final class WorldGrid
     {
         return [$i / self::COLUMNS, $j / self::ROWS, ($i + 1) / self::COLUMNS, ($j + 1) / self::ROWS];
     }
+
+    /** The share of cells left out at each end of a column or row range by `around()`. */
+    private const float TRIM = 0.02;
+
+    /** The share of a rectangle's size `around()` adds on each side. */
+    private const float PADDING = 0.12;
+
+    /** The smallest side of the rectangle `around()` pads, in world widths: a character that never left one spot. */
+    private const float MIN_SIDE = 0.02;
+
+    /**
+     * The world rectangle to open a map on so that its cells fill it: u0, v0, u1, v1 from the 2nd to the 98th percentile of
+     * the cells' columns and rows, which leaves out the odd cell far from the rest, then `PADDING` of its size on each side.
+     *
+     * @param  list<array<string, mixed>>  $cells  heat rows: cell_i, cell_j
+     * @return array{0: float, 1: float, 2: float, 3: float}|null
+     */
+    public static function around(array $cells): ?array
+    {
+        if ($cells === []) {
+            return null;
+        }
+        $columns = array_map(fn (array $cell): int => (int) $cell['cell_i'], $cells);
+        $rows = array_map(fn (array $cell): int => (int) $cell['cell_j'], $cells);
+        sort($columns);
+        sort($rows);
+        $last = count($cells) - 1;
+        $low = (int) floor(self::TRIM * $last);
+        $high = (int) ceil((1 - self::TRIM) * $last);
+        [$u0, $v0] = WorldGrid::rect($columns[$low], $rows[$low]);
+        [, , $u1, $v1] = WorldGrid::rect($columns[$high], $rows[$high]);
+        $padU = max(self::MIN_SIDE, $u1 - $u0) * self::PADDING;
+        $padV = max(self::MIN_SIDE, $v1 - $v0) * self::PADDING;
+
+        return [max(0.0, $u0 - $padU), max(0.0, $v0 - $padV), min(1.0, $u1 + $padU), min(1.0, $v1 + $padV)];
+    }
 }

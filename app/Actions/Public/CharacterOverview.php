@@ -3,7 +3,12 @@
 namespace App\Actions\Public;
 
 use App\Actions\Public\Character\DeathLog;
+use App\Actions\Public\Character\DungeonRuns;
+use App\Actions\Public\Character\HeatCells;
+use App\Actions\Public\Character\HourlyPlay;
 use App\Actions\Public\Character\ItemsFound;
+use App\Actions\Public\Character\MostCrafted;
+use App\Actions\Public\Character\MostKilled;
 use App\Actions\Public\Character\Records;
 use App\Actions\Public\Character\SessionTotals;
 use App\Actions\Public\Character\SkillRanks;
@@ -41,6 +46,11 @@ class CharacterOverview
         private readonly SessionTotals $totals,
         private readonly Records $records,
         private readonly TimePerLevel $timePerLevel,
+        private readonly MostKilled $mostKilled,
+        private readonly MostCrafted $mostCrafted,
+        private readonly DungeonRuns $dungeonRuns,
+        private readonly HourlyPlay $hourlyPlay,
+        private readonly HeatCells $heatCells,
     ) {}
 
     /**
@@ -63,13 +73,14 @@ class CharacterOverview
         $rulesetId = $last === null ? null : (int) $last->ruleset_id;
         $ruleset = collect($this->rulesets->handle())->firstWhere('id', $rulesetId);
         $totals = $this->totals->handle($id);
+        $play = $this->hourlyPlay->handle($id);
 
         return [
             'character' => $character,
             'owner' => $owner,
             'economy' => $economy,
             'ruleset' => $ruleset,
-            'heat' => $this->heat($id),
+            'heat' => $this->heatCells->handle($id),
             'marks' => $this->marks($id),
             'week' => $this->week($id, $last === null ? null : Carbon::parse((string) $last->end_at, 'UTC'), $economy),
             'pace' => ['character' => $this->levels($id), 'ruleset' => $rulesetId === null ? [] : $this->curve->handle($rulesetId)],
@@ -82,22 +93,17 @@ class CharacterOverview
             'items' => $this->itemsFound->handle($id),
             'skills' => $this->skillRanks->handle($id),
             'records' => $this->records->handle($id),
+            'killed' => $this->mostKilled->handle($id),
+            'crafted' => $this->mostCrafted->handle($id),
+            'dungeonRuns' => $this->dungeonRuns->handle($id),
             'totals' => $totals,
-            'days' => $this->days($id),
+            'days' => $play['days'],
+            'hours' => $play['hours'],
             'gold' => $economy ? $this->gold($id) : null,
             'sessions' => $this->sessions($id, $economy, $history),
             'distance' => $totals['distance'],
             'history' => $history,
         ];
-    }
-
-    /** @return list<array<string, mixed>> cell_i, cell_j, value */
-    private function heat(int $id): array
-    {
-        return $this->read->rows(
-            DB::table(Rollup::WorldHeatDailyCharacter->value)->selectRaw('cell_i, cell_j, sum(points) as value')->where('character_id', $id)
-                ->groupBy('cell_i', 'cell_j')->orderByRaw('sum(points) desc')->orderBy('cell_i')->orderBy('cell_j')->limit(30000),
-        );
     }
 
     /** @return list<array{kind: string, u: float, v: float}> */
@@ -192,17 +198,6 @@ class CharacterOverview
             ])->all()),
             'zones' => array_values($zones->map(fn (object $row): array => ['zone_id' => (int) $row->zone_id, 'zone' => $row->zone, 'deaths' => (int) $row->deaths])->all()),
         ];
-    }
-
-    /** @return array<string, float> UTC day => played seconds */
-    private function days(int $id): array
-    {
-        $days = [];
-        foreach ($this->read->rows(DB::table(Rollup::PlayHourlyCharacter->value)->selectRaw("to_char(bucket at time zone 'UTC', 'YYYY-MM-DD') as day, (sum(ms) / 1000.0)::float as seconds")->where('character_id', $id)->groupBy('day')->orderBy('day')) as $row) {
-            $days[(string) $row['day']] = (float) $row['seconds'];
-        }
-
-        return $days;
     }
 
     /** @return list<array{at: string, balance: int}> the balance at the end of the last sessions, oldest first */

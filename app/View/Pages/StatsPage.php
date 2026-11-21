@@ -365,7 +365,7 @@ final class StatsPage
      * @param  list<array<string, mixed>>  $rows  weekday (0 is Sunday), hour, seconds
      * @return array<string, mixed>|null
      */
-    private static function hours(array $rows): ?array
+    public static function hours(array $rows): ?array
     {
         if ($rows === []) {
             return null;

@@ -20,9 +20,10 @@ final class CharacterRecords
      * @param  array<string, mixed>  $records  the answer of App\Actions\Public\Character\Records
      * @param  array<string, mixed>  $totals  the answer of App\Actions\Public\Character\SessionTotals
      * @param  array<string, mixed>  $items  the answer of App\Actions\Public\Character\ItemsFound
+     * @param  list<array{id: int, name: string, kills: int}>  $killed  the answer of App\Actions\Public\Character\MostKilled
      * @return list<array{value: string, label: string, detail: string|null, href: string|null, class: string|null}>
      */
-    public static function tiles(array $records, array $totals, array $items): array
+    public static function tiles(array $records, array $totals, array $items, array $killed): array
     {
         $tiles = [];
         if ($records['blow'] !== null) {
@@ -40,8 +41,8 @@ final class CharacterRecords
         if ($records['slowest'] !== null) {
             $tiles[] = self::tile(Format::duration($records['slowest']['seconds']), 'Slowest level', 'Level '.$records['slowest']['level']);
         }
-        if ($records['creature'] !== null) {
-            $tiles[] = self::tile(Format::number($records['creature']['kills']), 'Most killed creature', $records['creature']['name'], '/creatures/'.$records['creature']['id']);
+        if ($killed !== []) {
+            $tiles[] = self::tile(Format::number($killed[0]['kills']), 'Most killed creature', $killed[0]['name'], '/creatures/'.$killed[0]['id']);
         }
         if ($items['gear'] !== null) {
             $best = $items['gear'];

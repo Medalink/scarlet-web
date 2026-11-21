@@ -91,19 +91,44 @@
       @endif
     </x-module>
 
-    <x-module :first="true" id="h-runs" heading="Dungeons and raids">
-      @if ($d['dungeons'])
-      <x-rank :rows="$d['dungeons']" plain />
-      <p class="total">{{ $d['dungeonTotal'] }}</p>
+    <x-module :first="true" id="h-killed" heading="Most killed creatures">
+      @if ($d['killed'])
+      <x-rank :rows="$d['killed']" />
+      @else
+      <x-note>No named creatures killed yet.</x-note>
+      @endif
+    </x-module>
+    <x-module span="w8" :last="true" id="h-runs" heading="Dungeon runs">
+      @if ($d['runs'])
+      <x-run-list :rows="$d['runs']['rows']" />
+      <p class="total">{{ $d['runs']['total'] }}</p>
       @else
       <x-note>No dungeon runs recorded.</x-note>
       @endif
     </x-module>
-    <x-module span="w8" :last="true" id="h-days" heading="Play time by day">
+
+    <x-module span="w8" :first="true" id="h-days" heading="Play time by day">
       @if ($d['days'])
       <x-day-heat id="heat" :spec="$d['days']['spec']" />
       <x-heat-key low="0" high="over 4h" />
       <x-readout id="days-out" :line="$d['days']['line']" />
+      @else
+      <x-note>No play time recorded yet.</x-note>
+      @endif
+    </x-module>
+    <x-module :last="true" id="h-crafted" heading="Most crafted">
+      @if ($d['crafted'])
+      <x-rank :rows="$d['crafted']" />
+      @else
+      <x-note>No crafts recorded.</x-note>
+      @endif
+    </x-module>
+
+    <x-module span="w12" :first="true" :last="true" id="h-hours" heading="Play time by hour">
+      @if ($d['hours'])
+      <x-hours-grid id="hours" label="Play time by weekday and hour of day, in UTC" :spec="$d['hours']" />
+      <x-readout id="hours-out" :line="['Hover a cell', ' to read it.']" />
+      <x-heat-key low="Quiet" high="Busiest" :zero="true" extra="Hours are UTC" />
       @else
       <x-note>No play time recorded yet.</x-note>
       @endif

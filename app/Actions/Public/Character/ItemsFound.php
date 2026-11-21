@@ -28,7 +28,10 @@ class ItemsFound
         $qualities = $this->looted($characterId)->whereBetween('i.quality', [ItemQuality::Poor->value, ItemQuality::Epic->value])
             ->groupBy('i.quality')->selectRaw('i.quality as quality, sum(d.quantity) as items')->pluck('items', 'quality');
         $best = $this->finds($this->looted($characterId))->limit(self::SHOWN)->get();
-        $gear = $this->finds($this->looted($characterId)->whereIn('i.class_id', [ItemClass::Weapon->value, ItemClass::Armor->value]))->first();
+        $gears = [ItemClass::Weapon->value, ItemClass::Armor->value];
+        // The best finds and the best gear share one order, so the first gear among the best finds is the best gear.
+        $gear = $best->first(fn (\stdClass $row): bool => in_array((int) $row->class_id, $gears, true))
+            ?? ($best->count() < self::SHOWN ? null : $this->finds($this->looted($characterId)->whereIn('i.class_id', $gears))->first());
 
         return [
             'qualities' => array_map(fn (mixed $count): int => (int) $count, $qualities->all()),
@@ -40,9 +43,9 @@ class ItemsFound
     /** Uncommon or better finds of a query from `looted()`, best first. */
     private function finds(Builder $looted): Builder
     {
-        return $looted->where('i.quality', '>=', ItemQuality::Uncommon->value)->groupBy('d.item_id', 'i.quality', 'i.item_level')
+        return $looted->where('i.quality', '>=', ItemQuality::Uncommon->value)->groupBy('d.item_id', 'i.quality', 'i.item_level', 'i.class_id')
             ->selectRaw('d.item_id, (select n.name from names n where n.kind = ? and n.id = d.item_id order by n.votes desc, n.name limit 1) as name', [NameKind::Item->value])
-            ->selectRaw('i.quality, i.item_level, sum(d.quantity) as quantity')
+            ->selectRaw('i.quality, i.item_level, i.class_id, sum(d.quantity) as quantity')
             ->orderByDesc('i.quality')->orderByRaw('i.item_level desc nulls last')->orderBy('d.item_id');
     }
 
