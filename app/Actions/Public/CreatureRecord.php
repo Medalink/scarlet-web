@@ -106,7 +106,7 @@ class CreatureRecord
         $row = $this->read->rows($this->read->shown(
             $this->read->from(Rollup::DeathsDailyRuleset, $ids)
                 ->selectRaw('sum(deaths) as deaths, distinct_count(rollup(characters)) as characters')
-                ->where('killer_kind', KillerKind::Creature->value)->where('killer', $name),
+                ->whereRaw('killer_kind is distinct from ?', [KillerKind::Player->value])->where('killer', $name),
         ))[0] ?? null;
 
         return ['deaths' => $row === null ? null : (int) $row['deaths'], 'characters' => $row === null ? null : (int) $row['characters']];
@@ -121,7 +121,7 @@ class CreatureRecord
         return $this->read->rows($this->read->shown(
             $this->read->from(Rollup::DeathsDailyRuleset, $ids)
                 ->selectRaw('level, sum(deaths) as deaths, distinct_count(rollup(characters)) as characters')
-                ->where('killer_kind', KillerKind::Creature->value)->where('killer', $name)->whereNotNull('level')
+                ->whereRaw('killer_kind is distinct from ?', [KillerKind::Player->value])->where('killer', $name)->whereNotNull('level')
                 ->groupBy('level')->orderBy('level'),
         ));
     }

@@ -5,6 +5,7 @@ namespace App\Actions\Public;
 use App\Actions\Rollups\WorldHeat;
 use App\Models\MapRect;
 use App\Support\KillerKind;
+use App\Support\KillerRows;
 use App\Support\NameKind;
 use App\Support\Rollup;
 use App\Support\RollupRead;
@@ -77,12 +78,12 @@ class ZoneRecord
      */
     private function killers(int $id, int|array|null $ids): array
     {
-        return $this->read->rows($this->read->shown(
+        return KillerRows::shown($this->read->rows($this->read->shown(
             $this->read->from(Rollup::DeathsDailyRuleset, $ids)
                 ->selectRaw('killer_kind as kind, killer, sum(deaths) as deaths, distinct_count(rollup(characters)) as characters')
-                ->selectRaw('(select n.id from names n where n.kind = ? and killer_kind = ? and n.name = killer order by n.votes desc limit 1) as npc_id', [NameKind::Npc->value, KillerKind::Creature->value])
+                ->selectRaw('(select n.id from names n where n.kind = ? and killer_kind is distinct from ? and n.name = killer order by n.votes desc limit 1) as npc_id', [NameKind::Npc->value, KillerKind::Player->value])
                 ->where('zone_id', $id)->whereNotNull('killer')->groupBy('killer_kind', 'killer')->orderByRaw('sum(deaths) desc')->orderBy('killer')->limit(8),
-        ));
+        )));
     }
 
     /**

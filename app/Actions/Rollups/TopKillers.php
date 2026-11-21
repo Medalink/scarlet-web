@@ -3,6 +3,7 @@
 namespace App\Actions\Rollups;
 
 use App\Support\KillerKind;
+use App\Support\KillerRows;
 use App\Support\NameKind;
 use App\Support\Rollup;
 use App\Support\RollupRead;
@@ -22,13 +23,13 @@ class TopKillers
     {
         $query = $this->read->from(Rollup::DeathsDailyRuleset, $rulesetId)
             ->selectRaw('killer_kind as kind, killer, sum(deaths) as deaths, distinct_count(rollup(characters)) as characters')
-            ->selectRaw('(select n.id from names n where n.kind = ? and killer_kind = ? and n.name = killer order by n.votes desc limit 1) as npc_id', [NameKind::Npc->value, KillerKind::Creature->value])
+            ->selectRaw('(select n.id from names n where n.kind = ? and killer_kind is distinct from ? and n.name = killer order by n.votes desc limit 1) as npc_id', [NameKind::Npc->value, KillerKind::Player->value])
             ->whereNotNull('killer')
             ->groupBy('killer_kind', 'killer')
             ->orderByRaw('sum(deaths) desc')
             ->orderBy('killer')
             ->limit($limit);
 
-        return $this->read->rows($this->read->shown($query));
+        return KillerRows::shown($this->read->rows($this->read->shown($query)));
     }
 }
