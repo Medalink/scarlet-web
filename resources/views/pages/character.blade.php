@@ -1,17 +1,29 @@
-<x-layouts.app :title="$d['name'].': a Scarlet character overview'" current="search" description="Levelling pace, experience, dungeons, deaths and play history of {{ $d['name'] }}, from what the player chose to upload.">
-<section class="ch-head" aria-labelledby="h1">
-  <div class="stage"><x-world-canvas id="map" label="Every path {{ $d['name'] }} walked, with deaths as crosses. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
-  <div class="ch-id wrap" style="padding-top:3rem">
-    <div><h1 class="ch-name" id="h1">{{ $d['name'] }}</h1>
-      <p class="ch-sub"><i class="dot" aria-hidden="true"></i>@foreach ($d['facts'] as $fact)<span>{{ $fact }}</span>@endforeach</p></div>
-    <ul class="legend ch-map" aria-label="Map marks">
+<x-layouts.app :title="$d['name'].': a Scarlet character overview'" current="search" description="Records, time in each level, experience, dungeons, deaths and play history of {{ $d['name'] }}, from what the player chose to upload.">
+<section class="ch-head ch-rich" aria-labelledby="h1">
+  <div class="stage"><x-world-canvas id="map" label="Every path {{ $d['name'] }} walked, with deaths as crosses. Drag to move, scroll to zoom." :spec="$d['map']" />
+    <ul class="legend ch-legend" aria-label="Map marks">
       <li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M1 7h22" stroke="#ff2d55" stroke-width="2"/></svg>every path walked</li>
       @if ($d['deathCount'])<li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M7.5 2.5l9 9M16.5 2.5l-9 9" stroke="#f0f1f3" stroke-width="1.7" stroke-linecap="round"/></svg>death</li>@endif
     </ul>
   </div>
+  <div class="ch-id wrap">
+    <div><h1 class="ch-name" id="h1">{{ $d['name'] }}</h1>
+      <p class="ch-sub"><i class="dot" aria-hidden="true"></i>@foreach ($d['facts'] as $fact)<span>{{ $fact }}</span>@endforeach</p>
+      <dl class="ch-figs">@foreach ($d['figures'] as $figure)<div><dt>{{ $figure['label'] }}</dt><dd>{{ $figure['value'] }}</dd></div>@endforeach</dl></div>
+  </div>
 </section>
 <div class="wrap">
   @if ($d['owner'])<livewire:owner-bar :character-id="$d['id']" />@endif
+  @if ($d['records'])
+  <section class="recs" aria-labelledby="h-records">
+    <h2 id="h-records">Records</h2>
+    <ul class="rec-grid">@foreach ($d['records'] as $tile)<li>
+      @if ($tile['text'] && $tile['href'])<a @class(['rec-v', 'txt', $tile['class']]) href="{{ $tile['href'] }}">{{ $tile['value'] }}</a>@else<b @class(['rec-v', 'txt' => $tile['text']])>{{ $tile['value'] }}</b>@endif
+      <span class="rec-l">{{ $tile['label'] }}</span>
+      @if ($tile['detail'])<span class="rec-d">@if ($tile['href'] && ! $tile['text'])<a href="{{ $tile['href'] }}">{{ $tile['detail'] }}</a>@else{{ $tile['detail'] }}@endif</span>@endif
+    </li>@endforeach</ul>
+  </section>
+  @endif
   @if ($d['week'])
   <section class="week" aria-labelledby="h-week">
     <div><h2 id="h-week">This week</h2><p>{{ $d['week']['range'] }}</p></div>
@@ -19,13 +31,12 @@
   </section>
   @endif
   <x-sheet>
-    <x-module :span="$d['gold'] ? 'w8' : 'w12'" :first="true" :last="! $d['gold']" id="h-pace" :heading="$d['paceTitle']">
-      @if ($d['pace'])
-      <x-plot id="pace" :label="$d['paceLabel']" :spec="$d['pace']['spec']" />
-      <x-key :items="$d['pace']['key']" />
-      <x-readout id="pace-out" :line="$d['pace']['line']" />
+    <x-module :span="$d['gold'] ? 'w8' : 'w12'" :first="true" :last="! $d['gold']" id="h-pace" heading="Time in each level">
+      @if ($d['levelTimes'])
+      <x-plot id="level-times" label="Hours {{ $d['name'] }} spent in each level it has left, with the median of its ruleset as a tick where at least two characters completed the level." :spec="$d['levelTimes']['spec']" />
+      <x-key :items="$d['levelTimes']['key']" />
       @else
-      <x-note>Fewer than two levels are recorded.</x-note>
+      <x-note>Fewer than two completed levels are recorded.</x-note>
       @endif
     </x-module>
     @if ($d['gold'])
@@ -96,7 +107,6 @@
       @else
       <x-note>No play time recorded yet.</x-note>
       @endif
-      @if ($d['distance'])<p class="total">{{ $d['distance'] }}.</p>@endif
     </x-module>
 
     <x-module span="w12" :first="true" :last="true" id="h-hist" heading="Play history">

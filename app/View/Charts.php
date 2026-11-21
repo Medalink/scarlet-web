@@ -38,7 +38,7 @@ final class Charts
     }
 
     /**
-     * A bar chart. $data: [[x, value, lo, hi]]; lo and hi draw a whisker.
+     * A bar chart. $data: [[x, value, lo, hi, tick]]; lo and hi draw a whisker, tick a mark across the bar at that value.
      *
      * @param  array<string, mixed>  $axes
      * @param  list<list<int|float|null>>  $data

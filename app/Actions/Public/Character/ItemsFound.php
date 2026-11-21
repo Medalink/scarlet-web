@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public\Character;
 
+use App\Support\ItemClass;
 use App\Support\ItemQuality;
 use App\Support\LootVia;
 use App\Support\NameKind;
@@ -18,23 +19,39 @@ class ItemsFound
      * `window` row is an item in a loot window, and a `receipt` row counts only when it has a loot source and its
      * session has no window rows (an older log with no item lists). Crafts, purchases and rewards have no source.
      *
-     * @return array{qualities: array<int, int>, best: list<array{item_id: int, name: string, quality: int, item_level: int|null, quantity: int}>}
+     * `gear` is the best weapon or armour found, uncommon or better, by quality and then item level.
+     *
+     * @return array{qualities: array<int, int>, best: list<array{item_id: int, name: string, quality: int, item_level: int|null, quantity: int}>, gear: array{item_id: int, name: string, quality: int, item_level: int|null, quantity: int}|null}
      */
     public function handle(int $characterId): array
     {
         $qualities = $this->looted($characterId)->whereBetween('i.quality', [ItemQuality::Poor->value, ItemQuality::Epic->value])
             ->groupBy('i.quality')->selectRaw('i.quality as quality, sum(d.quantity) as items')->pluck('items', 'quality');
-        $best = $this->looted($characterId)->where('i.quality', '>=', ItemQuality::Uncommon->value)->groupBy('d.item_id', 'i.quality', 'i.item_level')
-            ->selectRaw('d.item_id, (select n.name from names n where n.kind = ? and n.id = d.item_id order by n.votes desc, n.name limit 1) as name', [NameKind::Item->value])
-            ->selectRaw('i.quality, i.item_level, sum(d.quantity) as quantity')
-            ->orderByDesc('i.quality')->orderByRaw('i.item_level desc nulls last')->orderBy('d.item_id')->limit(self::SHOWN)->get();
+        $best = $this->finds($this->looted($characterId))->limit(self::SHOWN)->get();
+        $gear = $this->finds($this->looted($characterId)->whereIn('i.class_id', [ItemClass::Weapon->value, ItemClass::Armor->value]))->first();
 
         return [
             'qualities' => array_map(fn (mixed $count): int => (int) $count, $qualities->all()),
-            'best' => array_values($best->map(fn (object $row): array => [
-                'item_id' => (int) $row->item_id, 'name' => (string) ($row->name ?? 'Item '.$row->item_id), 'quality' => (int) $row->quality,
-                'item_level' => $row->item_level === null ? null : (int) $row->item_level, 'quantity' => (int) $row->quantity,
-            ])->all()),
+            'best' => array_values($best->map(fn (\stdClass $row): array => $this->find($row))->all()),
+            'gear' => $gear === null ? null : $this->find($gear),
+        ];
+    }
+
+    /** Uncommon or better finds of a query from `looted()`, best first. */
+    private function finds(Builder $looted): Builder
+    {
+        return $looted->where('i.quality', '>=', ItemQuality::Uncommon->value)->groupBy('d.item_id', 'i.quality', 'i.item_level')
+            ->selectRaw('d.item_id, (select n.name from names n where n.kind = ? and n.id = d.item_id order by n.votes desc, n.name limit 1) as name', [NameKind::Item->value])
+            ->selectRaw('i.quality, i.item_level, sum(d.quantity) as quantity')
+            ->orderByDesc('i.quality')->orderByRaw('i.item_level desc nulls last')->orderBy('d.item_id');
+    }
+
+    /** @return array{item_id: int, name: string, quality: int, item_level: int|null, quantity: int} */
+    private function find(\stdClass $row): array
+    {
+        return [
+            'item_id' => (int) $row->item_id, 'name' => (string) ($row->name ?? 'Item '.$row->item_id), 'quality' => (int) $row->quality,
+            'item_level' => $row->item_level === null ? null : (int) $row->item_level, 'quantity' => (int) $row->quantity,
         ];
     }
 

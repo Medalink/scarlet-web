@@ -4,9 +4,12 @@ namespace App\Actions\Public;
 
 use App\Actions\Public\Character\DeathLog;
 use App\Actions\Public\Character\ItemsFound;
+use App\Actions\Public\Character\Records;
+use App\Actions\Public\Character\SessionTotals;
 use App\Actions\Public\Character\SkillRanks;
 use App\Actions\Public\Character\ZoneHours;
 use App\Actions\Rollups\LevellingCurve;
+use App\Actions\Rollups\TimePerLevel;
 use App\Models\Character;
 use App\Support\KillerKind;
 use App\Support\PlayerNameShape;
@@ -17,8 +20,11 @@ use Illuminate\Support\Facades\DB;
 
 class CharacterOverview
 {
-    /** Sessions the play history lists. */
+    /** Sessions the play history lists in the answer of the API. */
     public const int HISTORY = 25;
+
+    /** Sessions the character page lists first. */
+    public const int PAGE_HISTORY = 10;
 
     /** Sessions the gold line covers. */
     public const int GOLD_SESSIONS = 30;
@@ -32,6 +38,9 @@ class CharacterOverview
         private readonly DeathLog $deathLog,
         private readonly ItemsFound $itemsFound,
         private readonly SkillRanks $skillRanks,
+        private readonly SessionTotals $totals,
+        private readonly Records $records,
+        private readonly TimePerLevel $timePerLevel,
     ) {}
 
     /**
@@ -53,6 +62,7 @@ class CharacterOverview
         $last = DB::table('sessions')->where('character_id', $id)->orderByDesc('end_at')->first(['ruleset_id', 'end_at', 'level_end']);
         $rulesetId = $last === null ? null : (int) $last->ruleset_id;
         $ruleset = collect($this->rulesets->handle())->firstWhere('id', $rulesetId);
+        $totals = $this->totals->handle($id);
 
         return [
             'character' => $character,
@@ -63,6 +73,7 @@ class CharacterOverview
             'marks' => $this->marks($id),
             'week' => $this->week($id, $last === null ? null : Carbon::parse((string) $last->end_at, 'UTC'), $economy),
             'pace' => ['character' => $this->levels($id), 'ruleset' => $rulesetId === null ? [] : $this->curve->handle($rulesetId)],
+            'levelTimes' => ['character' => $this->levelTimes($id), 'ruleset' => $rulesetId === null ? [] : $this->timePerLevel->handle($rulesetId)],
             'xp' => $this->xp($id),
             'dungeons' => $this->dungeons($id),
             'deaths' => $this->deaths($id, $owner),
@@ -70,10 +81,13 @@ class CharacterOverview
             'deathLog' => $this->deathLog->handle($id, $owner),
             'items' => $this->itemsFound->handle($id),
             'skills' => $this->skillRanks->handle($id),
+            'records' => $this->records->handle($id),
+            'totals' => $totals,
             'days' => $this->days($id),
             'gold' => $economy ? $this->gold($id) : null,
             'sessions' => $this->sessions($id, $economy, $history),
-            'distance' => (float) DB::table('sessions')->where('character_id', $id)->where('counted', true)->sum('distance'),
+            'distance' => $totals['distance'],
+            'history' => $history,
         ];
     }
 
@@ -123,6 +137,14 @@ class CharacterOverview
     {
         return array_values(DB::table('character_levels')->where('character_id', $id)->where('counted', true)->orderBy('level')
             ->get(['level', 'before_seconds'])->map(fn (object $row): array => ['level' => (int) $row->level, 'seconds' => (int) $row->before_seconds])->all());
+    }
+
+    /** @return list<array{level: int, seconds: int}> the played time spent at each level the character has left */
+    private function levelTimes(int $id): array
+    {
+        return array_values(DB::table('character_levels')->where('character_id', $id)->where('counted', true)->where('completed', true)->whereNotNull('level')
+            ->groupBy('level')->orderBy('level')->selectRaw('level, max(seconds) as seconds')->get()
+            ->map(fn (object $row): array => ['level' => (int) $row->level, 'seconds' => (int) $row->seconds])->all());
     }
 
     /** @return list<array<string, mixed>> level, source, xp */

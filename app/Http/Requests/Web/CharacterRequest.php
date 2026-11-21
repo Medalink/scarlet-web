@@ -25,7 +25,7 @@ class CharacterRequest extends FormRequest
     {
         $sessions = $this->validated('sessions');
 
-        return is_numeric($sessions) ? (int) $sessions : CharacterOverview::HISTORY;
+        return is_numeric($sessions) ? (int) $sessions : CharacterOverview::PAGE_HISTORY;
     }
 
     /** The account the page is shown to, or null for a visitor. */

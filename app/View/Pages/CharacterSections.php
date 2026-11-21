@@ -6,12 +6,16 @@ use App\Actions\Public\Character\DeathLog;
 use App\Actions\Public\Character\SkillRanks;
 use App\Support\ItemQuality;
 use App\Support\Profession;
+use App\View\Charts;
 use App\View\Format;
 use App\View\ItemTypes;
 
 /** The sections of the character page that read one fact table each: zones, deaths, items and skills. */
 final class CharacterSections
 {
+    /** Characters that completed a level before the ruleset's median time in it is shown. */
+    private const int MEDIAN_FROM = 2;
+
     /**
      * @param  array{zones: list<array<string, mixed>>, others: int, other_seconds: float}  $hours
      * @return array{rows: list<array<string, mixed>>, others: string|null}
@@ -94,6 +98,43 @@ final class CharacterSections
                 'value' => ($row['quantity'] > 1 ? '×'.Format::number($row['quantity']).', ' : '').($row['item_level'] === null ? ItemQuality::from($row['quality'])->label() : 'item level '.$row['item_level']),
                 'share' => ($row['item_level'] ?? 0) / $top * 100, 'class' => ItemQuality::from($row['quality'])->fill(),
             ], $items['best']),
+        ];
+    }
+
+    /**
+     * A bar for the hours the character spent in each level it has left, with a tick at the ruleset's median wherever at
+     * least two characters completed the level. The median of fewer than two is the character itself.
+     *
+     * @param  array{character: list<array{level: int, seconds: int}>, ruleset: list<array<string, mixed>>}  $times
+     * @return array{spec: array<string, mixed>, key: list<array<string, mixed>>}|null
+     */
+    public static function levelTimes(array $times): ?array
+    {
+        $own = $times['character'];
+        if (count($own) < 2) {
+            return null;
+        }
+        $medians = [];
+        foreach ($times['ruleset'] as $row) {
+            if ((int) $row['completed'] >= self::MEDIAN_FROM) {
+                $medians[(int) $row['level']] = (float) $row['median'];
+            }
+        }
+        $data = $say = [];
+        $ticks = false;
+        foreach ($own as $row) {
+            $median = $medians[$row['level']] ?? null;
+            $ticks = $ticks || $median !== null;
+            $data[] = [$row['level'], $row['seconds'] / 3600, null, null, $median === null ? null : $median / 3600];
+            $say[] = Format::line('Level '.$row['level'], ': '.Format::duration($row['seconds']).($median === null ? '' : ', median '.Format::duration($median)));
+        }
+        $axis = Axis::nice(max([0.0, ...array_column($data, 1), ...array_filter(array_column($data, 4), fn (mixed $hours): bool => $hours !== null)]));
+        $first = $data[0][0];
+        $end = $data[count($data) - 1][0];
+
+        return [
+            'spec' => Charts::bars(['w' => 1100, 'h' => 240, 'x0' => $first - 1, 'x1' => $end + 1, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread($first, $end))], $data, 't', $say),
+            'key' => [['label' => 'Time in level', 'style' => 'background:var(--fg)'], ...($ticks ? [['label' => 'Ruleset median', 'class' => 'k-line', 'style' => 'background:var(--accent)']] : [])],
         ];
     }
 

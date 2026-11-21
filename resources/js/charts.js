@@ -129,13 +129,14 @@ const draw = {
         const f = frame(svg, spec);
         const bw = ((f.W - f.L - 6) / (spec.x1 - spec.x0)) * 0.72;
         const rects = [];
-        spec.data.forEach(([a, v, lo, hi], i) => {
+        spec.data.forEach(([a, v, lo, hi, mark], i) => {
             const rect = svgEl('rect', { class: 'bar ' + (spec.cls || ''), x: f.x(a) - bw / 2, width: bw, y: f.y(v), height: Math.max(0, f.y(0) - f.y(v)), rx: 1.5 });
             const line = spec.say?.[i];
             if (line) rect.append(svgEl('title', {}, line[0] + (line[1] ?? '')));
             svg.append(rect);
             rects.push(rect);
             if (hi != null) svg.append(svgEl('line', { class: 'whisk', x1: f.x(a), x2: f.x(a), y1: f.y(lo), y2: f.y(hi) }));
+            if (mark != null) svg.append(svgEl('line', { class: 'tick', x1: f.x(a) - bw / 2 - 1.5, x2: f.x(a) + bw / 2 + 1.5, y1: f.y(mark), y2: f.y(mark) }));
         });
         readable(svg, spec, f, spec.data.length, (i) => f.x(spec.data[i][0]), (i, live) => {
             rects.forEach((rect, k) => rect.classList.toggle('dim', live && k !== i));
