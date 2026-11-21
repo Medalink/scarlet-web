@@ -4,6 +4,8 @@ use scarlet_part::pseudo::{hex, unhex};
 use scarlet_part::tables::Groups;
 use scarlet_part::wire;
 use serde_json::json;
+mod measure;
+
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::ffi::OsString;
 use std::fs;
@@ -17,7 +19,9 @@ const USAGE: &str = "usage:
   scarlet-part batch --parts-dir <dir> --out <file> [--split]
   scarlet-part unbatch --in <file> --out-dir <dir>
   scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin
-  scarlet-part check-overview --parts-dir <dir> --overview <overview.json>";
+  scarlet-part check-overview --parts-dir <dir> --overview <overview.json>
+  scarlet-part measure --root <out dir> --folders a,b,c [--runs 5] [--dump-text <dir>]
+  scarlet-part parse-bench <text file> [--runs 7]";
 
 type Flags = BTreeMap<String, String>;
 
@@ -93,6 +97,31 @@ fn run(mut args: Vec<OsString>) -> Result<(), String> {
         "unbatch" => unbatch(args),
         "decode" => decode(args),
         "check-overview" => check_overview(args),
+        "measure" => {
+            let (f, _) = flags(args, &["root", "folders", "runs", "dump-text"], &[])?;
+            let folders: Vec<String> = need(&f, "folders")?
+                .split(',')
+                .map(str::to_string)
+                .collect();
+            let runs = f
+                .get("runs")
+                .map_or(Ok(5), |r| r.parse())
+                .map_err(|_| "bad --runs")?;
+            measure::measure(
+                Path::new(need(&f, "root")?),
+                &folders,
+                runs,
+                f.get("dump-text").map(Path::new),
+            )
+        }
+        "parse-bench" => {
+            let (f, rest) = flags(args, &["runs"], &[])?;
+            let runs = f
+                .get("runs")
+                .map_or(Ok(7), |r| r.parse())
+                .map_err(|_| "bad --runs")?;
+            measure::parse_bench(Path::new(rest.first().ok_or(USAGE)?), runs)
+        }
         _ => Err(USAGE.into()),
     }
 }

@@ -25,6 +25,7 @@ pub struct Summary {
     pub rows: usize,
     pub lines: usize,
     pub session: i64,
+    pub played_ms: i64,
 }
 
 struct DLine<'a> {
@@ -774,7 +775,7 @@ impl Dec<'_> {
 }
 
 impl Dec<'_> {
-    fn finish(mut self, lines: usize, groups: &[&str], backsteps: usize) -> usize {
+    fn finish(mut self, lines: usize, groups: &[&str], backsteps: usize) -> (usize, i64) {
         self.charge(self.end_ms, true);
         if let Some(i) = self.run_inside.take() {
             let end = self.end_ms;
@@ -892,7 +893,7 @@ impl Dec<'_> {
             self.w.end();
         }
         self.session_row(lines, groups, backsteps);
-        self.w.count
+        (self.w.count, self.end_ms.max(self.start_ms) - self.start_ms)
     }
 
     fn session_row(&mut self, lines: usize, groups: &[&str], backsteps: usize) {
@@ -1106,10 +1107,11 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         }
     }
     let names: Vec<&str> = keys.iter().map(|i| groups.key(*i)).collect();
-    let rows = d.finish(count, &names, backsteps);
+    let (rows, played_ms) = d.finish(count, &names, backsteps);
     Ok(Summary {
         rows,
         lines: count,
         session,
+        played_ms,
     })
 }

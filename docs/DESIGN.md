@@ -17,8 +17,8 @@ This file is the design. Build nothing that contradicts it; change it first. Num
 | Upload unit | A *part*: one session of one character, one sharing group | A session never changes once it ends, so its parts are immutable and a hash names them for good |
 | Identity of a part | SHA-256 of its text | Nothing is sent or stored twice, whatever PC or reinstall it comes from |
 | Filtering | In the app, before hashing | The hash covers exactly what is shared. A group that is off is never built, so the server cannot see it |
-| Wire compression | One zstd frame per request over many parts | Parts are small; compressing them together keeps the ratio of a whole file |
-| Decoding | A small Rust tool, `scarlet-part`, that the queue job runs | Stock PHP has no zstd. The same crate builds the parts in the app, so the format lives in one place |
+| Wire compression | One zstd frame per request over many parts | Parts are small; compressing them together keeps the ratio of a whole file. *Measured:* a 125-hour history (148 sessions) is one request of 1.2 MB, a typical new session 2.8 KB, about 10 KB per hour played; stored alone the same parts take 25 percent more |
+| Decoding | A small Rust tool, `scarlet-part`, that the queue job runs | Stock PHP has no zstd. The same crate builds the parts in the app, so the format lives in one place. *Measured:* the bare line-parsing loop takes 62 ms in PHP and 30 ms in Rust on 258,000 lines; the full decode of a 125-hour history takes 121 ms in Rust |
 | Upload credential | An Ed25519 key per install, every request signed | No password, no secret on the wire, and the server stores only public keys |
 | Accounts | Sign in with Google or Battle.net. The account owns installs and characters | Private views and control from the browser. Only the provider's subject id is stored |
 | Linking the app | The app shows a code and opens the browser; the player confirms while signed in | No local listener, no token handed to the app, works from another device |

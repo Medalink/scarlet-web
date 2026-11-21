@@ -21,6 +21,8 @@ impl Ev {
 pub struct Payload {
     pub character: String,
     pub events: Vec<Ev>,
+    /// Bytes of the decompressed text.
+    pub text_len: usize,
 }
 
 /// Parse decoded payload text. `magic` is `scarlet` or `scarletaddons`. Lines
@@ -53,7 +55,11 @@ pub fn parse(text: &str, magic: &str) -> Result<Payload, String> {
             text: rest.to_string(),
         });
     }
-    Ok(Payload { character, events })
+    Ok(Payload {
+        character,
+        events,
+        text_len: text.len(),
+    })
 }
 
 /// Decompress a `.scl` file's bytes (one zstd frame) and parse it.

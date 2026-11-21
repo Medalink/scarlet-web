@@ -11,6 +11,8 @@ pub struct Loaded {
     pub files: usize,
     /// Bytes of the .scl files as they are on disk.
     pub scl_bytes: u64,
+    /// Bytes of the decompressed main-stream text.
+    pub text_bytes: u64,
     pub addon_files: usize,
     pub addon_scl_bytes: u64,
     /// Files left out and why.
@@ -39,6 +41,7 @@ pub fn load_dir(payloads: &Path, addons: Option<&Path>) -> Result<Loaded, String
         addon: Vec::new(),
         files: 0,
         scl_bytes: 0,
+        text_bytes: 0,
         addon_files: 0,
         addon_scl_bytes: 0,
         skipped: Vec::new(),
@@ -51,6 +54,7 @@ pub fn load_dir(payloads: &Path, addons: Option<&Path>) -> Result<Loaded, String
         match parse_scl(&bytes, "scarlet") {
             Ok(p) if loaded.character.is_empty() || p.character == loaded.character => {
                 loaded.character = p.character;
+                loaded.text_bytes += p.text_len as u64;
                 loaded.main.extend(p.events);
                 loaded.files += 1;
                 loaded.scl_bytes += bytes.len() as u64;
