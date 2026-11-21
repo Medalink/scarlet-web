@@ -7,7 +7,8 @@
 # /up and /release-notes through nginx's own configuration (loopback ports 8091 and 8092), and only then does nginx's
 # upstream move to it with a reload. nginx finishes the requests it has, the old php-fpm gets SIGQUIT and finishes
 # its own, then stops. A release that fails its check never gets visitors: the old one keeps serving and this exits 1.
-# Horizon and the scheduler are stopped gracefully (running jobs finish) and started on the new release.
+# Horizon runs per slot too: the new release's Horizon starts beside the old one, which stops gracefully in the background
+# (running jobs finish), so no deploy waits for a job. The scheduler is stopped and started on the new release.
 #
 # Migrations run before the switch while the old code still serves. They must be expand-only (docs/HOSTING.md).
 set -eu
@@ -49,15 +50,29 @@ healthy() {
   port=$(check_port "$1")
   good=0
   tries=0
-  while [ "$tries" -lt 60 ]; do
+  while [ "$tries" -lt 120 ]; do
     up=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/up" || true)
     notes=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/release-notes" || true)
     if [ "$up" = 200 ] && [ "$notes" = 200 ]; then good=$((good + 1)); else good=0; fi
     [ "$good" -ge 3 ] && return 0
     tries=$((tries + 1))
-    sleep 2
+    sleep 1
   done
   return 1
+}
+
+nginx_workers_drained() {
+  n=0
+  while [ "$n" -lt 10 ]; do
+    $dc exec -T web ps 2>/dev/null | grep -q 'shutting down' || return 0
+    n=$((n + 1))
+    sleep 0.5
+  done
+}
+
+drain_without_rollout_lock() {
+  [ -n "$1" ] || return 0
+  setsid sh -c 'docker stop -t 150 "$@" >/dev/null 2>&1; docker rm "$@" >/dev/null 2>&1' drain $1 9>&- >/dev/null 2>&1 </dev/null &
 }
 
 # The built assets of every release stay in one folder, so a page from the old release still finds its files.
@@ -100,23 +115,24 @@ activate() {
   echo "$nxt" > state/active.new && mv state/active.new state/active
   echo "rollout: visitors moved to $nxt ($release)"
 
-  # Requests nginx had handed to the old php-fpm finish there; the single-container layout before blue/green is cleaned up too.
-  sleep 5
+  nginx_workers_drained
   if [ "$cur" != none ]; then
     $dc stop -t 60 "app-$cur" >/dev/null
     $dc rm -f "app-$cur" >/dev/null
   fi
   docker rm -f scarlet-web-app-1 >/dev/null 2>&1 || true
 
-  # Running jobs finish (SIGTERM is Horizon's own terminate), then the new release takes over.
   put SCARLET_RELEASE "$release"
-  $dc stop horizon schedule >/dev/null 2>&1 || true
+  retiring=$($dc ps -q "horizon-$cur" 2>/dev/null || true)
+  retiring="$retiring $(docker ps -aq --filter label=com.docker.compose.project=scarlet-web --filter label=com.docker.compose.service=horizon)"
+  $dc stop "horizon-$nxt" schedule >/dev/null 2>&1 || true
   # rm clears a container an interrupted rollout left behind: a recreate of it dies on
   # "container name already in use" and horizon or schedule would keep running the old release.
-  $dc rm -f horizon schedule >/dev/null 2>&1 || true
-  $dc up -d --no-deps horizon schedule
+  $dc rm -f "horizon-$nxt" schedule >/dev/null 2>&1 || true
+  $dc up -d --no-deps "horizon-$nxt" schedule
+  drain_without_rollout_lock "$retiring"
   # A failed recreate can still print nothing on compose's side or exit 0, so check the state itself.
-  for svc in horizon schedule; do
+  for svc in "horizon-$nxt" schedule; do
     if ! $dc ps --services --status running "$svc" | grep -qx "$svc"; then
       echo "rollout: $svc is not running on $release" >&2
       $dc logs --no-log-prefix --tail 40 "$svc" >&2 || true
@@ -134,6 +150,20 @@ prune_images() {
   for tag in $(docker images scarlet-web-web --format '{{.Tag}}'); do docker rmi "scarlet-web-web:$tag" >/dev/null 2>&1 || true; done
 }
 
+prune_registry() {
+  api=http://127.0.0.1:5077/v2/scarlet-web-app
+  accept='application/vnd.oci.image.index.v1+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json'
+  keep=" $(get BLUE_RELEASE) $(get GREEN_RELEASE) $(get SCARLET_RELEASE) $(tail -n 3 releases | tr '\n' ' ')"
+  deleted=0
+  tags=$(curl -sf "$api/tags/list" | sed -n 's/.*"tags":\[\(.*\)\].*/\1/p' | tr -d '"' | tr ',' ' ') || return 0
+  for tag in $tags; do
+    case "$keep" in *" $tag "*) continue ;; esac
+    digest=$(curl -sfI -H "Accept: $accept" "$api/manifests/$tag" | tr -d '\r' | sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: //p')
+    [ -n "$digest" ] && curl -sf -X DELETE "$api/manifests/$digest" >/dev/null && deleted=$((deleted + 1))
+  done
+  [ "$deleted" -eq 0 ] || $dc exec -T registry registry garbage-collect --delete-untagged /etc/distribution/config.yml >/dev/null
+}
+
 if [ "${1:-}" = --rollback ]; then
   now=$(get SCARLET_RELEASE)
   previous=$(grep -v "^$now\$" releases | tail -n 1 || true)
@@ -146,18 +176,19 @@ fi
 new=$1
 docker image inspect "scarlet-web-app:$new" >/dev/null
 t_migrate=$(date +%s.%N)
-$dc pull postgres redis web
+$dc pull --quiet --policy missing postgres redis web
 $dc up -d --wait postgres redis web
 reload_nginx
 
-artisan() { SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools php artisan "$@" --no-interaction; }
-artisan migrate --force
-artisan maps:load-rects
-artisan app:release-notes:publish --from-file=storage/app/release-notes.json
-artisan cache:clear
+SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools sh -ec '
+  php artisan migrate --force --no-interaction
+  php artisan maps:load-rects --no-interaction
+  php artisan app:release-notes:publish --from-file=storage/app/release-notes.json --no-interaction
+  php artisan cache:clear --no-interaction'
 phase migrate "$t_migrate"
 
 activate "$new" || exit 1
 grep -qx "$new" releases || echo "$new" >> releases
 prune_images
+prune_registry || echo "rollout: the registry was not pruned"
 echo "rollout: $new is serving"

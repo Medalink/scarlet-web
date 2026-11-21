@@ -9,7 +9,7 @@ scarletweb.io runs on one DigitalOcean droplet behind Cloudflare. The code that 
 | --- | --- |
 | Droplet | `scarlet-web`, region nyc3, `s-2vcpu-4gb` (2 vCPU, 4 GB RAM, 80 GB disk), Ubuntu 24.04, 2 GB swap, DigitalOcean backups and monitoring on |
 | Cloudflare | Zone `scarletweb.io` on the Free plan. Proxied `A` and `AAAA` records for the apex and `www`. SSL mode Full (strict), Authenticated Origin Pulls on, Always Use HTTPS on, minimum TLS 1.2, HSTS off |
-| Containers | `web` (nginx), `app-blue` or `app-green` (php-fpm, one serves), `horizon`, `schedule`, `postgres` (TimescaleDB 2.32 with the Toolkit, PostgreSQL 18), `redis`. `deploy/compose.yaml` |
+| Containers | `web` (nginx), `app-blue` or `app-green` (php-fpm, one serves), `horizon-blue` or `horizon-green` (the active release's), `schedule`, `registry` (image layers, loopback only), `postgres` (TimescaleDB 2.32 with the Toolkit, PostgreSQL 18), `redis`. `deploy/compose.yaml` |
 | Access | Tailscale only. `ssh ops@scarlet-web` with the server's own key. The DigitalOcean web console is the fallback |
 | Files on the droplet | `/srv/scarlet-web`: `.env` (mode 600), `tls/`, `maps/`, `backups/`, `deploy/`; `/etc/scarlet-web/r2.env` (R2 credentials, root only) |
 
@@ -43,8 +43,12 @@ bin/deploy <sha>      # a given commit
 
 What it does: clones the full history on medaware (checkouts under `/data/<user>/scratch/scarlet-web-build`), builds
 the `app` image through `fleet slot` (cargo for `scarlet-part`, composer, Vite), runs `app:version --strict` and
-`app:release-notes:backfill` with the git history mounted for that one step so no `.git` is in the image, then pipes
-`docker save | zstd | ssh | docker load` to the droplet. On the droplet `deploy/rollout.sh`:
+`app:release-notes:backfill` with the git history mounted for that one step so no `.git` is in the image. The image goes
+to the droplet as the layers its registry lacks: `registry:3` runs on the droplet and listens on 127.0.0.1:5077 only;
+`bin/deploy` opens `ssh -L` to it from the machine that runs the deploy and `ssh -R` from there to medaware, which
+cannot reach the droplet, so medaware's `docker push` sends only new layers (a code-only release is a few MB) and the
+droplet pulls them from its own registry. When the registry does not answer, or with `DEPLOY_TRANSPORT=stream`, it
+falls back to `docker save | zstd | ssh | docker load` of the whole image. `bin/deploy` prints the seconds each phase took when it ends. On the droplet `deploy/rollout.sh`:
 
 1. runs `migrate --force`, `maps:load-rects`, `app:release-notes:publish` and `cache:clear` with the new image while
    the old release still serves;
@@ -54,9 +58,12 @@ the `app` image through `fleet slot` (cargo for `scarlet-part`, composer, Vite),
    from the old release still finds its files;
 4. rewrites nginx's upstream (`/srv/scarlet-web/state/upstream.conf`) and runs `nginx -s reload`, not a restart: nginx
    finishes the requests it has;
-5. waits 5 seconds, then sends the old php-fpm SIGQUIT, which finishes its requests, and removes it;
-6. stops Horizon and the scheduler gracefully (running jobs finish; SIGTERM is Horizon's own terminate) and starts them
-   on the new release. Queued jobs wait in Redis meanwhile.
+5. waits until nginx's old workers have exited (5 seconds at most), then sends the old php-fpm SIGQUIT, which finishes
+   its requests, and removes it;
+6. starts the new release's Horizon (`horizon-blue` or `horizon-green`, the slot of the new php-fpm) and restarts the
+   scheduler on it, then stops the old Horizon in the background with SIGTERM (Horizon's own terminate: running jobs
+   finish, 150 seconds at most). The deploy does not wait for it; both Horizons work the queues meanwhile;
+7. keeps the registry to the same releases as the droplet's images and collects the layers no release uses.
 
 A release that fails the health check never gets visitors: the old release keeps serving, the new container is
 removed and the deploy exits 1. The images of the active release, the other slot and the last three releases stay on
@@ -94,9 +101,9 @@ goes forward again.
 ```sh
 bin/deploy logs web            # nginx access log: visitor address, Cloudflare peer, status, time
 bin/deploy logs app-blue       # php-fpm and Laravel (stderr) of one slot; `bin/deploy status` shows which serves
-bin/deploy logs horizon
+bin/deploy logs horizon-blue  # or horizon-green, the slot `bin/deploy status` shows
 bin/deploy ssh                 # a shell on the droplet; deploy/dc is docker compose for the stack
-bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec horizon php artisan horizon:status'
+bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec horizon-blue php artisan horizon:status'
 ```
 
 The Laravel log is also in the `logs` volume (`storage/logs/laravel.log` in the app containers). Docker keeps three
@@ -159,15 +166,15 @@ dump on the droplet is `backups/scarlet-<stamp>.dump`; a dump from R2 is piped i
 ```sh
 bin/deploy ssh
 cd /srv/scarlet-web
-deploy/dc stop app-blue app-green horizon schedule web
+deploy/dc stop app-blue app-green horizon-blue horizon-green schedule web
 deploy/dc exec -T postgres psql -U postgres -d postgres -c 'drop database scarlet' -c 'create database scarlet'
 deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'create extension if not exists timescaledb' \
   -c 'create extension if not exists timescaledb_toolkit' -c 'select timescaledb_pre_restore()'
 deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner < backups/scarlet-<stamp>.dump
 # from R2: bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner' < scarlet.dump
 deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'select timescaledb_post_restore()'
-deploy/dc up -d web horizon schedule
-cat state/active   # then: deploy/dc up -d app-blue (or app-green), the slot named there
+deploy/dc up -d web schedule
+cat state/active   # then: deploy/dc up -d app-blue horizon-blue (or app-green horizon-green), the slot named there
 ```
 
 `pg_dump` prints a warning about circular foreign keys on `continuous_agg`; the restore above ran clean from such a dump

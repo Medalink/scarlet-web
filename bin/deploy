@@ -6,7 +6,7 @@
 #                               an nginx reload: no failed request. A failed health check leaves the old release serving.
 #   bin/deploy rollback         move visitors back to the release before the current one, the same way (code only)
 #   bin/deploy status           the containers, the release and the zone settings
-#   bin/deploy logs [service]   follow the logs (web, app-blue, app-green, horizon, schedule, postgres, redis)
+#   bin/deploy logs [service]   follow the logs (web, app-blue, app-green, horizon-blue, horizon-green, schedule, postgres, redis, registry)
 #   bin/deploy backup           a backup now: dump, encrypt, copy to R2 (starts the nightly unit; exits 1 when it fails)
 #   bin/deploy backups          the newest local and R2 copies with their ages; exits 1 when stale or the last run failed
 #   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env (run before `server`)
@@ -136,7 +136,7 @@ take_lock() {
   until srv "mkdir -p /srv/scarlet-web/state && mkdir $lock 2>/dev/null && date +%s > $lock/at"; do
     srv "[ -f $lock/at ] && [ \$(( \$(date +%s) - \$(cat $lock/at) )) -gt 2400 ] && rm -rf $lock" || true
     echo "deploy: another deploy is running; waiting for it"
-    sleep 20
+    sleep 3
   done
   trap 'report; srv "rm -rf '"$lock"'"' EXIT
 }
