@@ -41,6 +41,7 @@ final class AccountPages
             ['Collections, achievements, Legacy and reputation', 'Legacy Challenges and points, mounts, pets, reputation.', true, false],
             ['Game client and addons loaded', 'Client checks, the addon list, UI errors, screenshots taken.', true, false],
             ['Other addons', 'What Scarlet records from other addons you run.', true, false],
+            ['Imported history from other addons', 'Gold, sales and purchases Scarlet read from other addons saved on this PC. Only you see them.', true, false],
         ];
     }
 }

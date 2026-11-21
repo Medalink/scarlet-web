@@ -91,3 +91,21 @@ pub fn load_dir(payloads: &Path, addons: Option<&Path>) -> Result<Loaded, String
     }
     Ok(loaded)
 }
+
+/// The imported history of one character (`imports/payloads/*.scl`, magic `scarletimports`),
+/// when its header names `character`.
+pub fn load_imports(dir: &Path, character: &str) -> Vec<Ev> {
+    let Ok(files) = scl_files(dir) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for path in files {
+        let Ok(bytes) = fs::read(&path) else { continue };
+        if let Ok(p) = parse_scl(&bytes, "scarletimports")
+            && p.character == character
+        {
+            out.extend(p.events);
+        }
+    }
+    out
+}

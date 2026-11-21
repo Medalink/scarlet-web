@@ -21,6 +21,7 @@ final class GroupDescriptions
         'collections' => 'Legacy Challenges and points, mounts, pets, reputation.',
         'client' => 'Client checks, the addon list, UI errors, screenshots taken.',
         'addons' => 'What Scarlet records from other addons you run.',
+        'imports' => 'Gold, sales and purchases Scarlet read from other addons saved on this PC. Only you see them.',
     ];
 
     public static function of(string $group): string

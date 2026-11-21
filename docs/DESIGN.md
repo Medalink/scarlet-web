@@ -58,6 +58,7 @@ is in no group or in two, and the app, the decoder and the settings page all rea
 | `collections` | Collections, achievements, Legacy and reputation | Legacy Challenges and points, mounts, pets, reputation, statistics |
 | `client` | Game client and addons loaded | Client checks, addon list, UI errors, screenshots, loading screens |
 | `addons` | Other addons | The whole addon stream of ADDONS.md, every integration |
+| `imports` | Imported history from other addons | Gold balances, sales, purchases and other income and expense read from other addons' saved variables; owner-only, never in a board |
 | `names` | Names and item facts | Not a switch. A name line (`N`, `SN`, `IN`, `II` and the like) is sent only in a session where a sent line uses that id |
 
 Rules:
@@ -119,6 +120,18 @@ scarlet-part\t1\t<Name-Surname>\t<session start, epoch s>\t<group key>
 The companion builds parts from its payloads (`out/<Name-Surname>/payloads/*.scl` and `addons/payloads/*.scl`), which
 stay as they are. `scarlet-part` is a Rust crate in this repo (`part/`). The companion depends on it by git revision;
 the server runs its binary.
+
+### Imported history
+
+The `imports` group carries gold balances, sales, purchases and other income and expense that the companion read from
+other addons' saved variables (Scarlet's FORMAT.md, "Imported history"). They are a third kind of record beside lifetime
+and observed numbers and stay apart from both:
+
+- One part per UTC day, whose session key is that day's start in epoch seconds. `DecodeSession` sends these parts to
+  `scarlet-part decode --imports` and `StoreImportedRecords` replaces the day's rows in `imported_records`; the session
+  decoder skips the group, so no session, fact row, rollup or board ever sees them.
+- `imported_records` has no public reader. `ShowImportedHistory` feeds the signed-in owner's character page and the
+  account's characters page, both labelled with the source. Removing the group or the character deletes its rows.
 
 ## Upload protocol
 

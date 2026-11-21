@@ -72,6 +72,36 @@ class PartTool
     }
 
     /**
+     * Decode the stored imports parts of one day into newline-delimited JSON, one `imported` row per line.
+     *
+     * @param  list<string>  $bodies  the `body` column of each part
+     * @return list<array<string, mixed>>
+     */
+    public function decodeImports(array $bodies): array
+    {
+        $input = '';
+        foreach ($bodies as $body) {
+            $input .= pack('V', strlen($body)).$body;
+        }
+
+        $run = Process::timeout(60)->input($input)->run([$this->binary(), 'decode', '--stdin', '--imports']);
+        if (! $run->successful()) {
+            throw new RuntimeException('scarlet-part decode --imports failed: '.$this->message($run->errorOutput()));
+        }
+
+        $rows = [];
+        foreach (explode("\n", $run->output()) as $line) {
+            if ($line !== '') {
+                /** @var array<string, mixed> $row */
+                $row = json_decode($line, associative: true, flags: JSON_THROW_ON_ERROR);
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
      * The sharing groups in the order of docs/groups.tsv.
      *
      * @return list<array{key: string, label: string, switchable: bool, codes: list<string>}>

@@ -29,4 +29,6 @@ final class SharingGroup
     public const string SOCIAL = 'social';
 
     public const string BUILD = 'build';
+
+    public const string IMPORTS = 'imports';
 }

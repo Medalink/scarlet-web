@@ -33,6 +33,9 @@ class DeleteFactRows
             $deleted += $query->delete();
         }
 
+        if ($sessionStart === null && ($group === null || $group === SharingGroup::IMPORTS)) {
+            $deleted += DB::table('imported_records')->whereIn('character_id', $characterIds)->delete();
+        }
         if ($group === SharingGroup::SOCIAL && $sessionStart === null) {
             $deleted += DB::table('pseudonyms')->whereIn('character_id', $characterIds)->delete();
         }

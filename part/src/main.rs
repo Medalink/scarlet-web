@@ -19,7 +19,7 @@ const USAGE: &str = "usage:
   scarlet-part batch --parts-dir <dir> --out <file> [--split]
   scarlet-part unbatch --in <file> --out-dir <dir> [--stored]
   scarlet-part inflate < <zstd frame> > <bytes>
-  scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin
+  scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin [--imports]
   scarlet-part check-overview --parts-dir <dir> --overview <overview.json>
   scarlet-part measure --root <out dir> --folders a,b,c [--runs 5] [--dump-text <dir>]
   scarlet-part parse-bench <text file> [--runs 7]";
@@ -343,7 +343,7 @@ fn by_session(texts: Vec<String>) -> Result<BTreeMap<i64, Vec<String>>, String> 
 
 fn decode(args: Vec<OsString>) -> Result<(), String> {
     use std::io::{Read, Write};
-    let (f, files) = flags(args, &["parts-dir", "session"], &["stdin"])?;
+    let (f, files) = flags(args, &["parts-dir", "session"], &["stdin", "imports"])?;
     let mut texts: Vec<String> = Vec::new();
     if f.contains_key("stdin") {
         let mut raw = Vec::new();
@@ -375,6 +375,15 @@ fn decode(args: Vec<OsString>) -> Result<(), String> {
     }
     for file in files {
         texts.push(read_part_file(Path::new(&file))?);
+    }
+    if f.contains_key("imports") {
+        let refs: Vec<&str> = texts.iter().map(String::as_str).collect();
+        let mut out = String::new();
+        scarlet_part::imports::decode_imports(&refs, &mut out)?;
+        return std::io::stdout()
+            .lock()
+            .write_all(out.as_bytes())
+            .map_err(|e| e.to_string());
     }
     let want: Option<i64> = f
         .get("session")
