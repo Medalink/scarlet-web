@@ -51,6 +51,20 @@ final class Charts
     }
 
     /**
+     * Stacked bars. $data: [[x, [part, part, ...]]], the parts from the bottom up; $classes: the class of each part.
+     *
+     * @param  array<string, mixed>  $axes
+     * @param  list<array{0: int, 1: list<float>}>  $data
+     * @param  list<string>  $classes
+     * @param  list<array{0: string, 1: string}>|null  $say
+     * @return array<string, mixed>
+     */
+    public static function stack(array $axes, array $data, array $classes, ?array $say = null, ?int $rest = null, ?string $out = null): array
+    {
+        return self::reading(['kind' => 'stack', ...$axes, 'cls' => $classes, 'data' => $data], $say, $rest, $out);
+    }
+
+    /**
      * Stacked shares, one row per step: [kill, dungeon, quest, explore, other], each a share of 1.
      *
      * @param  list<list<int|float>>  $rows

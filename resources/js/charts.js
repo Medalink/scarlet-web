@@ -143,6 +143,27 @@ const draw = {
         }, signal);
     },
 
+    stack(svg, spec, signal) {
+        const f = frame(svg, spec);
+        const bw = ((f.W - f.L - 6) / (spec.x1 - spec.x0)) * 0.72;
+        const groups = spec.data.map(([a, parts], i) => {
+            const group = svgEl('g');
+            let base = 0;
+            parts.forEach((value, k) => {
+                if (value <= 0) return;
+                group.append(svgEl('rect', { class: 'stk ' + spec.cls[k], x: f.x(a) - bw / 2, width: bw, y: f.y(base + value), height: Math.max(0, f.y(base) - f.y(base + value)) }));
+                base += value;
+            });
+            const line = spec.say?.[i];
+            if (line) group.append(svgEl('title', {}, line[0] + (line[1] ?? '')));
+            svg.append(group);
+            return group;
+        });
+        readable(svg, spec, f, spec.data.length, (i) => f.x(spec.data[i][0]), (i, live) => {
+            groups.forEach((group, k) => group.classList.toggle('dim', live && k !== i));
+        }, signal);
+    },
+
     // Stacked share bars in the page's own .xp-bars markup. rows: [kill, dungeon, quest, explore, other] as shares.
     shares(box, spec, signal) {
         const cls = ['c-kill', 'c-dungeon', 'c-quest', 'c-explore', 'c-other'];
@@ -257,7 +278,7 @@ function mount(node) {
     };
     render();
     if (spec.kind === 'map') document.fonts?.ready.then(render);
-    if (spec.kind !== 'line' && spec.kind !== 'bars' && spec.kind !== 'map') return;
+    if (spec.kind !== 'line' && spec.kind !== 'bars' && spec.kind !== 'stack' && spec.kind !== 'map') return;
     // Svg plots and maps are laid out for their width, so they draw again when it changes.
     let width = node.getBoundingClientRect().width;
     new ResizeObserver(() => {

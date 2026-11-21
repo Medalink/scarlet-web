@@ -9,6 +9,7 @@
 @endif
   <x-sheet>
     <x-module span="w7" :first="true" id="h-c" heading="Characters">
+      <x-slot:controls><a href="/account/characters">Compare characters</a></x-slot:controls>
       <livewire:account.characters />
     </x-module>
     <x-module span="w5" :last="true" id="h-i" heading="Installs">

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\AccountCharactersController;
 use App\Http\Controllers\Web\AccountController;
 use App\Http\Controllers\Web\AuthCallbackController;
 use App\Http\Controllers\Web\AuthDevelopmentController;
@@ -24,6 +25,7 @@ if (IdentityProvider::developmentAllowed()) {
 
 Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account', AccountController::class);
+    Route::get('/account/characters', AccountCharactersController::class);
     Route::get('/link', LinkShowController::class);
     Route::post('/link', LinkConfirmController::class);
 });

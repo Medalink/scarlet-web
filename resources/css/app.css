@@ -42,6 +42,10 @@
 .plot .ln.thin { stroke-width: 1.4; }
 .plot .dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
 .plot .bar { fill: var(--accent); } .plot .bar.t { fill: var(--fg); } .plot .bar.dim { fill: rgba(255, 255, 255, 0.16); }
+:root { --c-s1: var(--s-kill); --c-s2: var(--s-dungeon); --c-s3: var(--s-quest); --c-s4: var(--s-explore); --c-s5: var(--silver); --c-o: var(--s-other); }
+.plot .stk.s1 { fill: var(--c-s1); } .plot .stk.s2 { fill: var(--c-s2); } .plot .stk.s3 { fill: var(--c-s3); } .plot .stk.s4 { fill: var(--c-s4); } .plot .stk.s5 { fill: var(--c-s5); } .plot .stk.o { fill: var(--c-o); }
+.plot g.dim { opacity: 0.35; }
+.chart-name { font: 750 1.3rem/1 var(--display); color: var(--fg); margin-top: 1.8rem; }
 .plot .tick { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
 .plot .whisk { stroke: var(--muted); stroke-width: 1; }
 .plot .lab { fill: var(--fg); }
