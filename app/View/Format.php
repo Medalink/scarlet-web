@@ -100,6 +100,39 @@ final class Format
         return preg_replace('/([gs])(?=\d)/', '$1 ', $plain) ?? $plain;
     }
 
+    /** The races whose client file name differs from the name a player knows. */
+    private const array RACES = ['Scourge' => 'Undead', 'Undead' => 'Undead', 'NightElf' => 'Night Elf', 'BloodElf' => 'Blood Elf'];
+
+    /** A class file name as a player writes it: WARRIOR → "Warrior", DEATHKNIGHT → "Death Knight". */
+    public static function className(?string $file): string
+    {
+        if ($file === null || $file === '') {
+            return '';
+        }
+
+        return match (strtoupper($file)) {
+            'DEATHKNIGHT' => 'Death Knight',
+            'DEMONHUNTER' => 'Demon Hunter',
+            default => ucfirst(strtolower($file)),
+        };
+    }
+
+    /** A race file name as a player writes it: Scourge → "Undead", NightElf → "Night Elf". A name that is already spaced stays. */
+    public static function raceName(?string $file): string
+    {
+        if ($file === null || $file === '') {
+            return '';
+        }
+
+        return self::RACES[$file] ?? trim((string) preg_replace('/(?<=[a-z])(?=[A-Z])/', ' ', $file));
+    }
+
+    /** "Level 12 Orc Warrior" from the parts that are known. */
+    public static function character(?int $level, ?string $race, ?string $class): string
+    {
+        return trim(implode(' ', array_filter([$level === null ? '' : 'Level '.$level, self::raceName($race), self::className($class)])));
+    }
+
     /** Level ranges and counts that read "Levels 18 to 27". */
     public static function range(int $from, int $to): string
     {

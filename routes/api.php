@@ -2,8 +2,17 @@
 
 use App\Http\Controllers\Api\V1\Upload\InstallController;
 use App\Http\Controllers\Api\V1\Upload\UploadController;
+use App\Http\Middleware\PublicApi;
 use App\Http\Middleware\RateLimitRequests;
+use App\Support\PublicApiCatalog;
 use Illuminate\Support\Facades\Route;
+
+// The public read API under /api/v1/public: open data, no sign-in, listed once in PublicApiCatalog.
+Route::prefix('v1/public')->middleware(PublicApi::class)->group(function (): void {
+    foreach (PublicApiCatalog::endpoints() as $endpoint) {
+        Route::get($endpoint['path'], $endpoint['action'])->where($endpoint['where'])->name('public.'.$endpoint['name']);
+    }
+});
 
 // The upload API, versioned by path (docs/API.md). Everything but registration is signed by an install.
 Route::prefix('v1')->group(function (): void {

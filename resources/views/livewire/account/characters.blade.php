@@ -5,7 +5,7 @@
   <x-rows>
 @foreach ($characters as $character)
     @php
-        $detail = collect([$character->level ? 'Level '.$character->level : null, trim(($character->race ?? '').' '.($character->class ?? '')) ?: null])->filter()->implode(' ');
+        $detail = \App\View\Format::character($character->level ?: null, $character->race, $character->class);
         $line = collect([$detail ?: null, $character->sessions_decoded.' '.\Illuminate\Support\Str::plural('session', $character->sessions_decoded), $character->last_seen_at ? 'last upload '.$character->last_seen_at->diffForHumans() : 'nothing uploaded yet'])->filter()->implode(' · ');
     @endphp
     <x-row :title="$character->name" :href="'/c/'.rawurlencode($character->name)" :body="$line" wire:key="c-{{ $character->id }}">

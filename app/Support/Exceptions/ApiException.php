@@ -82,6 +82,16 @@ class ApiException extends RuntimeException
         return new self(429, 'rate_limited', 'Too many requests.', ['retry_after' => $retryAfter]);
     }
 
+    public static function invalidToken(): self
+    {
+        return new self(401, 'invalid_token', 'The bearer token is unknown, expired, or lacks the public:read ability.');
+    }
+
+    public static function notFound(string $what): self
+    {
+        return new self(404, 'not_found', $what.' was not found.');
+    }
+
     public static function dailyLimit(int $limit, int $used): self
     {
         return new self(429, 'daily_limit', 'This install reached its upload limit for today (UTC).', ['limit_bytes' => $limit, 'used_bytes' => $used]);
