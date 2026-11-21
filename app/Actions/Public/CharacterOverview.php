@@ -2,9 +2,14 @@
 
 namespace App\Actions\Public;
 
+use App\Actions\Public\Character\DeathLog;
+use App\Actions\Public\Character\ItemsFound;
+use App\Actions\Public\Character\SkillRanks;
+use App\Actions\Public\Character\ZoneHours;
 use App\Actions\Rollups\LevellingCurve;
 use App\Models\Character;
 use App\Support\KillerKind;
+use App\Support\PlayerNameShape;
 use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Support\Carbon;
@@ -23,6 +28,10 @@ class CharacterOverview
         private readonly LevellingCurve $curve,
         private readonly ListRulesets $rulesets,
         private readonly ResolvePlayerName $players,
+        private readonly ZoneHours $zoneHours,
+        private readonly DeathLog $deathLog,
+        private readonly ItemsFound $itemsFound,
+        private readonly SkillRanks $skillRanks,
     ) {}
 
     /**
@@ -57,6 +66,10 @@ class CharacterOverview
             'xp' => $this->xp($id),
             'dungeons' => $this->dungeons($id),
             'deaths' => $this->deaths($id, $owner),
+            'zoneHours' => $this->zoneHours->handle($id),
+            'deathLog' => $this->deathLog->handle($id, $owner),
+            'items' => $this->itemsFound->handle($id),
+            'skills' => $this->skillRanks->handle($id),
             'days' => $this->days($id),
             'gold' => $economy ? $this->gold($id) : null,
             'sessions' => $this->sessions($id, $economy, $history),
@@ -148,7 +161,11 @@ class CharacterOverview
         return [
             'total' => (int) DB::table('deaths')->where('character_id', $id)->count(),
             'killers' => array_values($killers->map(fn (object $row): array => [
-                'kind' => $row->kind, 'killer' => $row->kind === KillerKind::Player->value ? ($names[(string) $row->killer] ?? ResolvePlayerName::UNKNOWN) : (string) $row->killer, 'deaths' => (int) $row->deaths,
+                'kind' => $row->kind, 'killer' => match (true) {
+                    $row->kind === KillerKind::Player->value => $names[(string) $row->killer] ?? ResolvePlayerName::UNKNOWN,
+                    PlayerNameShape::matches((string) $row->killer) => ResolvePlayerName::UNKNOWN,
+                    default => (string) $row->killer,
+                }, 'deaths' => (int) $row->deaths,
             ])->all()),
             'zones' => array_values($zones->map(fn (object $row): array => ['zone_id' => (int) $row->zone_id, 'zone' => $row->zone, 'deaths' => (int) $row->deaths])->all()),
         ];

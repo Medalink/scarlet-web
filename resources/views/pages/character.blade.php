@@ -21,7 +21,7 @@
   <x-sheet>
     <x-module :span="$d['gold'] ? 'w8' : 'w12'" :first="true" :last="! $d['gold']" id="h-pace" :heading="$d['paceTitle']">
       @if ($d['pace'])
-      <x-plot id="pace" label="Hours played before each level for {{ $d['name'] }}, against the median and the middle half of characters of the same ruleset" :spec="$d['pace']['spec']" />
+      <x-plot id="pace" :label="$d['paceLabel']" :spec="$d['pace']['spec']" />
       <x-key :items="$d['pace']['key']" />
       <x-readout id="pace-out" :line="$d['pace']['line']" />
       @else
@@ -45,11 +45,39 @@
       <x-note>No experience recorded yet.</x-note>
       @endif
     </x-module>
-    <x-module :last="true" id="h-deaths" heading="Deaths">
-      @if ($d['deaths'])
-      <x-rank :rows="$d['deaths']" />
+    <x-module :last="true" id="h-zones" heading="Hours by zone">
+      @if ($d['zoneHours']['rows'])
+      <x-rank :rows="$d['zoneHours']['rows']" />
+      @if ($d['zoneHours']['others'])<p class="total">{{ $d['zoneHours']['others'] }}</p>@endif
+      @else
+      <x-note>No play time recorded yet.</x-note>
       @endif
-      <p class="total">{{ $d['deathTotal'] }}@if ($d['deathZones']) Most in {{ implode(', ', $d['deathZones']) }}.@endif</p>
+    </x-module>
+
+    <x-module span="w12" :first="true" :last="true" id="h-deaths" heading="Deaths by level">
+      @if ($d['deaths']['strip'])
+      <x-level-strip :cells="$d['deaths']['strip']" label="Deaths at each level" />
+      <x-table :rows="$d['deaths']['rows']" :columns="$d['deaths']['columns']" style="margin-top:1.4rem" />
+      @endif
+      <p class="total">{{ $d['deaths']['total'] }}</p>
+    </x-module>
+
+    <x-module span="w8" :first="true" id="h-items" heading="Items found">
+      @if ($d['items'])
+      <x-stack-bar :segments="$d['items']['segments']" :label="$d['items']['say']" />
+      <x-key :items="$d['items']['key']" />
+      @if ($d['items']['best'])<x-rank :rows="$d['items']['best']" />@endif
+      <p class="total">{{ $d['items']['total'] }}</p>
+      @else
+      <x-note>No looted items recorded.</x-note>
+      @endif
+    </x-module>
+    <x-module :last="true" id="h-skills" heading="Skills">
+      @if ($d['skills'])
+      <x-rank :rows="$d['skills']" />
+      @else
+      <x-note>No skills recorded.</x-note>
+      @endif
     </x-module>
 
     <x-module :first="true" id="h-runs" heading="Dungeons and raids">

@@ -30,8 +30,8 @@ final class CharacterPage
         /** @var list<array<string, mixed>> $sessions */
         $sessions = $r['sessions'];
         $economy = (bool) $r['economy'];
+        $pace = self::pace($r['pace'], $character->name);
         $topRuns = $dungeons === [] ? 1 : max(1, (int) $dungeons[0]['runs']);
-        $topKill = $deaths['killers'] === [] ? 1 : max(1, (int) $deaths['killers'][0]['deaths']);
 
         return [
             'id' => $character->id,
@@ -44,12 +44,17 @@ final class CharacterPage
                 $ruleset['label'] ?? null,
                 Format::duration($character->played_seconds).' played',
             ])),
-            'paceTitle' => isset($ruleset['label']) ? 'Levelling against other '.$ruleset['label'].' characters' : 'Levelling against other characters of the same ruleset',
+            'paceTitle' => match (true) {
+                $pace !== null && ! $pace['curve'] => 'Hours played before each level',
+                isset($ruleset['label']) => 'Levelling against other '.$ruleset['label'].' characters',
+                default => 'Levelling against other characters of the same ruleset',
+            },
+            'paceLabel' => $pace !== null && ! $pace['curve'] ? 'Hours played before each level for '.$character->name : 'Hours played before each level for '.$character->name.', against the median and the middle half of characters of the same ruleset',
             'map' => MapSpec::build($r['heat'], [], null, [], $r['marks']),
             'hasMap' => $r['heat'] !== [],
             'deathCount' => count($r['marks']),
             'week' => $week === null ? null : self::week($week, $economy),
-            'pace' => self::pace($r['pace'], $character->name),
+            'pace' => $pace,
             'xp' => StatsPage::xp($r['xp']),
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
             'dungeons' => array_map(fn (array $row): array => [
@@ -57,9 +62,10 @@ final class CharacterPage
                 'share' => (int) $row['runs'] / $topRuns * 100,
             ], $dungeons),
             'dungeonTotal' => $dungeons === [] ? null : Format::count(array_sum(array_column($dungeons, 'runs')), 'dungeon run').' in all.',
-            'deaths' => array_map(fn (array $row): array => ['label' => (string) $row['killer'], 'value' => Format::number($row['deaths']), 'share' => (int) $row['deaths'] / $topKill * 100], $deaths['killers']),
-            'deathZones' => array_map(fn (array $row): string => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']).' '.$row['deaths'], $deaths['zones']),
-            'deathTotal' => $deaths['total'] === 0 ? 'No deaths recorded.' : Format::count($deaths['total'], 'death').' recorded.',
+            'zoneHours' => CharacterSections::zones($r['zoneHours']),
+            'deaths' => CharacterSections::deaths($r['deathLog'], $deaths, (int) $character->level),
+            'items' => CharacterSections::items($r['items']),
+            'skills' => CharacterSections::skills($r['skills']),
             'days' => self::days($r['days']),
             'distance' => $r['distance'] > 0 ? Format::number($r['distance'], 1).' world widths walked' : null,
             'sessions' => self::sessions($sessions, $economy),
@@ -101,7 +107,11 @@ final class CharacterPage
             return null;
         }
         $curve = [];
+        // A median of one character is this character: compare only where others reached the level too.
         foreach ($pace['ruleset'] as $row) {
+            if ((int) $row['characters'] < 2) {
+                continue;
+            }
             $curve[(int) $row['level']] = $row;
         }
         $mine = $median = $band = $say = [];
@@ -128,6 +138,7 @@ final class CharacterPage
         $compare = isset($curve[$final['level']]) ? (float) $curve[$final['level']]['median'] - $final['seconds'] : null;
 
         return [
+            'curve' => $median !== [],
             // The readout steps along the character's own levels (series 1), not the median, which can miss a level.
             'spec' => Charts::line(['x0' => $first, 'x1' => $end, 'y1' => $axis['max'], 'lead' => 1, 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread($first, $end))], $series, $say, $last, 'pace-out'),
             'line' => [
@@ -139,7 +150,10 @@ final class CharacterPage
                     default => ', '.Format::hours(-$compare).' slower than the median.',
                 },
             ],
-            'key' => [['label' => $name, 'class' => 'k-line', 'style' => 'background:var(--fg)'], ['label' => 'Median', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Middle half', 'style' => 'background:rgba(255,45,85,.3)']],
+            'key' => [
+                ['label' => $name, 'class' => 'k-line', 'style' => 'background:var(--fg)'],
+                ...($median === [] ? [] : [['label' => 'Median', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Middle half', 'style' => 'background:rgba(255,45,85,.3)']]),
+            ],
         ];
     }
 

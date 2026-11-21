@@ -1,0 +1,3 @@
+{{-- One cell per level. cells: [['level', 'count', 'say']]. A level with deaths has a cross, and its count when it is more than one. --}}
+@props(['cells', 'label'])
+<ol class="lvls" aria-label="{{ $label }}">@foreach ($cells as $cell)<li @class(['dead' => $cell['count'] > 0]) title="{{ $cell['say'] }}"><span class="vh">{{ $cell['say'] }}</span><b aria-hidden="true">{{ $cell['level'] }}</b>@if ($cell['count'] > 0)<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12"/></svg>@if ($cell['count'] > 1)<small aria-hidden="true">{{ $cell['count'] }}</small>@endif @endif</li>@endforeach</ol>

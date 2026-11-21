@@ -281,3 +281,23 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .dl-list li { display: grid; gap: 0.2rem; }
 .dl-list span { color: var(--muted); font-size: 0.92rem; max-width: 70ch; }
 @media (max-width: 820px) { .dl { grid-template-columns: minmax(0, 1fr); } }
+
+/* Item quality: the game's colours for a bar, a key swatch and a name. */
+:root { --q0: #9d9d9d; --q1: #f0f1f3; --q2: #6cc24a; --q3: #4a9eff; --q4: #b77bff; }
+.q0 { color: var(--q0); }
+.c-q0, .rank .track i.c-q0 { background: var(--q0); } .c-q1, .rank .track i.c-q1 { background: var(--q1); } .c-q2, .rank .track i.c-q2 { background: var(--q2); }
+.c-q3, .rank .track i.c-q3 { background: var(--q3); } .c-q4, .rank .track i.c-q4 { background: var(--q4); }
+.stack { display: flex; gap: 2px; height: 1.1rem; margin-top: 1.3rem; }
+.stack i { flex: 1 1 0; min-width: 3px; border-radius: 2px; }
+.stack i:first-child { border-radius: 3px 2px 2px 3px; } .stack i:last-child { border-radius: 2px 3px 3px 2px; }
+
+/* Deaths by level: one cell per level, a cross on a level with deaths. */
+.lvls { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr)); gap: 3px; margin-top: 1.3rem; }
+.lvls li { position: relative; display: grid; grid-template-rows: auto 1fr; justify-items: center; align-items: center; min-height: 2.9rem; padding: 0.3rem 0 0.35rem; border-radius: 2px; background: rgba(255, 255, 255, 0.055); }
+.lvls b { font: 400 0.72rem/1 var(--mono); font-stretch: 85%; color: var(--muted); }
+.lvls svg { width: 0.9rem; height: 0.9rem; fill: none; stroke: var(--accent); stroke-width: 1.9; stroke-linecap: round; }
+.lvls small { position: absolute; right: 0.3rem; bottom: 0.2rem; font: 600 0.68rem/1 var(--mono); color: var(--fg); }
+.lvls li.dead { background: rgba(255, 45, 85, 0.13); }
+.lvls li.dead b { color: var(--text); }
+.rank .who.q0 { color: var(--q0); } .rank .who.q2 { color: var(--q2); } .rank .who.q3 { color: var(--q3); } .rank .who.q4 { color: var(--q4); }
+@media (max-width: 900px) { .mod + .mod { border-left: 0; } }
