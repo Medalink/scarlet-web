@@ -1,5 +1,5 @@
 // Writes the page comps into <repo>/docs/comps. Every name and number is invented.
-// node build-comps.mjs E:/Dev/scarlet-api/docs/comps
+// node docs/comps/build.mjs docs/comps
 import fs from "node:fs";
 import path from "node:path";
 

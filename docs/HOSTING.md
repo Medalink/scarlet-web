@@ -51,6 +51,7 @@ For local development the redirect URLs are the same paths on the local host nam
 
 ## The static website
 
-The landing page and the demo character page move into this app unchanged. The static site (Medalink/scarlet-web on
-GitHub Pages) keeps serving until this app has a public home. Retiring it is part of the same decision: once the app
-is live, replace the static pages with a redirect to the new address and archive that repo.
+The landing page and the demo character page move into the app unchanged. Until the app has a public home, the
+static pages keep serving from GitHub Pages on the `gh-pages` branch of this repo (a copy is in `static-site/`).
+Retiring them is part of the same decision: once the app is live, replace the `gh-pages` pages with a redirect to
+the new address, then delete `static-site/`.

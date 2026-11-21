@@ -23,7 +23,7 @@ This file is the design. Build nothing that contradicts it; change it first. Num
 | Accounts | Sign in with Google or Battle.net. The account owns installs and characters | Private views and control from the browser. Only the provider's subject id is stored |
 | Linking the app | The app shows a code and opens the browser; the player confirms while signed in | No local listener, no token handed to the app, works from another device |
 | Other players' names | Pseudonyms everywhere except the Social group, and never public unless that player made their own character public | A name belongs to its owner |
-| Pages | In this app. The static site stays as it is until the public deploy | Sign-in, search and private views need a server |
+| Repo | One Laravel app in this repo is the website and the API. The static pages keep serving from the `gh-pages` branch until the public deploy | Sign-in, search and private views need a server, and the owner wants the API to be part of the web |
 
 ## Words
 
