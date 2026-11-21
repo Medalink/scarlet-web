@@ -255,7 +255,19 @@ pub fn compare(sessions: &[String], overview: &str) -> Result<Report, String> {
             continue;
         };
         rep.compared += 1;
-        rep.check(*t, "played_s", row.p, int(o, "p"));
+        // The overview adds the reload before the next session (OVERVIEW.md, Played), up to the wall time
+        // between sessions; the decoder reads one session alone. Within two minutes over is that credit.
+        let theirs_p = int(o, "p");
+        rep.check(
+            *t,
+            "played_s",
+            row.p,
+            if (0..=120).contains(&(theirs_p - row.p)) {
+                row.p
+            } else {
+                theirs_p
+            },
+        );
         rep.check(*t, "level_start", row.l0, int(o, "l0"));
         rep.check(*t, "level_end", row.l1, int(o, "l1"));
         for (i, name) in [

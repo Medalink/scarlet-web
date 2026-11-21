@@ -117,7 +117,7 @@ class CharacterOverview
         ];
     }
 
-    /** @return list<array{level: int, seconds: int}> the played time before each level, from the first recorded session */
+    /** @return list<array{level: int, seconds: int}> the played time before each level, from the client's counter where the level's session read it, else summed from the first recorded session */
     private function levels(int $id): array
     {
         return array_values(DB::table('character_levels')->where('character_id', $id)->where('counted', true)->orderBy('level')

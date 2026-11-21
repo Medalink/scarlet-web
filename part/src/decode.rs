@@ -153,6 +153,9 @@ struct Dec<'o> {
     last_level_t: i64,
     tp_total: Option<i64>,
     tp_level: Option<i64>,
+    /// The first and the last `TP` read of the session: when (ms) and the total (s).
+    tp_first: Option<(i64, i64)>,
+    tp_last: Option<(i64, i64)>,
     // money
     balance: Option<i64>,
     money_start: Option<i64>,
@@ -501,6 +504,10 @@ impl Dec<'_> {
             "TP" => {
                 self.tp_total = num(&f, 0);
                 self.tp_level = num(&f, 1);
+                if let Some(total) = self.tp_total {
+                    self.tp_first.get_or_insert((t, total));
+                    self.tp_last = Some((t, total));
+                }
             }
             "GR" => {
                 let v = (field(&f, 0).to_string(), field(&f, 1).to_string());
@@ -966,6 +973,13 @@ impl Dec<'_> {
         let sf = self.s_fields.clone();
         let cd = self.cd.clone().unwrap_or_default();
         let level_end = self.lvl();
+        // The client's played counter (ms) at the start and the end of the session, from the reads in it.
+        let counter_start = self
+            .tp_first
+            .map(|(at, total)| total * 1000 - (at - start).max(0));
+        let counter_end = self
+            .tp_last
+            .map(|(at, total)| total * 1000 + (end - at).max(0));
         let xp_bar = self.xp_bar;
         let l0 = self.level_start;
         self.w.begin("sessions");
@@ -1003,6 +1017,8 @@ impl Dec<'_> {
             .opt("dungeon_runs", self.has.combat.then_some(self.run_count))
             .opt("tp_total_s", self.tp_total)
             .opt("tp_level_s", self.tp_level)
+            .opt("counter_start_ms", counter_start)
+            .opt("counter_end_ms", counter_end)
             .opt("gr_preset", preset);
         match hardcore {
             Some(b) => self.w.bool("gr_hardcore", b),
@@ -1111,6 +1127,8 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         last_level_t: first_t,
         tp_total: None,
         tp_level: None,
+        tp_first: None,
+        tp_last: None,
         balance: None,
         money_start: None,
         s_fields: Default::default(),

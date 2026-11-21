@@ -235,7 +235,7 @@ One per decode, last. Keys in order:
 | `session` | int | key |
 | `start`, `end` | int | ms. `start` is the `S` line (the first line when there is none); `end` is the latest time of any line from `S` through `ES`, except `TP` and `DP`. Name lines count too |
 | `has_start`, `ended` | bool | an `S` line exists; an `ES` line exists |
-| `played_ms`, `played_s` | int | `end - start`; seconds rounded half up. This is OVERVIEW.md's played time |
+| `played_ms`, `played_s` | int | `end - start`; seconds rounded half up. This is OVERVIEW.md's played time before the reload credit, which needs the session before and is applied across sessions (`counter_*`, below) |
 | `lines` | int | lines in all parts of the session, `pn` lines and addon lines included |
 | `groups` | string[] | the group keys that had a part |
 | `build`, `class`, `race`, `faction`, `addon_version` | string or null | `S` fields 1, 2, 3, 5, 6 |
@@ -249,6 +249,7 @@ One per decode, last. Keys in order:
 | `zones` | int | distinct zone names seen |
 | `dungeon_runs` | int or null | runs written in this session (before the joining rule above). null without a `combat` part |
 | `tp_total_s`, `tp_level_s` | int or null | the last `TP` |
+| `counter_start_ms`, `counter_end_ms` | int or null | the client's played counter at `start` and at `end`: the first `TP` read's total less the time from `start` to the read, and the last read's total plus the time from the read to `end`. null without a `TP` read. The client keeps counting through a reload, so the gap between two sessions' counters is played time that `played_ms` does not hold |
 | `gr_preset` | int or null | `GR` preset, the first one in the session |
 | `gr_hardcore` | bool or null | `GR` hardcore |
 | `war_mode` | string | `on`, `off` or `unknown` from the first `PB` line (warModeActive) |
