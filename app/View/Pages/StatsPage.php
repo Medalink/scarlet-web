@@ -75,9 +75,9 @@ final class StatsPage
             return Format::TOO_FEW.'.';
         }
         $characters = (int) $totals['characters'];
-        $text = Format::number($characters).($characters === 1 ? ' character' : ' characters');
+        $text = Format::count($characters, 'character');
         if ($totals['played_seconds'] !== null) {
-            $text .= ', '.Format::number(round((float) $totals['played_seconds'] / 3600)).' hours of play';
+            $text .= ', '.Format::count(round((float) $totals['played_seconds'] / 3600), 'hour').' of play';
         }
         $coverage = is_array($coverage) ? $coverage : [];
         $since = $coverage['since'] ?? null;
@@ -163,7 +163,7 @@ final class StatsPage
         $data = $say = [];
         foreach ($levels as $row) {
             $data[] = [(int) $row['level'], (int) $row['characters']];
-            $say[] = Format::line('Level '.$row['level'], ': '.Format::number((int) $row['characters']).((int) $row['characters'] === 1 ? ' character' : ' characters'));
+            $say[] = Format::line('Level '.$row['level'], ': '.Format::count((int) $row['characters'], 'character'));
         }
         $axis = Axis::nice((float) max(array_column($data, 1)), 2);
         $first = $data[0][0];
@@ -280,7 +280,7 @@ final class StatsPage
             $name = $row['kind'] === KillerKind::Player->value ? 'Another player' : (string) $row['killer'];
 
             return [
-                'label' => $name, 'value' => Format::number($deaths).($i === 0 ? ($deaths === 1 ? ' death' : ' deaths') : ''), 'share' => $top > 0 ? $deaths / $top * 100 : 0,
+                'label' => $name, 'value' => $i === 0 ? Format::count($deaths, 'death') : Format::number($deaths), 'share' => $top > 0 ? $deaths / $top * 100 : 0,
                 'href' => $row['npc_id'] === null ? null : '/creatures/'.$row['npc_id'],
             ];
         }, $rows, array_keys($rows));
@@ -295,7 +295,7 @@ final class StatsPage
         $top = (int) max([0, ...array_column($rows, 'deaths')]);
 
         return array_map(fn (array $row, int $i): array => [
-            'label' => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']), 'value' => Format::number((int) $row['deaths']).($i === 0 ? ((int) $row['deaths'] === 1 ? ' death' : ' deaths') : ''),
+            'label' => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']), 'value' => $i === 0 ? Format::count((int) $row['deaths'], 'death') : Format::number((int) $row['deaths']),
             'share' => $top > 0 ? (int) $row['deaths'] / $top * 100 : 0, 'href' => '/zones/'.$row['zone_id'],
         ], $rows, array_keys($rows));
     }

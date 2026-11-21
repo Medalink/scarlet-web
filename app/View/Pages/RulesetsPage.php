@@ -2,6 +2,7 @@
 
 namespace App\View\Pages;
 
+use App\Models\Ruleset;
 use App\View\Charts;
 use App\View\Format;
 
@@ -25,9 +26,11 @@ final class RulesetsPage
         $curves = $r['curves'];
         $byId = array_column($rulesets, null, 'id');
 
-        usort($rows, fn (array $a, array $b): int => (int) ($b['characters'] ?? 0) <=> (int) ($a['characters'] ?? 0));
+        $unrecorded = fn (array $row): bool => ($byId[$row['ruleset_id']]['slug'] ?? '') === Ruleset::UNKNOWN_SLUG;
+        usort($rows, fn (array $a, array $b): int => [$unrecorded($a), (int) ($b['characters'] ?? 0)] <=> [$unrecorded($b), (int) ($a['characters'] ?? 0)]);
 
         return [
+            'unrecorded' => array_any($rows, $unrecorded),
             'rows' => array_map(fn (array $row): array => self::row($row, $byId[$row['ruleset_id']]), $rows),
             'compare' => self::compare($rows, $byId, $curves),
             'survival' => self::survival($rulesets, $curves),

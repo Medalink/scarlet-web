@@ -53,7 +53,7 @@ final class MapPage
             'zonesList' => array_map(fn (array $zone, int $i): array => [
                 'label' => (string) ($zone['zone'] ?? 'Zone '.$zone['zone_id']), 'href' => '/zones/'.$zone['zone_id'],
                 'share' => $top > 0 ? (float) $zone['seconds'] / $top * 100 : 0,
-                'value' => Format::number(round((float) $zone['seconds'] / 3600)).($i === 0 ? ' hours' : ''),
+                'value' => $i === 0 ? Format::count(round((float) $zone['seconds'] / 3600), 'hour') : Format::number(round((float) $zone['seconds'] / 3600)),
             ], $busiest, array_keys($busiest)),
             'layerWord' => strtolower($layer->label()),
         ];

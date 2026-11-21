@@ -76,7 +76,13 @@ class Ruleset extends Model
         return $parts === [] ? self::UNKNOWN_SLUG : implode('-', $parts);
     }
 
-    /** The name a page shows: "Hardcore, Preset 1, PvP". */
+    /** The label of a ruleset none of whose signals were recorded. */
+    public const string UNRECORDED_LABEL = 'Rules not recorded';
+
+    /**
+     * The name a page shows: "Hardcore, PvP, Experience off". The recording carries the preset and the game mode as
+     * bare numbers and nothing that names them, so they stay out of the label; the slug still tells them apart.
+     */
     public function label(): string
     {
         $parts = [
@@ -85,17 +91,19 @@ class Ruleset extends Model
                 false => 'Standard',
                 default => null,
             },
-            $this->preset === null ? null : 'Preset '.$this->preset,
             match ($this->war_mode) {
                 self::WAR_MODE_ON => 'PvP',
                 self::WAR_MODE_OFF => 'PvE',
                 default => null,
             },
-            $this->xp_off === true ? 'Experience off' : null,
-            $this->game_mode === null ? null : 'Game mode '.$this->game_mode,
+            match ($this->xp_off) {
+                true => 'Experience off',
+                false => 'Experience on',
+                default => null,
+            },
         ];
         $parts = array_values(array_filter($parts));
 
-        return $parts === [] ? 'Unknown rules' : implode(', ', $parts);
+        return $parts === [] ? self::UNRECORDED_LABEL : implode(', ', $parts);
     }
 }

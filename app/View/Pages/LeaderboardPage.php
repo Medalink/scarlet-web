@@ -70,7 +70,7 @@ final class LeaderboardPage
 
     private static function count(Board $board, int $total): string
     {
-        $who = $total === 1 ? '1 public character' : Format::number($total).' public characters';
+        $who = Format::count($total, 'public character');
         $level = $board->level();
 
         return $level === null ? $who.' on this board.' : $who.($total === 1 ? ' has' : ' have').' reached level '.$level.'.';

@@ -75,7 +75,7 @@ final class SearchPage
             ],
             SearchKind::Creatures => [
                 'meta' => self::creatureMeta($hit),
-                'value' => $hit['kills'] === null ? '' : Format::number($hit['kills']).' kills',
+                'value' => $hit['kills'] === null ? '' : Format::count($hit['kills'], 'kill'),
             ],
             SearchKind::Items => [
                 'quality' => ItemTypes::quality($hit['quality'] ?? null),

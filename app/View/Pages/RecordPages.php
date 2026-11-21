@@ -138,7 +138,7 @@ final class RecordPages
             'name' => $r['name'],
             'facts' => array_values(array_filter([
                 $played === null ? null : Format::range((int) $played['level_min'], (int) $played['level_max']),
-                $hours === null ? 'No play recorded here yet' : Format::number(round($hours)).' hours played here',
+                $hours === null ? 'No play recorded here yet' : Format::count(round($hours), 'hour').' played here',
                 $deathCount === 0 ? null : Format::count($deathCount, 'death'),
             ])),
             'filters' => Filters::onPage($scope, self::rulesets($r), '/zones/'.$r['id']),

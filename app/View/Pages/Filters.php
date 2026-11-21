@@ -2,6 +2,7 @@
 
 namespace App\View\Pages;
 
+use App\Models\Ruleset;
 use App\Support\PageScope;
 use App\Support\Server;
 
@@ -20,6 +21,7 @@ final class Filters
      */
     public static function onPage(PageScope $scope, array $rulesets, string $path, array $keep = []): array
     {
+        $rulesets = self::named($scope, $rulesets);
         $link = fn (array $query): string => $path.(($query = array_filter([...$keep, ...$query])) === [] ? '' : '?'.http_build_query($query));
         $items = [['label' => 'All', 'href' => $link([]), 'on' => $scope->ruleset === null && $scope->server === Server::All]];
         foreach ($rulesets as $ruleset) {
@@ -46,6 +48,7 @@ final class Filters
      */
     public static function for(PageScope $scope, array $rulesets, string $statsPath = '/stats', string $rulesetPath = '/rulesets'): array
     {
+        $rulesets = self::named($scope, $rulesets);
         $items = [['label' => 'All', 'href' => $statsPath, 'on' => $scope->ruleset === null]];
         foreach ($rulesets as $ruleset) {
             $items[] = ['label' => $ruleset['label'], 'href' => $rulesetPath.'/'.$ruleset['slug'], 'on' => $scope->ruleset?->id === $ruleset['id']];
@@ -67,5 +70,22 @@ final class Filters
             'rulesetSelected' => $many ? ($scope->ruleset?->label() ?? 'All') : null,
             'servers' => $servers,
         ];
+    }
+
+    /**
+     * The rulesets a filter offers: the one with no recorded rules is left out when a named one exists, unless it is
+     * the one on show. /rulesets still lists it.
+     *
+     * @param  list<array{id: int, slug: string, label: string}>  $rulesets
+     * @return list<array{id: int, slug: string, label: string}>
+     */
+    private static function named(PageScope $scope, array $rulesets): array
+    {
+        $named = array_values(array_filter($rulesets, fn (array $ruleset): bool => $ruleset['slug'] !== Ruleset::UNKNOWN_SLUG));
+        if ($named === []) {
+            return $rulesets;
+        }
+
+        return array_values(array_filter($rulesets, fn (array $ruleset): bool => $ruleset['slug'] !== Ruleset::UNKNOWN_SLUG || $scope->ruleset?->id === $ruleset['id']));
     }
 }

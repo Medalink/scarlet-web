@@ -1,7 +1,7 @@
 <x-layouts.app title="Scarlet rulesets compared" current="rulesets" description="Characters, hours, time to level {{ $target }} and deaths for each ruleset.">
 <div class="wrap">
   <x-page-head title="Rulesets compared">
-    <x-slot:sub>A ruleset is how a character plays: the experience preset, hardcore or not, and PvE or PvP. Each row links to its own dashboard.</x-slot:sub>
+    <x-slot:sub>A ruleset is how a character plays: hardcore or not, PvE or PvP, and whether experience is on. Each row links to its own dashboard.@if ($d['unrecorded']) "Rules not recorded" holds sessions imported from before the rules line existed.@endif</x-slot:sub>
   </x-page-head>
   <x-sheet>
     <x-module span="w12" :first="true" :last="true">

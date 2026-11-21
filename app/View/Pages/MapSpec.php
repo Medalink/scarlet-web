@@ -49,7 +49,7 @@ final class MapSpec
         }
         $characters = (int) $zone['characters'];
 
-        return ', under the pointer: '.Format::number($characters).($characters === 1 ? ' character, ' : ' characters, ')
-            .Format::number(round((float) $zone['seconds'] / 3600)).' hours, '.Format::number((int) $zone['deaths']).((int) $zone['deaths'] === 1 ? ' death.' : ' deaths.');
+        return ', under the pointer: '.Format::count($characters, 'character').', '
+            .Format::count(round((float) $zone['seconds'] / 3600), 'hour').', '.Format::count((int) $zone['deaths'], 'death').'.';
     }
 }
