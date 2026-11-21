@@ -1,47 +1,145 @@
-# Hosting options
+# Hosting
 
-Nothing is deployed. This file lists what a public deploy needs and what each option costs a month, so the owner can
-pick one. Prices are list prices read in November 2026 and are to be checked on the provider's page before buying.
+scarletweb.io runs on one DigitalOcean droplet behind Cloudflare. The code that builds, ships and runs it is in
+`bin/deploy`, `deploy/` and `docker/prod.Dockerfile`; this file says what it does and how to operate it.
 
-## What runs
+## Layout
 
-- The Laravel app: web requests, and a Horizon worker for decoding and rollup refreshes.
-- `scarlet-part`, the decoder binary, next to the worker.
-- PostgreSQL 18 with TimescaleDB (community edition: continuous aggregates and columnstore) and the TimescaleDB
-  Toolkit (percentile and distinct-count sketches).
-- Redis for queues, cache and rate limits.
+| Part | What |
+| --- | --- |
+| Droplet | `scarlet-web`, region nyc3, `s-2vcpu-4gb` (2 vCPU, 4 GB RAM, 80 GB disk), Ubuntu 24.04, 2 GB swap, DigitalOcean backups and monitoring on |
+| Cloudflare | Zone `scarletweb.io` on the Free plan. Proxied `A` and `AAAA` records for the apex and `www`. SSL mode Full (strict), Authenticated Origin Pulls on, Always Use HTTPS on, minimum TLS 1.2, HSTS off |
+| Containers | `web` (nginx), `app` (php-fpm), `horizon`, `schedule`, `postgres` (TimescaleDB 2.32 with the Toolkit, PostgreSQL 18), `redis`. `deploy/compose.yaml` |
+| Access | Tailscale only. `ssh ops@scarlet-web` with the server's own key. The DigitalOcean web console is the fallback |
+| Files on the droplet | `/srv/scarlet-web`: `.env` (mode 600), `tls/`, `maps/`, `backups/`, `deploy/` |
 
-Expected size at the start is small: one character's whole history is a few megabytes of parts.
+Request path: browser, Cloudflare, nginx on the droplet (port 443, checked against Cloudflare's client certificate),
+php-fpm. nginx runs on the host network so it sees the real peer address. It trusts `CF-Connecting-IP` only from
+Cloudflare's published ranges (`deploy/nginx/cloudflare-ips.conf`), so Laravel's `$request->ip()` and the rate limits
+see the visitor, not Cloudflare. `www` redirects to the apex in nginx.
 
-## Options
+### Access and exposure
 
-| Option | What | About a month |
-| --- | --- | --- |
-| A. Laravel Cloud + managed TimescaleDB | App and worker on Laravel Cloud (Starter plan, one small web instance, one small worker, its Redis). Database on Tiger Cloud, the smallest paid service | $5 plan + about $12 to $15 compute + about $30 database: **about $50** |
-| B. Laravel Cloud only | As A, with Laravel Cloud's own serverless Postgres | **about $20 to $25**, only if check 1 below passes |
-| C. One server | A 4 vCPU, 8 GB server running the app, TimescaleDB and Redis in containers, backups to object storage | **about $10 to $25** |
+- The DigitalOcean cloud firewall `scarlet-web` (tag `scarlet-web`) lets in tcp 80 and 443 from Cloudflare's IPv4 and
+  IPv6 ranges and nothing else. There is no inbound 22. Outbound is open. Docker publishes ports around `ufw`, so
+  the cloud firewall is the guard, and nothing else is published: php-fpm listens on `127.0.0.1:9000` and PostgreSQL
+  and Redis are on the compose network only.
+- To open ssh for a while, add a tcp 22 rule for one address to the `scarlet-web` firewall and remove it after.
+- sshd allows the user `ops` with a key only; root login and passwords are off. `unattended-upgrades` is on and may
+  reboot at 04:30 UTC; every container restarts by itself.
+- Tailscale's Tailnet Lock is on for the tailnet. A new node stays locked out until a trusted node runs
+  `tailscale lock sign nodekey:<key>` (`tailscale lock status` on the trusted node shows the key).
+- The Cloudflare IP ranges change rarely. To refresh them: `node deploy/cloudflare.mjs ips > deploy/nginx/cloudflare-ips.conf`,
+  edit the firewall rules to match, then deploy.
 
-## Checks before choosing
+## Deploy
 
-1. Laravel Cloud's serverless Postgres must offer TimescaleDB with continuous aggregates and the Toolkit. Its docs name
-   pgvector and "a wide range of extensions" but no list. On a Laravel Cloud database run
-   `select name, default_version from pg_available_extensions where name like 'timescaledb%';` and
-   `create materialized view t with (timescaledb.continuous) as ...` on a hypertable. If either fails, option B is out.
-2. Laravel Cloud must offer PHP 8.5 as a runtime. Not confirmed from its docs.
-3. The worker must be able to run a bundled Linux binary (`scarlet-part`, static, a few MB).
+From medaviper (Git Bash) or medaware, in a checkout of this repository:
 
-## Recommendation
+```sh
+bin/deploy            # build main, ship it, migrate, start it
+bin/deploy <sha>      # a given commit
+```
 
-Option A. The owner already runs Laravel apps on Laravel Cloud, and a managed TimescaleDB means backups, upgrades and
-the extensions are someone else's work. If check 1 passes, move to B and save the $30. Option C is the cheapest and
-is fully under the owner's control, but the owner then runs the database.
+What it does: clones the full history on medaware (checkouts under `/data/<user>/scratch/scarlet-web-build`), builds
+the `app` and `web` images through `fleet slot` (cargo for `scarlet-part`, composer, Vite), runs `app:version
+--strict` and `app:release-notes:backfill` with the git history mounted for that one step so no `.git` is in the
+image, then pipes `docker save | zstd | ssh | docker load` to the droplet. On the droplet `deploy/rollout.sh`
+brings the databases up, runs `migrate --force`, `maps:load-rects`, `app:release-notes:publish` and `cache:clear`
+with the new image, starts the new containers and waits for `/up`. If `/up` does not answer in two minutes it starts
+the previous release again and exits 1. The newest three releases' images stay on the droplet.
+
+`bin/deploy status` shows the containers, the release and the Cloudflare settings. Every base image is pinned by
+digest in `docker/pins.tsv` and `docker/prod.Dockerfile`; `scripts/deps-age` checks they are at least 7 days old.
+
+## Roll back
+
+```sh
+bin/deploy rollback
+```
+
+It starts the release before the current one. Migrations are forward-only and are not undone, so a rollback changes
+code only; a migration that breaks the older code needs a new fix-forward release instead.
+
+## Logs and shells
+
+```sh
+bin/deploy logs web            # nginx access log: visitor address, Cloudflare peer, status, time
+bin/deploy logs app            # php-fpm and Laravel (stderr)
+bin/deploy logs horizon
+bin/deploy ssh                 # a shell on the droplet; deploy/dc is docker compose for the stack
+bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec horizon php artisan horizon:status'
+```
+
+The Laravel log is also in the `logs` volume (`storage/logs/laravel.log` in the `app` container). Docker keeps three
+10 MB files per container.
+
+## Backups
+
+- DigitalOcean backs up the whole droplet daily and keeps 7 days (the droplet's Backups tab restores or rebuilds
+  from one).
+- `scarlet-backup.timer` runs `deploy/backup.sh` at 03:15 UTC: `pg_dump -Fc` of the `scarlet` database into
+  `/srv/scarlet-web/backups`, deleting dumps older than 7 days. `bin/deploy backup` makes one now.
+- **Nothing is stored off-site yet.** The dumps are on the droplet's own disk, so they die with it, and the
+  DigitalOcean backups are in the same DigitalOcean account. Copy a dump somewhere else before anything risky.
+
+Restore a dump into an empty database (the order matters, TimescaleDB needs the two calls around `pg_restore`):
+
+```sh
+bin/deploy ssh
+cd /srv/scarlet-web
+f=backups/scarlet-<stamp>.dump
+deploy/dc stop app horizon schedule web
+deploy/dc exec -T postgres psql -U postgres -d postgres -c 'drop database scarlet' -c 'create database scarlet'
+deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'create extension if not exists timescaledb' \
+  -c 'create extension if not exists timescaledb_toolkit' -c 'select timescaledb_pre_restore()'
+deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner < "$f"
+deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'select timescaledb_post_restore()'
+deploy/dc up -d
+```
+
+`pg_dump` prints a warning about circular foreign keys on `continuous_agg`; the restore above ran clean from such a dump
+into a scratch database (61 tables, 26 continuous aggregates, 15 hypertables).
+
+## Map art
+
+The map tiles are not in git or in the image. They live on the droplet at `/srv/scarlet-web/maps` (mounted read-only
+at `/maps`, `MAPS_ROOT=/maps`), so a deploy never touches them. Build them as DEV.md says (`tools/map-tiles`), then:
+
+```sh
+bin/deploy maps <folder with manifest.json>     # normally storage/app/maps of a dev checkout
+```
+
+The site reads `manifest.json` for the current version, so a new build is live once it is copied. Never commit the
+tiles.
+
+## Setting up again from nothing
+
+Needs the secrets folder (`SCARLET_SECRETS`, default `E:/Dev/secrets/scarlet-web` on Windows): `do-token`,
+`cloudflare-token`, `tailscale-authkey`, `ops_ed25519` and `ops_ed25519.pub`.
+
+1. `node deploy/provision.mjs` uploads the ops key, creates the tag and the firewall, then the droplet from
+   `deploy/cloud-init.yaml` (ops user, key-only ssh, unattended upgrades, Docker, Tailscale, swap). It touches only
+   resources named `scarlet-web`.
+2. Sign the new node in the tailnet if Tailnet Lock is on.
+3. `bin/deploy bootstrap` makes the server folder and `.env` (its secrets are generated on the droplet), points the
+   DNS records at it, gets an Origin CA certificate for the apex and `*.scarletweb.io` (the key and CSR are made on
+   the droplet; only the CSR leaves it), deploys main, checks the certificate serves, switches the zone to Full
+   (strict), then turns on Authenticated Origin Pulls. Turning origin pulls on first, or strict first, makes every
+   request fail, which is why the order is fixed.
+
+## Cost
+
+Droplet `s-2vcpu-4gb`: $24 a month, plus the backups (a share of the droplet price) and nothing for Cloudflare's Free
+plan. Check DigitalOcean's pricing page; prices here were read in November 2026.
 
 ## What the owner registers
 
-Sign-in needs two OAuth clients, one per provider. Their ids and secrets go in the server's environment, never in the
-repo. `<domain>` is the public host name, `APP_URL` is `https://<domain>`, and `SESSION_SECURE_COOKIE` defaults to on
-when `APP_URL` starts with `https://`. Scarlet asks each provider for the `openid` scope only and keeps the provider
-name and the provider's subject id.
+Sign-in needs two OAuth clients, one per provider. Their ids and secrets go in `/srv/scarlet-web/.env` on the server
+(`bin/deploy ssh`, edit, then `deploy/dc up -d --force-recreate app horizon schedule`), never in the repo. They are
+empty today, so both buttons on `/login` are disabled. `<domain>` is `scarletweb.io`, `APP_URL` is
+`https://scarletweb.io`, and `SESSION_SECURE_COOKIE` is on. Scarlet asks each provider for the `openid` scope only and
+keeps the provider name and the provider's subject id.
 
 ### Google
 
@@ -69,8 +167,8 @@ name and the provider's subject id.
 
 `SCARLET_DEV_LOGIN=true` with `APP_ENV=local` adds a "Development sign-in" button to `/login`, which signs in as one
 fixed identity through the same Action as the callbacks. The route is not registered in any other environment and the
-Action refuses to run there. A provider with no client id shows its button disabled, and `/auth/<provider>/redirect`
-answers `503` with "Sign in with <provider> is not set up on this server."
+Action refuses to run there, so production shows no such button. A provider with no client id shows its button
+disabled, and `/auth/<provider>/redirect` answers `503` with "Sign in with <provider> is not set up on this server."
 
 ### What is proven
 
@@ -83,29 +181,18 @@ first real client ids before announcing sign-in.
 
 ## Version numbers and release notes
 
-The page footer and `/release-notes` read two files the build writes while it has the full git history. Neither is in
-git. Run these in the build, before the image is made, from a checkout that is not shallow:
-
-```sh
-php artisan app:version --strict --no-interaction
-php artisan app:release-notes:backfill --all --output=storage/app/release-notes.json --no-interaction
-```
-
-Ship `storage/app/version.json` and `storage/app/release-notes.json` in the image. After `php artisan migrate`, run:
-
-```sh
-php artisan app:release-notes:publish --from-file=storage/app/release-notes.json --no-interaction
-```
-
-The import reads no git, rejects a snapshot from another build, and keeps each release's date and every account's read
-state when it runs again. Flat mode is not used: it needs a commit of the generated file after every commit. Git hooks
-are not installed (`app:version:install-hooks`): PHP exists only in the dev containers, so a host hook would fail on
-Windows and on the ship machine. Without `version.json` the site shows the `VERSION` file with build `0`. Published
-notes are cached for an hour; `php artisan cache:clear` after the import shows them at once.
+The page footer and `/release-notes` read two files the image build writes while it has the full git history
+(`docker/prod.Dockerfile`, the step that mounts the history for `app:version --strict` and
+`app:release-notes:backfill --all --output=storage/app/release-notes.json`). Neither is in git. `deploy/rollout.sh`
+runs `php artisan app:release-notes:publish --from-file=storage/app/release-notes.json` after `migrate` and then
+`cache:clear`. The import reads no git, rejects a snapshot from another build, and keeps each release's date and every
+account's read state when it runs again. Flat mode is not used: it needs a commit of the generated file after every
+commit. Git hooks are not installed (`app:version:install-hooks`): PHP exists only in containers, so a host hook would
+fail on Windows and on the ship machine. Without `version.json` the site shows the `VERSION` file with build `0`.
 
 ## The static website
 
 The landing page and the demo character page move into the app unchanged. Until the app has a public home, the
 static pages keep serving from GitHub Pages on the `gh-pages` branch of this repo (a copy is in `static-site/`).
-Retiring them is part of the same decision: once the app is live, replace the `gh-pages` pages with a redirect to
-the new address, then delete `static-site/`.
+Retiring them is part of the same decision: now that the app is live, replace the `gh-pages` pages with a redirect to
+`https://scarletweb.io`, then delete `static-site/`.

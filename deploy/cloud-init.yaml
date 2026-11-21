@@ -1,0 +1,72 @@
+#cloud-config
+# First boot of the scarlet-web droplet (DigitalOcean nyc3, s-2vcpu-4gb, Ubuntu 24.04).
+# deploy/provision.mjs fills the two double-underscore placeholders below at create time: the public half of the
+# server-only ops key and a one-use, pre-approved Tailscale auth key. A filled copy never goes in git.
+
+disable_root: true
+ssh_pwauth: false
+package_update: true
+
+users:
+  - name: ops
+    gecos: scarlet-web operator
+    shell: /bin/bash
+    lock_passwd: true
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - __OPS_SSH_PUBKEY__
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - docker.io
+  - docker-compose-v2
+  - unattended-upgrades
+  - zstd
+  - postgresql-client
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-scarlet.conf
+    permissions: "0644"
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+      AllowUsers ops
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+  - path: /etc/apt/apt.conf.d/52scarlet-upgrades
+    permissions: "0644"
+    content: |
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+  - path: /etc/docker/daemon.json
+    permissions: "0644"
+    content: |
+      {"log-driver": "json-file", "log-opts": {"max-size": "10m", "max-file": "3"}}
+  - path: /etc/sysctl.d/90-scarlet.conf
+    permissions: "0644"
+    content: |
+      vm.swappiness=10
+      vm.overcommit_memory=1
+
+runcmd:
+  - [sh, -c, "fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo '/swapfile none swap sw 0 0' >> /etc/fstab"]
+  - [sysctl, --system]
+  - [usermod, -aG, docker, ops]
+  - [systemctl, enable, --now, docker]
+  - [sh, -c, "curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg -o /usr/share/keyrings/tailscale-archive-keyring.gpg"]
+  - [sh, -c, "curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list -o /etc/apt/sources.list.d/tailscale.list"]
+  - [apt-get, update]
+  - [apt-get, install, -y, tailscale]
+  - [sh, -c, "tailscale up --authkey='__TAILSCALE_AUTHKEY__' --hostname=scarlet-web"]
+  - [install, -d, -o, ops, -g, ops, -m, "0750", /srv/scarlet-web]
+  - [systemctl, restart, ssh]
+  - [touch, /var/lib/cloud/instance/scarlet-ready]

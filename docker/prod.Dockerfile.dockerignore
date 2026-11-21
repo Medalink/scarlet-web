@@ -1,0 +1,23 @@
+# The context of docker/prod.Dockerfile is a full clone. Nothing below reaches the images; the git history comes in as
+# the named context `gitdir` for the version step only.
+.git
+.env
+.env.*
+vendor
+node_modules
+public/build
+public/hot
+storage/app/maps
+storage/app/version.json
+storage/app/release-notes.json
+storage/logs/*.log
+storage/framework/views/*.php
+storage/deps-age
+storage/phpstan
+static-site
+e2e
+deploy
+docs/*.md
+docs/comps
+part/target
+tools/map-tiles/node_modules

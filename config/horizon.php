@@ -237,9 +237,10 @@ return [
 
     'environments' => [
         'production' => [
-            'supervisor-ingest' => ['maxProcesses' => 6],
+            // One 4 GB server runs the database and Redis too: two decoders at up to 1 GB each, not six.
+            'supervisor-ingest' => ['maxProcesses' => 2],
             'supervisor-rollups' => ['maxProcesses' => 1],
-            'supervisor-default' => ['maxProcesses' => 4, 'balanceMaxShift' => 1, 'balanceCooldown' => 3],
+            'supervisor-default' => ['maxProcesses' => 2, 'balanceMaxShift' => 1, 'balanceCooldown' => 3],
         ],
 
         'local' => [

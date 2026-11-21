@@ -1,0 +1,129 @@
+#!/bin/bash
+# Builds, ships and rolls out scarletweb.io. Run it from medaviper (Git Bash) or from medaware.
+#
+#   bin/deploy [ref]            build ref (default main) on the build host, load the images on the droplet,
+#                               migrate and start them, check the health. A failed check restarts the old release.
+#   bin/deploy rollback         start the release before the current one (code only: migrations are forward-only)
+#   bin/deploy status           the containers, the release and the zone settings
+#   bin/deploy logs [service]   follow the logs (web, app, horizon, schedule, postgres, redis)
+#   bin/deploy backup           an extra pg_dump now
+#   bin/deploy maps <folder>    copy map tiles (a folder with manifest.json) to the droplet's disk, outside the image
+#   bin/deploy bootstrap [ref]  first install: server, DNS, certificate, release, strict TLS, origin pulls
+#   bin/deploy server | tls | dns | strict | aop     the steps of bootstrap, each safe to run again
+#   bin/deploy ssh [command]    a shell on the droplet
+#
+# Settings (environment): SCARLET_SECRETS (folder with ops_ed25519, cloudflare-token), DEPLOY_HOST (default
+# scarlet-web, its tailnet name), DEPLOY_BUILD_HOST (default medaware; `local` builds on this machine),
+# DEPLOY_REPO (default the GitHub repository).
+set -euo pipefail
+
+here=$(cd "$(dirname "$0")/.." && pwd)
+case "$(uname -s)" in
+  MINGW* | MSYS*) default_secrets=E:/Dev/secrets/scarlet-web ;;
+  *) default_secrets=$HOME/.config/scarlet-web ;;
+esac
+secrets=${SCARLET_SECRETS:-$default_secrets}
+host=${DEPLOY_HOST:-scarlet-web}
+build_host=${DEPLOY_BUILD_HOST:-medaware}
+repo=${DEPLOY_REPO:-https://github.com/Medalink/scarlet-web.git}
+cf="node $here/deploy/cloudflare.mjs"
+export SCARLET_SECRETS=$secrets
+
+ssh_opts=(-i "$secrets/ops_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30)
+srv() { ssh "${ssh_opts[@]}" "ops@$host" "$@"; }
+on_build() {
+  if [ "$build_host" = local ]; then bash -c "$1"; else ssh -o ServerAliveInterval=30 "$build_host" "$1"; fi
+}
+# Where the build host keeps its clone: the same place build.sh uses.
+build_src='$(echo /data/$(id -un))/scratch/scarlet-web-build/src'
+
+push_deploy_folder() {
+  srv 'rm -rf /srv/scarlet-web/deploy.new && mkdir -p /srv/scarlet-web/deploy.new'
+  on_build "tar -C $build_src -cf - deploy" | srv 'tar -C /srv/scarlet-web/deploy.new --strip-components=1 --no-same-owner -xf - && rm -rf /srv/scarlet-web/deploy && mv /srv/scarlet-web/deploy.new /srv/scarlet-web/deploy'
+}
+
+build() {
+  local ref=$1
+  on_build "bash -s -- '$repo' '$ref'" < "$here/deploy/build.sh" | tee /dev/stderr | sed -n 's/^built //p' | tail -n 1
+}
+
+ship_images() {
+  local tag=$1
+  on_build "sudo -n docker save scarlet-web-app:$tag scarlet-web-web:$tag | zstd -T2 -3" | srv 'zstd -d | docker load'
+}
+
+release() {
+  local ref=${1:-main} sha
+  sha=$(build "$ref")
+  [ -n "$sha" ] || { echo "deploy: the build gave no sha" >&2; exit 1; }
+  echo "deploy: built $sha"
+  push_deploy_folder
+  ship_images "${sha:0:12}"
+  srv "/srv/scarlet-web/deploy/rollout.sh ${sha:0:12}"
+  echo "deploy: $sha is live"
+}
+
+step_server() {
+  srv 'sudo install -d -o ops -g ops -m 750 /srv/scarlet-web'
+  # The first deploy folder comes from the checkout this script runs in; later releases bring their own.
+  tar -C "$here" -cf - deploy | srv 'tar -C /srv/scarlet-web --no-same-owner -xf -'
+  srv 'sh /srv/scarlet-web/deploy/server-setup.sh'
+}
+
+step_tls() {
+  local tmp
+  tmp=$(mktemp -d)
+  srv 'cat /srv/scarlet-web/tls/origin.csr' > "$tmp/origin.csr"
+  $cf origin-cert "$tmp/origin.csr" "$tmp/origin.pem"
+  srv 'cat > /srv/scarlet-web/tls/origin.pem && chmod 644 /srv/scarlet-web/tls/origin.pem' < "$tmp/origin.pem"
+  rm -rf "$tmp"
+}
+
+droplet_address() { srv "ip -$1 route get $2 | grep -o 'src [^ ]*' | cut -d' ' -f2"; }
+
+step_dns() {
+  $cf dns "$(droplet_address 4 1.1.1.1)" "$(droplet_address 6 2606:4700:4700::1111)"
+  $cf settings
+}
+
+step_aop() {
+  $cf aop on
+  srv 'cp /srv/scarlet-web/deploy/nginx/aop-on.conf /srv/scarlet-web/aop.conf && /srv/scarlet-web/deploy/dc exec -T web nginx -s reload'
+}
+
+case "${1:-release}" in
+  release) release "${2:-main}" ;;
+  rollback) srv '/srv/scarlet-web/deploy/rollout.sh --rollback' ;;
+  status)
+    srv '/srv/scarlet-web/deploy/dc ps; cat /srv/scarlet-web/release.env'
+    $cf status
+    ;;
+  logs) srv "/srv/scarlet-web/deploy/dc logs --tail 100 -f ${2:-}" ;;
+  backup) srv '/srv/scarlet-web/deploy/backup.sh' ;;
+  maps)
+    [ -f "${2:?folder with manifest.json}/manifest.json" ] || { echo "deploy: no manifest.json in $2" >&2; exit 1; }
+    tar -C "$2" -cf - . | srv 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf -'
+    echo "deploy: maps copied to /srv/scarlet-web/maps"
+    ;;
+  server) step_server ;;
+  tls) step_tls ;;
+  dns) step_dns ;;
+  strict) $cf ssl strict ;;
+  aop) step_aop ;;
+  bootstrap)
+    step_server
+    step_dns
+    step_tls
+    release "${2:-main}"
+    srv "curl -sk --resolve scarletweb.io:443:127.0.0.1 -o /dev/null -w 'origin certificate serves: %{http_code}\n' https://scarletweb.io/up"
+    curl -s -o /dev/null -w 'through Cloudflare (ssl full): %{http_code}\n' https://scarletweb.io/up
+    $cf ssl strict
+    sleep 5
+    curl -s -o /dev/null -w 'through Cloudflare (ssl strict): %{http_code}\n' https://scarletweb.io/up
+    step_aop
+    sleep 5
+    curl -s -o /dev/null -w 'through Cloudflare (origin pulls): %{http_code}\n' https://scarletweb.io/up
+    ;;
+  ssh) shift; srv "$@" ;;
+  *) sed -n '2,19p' "$0"; exit 2 ;;
+esac

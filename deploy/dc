@@ -1,0 +1,4 @@
+#!/bin/sh
+# docker compose for the scarlet-web stack on the server: deploy/dc ps, deploy/dc logs -f horizon, deploy/dc exec app sh.
+cd /srv/scarlet-web/deploy
+exec docker compose -f compose.yaml --env-file ../.env --env-file ../release.env "$@"

@@ -76,6 +76,13 @@ The commit message is the ship note: a plain title that names the outcome, one t
 for the user and what stays the same, then `What changes` (concrete identifiers, old to new), `Unchanged on purpose`
 (what was left alone) and `Verification` (what ran, with counts, and what did not run and why).
 
+## Production
+
+scarletweb.io runs on one DigitalOcean droplet behind Cloudflare. `bin/deploy` builds a commit on medaware and rolls
+it out; [docs/HOSTING.md](docs/HOSTING.md) has the layout, rollback, logs, backups and restore. A ship does not
+deploy: `ship` lands on main and a lead runs `bin/deploy` afterwards. Secrets live on the server and in the owner's
+secrets folder, never in the repo. Map art is copied to the droplet with `bin/deploy maps`, never committed.
+
 ## Local development
 
 wslc containers only; DEV.md has the steps. The app is at `http://127.0.0.1:<port>`; `bin/dev status` prints the
