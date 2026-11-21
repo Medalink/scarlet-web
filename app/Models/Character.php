@@ -32,6 +32,8 @@ class Character extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['account_id', 'first_install_id'];
+
     /** @return array<string, string> */
     protected function casts(): array
     {
