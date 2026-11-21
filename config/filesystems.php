@@ -47,6 +47,21 @@ return [
             'report' => false,
         ],
 
+        // The world map tiles and their manifest, written by tools/map-tiles. Local storage by default (DEV.md says how
+        // the folder reaches the containers); MAPS_DISK_DRIVER=s3 with the MAPS_* settings reads them from object storage.
+        'maps' => [
+            'driver' => env('MAPS_DISK_DRIVER', 'local'),
+            'root' => env('MAPS_ROOT') ?: storage_path('app/maps'),
+            'key' => env('MAPS_ACCESS_KEY_ID'),
+            'secret' => env('MAPS_SECRET_ACCESS_KEY'),
+            'region' => env('MAPS_REGION'),
+            'bucket' => env('MAPS_BUCKET'),
+            'endpoint' => env('MAPS_ENDPOINT'),
+            'use_path_style_endpoint' => env('MAPS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

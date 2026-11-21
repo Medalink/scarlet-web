@@ -12,3 +12,5 @@ if (app()->environment('local')) {
     Route::get('/design', [DesignController::class, 'index']);
     Route::get('/design/{page}', [DesignController::class, 'show'])->where('page', implode('|', array_keys(Gallery::PAGES)));
 }
+
+require __DIR__.'/maps.php';
