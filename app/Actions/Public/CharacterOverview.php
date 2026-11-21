@@ -13,6 +13,7 @@ use App\Actions\Public\Character\MostKilled;
 use App\Actions\Public\Character\Records;
 use App\Actions\Public\Character\SessionTotals;
 use App\Actions\Public\Character\SkillRanks;
+use App\Actions\Public\Character\Talents;
 use App\Actions\Public\Character\ZoneHours;
 use App\Actions\Rollups\LevellingCurve;
 use App\Actions\Rollups\TimePerLevel;
@@ -53,6 +54,7 @@ class CharacterOverview
         private readonly HourlyPlay $hourlyPlay,
         private readonly HeatCells $heatCells,
         private readonly CapState $capState,
+        private readonly Talents $talents,
     ) {}
 
     /**
@@ -95,6 +97,7 @@ class CharacterOverview
             'deathLog' => $this->deathLog->handle($id, $owner),
             'items' => $this->itemsFound->handle($id),
             'skills' => $this->skillRanks->handle($id),
+            'talents' => $this->talents->handle($id),
             'records' => $this->records->handle($id),
             'killed' => $this->mostKilled->handle($id),
             'crafted' => $this->mostCrafted->handle($id),

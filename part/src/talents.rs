@@ -9,6 +9,9 @@ use std::collections::BTreeMap;
 const OFFER_TO_REFUND_MS: i64 = 10 * 60 * 1000;
 const RESET_TO_REFUND_MS: i64 = 60 * 1000;
 
+type Held = (i64, i64, Option<i64>, Option<i64>);
+type Ranks = BTreeMap<i64, Held>;
+
 pub struct Ctx {
     pub session: i64,
     pub at: i64,
@@ -41,7 +44,7 @@ struct Respec {
 #[derive(Default)]
 pub struct Talents {
     build: String,
-    ranks: BTreeMap<i64, BTreeMap<i64, (i64, i64)>>,
+    ranks: BTreeMap<i64, BTreeMap<i64, Held>>,
     baselined: Vec<i64>,
     last_key: BTreeMap<i64, String>,
     offer: Option<(i64, i64)>,
@@ -52,9 +55,9 @@ pub struct Talents {
     trees: BTreeMap<i64, String>,
 }
 
-fn hash(ranks: &BTreeMap<i64, (i64, i64)>) -> String {
+fn hash(ranks: &Ranks) -> String {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
-    for (node, (entry, rank)) in ranks {
+    for (node, (entry, rank, ..)) in ranks {
         for b in format!("{node}:{entry}:{rank},").bytes() {
             h ^= u64::from(b);
             h = h.wrapping_mul(0x0100_0000_01b3);
@@ -63,8 +66,8 @@ fn hash(ranks: &BTreeMap<i64, (i64, i64)>) -> String {
     format!("{h:016x}")
 }
 
-fn points(ranks: &BTreeMap<i64, (i64, i64)>) -> i64 {
-    ranks.values().map(|(_, r)| *r).sum()
+fn points(ranks: &Ranks) -> i64 {
+    ranks.values().map(|held| held.1).sum()
 }
 
 fn tab_with_most_points(tabs: &str) -> Option<i64> {
@@ -95,7 +98,7 @@ impl Talents {
         self.build = build.trim().to_string();
     }
 
-    fn current(&self, group: i64) -> BTreeMap<i64, (i64, i64)> {
+    fn current(&self, group: i64) -> Ranks {
         self.ranks.get(&group).cloned().unwrap_or_default()
     }
 
@@ -159,14 +162,14 @@ impl Talents {
         let entry = num(f, 2).unwrap_or(0);
         let why = f.get(8).map_or("", |s| s.trim());
         if why == "s" {
-            self.apply(group, node, entry, rank);
+            self.apply(group, node, (entry, rank, num(f, 6), num(f, 7)));
             if !self.baselined.contains(&group) {
                 self.baselined.push(group);
             }
             return;
         }
         let before = self.current(group);
-        let old = num(f, 4).unwrap_or_else(|| before.get(&node).map_or(0, |(_, r)| *r));
+        let old = num(f, 4).unwrap_or_else(|| before.get(&node).map_or(0, |held| held.1));
         let kind = match rank.cmp(&old) {
             std::cmp::Ordering::Greater => "pick",
             std::cmp::Ordering::Less => "refund",
@@ -174,7 +177,7 @@ impl Talents {
         };
         let hash_before = hash(&before);
         let points_before = points(&before);
-        self.apply(group, node, entry, rank);
+        self.apply(group, node, (entry, rank, num(f, 6), num(f, 7)));
         let now = self.current(group);
         let total = points(&now);
         let index = match kind {
@@ -198,10 +201,10 @@ impl Talents {
         w.end();
     }
 
-    fn apply(&mut self, group: i64, node: i64, entry: i64, rank: i64) {
+    fn apply(&mut self, group: i64, node: i64, held: Held) {
         let map = self.ranks.entry(group).or_default();
-        if rank > 0 {
-            map.insert(node, (entry, rank));
+        if held.1 > 0 {
+            map.insert(node, held);
             return;
         }
         map.remove(&node);
@@ -257,7 +260,7 @@ impl Talents {
         group: i64,
         pick: bool,
         total: i64,
-        now: &BTreeMap<i64, (i64, i64)>,
+        now: &Ranks,
         before: &str,
     ) -> Option<i64> {
         let open = self.open.get(&group)?;
@@ -292,7 +295,10 @@ impl Talents {
         self.last_key.insert(group, key);
         let list: Vec<String> = ranks
             .iter()
-            .map(|(node, (entry, rank))| format!("{node}:{entry}:{rank}"))
+            .map(|(node, (entry, rank, spell, tab))| {
+                let id = |v: &Option<i64>| v.map_or(String::new(), |v| v.to_string());
+                format!("{node}:{entry}:{rank}:{}:{}", id(spell), id(tab))
+            })
             .collect();
         let text = |i: usize| f.get(i).map_or("", |s| s.trim());
         c.begin(w, "talent_snapshots");

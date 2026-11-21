@@ -15,8 +15,10 @@ final class CharacterLayout
     /**
      * @return list<list<array{module: string, span: string|null, level: int}>>
      */
-    public static function rows(bool $capped, bool $gold): array
+    public static function rows(bool $capped, bool $gold, bool $talents): array
     {
+        $build = $talents ? [[self::m('talents', 'w8'), self::m('respecs')], [self::m('talent-order', 'w12')]] : [];
+
         if (! $capped) {
             return [
                 [self::m('level-times', $gold ? 'w8' : 'w12'), ...($gold ? [self::m('gold')] : [])],
@@ -26,6 +28,7 @@ final class CharacterLayout
                 [self::m('killed'), self::m('runs', 'w8')],
                 [self::m('days'), self::m('hours', 'w8')],
                 [self::m('crafted', 'w12')],
+                ...$build,
                 [self::m('history', 'w12')],
             ];
         }
@@ -37,6 +40,7 @@ final class CharacterLayout
             [self::m('crafted', 'w5'), self::m('zones', 'w7')],
             [self::m('days'), self::m('hours', 'w8')],
             ...($gold ? [[self::m('gold', 'w12')]] : []),
+            ...$build,
             [self::m(self::LEVELLING, 'w12')],
             [self::m('level-times', 'w12', 3)],
             [self::m('xp', 'w12', 3)],

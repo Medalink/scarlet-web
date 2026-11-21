@@ -243,7 +243,7 @@ group always writes one). A `TG` whose group is not a number (older logs) writes
 | `spec_tab_id` | int or null | the tab with the most points spent; null when none or two tie |
 | `class_points`, `spec_points`, `config_id` | int or null | |
 | `build_hash` | string | 16 hex digits, FNV-1a of the sorted `node:entry:rank` list. Equal ranks give equal hashes |
-| `ranks` | string | `node:entry:rank` for every node with a rank, comma-joined, sorted by node, from the `TA` lines read so far |
+| `ranks` | string | `node:entry:rank:spell:tab` for every node with a rank, comma-joined, sorted by node, from the `TA` lines read so far; spell and tab are empty when the line had none |
 | `loadout`, `why` | string or null, string | the `TG` fields |
 
 ### `talent_trees`, `talent_nodes` (build: `TV`, `TD`; names group)

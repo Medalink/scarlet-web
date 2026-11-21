@@ -412,7 +412,7 @@ headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figure
 | `/rulesets`, `/rulesets/{slug}` | The same dashboard per ruleset, and rulesets side by side |
 | `/leaderboards` | Fastest to a level, fewest deaths, most quests, hardcore survivors, per ruleset |
 | `/search` | Characters that are public, creatures, items, zones, quests |
-| `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths. Public when its owner says so; the owner sees the private parts too |
+| `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths, talents (the latest build of each talent group by tab, the order the points were taken in, respecs). Public when its owner says so; the owner sees the private parts too |
 | `/creatures/{id}`, `/items/{id}`, `/zones/{id}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels |
 | `/map` | The world map: one seamless map, zoomable down to a zone, with heat from paths, deaths and kills (see Maps) |
 | `/developers` | The public API reference |
