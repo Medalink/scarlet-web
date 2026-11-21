@@ -93,6 +93,8 @@ pub struct Group {
 pub struct Groups {
     pub list: Vec<Group>,
     by_code: HashMap<String, usize>,
+    /// Codes of the `none` row: the addon writes them, nothing uploads them.
+    pub owner_only: BTreeSet<String>,
 }
 
 impl Groups {
@@ -104,9 +106,14 @@ impl Groups {
     fn parse(text: &str) -> Groups {
         let mut list = Vec::new();
         let mut by_code = HashMap::new();
+        let mut owner_only = BTreeSet::new();
         for r in rows(text) {
             let key = cell(&r, 0).to_string();
             let codes: Vec<String> = cell(&r, 2).split_whitespace().map(str::to_string).collect();
+            if key == "none" {
+                owner_only.extend(codes);
+                continue;
+            }
             for c in codes.iter().filter(|c| *c != "*") {
                 by_code.entry(c.clone()).or_insert(list.len());
             }
@@ -117,7 +124,11 @@ impl Groups {
                 codes,
             });
         }
-        Groups { list, by_code }
+        Groups {
+            list,
+            by_code,
+            owner_only,
+        }
     }
 
     /// Index of the group a main-stream line code belongs to.

@@ -48,6 +48,15 @@ pub fn check(format_md: &str) -> Vec<String> {
         }
     }
     for c in &codes {
+        if groups.owner_only.contains(c.as_str()) {
+            if let Some(g) = seen.get(c.as_str()) {
+                problems.push(format!(
+                    "owner-only code {c} is also in group {}",
+                    g.join(", ")
+                ));
+            }
+            continue;
+        }
         match seen.get(c.as_str()) {
             None => problems.push(format!("code {c} is in no group")),
             Some(g) if g.len() > 1 => {
@@ -66,6 +75,11 @@ pub fn check(format_md: &str) -> Vec<String> {
                 "group {} lists code {c}, which FORMAT.md does not have",
                 g.join(", ")
             ));
+        }
+    }
+    for c in &groups.owner_only {
+        if !known.contains(c.as_str()) {
+            problems.push(format!("owner-only code {c} is not in FORMAT.md"));
         }
     }
     let (names, players) = raw_codes();
