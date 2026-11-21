@@ -16,6 +16,7 @@
     <a class="brand" href="{{ $base ?: '/' }}" aria-label="Scarlet, home"><x-mark />Scarlet</a>
     <nav class="nav" aria-label="Site">@foreach ($items as $key => [$label, $path])<a href="{{ $base.$path }}"@if ($key === $current) aria-current="page"@endif>{{ $label }}</a>@endforeach</nav>
     <form class="top-find" role="search" action="{{ $base }}/search"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="get" href="{{ $base }}/download"@if ($current === 'download') aria-current="page"@endif>Get the app</a>
     <a class="acct" href="{{ $base }}{{ $signedIn ? '/account' : '/login' }}">{{ $signedIn ? 'Account' : 'Sign in' }}</a>
   </div>
 </header>

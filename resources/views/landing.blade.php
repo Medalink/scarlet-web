@@ -4,9 +4,8 @@
       <h1 id="h1">Scarlet records what you do in WoW Forever and keeps it on your PC</h1>
       <p class="lead">The addon writes a timestamped line for each thing that happens: a step, a cast, a kill, a death, a coin looted. The desktop app reads those lines and draws your character's overview, timeline, maps, charts and loot tables. Uploading to the website is optional and off until you turn it on.</p>
       <p class="hero-links">
-        <a class="btn" href="/demo">See a character overview
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
+        <x-get-app />
+        <a href="/demo">See a character overview</a>
         <a href="#events">All <span data-codes>227</span> event codes</a>
       </p>
     </div>
@@ -199,9 +198,12 @@
     <div class="wrap">
       <h2 id="h-close">The demo character Maren-Ashlow has <span data-hours>96</span> hours of play on record</h2>
       <p>The overview shows experience by level and source, gold, dungeon runs, deaths and every session, all drawn from invented data.</p>
-      <a class="btn on-scarlet" href="/demo">Open the character overview
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
+      <p class="close-links">
+        <a class="btn on-scarlet" href="/demo">Open the character overview
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="/download">Download the app for Windows</a>
+      </p>
     </div>
   </section>
 </main>

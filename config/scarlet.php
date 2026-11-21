@@ -34,6 +34,14 @@ return [
         'upload' => ['per_install' => 240, 'per_ip' => 600, 'seconds' => 60],
     ],
 
+    // The newest desktop app build, read from the GitHub releases of Medalink/scarlet-app (App\Actions\Release\ShowAppDownload).
+    // An answer is reused for `fresh_seconds`; after a failed read GitHub is not asked again for `retry_seconds`.
+    'app_download' => [
+        'fresh_seconds' => 600,
+        'retry_seconds' => 60,
+        'timeout_seconds' => 3,
+    ],
+
     // Queue names and the bounded limits of the jobs (App\Contracts\BoundedJob).
     'queues' => [
         'ingest' => 'ingest',

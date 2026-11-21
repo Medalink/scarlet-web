@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\CharacterController;
 use App\Http\Controllers\Web\DevelopersController;
+use App\Http\Controllers\Web\DownloadController;
 use App\Http\Controllers\Web\LeaderboardController;
 use App\Http\Controllers\Web\MapController;
 use App\Http\Controllers\Web\RecordController;
@@ -17,6 +18,7 @@ Route::get('/map', MapController::class);
 Route::get('/search', SearchController::class);
 Route::get('/developers', DevelopersController::class);
 Route::get('/release-notes', ReleaseNotesController::class);
+Route::get('/download', DownloadController::class);
 Route::get('/c/{name}', CharacterController::class)->where('name', '[^/]+');
 Route::get('/creatures/{id}', [RecordController::class, 'creature'])->whereNumber('id');
 Route::get('/items/{id}', [RecordController::class, 'item'])->whereNumber('id');

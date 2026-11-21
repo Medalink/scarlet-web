@@ -1,6 +1,6 @@
 <div>
 @if ($installs === [])
-  <x-note>No app is linked. Open Scarlet on your PC and choose Link to my account.</x-note>
+  <x-note>No app is linked. Open Scarlet on your PC and choose Link to my account. The app is on the <a href="/download">download page</a>.</x-note>
 @else
   <x-rows>
 @foreach ($installs as $install)

@@ -26,6 +26,7 @@
       @foreach ($items as [$label, $path, $class])
       <a @if ($class) class="{{ $class }}" @endif href="{{ $path }}">{{ $label }}</a>
       @endforeach
+      <a class="get" href="/download">Get the app</a>
     </nav>
     <a class="acct" href="{{ auth()->check() ? '/account' : '/login' }}">{{ auth()->check() ? 'Account' : 'Sign in' }}</a>
   </div>
