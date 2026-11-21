@@ -137,7 +137,7 @@ case "${1:-release}" in
   r2) step_r2 ;;
   maps)
     [ -f "${2:?folder with manifest.json}/manifest.json" ] || { echo "deploy: no manifest.json in $2" >&2; exit 1; }
-    tar -C "$2" -cf - . | srv 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf -'
+    tar -C "$2" -cf - . | srv 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf - && chmod -R a+rX /srv/scarlet-web/maps'
     echo "deploy: maps copied to /srv/scarlet-web/maps"
     ;;
   server) step_server ;;
