@@ -135,6 +135,8 @@ activate() {
   fi
   echo "$nxt" > state/active.new && mv state/active.new state/active
   echo "rollout: visitors moved to $nxt ($release)"
+  phase switch-nginx "$t_switch"
+  t_old=$(date +%s.%N)
 
   nginx_workers_drained
   if [ "$cur" != none ]; then
@@ -143,6 +145,8 @@ activate() {
   fi
   docker rm -f scarlet-web-app-1 >/dev/null 2>&1 || true
 
+  phase stop-old-app "$t_old"
+  t_workers=$(date +%s.%N)
   put SCARLET_RELEASE "$release"
   retiring=$(running_horizons)
   nxt_horizon=$(idle_horizon)
@@ -160,6 +164,7 @@ activate() {
       return 1
     fi
   done
+  phase start-workers "$t_workers"
   phase switch "$t_switch"
 }
 
@@ -200,6 +205,8 @@ t_migrate=$(date +%s.%N)
 $dc pull --quiet --policy missing postgres redis web
 $dc up -d --wait postgres redis web
 [ "$nginx_changed" -eq 0 ] || reload_nginx
+phase compose-up "$t_migrate"
+t_migrate=$(date +%s.%N)
 
 SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools sh -ec '
   php artisan migrate --force --no-interaction
@@ -210,6 +217,8 @@ phase migrate "$t_migrate"
 
 activate "$new" || exit 1
 grep -qx "$new" releases || echo "$new" >> releases
+t_prune=$(date +%s.%N)
 prune_images
 prune_registry || echo "rollout: the registry was not pruned"
+phase prune "$t_prune"
 echo "rollout: $new is serving"

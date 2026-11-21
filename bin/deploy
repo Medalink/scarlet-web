@@ -81,9 +81,14 @@ report() {
         row "  deploy folder (alongside)" "$(phase_of ship.out deploy-folder)"
         ;;
       rollout)
+        row "  pull and start databases" "$(phase_of rollout.out compose-up)"
         row "  migrate" "$(phase_of rollout.out migrate)"
         row "  start and health check" "$(phase_of rollout.out start-health)"
         row "  switch" "$(phase_of rollout.out switch)"
+        row "    assets, nginx" "$(phase_of rollout.out switch-nginx)"
+        row "    stop old php-fpm" "$(phase_of rollout.out stop-old-app)"
+        row "    horizon, schedule" "$(phase_of rollout.out start-workers)"
+        row "  prune images" "$(phase_of rollout.out prune)"
         ;;
     esac
   done
