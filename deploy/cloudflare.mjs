@@ -70,6 +70,10 @@ const CACHE_RULES = [
     expression: `${HOST} and starts_with(http.request.uri.path, "/api/v1/public/") and ${NO_CREDENTIALS}`,
   },
   {
+    description: 'Map tile manifest',
+    expression: `${HOST} and http.request.uri.path eq "/map-tiles/manifest.json"`,
+  },
+  {
     description: 'Public pages for visitors without a session',
     expression: `${HOST} and (http.request.uri.path in {${PAGES.map((path) => `"${path}"`).join(' ')}} or ${PAGE_PREFIXES.map((prefix) => `starts_with(http.request.uri.path, "${prefix}")`).join(' or ')}) and ${NO_CREDENTIALS}`,
   },
