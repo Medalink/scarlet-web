@@ -1,0 +1,3 @@
+/* The landing page and the demo character keep the static site's header. Its nav also links the app's pages,
+   which only fit beside the four in-page links on a wide window. */
+@media (max-width: 960px) { .nav .app { display: none; } }

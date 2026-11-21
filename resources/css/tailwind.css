@@ -1,0 +1,10 @@
+/* Tailwind without its preflight, so it never changes how site.css and app.css pages render.
+   No page loads this file yet; a utility-styled fragment would add it after app.css. */
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+
+/* The sources are listed, never detected: the repo also holds static-site/, docs/ and part/. */
+@source '../views/tailwind';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

@@ -2,4 +2,5 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'running');
+Route::view('/', 'landing');
+Route::view('/demo', 'demo');

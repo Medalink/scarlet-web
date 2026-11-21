@@ -5,7 +5,14 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            // site.css is the Scarlet site's stylesheet. tailwind.css is for utility-styled fragments and is loaded by no page yet.
+            input: [
+                'resources/css/site.css',
+                'resources/css/landing.css',
+                'resources/css/tailwind.css',
+                'resources/js/landing.js',
+                'resources/js/demo.js',
+            ],
             refresh: true,
         }),
         tailwindcss(),
