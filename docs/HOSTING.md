@@ -52,7 +52,7 @@ falls back to `docker save | zstd | ssh | docker load` of the whole image. `bin/
 
 1. runs `migrate --force`, `maps:load-rects`, `app:release-notes:publish` and `cache:clear` with the new image while
    the old release still serves;
-2. starts the new release as `app-blue` or `app-green`, whichever is idle, and waits for three answers in a row from
+2. starts the new release as `app-blue` or `app-green`, whichever is idle, and waits for five answers in a row, half a second apart, from
    `/up` and `/release-notes` through nginx's own configuration (loopback ports 8091 and 8092);
 3. copies the release's built assets into `/srv/scarlet-web/public`, where every release's assets stay, so a page
    from the old release still finds its files;

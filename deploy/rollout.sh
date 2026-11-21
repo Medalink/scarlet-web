@@ -25,6 +25,7 @@ if ! flock -n 9; then
 fi
 
 # deploy/ is replaced on every deploy, so nginx reads its files from folders that stay in place.
+nginx_changed=$(diff -rq deploy/nginx nginx 2>/dev/null | grep -Ec '^(Files .* differ|Only in deploy/nginx)' || true)
 cp -a deploy/nginx/. nginx/
 [ -f state/upstream.conf ] || echo 'upstream php { server 127.0.0.1:9000; }' > state/upstream.conf
 if [ ! -f state/aop.conf ]; then
@@ -46,18 +47,17 @@ phase() { awk -v a="$2" -v b="${3:-$(date +%s.%N)}" -v n="$1" 'BEGIN { printf "p
 nginx_cmd='nginx -c /etc/nginx/scarlet/nginx.conf'
 reload_nginx() { $dc exec -T web $nginx_cmd -t && $dc exec -T web $nginx_cmd -s reload; }
 
-# Three answers in a row from /up and /release-notes, within two minutes.
 healthy() {
   port=$(check_port "$1")
   good=0
   tries=0
-  while [ "$tries" -lt 120 ]; do
+  while [ "$tries" -lt 240 ]; do
     up=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/up" || true)
     notes=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/release-notes" || true)
     if [ "$up" = 200 ] && [ "$notes" = 200 ]; then good=$((good + 1)); else good=0; fi
-    [ "$good" -ge 3 ] && return 0
+    [ "$good" -ge 5 ] && return 0
     tries=$((tries + 1))
-    sleep 1
+    sleep 0.5
   done
   return 1
 }
@@ -111,6 +111,8 @@ activate() {
 
   t_start=$(date +%s.%N)
   put "$(slot_var "$nxt")" "$release"
+  sync_assets "$release" &
+  assets_job=$!
   $dc up -d --no-deps "app-$nxt"
   if ! healthy "$nxt"; then
     echo "rollout: $release did not pass its health check; $( [ "$cur" = none ] && echo 'nothing is serving' || echo "$cur keeps serving")"
@@ -122,7 +124,7 @@ activate() {
 
   phase start-health "$t_start"
   t_switch=$(date +%s.%N)
-  sync_assets "$release"
+  wait "$assets_job" || { echo "rollout: copying the assets of $release failed; $cur keeps serving"; return 1; }
   cp state/upstream.conf state/upstream.conf.prev
   printf 'upstream php { server 127.0.0.1:%s; }\n' "$(slot_port "$nxt")" > state/upstream.conf.new
   mv state/upstream.conf.new state/upstream.conf
@@ -197,7 +199,7 @@ docker image inspect "scarlet-web-app:$new" >/dev/null
 t_migrate=$(date +%s.%N)
 $dc pull --quiet --policy missing postgres redis web
 $dc up -d --wait postgres redis web
-reload_nginx
+[ "$nginx_changed" -eq 0 ] || reload_nginx
 
 SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools sh -ec '
   php artisan migrate --force --no-interaction

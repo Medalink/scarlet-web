@@ -42,7 +42,10 @@ on_build() {
 build_src='$(echo /data/$(id -un))/scratch/scarlet-web-build/src'
 
 push_deploy_folder() {
+  local t0
+  t0=$(now)
   on_build "tar -C $build_src -cf - deploy" | srv 'rm -rf /srv/scarlet-web/deploy.new && mkdir -p /srv/scarlet-web/deploy.new && tar -C /srv/scarlet-web/deploy.new --strip-components=1 --no-same-owner -xf - && rm -rf /srv/scarlet-web/deploy && mv /srv/scarlet-web/deploy.new /srv/scarlet-web/deploy'
+  echo "phase deploy-folder $(span "$t0" "$(now)")" >> "$timing/ship.out"
 }
 
 now() { date +%s.%N; }
@@ -73,8 +76,9 @@ report() {
         row "  docker build" "$(phase_of build.out docker-build)"
         ;;
       "image transfer")
-        row "  registry up, tunnel" "$(phase_of ship.out registry-up-and-tunnel)"
+        row "  wait for the tunnel" "$(phase_of ship.out tunnel-wait)"
         row "  docker push" "$(phase_of ship.out push)"
+        row "  deploy folder (alongside)" "$(phase_of ship.out deploy-folder)"
         ;;
       rollout)
         row "  migrate" "$(phase_of rollout.out migrate)"
@@ -103,21 +107,27 @@ tunnel_port=15077
 registry_url=127.0.0.1:$registry_port
 registry_data_kb='docker exec scarlet-web-registry-1 du -sk /var/lib/registry | cut -f1'
 
+open_registry_path() {
+  local kb
+  kb=$(srv "curl -sf -o /dev/null http://127.0.0.1:$registry_port/v2/ || /srv/scarlet-web/deploy/dc up -d --no-deps --wait registry >&2; $registry_data_kb") || return 1
+  echo "$kb" > "$timing/before_kb"
+  exec ssh "${ssh_opts[@]}" -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$tunnel_port:127.0.0.1:$registry_port" "ops@$host"
+}
+
+registry_job=
 ship_new_layers() {
-  local tag=$1 tunnel before after ready= rc=0 at=$registry_url t0 t1
+  local tag=$1 after ready= rc=0 at=$registry_url t0 t1
   t0=$(now)
-  before=$(srv "/srv/scarlet-web/deploy/dc up -d --no-deps --wait registry >&2 && $registry_data_kb") || return 1
-  ssh "${ssh_opts[@]}" -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$tunnel_port:127.0.0.1:$registry_port" "ops@$host" &
-  tunnel=$!
-  for _ in $(seq 1 30); do
-    if curl -sf -o /dev/null "http://127.0.0.1:$tunnel_port/v2/"; then ready=1; break; fi
-    sleep 0.2
+  for _ in $(seq 1 150); do
+    if [ -s "$timing/before_kb" ] && curl -sf -o /dev/null "http://127.0.0.1:$tunnel_port/v2/"; then ready=1; break; fi
+    kill -0 "$registry_job" 2>/dev/null || break
+    sleep 0.1
   done
-  [ -n "$ready" ] || { kill "$tunnel" 2>/dev/null || true; return 1; }
+  [ -n "$ready" ] || return 1
   t1=$(now)
-  echo "phase registry-up-and-tunnel $(span "$t0" "$t1")" >> "$timing/ship.out"
+  echo "phase tunnel-wait $(span "$t0" "$t1")" >> "$timing/ship.out"
   [ "$build_host" = local ] && at=127.0.0.1:$tunnel_port
-  local push="sudo -n docker tag scarlet-web-app:$tag $at/scarlet-web-app:$tag && sudo -n docker push -q $at/scarlet-web-app:$tag >/dev/null; rc=\$?; sudo -n docker rmi $at/scarlet-web-app:$tag >/dev/null 2>&1; echo pushed:\$rc"
+  local push="sudo -n docker tag scarlet-web-app:$tag $at/scarlet-web-app:$tag && sudo -n docker push -q $at/scarlet-web-app:$tag >/dev/null; rc=$?; sudo -n docker rmi $at/scarlet-web-app:$tag >/dev/null 2>&1; echo pushed:$rc"
   local pusher
   if [ "$build_host" = local ]; then
     bash -c "$push" > "$timing/push.out" &
@@ -127,12 +137,12 @@ ship_new_layers() {
   pusher=$!
   until grep -q '^pushed:' "$timing/push.out" 2>/dev/null || ! kill -0 "$pusher" 2>/dev/null; do sleep 0.1; done
   grep -qx 'pushed:0' "$timing/push.out" 2>/dev/null || rc=1
-  kill "$pusher" "$tunnel" 2>/dev/null || true
+  kill "$pusher" "$registry_job" 2>/dev/null || true
   [ "$rc" = 0 ] || return 1
   now > "$timing/sent"
   echo "phase push $(span "$t1" "$(cat "$timing/sent")")" >> "$timing/ship.out"
   after=$(srv "docker pull -q $registry_url/scarlet-web-app:$tag >/dev/null && docker tag $registry_url/scarlet-web-app:$tag scarlet-web-app:$tag && docker rmi $registry_url/scarlet-web-app:$tag >/dev/null && $registry_data_kb") || return 1
-  echo $((after - before)) > "$timing/sent_kb"
+  echo $((after - $(cat "$timing/before_kb"))) > "$timing/sent_kb"
 }
 
 ship_images() {
@@ -151,7 +161,7 @@ take_lock() {
     echo "deploy: another deploy is running; waiting for it"
     sleep 3
   done
-  trap 'report; srv "rm -rf '"$lock"'"' EXIT
+  trap 'report; [ -z "$registry_job" ] || kill "$registry_job" 2>/dev/null; srv "rm -rf '"$lock"'"' EXIT
 }
 
 release() {
@@ -161,13 +171,18 @@ release() {
   lap_at=$deploy_at
   take_lock
   lap "lock wait"
+  if [ "${DEPLOY_TRANSPORT:-registry}" = registry ]; then
+    open_registry_path &
+    registry_job=$!
+  fi
   sha=$(build "$ref")
   [ -n "$sha" ] || { echo "deploy: the build gave no sha" >&2; exit 1; }
   echo "deploy: built $sha"
   lap build
-  push_deploy_folder
-  lap "deploy folder"
+  push_deploy_folder &
+  local folder_job=$!
   ship_images "${sha:0:12}"
+  wait "$folder_job"
   local end
   end=$(now)
   laps+=("image transfer|$(span "$lap_at" "$(cat "$timing/sent")")" "load or pull on droplet|$(span "$(cat "$timing/sent")" "$end")")
