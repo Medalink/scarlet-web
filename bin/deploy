@@ -10,6 +10,7 @@
 #   bin/deploy backup           a backup now: dump, encrypt, copy to R2 (starts the nightly unit; exits 1 when it fails)
 #   bin/deploy backups          the newest local and R2 copies with their ages; exits 1 when stale or the last run failed
 #   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env (run before `server`)
+#   bin/deploy cache-rules      write Cloudflare's Cache Rules for the public API, the public pages and the map manifest
 #   bin/deploy maps <folder>    copy map tiles (a folder with manifest.json) to the droplet's disk, outside the image
 #   bin/deploy bootstrap [ref]  first install: server, DNS, certificate, release, strict TLS, origin pulls
 #   bin/deploy server | tls | dns | strict | aop     the steps of bootstrap, each safe to run again
@@ -254,6 +255,7 @@ case "${1:-release}" in
   tls) step_tls ;;
   dns) step_dns ;;
   strict) $cf ssl strict ;;
+  cache-rules) $cf cache-rules ;;
   aop) step_aop ;;
   bootstrap)
     step_server

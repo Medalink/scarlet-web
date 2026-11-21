@@ -27,11 +27,10 @@ class BusiestZones
             ->limit($limit);
         $rows = $this->read->rows($this->read->shown($query));
 
-        $deaths = $this->read->from(Rollup::DeathsDailyRuleset, $rulesetId)
+        $deaths = array_column($this->read->rows($this->read->from(Rollup::DeathsDailyRuleset, $rulesetId)
             ->selectRaw('zone_id, sum(deaths) as deaths')
             ->whereIn('zone_id', array_column($rows, 'zone_id'))
-            ->groupBy('zone_id')
-            ->pluck('deaths', 'zone_id');
+            ->groupBy('zone_id')), 'deaths', 'zone_id');
 
         return array_map(fn (array $row): array => [...$row, 'deaths' => (int) ($deaths[$row['zone_id']] ?? 0)], $rows);
     }
