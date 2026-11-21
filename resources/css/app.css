@@ -153,6 +153,7 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 /* Owner strip on a character page: what only the signed-in owner sees. */
 .own { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.6rem; padding: 0.8rem 0; border-bottom: 1px solid var(--line2); font-size: 0.95rem; }
 .own .state { font-size: 0.95rem; }
+.own .alts { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; flex-basis: 100%; }
 .own .sp { margin-left: auto; display: flex; gap: 0.9rem; align-items: center; }
 .priv { font: 500 0.66rem/1 var(--mono); font-stretch: 85%; color: var(--soft); border: 1px solid var(--deep); border-radius: 2px; padding: 0.22rem 0.4rem; margin-left: 0.6rem; vertical-align: 0.35em; }
 

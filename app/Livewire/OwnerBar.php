@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Actions\Account\CharacterSwitch;
 use App\Actions\Account\SetCharacterSwitch;
+use App\Actions\Account\ShowOtherCharacters;
 use App\Actions\Account\ShowOwnedCharacter;
 use App\Livewire\Concerns\ActsForAccount;
 use Illuminate\Contracts\View\View;
@@ -34,7 +35,7 @@ class OwnerBar extends Component
         $set->handle($this->account(), $this->characterId, CharacterSwitch::PublicPage, $on);
     }
 
-    public function render(ShowOwnedCharacter $owned): View
+    public function render(ShowOwnedCharacter $owned, ShowOtherCharacters $others): View
     {
         $character = $owned->handle($this->account(), $this->characterId);
         $facts = [$character->show_economy ? 'Gold and trades shown to visitors' : 'Gold and trades hidden from visitors'];
@@ -42,6 +43,6 @@ class OwnerBar extends Component
             ? 'Nothing uploaded yet'
             : 'Last upload '.$character->last_seen_at->diffForHumans().', '.$character->sessions_decoded.' '.Str::plural('session', $character->sessions_decoded);
 
-        return view('livewire.owner-bar', ['public' => $character->is_public, 'facts' => $facts]);
+        return view('livewire.owner-bar', ['public' => $character->is_public, 'facts' => $facts, 'others' => $others->handle($this->account(), $this->characterId)]);
     }
 }
