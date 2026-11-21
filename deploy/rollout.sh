@@ -1,72 +1,139 @@
 #!/bin/sh
-# Runs on the droplet as ops: `rollout.sh <release>` starts the images tagged <release>. `rollout.sh --rollback` starts
-# the release before the current one. The images are already loaded (bin/deploy pipes them in).
+# Runs on the droplet as ops (bin/deploy pipes the image in first):
+#   rollout.sh <release>     migrate, then start <release> beside the running one and move visitors to it
+#   rollout.sh --rollback    move visitors back to the release before the current one (code only)
 #
-# A release rolls out in this order: databases up, migrations and imports with the new image, then the new containers,
-# then a health check. A failed health check starts the previous release again. Migrations are forward-only, so a
-# rollback changes code only.
+# Blue/green with no failed request: the new release starts as app-blue or app-green next to the active slot, answers
+# /up and /release-notes through nginx's own configuration (loopback ports 8091 and 8092), and only then does nginx's
+# upstream move to it with a reload. nginx finishes the requests it has, the old php-fpm gets SIGQUIT and finishes
+# its own, then stops. A release that fails its check never gets visitors: the old one keeps serving and this exits 1.
+# Horizon and the scheduler are stopped gracefully (running jobs finish) and started on the new release.
+#
+# Migrations run before the switch while the old code still serves. They must be expand-only (docs/HOSTING.md).
 set -eu
 cd /srv/scarlet-web
 dc=deploy/dc
-touch releases
+mkdir -p state public nginx
+touch releases release.env
 
-current() { sed -n 's/^SCARLET_RELEASE=//p' release.env 2>/dev/null || true; }
+# deploy/ is replaced on every deploy, so nginx reads its files from folders that stay in place.
+cp -a deploy/nginx/. nginx/
+[ -f state/upstream.conf ] || echo 'upstream php { server 127.0.0.1:9000; }' > state/upstream.conf
+if [ ! -f state/aop.conf ]; then
+  if [ -f aop.conf ]; then mv aop.conf state/aop.conf; else cp deploy/nginx/aop-off.conf state/aop.conf; fi
+fi
+[ -f tls/origin-pull-ca.pem ] || cp deploy/nginx/origin-pull-ca.pem tls/origin-pull-ca.pem
 
-wait_healthy() {
-  i=0
-  while [ "$i" -lt 60 ]; do
-    if [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8081/up || true)" = 200 ]; then return 0; fi
-    i=$((i + 1))
+get() { sed -n "s/^$1=//p" release.env | tail -n 1; }
+put() {
+  grep -v "^$1=" release.env > release.env.new || true
+  printf '%s=%s\n' "$1" "$2" >> release.env.new
+  mv release.env.new release.env
+}
+slot_port() { if [ "$1" = blue ]; then echo 9001; else echo 9002; fi; }
+check_port() { if [ "$1" = blue ]; then echo 8091; else echo 8092; fi; }
+slot_var() { if [ "$1" = blue ]; then echo BLUE_RELEASE; else echo GREEN_RELEASE; fi; }
+active_slot() { cat state/active 2>/dev/null || echo none; }
+nginx_cmd='nginx -c /etc/nginx/scarlet/nginx.conf'
+reload_nginx() { $dc exec -T web $nginx_cmd -t && $dc exec -T web $nginx_cmd -s reload; }
+
+# Three answers in a row from /up and /release-notes, within two minutes.
+healthy() {
+  port=$(check_port "$1")
+  good=0
+  tries=0
+  while [ "$tries" -lt 60 ]; do
+    up=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/up" || true)
+    notes=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/release-notes" || true)
+    if [ "$up" = 200 ] && [ "$notes" = 200 ]; then good=$((good + 1)); else good=0; fi
+    [ "$good" -ge 3 ] && return 0
+    tries=$((tries + 1))
     sleep 2
   done
   return 1
 }
 
-start() {
-  printf 'SCARLET_RELEASE=%s\n' "$1" > release.env
-  $dc up -d --remove-orphans
+# The built assets of every release stay in one folder, so a page from the old release still finds its files.
+sync_assets() {
+  container=$(docker create "scarlet-web-app:$1")
+  docker cp "$container:/app/public/." public/
+  docker rm "$container" >/dev/null
+  chmod -R a+rX public
+}
+
+activate() {
+  release=$1
+  cur=$(active_slot)
+  nxt=blue
+  [ "$cur" = blue ] && nxt=green
+  docker image inspect "scarlet-web-app:$release" >/dev/null
+
+  put "$(slot_var "$nxt")" "$release"
+  $dc up -d --no-deps "app-$nxt"
+  if ! healthy "$nxt"; then
+    echo "rollout: $release did not pass its health check; $( [ "$cur" = none ] && echo 'nothing is serving' || echo "$cur keeps serving")"
+    $dc logs --no-log-prefix --tail 40 "app-$nxt" || true
+    $dc stop "app-$nxt" >/dev/null 2>&1 || true
+    $dc rm -f "app-$nxt" >/dev/null 2>&1 || true
+    return 1
+  fi
+
+  sync_assets "$release"
+  cp state/upstream.conf state/upstream.conf.prev
+  printf 'upstream php { server 127.0.0.1:%s; }\n' "$(slot_port "$nxt")" > state/upstream.conf.new
+  mv state/upstream.conf.new state/upstream.conf
+  if ! reload_nginx; then
+    mv state/upstream.conf.prev state/upstream.conf
+    echo "rollout: nginx refused the new upstream; $cur keeps serving"
+    return 1
+  fi
+  echo "$nxt" > state/active.new && mv state/active.new state/active
+  echo "rollout: visitors moved to $nxt ($release)"
+
+  # Requests nginx had handed to the old php-fpm finish there; the single-container layout before blue/green is cleaned up too.
+  sleep 5
+  if [ "$cur" != none ]; then
+    $dc stop -t 60 "app-$cur" >/dev/null
+    $dc rm -f "app-$cur" >/dev/null
+  fi
+  docker rm -f scarlet-web-app-1 >/dev/null 2>&1 || true
+
+  # Running jobs finish (SIGTERM is Horizon's own terminate), then the new release takes over.
+  put SCARLET_RELEASE "$release"
+  $dc stop horizon schedule >/dev/null 2>&1 || true
+  $dc up -d --no-deps horizon schedule
+}
+
+prune_images() {
+  keep=" $(get BLUE_RELEASE) $(get GREEN_RELEASE) $(get SCARLET_RELEASE) $(tail -n 3 releases | tr '\n' ' ')"
+  for tag in $(docker images scarlet-web-app --format '{{.Tag}}'); do
+    case "$keep" in *" $tag "*) ;; *) docker rmi "scarlet-web-app:$tag" >/dev/null 2>&1 || true ;; esac
+  done
+  for tag in $(docker images scarlet-web-web --format '{{.Tag}}'); do docker rmi "scarlet-web-web:$tag" >/dev/null 2>&1 || true; done
 }
 
 if [ "${1:-}" = --rollback ]; then
-  now=$(current)
+  now=$(get SCARLET_RELEASE)
   previous=$(grep -v "^$now\$" releases | tail -n 1 || true)
   [ -n "$previous" ] || { echo "rollout: no earlier release to go back to"; exit 1; }
-  docker image inspect "scarlet-web-app:$previous" >/dev/null || { echo "rollout: image $previous is gone"; exit 1; }
-  start "$previous"
-  wait_healthy || { echo "rollout: release $previous did not become healthy"; exit 1; }
+  activate "$previous" || exit 1
   echo "rollout: rolled back from $now to $previous (code only; migrations stay)"
   exit 0
 fi
 
 new=$1
-old=$(current)
-docker image inspect "scarlet-web-app:$new" "scarlet-web-web:$new" >/dev/null
-[ -f release.env ] || printf 'SCARLET_RELEASE=%s\n' "$new" > release.env
+docker image inspect "scarlet-web-app:$new" >/dev/null
+$dc pull postgres redis web
+$dc up -d --wait postgres redis web
+reload_nginx
 
-$dc pull postgres redis
-$dc up -d --wait postgres redis
-
-artisan() { SCARLET_RELEASE=$new $dc run --rm --no-deps -T app php artisan "$@" --no-interaction; }
+artisan() { SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools php artisan "$@" --no-interaction; }
 artisan migrate --force
 artisan maps:load-rects
 artisan app:release-notes:publish --from-file=storage/app/release-notes.json
 artisan cache:clear
 
-start "$new"
-if wait_healthy; then
-  grep -qx "$new" releases || echo "$new" >> releases
-  echo "rollout: $new is serving (was ${old:-nothing})"
-  # keep this release and the two before it
-  for tag in $(docker images scarlet-web-app --format '{{.Tag}}' | tail -n +4); do
-    docker rmi "scarlet-web-app:$tag" "scarlet-web-web:$tag" >/dev/null 2>&1 || true
-  done
-  exit 0
-fi
-
-echo "rollout: $new did not become healthy"
-$dc logs --tail 40 app web || true
-if [ -n "$old" ] && [ "$old" != "$new" ]; then
-  start "$old"
-  wait_healthy && echo "rollout: back on $old" || echo "rollout: $old is not healthy either"
-fi
-exit 1
+activate "$new" || exit 1
+grep -qx "$new" releases || echo "$new" >> releases
+prune_images
+echo "rollout: $new is serving"

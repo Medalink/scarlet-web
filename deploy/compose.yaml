@@ -1,17 +1,25 @@
 # Production stack of scarlet-web on one droplet. Run it through deploy/dc, which adds the project name and the two
-# env files: /srv/scarlet-web/.env (secrets, written once on the server) and /srv/scarlet-web/release.env (the image tag).
-# Nothing but nginx listens on a public interface. Postgres and Redis live on the compose network only; php-fpm is
-# published on 127.0.0.1 for nginx, which runs on the host network so it sees the real peer address.
+# env files: /srv/scarlet-web/.env (secrets, written once on the server) and /srv/scarlet-web/release.env (which release
+# runs where). Nothing but nginx listens on a public interface. Postgres and Redis live on the compose network only;
+# php-fpm is published on 127.0.0.1 for nginx, which runs on the host network so it sees the real peer address.
+#
+# A release rolls out blue/green: the new release starts as app-blue or app-green beside the running one, and nginx's
+# upstream moves to it with a reload (deploy/rollout.sh). horizon and schedule run the active release.
 name: scarlet-web
 
 x-app: &app
-  image: scarlet-web-app:${SCARLET_RELEASE}
+  image: scarlet-web-app:${SCARLET_RELEASE:-none}
   env_file: ../.env
   restart: unless-stopped
   networks: [backend]
   volumes:
     - logs:/app/storage/logs
     - /srv/scarlet-web/maps:/maps:ro
+
+x-after-databases: &after-databases
+  depends_on:
+    postgres: {condition: service_healthy}
+    redis: {condition: service_healthy}
 
 services:
   postgres:
@@ -71,41 +79,55 @@ services:
       timeout: 5s
       retries: 6
 
-  app:
-    <<: *app
+  # The two php-fpm slots. Only the one nginx points at serves visitors. SIGQUIT lets php-fpm finish its requests.
+  app-blue:
+    <<: [*app, *after-databases]
+    image: scarlet-web-app:${BLUE_RELEASE:-none}
+    profiles: [blue]
+    stop_signal: SIGQUIT
+    stop_grace_period: 60s
     ports:
-      - "127.0.0.1:9000:9000"
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
+      - "127.0.0.1:9001:9000"
+
+  app-green:
+    <<: [*app, *after-databases]
+    image: scarlet-web-app:${GREEN_RELEASE:-none}
+    profiles: [green]
+    stop_signal: SIGQUIT
+    stop_grace_period: 60s
+    ports:
+      - "127.0.0.1:9002:9000"
+
+  # One-off artisan commands of a release: deploy/dc run --rm tools php artisan migrate --force
+  tools:
+    <<: [*app, *after-databases]
+    profiles: [tools]
+    restart: "no"
 
   horizon:
-    <<: *app
+    <<: [*app, *after-databases]
     user: www-data
     command: ["php", "artisan", "horizon"]
-    stop_grace_period: 120s
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
+    stop_grace_period: 150s
 
   schedule:
-    <<: *app
+    <<: [*app, *after-databases]
     user: www-data
     command: ["php", "artisan", "schedule:work"]
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
+    stop_grace_period: 30s
 
+  # nginx is not rebuilt per release: its image is the pinned upstream one, its config comes from /srv/scarlet-web/nginx
+  # (copied there by rollout.sh) and is reloaded, and the built assets of every release collect in /srv/scarlet-web/public.
   web:
-    image: scarlet-web-web:${SCARLET_RELEASE}
+    image: nginx:1.31.8-alpine@sha256:fed7e14be83cbd2661a75cdc5b872d936cf155d46c327084d30b8df19ae88d72
     restart: unless-stopped
     network_mode: host
+    command: ["nginx", "-c", "/etc/nginx/scarlet/nginx.conf", "-g", "daemon off;"]
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/cloudflare-ips.conf:/etc/nginx/cloudflare-ips.conf:ro
-      - ./nginx/fastcgi-app.conf:/etc/nginx/fastcgi-app.conf:ro
-      - /srv/scarlet-web/aop.conf:/etc/nginx/aop.conf:ro
+      - /srv/scarlet-web/nginx:/etc/nginx/scarlet:ro
+      - /srv/scarlet-web/state:/etc/nginx/state:ro
       - /srv/scarlet-web/tls:/etc/nginx/tls:ro
+      - /srv/scarlet-web/public:/var/www/public:ro
 
 networks:
   backend:

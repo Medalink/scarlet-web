@@ -1,11 +1,12 @@
 #!/bin/bash
 # Builds, ships and rolls out scarletweb.io. Run it from medaviper (Git Bash) or from medaware.
 #
-#   bin/deploy [ref]            build ref (a sha, branch or tag; default main) on the build host, load the images on the droplet,
-#                               migrate and start them, check the health. A failed check restarts the old release.
-#   bin/deploy rollback         start the release before the current one (code only: migrations are forward-only)
+#   bin/deploy [ref]            build ref (a sha, branch or tag; default main) on the build host, load the image on the
+#                               droplet, migrate, start the release beside the running one and move visitors to it with
+#                               an nginx reload: no failed request. A failed health check leaves the old release serving.
+#   bin/deploy rollback         move visitors back to the release before the current one, the same way (code only)
 #   bin/deploy status           the containers, the release and the zone settings
-#   bin/deploy logs [service]   follow the logs (web, app, horizon, schedule, postgres, redis)
+#   bin/deploy logs [service]   follow the logs (web, app-blue, app-green, horizon, schedule, postgres, redis)
 #   bin/deploy backup           an extra pg_dump now
 #   bin/deploy maps <folder>    copy map tiles (a folder with manifest.json) to the droplet's disk, outside the image
 #   bin/deploy bootstrap [ref]  first install: server, DNS, certificate, release, strict TLS, origin pulls
@@ -49,7 +50,7 @@ build() {
 
 ship_images() {
   local tag=$1
-  on_build "sudo -n docker save scarlet-web-app:$tag scarlet-web-web:$tag | zstd -T2 -3" | srv 'zstd -d | docker load'
+  on_build "sudo -n docker save scarlet-web-app:$tag | zstd -T2 -3" | srv 'zstd -d | docker load'
 }
 
 release() {
@@ -88,7 +89,7 @@ step_dns() {
 
 step_aop() {
   $cf aop on
-  srv 'cp /srv/scarlet-web/deploy/nginx/aop-on.conf /srv/scarlet-web/aop.conf && /srv/scarlet-web/deploy/dc exec -T web nginx -s reload'
+  srv 'cp /srv/scarlet-web/deploy/nginx/aop-on.conf /srv/scarlet-web/state/aop.conf && /srv/scarlet-web/deploy/dc exec -T web nginx -c /etc/nginx/scarlet/nginx.conf -t && /srv/scarlet-web/deploy/dc exec -T web nginx -c /etc/nginx/scarlet/nginx.conf -s reload'
 }
 
 case "${1:-release}" in
@@ -125,6 +126,6 @@ case "${1:-release}" in
     curl -s -o /dev/null -w 'through Cloudflare (origin pulls): %{http_code}\n' https://scarletweb.io/up
     ;;
   ssh) shift; srv "$@" ;;
-  help | -h | --help) sed -n '2,19p' "$0" ;;
+  help | -h | --help) sed -n '2,20p' "$0" ;;
   *) release "$1" ;;
 esac

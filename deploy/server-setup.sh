@@ -68,8 +68,10 @@ EOF
 fi
 chmod 600 .env
 
-# Authenticated Origin Pulls stays off until the zone setting is on (bin/deploy aop on).
-[ -f aop.conf ] || cp deploy/nginx/aop-off.conf aop.conf
+# Authenticated Origin Pulls stays off until the zone setting is on (bin/deploy aop on). rollout.sh keeps the live
+# switches of nginx in state/.
+install -d state
+[ -f state/aop.conf ] || cp deploy/nginx/aop-off.conf state/aop.conf
 cp deploy/nginx/origin-pull-ca.pem tls/origin-pull-ca.pem
 
 # The origin key is made on the server and never leaves it; only the request for a certificate does.

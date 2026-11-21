@@ -1,10 +1,9 @@
-# The production images: `app` (php-fpm; Horizon and the scheduler run the same image) and `web` (nginx with the
-# built assets). `bin/deploy` builds both from a full clone and passes the clone's git history as the named context
+# The production image `app` (php-fpm; Horizon, the scheduler and the artisan commands run the same image; nginx is the
+# upstream image, it takes the built assets from this one). `bin/deploy` builds it from a full clone and passes the clone's git history as the named context
 # `gitdir`. Every FROM is a release that was public for at least 7 days when it was chosen, pinned by digest in
 # docker/pins.tsv.
 #
 #   docker build -f docker/prod.Dockerfile --target app --build-context gitdir=<clone>/.git -t scarlet-web-app:<sha> <clone>
-#   docker build -f docker/prod.Dockerfile --target web -t scarlet-web-web:<sha> <clone>
 FROM composer:2.11.1@sha256:8de2184c6de224f4689e8f80ed5f5edaf0030b6b8b7839a22a2bcb6722ac87d0 AS composer
 FROM rust:1.100.0-bookworm@sha256:ade39a710ef85f3506cffcfec3e8a24ba090badef1dff2fb798f71d878833fea AS part
 
@@ -24,9 +23,6 @@ COPY resources/ resources/
 COPY app/ app/
 COPY public/ public/
 RUN pnpm run build
-
-FROM nginx:1.31.8-alpine@sha256:fed7e14be83cbd2661a75cdc5b872d936cf155d46c327084d30b8df19ae88d72 AS web
-COPY --from=assets /app/public/ /var/www/public/
 
 FROM php:8.5.12-fpm-bookworm@sha256:eec275cd99580e0a6e103dd343a7c160c86917003f6b9bba2d4c75d82419c683 AS app
 

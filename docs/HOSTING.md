@@ -9,7 +9,7 @@ scarletweb.io runs on one DigitalOcean droplet behind Cloudflare. The code that 
 | --- | --- |
 | Droplet | `scarlet-web`, region nyc3, `s-2vcpu-4gb` (2 vCPU, 4 GB RAM, 80 GB disk), Ubuntu 24.04, 2 GB swap, DigitalOcean backups and monitoring on |
 | Cloudflare | Zone `scarletweb.io` on the Free plan. Proxied `A` and `AAAA` records for the apex and `www`. SSL mode Full (strict), Authenticated Origin Pulls on, Always Use HTTPS on, minimum TLS 1.2, HSTS off |
-| Containers | `web` (nginx), `app` (php-fpm), `horizon`, `schedule`, `postgres` (TimescaleDB 2.32 with the Toolkit, PostgreSQL 18), `redis`. `deploy/compose.yaml` |
+| Containers | `web` (nginx), `app-blue` or `app-green` (php-fpm, one serves), `horizon`, `schedule`, `postgres` (TimescaleDB 2.32 with the Toolkit, PostgreSQL 18), `redis`. `deploy/compose.yaml` |
 | Access | Tailscale only. `ssh ops@scarlet-web` with the server's own key. The DigitalOcean web console is the fallback |
 | Files on the droplet | `/srv/scarlet-web`: `.env` (mode 600), `tls/`, `maps/`, `backups/`, `deploy/` |
 
@@ -42,12 +42,38 @@ bin/deploy <sha>      # a given commit
 ```
 
 What it does: clones the full history on medaware (checkouts under `/data/<user>/scratch/scarlet-web-build`), builds
-the `app` and `web` images through `fleet slot` (cargo for `scarlet-part`, composer, Vite), runs `app:version
---strict` and `app:release-notes:backfill` with the git history mounted for that one step so no `.git` is in the
-image, then pipes `docker save | zstd | ssh | docker load` to the droplet. On the droplet `deploy/rollout.sh`
-brings the databases up, runs `migrate --force`, `maps:load-rects`, `app:release-notes:publish` and `cache:clear`
-with the new image, starts the new containers and waits for `/up`. If `/up` does not answer in two minutes it starts
-the previous release again and exits 1. The newest three releases' images stay on the droplet.
+the `app` image through `fleet slot` (cargo for `scarlet-part`, composer, Vite), runs `app:version --strict` and
+`app:release-notes:backfill` with the git history mounted for that one step so no `.git` is in the image, then pipes
+`docker save | zstd | ssh | docker load` to the droplet. On the droplet `deploy/rollout.sh`:
+
+1. runs `migrate --force`, `maps:load-rects`, `app:release-notes:publish` and `cache:clear` with the new image while
+   the old release still serves;
+2. starts the new release as `app-blue` or `app-green`, whichever is idle, and waits for three answers in a row from
+   `/up` and `/release-notes` through nginx's own configuration (loopback ports 8091 and 8092);
+3. copies the release's built assets into `/srv/scarlet-web/public`, where every release's assets stay, so a page
+   from the old release still finds its files;
+4. rewrites nginx's upstream (`/srv/scarlet-web/state/upstream.conf`) and runs `nginx -s reload`, not a restart: nginx
+   finishes the requests it has;
+5. waits 5 seconds, then sends the old php-fpm SIGQUIT, which finishes its requests, and removes it;
+6. stops Horizon and the scheduler gracefully (running jobs finish; SIGTERM is Horizon's own terminate) and starts them
+   on the new release. Queued jobs wait in Redis meanwhile.
+
+A release that fails the health check never gets visitors: the old release keeps serving, the new container is
+removed and the deploy exits 1. The images of the active release, the other slot and the last three releases stay on
+the droplet.
+
+nginx is not rebuilt per release. Its image is the pinned upstream one, its configuration is copied to
+`/srv/scarlet-web/nginx` and reloaded, and the Cloudflare ranges, certificate and origin-pull switch are files it
+reads, so none of that needs a restart either.
+
+### The migration rule
+
+A migration runs while the old code is still serving, and a rollback runs the old code against the new schema. So
+every release must be safe with both: **expand first, contract in a later release.** Add tables and columns as
+nullable or defaulted, add indexes without locking (`$withinTransaction = false`, `concurrently`), and deploy the code
+that uses them. Drop or rename a column, change a type or tighten a constraint only in a later release, after no
+running code reads the old shape. A migration that cannot satisfy this ships behind a flag that stays off until the
+schema change is live, or in two releases. `migrationUnsafe` in the analyser enforces part of this.
 
 `bin/deploy status` shows the containers, the release and the Cloudflare settings. Every base image is pinned by
 digest in `docker/pins.tsv` and `docker/prod.Dockerfile`; `scripts/deps-age` checks they are at least 7 days old.
@@ -58,20 +84,22 @@ digest in `docker/pins.tsv` and `docker/prod.Dockerfile`; `scripts/deps-age` che
 bin/deploy rollback
 ```
 
-It starts the release before the current one. Migrations are forward-only and are not undone, so a rollback changes
-code only; a migration that breaks the older code needs a new fix-forward release instead.
+It starts the release before the current one beside the running one and moves visitors to it exactly as a deploy
+does (health check, reload, drain), so it also drops no request. Migrations are forward-only and are not undone, so a
+rollback changes code only; the expand-first rule above is what keeps the older code working. A second `rollback`
+goes forward again.
 
 ## Logs and shells
 
 ```sh
 bin/deploy logs web            # nginx access log: visitor address, Cloudflare peer, status, time
-bin/deploy logs app            # php-fpm and Laravel (stderr)
+bin/deploy logs app-blue       # php-fpm and Laravel (stderr) of one slot; `bin/deploy status` shows which serves
 bin/deploy logs horizon
 bin/deploy ssh                 # a shell on the droplet; deploy/dc is docker compose for the stack
 bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec horizon php artisan horizon:status'
 ```
 
-The Laravel log is also in the `logs` volume (`storage/logs/laravel.log` in the `app` container). Docker keeps three
+The Laravel log is also in the `logs` volume (`storage/logs/laravel.log` in the app containers). Docker keeps three
 10 MB files per container.
 
 ## Backups
@@ -89,13 +117,14 @@ Restore a dump into an empty database (the order matters, TimescaleDB needs the 
 bin/deploy ssh
 cd /srv/scarlet-web
 f=backups/scarlet-<stamp>.dump
-deploy/dc stop app horizon schedule web
+deploy/dc stop app-blue app-green horizon schedule web
 deploy/dc exec -T postgres psql -U postgres -d postgres -c 'drop database scarlet' -c 'create database scarlet'
 deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'create extension if not exists timescaledb' \
   -c 'create extension if not exists timescaledb_toolkit' -c 'select timescaledb_pre_restore()'
 deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner < "$f"
 deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'select timescaledb_post_restore()'
-deploy/dc up -d
+deploy/dc up -d web horizon schedule
+cat state/active   # then: deploy/dc up -d app-blue (or app-green), the slot named there
 ```
 
 `pg_dump` prints a warning about circular foreign keys on `continuous_agg`; the restore above ran clean from such a dump
@@ -136,7 +165,7 @@ plan. Check DigitalOcean's pricing page; prices here were read in November 2026.
 ## What the owner registers
 
 Sign-in needs two OAuth clients, one per provider. Their ids and secrets go in `/srv/scarlet-web/.env` on the server
-(`bin/deploy ssh`, edit, then `deploy/dc up -d --force-recreate app horizon schedule`), never in the repo. They are
+(`bin/deploy ssh`, edit, then `bin/deploy` the current release again: the new containers read the file), never in the repo. They are
 empty today, so both buttons on `/login` are disabled. `<domain>` is `scarletweb.io`, `APP_URL` is
 `https://scarletweb.io`, and `SESSION_SECURE_COOKIE` is on. Scarlet asks each provider for the `openid` scope only and
 keeps the provider name and the provider's subject id.

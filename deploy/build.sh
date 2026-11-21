@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs on the build host (medaware), piped in by bin/deploy: `bash -s -- <repo> <ref>`.
-# Clones the full history, checks out the ref and builds the two images through `fleet slot`, so the compile waits its
+# Clones the full history, checks out the ref and builds the app image through `fleet slot`, so the compile waits its
 # turn. Prints `built <sha>` as its last line. Checkouts live under /data/<user>/scratch, never on the 4 GB droplet.
 set -euo pipefail
 repo=$1
@@ -24,5 +24,4 @@ tag=${sha:0:12}
 
 slot() { if command -v fleet >/dev/null; then fleet slot -- "$@"; else "$@"; fi; }
 slot sudo -n docker build -f docker/prod.Dockerfile --target app --build-context "gitdir=$PWD/.git" -t "scarlet-web-app:$tag" .
-slot sudo -n docker build -f docker/prod.Dockerfile --target web -t "scarlet-web-web:$tag" .
 echo "built $sha"
