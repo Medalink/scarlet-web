@@ -3,7 +3,7 @@
 @props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => ''])
 @php
     $signedIn = $signedIn || auth()->check();
-    $items = ['stats' => ['Stats', '/stats'], 'world' => ['Map', '/map'], 'rulesets' => ['Rulesets', '/rulesets'], 'leaderboards' => ['Leaderboards', '/leaderboards'], 'search' => ['Search', '/search'], 'developers' => ['API', '/developers']];
+    $items = ['stats' => ['Stats', '/stats'], 'world' => ['Map', '/map'], 'rulesets' => ['Rulesets', '/rulesets'], 'talents' => ['Talents', '/talents'], 'leaderboards' => ['Leaderboards', '/leaderboards'], 'search' => ['Search', '/search'], 'developers' => ['API', '/developers']];
 @endphp
 <!doctype html>
 <html lang="en">

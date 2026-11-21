@@ -413,6 +413,7 @@ headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figure
 | `/leaderboards` | Fastest to a level, fewest deaths, most quests, hardcore survivors, per ruleset |
 | `/search` | Characters that are public, creatures, items, zones, quests |
 | `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths, talents (the latest build of each talent group drawn on its tree, or listed by tab while no layout is stored; the order the points were taken in; respecs). Public when its owner says so; the owner sees the private parts too |
+| `/talents`, `/talents/{class}/{spec}` | Public. Every spec with the characters that play it, and one spec: pick rate by node (a heat on the real tree when a layout is stored, a table always), the most common order of points, and builds by level bracket (`?level=10-19` to `60`; `ruleset` and `server` as on `/stats`). Each character counts once, by its latest counted build read inside the bracket, and every figure prints its n. `/stats` carries a Talents block with the most played specs |
 | `/creatures/{id}`, `/items/{id}`, `/zones/{id}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels |
 | `/map` | The world map: one seamless map, zoomable down to a zone, with heat from paths, deaths and kills (see Maps) |
 | `/developers` | The public API reference |
