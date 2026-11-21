@@ -6,6 +6,8 @@ return [
     // to it: 5 on a public deploy, 1 in development.
     'min_characters' => (int) env('SCARLET_MIN_CHARACTERS', 1),
 
+    'continuity_seconds' => 300,
+
     // A third sign-in button for local development. It exists only in the `local` environment, whatever this says.
     'dev_login' => (bool) env('SCARLET_DEV_LOGIN', false),
 

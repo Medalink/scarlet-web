@@ -67,6 +67,7 @@ instance type or the instance id changes; zero-length spans are not written. `at
 | `reached` | int | the level reached (the row's `level` is the same) |
 | `since_ms` | int | ms since the previous `L` or the session start: time at the old level in this session |
 | `tp_level_s` | int or null | `TP` levelSeconds, the latest one before this line in the session |
+| `ding` | bool | the level before the line was known and lower than `reached`. False for an `L` line that repeats the level (an import writes one at its start), so it is no level-up Scarlet saw and the character was already at that level when first seen |
 
 ### `xp_gains` (xp: `X`)
 

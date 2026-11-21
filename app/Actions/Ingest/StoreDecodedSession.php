@@ -15,8 +15,9 @@ class StoreDecodedSession
         private readonly UpsertDictionaries $dictionaries,
         private readonly UpsertTalentLayouts $layouts,
         private readonly SummarizeTalents $talents,
+        private readonly MarkSessionJoins $joins,
         private readonly RebuildCharacterLevels $levels,
-        private readonly ResolveDungeonJoins $joins,
+        private readonly ResolveDungeonJoins $dungeonJoins,
         private readonly SummarizeCharacter $summaries,
         private readonly SessionRows $sessionRows,
         private readonly MeasureDistance $distance,
@@ -44,8 +45,9 @@ class StoreDecodedSession
             $this->deleteRows->handle([$characterId], null, $sessionStart);
 
             $range = $this->union($old, $this->replace($characterId, $sessionStart, $ruleset?->id, $decoded, $namesCounted));
+            $this->joins->handle($characterId);
             $range = $this->union($range, $this->levels->handle($characterId));
-            $this->joins->handle($characterId, $sessionStart);
+            $this->dungeonJoins->handle($characterId, $sessionStart);
             $this->summaries->handle($characterId);
             $this->talents->handle($characterId);
 

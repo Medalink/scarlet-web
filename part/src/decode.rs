@@ -638,7 +638,8 @@ impl Dec<'_> {
         let since = t - self.last_level_t;
         // An `L` line that repeats the level (an import writes one at its start, the client may after a
         // reload) gains nothing, so it must not count toward the "levels too fast" flag.
-        if self.level > 0 && l > self.level {
+        let ding = self.level > 0 && l > self.level;
+        if ding {
             self.levels_gained += l - self.level;
             if l > self.level + 1 {
                 self.level_skip = true;
@@ -652,7 +653,8 @@ impl Dec<'_> {
         self.w
             .int("reached", l)
             .int("since_ms", since)
-            .opt("tp_level_s", tpl);
+            .opt("tp_level_s", tpl)
+            .bool("ding", ding);
         self.w.end();
     }
 

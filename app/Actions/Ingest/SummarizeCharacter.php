@@ -3,6 +3,7 @@
 namespace App\Actions\Ingest;
 
 use App\Models\Character;
+use App\Support\SessionJoin;
 use Illuminate\Support\Facades\DB;
 
 class SummarizeCharacter
@@ -34,6 +35,14 @@ class SummarizeCharacter
                     ),
                     (select coalesce(sum(s.played_ms), 0) / 1000 from sessions s where s.character_id = characters.id)
                 ),
+                played_known = exists (select 1 from sessions s where s.character_id = characters.id and s.counter_end_ms is not null),
+                recorded_seconds = (select coalesce(round(sum(s.played_ms) / 1000.0), 0) from sessions s where s.character_id = characters.id),
+                first_level = (select s.level_start from sessions s where s.character_id = characters.id order by s.session_start limit 1),
+                whole_life = coalesce((
+                    select f.level_start = 1 and f.counter_start_ms is not null and f.counter_start_ms <= ?
+                           and not exists (select 1 from sessions s where s.character_id = characters.id and coalesce(s.joins, ?) in (?, ?))
+                    from sessions f where f.character_id = characters.id order by f.session_start limit 1
+                ), false),
                 first_seen_at = (select min(s.start_at) from sessions s where s.character_id = characters.id),
                 last_seen_at = (select max(s.end_at) from sessions s where s.character_id = characters.id),
                 plausibility = case when exists (select 1 from sessions s where s.character_id = characters.id and not s.counted) then ? else ? end,
@@ -45,7 +54,7 @@ class SummarizeCharacter
                 updated_at = now()
             where id = ?
             SQL,
-            [Character::FLAGGED, Character::PLAUSIBLE, $characterId],
+            [(int) config('scarlet.continuity_seconds') * 1000, SessionJoin::Unknown->value, ...SessionJoin::BROKEN, Character::FLAGGED, Character::PLAUSIBLE, $characterId],
         );
     }
 }
