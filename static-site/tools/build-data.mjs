@@ -11,7 +11,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 const GROUPS = [
   ["Sessions and time", "S ES TP AFK RS RX XD GA GR LL LK LG SS PR"],
-  ["Movement and travel", "Z P W T TN TF MO WP SM HB CP EX VG AI MP ZP MT TE"],
+  ["Movement and travel", "Z SZ P W T TN TF MO WP SM HB CP EX VG AI MP ZP MT TE"],
   ["Combat", "F C CH CI K NS A CC DM DS DP TW AR SO"],
   ["Deaths", "D R U DL DR RZ SH SKN SR DB"],
   ["Experience, stats and talents", "X L XR ST SC SX CD SK SL TL TG TA TQ LS SB AB TB TC"],
@@ -102,6 +102,7 @@ Object.assign(MEANING, {
   LG: "Combat logging was turned off or on",
   SS: "You took a screenshot. Scarlet takes none and never reads one",
   Z: "The area changed: zone, subzone and instance type",
+  SZ: "The first time you entered a subzone, with the map and where you stood",
   P: "A path point while moving: map, x, y and the way you face",
   W: "A stretch of movement ended: running, walking, mounted, swimming or flying, with yards, seconds and jumps",
   TN: "A flight point seen on a flight master's map",
