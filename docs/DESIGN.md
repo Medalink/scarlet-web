@@ -99,7 +99,9 @@ scarlet-part\t1\t<Name-Surname>\t<session start, epoch s>\t<group key>
 - How lines become sessions: all payload lines of a character are put in time order (a stable sort, ties keep the
   recorded order). A session runs from an `S` line to its `ES`, or to the line before the next `S`. Lines between an
   `ES` and the next `S` are that login's own first lines (durability, pet, client checks) and join the next session;
-  lines after the last `ES` join the last session; lines before any `S` form a session keyed by the first line's time.
+  lines after the last `ES` are held back and join the next session that starts, so a closed session never changes (the
+  builder counts them in `Stats.held_back`); lines of a character with no `S` at all form one session keyed by the first
+  line's time, which never closes.
   The key is the `S` time in epoch seconds, raised by one second until it is unique for the character. `dt` can be
   negative when a recorded line is earlier than the one before it.
 - A line whose code is in no group is never sent. The `names` group needs no switch: a name line (`name-refs.tsv`,

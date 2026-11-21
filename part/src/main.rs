@@ -204,14 +204,15 @@ fn pack(args: Vec<OsString>) -> Result<(), String> {
     .map_err(|e| e.to_string())?;
     let s = &built.stats;
     eprintln!(
-        "{} parts from {} closed sessions ({} open left out); {} lines in, {} sent, {} of unknown code and {} of groups that are off dropped",
+        "{} parts from {} closed sessions ({} open left out); {} lines in, {} sent, {} of unknown code and {} of groups that are off dropped, {} held back for the next session",
         built.parts.len(),
         s.sessions_closed,
         s.sessions_open,
         s.lines_in,
         s.lines_sent,
         s.dropped_unknown,
-        s.dropped_off
+        s.dropped_off,
+        s.held_back
     );
     Ok(())
 }

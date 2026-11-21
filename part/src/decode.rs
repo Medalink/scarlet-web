@@ -119,8 +119,19 @@ struct ItemAcc {
     tooltip: String,
 }
 
+/// Which groups have a part in this call. Without one the counts it feeds are
+/// unknown (null), not zero.
+#[derive(Clone, Copy)]
+struct Has {
+    xp: bool,
+    quests: bool,
+    combat: bool,
+    economy: bool,
+}
+
 struct Dec<'o> {
     w: Rows<'o>,
+    has: Has,
     session: i64,
     started: bool,
     ended: bool,
@@ -262,7 +273,7 @@ impl Dec<'_> {
             self.w
                 .int("end", now)
                 .int("ms", ms)
-                .int("afk_ms", done.afk_ms)
+                .opt("afk_ms", self.has.xp.then_some(done.afk_ms))
                 .text("zone", &done.key.zone)
                 .text("instance_type", &done.key.inst_type)
                 .opt("instance_id", done.key.inst_id);
@@ -283,15 +294,20 @@ impl Dec<'_> {
             }
             return;
         }
+        if self.started && code != "TP" && code != "DP" {
+            self.end_ms = self.end_ms.max(t);
+        }
         if let Some(kind) = NameRefs::get().def_kind(code) {
             self.define(code, kind, &f);
             return;
         }
-        if !self.started && code != "S" {
+        // A login's first lines come before its `S` line. Only the lines that
+        // set the ruleset and the group context are read from them; nothing is counted.
+        if !self.started
+            && code != "S"
+            && !matches!(code, "GR" | "PB" | "XD" | "GA" | "CD" | "GP" | "LM")
+        {
             return;
-        }
-        if code != "TP" && code != "DP" {
-            self.end_ms = self.end_ms.max(t);
         }
         match code {
             "S" => self.on_s(t, &f),
@@ -561,7 +577,7 @@ impl Dec<'_> {
         let money = num(f, 12);
         self.balance = money;
         self.money_start = money;
-        if money.is_some() {
+        if money.is_some() && self.has.economy {
             self.fact("money_changes", t);
             self.w
                 .str("src", "S")
@@ -817,6 +833,8 @@ impl Dec<'_> {
             self.w.end();
         }
         let runs = std::mem::take(&mut self.runs);
+        // Without combat parts the bosses and deaths of a run are unknown: no rows.
+        let runs = if self.has.combat { runs } else { Vec::new() };
         let end = self.end_ms;
         self.run_count = runs.len() as i64;
         for (i, r) in runs.iter().enumerate() {
@@ -959,15 +977,18 @@ impl Dec<'_> {
             .opt("xp", xp_bar.0)
             .opt("xp_max", xp_bar.1)
             .opt("money_start", self.money_start)
-            .opt("money_end", self.balance)
-            .int("kills", self.kills)
-            .int("deaths", self.deaths)
-            .int("quests_done", self.quests)
-            .int("copper_earned", self.earned)
-            .int("copper_spent", self.spent)
-            .int("xp_total", self.xp_total)
+            .opt(
+                "money_end",
+                self.has.economy.then_some(self.balance).flatten(),
+            )
+            .opt("kills", self.has.combat.then_some(self.kills))
+            .opt("deaths", self.has.combat.then_some(self.deaths))
+            .opt("quests_done", self.has.quests.then_some(self.quests))
+            .opt("copper_earned", self.has.economy.then_some(self.earned))
+            .opt("copper_spent", self.has.economy.then_some(self.spent))
+            .opt("xp_total", self.has.xp.then_some(self.xp_total))
             .int("zones", self.zones_seen.len() as i64)
-            .int("dungeon_runs", self.run_count)
+            .opt("dungeon_runs", self.has.combat.then_some(self.run_count))
             .opt("tp_total_s", self.tp_total)
             .opt("tp_level_s", self.tp_level)
             .opt("gr_preset", preset);
@@ -1047,8 +1068,15 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
     };
     lines.sort_unstable_by_key(|l| (l.t, l.rank, l.seq));
     let first_t = lines.first().map_or(session * 1000, |l| l.t);
+    let has_group = |k: &str| groups.index(k).is_some_and(|i| keys.contains(&i));
     let mut d = Dec {
         w: Rows::new(out),
+        has: Has {
+            xp: has_group("xp"),
+            quests: has_group("quests"),
+            combat: has_group("combat"),
+            economy: has_group("economy"),
+        },
         session,
         started: false,
         ended: false,

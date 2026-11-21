@@ -40,6 +40,7 @@ CR	5	spell		id	recipeSpellID; absent on older lines
 CA	7	spell	field 1 is mount	id	extra is the mount spell
 SR	2	spell	field 1 is 0	id	optionType 0 is a spell
 SB	4	spell		list	spellID:rank joined by commas
+MP	1	spell		list	tracking types joined by commas: a spellID, or a name that is skipped
 AB	3	spell	field 2 is spell	id	
 AB	5	spell	field 4 is spell	id	what the slot held before
 O	1	item		id	

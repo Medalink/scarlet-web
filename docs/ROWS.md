@@ -55,7 +55,7 @@ instance type or the instance id changes; zero-length spans are not written. `at
 | --- | --- | --- |
 | `end` | int | ms |
 | `ms` | int | `end - at` |
-| `afk_ms` | int | time inside the span between `AFK 1` and `AFK 0` |
+| `afk_ms` | int or null | time inside the span between `AFK 1` and `AFK 0` |
 | `zone` | string or null | zone name of the `Z` line |
 | `instance_type` | string or null | `none`, `party`, `raid`, `pvp`, `arena`, `scenario` |
 | `instance_id` | int or null | `instanceMapID` |
@@ -233,7 +233,7 @@ One per decode, last. Keys in order:
 | Key | Type | |
 | --- | --- | --- |
 | `session` | int | key |
-| `start`, `end` | int | ms. `start` is the `S` line (the first line when there is none); `end` is the latest time of any line up to `ES`, except `TP` and `DP` |
+| `start`, `end` | int | ms. `start` is the `S` line (the first line when there is none); `end` is the latest time of any line from `S` through `ES`, except `TP` and `DP`. Name lines count too |
 | `has_start`, `ended` | bool | an `S` line exists; an `ES` line exists |
 | `played_ms`, `played_s` | int | `end - start`; seconds rounded half up. This is OVERVIEW.md's played time |
 | `lines` | int | lines in all parts of the session, `pn` lines and addon lines included |
@@ -241,12 +241,13 @@ One per decode, last. Keys in order:
 | `build`, `class`, `race`, `faction`, `addon_version` | string or null | `S` fields 1, 2, 3, 5, 6 |
 | `level_start`, `level_end` | int or null | the level at `S`; the level after the last `L` |
 | `xp`, `xp_max` | int or null | the experience bar, last seen (`S` or `X`) |
-| `money_start`, `money_end` | int or null | copper at `S` (or the first `ST`); the balance after the last money line |
-| `kills`, `deaths`, `quests_done` | int | counts of `K`, `D`, `Q 2` |
-| `copper_earned`, `copper_spent` | int | sums over `M` lines |
-| `xp_total` | int | sum of `X` amounts |
+| `money_start`, `money_end` | int or null | copper at `S` (or the first `ST`); the balance after the last money line. `money_end` is null without an `economy` part |
+| `kills`, `deaths` | int or null | counts of `K`, `D`. null without a `combat` part |
+| `quests_done` | int or null | count of `Q 2`. null without a `quests` part |
+| `copper_earned`, `copper_spent` | int or null | sums over `M` lines. null without an `economy` part |
+| `xp_total` | int or null | sum of `X` amounts. null without an `xp` part |
 | `zones` | int | distinct zone names seen |
-| `dungeon_runs` | int | runs written in this session (before the joining rule above) |
+| `dungeon_runs` | int or null | runs written in this session (before the joining rule above). null without a `combat` part |
 | `tp_total_s`, `tp_level_s` | int or null | the last `TP` |
 | `gr_preset` | int or null | `GR` preset, the first one in the session |
 | `gr_hardcore` | bool or null | `GR` hardcore |
@@ -271,11 +272,21 @@ flags stop; thresholds are the decoder's):
 | `levels_too_fast` | `played_ms` divided by the levels gained in the session is under 20 seconds |
 | `ruleset_changed` | a later `GR`, `PB`, `XD` or `GA` line differs from the first one |
 
+## Missing groups
+
+A session with no part for a group (the player switched it off, or the session had no line of it) cannot be told from
+a session where the thing did not happen, except by `groups` on the `sessions` row. The decoder therefore writes
+nothing it cannot know: the `sessions` counters of a missing group are null, not 0; `play_spans.afk_ms` is null
+without an `xp` part; no `dungeon_runs` row and no `money_changes` row of `src` `S` is written without a `combat`
+or an `economy` part. A job that sums counters treats null as "not sent", never as 0.
+
 ## Counting rules
 
 The decoder follows docs/OVERVIEW.md of the Scarlet repo. Level and zone splits: time, XP, kills, deaths and quests
 go to the level and zone current when they happen (`level` and `zone_id` on the row; the zone's time is the sum of
-`play_spans` by `zone` name). A line before the session's `S` line is not counted. Nothing after `ES` is read.
+`play_spans` by `zone` name). A line before the session's `S` line is not counted, except that the signal lines `GR`, `PB`, `XD`, `GA`, `CD`, `GP`
+and `LM` and the name lines are read from the login lines that precede `S`, so the ruleset is known. Nothing after
+`ES` is read. Lines the builder holds back after the last `ES` are not in any part.
 
 ### Ties
 

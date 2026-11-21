@@ -112,8 +112,8 @@ Each group's parts, whole history, one frame per character and group, summed ove
 
 `movement` (the `P` path points) is 62 percent of everything sent. A player who switches only `movement` off cuts the
 upload by more than half and loses the map paths and heat maps. `social` (player seen lines, 10 percent) and `names`
-(8 percent) come next. The groups sum to 2 percent less than the full batch: the full frame finds matches across
-groups.
+(8 percent) come next. The groups sum to 2 percent less than the full batch (1,211,907 against 1,236,086 bytes): compressing like
+lines together beats compressing in session order. It does not mean the full frame finds matches across groups.
 
 ## Decoder
 
@@ -123,13 +123,13 @@ Release build, parts in memory, median of 5 runs. "Stored" adds reading every pa
 
 | | part lines | rows | wall time | lines per second | stored: wall time |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| character A | 4,862 | 3,706 | 2.4 ms | 2,041,485 | 3.0 ms |
-| character B | 258,085 | 210,895 | 121.0 ms | 2,133,768 | 141.0 ms |
-| character C | 1,559 | 903 | 0.6 ms | 2,580,271 | 0.9 ms |
-| total | 264,506 | 215,504 | 123.9 ms | 2,134,171 | 144.9 ms |
+| character A | 4,862 | 3,698 | 1.9 ms | 2,519,040 | 2.6 ms |
+| character B | 258,085 | 210,851 | 87.8 ms | 2,938,320 | 110.2 ms |
+| character C | 1,559 | 903 | 0.5 ms | 3,160,349 | 0.7 ms |
+| total | 264,506 | 215,452 | 90.3 ms | 2,930,568 | 113.5 ms |
 
 One 3 KB session decodes in well under a millisecond, so a queue job is dominated by process start and the database
-insert, not the decode. The rows are 80 percent `path_points` (170,384 of 210,895 for B); the NDJSON is 27.7 MB for B.
+insert, not the decode. The rows are 80 percent `path_points` (170,384 of 210,851 for B); the NDJSON is 27.7 MB for B.
 
 ### PHP against Rust, the line-parsing loop
 

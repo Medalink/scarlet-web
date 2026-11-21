@@ -54,6 +54,8 @@ pub struct Stats {
     pub dropped_unknown: usize,
     /// Lines of a group that is off.
     pub dropped_off: usize,
+    /// Lines after the last session's `ES`: they wait for the next session.
+    pub held_back: usize,
     pub pseudonyms: usize,
 }
 
@@ -94,9 +96,11 @@ pub fn parse_header(text: &str) -> Option<(&str, i64, &str)> {
 /// The lines are put in time order first (a stable sort, as the companion
 /// does). A session runs from its `S` line to its `ES`, or to the line before
 /// the next `S`. Lines between an `ES` and the next `S` are the next session's
-/// login lines and join it; lines after the last `ES` join the last session;
-/// lines before any `S` form a session keyed by the first line's time.
-fn split_sessions(mut main: Vec<Ev>) -> Vec<Sess> {
+/// login lines and join it. Lines after the last `ES` are held back until a
+/// later `S` takes them, so a closed session never changes. With no `S` at all
+/// the lines form one session, keyed by the first line's time, that never
+/// closes. Returns the sessions and the number of lines held back.
+fn split_sessions(mut main: Vec<Ev>) -> (Vec<Sess>, usize) {
     main.sort_by_key(|e| e.ms);
     let mut sessions: Vec<Sess> = Vec::new();
     let mut used: HashSet<i64> = HashSet::new();
@@ -132,21 +136,21 @@ fn split_sessions(mut main: Vec<Ev>) -> Vec<Sess> {
             pending.push(ev);
         }
     }
+    let mut held = 0;
     if !pending.is_empty() {
-        match sessions.last_mut() {
-            Some(s) => s.lines.append(&mut pending),
-            None => {
-                let ms = pending[0].ms;
-                sessions.push(Sess {
-                    key: ms.div_euclid(1000),
-                    start_ms: ms,
-                    lines: pending,
-                    ended: false,
-                });
-            }
+        if sessions.is_empty() {
+            let ms = pending[0].ms;
+            sessions.push(Sess {
+                key: ms.div_euclid(1000),
+                start_ms: ms,
+                lines: pending,
+                ended: false,
+            });
+        } else {
+            held = pending.len();
         }
     }
-    sessions
+    (sessions, held)
 }
 
 /// Build every part of every closed session. `main` and `addon` are the
@@ -157,7 +161,8 @@ pub fn build_parts(character: &str, main: Vec<Ev>, mut addon: Vec<Ev>, opts: &Op
         lines_in: main.len() + addon.len(),
         ..Stats::default()
     };
-    let sessions = split_sessions(main);
+    let (sessions, held) = split_sessions(main);
+    stats.held_back = held;
     addon.sort_by_key(|e| e.ms);
     let mut addon_for: Vec<Vec<&Ev>> = vec![Vec::new(); sessions.len()];
     if opts.is_on("addons") && !sessions.is_empty() {
