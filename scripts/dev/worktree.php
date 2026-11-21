@@ -14,6 +14,17 @@ function checkoutRoot(): string
 /** The checkout folder as a short name: `scarlet-api-app` becomes `app`, the main `scarlet-web` becomes `main`. */
 function worktreeSlug(): string
 {
+    // The checkout is mounted at /app in every container, so its folder name says nothing there:
+    // bootstrap gets the name from bin/dev, and later runs read it back from this worktree's .env.
+    $given = getenv('SCARLET_WORKTREE');
+    if (is_string($given) && $given !== '') {
+        return $given;
+    }
+    $env = checkoutRoot().'/.env';
+    if (is_file($env) && preg_match('/^DB_DATABASE='.preg_quote(DATABASE_PREFIX, '/').'(\w+)$/m', (string) file_get_contents($env), $found) === 1) {
+        return $found[1];
+    }
+
     $slug = basename(checkoutRoot())
         |> strtolower(...)
         |> (static fn (string $name): string => preg_replace('/[^a-z0-9]+/', '_', $name) ?? $name)

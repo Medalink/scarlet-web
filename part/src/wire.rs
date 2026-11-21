@@ -48,29 +48,7 @@ pub fn decode_batch(
     bytes: &[u8],
     wanted: Option<&HashSet<[u8; 32]>>,
 ) -> Result<Vec<WirePart>, String> {
-    if bytes.len() > MAX_COMPRESSED {
-        return Err("request body is larger than 4 MiB".into());
-    }
-    let frame = zstd::zstd_safe::find_frame_compressed_size(bytes)
-        .map_err(|_| "not a zstd frame".to_string())?;
-    if frame != bytes.len() {
-        return Err("data after the zstd frame".into());
-    }
-    if let Ok(Some(n)) = zstd::zstd_safe::get_frame_content_size(bytes)
-        && n > MAX_DECOMPRESSED as u64
-    {
-        return Err("frame declares more than 64 MiB".into());
-    }
-    let err = |e: std::io::Error| e.to_string();
-    let mut dec = zstd::stream::read::Decoder::new(bytes).map_err(err)?;
-    dec.window_log_max(WINDOW_LOG).map_err(err)?;
-    let mut raw = Vec::new();
-    dec.take(MAX_DECOMPRESSED as u64 + 1)
-        .read_to_end(&mut raw)
-        .map_err(err)?;
-    if raw.len() > MAX_DECOMPRESSED {
-        return Err("decompressed data is larger than 64 MiB".into());
-    }
+    let raw = inflate(bytes)?;
     let mut out = Vec::new();
     let mut pos = 0;
     while pos < raw.len() {
@@ -104,6 +82,35 @@ pub fn decode_batch(
         });
     }
     Ok(out)
+}
+
+/// One request body: a single zstd frame of at most 4 MiB that declares and holds at most
+/// 64 MiB, with a window of at most 8 MiB (the limits of the protocol).
+pub fn inflate(bytes: &[u8]) -> Result<Vec<u8>, String> {
+    if bytes.len() > MAX_COMPRESSED {
+        return Err("request body is larger than 4 MiB".into());
+    }
+    let frame = zstd::zstd_safe::find_frame_compressed_size(bytes)
+        .map_err(|_| "not a zstd frame".to_string())?;
+    if frame != bytes.len() {
+        return Err("data after the zstd frame".into());
+    }
+    if let Ok(Some(n)) = zstd::zstd_safe::get_frame_content_size(bytes)
+        && n > MAX_DECOMPRESSED as u64
+    {
+        return Err("frame declares more than 64 MiB".into());
+    }
+    let err = |e: std::io::Error| e.to_string();
+    let mut dec = zstd::stream::read::Decoder::new(bytes).map_err(err)?;
+    dec.window_log_max(WINDOW_LOG).map_err(err)?;
+    let mut raw = Vec::new();
+    dec.take(MAX_DECOMPRESSED as u64 + 1)
+        .read_to_end(&mut raw)
+        .map_err(err)?;
+    if raw.len() > MAX_DECOMPRESSED {
+        return Err("decompressed data is larger than 64 MiB".into());
+    }
+    Ok(raw)
 }
 
 /// Group parts into requests that fit the limits: at most 20000 parts, 64 MiB

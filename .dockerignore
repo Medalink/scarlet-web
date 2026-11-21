@@ -1,0 +1,7 @@
+# The image build needs only the Rust crate and the tables it embeds (docker/dev.Dockerfile, stage "part").
+*
+!part/
+part/target/
+!docs/
+docs/*
+!docs/*.tsv

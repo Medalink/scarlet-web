@@ -17,7 +17,8 @@ const USAGE: &str = "usage:
   scarlet-part groups --json
   scarlet-part pack --out-dir <dir> --payloads <dir> [--addon-payloads <dir>] [--groups a,b,c] [--name-key-hex <64 hex>]
   scarlet-part batch --parts-dir <dir> --out <file> [--split]
-  scarlet-part unbatch --in <file> --out-dir <dir>
+  scarlet-part unbatch --in <file> --out-dir <dir> [--stored]
+  scarlet-part inflate < <zstd frame> > <bytes>
   scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin
   scarlet-part check-overview --parts-dir <dir> --overview <overview.json>
   scarlet-part measure --root <out dir> --folders a,b,c [--runs 5] [--dump-text <dir>]
@@ -95,6 +96,7 @@ fn run(mut args: Vec<OsString>) -> Result<(), String> {
         "pack" => pack(args),
         "batch" => batch(args),
         "unbatch" => unbatch(args),
+        "inflate" => inflate(),
         "decode" => decode(args),
         "check-overview" => check_overview(args),
         "measure" => {
@@ -269,16 +271,51 @@ fn batch(args: Vec<OsString>) -> Result<(), String> {
     Ok(())
 }
 
+/// One zstd frame from stdin to stdout under the protocol limits (the server reads manifests with it).
+fn inflate() -> Result<(), String> {
+    use std::io::{Read, Write};
+    let mut bytes = Vec::new();
+    std::io::stdin()
+        .take(wire::MAX_COMPRESSED as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|e| e.to_string())?;
+    let raw = wire::inflate(&bytes)?;
+    std::io::stdout()
+        .lock()
+        .write_all(&raw)
+        .map_err(|e| e.to_string())
+}
+
 fn unbatch(args: Vec<OsString>) -> Result<(), String> {
-    let (f, _) = flags(args, &["in", "out-dir"], &[])?;
+    let (f, _) = flags(args, &["in", "out-dir"], &["stored"])?;
     let path = need(&f, "in")?;
     let bytes = fs::read(path).map_err(|e| format!("{path}: {e}"))?;
     let parts = wire::decode_batch(&bytes, None::<&HashSet<[u8; 32]>>)?;
     let out = PathBuf::from(need(&f, "out-dir")?);
     fs::create_dir_all(&out).map_err(|e| e.to_string())?;
     for p in &parts {
-        fs::write(out.join(format!("{}.part", hex(&p.id))), p.text.as_bytes())
-            .map_err(|e| e.to_string())?;
+        let id = hex(&p.id);
+        if !f.contains_key("stored") {
+            fs::write(out.join(format!("{id}.part")), p.text.as_bytes())
+                .map_err(|e| e.to_string())?;
+        } else {
+            // The storage form (the part alone, zstd level 19) and one JSON line per part on stdout.
+            fs::write(out.join(format!("{id}.zst")), wire::compress_part(&p.text)?)
+                .map_err(|e| e.to_string())?;
+            let (character, session, group) =
+                scarlet_part::build::parse_header(&p.text).ok_or("a part has no valid header")?;
+            println!(
+                "{}",
+                json!({
+                    "id": id,
+                    "character": character,
+                    "session": session,
+                    "group": group,
+                    "lines": p.text.lines().count().saturating_sub(1),
+                    "raw_bytes": p.text.len(),
+                })
+            );
+        }
     }
     eprintln!("{} parts written to {}", parts.len(), out.display());
     Ok(())

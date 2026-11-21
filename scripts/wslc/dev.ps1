@@ -174,7 +174,7 @@ function Pick([string[]] $names) {
 
 switch ($Command) {
     'image' {
-        Wslc build --tag scarlet-web-dev:latest --file (Join-Path $root 'docker\dev.Dockerfile') (Join-Path $root 'docker')
+        Wslc build --tag scarlet-web-dev:latest --file (Join-Path $root 'docker\dev.Dockerfile') $root
     }
     'infra' {
         switch ($Rest[0]) {
@@ -186,7 +186,7 @@ switch ($Command) {
     'up' { ToolsUp }
     'bootstrap' {
         ToolsUp
-        Wslc exec -e "SCARLET_HOST_PORT=$(HostPort)" -w /app $tools php scripts/dev/worktree-bootstrap.php
+        Wslc exec -e "SCARLET_HOST_PORT=$(HostPort)" -e "SCARLET_WORKTREE=$($slug -replace '-', '_')" -w /app $tools php scripts/dev/worktree-bootstrap.php
     }
     'start' { Start-Roles (Pick $Rest) }
     'stop' { Stop-Roles (Pick $Rest) }
