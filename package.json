@@ -1,0 +1,18 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "name": "scarlet-web",
+    "private": true,
+    "type": "module",
+    "license": "GPL-3.0-only",
+    "packageManager": "pnpm@12.21.0",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "4.3.5",
+        "laravel-vite-plugin": "3.2.1",
+        "tailwindcss": "4.3.5",
+        "vite": "8.3.8"
+    }
+}

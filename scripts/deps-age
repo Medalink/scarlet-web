@@ -1,0 +1,286 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Lists every locked package younger than seven days and exits 1 when there is one.
+ *
+ * Reads composer.lock, pnpm-lock.yaml, part/Cargo.lock and the container images in
+ * docker/ (every FROM line and docker/pins.tsv) when they exist, asks each registry
+ * when the locked version was published, and caches the answers in
+ * storage/deps-age/times.json (a publish time never changes). A lookup that fails
+ * counts as a failure, so an unreachable registry cannot pass the check.
+ *
+ *   php scripts/deps-age            # seven days
+ *   php scripts/deps-age --days=14
+ */
+const USER_AGENT = 'deps-age (package release age check)';
+
+$root = dirname(__DIR__);
+$days = 7;
+foreach (array_slice($argv, 1) as $argument) {
+    if (preg_match('/^--days=(\d+)$/', $argument, $match) !== 1) {
+        fwrite(STDERR, "Unknown argument: {$argument}\n");
+        exit(2);
+    }
+    $days = (int) $match[1];
+}
+
+$packages = [
+    ...composerPackages($root.'/composer.lock'),
+    ...pnpmPackages($root.'/pnpm-lock.yaml'),
+    ...cargoPackages($root.'/part/Cargo.lock'),
+    ...dockerPackages($root.'/docker'),
+];
+
+$cachePath = $root.'/storage/deps-age/times.json';
+$cache = is_file($cachePath) ? (json_decode((string) file_get_contents($cachePath), associative: true) ?: []) : [];
+$cutoff = time() - $days * 86400;
+$young = [];
+$failed = [];
+$looked = 0;
+
+foreach ($packages as [$registry, $name, $version]) {
+    $key = "{$registry}:{$name}@{$version}";
+    if (! isset($cache[$key])) {
+        try {
+            $cache[$key] = publishedAt($registry, $name, $version);
+            $looked++;
+        } catch (RuntimeException $exception) {
+            $failed[] = "{$key}: ".$exception->getMessage();
+
+            continue;
+        }
+        if ($looked % 20 === 0) {
+            saveCache($cachePath, $cache);
+        }
+    }
+    if ($cache[$key] > $cutoff) {
+        $young[] = sprintf('%s published %s (%.1f days ago)', $key, gmdate('Y-m-d H:i', $cache[$key]).'Z', (time() - $cache[$key]) / 86400);
+    }
+}
+saveCache($cachePath, $cache);
+
+$counts = array_count_values(array_column($packages, 0));
+ksort($counts);
+echo 'Checked '.count($packages).' locked packages ('.implode(', ', array_map(fn (string $registry, int $count): string => "{$registry} {$count}", array_keys($counts), $counts))."), $looked looked up, minimum age {$days} days.\n";
+
+foreach ($young as $line) {
+    echo "TOO YOUNG  {$line}\n";
+}
+foreach ($failed as $line) {
+    echo "NO ANSWER  {$line}\n";
+}
+if ($young !== [] || $failed !== []) {
+    exit(1);
+}
+echo "deps-age: every locked package is at least {$days} days old.\n";
+
+/** @return list<array{string, string, string}> */
+function composerPackages(string $path): array
+{
+    if (! is_file($path)) {
+        return [];
+    }
+    $lock = json_decode((string) file_get_contents($path), associative: true, flags: JSON_THROW_ON_ERROR);
+    $rows = [];
+    foreach ([...($lock['packages'] ?? []), ...($lock['packages-dev'] ?? [])] as $package) {
+        $rows[] = ['packagist', strtolower($package['name']), $package['version']];
+    }
+
+    return $rows;
+}
+
+/** @return list<array{string, string, string}> */
+function pnpmPackages(string $path): array
+{
+    if (! is_file($path)) {
+        return [];
+    }
+    $rows = [];
+    $inPackages = false;
+    foreach (file($path, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
+        if (preg_match('/^\S/', $line) === 1) {
+            $inPackages = $line === 'packages:';
+
+            continue;
+        }
+        if (! $inPackages || preg_match("/^  '?((?:@[^@\\/'\\s]+\\/)?[^@'\\s]+)@(\\d[^'(:\\s]*)'?:\\s*$/", $line, $match) !== 1) {
+            continue;
+        }
+        $rows[] = ['npm', $match[1], $match[2]];
+    }
+
+    return $rows;
+}
+
+/** @return list<array{string, string, string}> */
+function cargoPackages(string $path): array
+{
+    if (! is_file($path)) {
+        return [];
+    }
+    $rows = [];
+    foreach (preg_split('/^\[\[package\]\]\s*$/m', (string) file_get_contents($path)) ?: [] as $block) {
+        if (preg_match('/^source = "registry\+/m', $block) !== 1) {
+            continue;
+        }
+        if (preg_match('/^name = "([^"]+)"/m', $block, $name) === 1 && preg_match('/^version = "([^"]+)"/m', $block, $version) === 1) {
+            $rows[] = ['crates', $name[1], $version[1]];
+        }
+    }
+
+    return $rows;
+}
+
+/**
+ * Every image in docker/pins.tsv and every FROM line of docker/*.Dockerfile. An image must be
+ * written as name:tag@sha256:digest and its Dockerfile line must match docker/pins.tsv.
+ *
+ * @return list<array{string, string, string}>
+ */
+function dockerPackages(string $directory): array
+{
+    $pins = $directory.'/pins.tsv';
+    if (! is_file($pins)) {
+        return [];
+    }
+    $recorded = [];
+    foreach (array_slice(file($pins, FILE_IGNORE_NEW_LINES) ?: [], 1) as $line) {
+        [, $image, $pushed] = array_pad(explode("	", $line), 3, '');
+        $recorded[$image] = $pushed;
+    }
+    $GLOBALS['recordedImages'] = $recorded;
+    $images = array_keys($recorded);
+    foreach (glob($directory.'/*Dockerfile') ?: [] as $dockerfile) {
+        foreach (file($dockerfile, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
+            if (preg_match('/^FROMs+(?:--S+s+)*(S+)/i', $line, $match) === 1 && $match[1] !== 'scratch') {
+                $images[] = $match[1];
+            }
+        }
+    }
+    $rows = [];
+    foreach (array_unique($images) as $image) {
+        [$name, $digest] = array_pad(explode('@', $image, 2), 2, '');
+        $rows[] = ['docker', $name, $digest !== '' && isset($recorded[$image]) ? $digest : 'unpinned'];
+    }
+
+    return $rows;
+}
+
+function dockerTime(string $name, string $digest): int
+{
+    if (! str_starts_with($digest, 'sha256:')) {
+        throw new RuntimeException('image is not pinned by digest in docker/pins.tsv');
+    }
+    [$repository, $tag] = array_pad(explode(':', $name, 2), 2, '');
+    if ($tag === '' || str_contains(explode('/', $repository)[0], '.')) {
+        throw new RuntimeException('only tagged Docker Hub images are checked');
+    }
+    $repository = str_contains($repository, '/') ? $repository : 'library/'.$repository;
+    $answer = fetchJson("https://hub.docker.com/v2/repositories/{$repository}/tags/{$tag}");
+    if (($answer['digest'] ?? null) === $digest) {
+        return timestamp($answer['tag_last_pushed'] ?? null, "{$name} {$digest}");
+    }
+    // The tag has been pushed again since; Docker Hub cannot date the old digest, so the date
+    // written in docker/pins.tsv when the image was chosen stands.
+    foreach ($GLOBALS['recordedImages'] ?? [] as $image => $pushed) {
+        if ($image === "{$name}@{$digest}") {
+            return timestamp($pushed.'T23:59:59Z', "{$name} {$digest}");
+        }
+    }
+
+    throw new RuntimeException('no recorded date for a digest the registry no longer serves');
+}
+
+function publishedAt(string $registry, string $name, string $version): int
+{
+    return match ($registry) {
+        'packagist' => packagistTime($name, $version),
+        'npm' => npmTime($name, $version),
+        'crates' => cratesTime($name, $version),
+        'docker' => dockerTime($name, $version),
+    };
+}
+
+function packagistTime(string $name, string $version): int
+{
+    $document = fetchJson("https://repo.packagist.org/p2/{$name}.json");
+    // The p2 metadata is minified: a release leaves out every key it shares with the one before it.
+    $previous = [];
+    foreach ($document['packages'][$name] ?? [] as $release) {
+        $release = [...$previous, ...$release];
+        $previous = $release;
+        if (($release['version'] ?? null) === $version) {
+            return timestamp($release['time'] ?? null, "{$name} {$version}");
+        }
+    }
+
+    throw new RuntimeException('version not listed on packagist');
+}
+
+function npmTime(string $name, string $version): int
+{
+    $document = fetchJson('https://registry.npmjs.org/'.str_replace('/', '%2F', $name));
+
+    return timestamp($document['time'][$version] ?? null, "{$name} {$version}");
+}
+
+function cratesTime(string $name, string $version): int
+{
+    static $last = 0.0;
+    // crates.io asks for at most one request a second.
+    $wait = 1.05 - (microtime(true) - $last);
+    if ($wait > 0) {
+        usleep((int) ($wait * 1_000_000));
+    }
+    $last = microtime(true);
+    $document = fetchJson("https://crates.io/api/v1/crates/{$name}/{$version}");
+
+    return timestamp($document['version']['created_at'] ?? null, "{$name} {$version}");
+}
+
+function timestamp(?string $value, string $what): int
+{
+    $time = $value === null ? false : strtotime($value);
+    if ($time === false) {
+        throw new RuntimeException("no publish time for {$what}");
+    }
+
+    return $time;
+}
+
+/** @return array<string, mixed> */
+function fetchJson(string $url): array
+{
+    $curl = curl_init($url);
+    curl_setopt_array($curl, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_USERAGENT => USER_AGENT,
+        CURLOPT_TIMEOUT => 60,
+        CURLOPT_ENCODING => '',
+        CURLOPT_HTTPHEADER => ['Accept: application/json'],
+    ]);
+    $body = curl_exec($curl);
+    $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+    $error = curl_error($curl);
+    if (! is_string($body) || $status !== 200) {
+        throw new RuntimeException("{$url} answered ".($status ?: $error));
+    }
+    $decoded = json_decode($body, associative: true);
+    if (! is_array($decoded)) {
+        throw new RuntimeException("{$url} did not answer JSON");
+    }
+
+    return $decoded;
+}
+
+/** @param array<string, int> $cache */
+function saveCache(string $path, array $cache): void
+{
+    if (! is_dir(dirname($path))) {
+        mkdir(dirname($path), 0777, recursive: true);
+    }
+    ksort($cache);
+    file_put_contents($path, json_encode($cache, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+}

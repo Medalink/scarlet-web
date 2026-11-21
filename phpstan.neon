@@ -1,0 +1,35 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - app/
+        - bootstrap/app.php
+        - database/migrations/
+        - routes/
+    tmpDir: storage/phpstan
+    parseModelCastsMethod: true
+    parallel:
+        maximumNumberOfProcesses: 8
+
+rules:
+    - Scarlet\Analysis\Rules\ActionHttpCouplingRule
+    - Scarlet\Analysis\Rules\BoundedQueueJobRule
+    - Scarlet\Analysis\Rules\FileLengthRule
+    - Scarlet\Analysis\Rules\ForwardOnlyMigrationRule
+    - Scarlet\Analysis\Rules\IdentityLiteralRule
+    - Scarlet\Analysis\Rules\JobCollaboratorRule
+    - Scarlet\Analysis\Rules\LiteralCacheKeyRule
+    - Scarlet\Analysis\Rules\LiteralLockKeyRule
+    - Scarlet\Analysis\Rules\LivewireQueryRule
+    - Scarlet\Analysis\Rules\LivewireWriteRule
+    - Scarlet\Analysis\Rules\LockedIdentifierRule
+    - Scarlet\Analysis\Rules\MigrationExpandOnlyRule
+    - Scarlet\Analysis\Rules\NoBlockingInTransactionRule
+    - Scarlet\Analysis\Rules\NoElseRule
+    - Scarlet\Analysis\Rules\NoEnvRule
+    - Scarlet\Analysis\Rules\QueueHookSignatureRule
+    - Scarlet\Analysis\Rules\RawSqlInterpolationRule
+    - Scarlet\Analysis\Rules\ServiceShapeRule
+    - Scarlet\Analysis\Rules\SingleHandleRule

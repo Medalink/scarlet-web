@@ -1,0 +1,7 @@
+/* The sources are listed, never detected: the repo also holds static-site/, docs/ and part/. */
+@import 'tailwindcss' source(none);
+
+@source '../views';
+@source '../js';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
