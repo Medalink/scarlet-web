@@ -6,7 +6,7 @@
 #                               an nginx reload: no failed request. A failed health check leaves the old release serving.
 #   bin/deploy rollback         move visitors back to the release before the current one, the same way (code only)
 #   bin/deploy status           the containers, the release and the zone settings
-#   bin/deploy logs [service]   follow the logs (web, app-blue, app-green, horizon-blue, horizon-green, schedule, postgres, redis, registry)
+#   bin/deploy logs [service]   follow the logs (web, app-blue, app-green, horizon-a, horizon-b, horizon-c, schedule, postgres, redis, registry)
 #   bin/deploy backup           a backup now: dump, encrypt, copy to R2 (starts the nightly unit; exits 1 when it fails)
 #   bin/deploy backups          the newest local and R2 copies with their ages; exits 1 when stale or the last run failed
 #   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env (run before `server`)
@@ -116,13 +116,17 @@ ship_new_layers() {
   t1=$(now)
   echo "phase registry-up-and-tunnel $(span "$t0" "$t1")" >> "$timing/ship.out"
   [ "$build_host" = local ] && at=127.0.0.1:$tunnel_port
-  local push="sudo -n docker tag scarlet-web-app:$tag $at/scarlet-web-app:$tag && sudo -n docker push -q $at/scarlet-web-app:$tag >/dev/null; rc=\$?; sudo -n docker rmi $at/scarlet-web-app:$tag >/dev/null 2>&1; exit \$rc"
+  local push="sudo -n docker tag scarlet-web-app:$tag $at/scarlet-web-app:$tag && sudo -n docker push -q $at/scarlet-web-app:$tag >/dev/null; rc=\$?; sudo -n docker rmi $at/scarlet-web-app:$tag >/dev/null 2>&1; echo pushed:\$rc"
+  local pusher
   if [ "$build_host" = local ]; then
-    bash -c "$push" || rc=$?
+    bash -c "$push" > "$timing/push.out" &
   else
-    ssh -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes -R "127.0.0.1:$registry_port:127.0.0.1:$tunnel_port" "$build_host" "$push" || rc=$?
+    ssh -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes -R "127.0.0.1:$registry_port:127.0.0.1:$tunnel_port" "$build_host" "$push" > "$timing/push.out" &
   fi
-  kill "$tunnel" 2>/dev/null || true
+  pusher=$!
+  until grep -q '^pushed:' "$timing/push.out" 2>/dev/null || ! kill -0 "$pusher" 2>/dev/null; do sleep 0.1; done
+  grep -qx 'pushed:0' "$timing/push.out" 2>/dev/null || rc=1
+  kill "$pusher" "$tunnel" 2>/dev/null || true
   [ "$rc" = 0 ] || return 1
   now > "$timing/sent"
   echo "phase push $(span "$t1" "$(cat "$timing/sent")")" >> "$timing/ship.out"

@@ -4,7 +4,7 @@
 # php-fpm is published on 127.0.0.1 for nginx, which runs on the host network so it sees the real peer address.
 #
 # A release rolls out blue/green: the new release starts as app-blue or app-green beside the running one, and nginx's
-# upstream moves to it with a reload (deploy/rollout.sh). horizon-blue or horizon-green and schedule run the active release.
+# upstream moves to it with a reload (deploy/rollout.sh). horizon-a, -b or -c (the one started last) and schedule run the active release.
 name: scarlet-web
 
 x-app: &app
@@ -104,18 +104,23 @@ services:
     profiles: [tools]
     restart: "no"
 
-  horizon-blue:
+  horizon-a:
     <<: [*app, *after-databases]
-    image: scarlet-web-app:${BLUE_RELEASE:-none}
-    profiles: [blue]
+    profiles: [horizon]
     user: www-data
     command: ["php", "artisan", "horizon"]
     stop_grace_period: 150s
 
-  horizon-green:
+  horizon-b:
     <<: [*app, *after-databases]
-    image: scarlet-web-app:${GREEN_RELEASE:-none}
-    profiles: [green]
+    profiles: [horizon]
+    user: www-data
+    command: ["php", "artisan", "horizon"]
+    stop_grace_period: 150s
+
+  horizon-c:
+    <<: [*app, *after-databases]
+    profiles: [horizon]
     user: www-data
     command: ["php", "artisan", "horizon"]
     stop_grace_period: 150s

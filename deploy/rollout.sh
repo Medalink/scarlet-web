@@ -7,8 +7,9 @@
 # /up and /release-notes through nginx's own configuration (loopback ports 8091 and 8092), and only then does nginx's
 # upstream move to it with a reload. nginx finishes the requests it has, the old php-fpm gets SIGQUIT and finishes
 # its own, then stops. A release that fails its check never gets visitors: the old one keeps serving and this exits 1.
-# Horizon runs per slot too: the new release's Horizon starts beside the old one, which stops gracefully in the background
-# (running jobs finish), so no deploy waits for a job. The scheduler is stopped and started on the new release.
+# Horizon: the new release's Horizon starts beside the old one (horizon-a, -b or -c, whichever has no container), which
+# stops gracefully in the background (running jobs finish), so no deploy waits for a job. The scheduler is stopped and
+# started on the new release.
 #
 # Migrations run before the switch while the old code still serves. They must be expand-only (docs/HOSTING.md).
 set -eu
@@ -70,6 +71,24 @@ nginx_workers_drained() {
   done
 }
 
+service_containers() {
+  docker ps "$@" --filter label=com.docker.compose.project=scarlet-web --filter label=com.docker.compose.service="$svc_name"
+}
+
+running_horizons() {
+  for svc_name in horizon horizon-blue horizon-green horizon-a horizon-b horizon-c; do service_containers -q; done
+}
+
+idle_horizon() {
+  for svc_name in horizon-a horizon-b horizon-c; do
+    [ -n "$(service_containers -aq)" ] || { echo "$svc_name"; return; }
+  done
+  for svc_name in horizon-a horizon-b horizon-c; do
+    [ -n "$(service_containers -q)" ] || { echo "$svc_name"; return; }
+  done
+  echo horizon-a
+}
+
 drain_without_rollout_lock() {
   [ -n "$1" ] || return 0
   setsid sh -c 'docker stop -t 150 "$@" >/dev/null 2>&1; docker rm "$@" >/dev/null 2>&1' drain $1 9>&- >/dev/null 2>&1 </dev/null &
@@ -123,16 +142,16 @@ activate() {
   docker rm -f scarlet-web-app-1 >/dev/null 2>&1 || true
 
   put SCARLET_RELEASE "$release"
-  retiring=$($dc ps -q "horizon-$cur" 2>/dev/null || true)
-  retiring="$retiring $(docker ps -aq --filter label=com.docker.compose.project=scarlet-web --filter label=com.docker.compose.service=horizon)"
-  $dc stop "horizon-$nxt" schedule >/dev/null 2>&1 || true
+  retiring=$(running_horizons)
+  nxt_horizon=$(idle_horizon)
+  $dc stop "$nxt_horizon" schedule >/dev/null 2>&1 || true
   # rm clears a container an interrupted rollout left behind: a recreate of it dies on
   # "container name already in use" and horizon or schedule would keep running the old release.
-  $dc rm -f "horizon-$nxt" schedule >/dev/null 2>&1 || true
-  $dc up -d --no-deps "horizon-$nxt" schedule
+  $dc rm -f "$nxt_horizon" schedule >/dev/null 2>&1 || true
+  $dc up -d --no-deps "$nxt_horizon" schedule
   drain_without_rollout_lock "$retiring"
   # A failed recreate can still print nothing on compose's side or exit 0, so check the state itself.
-  for svc in "horizon-$nxt" schedule; do
+  for svc in "$nxt_horizon" schedule; do
     if ! $dc ps --services --status running "$svc" | grep -qx "$svc"; then
       echo "rollout: $svc is not running on $release" >&2
       $dc logs --no-log-prefix --tail 40 "$svc" >&2 || true
