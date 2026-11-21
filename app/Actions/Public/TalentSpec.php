@@ -14,7 +14,7 @@ class TalentSpec
     /** Points of the most common order the page lists. */
     public const int ORDER_POINTS = 40;
 
-    public function __construct(private readonly TalentSpecs $specs, private readonly TalentLayout $layouts) {}
+    public function __construct(private readonly TalentSpecs $specs, private readonly TalentLayout $layouts, private readonly TalentOutcomes $outcomes) {}
 
     /**
      * What the characters of one class and spec picked. Every character counts once, by its latest counted build read
@@ -26,6 +26,7 @@ class TalentSpec
      *   saw (the points held when the addon first read a build have no order, so this holds the characters that
      *   levelled with it on).
      * - `layout`: the layout of the tree, or null while no session sent one.
+     * - `outcomes`: for the most held builds, the levelling, deaths and dungeon runs that happened while they were held.
      *
      * @return array<string, mixed>|null null when no character plays the spec
      */
@@ -63,6 +64,7 @@ class TalentSpec
             'nodes' => array_map(fn (array $node): array => [...$node, 'name' => $node['spell'] === null ? null : ($names['spell'][$node['spell']] ?? null)], $nodes),
             'order' => array_map(fn (array $point): array => [...$point, 'name' => $point['spell'] === null ? null : ($names['spell'][$point['spell']] ?? null)], $order),
             'brackets' => $this->brackets($scope, $classSlug, $tabs, $names['tab']),
+            'outcomes' => array_map(fn (array $build): array => [...$build, 'build' => $this->tabsText($build['tab_points'], $names['tab'])], $this->outcomes->handle($scope, $classSlug, $tabs, $bracket)),
             'names' => $names,
         ];
     }

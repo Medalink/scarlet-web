@@ -29,6 +29,14 @@
     <x-module span="w7" :last="true" id="h-brackets" heading="Builds by level bracket">
       <x-table :rows="$d['builds']['rows']" :columns="$d['builds']['columns']" />
     </x-module>
+    <x-module span="w12" :first="true" :last="true" id="h-outcomes" heading="Builds and outcomes">
+      @if ($d['outcomes']['rows'])
+      <x-table :rows="$d['outcomes']['rows']" :columns="$d['outcomes']['columns']" />
+      <x-note>Each event counts for the build its character held at the time, from one build change to the next.</x-note>
+      @else
+      <x-note>No build recorded at these levels yet.</x-note>
+      @endif
+    </x-module>
   </x-sheet>
 </div>
 </x-layouts.app>

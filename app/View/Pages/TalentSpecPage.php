@@ -75,6 +75,22 @@ final class TalentSpecPage
             'nodes' => self::nodeTable($nodes, $n),
             'order' => self::order($a['order']),
             'builds' => self::builds($a['brackets']),
+            'outcomes' => self::outcomes($a['outcomes']),
+        ];
+    }
+
+    /**
+     * @param  list<array{build: string, characters: int, levels: int, median_s: float|null, deaths: int, runs: int, bosses: int, run_deaths: int}>  $outcomes
+     * @return array{columns: list<array<string, mixed>>, rows: list<array<string, mixed>>}
+     */
+    private static function outcomes(array $outcomes): array
+    {
+        return [
+            'columns' => [['label' => 'Build'], ['label' => 'Characters', 'numeric' => true], ['label' => 'Level-ups', 'numeric' => true], ['label' => 'Median time to level', 'numeric' => true], ['label' => 'Deaths', 'numeric' => true], ['label' => 'Dungeon runs', 'numeric' => true], ['label' => 'Bosses a run', 'numeric' => true], ['label' => 'Deaths a run', 'numeric' => true]],
+            'rows' => array_map(fn (array $row): array => ['cells' => [
+                $row['build'], Format::number($row['characters']), Format::number($row['levels']), $row['median_s'] === null ? '' : Format::duration($row['median_s']), Format::number($row['deaths']),
+                Format::number($row['runs']), $row['runs'] === 0 ? '' : Format::number($row['bosses'] / $row['runs'], 1), $row['runs'] === 0 ? '' : Format::number($row['run_deaths'] / $row['runs'], 1),
+            ]], $outcomes),
         ];
     }
 
