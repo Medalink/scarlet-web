@@ -15,6 +15,12 @@ cd /srv/scarlet-web
 dc=deploy/dc
 mkdir -p state public nginx
 touch releases release.env
+# One rollout at a time: agents deploy in parallel, and two rollouts would race for the same blue/green slot.
+exec 9>state/rollout.lock
+if ! flock -n 9; then
+  echo "rollout: another rollout is running; waiting for it"
+  flock 9
+fi
 
 # deploy/ is replaced on every deploy, so nginx reads its files from folders that stay in place.
 cp -a deploy/nginx/. nginx/
