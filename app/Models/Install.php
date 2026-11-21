@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $account_id
  * @property Carbon|null $revoked_at
  * @property Carbon|null $last_seen_at
+ * @property Carbon|null $linked_at
  * @property Carbon $created_at
  */
 class Install extends Model
@@ -28,7 +29,7 @@ class Install extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['revoked_at' => 'datetime', 'last_seen_at' => 'datetime'];
+        return ['revoked_at' => 'datetime', 'last_seen_at' => 'datetime', 'linked_at' => 'datetime'];
     }
 
     public function publicKey(): string

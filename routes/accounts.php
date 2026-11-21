@@ -1,0 +1,25 @@
+<?php
+
+use App\Http\Controllers\Web\AccountController;
+use App\Http\Controllers\Web\AuthCallbackController;
+use App\Http\Controllers\Web\AuthDevelopmentController;
+use App\Http\Controllers\Web\AuthLoginController;
+use App\Http\Controllers\Web\AuthLogoutController;
+use App\Http\Controllers\Web\AuthRedirectController;
+use App\Models\IdentityProvider;
+use Illuminate\Support\Facades\Route;
+
+// Sign-in: Google and Battle.net by authorization code, the account page, and linking the app.
+Route::get('/login', AuthLoginController::class)->name('login')->middleware('throttle:60,1');
+Route::get('/auth/{provider}/redirect', AuthRedirectController::class)->middleware('throttle:30,1');
+Route::get('/auth/{provider}/callback', AuthCallbackController::class)->middleware('throttle:30,1');
+Route::post('/logout', AuthLogoutController::class);
+
+// The development sign-in exists only where the environment is `local` and the switch is on.
+if (IdentityProvider::developmentAllowed()) {
+    Route::post('/auth/development', AuthDevelopmentController::class)->middleware('throttle:30,1');
+}
+
+Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
+    Route::get('/account', AccountController::class);
+});

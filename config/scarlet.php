@@ -6,6 +6,9 @@ return [
     // to it: 5 on a public deploy, 1 in development.
     'min_characters' => (int) env('SCARLET_MIN_CHARACTERS', 1),
 
+    // A third sign-in button for local development. It exists only in the `local` environment, whatever this says.
+    'dev_login' => (bool) env('SCARLET_DEV_LOGIN', false),
+
     // The scarlet-part binary the queue job runs to decode an uploaded part (built from part/).
     'part_bin' => env('SCARLET_PART_BIN') ?: base_path('part/target/release/scarlet-part'),
 
