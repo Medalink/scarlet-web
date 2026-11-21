@@ -95,6 +95,18 @@ class Leaderboard
         };
     }
 
+    /** Dungeon runs of the character: a run that carries on the one before it is the same run. */
+    private function runs(PageScope $scope): Builder
+    {
+        return DB::table('dungeon_runs as d')
+            ->whereColumn('d.character_id', 'sessions.character_id')
+            ->where('d.counted', true)
+            ->where('d.continues_previous', false)
+            ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('d.ruleset_id', $scope->ids))
+            ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('d.ruleset_id', $scope->ids))
+            ->selectRaw('count(*)');
+    }
+
     /** What a character's counted sessions add up to, one row per character, for the rulesets of the scope. */
     private function sessionTotals(PageScope $scope): Builder
     {
@@ -103,7 +115,8 @@ class Leaderboard
             ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('ruleset_id', $scope->ids))
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('ruleset_id', $scope->ids))
             ->groupBy('character_id')
-            ->selectRaw('character_id, coalesce(sum(deaths), 0) as deaths, coalesce(sum(quests_done), 0) as quests, coalesce(sum(dungeon_runs), 0) as runs')
+            ->selectRaw('character_id, coalesce(sum(deaths), 0) as deaths, coalesce(sum(quests_done), 0) as quests')
+            ->selectSub($this->runs($scope), 'runs')
             ->selectRaw('coalesce(sum(distance), 0) as distance, max(level_end) as level, max(end_at) as last_at')
             ->selectRaw('(array_agg(ruleset_id order by end_at desc))[1] as ruleset_id');
     }

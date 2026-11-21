@@ -106,13 +106,14 @@ class CharacterOverview
         $from = $end->copy()->startOfWeek();
         $to = $from->copy()->addWeek();
         $sum = DB::table('sessions')->where('character_id', $id)->where('end_at', '>=', $from)->where('end_at', '<', $to)->where('counted', true)
-            ->selectRaw('coalesce(sum(played_ms), 0) / 1000.0 as seconds, coalesce(sum(quests_done), 0) as quests, coalesce(sum(dungeon_runs), 0) as runs')
+            ->selectRaw('coalesce(sum(played_ms), 0) / 1000.0 as seconds, coalesce(sum(quests_done), 0) as quests')
             ->selectRaw('coalesce(sum(copper_earned), 0) - coalesce(sum(copper_spent), 0) as gold')->first();
+        $runs = DB::table('dungeon_runs')->where('character_id', $id)->where('at', '>=', $from)->where('at', '<', $to)->where('counted', true)->where('continues_previous', false)->count();
         $zones = DB::table('play_spans')->where('character_id', $id)->where('at', '>=', $from)->where('at', '<', $to)->whereNotNull('zone_id')->distinct()->count('zone_id');
 
         return [
             'from' => $from->toDateString(), 'to' => $to->copy()->subDay()->toDateString(),
-            'seconds' => (float) ($sum->seconds ?? 0), 'quests' => (int) ($sum->quests ?? 0), 'runs' => (int) ($sum->runs ?? 0),
+            'seconds' => (float) ($sum->seconds ?? 0), 'quests' => (int) ($sum->quests ?? 0), 'runs' => $runs,
             'zones' => $zones, 'gold' => $economy ? (int) ($sum->gold ?? 0) : null,
         ];
     }
