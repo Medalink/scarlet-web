@@ -8,6 +8,9 @@ use App\View\Format;
 /** What the world map viewer (resources/js/pages/maps.js) takes in its `data-world-map` attribute. */
 final class MapSpec
 {
+    /** The dark map art, which a page pins with `look` to ignore the look a viewer last chose on the world map. */
+    public const string SURVEY = 'survey';
+
     /**
      * @param  list<array<string, mixed>>  $cells  heat rows: cell_i, cell_j, value
      * @param  array{0: float, 1: float, 2: float, 3: float}|int|null  $fit  a zone id, or the world rectangle to open on: u0, v0, u1, v1

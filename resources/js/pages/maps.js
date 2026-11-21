@@ -32,6 +32,7 @@ function mount(canvas) {
         zones: config.zones,
         layers: config.layers,
         fit: config.fit ?? undefined,
+        look: config.look ?? undefined,
         lookSwitch: config.lookSwitch ? document.getElementById(config.lookSwitch) : undefined,
         onPointer: (pointer) => paint(pointer ? pointer.zone : null),
     });
