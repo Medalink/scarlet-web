@@ -24,7 +24,7 @@ COPY app/ app/
 COPY public/ public/
 RUN pnpm run build
 
-FROM php:8.5.12-fpm-bookworm@sha256:eec275cd99580e0a6e103dd343a7c160c86917003f6b9bba2d4c75d82419c683 AS app
+FROM php:8.5.12-fpm-bookworm@sha256:eec275cd99580e0a6e103dd343a7c160c86917003f6b9bba2d4c75d82419c683 AS base
 
 ENV DEBIAN_FRONTEND=noninteractive COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_NO_INTERACTION=1
 
@@ -46,22 +46,30 @@ WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
+# `app:version` and `app:release-notes:backfill` read the whole git history. This stage installs git (a cached layer) and
+# mounts the named context `gitdir` for the one step that runs them, and only their two output files go on to `app`:
+# no git and no .git land in the image.
+FROM base AS history
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && git config --global --add safe.directory '*' \
+    && rm -rf /var/lib/apt/lists/*
 COPY . /app
-COPY --from=assets /app/public/build /app/public/build
-
-# `app:version` and `app:release-notes:backfill` read the whole git history. It is a bind mount of the named context
-# for this one step, so no .git lands in a layer, and git is installed and purged inside the same step. The dummy
-# key is for this step only; the running containers get the real one from their environment.
 RUN --mount=type=bind,from=gitdir,target=/app/.git \
     export APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= APP_ENV=production \
-    && apt-get update && apt-get install -y --no-install-recommends git \
-    && git config --global --add safe.directory '*' \
     && composer dump-autoload --no-dev --classmap-authoritative \
     && php artisan app:version --strict --no-interaction \
-    && php artisan app:release-notes:backfill --all --output=storage/app/release-notes.json --no-interaction \
+    && php artisan app:release-notes:backfill --all --output=storage/app/release-notes.json --no-interaction
+
+FROM base AS app
+COPY . /app
+COPY --from=assets /app/public/build /app/public/build
+COPY --from=history /app/storage/app/version.json /app/storage/app/release-notes.json /app/storage/app/
+# The dummy key is for this step only; the running containers get the real one from their environment.
+RUN export APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= APP_ENV=production \
+    && composer dump-autoload --no-dev --classmap-authoritative \
     && php artisan view:cache --no-interaction \
-    && apt-get purge -y --auto-remove git \
-    && rm -rf /var/lib/apt/lists/* /root/.gitconfig /root/.composer \
+    && rm -rf /root/.composer \
     && chmod +x /usr/local/bin/scarlet-entrypoint \
     && chown -R www-data:www-data storage bootstrap/cache
 
