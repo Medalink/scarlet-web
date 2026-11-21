@@ -223,9 +223,32 @@ How the tables are built (decisions the first implementation made):
   changes nothing.
 - **Time per level.** A level's time spans sessions, so it cannot come from a daily rollup of `play_spans`. Ingest
   rebuilds `character_levels` (a hypertable on the time the character first stood at the level) for the character after
-  each session: one row per level with `seconds` at that level, `before_seconds` (the sum of the lower levels, which is
-  the time to reach it), `completed` (a higher level exists) and the `ruleset_id` and `counted` of its first span.
-  `level_time_ruleset` is a continuous aggregate over it.
+  each session: one row per level whose start Scarlet saw, with `seconds` at that level, `before_seconds` (the game's
+  /played at the ding into it, the time to reach it), `completed` (the ding out was seen and no unrecorded play lies
+  between the two dings) and the `ruleset_id` and `counted` of its first span. The level a character was first seen at
+  has no row unless it is level 1 from creation. `level_time_ruleset` is a continuous aggregate over it.
+
+### Mid-life characters
+
+A character can start uploading at any level. Every number is either lifetime (what the game reports for the whole
+life: /played, level, money, statistic totals) or observed (what Scarlet counted since it first saw the character:
+kills, deaths, gold earned and spent, quests, XP by source, time in a level, talent pick order). A label never mixes the
+two, and an observed number says "since <first seen date>" wherever a lifetime total could be assumed.
+
+- **Continuity.** `MarkSessionJoins` sets `sessions.joins` (`first`, `continuous`, `gap`, `unknown`) from the client's
+  /played at each session's start and end (`counter_start_ms`, `counter_end_ms`) against the end of the session before,
+  with `scarlet.continuity_seconds` of slack. `gap` carries `unrecorded_ms`. A session without counters is `unknown`
+  unless the wall clock between the two sessions is within the slack.
+- **Complete levels.** A level counts for durations, medians and the time-to-level boards only when its ding in and its
+  ding out were seen and no `gap` or `unknown` join lies between them. Decoder `L` repeats of the same level are not
+  dings: `level_ups.ding` is false for them. Time to reach level X is the lifetime /played at the ding into X.
+- **Characters.** `played_known`, `recorded_seconds`, `first_level` and `whole_life` (first session from level 1, no
+  broken join) are set by `SummarizeCharacter`. `highest-without-dying` lists whole-life characters only; the other
+  boards say "since" on the date a character was first recorded.
+- **Talents.** Order and unspent-point facts use picks seen live between two seen dings. Talents held at the first
+  snapshot have no order and no level.
+- **Re-decode.** `php artisan ingest:redecode` queues every session for a fresh decode (decoder version change), then
+  `php artisan levels:rebuild` recomputes joins, summaries and levels and refreshes the aggregates.
 - **Dungeon runs across sessions.** The decoder's rows are stored as written. A run that carries on the last run of the
   session before (ROWS.md, joining sessions) has `continues_previous` set; ingest sets it for the first run of the
   session it decodes and again for the first run of the next session, so the upload order does not matter. Counts of

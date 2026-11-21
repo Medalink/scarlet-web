@@ -57,7 +57,8 @@ class CharacterController extends PublicController
 
         return [
             'name' => $character->name, 'race' => $character->race, 'class' => $character->class, 'faction' => $character->faction,
-            'level' => $character->level, 'played_seconds' => $character->played_seconds, 'ruleset' => $ruleset['slug'] ?? null,
+            'level' => $character->level, 'played_seconds' => $character->played_known ? $character->played_seconds : null, 'recorded_seconds' => $character->recorded_seconds,
+            'first_level' => $character->first_level, 'recorded_since' => $character->first_seen_at?->toIso8601ZuluString(), 'whole_life' => $character->whole_life, 'ruleset' => $ruleset['slug'] ?? null,
             'last_seen_at' => $character->last_seen_at?->toIso8601ZuluString(),
         ];
     }

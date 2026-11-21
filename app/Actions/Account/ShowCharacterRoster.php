@@ -8,14 +8,16 @@ use Illuminate\Support\Facades\DB;
 class ShowCharacterRoster
 {
     /**
-     * Every character of the account, most played first, with its latest ruleset and balance and its counted kills and deaths.
+     * Every character of the account, most played first, with its latest ruleset and balance and the kills and deaths
+     * its counted sessions recorded. `played_seconds` is the client's total, null when no session read it; `recorded_seconds`
+     * is what the sessions add up to.
      *
-     * @return list<array{id: int, name: string, class: string|null, race: string|null, level: int|null, played_seconds: int, sessions: int, last_seen_at: string|null, is_public: bool, ruleset_id: int|null, balance: int|null, kills: int, deaths: int}>
+     * @return list<array{id: int, name: string, class: string|null, race: string|null, level: int|null, played_seconds: int|null, recorded_seconds: int, sessions: int, last_seen_at: string|null, is_public: bool, ruleset_id: int|null, balance: int|null, kills: int, deaths: int}>
      */
     public function handle(Account $account): array
     {
         $characters = $account->characters()
-            ->select(['id', 'name', 'class', 'race', 'level', 'played_seconds', 'sessions_decoded', 'last_seen_at', 'is_public'])
+            ->select(['id', 'name', 'class', 'race', 'level', 'played_seconds', 'played_known', 'recorded_seconds', 'sessions_decoded', 'last_seen_at', 'is_public'])
             ->orderByDesc('played_seconds')->orderBy('name')->get();
         $ids = $characters->pluck('id')->all();
         $rulesets = DB::table('sessions')->whereIn('character_id', $ids)->orderBy('character_id')->orderByDesc('end_at')
@@ -31,7 +33,8 @@ class ShowCharacterRoster
             'class' => $character->class,
             'race' => $character->race,
             'level' => $character->level,
-            'played_seconds' => (int) $character->played_seconds,
+            'played_seconds' => $character->played_known ? (int) $character->played_seconds : null,
+            'recorded_seconds' => (int) $character->recorded_seconds,
             'sessions' => (int) $character->sessions_decoded,
             'last_seen_at' => $character->last_seen_at?->toIso8601ZuluString(),
             'is_public' => (bool) $character->is_public,

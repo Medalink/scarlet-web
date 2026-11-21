@@ -1,4 +1,4 @@
-<x-module :span="$span" :first="$first" :last="$last" id="h-crafted" heading="Most crafted">
+<x-module :span="$span" :first="$first" :last="$last" id="h-crafted" :heading="'Most crafted'.$d['since']">
   @if ($d['crafted'])
   <x-rank :rows="$d['crafted']" />
   @else

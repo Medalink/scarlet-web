@@ -18,8 +18,8 @@ class TalentOutcomes
      * snapshot of the same character. An event counts for the build it happened under, at a level inside the bracket.
      *
      * - `characters`: characters that held the build.
-     * - `levels`, `median_s`: level-ups under the build and the median time they took, from the played time of the
-     *   level where the client reported it, else from the session.
+     * - `levels`, `median_s`: level-ups under the build for which the time spent in the level just left is complete
+     *   (Scarlet saw both level-ups, with no unrecorded play between them), and the median of that time.
      * - `deaths`: deaths under the build.
      * - `runs`, `bosses`, `run_deaths`: dungeon runs under the build and their bosses and deaths.
      *
@@ -36,7 +36,9 @@ class TalentOutcomes
         $hashes = array_values(array_map(fn (\stdClass $build): string => (string) $build->build_hash, $builds->all()));
 
         $levels = $this->under($held, 'level_ups', $hashes, $from, $to, 'e.reached')
-            ->selectRaw('i.build_hash, count(*) as n, percentile_cont(0.5) within group (order by coalesce(e.tp_level_s, e.since_ms / 1000.0)) as median_s')->get()->keyBy('build_hash');
+            ->where('e.ding', true)
+            ->join('character_levels as cl', fn (JoinClause $join) => $join->on('cl.character_id', '=', 'e.character_id')->whereRaw('cl.level = e.reached - 1')->where('cl.completed', true))
+            ->selectRaw('i.build_hash, count(*) as n, percentile_cont(0.5) within group (order by cl.seconds) as median_s')->get()->keyBy('build_hash');
         $deaths = $this->under($held, 'deaths', $hashes, $from, $to, 'e.level')
             ->selectRaw('i.build_hash, count(*) as n')->get()->keyBy('build_hash');
         $runs = $this->under($held, 'dungeon_runs', $hashes, $from, $to, 'e.level')

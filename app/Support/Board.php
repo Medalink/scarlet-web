@@ -29,10 +29,10 @@ enum Board: string
     public function description(): string
     {
         return match ($this) {
-            self::FastestTo60, self::FastestTo40, self::FastestTo20 => 'Played time from the first recorded session to level '.$this->level().'. Only characters whose owner made them public, and whose recording covers every level, are listed.',
-            self::HighestWithoutDying => 'The highest level reached by public characters with no recorded death.',
-            self::MostQuests => 'Quests turned in by public characters, from counted sessions.',
-            self::MostDungeonRuns => 'Dungeon runs by public characters, from counted sessions.',
+            self::FastestTo60, self::FastestTo40, self::FastestTo20 => 'The client\'s played time when the character reached level '.$this->level().'. Only public characters whose level-up to '.$this->level().' Scarlet recorded are listed.',
+            self::HighestWithoutDying => 'The highest level reached by public characters that Scarlet recorded from their first level, with no death and no play missing.',
+            self::MostQuests => 'Quests turned in by public characters, counted from each one\'s first recorded session.',
+            self::MostDungeonRuns => 'Dungeon runs by public characters, counted from each one\'s first recorded session.',
             self::MostDistance => 'The length of the recorded path on the world map, in world widths: 1.0 is the width of the map. Teleports and loading screens are left out.',
         };
     }

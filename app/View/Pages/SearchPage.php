@@ -71,7 +71,7 @@ final class SearchPage
         return $line + match ($kind) {
             SearchKind::Characters => [
                 'meta' => trim(Format::character($hit['level'], $hit['race'], $hit['class']).(isset($hit['ruleset_label']) ? ' · '.$hit['ruleset_label'] : '')),
-                'value' => Format::duration($hit['played_seconds']).' played',
+                'value' => $hit['played_seconds'] === null ? Format::duration($hit['recorded_seconds']).' recorded' : Format::duration($hit['played_seconds']).' played',
             ],
             SearchKind::Creatures => [
                 'meta' => self::creatureMeta($hit),

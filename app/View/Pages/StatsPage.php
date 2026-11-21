@@ -77,12 +77,12 @@ final class StatsPage
         $characters = (int) $totals['characters'];
         $text = Format::count($characters, 'character');
         if ($totals['played_seconds'] !== null) {
-            $text .= ', '.Format::count(round((float) $totals['played_seconds'] / 3600), 'hour').' of play';
+            $text .= ', '.Format::count(round((float) $totals['played_seconds'] / 3600), 'hour').' recorded';
         }
         $coverage = is_array($coverage) ? $coverage : [];
         $since = $coverage['since'] ?? null;
         $updated = $coverage['updated_at'] ?? null;
-        $text .= $since instanceof Carbon ? ', recorded since '.$since->format('j M Y').'.' : '.';
+        $text .= $since instanceof Carbon ? ($totals['played_seconds'] === null ? ', recorded' : '').' since '.$since->format('j M Y').'.' : '.';
 
         return $text.($updated instanceof Carbon ? ' Updated '.$updated->diffForHumans().'.' : '');
     }
@@ -110,7 +110,7 @@ final class StatsPage
 
         return [
             ['label' => 'Characters', ...$number($totals['characters'])],
-            ['label' => 'Hours played', ...($totals['played_seconds'] === null ? $number(null) : ['value' => Format::number(round((float) $totals['played_seconds'] / 3600))])],
+            ['label' => 'Hours recorded', ...($totals['played_seconds'] === null ? $number(null) : ['value' => Format::number(round((float) $totals['played_seconds'] / 3600))])],
             ['label' => 'Median to level '.($reached['level'] ?? $target), ...$median],
             ['label' => 'Deaths', ...$number($totals['deaths'] ?? null)],
             ['label' => 'Quests turned in', ...$number($totals['quests'] ?? null)],

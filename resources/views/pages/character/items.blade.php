@@ -1,4 +1,4 @@
-<x-module :span="$span" :first="$first" :last="$last" id="h-items" heading="Items found">
+<x-module :span="$span" :first="$first" :last="$last" id="h-items" :heading="'Items found'.$d['since']">
   @if ($d['items'])
   @if ($d['items']['looted'])
   <p class="sub">{{ $d['items']['looted']['total'] }}</p>

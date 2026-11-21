@@ -57,7 +57,7 @@ class Search
         }
 
         return DB::table('characters')->where('is_public', true)->where('name_key', 'ilike', $pattern)
-            ->select('id', 'name', 'race', 'class', 'level', 'played_seconds')
+            ->select('id', 'name', 'race', 'class', 'level', 'played_seconds', 'played_known', 'recorded_seconds')
             ->selectRaw('(select s.ruleset_id from sessions s where s.character_id = characters.id order by s.end_at desc limit 1) as ruleset_id')
             ->orderByRaw('(name_key like lower(?)) desc', [addcslashes($term, '\\%_').'%'])->orderByRaw('length(name)')->orderBy('id');
     }
@@ -85,7 +85,7 @@ class Search
             'id' => (int) $hit['id'],
             'name' => (string) $hit['name'],
             'path' => $kind->path().($kind === SearchKind::Characters ? $hit['name'] : $hit['id']),
-            ...($kind === SearchKind::Characters ? ['race' => $hit['race'], 'class' => $hit['class'], 'level' => $hit['level'] === null ? null : (int) $hit['level'], 'played_seconds' => (int) $hit['played_seconds']] : []),
+            ...($kind === SearchKind::Characters ? ['race' => $hit['race'], 'class' => $hit['class'], 'level' => $hit['level'] === null ? null : (int) $hit['level'], 'played_seconds' => $hit['played_known'] ? (int) $hit['played_seconds'] : null, 'recorded_seconds' => (int) $hit['recorded_seconds']] : []),
             ...($more[(int) $hit['id']] ?? []),
         ], $hits);
     }

@@ -23,8 +23,9 @@ final class CharacterRecords
      * @param  list<array{id: int, name: string, kills: int}>  $killed  the answer of App\Actions\Public\Character\MostKilled
      * @return list<array{value: string, label: string, detail: string|null, href: string|null, class: string|null}>
      */
-    public static function tiles(array $records, array $totals, array $items, array $killed): array
+    public static function tiles(array $records, array $totals, array $items, array $killed, string $since = ''): array
     {
+        $since = ltrim($since);
         $tiles = [];
         if ($records['blow'] !== null) {
             $blow = $records['blow'];
@@ -42,7 +43,7 @@ final class CharacterRecords
             $tiles[] = self::tile(Format::duration($records['slowest']['seconds']), 'Slowest level', 'Level '.$records['slowest']['level']);
         }
         if ($killed !== []) {
-            $tiles[] = self::tile(Format::number($killed[0]['kills']), 'Most killed creature', $killed[0]['name'], '/creatures/'.$killed[0]['id']);
+            $tiles[] = self::tile(Format::number($killed[0]['kills']), 'Most killed creature', $killed[0]['name'], '/creatures/'.$killed[0]['id'], since: $since);
         }
         if ($items['gear'] !== null) {
             $best = $items['gear'];
@@ -50,13 +51,13 @@ final class CharacterRecords
             $tiles[] = self::tile($best['name'], 'Best gear', $quality->label().($best['item_level'] === null ? '' : ', item level '.$best['item_level']), '/items/'.$best['item_id'], ItemTypes::quality($best['quality']), true);
         }
         if ($records['nodes'] > 0) {
-            $tiles[] = self::tile(Format::number($records['nodes']), 'Herbs and ore gathered');
+            $tiles[] = self::tile(Format::number($records['nodes']), 'Herbs and ore gathered', $since);
         }
         if ($records['fish'] > 0) {
-            $tiles[] = self::tile(Format::number($records['fish']), 'Fish caught');
+            $tiles[] = self::tile(Format::number($records['fish']), 'Fish caught', $since);
         }
         if ($records['afk'] > 0) {
-            $tiles[] = self::tile(Format::duration($records['afk']), 'Away from keyboard');
+            $tiles[] = self::tile(Format::duration($records['afk']), 'Away from keyboard', $since);
         }
         $tiles = array_slice($tiles, 0, self::SHOWN);
 
@@ -64,8 +65,10 @@ final class CharacterRecords
     }
 
     /** @return array{value: string, label: string, detail: string|null, href: string|null, class: string|null, text: bool} */
-    private static function tile(string $value, string $label, ?string $detail = null, ?string $href = null, ?string $class = null, bool $text = false): array
+    private static function tile(string $value, string $label, ?string $detail = null, ?string $href = null, ?string $class = null, bool $text = false, string $since = ''): array
     {
+        $detail = $since === '' ? $detail : trim(($detail ?? '').' '.$since);
+
         return ['value' => $value, 'label' => $label, 'detail' => $detail === '' ? null : $detail, 'href' => $href, 'class' => $class, 'text' => $text];
     }
 

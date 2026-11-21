@@ -292,7 +292,7 @@ for people. `404 not_found` (also for an unknown path under `/api`), `422 invali
 
 #### `GET /public/stats`
 
-Headline numbers: characters, experience, time played, kills, deaths, quests and money, with when the data starts and was last updated.
+Headline numbers: characters, experience, time recorded, kills, deaths, quests and money, with when the data starts and was last updated.
 
 | Parameter | In | Type | Meaning |
 | --- | --- | --- | --- |
@@ -359,7 +359,7 @@ One board, best first. Only public characters with counted sessions are listed.
 | `cursor` | query | string | The `next_cursor` of the previous page. |
 | `limit` | query | integer | Rows per page, 1 to 100. Default 25. |
 
-`data`: rows with `rank`, `name`, `race`, `class`, `value`, `ruleset`, `hardcore`, `deaths` and `at`. `meta.next_cursor`, `meta.total`.
+`data`: rows with `rank`, `name`, `race`, `class`, `value`, `ruleset`, `hardcore`, `deaths`, `since` (the date the character was first recorded, `null` when recorded from level 1) and `at`. `meta.next_cursor`, `meta.total`.
 
 Example: `curl https://<host>/api/v1/public/leaderboards/most-quests?limit=2`
 
@@ -390,7 +390,7 @@ A public character: race, class, level, ruleset, time played, this week and dist
 | --- | --- | --- | --- |
 | `name` | path | string | The character name, `Name-Surname`. |
 
-`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds`, `ruleset`, `last_seen_at`, `week`, `distance`. `meta.economy` says whether the owner shows money.
+`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`. `meta.economy` says whether the owner shows money.
 
 Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane`
 

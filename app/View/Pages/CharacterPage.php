@@ -30,38 +30,45 @@ final class CharacterPage
         /** @var list<array<string, mixed>> $sessions */
         $sessions = $r['sessions'];
         $economy = (bool) $r['economy'];
-        /** @var array{level: int, seconds_at_cap: int}|null $cap */
+        /** @var array{level: int, seconds_at_cap: int, observed: bool}|null $cap */
         $cap = $r['cap'];
         /** @var array<string, mixed> $totals */
         $totals = $r['totals'];
+        $since = self::since($character);
+        $levelTimes = CharacterSections::levelTimes($r['levelTimes']);
+        $xp = StatsPage::xp($r['xp']);
 
         return [
             'id' => $character->id,
             'name' => $character->name,
             'owner' => $r['owner'],
             'economy' => $economy,
+            'since' => $since,
             'facts' => array_values(array_filter([
                 Format::character(null, $character->race, $character->class),
                 $character->faction,
                 $ruleset['label'] ?? null,
+                $character->whole_life || $character->first_level === null ? null : 'First recorded at level '.$character->first_level,
             ])),
             'figures' => array_values(array_filter([
                 ['label' => 'Level', 'value' => (string) $character->level],
-                ['label' => 'Played', 'value' => Format::duration($character->played_seconds)],
-                $cap === null ? null : ['label' => 'Time at level '.$cap['level'], 'value' => Format::duration($cap['seconds_at_cap'])],
-                ['label' => 'Kills', 'value' => Format::number($totals['kills'])],
-                ['label' => 'Deaths', 'value' => Format::number($totals['deaths'])],
-                ['label' => 'Quests', 'value' => Format::number($totals['quests'])],
-                ['label' => 'World widths walked', 'value' => Format::number($totals['distance'], 1)],
+                $character->played_known
+                    ? ['label' => 'Played', 'value' => Format::duration($character->played_seconds)]
+                    : ['label' => 'Recorded'.$since, 'value' => Format::duration($character->recorded_seconds)],
+                $cap === null ? null : ['label' => 'Time at level '.$cap['level'].($cap['observed'] ? $since : ''), 'value' => Format::duration($cap['seconds_at_cap'])],
+                ['label' => 'Kills'.$since, 'value' => Format::number($totals['kills'])],
+                ['label' => 'Deaths'.$since, 'value' => Format::number($totals['deaths'])],
+                ['label' => 'Quests'.$since, 'value' => Format::number($totals['quests'])],
+                ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1)],
             ])),
-            'rows' => CharacterLayout::rows($cap !== null, $r['gold'] !== null, $r['talents'] !== null),
+            'rows' => CharacterLayout::rows($cap !== null, $r['gold'] !== null, $r['talents'] !== null, $levelTimes !== null, $xp !== null),
             'map' => MapSpec::levelled($r['heat']['cells'], [], $r['heat']['fit'], [], $r['marks']),
             'hasMap' => $r['heat']['cells'] !== [],
             'deathCount' => count($r['marks']),
             'week' => $week === null ? null : self::week($week, $economy),
-            'levelTimes' => CharacterSections::levelTimes($r['levelTimes']),
-            'records' => CharacterRecords::tiles($r['records'], $totals, $r['items'], $r['killed']),
-            'xp' => StatsPage::xp($r['xp']),
+            'levelTimes' => $levelTimes,
+            'records' => CharacterRecords::tiles($r['records'], $totals, $r['items'], $r['killed'], $since),
+            'xp' => $xp,
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
             'runs' => CharacterLists::runs($r['dungeonRuns'], $dungeons),
             'killed' => CharacterLists::killed($r['killed']),
@@ -76,6 +83,12 @@ final class CharacterPage
             'sessions' => self::sessions($sessions, $economy),
             'more' => count($sessions) >= $r['history'] && $r['history'] < CharacterRequest::MAX_HISTORY ? '/c/'.$character->name.'?sessions='.min($r['history'] * 4, CharacterRequest::MAX_HISTORY) : null,
         ];
+    }
+
+    /** The words that make a count Scarlet made a count of what it recorded, for a character it did not see from its first level: " since 21 Nov". */
+    private static function since(Character $character): string
+    {
+        return $character->whole_life || $character->first_seen_at === null ? '' : ' since '.$character->first_seen_at->utc()->format('j M');
     }
 
     /**

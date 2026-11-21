@@ -25,15 +25,16 @@ final class LeaderboardPage
         $link = fn (array $change = []): string => self::link($board, ['ruleset' => $slug, 'server' => $scope->server === Server::All ? null : $scope->server->value, 'class' => $class, ...$change]);
 
         [$shown, $next] = Cursor::page($r['rows'], $offset, $page);
+        $since = fn (array $row): string => $row['since'] === null ? '' : ' since '.Carbon::parse((string) $row['since'])->utc()->format('j M');
         $rows = array_map(fn (array $row): array => [
             'class' => $row['mine'] ? 'me' : null,
             'cells' => [
                 (string) $row['rank'],
                 ['text' => (string) $row['name'], 'href' => '/c/'.$row['name'], 'dot' => true],
                 Format::character(null, $row['race'], $row['class']),
-                $board->format($row['value']),
+                $board->format($row['value']).($board->level() === null ? $since($row) : ''),
                 ['text' => (string) ($row['ruleset_label'] ?? ''), 'tag' => $row['hardcore'] ? 'HC' : null],
-                Format::number($row['deaths']),
+                Format::number($row['deaths']).$since($row),
                 $row['at'] === null ? '' : Carbon::parse((string) $row['at'])->utc()->format('j M'),
             ],
         ], $shown);

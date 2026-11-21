@@ -55,10 +55,10 @@ final class AccountCharactersPage
     {
         return [
             ['label' => 'Characters', 'value' => Format::number(count($characters))],
-            ['label' => 'Played', 'value' => Format::duration(array_sum(array_column($characters, 'played_seconds')))],
+            ['label' => 'Time recorded', 'value' => Format::duration(array_sum(array_column($characters, 'recorded_seconds')))],
             ['label' => 'Sessions', 'value' => Format::number(array_sum(array_column($characters, 'sessions')))],
-            ['label' => 'Kills', 'value' => Format::number(array_sum(array_column($characters, 'kills')))],
-            ['label' => 'Deaths', 'value' => Format::number(array_sum(array_column($characters, 'deaths')))],
+            ['label' => 'Kills recorded', 'value' => Format::number(array_sum(array_column($characters, 'kills')))],
+            ['label' => 'Deaths recorded', 'value' => Format::number(array_sum(array_column($characters, 'deaths')))],
             ['label' => 'Gold', 'value' => Format::moneyText(array_sum(array_column($characters, 'balance')))],
         ];
     }
@@ -80,7 +80,7 @@ final class AccountCharactersPage
                 $c['level'] === null ? '' : (string) $c['level'],
                 trim(Format::raceName($c['race']).' '.Format::className($c['class'])),
                 $c['ruleset_id'] === null ? '' : (string) ($labels[$c['ruleset_id']] ?? ''),
-                Format::duration($c['played_seconds']),
+                $c['played_seconds'] === null ? Format::duration($c['recorded_seconds']).' recorded' : Format::duration($c['played_seconds']),
                 $c['last_seen_at'] === null ? '' : Carbon::parse($c['last_seen_at'])->format('j M Y'),
                 $c['balance'] === null ? '' : Format::moneyText($c['balance']),
                 $c['is_public'] ? 'Public' : 'Private',

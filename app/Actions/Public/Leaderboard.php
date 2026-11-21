@@ -42,6 +42,7 @@ class Leaderboard
             'ruleset_label' => $labels->get($row->ruleset_id)['label'] ?? null,
             'hardcore' => (bool) ($labels->get($row->ruleset_id)['hardcore'] ?? false),
             'deaths' => (int) $row->deaths,
+            'since' => $row->whole_life ? null : Carbon::parse((string) $row->first_seen_at)->utc()->toIso8601ZuluString(),
             'at' => $row->at === null ? null : Carbon::parse((string) $row->at)->utc()->toIso8601ZuluString(),
             'mine' => $viewerAccountId !== null && (int) $row->account_id === $viewerAccountId,
         ])->all();
@@ -55,7 +56,10 @@ class Leaderboard
         ];
     }
 
-    /** Time to reach a level, for public characters whose recording has a counted row for every level up to it. */
+    /**
+     * Time to reach a level, as the client's played total when Scarlet saw the level-up into it, for public characters.
+     * A character first seen at or above the level has no row for it, so it is not listed.
+     */
     private function fastest(Board $board, PageScope $scope): Builder
     {
         $level = (int) $board->level();
@@ -69,11 +73,7 @@ class Leaderboard
             ->where('cl.level', $level)
             ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('cl.ruleset_id', $scope->ids))
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('cl.ruleset_id', $scope->ids))
-            ->whereRaw(
-                '(select count(distinct x.level) from character_levels x where x.character_id = cl.character_id and x.counted and x.level <= ?) = ?',
-                [$level, $level],
-            )
-            ->select('c.name', 'c.race', 'c.class', 'c.account_id', 's.deaths', 's.ruleset_id', 'cl.before_seconds as value', 'cl.at')
+            ->select('c.name', 'c.race', 'c.class', 'c.account_id', 'c.whole_life', 'c.first_seen_at', 's.deaths', 's.ruleset_id', 'cl.before_seconds as value', 'cl.at')
             ->orderBy('cl.before_seconds')
             ->orderBy('c.id');
     }
@@ -84,10 +84,10 @@ class Leaderboard
         $query = DB::table('characters as c')
             ->joinSub($this->sessionTotals($scope), 's', 's.character_id', '=', 'c.id')
             ->where('c.is_public', true)
-            ->select('c.name', 'c.race', 'c.class', 'c.account_id', 's.deaths', 's.ruleset_id', 's.last_at as at');
+            ->select('c.name', 'c.race', 'c.class', 'c.account_id', 'c.whole_life', 'c.first_seen_at', 's.deaths', 's.ruleset_id', 's.last_at as at');
 
         return match ($board) {
-            Board::HighestWithoutDying => $query->where('s.deaths', 0)->whereNotNull('s.level')
+            Board::HighestWithoutDying => $query->where('c.whole_life', true)->where('s.deaths', 0)->whereNotNull('s.level')
                 ->addSelect('s.level as value')->orderByDesc('s.level')->orderBy('c.played_seconds')->orderBy('c.id'),
             Board::MostQuests => $query->where('s.quests', '>', 0)->addSelect('s.quests as value')->orderByDesc('s.quests')->orderBy('c.id'),
             Board::MostDungeonRuns => $query->where('s.runs', '>', 0)->addSelect('s.runs as value')->orderByDesc('s.runs')->orderBy('c.id'),

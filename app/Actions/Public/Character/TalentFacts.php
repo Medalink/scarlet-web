@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public\Character;
 
+use App\Support\SessionJoin;
 use App\Support\TalentKind;
 use App\Support\TalentRanks;
 use Illuminate\Database\Query\Builder;
@@ -24,7 +25,8 @@ class TalentFacts
      * - `sharing`: of the other characters whose latest build was read at the same level in the same ruleset, how many hold exactly this build.
      * - `least`: the talent of the latest build that the fewest characters of the same class and spec hold.
      * - `first_deep`: the level of the first build with the deep number of points in one tree.
-     * - `unspent`: how long the points the addon saw being picked waited after the level-up that gave them.
+     * - `unspent`: how long the points the addon saw being picked waited after the level-up that gave them, for the
+     *   level-ups Scarlet saw and picks with no unrecorded play since the level-up.
      * - `taken_back`: picks refunded within the minutes.
      * - `group_time`: the time played with each talent group active, from the session's active-group rows, with the
      *   sessions each group was active in.
@@ -117,7 +119,10 @@ class TalentFacts
     {
         $waits = DB::table('talent_changes as t')
             ->join('level_ups as e', fn ($join) => $join->on('e.character_id', '=', 't.character_id')->whereRaw('e.reached = t.point_no + ?', [self::FIRST_POINT_LEVEL - 1]))
-            ->where('t.character_id', $characterId)->where('t.counted', true)->where('e.counted', true)
+            ->where('t.character_id', $characterId)->where('t.counted', true)->where('e.counted', true)->where('e.ding', true)
+            ->whereNotExists(fn ($gap) => $gap->from('sessions as x')->whereColumn('x.character_id', 't.character_id')
+                ->whereColumn('x.session_start', '>', 'e.session_start')->whereColumn('x.session_start', '<=', 't.session_start')
+                ->whereRaw('coalesce(x.joins, ?) in (?, ?)', [SessionJoin::Unknown->value, ...SessionJoin::BROKEN]))
             ->where('t.kind', TalentKind::Pick->value)->whereNull('t.respec_index')->whereNotNull('t.point_no')
             ->selectRaw('extract(epoch from (t.at - e.at)) as waited')->pluck('waited')
             ->map(fn (mixed $seconds): float => (float) $seconds)->filter(fn (float $seconds): bool => $seconds >= 0)->sort()->values()->all();
