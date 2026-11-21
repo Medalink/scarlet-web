@@ -254,8 +254,9 @@ so a single player cannot be read from a statistic. A character answers only whe
 character is `404 not_found`, the same as one that does not exist. Money of a character is in the answer only when its
 owner shares the economy. The name of another player is shown only when that player's own character is public.
 
-Rulesets are named by slug (`p1-std-pve`): every signal the client reported has a part, so two rulesets never share a
-slug. Take the slugs from `GET /public/rulesets`.
+A ruleset row is addressed by slug (`p1-std-pve`): every signal the client reported has a part, so two rows never share a
+slug, and a slug never changes. The name a page shows is `label`, and `kind` is the ruleset of WoW Forever the row is.
+Take the slugs from `GET /public/rulesets`.
 
 ## Limits, keys and caching
 
@@ -306,7 +307,7 @@ Example: `curl https://<host>/api/v1/public/stats`
 
 Every ruleset with the numbers of the comparison table and its levelling curve.
 
-`data`: a list of rulesets with `slug`, `label`, `hardcore`, `war_mode`, `recorded` (false for the ruleset of sessions whose rules were not recorded), `characters`, `seconds`, `deaths`, `xp`, `quest_xp`, `reached`, `median_to_target` and `levelling` (level, median seconds, characters).
+`data`: a list of rulesets with `slug`, `label`, `hardcore`, `war_mode`, `kind` (`normal`, `pvp`, `roleplay`, `roleplay-pvp` or `hardcore`, `null` while Scarlet cannot tell which ruleset a character is on), `recorded` (false for the ruleset of sessions whose rules were not recorded), `characters`, `seconds`, `deaths`, `xp`, `quest_xp`, `reached`, `median_to_target` and `levelling` (level, median seconds, characters).
 
 Example: `curl https://<host>/api/v1/public/rulesets`
 

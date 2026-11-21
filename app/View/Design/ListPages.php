@@ -27,11 +27,11 @@ final class ListPages
     {
         $day = 86400;
         $rows = [
-            ['Enhanced, PvE', false, 612, 19870, 5 * $day + 21 * 3600, 0.41, 0.14, 0.47],
-            ['Enhanced, PvP', false, 288, 9412, 6 * $day + 9 * 3600, 0.58, 0.11, 0.44],
-            ['Enhanced, Hardcore, PvE', true, 204, 6330, 7 * $day + 2 * 3600, 0.03, 0.04, 0.52],
-            ['Classic, PvE', false, 131, 5105, 11 * $day + 6 * 3600, 0.37, 0.03, 0.49],
-            ['Hardcore, PvP', true, 49, 1190, null, 0.05, 0.0, 0.5],
+            ['Normal', false, 612, 19870, 5 * $day + 21 * 3600, 0.41, 0.14, 0.47],
+            ['PvP', false, 288, 9412, 6 * $day + 9 * 3600, 0.58, 0.11, 0.44],
+            ['Roleplay', true, 204, 6330, 7 * $day + 2 * 3600, 0.03, 0.04, 0.52],
+            ['Roleplay PvP', false, 131, 5105, 11 * $day + 6 * 3600, 0.37, 0.03, 0.49],
+            ['Roleplay PvP', false, 49, 1190, null, 0.05, 0.0, 0.5],
         ];
         $rows = array_map(fn (array $r): array => ['cells' => [
             ['text' => $r[0], 'href' => Gallery::url('stats'), 'tag' => $r[1] ? 'HC' : null],
@@ -73,10 +73,10 @@ final class ListPages
     private static function leaderboards(): array
     {
         $entries = [
-            ['Maren-Ashlow', 'Orc Warrior', [3, 19, 2], 'Enhanced, PvE', false], ['Tolvir-Greane', 'Troll Mage', [3, 22, 41], 'Enhanced, PvE', false],
-            ['Ysolde-Harrowick', 'Undead Priest', [4, 1, 16], 'Enhanced, PvP', false], ['Bram-Coldwater', 'Tauren Druid', [4, 3, 50], 'Enhanced, PvE', false],
-            ['Senna-Vale', 'Orc Hunter', [4, 6, 12], 'Enhanced, Hardcore, PvE', true], ['Dorrin-Ashby', 'Troll Shaman', [4, 9, 33], 'Enhanced, PvE', false],
-            ['Liss-Underhill', 'Undead Rogue', [4, 11, 8], 'Enhanced, PvP', false], ['Corwen-Pike', 'Tauren Warrior', [4, 14, 47], 'Classic, PvE', false],
+            ['Maren-Ashlow', 'Orc Warrior', [3, 19, 2], 'Normal', false], ['Tolvir-Greane', 'Troll Mage', [3, 22, 41], 'Normal', false],
+            ['Ysolde-Harrowick', 'Undead Priest', [4, 1, 16], 'PvP', false], ['Bram-Coldwater', 'Tauren Druid', [4, 3, 50], 'Normal', false],
+            ['Senna-Vale', 'Orc Hunter', [4, 6, 12], 'Roleplay', true], ['Dorrin-Ashby', 'Troll Shaman', [4, 9, 33], 'Normal', false],
+            ['Liss-Underhill', 'Undead Rogue', [4, 11, 8], 'PvP', false], ['Corwen-Pike', 'Tauren Warrior', [4, 14, 47], 'Roleplay PvP', false],
         ];
         $rows = [];
         foreach ($entries as $i => [$name, $class, [$d, $h, $m], $ruleset, $hc]) {
@@ -109,8 +109,8 @@ final class ListPages
         return [
             'kinds' => [['All 23', true], ['Characters 2'], ['Creatures 9'], ['Items 6'], ['Zones 2'], ['Quests 4']],
             'characters' => [
-                ['href' => $character, 'title' => 'Marsha-Venn', 'meta' => 'Level 44 Troll Hunter · Enhanced, PvE', 'value' => Format::duration(5 * 86400 + 2 * 3600).' played'],
-                ['href' => $character, 'title' => 'Tolmarsh-Greane', 'meta' => 'Level 12 Orc Warrior · Hardcore, PvE', 'value' => Format::duration(9 * 3600).' played'],
+                ['href' => $character, 'title' => 'Marsha-Venn', 'meta' => 'Level 44 Troll Hunter · Normal', 'value' => Format::duration(5 * 86400 + 2 * 3600).' played'],
+                ['href' => $character, 'title' => 'Tolmarsh-Greane', 'meta' => 'Level 12 Orc Warrior · Roleplay', 'value' => Format::duration(9 * 3600).' played'],
             ],
             'zones' => [
                 ['href' => $zone, 'title' => 'Saltmarsh Reach', 'meta' => Format::range(18, 27).' · '.Format::number(6480).' deaths', 'value' => Format::number(3912).' hours'],

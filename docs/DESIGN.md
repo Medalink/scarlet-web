@@ -173,7 +173,7 @@ Decoding a session first deletes that session's rows, so it can run any number o
 
 | Table | From | Group | Row |
 | --- | --- | --- | --- |
-| `sessions` (plain) | `S`, `ES`, `L`, `GR`, `PB`, `XD`, `GA`, `CD`, `TP` | core | one per session: start, end, played, class, race, faction, levels, ruleset |
+| `sessions` (plain) | `S`, `ES`, `L`, `GR`, `RU`, `PB`, `XD`, `GA`, `CD`, `TP` | core | one per session: start, end, played, class, race, faction, levels, ruleset |
 | `play_spans` | `S`, `ES`, `L`, `Z`, `AFK` | core | a stretch at one level in one zone: seconds, AFK seconds, instance type |
 | `level_ups` | `L` | core | level reached, played seconds spent in the level before it |
 | `xp_gains` | `X` | xp | amount, source (`k` kill, `d` dungeon kill, `q` quest, `e` exploring, `o` other), source id |
@@ -257,19 +257,39 @@ of the rollups.
 
 ### Rulesets
 
-A ruleset is the set of choices that make two characters comparable. It is read at the start of each session:
+WoW Forever has five rulesets. A ruleset is a permanent choice for each character; play is realmless, in regional
+populations with layers, and names are First-Last.
+
+| Ruleset | What it is |
+| --- | --- |
+| Normal | Quests, dungeons and monsters. Open-world PvP only if you opt in. Both factions. |
+| PvP | Open-world combat outside sanctuaries. One faction per player. |
+| Roleplay | Stricter naming and behaviour rules, a PvE focus and outdoor zones separate from non-RP players. Both factions. |
+| Roleplay PvP | Roleplay rules plus open-world faction PvP. |
+| Hardcore | One life; fallen characters can transfer out. Planned, not out yet: the site shows it disabled. |
+
+The game has no call that returns the ruleset, and war mode alone cannot tell Normal with PvP opted in from PvP. So a
+`rulesets` row is a combination of signals read at the start of each session, and `RulesetKind::of()` is the one place
+that says which kind a combination is. Only the hardcore flag names a ruleset today; every other row is "Not
+identified". The `RU` line records the other candidates (game mode record, server number in the GUID, whether war
+mode can be turned on or off, faction, the active game rules) for an in game check of one character on each ruleset;
+the signal that tells them apart is then added to `RulesetKind::of()`, and sessions from before `RU` stay "Not
+identified".
 
 | Signal | Line | Values |
 | --- | --- | --- |
-| Experience preset | `GR` preset | the client's preset number |
+| Experience preset | `GR` preset | the client's preset number (0 Classic, 1 Enhanced); not a ruleset |
 | Hardcore | `GR` hardcore | on, off |
-| War mode | `PB` warModeActive | on (PvP), off (PvE), unknown |
+| War mode | `PB` warModeActive | on, off, unknown; not a ruleset |
 | Experience gain | `XD` | on, off |
 | Game mode | `GA` | the client's mode number |
+| Game mode record | `RU` record | the record id the realm picker switches by |
 
-`rulesets(id, preset, hardcore, war_mode, xp_off, game_mode)` has one row per combination seen. Class, race and
-faction are filters on a page, not part of the ruleset. The `S` line's server fields are empty on Forever and are not
-used. The loot rule (`LM`) is a property of a drop, not of a character.
+`rulesets(id, preset, hardcore, war_mode, xp_off, game_mode, mode_record)` has one row per combination seen; a row
+without a record keeps the key it had before `RU` existed. Class, race and faction are filters on a page, not part of
+the ruleset. The `S` line's server fields are empty on Forever and are not used; `RU` carries the server number from
+the character's GUID, which `sessions.server_id` holds and no ruleset uses yet. The loot rule (`LM`) is a property of a
+drop, not of a character.
 
 ## Security
 
@@ -396,10 +416,11 @@ least 7 days old) turns git history into a version and release notes.
 
 ### Where the built pages differ from the comps
 
-- **Ruleset names** are "Enhanced, PvE, Experience on": the game's experience preset (Classic or Enhanced),
-  "Hardcore" only when it is on, war mode and experience. The game mode is a bare number that nothing names, so it
-  is not in a label; two rulesets that differ only in it are told apart by a count, "(2)". The ruleset with no recorded rules is "Rules not recorded", last in every list, and left out of the
-  filter chips while a named ruleset exists.
+- **Ruleset names** are the five of WoW Forever: Normal, PvP, Roleplay, Roleplay PvP and Hardcore. A row that no
+  checked signal names is "Not identified", listed last on /rulesets and left out of the filters unless it is the one
+  on show. Hardcore is not out yet, so the filters and /rulesets show it as "Hardcore (not out yet)", greyed out and
+  without a link, until a hardcore ruleset has data. Two rows of one name are told apart by a count, "(2)". The
+  address of a row (`p1-std-pve`) is its signals and never changes.
 - **Class filter**: leaderboards filter by class (`characters.class`). The dashboards and result pages do not: no
   aggregate carries the class.
 - **Reach**: "Characters that reached each level" in place of the comp's wording; the chart counts characters.

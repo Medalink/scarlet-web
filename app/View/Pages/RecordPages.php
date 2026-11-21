@@ -197,11 +197,11 @@ final class RecordPages
 
     /**
      * @param  array<string, mixed>  $r
-     * @return list<array{id: int, slug: string, label: string}>
+     * @return list<array{id: int, slug: string, label: string, kind: string|null}>
      */
     private static function rulesets(array $r): array
     {
-        /** @var list<array{id: int, slug: string, label: string}> $rulesets */
+        /** @var list<array{id: int, slug: string, label: string, kind: string|null}> $rulesets */
         $rulesets = $r['rulesets'];
 
         return $rulesets;

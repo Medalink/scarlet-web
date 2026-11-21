@@ -22,7 +22,7 @@ class StatsController extends Controller
 
         /** @var PageScope $scope */
         $scope = $answer['scope'];
-        /** @var list<array{id: int, slug: string, label: string}> $rulesets */
+        /** @var list<array{id: int, slug: string, label: string, kind: string|null}> $rulesets */
         $rulesets = $answer['rulesets'];
         $page = StatsPage::data($answer, $scope, RulesetSummaries::TARGET_LEVEL);
         /** @var list<array<string, mixed>> $heat */

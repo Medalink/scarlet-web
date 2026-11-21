@@ -2,7 +2,7 @@
 
 namespace App\View\Pages;
 
-use App\Models\Ruleset;
+use App\Models\RulesetKind;
 use App\View\Charts;
 use App\View\Format;
 
@@ -18,7 +18,7 @@ final class RulesetsPage
      */
     public static function data(array $r): array
     {
-        /** @var list<array{id: int, slug: string, label: string, hardcore: bool, war_mode: string}> $rulesets */
+        /** @var list<array{id: int, slug: string, label: string, kind: string|null, hardcore: bool, war_mode: string}> $rulesets */
         $rulesets = $r['rulesets'];
         /** @var list<array<string, mixed>> $rows */
         $rows = $r['rows'];
@@ -26,12 +26,17 @@ final class RulesetsPage
         $curves = $r['curves'];
         $byId = array_column($rulesets, null, 'id');
 
-        $unrecorded = fn (array $row): bool => ($byId[$row['ruleset_id']]['slug'] ?? '') === Ruleset::UNKNOWN_SLUG;
-        usort($rows, fn (array $a, array $b): int => [$unrecorded($a), (int) ($b['characters'] ?? 0)] <=> [$unrecorded($b), (int) ($a['characters'] ?? 0)]);
+        $unidentified = fn (array $row): bool => ($byId[$row['ruleset_id']]['kind'] ?? null) === null;
+        usort($rows, fn (array $a, array $b): int => [$unidentified($a), (int) ($b['characters'] ?? 0)] <=> [$unidentified($b), (int) ($a['characters'] ?? 0)]);
+        $table = array_map(fn (array $row): array => self::row($row, $byId[$row['ruleset_id']]), $rows);
+        if (! array_any($rulesets, fn (array $ruleset): bool => $ruleset['kind'] === RulesetKind::Hardcore->value)) {
+            $table[] = self::notOut(RulesetKind::Hardcore);
+        }
 
         return [
-            'unrecorded' => array_any($rows, $unrecorded),
-            'rows' => array_map(fn (array $row): array => self::row($row, $byId[$row['ruleset_id']]), $rows),
+            'unidentified' => array_any($rows, $unidentified),
+            'kinds' => array_map(fn (RulesetKind $kind): array => ['name' => $kind->label().($kind->available() ? '' : ' (not out yet)'), 'summary' => $kind->summary()], RulesetKind::cases()),
+            'rows' => $table,
             'compare' => self::compare($rows, $byId, $curves),
             'survival' => self::survival($rulesets, $curves),
         ];
@@ -44,7 +49,7 @@ final class RulesetsPage
      */
     private static function row(array $row, array $ruleset): array
     {
-        $name = ['text' => $ruleset['label'], 'href' => '/rulesets/'.$ruleset['slug'], 'tag' => $ruleset['hardcore'] ? 'HC' : null];
+        $name = ['text' => $ruleset['label'], 'href' => '/rulesets/'.$ruleset['slug']];
         if ($row['characters'] === null) {
             return ['cells' => [$name, Format::TOO_FEW, '–', '–', '–', '–', '–']];
         }
@@ -60,6 +65,16 @@ final class RulesetsPage
             Format::percent((int) $row['reached'] / $characters),
             (int) $row['xp'] > 0 ? Format::percent((int) $row['quest_xp'] / (int) $row['xp']) : '–',
         ]];
+    }
+
+    /**
+     * The table row of a ruleset that cannot be played yet: named, with no link and no numbers.
+     *
+     * @return array{class: string, cells: list<string>}
+     */
+    private static function notOut(RulesetKind $kind): array
+    {
+        return ['class' => 'off', 'cells' => [$kind->label().' (not out yet)', '–', '–', '–', '–', '–', '–']];
     }
 
     /**

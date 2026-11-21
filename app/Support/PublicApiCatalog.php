@@ -42,7 +42,7 @@ final class PublicApiCatalog
                 'name' => 'rulesets', 'group' => 'Statistics', 'path' => '/rulesets', 'action' => [StatsController::class, 'rulesets'],
                 'summary' => 'Every ruleset with the numbers of the comparison table and its levelling curve.',
                 'params' => [],
-                'returns' => '`data`: a list of rulesets with `slug`, `label`, `hardcore`, `war_mode`, `recorded` (false for the ruleset of sessions whose rules were not recorded), `characters`, `seconds`, `deaths`, `xp`, `quest_xp`, `reached`, `median_to_target` and `levelling` (level, median seconds, characters).',
+                'returns' => '`data`: a list of rulesets with `slug`, `label`, `hardcore`, `war_mode`, `kind` (`normal`, `pvp`, `roleplay`, `roleplay-pvp` or `hardcore`, `null` while Scarlet cannot tell which ruleset a character is on), `recorded` (false for the ruleset of sessions whose rules were not recorded), `characters`, `seconds`, `deaths`, `xp`, `quest_xp`, `reached`, `median_to_target` and `levelling` (level, median seconds, characters).',
                 'example' => '/rulesets', 'where' => [],
             ],
             [

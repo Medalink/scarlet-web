@@ -4,6 +4,7 @@ namespace App\View\Design;
 
 use App\View\Charts;
 use App\View\Format;
+use App\View\Pages\Filters;
 use DateTimeImmutable;
 use DateTimeZone;
 
@@ -84,10 +85,10 @@ final class Gallery
      */
     public static function filters(): array
     {
-        $on = fn (array $labels): array => array_map(fn (string $label, int $i): array => ['label' => $label, 'href' => '#', 'on' => $i === 0], $labels, array_keys($labels));
+        $on = fn (array $labels): array => array_map(fn (string $label, int $i): array => ['label' => $label, 'href' => '#', 'on' => $i === 0] + (str_contains($label, 'not out') ? ['disabled' => true] : []), $labels, array_keys($labels));
 
         return [
-            'rulesets' => $on(['All', 'Enhanced', 'Classic', 'Hardcore']),
+            'rulesets' => $on(['All', 'Normal', 'PvP', 'Roleplay', 'Roleplay PvP', Filters::HARDCORE_NOT_OUT]),
             'servers' => $on(['PvE and PvP', 'PvE', 'PvP']),
             'classes' => ['Every class', 'Warrior', 'Mage'],
         ];

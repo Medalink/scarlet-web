@@ -19,6 +19,7 @@ class ResolveRuleset
             'war_mode' => (string) ($summary['war_mode'] ?? Ruleset::WAR_MODE_UNKNOWN),
             'xp_off' => isset($summary['xp_off']) ? (bool) $summary['xp_off'] : null,
             'game_mode' => isset($summary['game_mode']) ? (int) $summary['game_mode'] : null,
+            'mode_record' => isset($summary['mode_record']) ? (int) $summary['mode_record'] : null,
         ];
         $key = Ruleset::keyFor($signals);
 

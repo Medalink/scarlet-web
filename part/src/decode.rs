@@ -163,6 +163,8 @@ struct Dec<'o> {
     war: Option<String>,
     xp_off: Option<String>,
     game_mode: Option<i64>,
+    mode_record: Option<i64>,
+    server_id: Option<i64>,
     cd: Option<(String, String, String)>,
     signal_changed: bool,
     // counters
@@ -305,7 +307,7 @@ impl Dec<'_> {
         // set the ruleset and the group context are read from them; nothing is counted.
         if !self.started
             && code != "S"
-            && !matches!(code, "GR" | "PB" | "XD" | "GA" | "CD" | "GP" | "LM")
+            && !matches!(code, "GR" | "PB" | "XD" | "GA" | "RU" | "CD" | "GP" | "LM")
         {
             return;
         }
@@ -530,6 +532,16 @@ impl Dec<'_> {
                 (Some(old), Some(v)) => self.signal_changed |= *old != v,
                 _ => {}
             },
+            "RU" => {
+                match (&self.mode_record, num(&f, 0)) {
+                    (None, v) => self.mode_record = v,
+                    (Some(old), Some(v)) => self.signal_changed |= *old != v,
+                    _ => {}
+                }
+                if self.server_id.is_none() {
+                    self.server_id = num(&f, 8);
+                }
+            }
             "CD" if self.cd.is_none() => {
                 self.cd = Some((
                     field(&f, 0).to_string(),
@@ -1003,6 +1015,8 @@ impl Dec<'_> {
         };
         self.w
             .opt("game_mode", self.game_mode)
+            .opt("mode_record", self.mode_record)
+            .opt("server_id", self.server_id)
             .opt("sex", num(&[cd.0.as_str()], 0))
             .opt("class_id", num(&[cd.1.as_str()], 0))
             .opt("race_id", num(&[cd.2.as_str()], 0))
@@ -1105,6 +1119,8 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         war: None,
         xp_off: None,
         game_mode: None,
+        mode_record: None,
+        server_id: None,
         cd: None,
         signal_changed: false,
         kills: 0,

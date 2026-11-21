@@ -2,7 +2,7 @@
 <x-layouts.app title="Scarlet rulesets compared" current="rulesets" :base="$base">
 <div class="wrap">
   <x-page-head title="Rulesets compared">
-    <x-slot:sub>A ruleset is how a character plays: the experience preset, hardcore or not, and a PvE or PvP server. Each row links to its own dashboard.</x-slot:sub>
+    <x-slot:sub>A ruleset is a permanent choice for each character. Each row links to its own dashboard.</x-slot:sub>
   </x-page-head>
   <x-sheet>
     <x-module span="w12" :first="true" :last="true">
@@ -11,7 +11,7 @@
     </x-module>
     <x-module span="w8" :first="true" id="h-c" heading="Played time to reach each level">
       <x-plot id="cmp" label="Median played hours to each level for three rulesets" :spec="$d['compare']" />
-      <x-key :items="[['label' => 'Enhanced, PvE', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Enhanced, Hardcore, PvE', 'class' => 'k-line', 'style' => 'background:var(--fg)'], ['label' => 'Classic, PvE', 'class' => 'k-line', 'style' => 'background:var(--s-dungeon)']]" />
+      <x-key :items="[['label' => 'Normal', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Roleplay', 'class' => 'k-line', 'style' => 'background:var(--fg)'], ['label' => 'PvP', 'class' => 'k-line', 'style' => 'background:var(--s-dungeon)']]" />
     </x-module>
     <x-module :last="true" id="h-s" heading="Hardcore characters still alive">
       <x-plot id="surv" label="Share of hardcore characters that reached each level without dying" :spec="$d['survival']" />

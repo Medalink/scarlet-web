@@ -14,7 +14,7 @@ final class LeaderboardPage
 {
     /**
      * @param  array{scope: PageScope, board: Board, rows: list<array<string, mixed>>, total: int, classes: list<string>}  $r
-     * @param  list<array{id: int, slug: string, label: string}>  $rulesets
+     * @param  list<array{id: int, slug: string, label: string, kind: string|null}>  $rulesets
      * @return array<string, mixed>
      */
     public static function data(array $r, array $rulesets, ?string $class, int $offset, int $page): array
@@ -44,7 +44,7 @@ final class LeaderboardPage
             'sub' => $board->description(),
             'boards' => array_map(fn (Board $item): array => [$item->title(), self::link($item, ['ruleset' => $slug, 'class' => $class])], Board::cases()),
             'boardSelected' => $board->title(),
-            'rulesets' => [['label' => 'All', 'href' => $link(['ruleset' => null]), 'on' => $slug === null], ...array_map(fn (array $item): array => ['label' => $item['label'], 'href' => $link(['ruleset' => $item['slug'], 'server' => null]), 'on' => $slug === $item['slug']], $rulesets)],
+            'rulesets' => Filters::items($scope, $rulesets, $link(['ruleset' => null]), fn (array $item): string => $link(['ruleset' => $item['slug'], 'server' => null])),
             'servers' => $slug === null ? array_map(fn (Server $server): array => ['label' => $server->label(), 'href' => $link(['server' => $server === Server::All ? null : $server->value]), 'on' => $server === $scope->server], Server::cases()) : null,
             'classes' => [['Every class', $link(['class' => null])], ...array_map(fn (string $name): array => [Format::className($name), $link(['class' => $name])], $r['classes'])],
             'classSelected' => $class === null ? 'Every class' : Format::className($class),

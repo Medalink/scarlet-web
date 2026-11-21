@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $war_mode
  * @property bool|null $xp_off
  * @property int|null $game_mode
+ * @property int|null $mode_record
  */
 class Ruleset extends Model
 {
@@ -36,19 +37,27 @@ class Ruleset extends Model
         return ['hardcore' => 'boolean', 'xp_off' => 'boolean'];
     }
 
-    /** @param  array{preset: int|null, hardcore: bool|null, war_mode: string, xp_off: bool|null, game_mode: int|null}  $signals */
+    /**
+     * The identity of a combination of signals. A session with no game mode record has the five-part key it always
+     * had, so the rulesets stored before the record was read keep their rows.
+     *
+     * @param  array{preset: int|null, hardcore: bool|null, war_mode: string, xp_off: bool|null, game_mode: int|null, mode_record: int|null}  $signals
+     */
     public static function keyFor(array $signals): string
     {
-        return implode('|', array_map(fn ($value): string => match (true) {
+        $key = implode('|', array_map(fn ($value): string => match (true) {
             $value === null => '-',
             is_bool($value) => $value ? '1' : '0',
             default => (string) $value,
         }, [$signals['preset'], $signals['hardcore'], $signals['war_mode'], $signals['xp_off'], $signals['game_mode']]));
+
+        return $signals['mode_record'] === null ? $key : $key.'|r'.$signals['mode_record'];
     }
 
     /**
      * The path segment of a ruleset: every signal that was reported has a part, so two rulesets never share one.
-     * `p1-std-pve-xp-g1` is preset 1, not hardcore, war mode off, experience on, game mode 1.
+     * `p1-std-pve-xp-g1` is preset 1, not hardcore, war mode off, experience on, game mode 1. The slug is an
+     * identity, not a name: it keeps the form it had, so the address of every ruleset keeps working.
      */
     public function slug(): string
     {
@@ -70,42 +79,25 @@ class Ruleset extends Model
                 default => null,
             },
             $this->game_mode === null ? null : 'g'.$this->game_mode,
+            $this->mode_record === null ? null : 'r'.$this->mode_record,
         ];
         $parts = array_values(array_filter($parts));
 
         return $parts === [] ? self::UNKNOWN_SLUG : implode('-', $parts);
     }
 
-    /** The label of a ruleset none of whose signals were recorded. */
-    public const string UNRECORDED_LABEL = 'Rules not recorded';
+    /** The label of a ruleset that no checked signal names yet. */
+    public const string UNIDENTIFIED_LABEL = 'Not identified';
 
-    /**
-     * The name a page shows: "Enhanced, Hardcore, PvP, Experience off". The preset is the game's experience preset
-     * (Enum.ForeverExperiencePreset: 0 Classic, 1 Enhanced). Hardcore is named only when it is on. The game mode is
-     * a bare number with no name, so it stays out of the label; the slug still tells it apart.
-     */
+    /** The ruleset of WoW Forever this row is, or null while no checked signal names it. */
+    public function kind(): ?RulesetKind
+    {
+        return RulesetKind::of($this->hardcore, $this->mode_record);
+    }
+
+    /** The name a page shows: the ruleset's name, or "Not identified" for a row no checked signal names. */
     public function label(): string
     {
-        $parts = [
-            match ($this->preset) {
-                0 => 'Classic',
-                1 => 'Enhanced',
-                default => null,
-            },
-            $this->hardcore === true ? 'Hardcore' : null,
-            match ($this->war_mode) {
-                self::WAR_MODE_ON => 'PvP',
-                self::WAR_MODE_OFF => 'PvE',
-                default => null,
-            },
-            match ($this->xp_off) {
-                true => 'Experience off',
-                false => 'Experience on',
-                default => null,
-            },
-        ];
-        $parts = array_values(array_filter($parts));
-
-        return $parts === [] ? self::UNRECORDED_LABEL : implode(', ', $parts);
+        return $this->kind()?->label() ?? self::UNIDENTIFIED_LABEL;
     }
 }

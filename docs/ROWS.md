@@ -254,11 +254,13 @@ One per decode, last. Keys in order:
 | `war_mode` | string | `on`, `off` or `unknown` from the first `PB` line (warModeActive) |
 | `xp_off` | bool or null | the first `XD` line |
 | `game_mode` | int or null | the first `GA` line |
+| `mode_record` | int or null | `RU` record, the game mode record id the realm picker switches by; the first one in the session |
+| `server_id` | int or null | `RU` server, the realm id inside the character's GUID; the first one in the session. Not part of the ruleset yet |
 | `sex`, `class_id`, `race_id` | int or null | the first `CD` line |
 | `flags` | string[] | plausibility flags, below |
 
-**Ruleset** of a session: (`gr_preset`, `gr_hardcore`, `war_mode`, `xp_off`, `game_mode`), the signals of DESIGN.md
-"Rulesets". The `rulesets` row is looked up or created from them.
+**Ruleset** of a session: (`gr_preset`, `gr_hardcore`, `war_mode`, `xp_off`, `game_mode`, `mode_record`), the signals of
+DESIGN.md "Rulesets". The `rulesets` row is looked up or created from them.
 
 **Plausibility flags** (a character with any flag in a session stays out of leaderboards and rollups until the
 flags stop; thresholds are the decoder's):
@@ -270,7 +272,7 @@ flags stop; thresholds are the decoder's):
 | `xp_over_level` | the XP gained at one level (below 60) is more than 1.5 times the XP that level needs (OVERVIEW.md table) |
 | `level_skip` | an `L` line raises the level by more than 1 |
 | `levels_too_fast` | `played_ms` divided by the levels gained in the session is under 20 seconds |
-| `ruleset_changed` | a later `GR`, `PB`, `XD` or `GA` line differs from the first one |
+| `ruleset_changed` | a later `GR`, `PB`, `XD`, `GA` or `RU` (record) line differs from the first one |
 
 ## Missing groups
 
@@ -284,7 +286,7 @@ or an `economy` part. A job that sums counters treats null as "not sent", never 
 
 The decoder follows docs/OVERVIEW.md of the Scarlet repo. Level and zone splits: time, XP, kills, deaths and quests
 go to the level and zone current when they happen (`level` and `zone_id` on the row; the zone's time is the sum of
-`play_spans` by `zone` name). A line before the session's `S` line is not counted, except that the signal lines `GR`, `PB`, `XD`, `GA`, `CD`, `GP`
+`play_spans` by `zone` name). A line before the session's `S` line is not counted, except that the signal lines `GR`, `PB`, `XD`, `GA`, `RU`, `CD`, `GP`
 and `LM` and the name lines are read from the login lines that precede `S`, so the ruleset is known. Nothing after
 `ES` is read. Lines the builder holds back after the last `ES` are not in any part.
 

@@ -1,9 +1,12 @@
 <x-layouts.app title="Scarlet rulesets compared" current="rulesets" description="Characters, hours, time to level {{ $target }} and deaths for each ruleset.">
 <div class="wrap">
   <x-page-head title="Rulesets compared">
-    <x-slot:sub>A ruleset is how a character plays: the experience preset (Classic or Enhanced), hardcore or not, PvE or PvP, and whether experience is on. Each row links to its own dashboard.@if ($d['unrecorded']) "Rules not recorded" holds sessions imported from before the rules line existed.@endif</x-slot:sub>
+    <x-slot:sub>A ruleset is a permanent choice for each character. Each row links to its own dashboard.@if ($d['unidentified']) "Not identified" holds characters whose ruleset Scarlet cannot tell yet, because the game does not report it.@endif</x-slot:sub>
   </x-page-head>
   <x-sheet>
+    <x-module span="w12" :first="true" :last="true" id="h-k" heading="The rulesets">
+      <dl class="kinds">@foreach ($d['kinds'] as $kind)<dt @class(['off' => str_contains($kind['name'], 'not out')])>{{ $kind['name'] }}</dt><dd @class(['off' => str_contains($kind['name'], 'not out')])>{{ $kind['summary'] }}</dd>@endforeach</dl>
+    </x-module>
     <x-module span="w12" :first="true" :last="true">
       <h2 id="h-tbl" class="vh">Every ruleset</h2>
       @if ($d['rows'])
