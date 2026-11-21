@@ -288,7 +288,7 @@ Versioned by path: `/api/v1`. A breaking change is `/api/v2`; fields are only ev
 - **Public**, read-only JSON, no sign-in: `GET /public/stats`, `/public/rulesets`, `/public/rulesets/{id}` and its
   series (`/levels`, `/xp`, `/deaths`, `/dungeons`, `/professions`, `/gold`, `/activity`), `/public/leaderboards/{board}`,
   `/public/search?q=`, `/public/characters/{name}` and its series, `/public/creatures/{id}`, `/public/items/{id}`,
-  `/public/zones/{id}`, `/public/quests/{id}`, `/public/maps/{id}/heat`. `Access-Control-Allow-Origin: *`,
+  `/public/zones/{id}`, `/public/quests/{id}`, `/public/map/heat`. `Access-Control-Allow-Origin: *`,
   `Cache-Control: public, max-age=300` with an `ETag`, cursor pagination (`?cursor=`, `next_cursor` in the answer),
   60 requests a minute per IP, 600 with a free API key (a Sanctum token made on the account page, sent as a bearer
   token). The reference is the `/developers` page, written from the same route table.
@@ -311,10 +311,44 @@ headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figure
 | `/search` | Characters that are public, creatures, items, zones, quests |
 | `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths. Public when its owner says so; the owner sees the private parts too |
 | `/creatures/{id}`, `/items/{id}`, `/zones/{slug}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels |
-| `/maps/{id}` | Heat from paths and deaths on a zone's map |
+| `/map` | The world map: one seamless map, zoomable down to a zone, with heat from paths, deaths and kills (see Maps) |
 | `/developers` | The public API reference |
 | `/login`, `/link` | Sign in, link the app |
 | `/account` | Characters and their public switches, installs and revoking them, sharing groups, removals, API keys |
+
+## Maps
+
+Every map on the site is one viewer over one world: the stitched Azeroth of the OpenMap addon, a square where a
+point is `u, v` from 0 to 1 across and down. A zone page, a character's paths and a creature's sightings are the same
+viewer opened on a rectangle of that world.
+
+**Art.** OpenMap bakes every zone's art into world tiles (`Media/Textures/Forever/MapZones/<i>_<j>.blp`: 512 px,
+of which 510 are the tile's own and the rest its neighbours' edge, 16 px per world unit; `Data/Forever/ZoneArt.lua`
+lists the tiles). `tools/map-tiles` reads an installed copy of the addon and writes a web tile pyramid: 256 px WebP
+tiles, `{look}/{z}/{x}/{y}.webp`, from the full detail down to one tile for the whole world. The images are not in
+git. They live on the app's `maps` disk (local storage in development, object storage in production) and are served
+with a one-year cache under a path that carries the build's version.
+
+**Two looks.** *Game* is the art as baked. *Survey* is the site's dark sheet, built from the same tiles at build
+time: luminance mapped onto the sheet's greys, the sea darkest, so scarlet data reads on it the way it does on the
+landing page. The viewer remembers the choice. Survey is the default.
+
+**Credit.** Every page that shows the art says "Map art © Blizzard Entertainment. Map by OpenMap." under the
+map, with OpenMap linked. Data or code copied from OpenMap into this repo carries its MIT notice
+(`tools/map-tiles/OPENMAP-LICENSE.txt`).
+
+**Where a recorded point is.** The recording gives a zone map and a position on it (`uiMapID`, x, y). The world
+position needs that zone's rectangle on the world, which the game computes. `map_rects(ui_map_id, u0, v0, u1, v1)`
+holds one row per zone map, loaded from `docs/map-rects.tsv`. Ingest stores `u, v` next to the zone position on
+`path_points`, `deaths` and `creature_sightings` (null for a map that is not on the world, such as a dungeon), and
+the heat rollups are keyed by a world cell: `u, v` on a 4096 grid. A rectangle that arrives later fills the nulls
+with one update; nothing is uploaded again.
+
+**The viewer** is the site's own canvas module, with no map library: tiles by zoom, drag and wheel and pinch to move,
+plus and minus keys, a heat layer of world cells in the heat palette, death crosses, a character's paths as scarlet
+lines, zone names from the dictionary at the zooms where they fit, and a link from a zone's name to its page. It
+loads only the tiles in view. Dungeons and other maps that are not on the world keep the plain sheet with their own
+x, y.
 
 ## Hosting
 

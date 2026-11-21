@@ -155,3 +155,22 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
   .search-box { grid-template-columns: minmax(0, 1fr); }
   .mod-head .state { white-space: normal; }
 }
+
+/* World map: the map fills the window under the header, the panel sits on its right. */
+.world { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; height: calc(100svh - 4.25rem); min-height: 34rem; border-bottom: 1px solid var(--line2); }
+.world-map { position: relative; overflow: hidden; background: var(--bg); cursor: grab; }
+.world-map canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.world-zoom { position: absolute; top: 1rem; left: 1rem; display: grid; gap: 4px; }
+.world-zoom .iconbtn { font: 500 1.2rem/1 var(--body); }
+.world-credit { position: absolute; left: 1rem; bottom: 0.8rem; font-size: 0.8rem; color: var(--muted); background: rgba(20, 20, 22, 0.8); padding: 0.2rem 0.5rem; border-radius: 2px; }
+.world-side { border-left: 1px solid var(--line2); padding: 1.6rem 1.5rem 2rem; overflow-y: auto; }
+.world-side h1 { font-size: 3.2rem; line-height: 0.9; }
+.world-side .sub { margin-top: 0.7rem; }
+.world-side h2 { font-size: 1.9rem; margin-top: 1.8rem; }
+.world-ctl { display: grid; gap: 0.6rem; margin-top: 1.3rem; justify-items: start; }
+.credit { margin-top: 0.6rem; font-size: 0.8rem; color: var(--muted); }
+@media (max-width: 900px) {
+  .world { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .world-map { height: 68svh; min-height: 22rem; }
+  .world-side { border-left: 0; border-top: 1px solid var(--line2); padding-inline: var(--gut); }
+}

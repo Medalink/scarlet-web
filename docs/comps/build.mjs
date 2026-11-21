@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const out = process.argv[2];
-const NAV = [["stats", "Stats"], ["rulesets", "Rulesets"], ["leaderboards", "Leaderboards"], ["search", "Search"], ["developers", "API"]];
+const NAV = [["stats", "Stats"], ["world", "Map"], ["rulesets", "Rulesets"], ["leaderboards", "Leaderboards"], ["search", "Search"], ["developers", "API"]];
 const mark = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>`;
 
 function page(file, title, cur, body, script = "", signedIn = false) {
@@ -181,6 +181,36 @@ const g = [], gb = []; let m = 0; for (let l = 1; l <= 60; l++) { m += Math.pow(
 C.lines("gold", { w: 480, h: 250, x0: 1, x1: 60, y1: 260, yt: [0, 100, 200], yf: (v) => v + "g", xt: [1, 20, 40, 60], series: [{ cls: "g", pts: g, band: gb }] });
 C.hours("hours", (d, h) => { const eve = Math.exp(-Math.pow((h - 20) / 3.2, 2)), day = d > 4 ? Math.exp(-Math.pow((h - 15) / 4.5, 2)) : 0; return Math.min(4, Math.round((eve + day * 0.8) * 4 + r() * 0.5)); });
 C.heatmap("map", { seed: 5, hot: [[3600, 4800, 900, 520], [5600, 4200, 700, 380], [7200, 3300, 650, 300], [4700, 2600, 500, 160], [6400, 5300, 520, 150]], deaths: [[3900, 4500], [5200, 4400], [5750, 3900], [7100, 3000], [6900, 3600], [4500, 2700], [3300, 5100]] });
+`);
+
+// ---------------------------------------------------------------------------------- world
+page("world.html", "Scarlet world map: where characters go and die", "world", `
+<section class="world" aria-labelledby="h1">
+  <div class="world-map"><canvas id="map" role="img" aria-label="The world map with heat from every recorded path. Drag to move, scroll to zoom."></canvas>
+    <div class="world-zoom" role="group" aria-label="Zoom"><button class="iconbtn" type="button" aria-label="Zoom in">+</button><button class="iconbtn" type="button" aria-label="Zoom out">&minus;</button></div>
+    <p class="world-credit">Map art &copy; Blizzard Entertainment. Map by <a href="#">OpenMap</a>.</p>
+  </div>
+  <aside class="world-side">
+    <h1 id="h1">World map</h1>
+    <p class="sub">Every path, death and kill that players chose to upload, on one map. Zoom into a zone to open it.</p>
+    <div class="world-ctl">
+      <div class="seg" role="group" aria-label="Layer"><button type="button" aria-pressed="true">Paths</button><button type="button" aria-pressed="false">Deaths</button><button type="button" aria-pressed="false">Kills</button></div>
+      <div class="seg" role="group" aria-label="Look"><button type="button" aria-pressed="true">Survey</button><button type="button" aria-pressed="false">Game</button></div>
+      <div class="seg" role="group" aria-label="Ruleset"><a href="#" aria-current="true">All</a><a href="#">Standard</a><a href="#">Hardcore</a><a href="#">Slow</a></div>
+    </div>
+    <p class="heat-key"><span>Few</span><i style="background:#4b1626"></i><i style="background:#861a34"></i><i style="background:#cf1f45"></i><i style="background:#ff5d7e"></i><span>Many characters</span></p>
+    <p class="readout"><b>Saltmarsh Reach</b>, under the pointer: 811 characters, 3,912 hours, 6,480 deaths.</p>
+    <h2>Busiest zones</h2>
+    <ol class="rank plain">
+      <li><a class="who" href="zone.html">Saltmarsh Reach</a><span class="val">3,912 hours</span><span class="track"><i style="width:100%"></i></span></li>
+      <li><a class="who" href="zone.html">Hollowmere</a><span class="val">3,105</span><span class="track"><i style="width:79%"></i></span></li>
+      <li><a class="who" href="zone.html">The Cinder Flats</a><span class="val">2,480</span><span class="track"><i style="width:63%"></i></span></li>
+      <li><a class="who" href="zone.html">Thornwall</a><span class="val">1,766</span><span class="track"><i style="width:45%"></i></span></li>
+      <li><a class="who" href="zone.html">Marshlight Fen</a><span class="val">804</span><span class="track"><i style="width:21%"></i></span></li>
+    </ol>
+  </aside>
+</section>`, `
+Comp.heatmap("map", { seed: 8, box: { x0: 600, y0: 200, x1: 9900, y1: 9300 }, hot: [[3600, 4800, 900, 620], [5600, 4200, 700, 420], [7200, 3300, 650, 340], [4700, 2600, 500, 200], [6400, 5300, 520, 180], [2900, 7900, 800, 260], [7600, 7200, 900, 300], [8600, 4800, 600, 160]], deaths: [[3900, 4500], [5200, 4400], [7100, 3000], [6900, 3600], [4500, 2700], [7700, 7000]] });
 `);
 
 // ------------------------------------------------------------------------------- rulesets

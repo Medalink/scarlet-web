@@ -17,7 +17,8 @@ A page is built from its comp and reviewed against it: same markup classes, same
 | `leaderboards.html` | `/leaderboards` |
 | `search.html` | `/search` |
 | `character.html` | `/c/{name}`: the head, the owner's bar and the two modules the web app adds. The rest is the site's `character.html` as it is |
-| `creature.html`, `item.html`, `zone.html`, `quest.html` | the result pages; `zone.html` is also `/maps/{id}` |
+| `creature.html`, `item.html`, `zone.html`, `quest.html` | the result pages |
+| `world.html` | `/map`, the world map. The comp draws the invented sheet; the built page draws the tile pyramid of DESIGN.md "Maps" |
 | `account.html` | `/account` |
 | `login.html`, `link.html` | `/login`, `/link` |
 | `developers.html` | `/developers` |
