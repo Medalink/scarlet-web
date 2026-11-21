@@ -57,15 +57,15 @@ final class CharacterTalents
         $groupTime = $facts['group_time'];
         $costs = array_filter(array_column($respecs, 'cost'), fn (mixed $cost): bool => $cost !== null);
         $rows = [];
-        if ($sharing !== null) {
-            $rows[] = ['Characters with your exact build at level '.$sharing['level'], Format::number($sharing['same']), 'of '.Format::count($sharing['total'], 'other character').' at that level'];
+        if ($sharing !== null && $sharing['total'] > 0) {
+            $rows[] = ['Characters with this exact build at level '.$sharing['level'], Format::number($sharing['same']), 'of '.Format::count($sharing['total'], 'other character').' at that level'];
         }
         $rows[] = ['Respecs', Format::number(count($respecs)), 'recorded'];
         if ($costs !== []) {
             $rows[] = ['Gold spent on respecs', Format::moneyText((int) array_sum($costs)), 'from '.Format::count(count($costs), 'respec').' with a recorded cost'];
         }
         if ($least !== null) {
-            $rows[] = ['Your least picked talent', ($least['spell'] === null ? null : ($spells[$least['spell']] ?? null)) ?? 'Node '.$least['node'], 'held by '.Format::number($least['taken']).' of '.Format::count($least['total'], 'other character').' of your class and spec'];
+            $rows[] = ['Least picked talent taken', ($least['spell'] === null ? null : ($spells[$least['spell']] ?? null)) ?? 'Node '.$least['node'], 'held by '.Format::number($least['taken']).' of '.Format::count($least['total'], 'other character').' of the same class and spec'];
         }
         if ($deep !== null) {
             $rows[] = ['First build with '.TalentFacts::DEEP_POINTS.' points in one tree', $deep['level'] === null ? '' : 'Level '.$deep['level'], $deep['first_read'] ? 'already held when the build was first read' : 'when that build was read'];
@@ -76,7 +76,7 @@ final class CharacterTalents
         }
         $rows[] = ['Picks refunded within '.TalentFacts::TAKEN_BACK_MINUTES.' minutes', Format::number($takenBack['refunded']), 'of '.Format::count($takenBack['picks'], 'pick').' seen'];
         foreach ($groupTime as $time) {
-            $rows[] = ['Play time in group '.$time['group'], Format::duration($time['seconds']), 'across '.Format::count($time['sessions'], 'session').' with it active'];
+            $rows[] = ['Play time in talent group '.$time['group'], Format::duration($time['seconds']), 'across '.Format::count($time['sessions'], 'session').' with it active'];
         }
 
         return [

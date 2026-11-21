@@ -1,4 +1,4 @@
-<x-module :span="$span" :first="$first" :last="$last" id="h-talent-order" heading="Talent order by level">
+<x-module :span="$span" :first="$first" :last="$last" :level="$level" id="h-talent-order" heading="Talent order by level">
   @if ($d['talents']['order']['rows'])
   <x-table :rows="$d['talents']['order']['rows']" :columns="$d['talents']['order']['columns']" />
   @endif

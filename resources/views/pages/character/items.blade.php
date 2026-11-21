@@ -7,7 +7,7 @@
   @endif
   @if ($d['items']['best'])
   <p @class(['sub', 'gap' => $d['items']['looted']])>Best items received</p>
-  <ol class="best">@foreach ($d['items']['best'] as $row)<li><b @class(['lvl', $row['quality']])>{{ $row['level'] }}</b><a @class(['who', $row['quality']]) href="{{ $row['href'] }}">{{ $row['label'] }}</a><span class="val">{{ $row['value'] }}</span></li>@endforeach</ol>
+  <ol class="best">@foreach ($d['items']['best'] as $row)<li><b @class(['lvl', $row['quality']]) title="Item level"><span class="vh">Item level </span>{{ $row['level'] }}</b><a @class(['who', $row['quality']]) href="{{ $row['href'] }}">{{ $row['label'] }}</a><span class="val">{{ $row['value'] }}</span></li>@endforeach</ol>
   @endif
   @else
   <x-note>No items recorded.</x-note>

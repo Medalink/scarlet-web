@@ -85,7 +85,7 @@ final class CharacterSections
             $biggest = $damage > (int) $dated[$biggest]['damage'] ? $i : $biggest;
             $say[] = Format::line(
                 'Level '.$row['level'].($row['zone'] === null ? '' : ', '.$row['zone']),
-                ': '.($row['killer'] ?? 'Killer not recorded').($damage > 0 ? ', '.Format::number($damage) : ''),
+                ': '.($row['killer'] ?? 'Killer not recorded').($damage > 0 ? ', '.Format::number($damage).' damage' : ''),
             );
         }
         $top = max($level, ...array_map(fn (array $row): int => (int) $row['level'], $dated));
@@ -94,7 +94,7 @@ final class CharacterSections
             'spec' => Charts::dots(['w' => 1100, 'x0' => 0, 'x1' => $top + 1, 'rows' => max($heights), 'peak' => $peak, 'xt' => Charts::ticks(Axis::spread(1, $top))], $data, $say, $biggest),
             'key' => $peak > $least ? [
                 ['label' => 'Killing blow '.Format::number($least), 'class' => 'k-dot', 'style' => 'width:0.45rem;height:0.45rem'],
-                ['label' => Format::number($peak), 'class' => 'k-dot', 'style' => 'width:0.95rem;height:0.95rem'],
+                ['label' => Format::number($peak).' damage', 'class' => 'k-dot', 'style' => 'width:0.95rem;height:0.95rem'],
             ] : [],
         ];
     }

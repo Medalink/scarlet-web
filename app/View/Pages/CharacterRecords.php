@@ -31,7 +31,7 @@ final class CharacterRecords
         $tiles = [];
         if ($records['blow'] !== null) {
             $blow = $records['blow'];
-            $tiles[] = self::tile(Format::number($blow['damage']), 'Biggest killing blow taken', implode(', ', array_filter([
+            $tiles[] = self::tile(Format::number($blow['damage']), 'Biggest killing blow from a creature', implode(', ', array_filter([
                 'Killed by '.$blow['killer'], $blow['level'] === null ? null : 'level '.$blow['level'], $blow['zone'],
             ])));
         }
