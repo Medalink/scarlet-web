@@ -26,9 +26,11 @@ class TalentFacts
      * - `first_deep`: the level of the first build with the deep number of points in one tree.
      * - `unspent`: how long the points the addon saw being picked waited after the level-up that gave them.
      * - `taken_back`: picks refunded within the minutes.
+     * - `group_time`: the time played with each talent group active, from the session's active-group rows, with the
+     *   sessions each group was active in.
      *
      * @param  list<\stdClass>  $snapshots  the character's builds, oldest first, at least one
-     * @return array{sharing: array{same: int, total: int, level: int}|null, least: array{node: int, spell: int|null, taken: int, total: int}|null, first_deep: array{level: int|null, first_read: bool}|null, unspent: array{points: int, longest_s: float, median_s: float}|null, taken_back: array{refunded: int, picks: int}}
+     * @return array{sharing: array{same: int, total: int, level: int}|null, least: array{node: int, spell: int|null, taken: int, total: int}|null, first_deep: array{level: int|null, first_read: bool}|null, unspent: array{points: int, longest_s: float, median_s: float}|null, taken_back: array{refunded: int, picks: int}, group_time: list<array{group: int, seconds: float, sessions: int}>}
      */
     public function handle(int $characterId, array $snapshots): array
     {
@@ -40,6 +42,7 @@ class TalentFacts
             'first_deep' => $this->firstDeep($snapshots),
             'unspent' => $this->unspent($characterId),
             'taken_back' => $this->takenBack($characterId),
+            'group_time' => $this->groupTime($characterId),
         ];
     }
 
@@ -141,5 +144,32 @@ class TalentFacts
         $picks = DB::table('talent_changes')->where('character_id', $characterId)->where('counted', true)->where('kind', TalentKind::Pick->value)->whereNull('respec_index')->count();
 
         return ['refunded' => $refunded, 'picks' => $picks];
+    }
+
+    /**
+     * The time played with each talent group active: a span ends at the next active-group row of its session, or at
+     * the session's end. Ordered by group; empty when no session has one (data decoded before the table existed).
+     *
+     * @return list<array{group: int, seconds: float, sessions: int}>
+     */
+    private function groupTime(int $characterId): array
+    {
+        $spans = DB::table('talent_group_spans as g')
+            ->join('sessions as s', fn ($join) => $join->on('s.character_id', '=', 'g.character_id')->on('s.session_start', '=', 'g.session_start'))
+            ->where('g.character_id', $characterId)->where('g.counted', true)
+            ->selectRaw('g.session_start, g.spec_group, extract(epoch from (coalesce(lead(g.at) over (partition by g.session_start order by g.at), s.end_at) - g.at)) as seconds')
+            ->get();
+        $time = [];
+        foreach ($spans as $span) {
+            $group = (int) $span->spec_group;
+            $row = $time[$group] ??= ['group' => $group, 'seconds' => 0.0, 'sessions' => []];
+            $row['seconds'] = max(0.0, $row['seconds'] + (float) $span->seconds);
+            $row['sessions'][(int) $span->session_start] = true;
+            $time[$group] = $row;
+        }
+
+        ksort($time);
+
+        return array_map(fn (array $row): array => [...$row, 'sessions' => count($row['sessions'])], array_values($time));
     }
 }

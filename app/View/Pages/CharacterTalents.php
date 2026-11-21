@@ -53,6 +53,8 @@ final class CharacterTalents
         $unspent = $facts['unspent'];
         /** @var array{refunded: int, picks: int} $takenBack */
         $takenBack = $facts['taken_back'];
+        /** @var list<array{group: int, seconds: float, sessions: int}> $groupTime */
+        $groupTime = $facts['group_time'];
         $costs = array_filter(array_column($respecs, 'cost'), fn (mixed $cost): bool => $cost !== null);
         $rows = [];
         if ($sharing !== null) {
@@ -73,6 +75,9 @@ final class CharacterTalents
             $rows[] = ['Median wait to spend a point', Format::duration($unspent['median_s']), 'of '.Format::count($unspent['points'], 'point')];
         }
         $rows[] = ['Picks refunded within '.TalentFacts::TAKEN_BACK_MINUTES.' minutes', Format::number($takenBack['refunded']), 'of '.Format::count($takenBack['picks'], 'pick').' seen'];
+        foreach ($groupTime as $time) {
+            $rows[] = ['Play time in group '.$time['group'], Format::duration($time['seconds']), 'across '.Format::count($time['sessions'], 'session').' with it active'];
+        }
 
         return [
             'columns' => [['label' => 'Fact'], ['label' => 'Value', 'numeric' => true], ['label' => 'Based on']],

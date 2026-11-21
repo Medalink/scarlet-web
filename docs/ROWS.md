@@ -246,6 +246,17 @@ group always writes one). A `TG` whose group is not a number (older logs) writes
 | `ranks` | string | `node:entry:rank:spell:tab` for every node with a rank, comma-joined, sorted by node, from the `TA` lines read so far; spell and tab are empty when the line had none |
 | `loadout`, `why` | string or null, string | the `TG` fields |
 
+### `talent_group_spans` (build: `TG`)
+
+One row when the session's first build is read (`TG` why `s`) and when the active group changes (why `w`): the time
+from the row to the next row of the session, or to the session's end, was played with `spec_group` active. The
+character page's play time per spec group sums those. A `TG` whose group is not a number (older logs) writes none,
+and a row whose group the last one already named writes none.
+
+| Key | Type | |
+| --- | --- | --- |
+| `spec_group` | int | the talent group, `1` or `2` |
+
 ### `talent_trees`, `talent_nodes` (build: `TV`, `TD`; names group)
 
 The layout of a class tree, which is the same for every player of a client build. Like `names`, these rows carry

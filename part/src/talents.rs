@@ -1,6 +1,6 @@
-//! Talent rows of the decoder (docs/ROWS.md): `talent_changes`, `talent_snapshots`, `talent_respecs`, and the
-//! layout rows `talent_trees` and `talent_nodes`. The state it keeps is one session's: the ranks of each talent
-//! group as the `TA` lines left them.
+//! Talent rows of the decoder (docs/ROWS.md): `talent_changes`, `talent_snapshots`, `talent_respecs`,
+//! `talent_group_spans`, and the layout rows `talent_trees` and `talent_nodes`. The state it keeps is one session's:
+//! the ranks of each talent group as the `TA` lines left them, and the group that is active.
 
 use crate::decode::num;
 use crate::rows::Rows;
@@ -44,6 +44,7 @@ struct Respec {
 #[derive(Default)]
 pub struct Talents {
     build: String,
+    active: Option<i64>,
     ranks: BTreeMap<i64, BTreeMap<i64, Held>>,
     baselined: Vec<i64>,
     last_key: BTreeMap<i64, String>,
@@ -283,7 +284,18 @@ impl Talents {
     }
 
     pub fn on_tg(&mut self, c: &Ctx, w: &mut Rows, f: &[&str]) {
-        let (Some(group), Some(tree)) = (num(f, 1), num(f, 5)) else {
+        let why = f.first().map_or("", |s| s.trim());
+        let group = num(f, 1);
+        if let Some(group) = group
+            && (why == "s" || why == "w")
+            && self.active != Some(group)
+        {
+            self.active = Some(group);
+            c.begin(w, "talent_group_spans");
+            w.int("spec_group", group);
+            w.end();
+        }
+        let (Some(group), Some(tree)) = (group, num(f, 5)) else {
             return;
         };
         let ranks = self.current(group);

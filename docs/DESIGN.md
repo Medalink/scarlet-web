@@ -195,6 +195,7 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `talent_changes` | `TA` | build | a point picked, refunded or swapped: node, ranks, the ordinal of the point in the build, the respec it belongs to |
 | `talent_snapshots` | `TG`, `TA` | build | the build as ranks, tab points, build hash and loadout, one row per change of it |
 | `talent_respecs` | `TA`, `TQ` | build | refunds that came together: points moved, cost, hash before and after |
+| `talent_group_spans` | `TG` | build | the talent group that was active: one row when a session's first build is read (why `s`) and when the active group changes (why `w`); a span ends at the next row of its session or the session's end, which is where the play time per spec group comes from |
 
 Dictionaries, plain tables: `names(kind, id, name)` from the name lines, `items` from `II`, `zones`, `rulesets`,
 `talent_trees` and `talent_nodes` (the class tree layouts of `TV` and `TD`, one per tree, client build and layout hash;
