@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public\Character;
 
+use App\Actions\Public\TalentLayout;
 use App\Support\NameKind;
 use App\Support\RespecKind;
 use App\Support\TalentKind;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class Talents
 {
+    public function __construct(private readonly TalentLayout $layouts) {}
+
     /**
      * What a character's talents look like on a page: the latest build of each talent group, the order the points were
      * taken in and the respecs. Null when no talent was recorded.
@@ -20,7 +23,7 @@ class Talents
      * listed. A build with fewer points than the one before it, and no respec recorded between them, is a respec
      * between sessions.
      *
-     * @return array{active: int, groups: list<array<string, mixed>>, order: list<array<string, mixed>>, respecs: list<array<string, mixed>>}|null
+     * @return array{active: int, groups: list<array<string, mixed>>, names: array{spell: array<int, string>, tab: array<int, string>}, order: list<array<string, mixed>>, respecs: list<array<string, mixed>>}|null
      */
     public function handle(int $characterId): ?array
     {
@@ -52,11 +55,17 @@ class Talents
         usort($order, fn (array $a, array $b): int => strcmp($a['at'], $b['at']));
         ksort($latest);
 
-        $names = $this->names($latest, $order);
+        $layouts = [];
+        foreach ($latest as $build) {
+            $tree = (int) $build['row']->tree_id;
+            $layouts[$tree] ??= $this->layouts->handle($tree);
+        }
+        $names = $this->names($latest, $order, $layouts);
 
         return [
             'active' => (int) $snapshots[count($snapshots) - 1]->spec_group,
-            'groups' => array_values(array_map(fn (array $build): array => $this->group($build['row'], $build['held'], $names), $latest)),
+            'groups' => array_values(array_map(fn (array $build): array => $this->group($build['row'], $build['held'], $names, $layouts[(int) $build['row']->tree_id]), $latest)),
+            'names' => $names,
             'order' => array_map(fn (array $row): array => [...$row, 'name' => $names['spell'][$row['spell']] ?? null], $order),
             'respecs' => $respecs,
         ];
@@ -154,12 +163,19 @@ class Talents
     /**
      * @param  array<int, array{row: \stdClass, held: array<int, array{spell: int|null}>}>  $latest
      * @param  list<array<string, mixed>>  $order
+     * @param  array<int, array{nodes: array<int, array{entries: list<array{spell: int|null}>, tab: int|null}>}|null>  $layouts
      * @return array{spell: array<int, string>, tab: array<int, string>}
      */
-    private function names(array $latest, array $order): array
+    private function names(array $latest, array $order, array $layouts): array
     {
         $spells = array_column($order, 'spell');
         $tabs = [];
+        foreach ($layouts as $layout) {
+            foreach ($layout['nodes'] ?? [] as $node) {
+                array_push($spells, ...array_column($node['entries'], 'spell'));
+                $tabs[] = $node['tab'];
+            }
+        }
         foreach ($latest as $build) {
             array_push($spells, ...array_column($build['held'], 'spell'));
             array_push($tabs, ...array_column(TalentRanks::tabs($build['row']->tab_points), 'id'), ...array_column($build['held'], 'tab'));
@@ -189,9 +205,10 @@ class Talents
     /**
      * @param  array<int, array{node: int, entry: int, rank: int, spell: int|null, tab: int|null}>  $held
      * @param  array{spell: array<int, string>, tab: array<int, string>}  $names
+     * @param  array<string, mixed>|null  $layout
      * @return array<string, mixed>
      */
-    private function group(\stdClass $row, array $held, array $names): array
+    private function group(\stdClass $row, array $held, array $names, ?array $layout): array
     {
         $tabs = array_map(fn (array $tab): array => ['id' => $tab['id'], 'name' => $names['tab'][$tab['id']] ?? null, 'spent' => $tab['spent']], TalentRanks::tabs($row->tab_points));
 
@@ -204,6 +221,7 @@ class Talents
             'spec_tab_id' => $row->spec_tab_id === null ? null : (int) $row->spec_tab_id,
             'points' => TalentRanks::points($held),
             'tabs' => $tabs,
+            'layout' => $layout,
             'nodes' => array_values(array_map(fn (array $node): array => [...$node, 'name' => $node['spell'] === null ? null : ($names['spell'][$node['spell']] ?? null)], $held)),
         ];
     }

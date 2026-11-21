@@ -4,6 +4,7 @@ namespace App\View\Pages;
 
 use App\Support\RespecKind;
 use App\View\Format;
+use App\View\TalentTree;
 use Illuminate\Support\Carbon;
 
 /** The talent modules of the character page, from the answer of App\Actions\Public\Character\Talents. */
@@ -26,7 +27,7 @@ final class CharacterTalents
         $respecs = $talents['respecs'];
 
         return [
-            'groups' => array_map(fn (array $group): array => self::group($group, $group['group'] === $talents['active'], count($groups) > 1), $groups),
+            'groups' => array_map(fn (array $group): array => self::group($group, $group['group'] === $talents['active'], count($groups) > 1, $talents['names']['spell']), $groups),
             'order' => self::order($order),
             'respecs' => self::respecs($respecs, count($groups) > 1),
         ];
@@ -34,16 +35,17 @@ final class CharacterTalents
 
     /**
      * @param  array<string, mixed>  $group
+     * @param  array<int, string>  $spells
      * @return array<string, mixed>
      */
-    private static function group(array $group, bool $active, bool $several): array
+    private static function group(array $group, bool $active, bool $several, array $spells): array
     {
         /** @var list<array{id: int, name: string|null, spent: int}> $tabs */
         $tabs = $group['tabs'];
         $top = max(1, ...array_column($tabs, 'spent'));
         $known = array_flip(array_column($tabs, 'id'));
         $byTab = [];
-        /** @var list<array{node: int, rank: int, tab: int|null, name: string|null, spell: int|null}> $nodes */
+        /** @var list<array{node: int, entry: int, rank: int, tab: int|null, name: string|null, spell: int|null}> $nodes */
         $nodes = $group['nodes'];
         foreach ($nodes as $node) {
             $byTab[$node['tab'] !== null && isset($known[$node['tab']]) ? $node['tab'] : 0][] = [
@@ -68,8 +70,49 @@ final class CharacterTalents
                 'class' => $tab['id'] === $group['spec_tab_id'] ? null : 'dim',
             ], array_values(array_filter($tabs, fn (array $tab): bool => $tab['spent'] > 0))),
             'columns' => [['label' => 'Talent'], ['label' => 'Rank', 'numeric' => true]],
-            'sections' => $sections,
+            'sections' => $group['layout'] === null ? $sections : [],
+            'tree' => $group['layout'] === null ? null : self::tree($group['layout'], $nodes, $tabs, $spells),
         ];
+    }
+
+    /**
+     * @param  array{nodes: array<int, array{id: int, max: int|null, entries: list<array{entry: int, spell: int|null}>, tab: int|null, x: int, y: int, edges: list<array{to: int, type: string}>}>}  $layout
+     * @param  list<array{node: int, entry: int, rank: int}>  $held
+     * @param  list<array{id: int, name: string|null}>  $tabs
+     * @param  array<int, string>  $spells
+     * @return array<string, mixed>
+     */
+    private static function tree(array $layout, array $held, array $tabs, array $spells): array
+    {
+        $ranks = [];
+        foreach ($held as $node) {
+            $ranks[$node['node']] = $node;
+        }
+        $marks = [];
+        foreach ($layout['nodes'] as $id => $node) {
+            $rank = $ranks[$id]['rank'] ?? 0;
+            $entry = null;
+            foreach ($node['entries'] as $candidate) {
+                $entry ??= isset($ranks[$id]) && $candidate['entry'] === $ranks[$id]['entry'] ? $candidate : null;
+            }
+            $names = array_map(fn (array $candidate): string => ($candidate['spell'] === null ? null : ($spells[$candidate['spell']] ?? null)) ?? 'Talent '.$candidate['entry'], $entry === null ? $node['entries'] : [$entry]);
+            $name = implode(' or ', $names) ?: 'Node '.$id;
+            $max = $node['max'] ?? 0;
+            $marks[$id] = [
+                'title' => $rank === 0 ? $name.', not taken' : $name.', rank '.$rank.($max > 0 ? ' of '.$max : ''),
+                'text' => $rank > 0 ? (string) $rank : '',
+                'class' => $rank === 0 ? 'off' : ($max > 0 && $rank >= $max ? 'full' : 'part'),
+                'on' => $rank > 0,
+            ];
+        }
+        $tabNames = [];
+        foreach ($tabs as $tab) {
+            if ($tab['name'] !== null) {
+                $tabNames[$tab['id']] = $tab['name'];
+            }
+        }
+
+        return TalentTree::geometry($layout, $marks, $tabNames);
     }
 
     /**

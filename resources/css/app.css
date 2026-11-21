@@ -362,3 +362,17 @@ a.rec-v:hover { text-decoration: underline; }
   .ch-figs dd { font-size: 2.2rem; }
   .ch-legend { top: 0.8rem; right: 1rem; bottom: auto; }
 }
+
+.tree { display: block; width: 100%; height: auto; max-height: 52rem; margin-top: 1.2rem; }
+.tree .edge { stroke: var(--line2); stroke-width: calc(var(--r) * 0.16); }
+.tree .edge.on { stroke: var(--accent); }
+.tree .node circle { fill: var(--panel); stroke: var(--line2); stroke-width: calc(var(--r) * 0.1); }
+.tree .node.part circle { fill: rgba(255, 45, 85, 0.2); stroke: var(--accent); }
+.tree .node.full circle { fill: var(--accent); stroke: var(--soft); }
+.tree .node.h1 circle { fill: #4b1626; stroke: transparent; }
+.tree .node.h2 circle { fill: #861a34; stroke: transparent; }
+.tree .node.h3 circle { fill: #cf1f45; stroke: transparent; }
+.tree .node.h4 circle { fill: #ff5d7e; stroke: transparent; }
+.tree text { fill: var(--fg); font-family: var(--mono); pointer-events: none; }
+.tree .node.full text, .tree .node.h4 text { fill: var(--ink); }
+.tree .head { fill: var(--fg); font-family: var(--display); letter-spacing: 0.02em; }
