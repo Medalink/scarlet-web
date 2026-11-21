@@ -35,7 +35,7 @@
 </main>
 
 <footer class="foot">
-  <div class="wrap"><span>Scarlet</span><span>The character, places, creatures and numbers on this site are invented demo data.</span></div>
+  <div class="wrap"><span>Scarlet</span><span>The character, places, creatures and numbers on this site are invented demo data. <x-version /></span></div>
 </footer>
 </body>
 </html>

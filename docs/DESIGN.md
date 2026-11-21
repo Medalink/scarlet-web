@@ -365,10 +365,33 @@ headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figure
 | `/creatures/{id}`, `/items/{id}`, `/zones/{id}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels |
 | `/map` | The world map: one seamless map, zoomable down to a zone, with heat from paths, deaths and kills (see Maps) |
 | `/developers` | The public API reference |
+| `/release-notes` | Public. The running build (version, build number, commit, lines, files, and the lines added and removed by the last commit, this build and all time), a rail of released versions, and one release with its changes grouped by area. Filters by New, Improved or Fixed are query parameters (`?v=0.1.0&only=fixed`), so the page needs no script. The footer of every page shows `v<version>.<build>` and links here |
 | `/login`, `/link` | Sign in, link the app |
 | `/account` | Characters and their public switches, installs and revoking them, sharing groups, removals, API keys |
 
 A dungeon is `/zones/{id}` with the negative instance id (`/zones/-90`).
+
+### Versions and release notes
+
+The package `medalink/laravel-app-version` (a `vcs` repository in `composer.json`, pinned to the newest tag that is at
+least 7 days old) turns git history into a version and release notes.
+
+- The version is the `VERSION` file. The build number is the count of commits since `VERSION` last changed, so a
+  version is cut by changing `VERSION` in a ship of its own (`0.1.0` to `0.2.0`). Nothing is tagged: `ship` pushes
+  no tags and the lander rewrites SHAs, so a tag would point at a commit that is not on `main`. Judge's lean was
+  `app:version:set` on every ship; it commits and tags, which this flow cannot keep.
+- One release note per version, compiled from commit subjects (`release_notes.unit = commit`, because changes land
+  without pull requests). Subjects are public text: `config/app-version.php` drops anything that names a player,
+  another site or a key, and work on the repo's own tooling; `detail_rewrites` holds the hand-written sentences for
+  subjects that read badly in past voice. A commit subject should say what a visitor can now do, starting with a verb.
+- The build writes `storage/app/version.json` and `storage/app/release-notes.json` while it has the full history, and
+  the deploy publishes the second into `release_notes` after the migrations (docs/HOSTING.md). The running app never
+  reads git.
+- A signed-in account sees a strip under the header while its read state is behind the current release: "Updates since
+  you last logged in", the release's lines, Dismiss (hides the strip) and Mark as read (the account has read
+  everything listed). State is `release_note_reads` keyed by account id.
+- A release lists commits as changes, not as a commit list: the build panel on `/release-notes` carries the commit,
+  the commit count and the lines changed.
 
 ### Where the built pages differ from the comps
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
+use Medalink\AppVersion\Concerns\HasReleaseNoteReadState;
 
 /**
  * A signed-in person. Owns installs, characters, sign-in identities and API keys. The account row itself
@@ -13,6 +14,7 @@ use Laravel\Sanctum\HasApiTokens;
 class Account extends Authenticatable
 {
     use HasApiTokens;
+    use HasReleaseNoteReadState;
 
     /** The one ability an API key carries: reading the public API with the higher rate limit. */
     public const string API_ABILITY = 'public:read';

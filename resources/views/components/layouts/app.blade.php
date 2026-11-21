@@ -19,11 +19,14 @@
     <a class="acct" href="{{ $base }}{{ $signedIn ? '/account' : '/login' }}">{{ $signedIn ? 'Account' : 'Sign in' }}</a>
   </div>
 </header>
+@auth
+<livewire:updates-banner />
+@endauth
 <main>
 {{ $slot }}
 </main>
 <footer class="foot">
-  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="{{ $base }}/developers">Public API</a></span></div>
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="{{ $base }}/developers">Public API</a> · <x-version :base="$base" /></span></div>
 </footer>
 </body>
 </html>
