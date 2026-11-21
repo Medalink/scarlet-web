@@ -46,11 +46,8 @@ push_deploy_folder() {
 }
 
 now() { date +%s.%N; }
-# Seconds between two timestamps.
 span() { awk -v a="$1" -v b="$2" 'BEGIN { printf "%.1f", b - a }'; }
 
-# Per-phase timing: `lap <name>` records the time since the last lap. build.sh and rollout.sh print `phase <name> <s>`
-# lines for their own steps; they are collected in $timing/ and listed with the laps when the deploy ends.
 timing=
 lap_at=
 laps=()

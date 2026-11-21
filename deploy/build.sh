@@ -25,7 +25,6 @@ tag=${sha:0:12}
 now() { date +%s.%N; }
 phase() { awk -v a="$2" -v b="$3" -v n="$1" 'BEGIN { printf "phase %s %.1f\n", n, b - a }'; }
 
-# The command inside the slot writes the time it started, so the wait for the slot and the build are told apart.
 started=$(mktemp)
 trap 'rm -f "$started"' EXIT
 slot() { if command -v fleet >/dev/null; then fleet slot -- "$@"; else "$@"; fi; }
