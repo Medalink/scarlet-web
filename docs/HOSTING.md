@@ -11,7 +11,7 @@ scarletweb.io runs on one DigitalOcean droplet behind Cloudflare. The code that 
 | Cloudflare | Zone `scarletweb.io` on the Free plan. Proxied `A` and `AAAA` records for the apex and `www`. SSL mode Full (strict), Authenticated Origin Pulls on, Always Use HTTPS on, minimum TLS 1.2, HSTS off |
 | Containers | `web` (nginx), `app-blue` or `app-green` (php-fpm, one serves), `horizon`, `schedule`, `postgres` (TimescaleDB 2.32 with the Toolkit, PostgreSQL 18), `redis`. `deploy/compose.yaml` |
 | Access | Tailscale only. `ssh ops@scarlet-web` with the server's own key. The DigitalOcean web console is the fallback |
-| Files on the droplet | `/srv/scarlet-web`: `.env` (mode 600), `tls/`, `maps/`, `backups/`, `deploy/` |
+| Files on the droplet | `/srv/scarlet-web`: `.env` (mode 600), `tls/`, `maps/`, `backups/`, `deploy/`; `/etc/scarlet-web/r2.env` (R2 credentials, root only) |
 
 Request path: browser, Cloudflare, nginx on the droplet (port 443, checked against Cloudflare's client certificate),
 php-fpm. nginx runs on the host network so it sees the real peer address. It trusts `CF-Connecting-IP` only from
@@ -105,23 +105,65 @@ The Laravel log is also in the `logs` volume (`storage/logs/laravel.log` in the 
 ## Backups
 
 - DigitalOcean backs up the whole droplet daily and keeps 7 days (the droplet's Backups tab restores or rebuilds
-  from one).
-- `scarlet-backup.timer` runs `deploy/backup.sh` at 03:15 UTC: `pg_dump -Fc` of the `scarlet` database into
-  `/srv/scarlet-web/backups`, deleting dumps older than 7 days. `bin/deploy backup` makes one now.
-- **Nothing is stored off-site yet.** The dumps are on the droplet's own disk, so they die with it, and the
-  DigitalOcean backups are in the same DigitalOcean account. Copy a dump somewhere else before anything risky.
+  from one). It is the same DigitalOcean account as the droplet.
+- `scarlet-backup.timer` runs `deploy/backup.sh` at 03:15 UTC. It dumps the `scarlet` database (`pg_dump -Fc`) into
+  `/srv/scarlet-web/backups` (local copies kept 7 days), encrypts the dump with age, copies it to Cloudflare R2 and
+  prunes R2. `bin/deploy backup` starts the same unit now and exits 1 when it fails.
+- `bin/deploy backups` (also the last lines of `bin/deploy status`) prints the unit's last result and the newest local
+  and R2 copies with size and age. It exits 1 when the last run failed, R2 cannot be read, or the newest `daily/`
+  copy is older than 26 hours.
 
-Restore a dump into an empty database (the order matters, TimescaleDB needs the two calls around `pg_restore`):
+### Off-site copy in Cloudflare R2
+
+| Part | What |
+| --- | --- |
+| Bucket | `scarlet-web-backups`, one R2 API token limited to it (Object Read & Write) |
+| Encryption | `age` to the public key in `deploy/backup-age.pub`, before the dump leaves the droplet. The droplet never has the private key, so someone who gets into the droplet or the bucket cannot read old backups |
+| Private key | `E:\Dev\secrets\scarlet-web\backup-age.key` on medaviper only. Not in a repo, not on the droplet. **Copy it to a second place you control: if that file is lost, every R2 backup is unreadable.** |
+| Credentials | `/etc/scarlet-web/r2.env` on the droplet, `root:root`, mode 600, loaded by systemd's `EnvironmentFile=` before the unit drops to `ops`. `bin/deploy r2` writes it from `r2-access-key-id`, `r2-secret-access-key` and `r2-endpoint` in the secrets folder. Never in the image or the repo |
+| Tools | `age` 1.3.2 and `rclone` 1.76.0 installed on the droplet by `bin/deploy server`, pinned by sha256 in `deploy/backup-tools.tsv` (at least 7 days old) |
+| Keys | `daily/scarlet-<UTC stamp>.dump.age` every night; on Sundays (UTC) a copy also goes to `weekly/` |
+| Retention | A prune step in `backup.sh`, not an R2 lifecycle rule (the token cannot set one): it keeps the newest 14 objects in `daily/` and the newest 8 in `weekly/`, and deletes nothing when the listing fails or has no more than the limit. It runs only after an upload whose size was checked in R2. `backup.sh prune <prefix> <keep>` runs it by hand |
+
+The job exits non-zero on any failure (dump, encryption, upload, size check, prune), so the unit shows as failed and
+`bin/deploy backups` says so. Retention counts objects: an extra `bin/deploy backup` adds a `daily/` object, so the 14
+copies then cover fewer than 14 days.
+
+Set up or rotate the credentials: `bin/deploy r2` first, then `bin/deploy server` (installs age and rclone and the
+unit; no container restarts). To make a new key pair, run `age-keygen -o backup-age.key`, commit the public key to
+`deploy/backup-age.pub`, deploy, and keep the old private key for the old copies.
+
+### Restore from R2
+
+On a machine that has the private key (medaviper), with `age` and `rclone`:
+
+```sh
+S=E:/Dev/secrets/scarlet-web
+export RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true
+export RCLONE_CONFIG_R2_ACCESS_KEY_ID=$(cat $S/r2-access-key-id) RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=$(cat $S/r2-secret-access-key) \
+  RCLONE_CONFIG_R2_ENDPOINT=$(cat $S/r2-endpoint)
+rclone lsf R2:scarlet-web-backups/daily/                 # pick a name; weekly/ has the Sunday ones
+rclone copyto R2:scarlet-web-backups/daily/scarlet-<stamp>.dump.age scarlet.dump.age
+age -d -i $S/backup-age.key -o scarlet.dump scarlet.dump.age
+```
+
+Then load `scarlet.dump` the way the next section shows, into a scratch database first if you only want to check it.
+Delete `scarlet.dump` and `scarlet.dump.age` afterwards.
+
+### Restore a dump into the database
+
+Restore into an empty database (the order matters, TimescaleDB needs the two calls around `pg_restore`). A plain
+dump on the droplet is `backups/scarlet-<stamp>.dump`; a dump from R2 is piped in from your machine instead:
 
 ```sh
 bin/deploy ssh
 cd /srv/scarlet-web
-f=backups/scarlet-<stamp>.dump
 deploy/dc stop app-blue app-green horizon schedule web
 deploy/dc exec -T postgres psql -U postgres -d postgres -c 'drop database scarlet' -c 'create database scarlet'
 deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'create extension if not exists timescaledb' \
   -c 'create extension if not exists timescaledb_toolkit' -c 'select timescaledb_pre_restore()'
-deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner < "$f"
+deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner < backups/scarlet-<stamp>.dump
+# from R2: bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner' < scarlet.dump
 deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'select timescaledb_post_restore()'
 deploy/dc up -d web horizon schedule
 cat state/active   # then: deploy/dc up -d app-blue (or app-green), the slot named there

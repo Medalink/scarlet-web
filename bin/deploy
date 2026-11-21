@@ -7,7 +7,9 @@
 #   bin/deploy rollback         move visitors back to the release before the current one, the same way (code only)
 #   bin/deploy status           the containers, the release and the zone settings
 #   bin/deploy logs [service]   follow the logs (web, app-blue, app-green, horizon, schedule, postgres, redis)
-#   bin/deploy backup           an extra pg_dump now
+#   bin/deploy backup           a backup now: dump, encrypt, copy to R2 (starts the nightly unit; exits 1 when it fails)
+#   bin/deploy backups          the newest local and R2 copies with their ages; exits 1 when stale or the last run failed
+#   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env (run before `server`)
 #   bin/deploy maps <folder>    copy map tiles (a folder with manifest.json) to the droplet's disk, outside the image
 #   bin/deploy bootstrap [ref]  first install: server, DNS, certificate, release, strict TLS, origin pulls
 #   bin/deploy server | tls | dns | strict | aop     the steps of bootstrap, each safe to run again
@@ -92,15 +94,47 @@ step_aop() {
   srv 'cp /srv/scarlet-web/deploy/nginx/aop-on.conf /srv/scarlet-web/state/aop.conf && /srv/scarlet-web/deploy/dc exec -T web nginx -c /etc/nginx/scarlet/nginx.conf -t && /srv/scarlet-web/deploy/dc exec -T web nginx -c /etc/nginx/scarlet/nginx.conf -s reload'
 }
 
+# The R2 credentials go from the secrets folder to /etc/scarlet-web/r2.env (root:root, mode 600) as rclone settings.
+# The values are read inside this command and pass through the ssh pipe only: no argument, log or file here holds them.
+step_r2() {
+  local f
+  for f in r2-access-key-id r2-secret-access-key r2-endpoint; do
+    [ -s "$secrets/$f" ] || { echo "deploy: $secrets/$f is missing" >&2; exit 1; }
+  done
+  srv 'sudo install -d -m 755 /etc/scarlet-web'
+  {
+    printf 'RCLONE_CONFIG_R2_TYPE=s3\nRCLONE_CONFIG_R2_PROVIDER=Cloudflare\n'
+    printf 'R2_BUCKET=%s\n' "${R2_BUCKET:-scarlet-web-backups}"
+    printf 'RCLONE_CONFIG_R2_ACCESS_KEY_ID=%s\n' "$(tr -d '\r\n' < "$secrets/r2-access-key-id")"
+    printf 'RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=%s\n' "$(tr -d '\r\n' < "$secrets/r2-secret-access-key")"
+    printf 'RCLONE_CONFIG_R2_ENDPOINT=%s\n' "$(tr -d '\r\n' < "$secrets/r2-endpoint")"
+  } | srv 'sudo sh -c "umask 077 && cat > /etc/scarlet-web/r2.env.new && chown root:root /etc/scarlet-web/r2.env.new && mv /etc/scarlet-web/r2.env.new /etc/scarlet-web/r2.env"'
+  echo "deploy: wrote /etc/scarlet-web/r2.env (root:root, mode 600)"
+}
+
+# The nightly unit's last result, then the newest local and R2 copies with their ages. Exits 1 when the last run
+# failed, R2 cannot be read or its newest daily copy is more than 26 hours old.
+backups_report() {
+  local result rc=0
+  result=$(srv 'systemctl show -p Result --value scarlet-backup.service')
+  echo "backup unit: last result $result; $(srv 'systemctl list-timers scarlet-backup.timer --no-pager | sed -n 2p' | awk '{print "next run", $1, $2, $3}')"
+  [ "$result" = success ] || rc=1
+  srv 'sudo sh -c "set -a; . /etc/scarlet-web/r2.env; set +a; exec /srv/scarlet-web/deploy/backup.sh status"' || rc=1
+  return "$rc"
+}
+
 case "${1:-release}" in
   release) release "${2:-main}" ;;
   rollback) srv '/srv/scarlet-web/deploy/rollout.sh --rollback' ;;
   status)
     srv '/srv/scarlet-web/deploy/dc ps; cat /srv/scarlet-web/release.env'
     $cf status
+    backups_report
     ;;
   logs) srv "/srv/scarlet-web/deploy/dc logs --tail 100 -f ${2:-}" ;;
-  backup) srv '/srv/scarlet-web/deploy/backup.sh' ;;
+  backup) srv 'sudo systemctl start scarlet-backup.service; rc=$?; journalctl -u scarlet-backup.service -n 12 --no-pager -o cat; exit $rc' ;;
+  backups) backups_report ;;
+  r2) step_r2 ;;
   maps)
     [ -f "${2:?folder with manifest.json}/manifest.json" ] || { echo "deploy: no manifest.json in $2" >&2; exit 1; }
     tar -C "$2" -cf - . | srv 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf -'
@@ -126,6 +160,6 @@ case "${1:-release}" in
     curl -s -o /dev/null -w 'through Cloudflare (origin pulls): %{http_code}\n' https://scarletweb.io/up
     ;;
   ssh) shift; srv "$@" ;;
-  help | -h | --help) sed -n '2,20p' "$0" ;;
+  help | -h | --help) sed -n '2,24p' "$0" ;;
   *) release "$1" ;;
 esac
