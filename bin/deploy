@@ -41,8 +41,7 @@ on_build() {
 build_src='$(echo /data/$(id -un))/scratch/scarlet-web-build/src'
 
 push_deploy_folder() {
-  srv 'rm -rf /srv/scarlet-web/deploy.new && mkdir -p /srv/scarlet-web/deploy.new'
-  on_build "tar -C $build_src -cf - deploy" | srv 'tar -C /srv/scarlet-web/deploy.new --strip-components=1 --no-same-owner -xf - && rm -rf /srv/scarlet-web/deploy && mv /srv/scarlet-web/deploy.new /srv/scarlet-web/deploy'
+  on_build "tar -C $build_src -cf - deploy" | srv 'rm -rf /srv/scarlet-web/deploy.new && mkdir -p /srv/scarlet-web/deploy.new && tar -C /srv/scarlet-web/deploy.new --strip-components=1 --no-same-owner -xf - && rm -rf /srv/scarlet-web/deploy && mv /srv/scarlet-web/deploy.new /srv/scarlet-web/deploy'
 }
 
 now() { date +%s.%N; }
@@ -80,6 +79,7 @@ report() {
     esac
   done
   row total "$(span "$deploy_at" "$(now)")"
+  [ ! -s "$timing/sent_kb" ] || printf '  new layers stored on the droplet: %s MB\n' "$(awk '{ printf "%.1f", $1 / 1024 }' "$timing/sent_kb")"
   rm -rf "$timing"
 }
 
@@ -88,9 +88,45 @@ build() {
   on_build "bash -s -- '$repo' '$ref'" < "$here/deploy/build.sh" | tee /dev/stderr | tee "$timing/build.out" | sed -n 's/^built //p' | tail -n 1
 }
 
-ship_images() {
+ship_whole_image() {
   local tag=$1
   { on_build "sudo -n docker save scarlet-web-app:$tag | zstd -T2 -3"; now > "$timing/sent"; } | srv 'zstd -d | docker load'
+}
+
+registry_port=5077
+tunnel_port=15077
+registry_url=127.0.0.1:$registry_port
+registry_data_kb='docker exec scarlet-web-registry-1 du -sk /var/lib/registry | cut -f1'
+
+ship_new_layers() {
+  local tag=$1 tunnel before after ready= rc=0 at=$registry_url
+  before=$(srv "/srv/scarlet-web/deploy/dc up -d --no-deps --wait registry >&2 && $registry_data_kb") || return 1
+  ssh "${ssh_opts[@]}" -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$tunnel_port:127.0.0.1:$registry_port" "ops@$host" &
+  tunnel=$!
+  for _ in $(seq 1 30); do
+    if curl -sf -o /dev/null "http://127.0.0.1:$tunnel_port/v2/"; then ready=1; break; fi
+    sleep 0.2
+  done
+  [ -n "$ready" ] || { kill "$tunnel" 2>/dev/null || true; return 1; }
+  [ "$build_host" = local ] && at=127.0.0.1:$tunnel_port
+  local push="sudo -n docker tag scarlet-web-app:$tag $at/scarlet-web-app:$tag && sudo -n docker push -q $at/scarlet-web-app:$tag >/dev/null; rc=\$?; sudo -n docker rmi $at/scarlet-web-app:$tag >/dev/null 2>&1; exit \$rc"
+  if [ "$build_host" = local ]; then
+    bash -c "$push" || rc=$?
+  else
+    ssh -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes -R "127.0.0.1:$registry_port:127.0.0.1:$tunnel_port" "$build_host" "$push" || rc=$?
+  fi
+  kill "$tunnel" 2>/dev/null || true
+  [ "$rc" = 0 ] || return 1
+  now > "$timing/sent"
+  after=$(srv "docker pull -q $registry_url/scarlet-web-app:$tag >/dev/null && docker tag $registry_url/scarlet-web-app:$tag scarlet-web-app:$tag && docker rmi $registry_url/scarlet-web-app:$tag >/dev/null && $registry_data_kb") || return 1
+  echo $((after - before)) > "$timing/sent_kb"
+}
+
+ship_images() {
+  local tag=$1
+  if [ "${DEPLOY_TRANSPORT:-registry}" = registry ] && ship_new_layers "$tag"; then return 0; fi
+  echo "deploy: sending the whole image"
+  ship_whole_image "$tag"
 }
 
 # One deploy at a time, build included: every deploy builds in the same clone on the build host and unpacks into the
@@ -119,10 +155,9 @@ release() {
   push_deploy_folder
   lap "deploy folder"
   ship_images "${sha:0:12}"
-  # The load runs while the bytes arrive: the sender finishing splits the two, the rest is the load's tail.
   local end
   end=$(now)
-  laps+=("image transfer|$(span "$lap_at" "$(cat "$timing/sent")")" "docker load (after last byte)|$(span "$(cat "$timing/sent")" "$end")")
+  laps+=("image transfer|$(span "$lap_at" "$(cat "$timing/sent")")" "load or pull on droplet|$(span "$(cat "$timing/sent")" "$end")")
   lap_at=$end
   srv "/srv/scarlet-web/deploy/rollout.sh ${sha:0:12}" 2>&1 | tee "$timing/rollout.out"
   lap rollout

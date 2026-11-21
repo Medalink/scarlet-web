@@ -116,6 +116,19 @@ services:
     command: ["php", "artisan", "schedule:work"]
     stop_grace_period: 30s
 
+  # The registry bin/deploy pushes new image layers to, so a release sends only the layers the droplet lacks. It listens on
+  # the droplet's loopback only; bin/deploy reaches it through ssh.
+  registry:
+    image: registry:3.1.2@sha256:82f6ff4a7f982960c8aa51617fea3aabc485df6e55cce80d22deb1de36f1bc3c
+    restart: unless-stopped
+    networks: [backend]
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    ports:
+      - "127.0.0.1:5077:5000"
+    volumes:
+      - registrydata:/var/lib/registry
+
   # nginx is not rebuilt per release: its image is the pinned upstream one, its config comes from /srv/scarlet-web/nginx
   # (copied there by rollout.sh) and is reloaded, and the built assets of every release collect in /srv/scarlet-web/public.
   web:
@@ -135,4 +148,5 @@ networks:
 volumes:
   pgdata:
   redisdata:
+  registrydata:
   logs:
