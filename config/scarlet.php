@@ -69,6 +69,8 @@ return [
         'memory_mb' => 256,
         // How long a refresh waits so the ingests of one upload share it.
         'debounce_seconds' => 5,
+        'read_fresh_seconds' => 60,
+        'read_stale_seconds' => 300,
     ],
 
 ];

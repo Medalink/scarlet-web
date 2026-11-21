@@ -46,10 +46,12 @@ class Totals
             return null;
         }
 
-        return DB::table('sessions')->where('counted', true)
-            ->when(is_int($rulesetId), fn (Builder $query): Builder => $query->where('ruleset_id', $rulesetId))
-            ->when(is_array($rulesetId), fn (Builder $query): Builder => $query->whereIn('ruleset_id', $rulesetId))
-            ->sum('kills') + 0;
+        return $this->read->sum(
+            DB::table('sessions')->where('counted', true)
+                ->when(is_int($rulesetId), fn (Builder $query): Builder => $query->where('ruleset_id', $rulesetId))
+                ->when(is_array($rulesetId), fn (Builder $query): Builder => $query->whereIn('ruleset_id', $rulesetId)),
+            'kills',
+        ) + 0;
     }
 
     /**
@@ -60,7 +62,7 @@ class Totals
      */
     private function characters(int|array|null $rulesetId): ?int
     {
-        $count = (int) $this->read->from(Rollup::PlayHourlyRuleset, $rulesetId)->selectRaw('distinct_count(rollup(characters)) as characters')->value('characters');
+        $count = (int) $this->read->value($this->read->from(Rollup::PlayHourlyRuleset, $rulesetId)->selectRaw('distinct_count(rollup(characters)) as characters'), 'characters');
 
         return $count < (int) config('scarlet.min_characters') ? null : $count;
     }
@@ -72,6 +74,6 @@ class Totals
             return null;
         }
 
-        return $this->read->from($rollup, $rulesetId)->sum($column) + 0;
+        return $this->read->sum($this->read->from($rollup, $rulesetId), $column) + 0;
     }
 }
