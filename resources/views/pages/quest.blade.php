@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Scarlet quest: '.$d['name']" current="search" description="Turn-ins, abandons and the levels and zones where {{ $d['name'] }} is turned in.">
+<x-layouts.app :title="'Scarlet quest: '.$d['name']" description="Turn-ins, abandons and the levels and zones where {{ $d['name'] }} is turned in.">
 <div class="wrap">
   <x-page-head :title="$d['name']">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>

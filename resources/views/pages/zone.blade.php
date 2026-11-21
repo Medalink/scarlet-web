@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Scarlet zone: '.$d['name']" current="search" description="Time played, deaths and creatures met in {{ $d['name'] }}.">
+<x-layouts.app :title="'Scarlet zone: '.$d['name']" description="Time played, deaths and creatures met in {{ $d['name'] }}.">
 <section class="ch-head" aria-labelledby="h1" style="min-height:27rem">
   <div class="stage"><x-world-canvas id="map" label="Heat from every recorded path, with the zone {{ $d['name'] }} in view. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
   <div class="ch-id wrap" style="padding-top:3rem">

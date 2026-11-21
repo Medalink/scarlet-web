@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['name'].': a Scarlet character overview'" current="search" description="Records, time in each level, experience, dungeons, deaths and play history of {{ $d['name'] }}, from what the player chose to upload.">
+<x-layouts.app :title="$d['name'].': a Scarlet character overview'" description="Records, time in each level, experience, dungeons, deaths and play history of {{ $d['name'] }}, from what the player chose to upload.">
 <section class="ch-head ch-rich" aria-labelledby="h1">
   <div class="stage"><x-world-canvas id="map" label="Every path {{ $d['name'] }} walked, with deaths as crosses. Drag to move, scroll to zoom." :spec="$d['map']" />
     <ul class="legend ch-legend" aria-label="Map marks">
