@@ -1,8 +1,9 @@
-// What is drawn over the art: heat cells on the 4096 world grid, paths, marks and zone names. All of it is data given
+// What is drawn over the art: heat cells on the 768 by 512 world grid (square cells on the 3:2 world), paths, marks and zone names. All of it is data given
 // to the viewer, in world u, v.
 
 export const HEAT = ['#4b1626', '#861a34', '#cf1f45', '#ff5d7e'];
-export const GRID = 4096;
+export const GRID_COLUMNS = 768;
+export const GRID_ROWS = 512;
 
 const ACCENT = '#ff2d55';
 const SOFT = '#ff6b8e';
@@ -35,8 +36,8 @@ export function drawHeat(ctx, view, flat, alpha = 0.9) {
     if (flat.length === 0) {
         return;
     }
-    const cw = (view.W / GRID) * view.s;
-    const ch = (view.H / GRID) * view.s;
+    const cw = (view.W / GRID_COLUMNS) * view.s;
+    const ch = (view.H / GRID_ROWS) * view.s;
     const [x0, y0] = view.toScreen(0, 0);
     ctx.save();
     ctx.globalAlpha = alpha;

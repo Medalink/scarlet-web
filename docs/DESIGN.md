@@ -237,6 +237,9 @@ contributed to (5 on a public deploy, 1 in development).
 | `drops_daily`, `opens_daily` | 1 day | source, item, loot rule | drops, quantity, opens (drop rate is drops over first opens) |
 | `skills_daily_ruleset` | 1 day | skill | skill-ups, highest rank |
 | `heat_daily_ruleset`, `heat_daily_character` | 1 day | map, 100 x 100 cell | points |
+| `world_heat_daily_ruleset`, `world_heat_daily_character` | 1 day | world cell (768 x 512) | points |
+| `world_death_heat_daily_ruleset`, `world_death_heat_daily_character` | 1 day | world cell | deaths |
+| `world_sighting_heat_daily_ruleset` | 1 day | npc, world cell | sightings |
 
 Reads go through one Action per question in `app/Actions/Rollups/` (`LevellingCurve`, `TimePerLevel`, `XpSourcesByLevel`,
 `DeathsByLevel`, `TopKillers`, `DeathZones`, `DungeonRuns`, `Professions`, `GoldByLevel`, `PlayTimeByWeekday`,
@@ -244,7 +247,7 @@ Reads go through one Action per question in `app/Actions/Rollups/` (`LevellingCu
 optional ruleset (none sums every ruleset) and leaves out any group that fewer than `config('scarlet.min_characters')`
 characters contributed to; `Totals` returns null for such a total. Pages and the public API call these and never query a
 fact table. The drop aggregates carry no ruleset, so `DropRates` and `ItemSources` take none. Heat cells are zone-map
-cells keyed by uiMap id; the world map of "Maps" is built apart from them.
+cells keyed by uiMap id; the world map of "Maps" reads the `world_*` rollups.
 
 Aggregates refresh on a policy and once more, for the affected time range, after a decode or a removal. Removing a
 group or everything deletes the fact rows; TimescaleDB records the change and the refresh takes the contribution out
@@ -388,8 +391,12 @@ map, with OpenMap linked. Data or code copied from OpenMap into this repo carrie
 position needs that zone's rectangle on the world, which the game computes. `map_rects(ui_map_id, u0, v0, u1, v1)`
 holds one row per zone map, loaded from `docs/map-rects.tsv`. Ingest stores `u, v` next to the zone position on
 `path_points`, `deaths` and `creature_sightings` (null for a map that is not on the world, such as a dungeon), and
-the heat rollups are keyed by a world cell: `u, v` on a 4096 grid (a cell is 3:2, like the world). A rectangle that arrives later
-fills the nulls with one update; nothing is uploaded again.
+the heat rollups are keyed by a world cell: `cell_i = floor(u * 768)` and `cell_j = floor(v * 512)`, a grid of 768 by
+512. The world is 3:2 (16032 by 10688 px at the top zoom), so those cells are square: 20.875 px at the top zoom, about
+1.3 of the world's 1002 by 668 units a side. A point with no `u, v` is in no cell. `bin/artisan maps:place-points` fills
+the nulls of rows whose map has a rectangle, in windows of seven days, then refreshes the world heat; it finds nothing
+to do on a second run, so it can run whenever rectangles arrive, and nothing is uploaded again. Kills carry no
+position, so the map's third layer is the creatures met (`creature_sightings`), not kills.
 
 **The viewer** is the site's own canvas module, with no map library: tiles by zoom, drag and wheel and pinch to move,
 plus and minus keys, a heat layer of world cells in the heat palette, death crosses, a character's paths as scarlet

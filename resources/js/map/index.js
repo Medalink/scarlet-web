@@ -5,7 +5,7 @@
 //
 // options
 //   manifestUrl   the tile manifest (required); tiles are read from the same folder, under the manifest's version
-//   layers        { heat: { cells }, paths, marks }: heat cells [i, j, level] on the 4096 world grid, level 1 to 4;
+//   layers        { heat: { cells }, paths, marks }: heat cells [i, j, level] on the 768 by 512 world grid, level 1 to 4;
 //                 paths [{ points: [[u, v], ...], mode }]; marks [{ kind: kill|death|quest|level, u, v }]
 //   zones         [{ id, name, u0, v0, u1, v1, href? }]: the zone rectangles, for the pointer readout, `fit(id)` and
 //                 the zone names drawn on the map; a zone with an href is a link

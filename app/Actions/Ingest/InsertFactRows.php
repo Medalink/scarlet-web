@@ -4,6 +4,7 @@ namespace App\Actions\Ingest;
 
 use App\Support\DecodedSession;
 use App\Support\FactTable;
+use App\Support\WorldPlacement;
 use Illuminate\Support\Facades\DB;
 
 class InsertFactRows
@@ -13,6 +14,8 @@ class InsertFactRows
 
     /** PostgreSQL allows 65535 bound values in one statement. */
     private const int MAX_BINDINGS = 60000;
+
+    public function __construct(private readonly WorldPlacement $placement) {}
 
     /**
      * Insert the fact rows of one decoded session, with the columns every fact row carries.
@@ -47,6 +50,11 @@ class InsertFactRows
                     }
                     $column = $renames[$key] ?? $key;
                     $out[$column] = $value !== null && isset($instants[$column]) ? FactTable::instant((int) $value) : $value;
+                }
+                if (WorldPlacement::places($table)) {
+                    $world = $this->placement->forRow($table, $row);
+                    $out['u'] = $world['u'] ?? null;
+                    $out['v'] = $world['v'] ?? null;
                 }
                 $width = count($out);
                 $batch[] = $out;
