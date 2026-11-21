@@ -63,7 +63,11 @@ prune() {
 list_remote() {
   local out rc=0
   out=$(rclone lsf --files-only --format sp --separator ' ' "$(remote "$1")") || rc=$?
-  [ "$rc" = 0 ] || [ "$rc" = 3 ] || return "$rc"
+  if [ "$rc" = 3 ]; then # no objects under the prefix, or no such bucket: only the bucket's own listing tells which
+    rclone lsf --max-depth 1 "R2:$bucket" >/dev/null 2>&1 || { echo "bucket $bucket not found or not readable with these credentials" >&2; return 3; }
+  elif [ "$rc" != 0 ]; then
+    return "$rc"
+  fi
   awk '$2 ~ /^scarlet-[0-9]{8}T[0-9]{6}Z\.dump\.age$/' <<<"$out" | sort -k2
 }
 

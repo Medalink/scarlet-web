@@ -110,7 +110,8 @@ The Laravel log is also in the `logs` volume (`storage/logs/laravel.log` in the 
   `/srv/scarlet-web/backups` (local copies kept 7 days), encrypts the dump with age, copies it to Cloudflare R2 and
   prunes R2. `bin/deploy backup` starts the same unit now and exits 1 when it fails.
 - `bin/deploy backups` (also the last lines of `bin/deploy status`) prints the unit's last result and the newest local
-  and R2 copies with size and age. It exits 1 when the last run failed, R2 cannot be read, or the newest `daily/`
+  and R2 copies with size and age. It exits 1 when the last run failed, R2 cannot be read (a missing bucket is named
+  as such), or the newest `daily/`
   copy is older than 26 hours.
 
 ### Off-site copy in Cloudflare R2
