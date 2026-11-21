@@ -45,14 +45,55 @@ push_deploy_folder() {
   on_build "tar -C $build_src -cf - deploy" | srv 'tar -C /srv/scarlet-web/deploy.new --strip-components=1 --no-same-owner -xf - && rm -rf /srv/scarlet-web/deploy && mv /srv/scarlet-web/deploy.new /srv/scarlet-web/deploy'
 }
 
+now() { date +%s.%N; }
+# Seconds between two timestamps.
+span() { awk -v a="$1" -v b="$2" 'BEGIN { printf "%.1f", b - a }'; }
+
+# Per-phase timing: `lap <name>` records the time since the last lap. build.sh and rollout.sh print `phase <name> <s>`
+# lines for their own steps; they are collected in $timing/ and listed with the laps when the deploy ends.
+timing=
+lap_at=
+laps=()
+lap() {
+  local t
+  t=$(now)
+  laps+=("$1|$(span "$lap_at" "$t")")
+  lap_at=$t
+}
+phase_of() { sed -n "s/^phase $2 //p" "$timing/$1" 2>/dev/null | tail -n 1; }
+row() { printf '  %-26s %8s s\n' "$1" "${2:-n/a}"; }
+report() {
+  [ -n "$timing" ] || return 0
+  local l name secs
+  echo "deploy: time per phase"
+  for l in "${laps[@]}"; do
+    name=${l%%|*}
+    secs=${l##*|}
+    row "$name" "$secs"
+    case $name in
+      build)
+        row "  slot wait" "$(phase_of build.out slot-wait)"
+        row "  docker build" "$(phase_of build.out docker-build)"
+        ;;
+      rollout)
+        row "  migrate" "$(phase_of rollout.out migrate)"
+        row "  start and health check" "$(phase_of rollout.out start-health)"
+        row "  switch" "$(phase_of rollout.out switch)"
+        ;;
+    esac
+  done
+  row total "$(span "$deploy_at" "$(now)")"
+  rm -rf "$timing"
+}
+
 build() {
   local ref=$1
-  on_build "bash -s -- '$repo' '$ref'" < "$here/deploy/build.sh" | tee /dev/stderr | sed -n 's/^built //p' | tail -n 1
+  on_build "bash -s -- '$repo' '$ref'" < "$here/deploy/build.sh" | tee /dev/stderr | tee "$timing/build.out" | sed -n 's/^built //p' | tail -n 1
 }
 
 ship_images() {
   local tag=$1
-  on_build "sudo -n docker save scarlet-web-app:$tag | zstd -T2 -3" | srv 'zstd -d | docker load'
+  { on_build "sudo -n docker save scarlet-web-app:$tag | zstd -T2 -3"; now > "$timing/sent"; } | srv 'zstd -d | docker load'
 }
 
 # One deploy at a time, build included: every deploy builds in the same clone on the build host and unpacks into the
@@ -64,18 +105,30 @@ take_lock() {
     echo "deploy: another deploy is running; waiting for it"
     sleep 20
   done
-  trap 'srv "rm -rf '"$lock"'"' EXIT
+  trap 'report; srv "rm -rf '"$lock"'"' EXIT
 }
 
 release() {
   local ref=${1:-main} sha
+  timing=$(mktemp -d)
+  deploy_at=$(now)
+  lap_at=$deploy_at
   take_lock
+  lap "lock wait"
   sha=$(build "$ref")
   [ -n "$sha" ] || { echo "deploy: the build gave no sha" >&2; exit 1; }
   echo "deploy: built $sha"
+  lap build
   push_deploy_folder
+  lap "deploy folder"
   ship_images "${sha:0:12}"
-  srv "/srv/scarlet-web/deploy/rollout.sh ${sha:0:12}"
+  # The load runs while the bytes arrive: the sender finishing splits the two, the rest is the load's tail.
+  local end
+  end=$(now)
+  laps+=("image transfer|$(span "$lap_at" "$(cat "$timing/sent")")" "docker load (after last byte)|$(span "$(cat "$timing/sent")" "$end")")
+  lap_at=$end
+  srv "/srv/scarlet-web/deploy/rollout.sh ${sha:0:12}" 2>&1 | tee "$timing/rollout.out"
+  lap rollout
   echo "deploy: $sha is live"
 }
 

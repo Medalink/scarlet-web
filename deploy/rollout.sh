@@ -40,6 +40,7 @@ slot_port() { if [ "$1" = blue ]; then echo 9001; else echo 9002; fi; }
 check_port() { if [ "$1" = blue ]; then echo 8091; else echo 8092; fi; }
 slot_var() { if [ "$1" = blue ]; then echo BLUE_RELEASE; else echo GREEN_RELEASE; fi; }
 active_slot() { cat state/active 2>/dev/null || echo none; }
+phase() { awk -v a="$2" -v b="${3:-$(date +%s.%N)}" -v n="$1" 'BEGIN { printf "phase %s %.1f\n", n, b - a }'; }
 nginx_cmd='nginx -c /etc/nginx/scarlet/nginx.conf'
 reload_nginx() { $dc exec -T web $nginx_cmd -t && $dc exec -T web $nginx_cmd -s reload; }
 
@@ -74,6 +75,7 @@ activate() {
   [ "$cur" = blue ] && nxt=green
   docker image inspect "scarlet-web-app:$release" >/dev/null
 
+  t_start=$(date +%s.%N)
   put "$(slot_var "$nxt")" "$release"
   $dc up -d --no-deps "app-$nxt"
   if ! healthy "$nxt"; then
@@ -84,6 +86,8 @@ activate() {
     return 1
   fi
 
+  phase start-health "$t_start"
+  t_switch=$(date +%s.%N)
   sync_assets "$release"
   cp state/upstream.conf state/upstream.conf.prev
   printf 'upstream php { server 127.0.0.1:%s; }\n' "$(slot_port "$nxt")" > state/upstream.conf.new
@@ -119,6 +123,7 @@ activate() {
       return 1
     fi
   done
+  phase switch "$t_switch"
 }
 
 prune_images() {
@@ -140,6 +145,7 @@ fi
 
 new=$1
 docker image inspect "scarlet-web-app:$new" >/dev/null
+t_migrate=$(date +%s.%N)
 $dc pull postgres redis web
 $dc up -d --wait postgres redis web
 reload_nginx
@@ -149,6 +155,7 @@ artisan migrate --force
 artisan maps:load-rects
 artisan app:release-notes:publish --from-file=storage/app/release-notes.json
 artisan cache:clear
+phase migrate "$t_migrate"
 
 activate "$new" || exit 1
 grep -qx "$new" releases || echo "$new" >> releases

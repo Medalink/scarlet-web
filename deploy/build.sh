@@ -22,6 +22,18 @@ git checkout --quiet --force --detach "$sha"
 git clean -ffdxq
 tag=${sha:0:12}
 
+now() { date +%s.%N; }
+phase() { awk -v a="$2" -v b="$3" -v n="$1" 'BEGIN { printf "phase %s %.1f\n", n, b - a }'; }
+
+# The command inside the slot writes the time it started, so the wait for the slot and the build are told apart.
+started=$(mktemp)
+trap 'rm -f "$started"' EXIT
 slot() { if command -v fleet >/dev/null; then fleet slot -- "$@"; else "$@"; fi; }
-slot sudo -n docker build -f docker/prod.Dockerfile --target app --build-context "gitdir=$PWD/.git" -t "scarlet-web-app:$tag" .
+t_wait=$(now)
+slot bash -c 'date +%s.%N > "$1"; shift; exec "$@"' _ "$started" \
+  sudo -n docker build -f docker/prod.Dockerfile --target app --build-context "gitdir=$PWD/.git" -t "scarlet-web-app:$tag" .
+t_done=$(now)
+t_start=$(cat "$started")
+phase slot-wait "$t_wait" "$t_start"
+phase docker-build "$t_start" "$t_done"
 echo "built $sha"
