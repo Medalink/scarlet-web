@@ -27,7 +27,7 @@ class ListRulesets
                 'kind' => $ruleset->kind()?->value,
                 'hardcore' => $ruleset->hardcore === true,
                 'war_mode' => $ruleset->war_mode,
-                'recorded' => $ruleset->slug() !== Ruleset::UNKNOWN_SLUG,
+                'recorded' => $ruleset->slugWithoutKind() !== Ruleset::UNKNOWN_SLUG,
             ];
         }
         usort($rows, fn (array $a, array $b): int => $rank($a) <=> $rank($b));
