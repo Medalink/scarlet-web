@@ -178,6 +178,32 @@ Decoding a session first deletes that session's rows, so it can run any number o
 Dictionaries, plain tables: `names(kind, id, name)` from the name lines, `items` from `II`, `zones`, `rulesets`.
 A name becomes the shown one for an id when most uploads agree on it.
 
+How the tables are built (decisions the first implementation made):
+
+- **Keys.** `session_start` is the session key in epoch seconds (`bigint`), `at` is `timestamptz`. A character is found
+  by `name_key`, its lower-case name, so two spellings are one character. A ruleset is found by `rulesets.key`, its five
+  signals joined as text (`-` for a missing one). Fact tables have no foreign keys: their rows are deleted by character
+  and session, and a check per inserted row would cost more than it protects.
+- **`counted`.** Every fact row carries `counted`, false when its session has a plausibility flag. The ruleset rollups
+  read `counted` rows only; the character rollups read all rows, so an owner sees their own flagged data. This replaces
+  "a character that fails stays out of the rollups": the unit is the session, and a replaced session that no longer
+  fails counts again on its next decode. The character keeps `plausibility` (`ok` or `flagged`, flagged while any of its
+  sessions is) for the leaderboards.
+- **Names.** `names` holds one row per candidate name of an id with `votes`, the number of sessions that reported it;
+  the shown name is the one with most votes. A session adds its votes once (`sessions.names_counted`), so a second decode
+  changes nothing.
+- **Time per level.** A level's time spans sessions, so it cannot come from a daily rollup of `play_spans`. Ingest
+  rebuilds `character_levels` (a hypertable on the time the character first stood at the level) for the character after
+  each session: one row per level with `seconds` at that level, `before_seconds` (the sum of the lower levels, which is
+  the time to reach it), `completed` (a higher level exists) and the `ruleset_id` and `counted` of its first span.
+  `level_time_ruleset` is a continuous aggregate over it.
+- **Dungeon runs across sessions.** The decoder's rows are stored as written. A run that carries on the last run of the
+  session before (ROWS.md, joining sessions) has `continues_previous` set; ingest sets it for the first run of the
+  session it decodes and again for the first run of the next session, so the upload order does not matter. Counts of
+  runs skip those rows, sums of time and bosses include them.
+- **Nulls.** A counter the decoder could not know (its group was not sent, ROWS.md "Missing groups") is null in
+  `sessions` and `play_spans.afk_ms`, and is never summed as zero.
+
 Codes with no table yet stay in their parts. Adding a table later is a new decoder version and a re-decode from the
 stored parts, with nothing re-uploaded.
 

@@ -93,6 +93,8 @@ return [
 
     'waits' => [
         'redis:default' => 60,
+        'redis:ingest' => 600,
+        'redis:rollups' => 900,
     ],
 
     /*
@@ -192,7 +194,33 @@ return [
     */
 
     'defaults' => [
-        'supervisor-1' => [
+        // Decoding parts into rows: one job per character and session, each with its own limits.
+        'supervisor-ingest' => [
+            'connection' => 'redis',
+            'queue' => ['ingest'],
+            'balance' => 'simple',
+            'maxProcesses' => 2,
+            'maxTime' => 3600,
+            'maxJobs' => 500,
+            'memory' => 1024,
+            'tries' => 3,
+            'timeout' => 300,
+            'nice' => 0,
+        ],
+        // Refreshing the continuous aggregates: one at a time, they read the same chunks.
+        'supervisor-rollups' => [
+            'connection' => 'redis',
+            'queue' => ['rollups'],
+            'balance' => 'simple',
+            'maxProcesses' => 1,
+            'maxTime' => 3600,
+            'maxJobs' => 200,
+            'memory' => 512,
+            'tries' => 2,
+            'timeout' => 960,
+            'nice' => 0,
+        ],
+        'supervisor-default' => [
             'connection' => 'redis',
             'queue' => ['default'],
             'balance' => 'auto',
@@ -209,17 +237,15 @@ return [
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
-                'balanceMaxShift' => 1,
-                'balanceCooldown' => 3,
-            ],
+            'supervisor-ingest' => ['maxProcesses' => 6],
+            'supervisor-rollups' => ['maxProcesses' => 1],
+            'supervisor-default' => ['maxProcesses' => 4, 'balanceMaxShift' => 1, 'balanceCooldown' => 3],
         ],
 
         'local' => [
-            'supervisor-1' => [
-                'maxProcesses' => 3,
-            ],
+            'supervisor-ingest' => ['maxProcesses' => 3],
+            'supervisor-rollups' => ['maxProcesses' => 1],
+            'supervisor-default' => ['maxProcesses' => 2],
         ],
     ],
 
