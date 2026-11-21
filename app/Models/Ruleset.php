@@ -39,10 +39,10 @@ class Ruleset extends Model
     }
 
     /**
-     * The identity of a combination of signals. A session with no game mode record has the five-part key it always
-     * had, so the rulesets stored before the record was read keep their rows.
+     * The identity of a combination of signals and the kind of its characters. A session with no game mode record and
+     * no kind has the five-part key it always had, so the rulesets stored before either was known keep their rows.
      *
-     * @param  array{preset: int|null, hardcore: bool|null, war_mode: string, xp_off: bool|null, game_mode: int|null, mode_record: int|null}  $signals
+     * @param  array{preset: int|null, hardcore: bool|null, war_mode: string, xp_off: bool|null, game_mode: int|null, mode_record: int|null, kind?: string|null}  $signals
      */
     public static function keyFor(array $signals): string
     {
@@ -52,15 +52,32 @@ class Ruleset extends Model
             default => (string) $value,
         }, [$signals['preset'], $signals['hardcore'], $signals['war_mode'], $signals['xp_off'], $signals['game_mode']]));
 
-        return $signals['mode_record'] === null ? $key : $key.'|r'.$signals['mode_record'];
+        $key = $signals['mode_record'] === null ? $key : $key.'|r'.$signals['mode_record'];
+
+        return ($signals['kind'] ?? null) === null ? $key : $key.'|k'.$signals['kind'];
     }
 
     /**
      * The path segment of a ruleset: every signal that was reported has a part, so two rulesets never share one.
      * `p1-std-pve-xp-g1` is preset 1, not hardcore, war mode off, experience on, game mode 1. The slug is an
-     * identity, not a name: it keeps the form it had, so the address of every ruleset keeps working.
+     * identity, not a name: it keeps the form it had, so the address of every ruleset keeps working. The kind of the
+     * row's characters ends it (`-kn` for Normal), so rows that differ only in kind have different slugs.
      */
     public function slug(): string
+    {
+        return $this->slugOf(withKind: true);
+    }
+
+    /**
+     * The slug without its kind: what an address from before the kind was part of a ruleset's identity says. A page
+     * that gets one shows the oldest row that has it (`ResolveScope`).
+     */
+    public function slugWithoutKind(): string
+    {
+        return $this->slugOf(withKind: false);
+    }
+
+    private function slugOf(bool $withKind): string
     {
         $parts = [
             $this->preset === null ? null : 'p'.$this->preset,
@@ -81,6 +98,7 @@ class Ruleset extends Model
             },
             $this->game_mode === null ? null : 'g'.$this->game_mode,
             $this->mode_record === null ? null : 'r'.$this->mode_record,
+            $withKind ? $this->storedKind()?->slugToken() : null,
         ];
         $parts = array_values(array_filter($parts));
 
@@ -90,11 +108,16 @@ class Ruleset extends Model
     /** The label of a ruleset that no checked signal names yet. */
     public const string UNIDENTIFIED_LABEL = 'Not identified';
 
-    /** The ruleset of WoW Forever this row is, or null while no checked signal names it. */
+    /** The ruleset of WoW Forever this row is, or null while neither a signal nor its characters name it. */
     public function kind(): ?RulesetKind
     {
-        return RulesetKind::of($this->hardcore, $this->mode_record)
-            ?? ($this->kind === null ? null : RulesetKind::tryFrom($this->kind));
+        return RulesetKind::of($this->hardcore, $this->mode_record) ?? $this->storedKind();
+    }
+
+    /** The kind the characters filed under this row have (`rulesets.kind`). */
+    private function storedKind(): ?RulesetKind
+    {
+        return $this->kind === null ? null : RulesetKind::tryFrom($this->kind);
     }
 
     /** The name a page shows: the ruleset's name, or "Not identified" for a row no checked signal names. */

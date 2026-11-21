@@ -21,6 +21,7 @@ class SummarizeCharacter
                 class = (select s.class from sessions s where s.character_id = characters.id and s.class is not null order by s.session_start desc limit 1),
                 race = (select s.race from sessions s where s.character_id = characters.id and s.race is not null order by s.session_start desc limit 1),
                 faction = (select s.faction from sessions s where s.character_id = characters.id and s.faction is not null order by s.session_start desc limit 1),
+                home_realm_id = (select (s.extra->>'server_id')::bigint from sessions s where s.character_id = characters.id and s.extra->>'server_id' is not null order by s.session_start desc limit 1),
                 level = (select s.level_end from sessions s where s.character_id = characters.id and s.level_end is not null order by s.session_start desc limit 1),
                 sessions_decoded = (select count(*) from sessions s where s.character_id = characters.id),
                 played_seconds = coalesce(

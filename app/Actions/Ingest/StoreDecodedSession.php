@@ -30,7 +30,7 @@ class StoreDecodedSession
      */
     public function handle(int $characterId, int $sessionStart, DecodedSession $decoded): ?array
     {
-        $ruleset = $decoded->summary === null ? null : $this->rulesets->handle($decoded->summary);
+        $ruleset = $decoded->summary === null ? null : $this->rulesets->handle($characterId, $decoded->summary);
 
         return DB::transaction(function () use ($characterId, $sessionStart, $decoded, $ruleset): ?array {
             if (! DB::table('characters')->where('id', $characterId)->lockForUpdate()->exists()) {

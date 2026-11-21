@@ -95,6 +95,7 @@ return [
         'redis:default' => 60,
         'redis:ingest' => 600,
         'redis:rollups' => 900,
+        'redis:armory' => 900,
     ],
 
     /*
@@ -220,6 +221,19 @@ return [
             'timeout' => 960,
             'nice' => 0,
         ],
+        // Asking the Forever Armory for rulesets: one request at a time, a run lasts minutes.
+        'supervisor-armory' => [
+            'connection' => 'redis',
+            'queue' => ['armory'],
+            'balance' => 'simple',
+            'maxProcesses' => 1,
+            'maxTime' => 3600,
+            'maxJobs' => 100,
+            'memory' => 256,
+            'tries' => 1,
+            'timeout' => 300,
+            'nice' => 0,
+        ],
         'supervisor-default' => [
             'connection' => 'redis',
             'queue' => ['default'],
@@ -240,12 +254,14 @@ return [
             // One 4 GB server runs the database and Redis too: two decoders at up to 1 GB each, not six.
             'supervisor-ingest' => ['maxProcesses' => 2],
             'supervisor-rollups' => ['maxProcesses' => 1],
+            'supervisor-armory' => ['maxProcesses' => 1],
             'supervisor-default' => ['maxProcesses' => 2, 'balanceMaxShift' => 1, 'balanceCooldown' => 3],
         ],
 
         'local' => [
             'supervisor-ingest' => ['maxProcesses' => 3],
             'supervisor-rollups' => ['maxProcesses' => 1],
+            'supervisor-armory' => ['maxProcesses' => 1],
             'supervisor-default' => ['maxProcesses' => 2],
         ],
     ],

@@ -46,12 +46,22 @@ return [
     'queues' => [
         'ingest' => 'ingest',
         'rollups' => 'rollups',
+        'armory' => 'armory',
     ],
     'ingest' => [
         'timeout' => 240,
         'tries' => 3,
         'memory_mb' => 768,
         'insert_rows' => 4000,
+    ],
+    // The Forever Armory names the ruleset of a character (docs/DESIGN.md, Rulesets). One request at a time.
+    'armory' => [
+        'region' => env('SCARLET_ARMORY_REGION', 'us'),
+        'user_agent' => 'scarletweb.io ruleset lookup (https://scarletweb.io)',
+        'timeout' => 20,
+        'pause_ms' => 2000,
+        // How long one run of the job looks characters up before the next run takes the rest.
+        'job_seconds' => 200,
     ],
     'rollups' => [
         'timeout' => 900,

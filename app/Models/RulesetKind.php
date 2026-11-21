@@ -4,7 +4,8 @@ namespace App\Models;
 
 /**
  * The rulesets of WoW Forever. A ruleset is a permanent choice for each character: the game has no call that
- * names it, so a `rulesets` row is matched to a kind only by a signal that has been checked in game (`of()`).
+ * names it, so a character's kind comes from the Forever Armory or from its home realm (docs/DESIGN.md, Rulesets),
+ * and a `rulesets` row carries the kind of the characters filed under it.
  */
 enum RulesetKind: string
 {
@@ -22,6 +23,31 @@ enum RulesetKind: string
             self::Roleplay => 'Roleplay',
             self::RoleplayPvp => 'Roleplay PvP',
             self::Hardcore => 'Hardcore',
+        };
+    }
+
+    /** The part of a ruleset's slug that names the kind. No other part of a slug starts with `k`. */
+    public function slugToken(): string
+    {
+        return match ($this) {
+            self::Normal => 'kn',
+            self::Pvp => 'kp',
+            self::Roleplay => 'kr',
+            self::RoleplayPvp => 'krp',
+            self::Hardcore => 'kh',
+        };
+    }
+
+    /** The kind the Forever Armory's ruleset slug means, or null for a slug this code does not know. */
+    public static function fromArmory(string $slug): ?self
+    {
+        return match (str_replace('_', '-', strtolower(trim($slug)))) {
+            'normal' => self::Normal,
+            'pvp' => self::Pvp,
+            'roleplay', 'rp' => self::Roleplay,
+            'roleplay-pvp', 'rp-pvp' => self::RoleplayPvp,
+            'hardcore' => self::Hardcore,
+            default => null,
         };
     }
 
@@ -44,10 +70,8 @@ enum RulesetKind: string
     }
 
     /**
-     * The kind a combination of signals belongs to, or null when none can be told. Only the hardcore flag is
-     * known to name a ruleset. The others wait for an in game check of one signal on a character of each ruleset
-     * (the `RU` line: game mode record, server number, war mode locks); add the checked values here. A row
-     * its players confirmed by hand carries `rulesets.kind` instead (`rulesets:kind`), used when no signal names it.
+     * The kind a combination of recorded signals names by itself, or null. Only the hardcore flag does. The kind of
+     * everything else is the kind of its character (`rulesets.kind`), which the Armory or the realm gives.
      */
     public static function of(?bool $hardcore, ?int $modeRecord): ?self
     {

@@ -256,7 +256,7 @@ One per decode, last. Keys in order:
 | `xp_off` | bool or null | the first `XD` line |
 | `game_mode` | int or null | the first `GA` line |
 | `mode_record` | int or null | `RU` record, the game mode record id the realm picker switches by; the first one in the session |
-| `server_id` | int or null | `RU` server, the realm id inside the character's GUID; the first one in the session. Not part of the ruleset yet |
+| `server_id` | int or null | `RU` server, the realm id inside the character's GUID; the first one in the session. The latest one of a character is its `home_realm_id`, which names its ruleset when the Armory has not (docs/DESIGN.md, Rulesets) |
 | `sex`, `class_id`, `race_id` | int or null | the first `CD` line |
 | `flags` | string[] | plausibility flags, below |
 

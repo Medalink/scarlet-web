@@ -18,6 +18,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $is_public
  * @property bool $show_economy
  * @property string $plausibility
+ * @property string|null $armory_kind the ruleset the Forever Armory named for the character
+ * @property string|null $armory_slug the Armory's own slug for it, kept when this code has no kind for it
+ * @property string|null $declared_kind
+ * @property int|null $armory_misses
+ * @property int|null $home_realm_id the realm id inside the character's GUID, from its latest session that has one
  */
 class Character extends Model
 {
