@@ -11,7 +11,7 @@
     </x-module>
     <x-module span="w8" :first="true" id="h-c" heading="Played time to reach each level">
       <x-plot id="cmp" label="Median played hours to each level for three rulesets" :spec="$d['compare']" />
-      <x-key :items="[['label' => 'Standard, PvE', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Hardcore, PvE', 'class' => 'k-line', 'style' => 'background:var(--fg)'], ['label' => 'Slow, PvE', 'class' => 'k-line', 'style' => 'background:var(--s-dungeon)']]" />
+      <x-key :items="[['label' => 'Enhanced, PvE', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Enhanced, Hardcore, PvE', 'class' => 'k-line', 'style' => 'background:var(--fg)'], ['label' => 'Classic, PvE', 'class' => 'k-line', 'style' => 'background:var(--s-dungeon)']]" />
     </x-module>
     <x-module :last="true" id="h-s" heading="Hardcore characters still alive">
       <x-plot id="surv" label="Share of hardcore characters that reached each level without dying" :spec="$d['survival']" />

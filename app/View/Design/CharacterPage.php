@@ -24,7 +24,7 @@ final class CharacterPage
 
         return [
             'map' => Charts::map(),
-            'facts' => ['Level 38 Orc Warrior', 'Horde', 'Standard, PvE', Format::duration(4 * 86400).' played'],
+            'facts' => ['Level 38 Orc Warrior', 'Horde', 'Enhanced, PvE', Format::duration(4 * 86400).' played'],
             'progress' => ['percent' => 38, 'text' => '38% to level 39 · '.Format::number(51274).' XP to go · level 40 in about '.Format::duration(6 * 3600 + 10 * 60).' played'],
             'week' => [
                 ['label' => 'Played', 'value' => Format::duration(8 * 3600 + 48 * 60)], ['label' => 'Dungeons', 'value' => '1'], ['label' => 'Quests', 'value' => '26'],

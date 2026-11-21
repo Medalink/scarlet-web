@@ -80,17 +80,19 @@ class Ruleset extends Model
     public const string UNRECORDED_LABEL = 'Rules not recorded';
 
     /**
-     * The name a page shows: "Hardcore, PvP, Experience off". The recording carries the preset and the game mode as
-     * bare numbers and nothing that names them, so they stay out of the label; the slug still tells them apart.
+     * The name a page shows: "Enhanced, Hardcore, PvP, Experience off". The preset is the game's experience preset
+     * (Enum.ForeverExperiencePreset: 0 Classic, 1 Enhanced). Hardcore is named only when it is on. The game mode is
+     * a bare number with no name, so it stays out of the label; the slug still tells it apart.
      */
     public function label(): string
     {
         $parts = [
-            match ($this->hardcore) {
-                true => 'Hardcore',
-                false => 'Standard',
+            match ($this->preset) {
+                0 => 'Classic',
+                1 => 'Enhanced',
                 default => null,
             },
+            $this->hardcore === true ? 'Hardcore' : null,
             match ($this->war_mode) {
                 self::WAR_MODE_ON => 'PvP',
                 self::WAR_MODE_OFF => 'PvE',

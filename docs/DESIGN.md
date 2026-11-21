@@ -395,9 +395,9 @@ least 7 days old) turns git history into a version and release notes.
 
 ### Where the built pages differ from the comps
 
-- **Ruleset names** are "Standard, PvE, Experience on". The recording carries the preset and the game mode as bare
-  numbers that nothing names, so they are not in a label; two rulesets that differ only in them are told apart by a
-  count, "(2)". The ruleset with no recorded rules is "Rules not recorded", last in every list, and left out of the
+- **Ruleset names** are "Enhanced, PvE, Experience on": the game's experience preset (Classic or Enhanced),
+  "Hardcore" only when it is on, war mode and experience. The game mode is a bare number that nothing names, so it
+  is not in a label; two rulesets that differ only in it are told apart by a count, "(2)". The ruleset with no recorded rules is "Rules not recorded", last in every list, and left out of the
   filter chips while a named ruleset exists.
 - **Class filter**: leaderboards filter by class (`characters.class`). The dashboards and result pages do not: no
   aggregate carries the class.

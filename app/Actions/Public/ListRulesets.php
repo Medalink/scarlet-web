@@ -8,7 +8,7 @@ class ListRulesets
 {
     /**
      * Every ruleset that has been seen, for filters and links. The ruleset with no recorded rules comes last. Two
-     * rulesets that differ only in a preset or a game mode number share a label, so the later one gets a count.
+     * rulesets that differ only in a game mode number share a label, so the later one gets a count.
      *
      * @return list<array{id: int, slug: string, label: string, hardcore: bool, war_mode: string, recorded: bool}>
      */

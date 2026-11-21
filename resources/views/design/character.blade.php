@@ -6,7 +6,7 @@
   <x-owner-bar state="Public page" :on="true" :facts="$d['facts_owner']" :link="['href' => $base.'/account', 'label' => 'Sharing and privacy']" switch-label="Public page" :public="true" />
   <x-week title="This week" range="Mon 16 to Sun 22 Nov" :items="$d['week']" />
   <x-sheet>
-    <x-module span="w8" :first="true" id="h-pace" heading="Levelling against other Standard, PvE characters">
+    <x-module span="w8" :first="true" id="h-pace" heading="Levelling against other Enhanced, PvE characters">
       <x-plot id="pace" label="This character's played hours to each level against the median and middle half of its ruleset" :spec="$d['pace']" />
       <x-key :items="[['label' => 'Maren-Ashlow', 'class' => 'k-line', 'style' => 'background:var(--fg)'], ['label' => 'Median', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Middle half', 'style' => 'background:rgba(255,45,85,.3)']]" />
       <x-readout id="pace-out" :line="$d['paceLine']" />
