@@ -12,6 +12,8 @@ class RebuildCharacterLevels
      * level began in has the client's played counter, both come from it (the counter at the level's first span,
      * and up to the next level's, or the end of the last session), so they include the reloads between sessions;
      * otherwise from the sum of the spans.
+     * A level of a character whose first recorded level is above 1 counts only where the played counter gives its
+     * time, since the sum of the spans misses all the play before the recording began.
      *
      * @return array{from: int, until: int}|null epoch seconds the rollups must look at again: the old and
      *                                           the new rows together, null when the character had none
@@ -24,7 +26,7 @@ class RebuildCharacterLevels
         DB::insert(
             <<<'SQL'
             insert into character_levels (at, character_id, session_start, ruleset_id, level, zone_id, counted, reached, seconds, before_seconds, completed)
-            select first_at, ?, first_session, first_ruleset, level, null, all_counted, level,
+            select first_at, ?, first_session, first_ruleset, level, null, all_counted and (min(level) over () = 1 or anchor_ms is not null), level,
                    round(case when anchor_ms is not null and next_ms is not null then (next_ms - anchor_ms) / 1000.0 else spent_ms / 1000.0 end)::int,
                    round(coalesce(anchor_ms, before_ms) / 1000.0)::int,
                    level < max(level) over ()
