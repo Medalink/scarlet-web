@@ -130,7 +130,19 @@ All upload requests are JSON or binary over HTTPS under `/api/v1/upload`, signed
    to 8 MiB) over the needed parts, each as a 4-byte little-endian length and the part text. At most 4 MiB compressed
    and 64 MiB decompressed per request, 20,000 parts; the app splits larger sets. The server recomputes each id,
    refuses a part whose id was not asked for, stores the rest and queues decoding. The answer lists stored ids.
-4. Requests are idempotent. A repeated `/parts` stores nothing new and answers the same.
+4. Requests are idempotent. A repeated `/parts` stores nothing new and answers the same. It also accepts a part the
+   server already holds even when the last manifest did not ask for it, so a retry after a lost answer works.
+
+The wire details are in [API.md](API.md). Where the first implementation settled something this page left open:
+
+- The manifest is one zstd frame of JSON with its own content type, `application/vnd.scarlet.manifest+zstd`. It is
+  inflated with `scarlet-part inflate`, which enforces the same window and size limits as a batch.
+- A batch is opened with `scarlet-part unbatch --stored`, which checks every id against the part text and writes each
+  part in its storage form (zstd 19 alone), so PHP stores the bytes it is given and never recompresses.
+- A manifest lists at most 200,000 parts; `sync` and `status` are bounded the same way.
+- The XOR set digest is computed in PostgreSQL (`bit_xor` over four 64-bit words of the id), not by reading ids.
+- Decoding is one queued job per (character, session) on the `ingest` queue, unique until it starts, so ten parts of
+  one session uploaded in two requests decode once. A per-character lock serializes the jobs of one character.
 
 What the server already has is known two ways: the app remembers the ids the server acknowledged
 (`out/upload-state.json`), and the set digest catches every case where that memory is wrong.
@@ -226,6 +238,14 @@ contributed to (5 on a public deploy, 1 in development).
 | `skills_daily_ruleset` | 1 day | skill | skill-ups, highest rank |
 | `heat_daily_ruleset`, `heat_daily_character` | 1 day | map, 100 x 100 cell | points |
 
+Reads go through one Action per question in `app/Actions/Rollups/` (`LevellingCurve`, `TimePerLevel`, `XpSourcesByLevel`,
+`DeathsByLevel`, `TopKillers`, `DeathZones`, `DungeonRuns`, `Professions`, `GoldByLevel`, `PlayTimeByWeekday`,
+`PathHeatCells`, `DeathHeatCells`, `CreatureKills`, `DropRates`, `ItemSources`, `QuestTurnIns`, `Totals`). Each takes an
+optional ruleset (none sums every ruleset) and leaves out any group that fewer than `config('scarlet.min_characters')`
+characters contributed to; `Totals` returns null for such a total. Pages and the public API call these and never query a
+fact table. The drop aggregates carry no ruleset, so `DropRates` and `ItemSources` take none. Heat cells are zone-map
+cells keyed by uiMap id; the world map of "Maps" is built apart from them.
+
 Aggregates refresh on a policy and once more, for the affected time range, after a decode or a removal. Removing a
 group or everything deletes the fact rows; TimescaleDB records the change and the refresh takes the contribution out
 of the rollups.
@@ -257,8 +277,9 @@ Scarlet-Time: <epoch seconds>
 Scarlet-Signature: base64(Ed25519(method \n path \n time \n SHA-256(body) hex))
 ```
 
-The server refuses a time more than 300 seconds off and remembers signatures for that long, so a request cannot be
-replayed. Bearer tokens were the alternative; a signature never puts a secret on the wire and a database leak yields
+The server refuses a time more than 300 seconds off and remembers signatures for 600 seconds (a time up to 300 s
+ahead is valid for up to 600 s), so a request cannot be replayed. Ed25519 is deterministic: the same request signed in
+the same second repeats its signature and counts as a replay, so a retry signs again with the new time. Bearer tokens were the alternative; a signature never puts a secret on the wire and a database leak yields
 nothing that can upload.
 
 **Who owns a character.** No check can prove it: the recording is a file on the player's PC, and anything shown or
