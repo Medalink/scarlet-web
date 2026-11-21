@@ -1,0 +1,17 @@
+key	label	codes
+core	Character and sessions	S ES L Z GR GA XD PB CD TP
+xp	Experience and levelling	X XR RX EX RS AFK CP
+quests	Quests	Q QI QP QS QA QD QR QW QY QK SE GS GO GC PC IR
+combat	Combat, kills and deaths	K D R U F E B DL DR DM DS DP RZ SH SR SKN C CH CI CC A TW AR SO MT IL IB DF TM
+pvp	PvP and duels	PV ZP HK HN PK HL BQ BM BS PP DU DW DQ
+movement	Movement and map paths	P W T TE TF MO WP SU HB SM MP
+world	Creatures and places seen	NS NP NI NW VG AI UW
+loot	Loot, items and drop rates	O LO LM LT LD RL RW BR LP I BG DI
+economy	Gold, vendors, auctions, mail and trade	M VB VS AU AV ML TR BK RE TK CU
+professions	Professions and crafting	SK SL CR CB CS CW RD RT TS PG PS PU PO CO LR EC RA
+build	Character build and gear	ST SC SX G EN WE IU DB EQ TG TA TQ TL SB LS AB TI PD PT SG TB TC BA TX TO
+social	Social and the players you meet	GP GM GL GI GU GH FR FC IV PM AL RC LF CT WD EM CM CE
+collections	Collections, achievements, Legacy and reputation	AC AD AE AP AT CK NC CL CA CX SP BT LV LB LA LN RP RF RG RV RR WS
+client	Game client and addons loaded	LG PR AO AX AF UE TU TT LK LL SS CV RM
+names	Names and item facts (sent only with a line that uses them)	N SN IN QN CN KN WN AN FN GN BN TN TY II IT IQ
+addons	Other addons	*

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet rulesets compared</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="rulesets.html" aria-current="page">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Rulesets compared</h1>
+    <p class="sub">A ruleset is how a character plays: the experience preset, hardcore or not, and a PvE or PvP server. Each row links to its own dashboard.</p></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w12 first last" aria-labelledby="h-tbl">
+      <h2 id="h-tbl" class="vh">Every ruleset</h2>
+      <div class="scroll-x"><table class="data">
+        <thead><tr><th>Ruleset</th><th class="n">Characters</th><th class="n">Hours</th><th class="n">Median to 60</th><th class="n">Deaths an hour</th><th class="n">Reached 60</th><th class="n">XP from quests</th></tr></thead>
+        <tbody>
+          <tr><td><a href="stats.html">Standard, PvE</a></td><td class="n">612</td><td class="n">19,870</td><td class="n">5d 21h</td><td class="n">0.41</td><td class="n">14%</td><td class="n">47%</td></tr>
+          <tr><td><a href="stats.html">Standard, PvP</a></td><td class="n">288</td><td class="n">9,412</td><td class="n">6d 9h</td><td class="n">0.58</td><td class="n">11%</td><td class="n">44%</td></tr>
+          <tr><td><a href="stats.html">Hardcore, PvE</a><span class="tag hc">HC</span></td><td class="n">204</td><td class="n">6,330</td><td class="n">7d 2h</td><td class="n">0.03</td><td class="n">4%</td><td class="n">52%</td></tr>
+          <tr><td><a href="stats.html">Slow, PvE</a></td><td class="n">131</td><td class="n">5,105</td><td class="n">11d 6h</td><td class="n">0.37</td><td class="n">3%</td><td class="n">49%</td></tr>
+          <tr><td><a href="stats.html">Hardcore, PvP</a><span class="tag hc">HC</span></td><td class="n">49</td><td class="n">1,190</td><td class="n">Too few characters</td><td class="n">0.05</td><td class="n">0%</td><td class="n">50%</td></tr>
+        </tbody></table></div>
+    </section>
+    <section class="mod w8 first" aria-labelledby="h-c">
+      <h2 id="h-c">Played time to reach each level</h2>
+      <div class="plot"><svg id="cmp" role="img" aria-label="Median played hours to each level for three rulesets"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--accent)"></i>Standard, PvE</li><li><i class="k-line" style="background:var(--fg)"></i>Hardcore, PvE</li><li><i class="k-line" style="background:var(--s-dungeon)"></i>Slow, PvE</li></ul>
+    </section>
+    <section class="mod last" aria-labelledby="h-s">
+      <h2 id="h-s">Hardcore characters still alive</h2>
+      <div class="plot"><svg id="surv" role="img" aria-label="Share of hardcore characters that reached each level without dying"></svg></div>
+      <p class="note">Half of hardcore characters die before level 19.</p>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+const mk = (k) => { const a = []; let t = 0; for (let l = 1; l <= 60; l++) { t += (0.12 + Math.pow(l / 60, 2.1) * 5.2) * k; a.push([l, t]); } return a; };
+Comp.lines("cmp", { x0: 1, x1: 60, y1: 300, yt: [0, 100, 200, 300], yf: (v) => v + "h", xt: [1, 10, 20, 30, 40, 50, 60], series: [{ cls: "c", pts: mk(1.85) }, { cls: "b", pts: mk(1.2) }, { cls: "a", pts: mk(1) }] });
+Comp.lines("surv", { w: 380, h: 250, x0: 1, x1: 60, y1: 100, yt: [0, 50, 100], yf: (v) => v + "%", xt: [1, 20, 40, 60], series: [{ cls: "a", pts: Array.from({ length: 60 }, (_, i) => [i + 1, 100 * Math.exp(-i / 26)]) }] });
+</script>
+</body>
+</html>

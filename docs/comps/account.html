@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Scarlet account</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="account.html">Account</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1"><div><h1 id="h1">Your account</h1><p class="sub">Signed in with Google. Scarlet stores the sign-in's id and nothing else about you: no email, no name.</p></div>
+    <div class="filters"><a class="btn quiet" href="#">Sign out</a></div></section>
+  <div class="sheet">
+    <section class="mod w7 first" aria-labelledby="h-c"><h2 id="h-c">Characters</h2>
+      <div class="rows">
+        <div class="row"><b><a href="character.html">Maren-Ashlow</a></b><p>Level 38 Orc Warrior · 214 sessions · last upload 12 minutes ago</p><div class="act"><span class="state on">Public</span><label class="sw"><input type="checkbox" checked aria-label="Public page for Maren-Ashlow"><i></i></label></div></div>
+        <div class="row"><b>Show gold and trades on the public page</b><p>Off: visitors see no balance, vendors, auctions, mail or trades for Maren-Ashlow.</p><div class="act"><label class="sw"><input type="checkbox" aria-label="Show economy for Maren-Ashlow"><i></i></label></div></div>
+        <div class="row"><b><a href="character.html">Tolvir-Greane</a></b><p>Level 12 Troll Mage · 31 sessions · last upload 3 days ago</p><div class="act"><span class="state">Private</span><label class="sw"><input type="checkbox" aria-label="Public page for Tolvir-Greane"><i></i></label></div></div>
+      </div>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-i"><h2 id="h-i">Installs</h2>
+      <div class="rows">
+        <div class="row"><b>Windows PC, linked 20 Nov 2026</b><p>Last upload 12 minutes ago · 2 characters</p><div class="act"><button class="btn danger" type="button">Revoke</button></div></div>
+        <div class="row"><b>Windows PC, linked 2 Nov 2026</b><p>Last upload 18 days ago · 1 character</p><div class="act"><button class="btn danger" type="button">Revoke</button></div></div>
+      </div>
+      <p class="note">A revoked install can no longer upload. What it uploaded stays until you remove it.</p>
+      <h2 style="margin-top:2rem;font-size:1.9rem">Sign-in methods</h2>
+      <div class="rows"><div class="row"><b>Google</b><p>Linked 2 Nov 2026</p><div class="act"><span class="state on">Linked</span></div></div><div class="row"><b>Battle.net</b><p>Not linked. Your BattleTag is never stored.</p><div class="act"><a class="btn quiet" href="#">Link</a></div></div></div>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-s"><div class="mod-head"><h2 id="h-s">What you share</h2><p class="state">Switches change what the app sends next. Recording and the app on your PC are never affected.</p></div>
+      <div class="rows"><div class="row"><b>Character and sessions</b><p>Sessions, levels, the zones you enter, your ruleset. Needed by every chart, so it is always sent while uploading is on.</p><div class="act"><label class="sw"><input type="checkbox" checked disabled aria-label="Share Character and sessions"><i></i></label></div></div><div class="row"><b>Experience and levelling</b><p>Experience gains and where they came from.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Experience and levelling"><i></i></label></div></div><div class="row"><b>Quests</b><p>Accepts, turn-ins, objectives and rewards.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Quests"><i></i></label></div></div><div class="row"><b>Combat, kills and deaths</b><p>Kills, deaths and what killed you, fights, bosses, casts.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Combat, kills and deaths"><i></i></label></div></div><div class="row"><b>PvP and duels</b><p>Honor, player kills, battlegrounds, duels.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share PvP and duels"><i></i></label></div></div><div class="row"><b>Movement and map paths</b><p>Where you walked, flew and teleported.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Movement and map paths"><i></i></label></div></div><div class="row"><b>Creatures and places seen</b><p>Creatures and objects you met and where you stood.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Creatures and places seen"><i></i></label></div></div><div class="row"><b>Loot, items and drop rates</b><p>What you looted and from what, loot rules and rolls.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Loot, items and drop rates"><i></i></label></div></div><div class="row"><b>Gold, vendors, auctions, mail and trade</b><p>Money, purchases, auctions, mail and trades.</p><div class="act"><button class="btn danger" type="button">Remove from server</button><label class="sw"><input type="checkbox" aria-label="Share Gold, vendors, auctions, mail and trade"><i></i></label></div></div><div class="row"><b>Professions and crafting</b><p>Skills, crafts and recipes.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Professions and crafting"><i></i></label></div></div><div class="row"><b>Character build and gear</b><p>Stats, gear, talents, spells and pets.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Character build and gear"><i></i></label></div></div><div class="row"><b>Social and the players you meet</b><p>Groups, guild, friends and players seen. Other players' names are sent only with this on.</p><div class="act"><button class="btn danger" type="button">Remove from server</button><label class="sw"><input type="checkbox" aria-label="Share Social and the players you meet"><i></i></label></div></div><div class="row"><b>Collections, achievements, Legacy and reputation</b><p>Legacy Challenges and points, mounts, pets, reputation.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Collections, achievements, Legacy and reputation"><i></i></label></div></div><div class="row"><b>Game client and addons loaded</b><p>Client checks, the addon list, UI errors, screenshots taken.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Game client and addons loaded"><i></i></label></div></div><div class="row"><b>Other addons</b><p>What Scarlet records from other addons you run.</p><div class="act"><label class="sw"><input type="checkbox" checked aria-label="Share Other addons"><i></i></label></div></div></div>
+    </section>
+    <section class="mod w7 first" aria-labelledby="h-k"><h2 id="h-k">API keys</h2>
+      <div class="rows"><div class="row"><b>guild dashboard</b><p>Made 19 Nov 2026 · last used today · 600 requests a minute</p><div class="act"><button class="btn danger" type="button">Delete</button></div></div></div>
+      <p style="margin-top:1rem"><a class="btn quiet" href="#">Make a key</a></p>
+      <p class="note">The <a href="developers.html">public API</a> needs no key at 60 requests a minute.</p></section>
+    <section class="mod w5 last" aria-labelledby="h-x"><h2 id="h-x">Delete everything you uploaded</h2>
+      <p class="sub">Removes every character, session and number that came from your installs, and takes them out of the totals. Your recordings on your PC are not touched.</p>
+      <p style="margin-top:1.1rem"><button class="btn danger" type="button">Delete everything I uploaded</button></p></section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script></script>
+</body>
+</html>

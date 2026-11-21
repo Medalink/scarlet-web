@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saltmarsh Reach: paths, deaths and levels</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html" aria-current="page">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<section class="ch-head" aria-labelledby="h1" style="min-height:27rem">
+  <div class="stage"><canvas id="map" role="img" aria-label="Heat from every recorded path in Saltmarsh Reach, with deaths as crosses"></canvas></div>
+  <div class="ch-id wrap" style="padding-top:3rem">
+    <div><h1 class="ch-name" id="h1">Saltmarsh Reach</h1>
+      <p class="ch-sub"><span>Levels 18 to 27</span><span>3,912 hours played here</span><span>6,480 deaths</span></p></div>
+    <ul class="legend ch-map" aria-label="Map marks">
+      <li><svg viewBox="0 0 24 14" aria-hidden="true"><rect x="5" y="1" width="12" height="12" fill="#cf1f45"/></svg>paths, by how many characters</li>
+      <li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M7.5 2.5l9 9M16.5 2.5l-9 9" stroke="#f0f1f3" stroke-width="1.7" stroke-linecap="round"/></svg>deaths</li>
+    </ul>
+  </div>
+</section>
+<div class="wrap">
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Characters</dt><dd>811</dd></div><div><dt>Median stay</dt><dd>4h 50m</dd></div><div><dt>Arrive at level</dt><dd>19</dd></div>
+    <div><dt>Leave at level</dt><dd>26</dd></div><div><dt>Deaths an hour</dt><dd>1.66</dd></div><div><dt>Quests</dt><dd>62</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod first" aria-labelledby="h-k"><h2 id="h-k">Most killed</h2>
+      <ol class="rank plain"><li><a class="who" href="creature.html">Marsh Stalker</a><span class="val">88,412</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="creature.html">Saltmarsh Raider</a><span class="val">61,090</span><span class="track"><i style="width:69%"></i></span></li><li><a class="who" href="creature.html">Reed Snapper</a><span class="val">40,255</span><span class="track"><i style="width:46%"></i></span></li></ol></section>
+    <section class="mod" aria-labelledby="h-d"><h2 id="h-d">Deadliest</h2>
+      <ol class="rank"><li><a class="who" href="creature.html">Marsh Stalker</a><span class="val">2,104 deaths</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="creature.html">Saltmarsh Raider</a><span class="val">1,118</span><span class="track"><i style="width:53%"></i></span></li><li><span class="who">Drowning</span><span class="val">402</span><span class="track"><i style="width:19%"></i></span></li></ol></section>
+    <section class="mod last" aria-labelledby="h-x"><h2 id="h-x">Experience here</h2>
+      <ol class="rank"><li><span class="who">Quests</span><span class="val">49%</span><span class="track"><i class="c-quest" style="width:49%"></i></span></li><li><span class="who">Kills</span><span class="val">44%</span><span class="track"><i style="width:44%"></i></span></li><li><span class="who">Exploring</span><span class="val">7%</span><span class="track"><i class="c-explore" style="width:7%"></i></span></li></ol></section>
+    <section class="mod w12 first last" aria-labelledby="h-q"><h2 id="h-q">Quests turned in here</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem"><thead><tr><th>Quest</th><th class="n">Turn-ins</th><th class="n">Median level</th><th class="n">XP</th><th class="n">Abandoned</th></tr></thead>
+      <tbody><tr><td><a href="quest.html">The Marsh Takes Its Due</a></td><td class="n">4,210</td><td class="n">23</td><td class="n">2,450</td><td class="n">3%</td></tr><tr><td><a href="quest.html">Reeds for the Weaver</a></td><td class="n">3,980</td><td class="n">20</td><td class="n">1,700</td><td class="n">1%</td></tr><tr><td><a href="quest.html">What the Tide Left</a></td><td class="n">2,644</td><td class="n">25</td><td class="n">2,900</td><td class="n">11%</td></tr></tbody></table></div></section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+Comp.heatmap("map", { seed: 5, hot: [[3600, 4800, 900, 620], [5600, 4200, 700, 420], [7200, 3300, 650, 340], [4700, 2600, 500, 200], [6400, 5300, 520, 180]], deaths: [[3900, 4500], [5200, 4400], [5750, 3900], [7100, 3000], [6900, 3600], [4500, 2700], [3300, 5100], [6100, 5200]] });
+</script>
+</body>
+</html>

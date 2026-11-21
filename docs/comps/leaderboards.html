@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet leaderboards</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html" aria-current="page">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Fastest to level 60</h1>
+    <p class="sub">Played time from the first recorded session to level 60. Only characters whose owner made them public, and whose recording covers every level, are listed.</p></div>
+    <div class="filters">
+      <select class="pick" aria-label="Board"><option>Fastest to level 60</option><option>Fastest to level 40</option><option>Fastest to level 20</option><option>Highest level without dying</option><option>Most quests turned in</option><option>Most dungeon runs</option><option>Most distance travelled</option></select>
+      <div class="seg" role="group" aria-label="Ruleset"><a href="#" aria-current="true">All</a><a href="#">Standard</a><a href="#">Hardcore</a><a href="#">Slow</a></div><div class="seg" role="group" aria-label="Server"><a href="#" aria-current="true">PvE and PvP</a><a href="#">PvE</a><a href="#">PvP</a></div><select class="pick" aria-label="Class"><option>Every class</option><option>Warrior</option><option>Mage</option></select>
+    </div>
+  </section>
+  <div class="sheet">
+    <section class="mod w12 first last">
+      <div class="scroll-x"><table class="data" style="font-size:1rem">
+        <thead><tr><th></th><th>Character</th><th>Class</th><th class="n">Played to 60</th><th>Ruleset</th><th class="n">Deaths</th><th class="n">Reached</th></tr></thead>
+        <tbody><tr><td class="rk">1</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">Maren-Ashlow</a></td><td>Orc Warrior</td><td class="n">3d 19h 02m</td><td>Standard, PvE</td><td class="n">20</td><td class="n">18 Nov</td></tr><tr><td class="rk">2</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">Tolvir-Greane</a></td><td>Troll Mage</td><td class="n">3d 22h 41m</td><td>Standard, PvE</td><td class="n">27</td><td class="n">19 Nov</td></tr><tr><td class="rk">3</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">Ysolde-Harrowick</a></td><td>Undead Priest</td><td class="n">4d 01h 16m</td><td>Standard, PvP</td><td class="n">34</td><td class="n">20 Nov</td></tr><tr><td class="rk">4</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">Bram-Coldwater</a></td><td>Tauren Druid</td><td class="n">4d 03h 50m</td><td>Standard, PvE</td><td class="n">41</td><td class="n">21 Nov</td></tr><tr class="me"><td class="rk">5</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">Senna-Vale</a></td><td>Orc Hunter</td><td class="n">4d 06h 12m</td><td>Hardcore, PvE<span class="tag hc">HC</span></td><td class="n">0</td><td class="n">22 Nov</td></tr><tr><td class="rk">6</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">Dorrin-Ashby</a></td><td>Troll Shaman</td><td class="n">4d 09h 33m</td><td>Standard, PvE</td><td class="n">55</td><td class="n">23 Nov</td></tr><tr><td class="rk">7</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">Liss-Underhill</a></td><td>Undead Rogue</td><td class="n">4d 11h 08m</td><td>Standard, PvP</td><td class="n">62</td><td class="n">24 Nov</td></tr><tr><td class="rk">8</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">Corwen-Pike</a></td><td>Tauren Warrior</td><td class="n">4d 14h 47m</td><td>Slow, PvE</td><td class="n">69</td><td class="n">25 Nov</td></tr></tbody>
+      </table></div>
+      <p class="note">Your character is highlighted when you are signed in. 212 public characters have reached level 60. <a href="#">Next 50</a></p>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script></script>
+</body>
+</html>

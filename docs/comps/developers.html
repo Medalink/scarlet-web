@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet public API reference</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html" aria-current="page">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1"><div><h1 id="h1">Public API</h1><p class="sub">Everything public on this site is readable as JSON. Read-only, no sign-up, version 1.</p></div></section>
+  <div class="ref">
+    <nav class="ref-nav" aria-label="Endpoints"><div><h3>Basics</h3><a href="#use">Using the API</a><a href="#limits">Limits and keys</a><a href="#pages">Pagination</a></div><div><h3>Endpoints</h3><a href="#api-v-public-stats">/stats</a><a href="#api-v-public-rulesets">/rulesets</a><a href="#api-v-public-rulesets-id-levels">/rulesets/{id}/levels</a><a href="#api-v-public-leaderboards-board">/leaderboards/{board}</a><a href="#api-v-public-search">/search</a><a href="#api-v-public-characters-name">/characters/{name}</a><a href="#api-v-public-creatures-id">/creatures/{id}</a><a href="#api-v-public-items-id">/items/{id}</a><a href="#api-v-public-zones-id">/zones/{id}</a><a href="#api-v-public-maps-id-heat">/maps/{id}/heat</a></div></nav>
+    <div>
+      <section class="ep" id="use"><h2>Using the API</h2><p>The base is <code>https://&lt;host&gt;/api/v1/public</code>. Answers are JSON in UTF-8. Times are ISO 8601 in UTC, durations are seconds, money is copper. Any origin may call it from a browser. Answers can be cached for five minutes and carry an <code>ETag</code>.</p>
+        <pre class="json">curl https://&lt;host&gt;/api/v1/public/stats?ruleset=3</pre></section>
+      <section class="ep" id="limits"><h2>Limits and keys</h2><p>60 requests a minute per IP address without a key. A free key from your account page raises that to 600. Send it as <code>Authorization: Bearer &lt;key&gt;</code>. Over the limit the answer is <code>429</code> with <code>Retry-After</code>.</p></section>
+      <section class="ep" id="pages"><h2>Pagination</h2><p>Lists return <code>data</code> and <code>next_cursor</code>. Pass it back as <code>?cursor=</code>. A null cursor is the end. Numbers a bucket cannot show because too few characters contributed come back as <code>null</code>.</p></section>
+      <section class="ep" id="api-v-public-stats"><h2><b>GET</b>/api/v1/public/stats</h2><p>Totals and the series of the global dashboard.</p><table class="data"><thead><tr><th>Parameter</th><th>Meaning</th></tr></thead><tbody><tr><td><code>ruleset</code></td><td>A ruleset id. Leave out for all rulesets</td></tr><tr><td><code>class</code></td><td>A class file, such as WARRIOR</td></tr></tbody></table><pre class="json">{
+  <b>"characters"</b>: 1284,
+  <b>"played_seconds"</b>: 150865200,
+  <b>"levels"</b>: [{ <b>"level"</b>: 40, <b>"median_seconds"</b>: 220800, <b>"p25"</b>: 172800, <b>"p75"</b>: 284400, <b>"characters"</b>: 311 }],
+  <b>"updated_at"</b>: <i>"2026-11-20T21:08:00Z"</i>
+}</pre></section><section class="ep" id="api-v-public-rulesets"><h2><b>GET</b>/api/v1/public/rulesets</h2><p>Every ruleset with its totals.</p></section><section class="ep" id="api-v-public-rulesets-id-levels"><h2><b>GET</b>/api/v1/public/rulesets/{id}/levels</h2><p>Played time to reach each level: median, quartiles, fastest tenth, characters.</p></section><section class="ep" id="api-v-public-leaderboards-board"><h2><b>GET</b>/api/v1/public/leaderboards/{board}</h2><p>A leaderboard of public characters.</p><table class="data"><thead><tr><th>Parameter</th><th>Meaning</th></tr></thead><tbody><tr><td><code>ruleset</code></td><td>A ruleset id</td></tr><tr><td><code>cursor</code></td><td>From next_cursor of the last answer</td></tr></tbody></table></section><section class="ep" id="api-v-public-search"><h2><b>GET</b>/api/v1/public/search</h2><p>Public characters, creatures, items, zones and quests by name.</p><table class="data"><thead><tr><th>Parameter</th><th>Meaning</th></tr></thead><tbody><tr><td><code>q</code></td><td>At least 2 characters</td></tr><tr><td><code>kind</code></td><td>character, creature, item, zone or quest</td></tr></tbody></table></section><section class="ep" id="api-v-public-characters-name"><h2><b>GET</b>/api/v1/public/characters/{name}</h2><p>A character whose owner made it public. 404 otherwise.</p></section><section class="ep" id="api-v-public-creatures-id"><h2><b>GET</b>/api/v1/public/creatures/{id}</h2><p>Kills, deaths and drop rates by loot rule.</p><table class="data"><thead><tr><th>Parameter</th><th>Meaning</th></tr></thead><tbody><tr><td><code>ruleset</code></td><td>A ruleset id</td></tr></tbody></table></section><section class="ep" id="api-v-public-items-id"><h2><b>GET</b>/api/v1/public/items/{id}</h2><p>Item facts and where it drops.</p></section><section class="ep" id="api-v-public-zones-id"><h2><b>GET</b>/api/v1/public/zones/{id}</h2><p>Time, deaths, kills and quests in a zone.</p></section><section class="ep" id="api-v-public-maps-id-heat"><h2><b>GET</b>/api/v1/public/maps/{id}/heat</h2><p>Path and death counts per map cell.</p><table class="data"><thead><tr><th>Parameter</th><th>Meaning</th></tr></thead><tbody><tr><td><code>layer</code></td><td>paths or deaths</td></tr></tbody></table></section>
+    </div>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script></script>
+</body>
+</html>

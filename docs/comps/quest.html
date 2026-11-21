@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Marsh Takes Its Due: turn-ins and levels</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html" aria-current="page">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">The Marsh Takes Its Due</h1><p class="sub">Level 23 quest in <a href="zone.html">Saltmarsh Reach</a>. Pays 2,450 XP and <span class="money">18<i class="s">s</i></span>.</p></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Ruleset"><a href="#" aria-current="true">All</a><a href="#">Standard</a><a href="#">Hardcore</a><a href="#">Slow</a></div><div class="seg" role="group" aria-label="Server"><a href="#" aria-current="true">PvE and PvP</a><a href="#">PvE</a><a href="#">PvP</a></div><select class="pick" aria-label="Class"><option>Every class</option><option>Warrior</option><option>Mage</option></select></div>
+  </section>
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Turn-ins</dt><dd>4,210</dd></div><div><dt>Accepted</dt><dd>4,366</dd></div><div><dt>Abandoned</dt><dd>3%</dd></div>
+    <div><dt>Median level</dt><dd>23</dd></div><div><dt>Median time to finish</dt><dd>26m</dd></div><div><dt>Deaths while on it</dt><dd>0.4</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w7 first" aria-labelledby="h-l"><h2 id="h-l">Level when turned in</h2><div class="plot"><svg id="ql" role="img" aria-label="Turn-ins by character level"></svg></div></section>
+    <section class="mod w5 last" aria-labelledby="h-r"><h2 id="h-r">Reward chosen</h2>
+      <ol class="rank"><li><a class="who q2" href="item.html">Reedbound Bracers</a><span class="val">58%</span><span class="track"><i style="width:58%"></i></span></li><li><a class="who q2" href="item.html">Tidewatcher Cord</a><span class="val">42%</span><span class="track"><i style="width:42%"></i></span></li></ol></section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+Comp.bars("ql", { x0: 17, x1: 32, y1: 1200, yt: [0, 600, 1200], xt: [18, 22, 26, 30], cls: "t", data: Array.from({ length: 14 }, (_, i) => [18 + i, 1150 * Math.exp(-Math.pow((i - 5) / 2.3, 2)) + 10]) });
+</script>
+</body>
+</html>

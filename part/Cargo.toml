@@ -1,0 +1,26 @@
+[package]
+name = "scarlet-part"
+version = "0.1.0"
+edition = "2024"
+description = "The Scarlet upload unit: sharing groups, parts, the wire batch and the decoder"
+publish = false
+
+[lib]
+name = "scarlet_part"
+path = "src/lib.rs"
+
+[[bin]]
+name = "scarlet-part"
+path = "src/main.rs"
+
+[dependencies]
+hmac = "=0.13.0"
+lexopt = "=0.3.2"
+serde_json = "=1.0.154"
+sha2 = "=0.11.1"
+zstd = { version = "=0.14.4", features = ["zdict_builder"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 4

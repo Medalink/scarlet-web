@@ -1,0 +1,539 @@
+// Writes the page comps into <repo>/docs/comps. Every name and number is invented.
+// node build-comps.mjs E:/Dev/scarlet-api/docs/comps
+import fs from "node:fs";
+import path from "node:path";
+
+const out = process.argv[2];
+const NAV = [["stats", "Stats"], ["rulesets", "Rulesets"], ["leaderboards", "Leaderboards"], ["search", "Search"], ["developers", "API"]];
+const mark = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>`;
+
+function page(file, title, cur, body, script = "", signedIn = false) {
+  const nav = NAV.map(([k, l]) => `<a href="${k}.html"${k === cur ? ' aria-current="page"' : ""}>${l}</a>`).join("");
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home">${mark}Scarlet</a>
+    <nav class="nav" aria-label="Site">${nav}</nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="${signedIn ? "account.html" : "login.html"}">${signedIn ? "Account" : "Sign in"}</a>
+  </div>
+</header>
+<main>
+${body}
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>${script}</script>
+</body>
+</html>
+`;
+  fs.writeFileSync(path.join(out, file), html);
+}
+
+const key = (items) => `<ul class="key">${items.map(([c, l]) => `<li><i class="${c}"></i>${l}</li>`).join("")}</ul>`;
+const rulesetSeg = `<div class="seg" role="group" aria-label="Ruleset"><a href="#" aria-current="true">All</a><a href="#">Standard</a><a href="#">Hardcore</a><a href="#">Slow</a></div><div class="seg" role="group" aria-label="Server"><a href="#" aria-current="true">PvE and PvP</a><a href="#">PvE</a><a href="#">PvP</a></div><select class="pick" aria-label="Class"><option>Every class</option><option>Warrior</option><option>Mage</option></select>`;
+
+// ---------------------------------------------------------------------------------- stats
+page("stats.html", "Scarlet stats: how characters level in WoW Forever", "stats", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div>
+      <h1 id="h1">All characters</h1>
+      <p class="sub">1,284 characters, 41,907 hours of play, recorded since 14 Nov 2026. Updated 6 minutes ago.</p>
+    </div>
+    <div class="filters">${rulesetSeg}</div>
+  </section>
+
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Characters</dt><dd>1,284</dd></div>
+    <div><dt>Hours played</dt><dd>41,907</dd></div>
+    <div><dt>Median to level 60</dt><dd>6d 4h<small>played</small></dd></div>
+    <div><dt>Deaths</dt><dd>58,310</dd></div>
+    <div><dt>Quests turned in</dt><dd>402,118</dd></div>
+    <div><dt>Dungeon runs</dt><dd>9,446</dd></div>
+  </section>
+
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-curve">
+      <div class="mod-head"><h2 id="h-curve">Played time to reach each level</h2>
+        <div class="seg" role="group" aria-label="Scale"><button type="button" aria-pressed="true">Hours</button><button type="button" aria-pressed="false">Days played</button></div></div>
+      <div class="plot"><svg id="curve" role="img" aria-label="Median played hours to reach each level, with the middle half of characters as a band"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--accent)"></i>Median</li><li><i style="background:rgba(255,45,85,.3)"></i>Middle half of characters</li><li><i class="k-line" style="background:var(--fg)"></i>Fastest tenth</li></ul>
+      <p class="readout"><b>Level 40</b> takes a median of 61h 20m played. The middle half is 48h to 79h.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-reach">
+      <h2 id="h-reach">Characters at each level</h2>
+      <div class="plot"><svg id="reach" role="img" aria-label="How many characters are currently at each level"></svg></div>
+      <p class="note">Half of all characters are below level 23.</p>
+    </section>
+
+    <section class="mod w8 first" aria-labelledby="h-xp">
+      <div class="mod-head"><h2 id="h-xp">Where experience comes from, by level</h2></div>
+      <div class="xp"><div class="xp-plot">
+        <div class="xp-y" aria-hidden="true"><span>100%</span><span>50%</span><span>0</span></div>
+        <div class="xp-bars" id="xp" role="img" aria-label="Share of experience from kills, dungeon kills, quests, exploring and other, one bar per level"></div>
+        <div class="xp-x" aria-hidden="true"><span>1</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>59</span></div>
+      </div>
+      ${key([["c-kill", "Kills"], ["c-dungeon", "Dungeon kills"], ["c-quest", "Quests"], ["c-explore", "Exploring"], ["c-other", "Other"]])}
+      <p class="readout"><b>Level 34</b>: quests 46%, kills 31%, dungeon kills 19%, exploring 3%, other 1%.</p></div>
+    </section>
+    <section class="mod last" aria-labelledby="h-time">
+      <h2 id="h-time">Hours spent in each level</h2>
+      <div class="plot"><svg id="ltime" role="img" aria-label="Median hours a character spends in each level"></svg></div>
+      <p class="note">The slowest level is 58, at a median of 5h 12m.</p>
+    </section>
+
+    <section class="mod first" aria-labelledby="h-deaths">
+      <h2 id="h-deaths">Deaths per hour, by level</h2>
+      <div class="plot"><svg id="dph" role="img" aria-label="Deaths per played hour at each level"></svg></div>
+      <p class="note">Most dangerous: levels 24 to 27.</p>
+    </section>
+    <section class="mod" aria-labelledby="h-killers">
+      <h2 id="h-killers">What kills characters</h2>
+      <ol class="rank">
+        <li><a class="who" href="creature.html">Marsh Stalker</a><span class="val">2,104 deaths</span><span class="track"><i style="width:100%"></i></span></li>
+        <li><a class="who" href="creature.html">Hollow Warden</a><span class="val">1,655</span><span class="track"><i style="width:79%"></i></span></li>
+        <li><span class="who">Falling</span><span class="val">1,402</span><span class="track"><i style="width:67%"></i></span></li>
+        <li><a class="who" href="creature.html">Saltmarsh Raider</a><span class="val">1,118</span><span class="track"><i style="width:53%"></i></span></li>
+        <li><span class="who">Another player</span><span class="val">940</span><span class="track"><i style="width:45%"></i></span></li>
+        <li><span class="who">Drowning</span><span class="val">611</span><span class="track"><i style="width:29%"></i></span></li>
+      </ol>
+    </section>
+    <section class="mod last" aria-labelledby="h-dz">
+      <h2 id="h-dz">Where characters die</h2>
+      <ol class="rank plain">
+        <li><a class="who" href="zone.html">Saltmarsh Reach</a><span class="val">6,480 deaths</span><span class="track"><i style="width:100%"></i></span></li>
+        <li><a class="who" href="zone.html">Hollowmere</a><span class="val">5,022</span><span class="track"><i style="width:77%"></i></span></li>
+        <li><a class="who" href="zone.html">The Cinder Flats</a><span class="val">3,870</span><span class="track"><i style="width:60%"></i></span></li>
+        <li><a class="who" href="zone.html">Greywater Deep</a><span class="val">2,911</span><span class="track"><i style="width:45%"></i></span></li>
+        <li><a class="who" href="zone.html">Thornwall</a><span class="val">2,240</span><span class="track"><i style="width:35%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-dung">
+      <h2 id="h-dung">Dungeons</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Dungeon</th><th class="n">Runs</th><th class="n">Median time</th><th class="n">Deaths a run</th><th class="n">Median level</th></tr></thead>
+        <tbody>
+          <tr><td><a href="zone.html">Greywater Deep</a></td><td class="n">2,418</td><td class="n">42m</td><td class="n">1.8</td><td class="n">22</td></tr>
+          <tr><td><a href="zone.html">The Ember Vault</a></td><td class="n">1,960</td><td class="n">58m</td><td class="n">2.6</td><td class="n">31</td></tr>
+          <tr><td><a href="zone.html">Thornwall Keep</a></td><td class="n">1,512</td><td class="n">1h 14m</td><td class="n">3.1</td><td class="n">38</td></tr>
+          <tr><td><a href="zone.html">Sunken Archive</a></td><td class="n">1,203</td><td class="n">51m</td><td class="n">2.2</td><td class="n">44</td></tr>
+          <tr><td><a href="zone.html">Hall of Ash</a></td><td class="n">877</td><td class="n">1h 32m</td><td class="n">4.4</td><td class="n">55</td></tr>
+        </tbody></table></div>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-prof">
+      <h2 id="h-prof">Professions</h2>
+      <ol class="rank">
+        <li><span class="who">Fishing</span><span class="val">71% of characters · median 118</span><span class="track"><i style="width:71%"></i></span></li>
+        <li><span class="who">Cooking</span><span class="val">64% · 142</span><span class="track"><i style="width:64%"></i></span></li>
+        <li><span class="who">Mining</span><span class="val">38% · 165</span><span class="track"><i style="width:38%"></i></span></li>
+        <li><span class="who">Herbalism</span><span class="val">35% · 171</span><span class="track"><i style="width:35%"></i></span></li>
+        <li><span class="who">Skinning</span><span class="val">33% · 190</span><span class="track"><i style="width:33%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod w5 first" aria-labelledby="h-gold">
+      <h2 id="h-gold">Gold carried, by level</h2>
+      <div class="plot"><svg id="gold" role="img" aria-label="Median gold a character carries at each level, with the middle half as a band"></svg></div>
+      <p class="note">Median at level 40: <span class="money">31<i class="g">g</i>40<i class="s">s</i></span>. Characters who shared their economy data only.</p>
+    </section>
+    <section class="mod w7 last" aria-labelledby="h-when">
+      <h2 id="h-when">When people play</h2>
+      <div class="hours" id="hours" role="img" aria-label="Play time by weekday and hour of day, in UTC"></div>
+      <p class="heat-key"><span>Quiet</span><i style="background:rgba(255,255,255,.055)"></i><i style="background:#4b1626"></i><i style="background:#861a34"></i><i style="background:#cf1f45"></i><i style="background:#ff5d7e"></i><span>Busiest</span><span style="margin-left:1rem">Hours are UTC</span></p>
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-map">
+      <div class="mod-head"><h2 id="h-map">Where characters go in Saltmarsh Reach</h2>
+        <select class="pick" aria-label="Zone"><option>Saltmarsh Reach</option><option>Hollowmere</option></select></div>
+      <div class="mapbox" style="aspect-ratio:21/9"><canvas id="map" role="img" aria-label="Heat from every recorded path in the zone, with deaths as crosses"></canvas></div>
+      <p class="heat-key"><span>Few paths</span><i style="background:#4b1626"></i><i style="background:#861a34"></i><i style="background:#cf1f45"></i><i style="background:#ff5d7e"></i><span>Many</span></p>
+    </section>
+  </div>
+</div>`, `
+const C = Comp, r = C.rng(11);
+const med = [], band = [], fast = []; let t = 0;
+for (let l = 1; l <= 60; l++) { t += 0.12 + Math.pow(l / 60, 2.1) * 5.2; med.push([l, t]); band.push([l, t * 0.78, t * 1.29]); fast.push([l, t * 0.6]); }
+C.lines("curve", { x0: 1, x1: 60, y1: 200, yt: [0, 50, 100, 150, 200], yf: (v) => v + "h", xt: [1, 10, 20, 30, 40, 50, 60], series: [{ cls: "a", pts: med, band, mark: 39 }, { cls: "b thin", pts: fast }] });
+C.bars("reach", { w: 380, h: 250, x0: 0, x1: 61, y1: 80, yt: [0, 40, 80], xt: [1, 20, 40, 60], cls: "t", data: Array.from({ length: 60 }, (_, i) => [i + 1, 70 * Math.exp(-i / 21) * (0.75 + r() * 0.5) + (i === 59 ? 34 : 0)]) });
+C.shares("xp", Array.from({ length: 59 }, (_, i) => { const q = 0.5 - i * 0.002 + r() * 0.06, d = i < 14 ? 0 : 0.1 + r() * 0.14, e = 0.07 - i * 0.001, o = 0.015; return [1 - q - d - e - o, d, q, e, o]; }));
+C.bars("ltime", { w: 380, h: 250, x0: 0, x1: 60, y1: 6, yt: [0, 2, 4, 6], yf: (v) => v + "h", xt: [1, 20, 40, 59], data: Array.from({ length: 59 }, (_, i) => { const v = 0.15 + Math.pow((i + 1) / 59, 1.8) * 4.6 * (0.9 + r() * 0.2); return [i + 1, v]; }) });
+C.lines("dph", { w: 380, h: 250, x0: 1, x1: 60, y1: 1.2, yt: [0, 0.4, 0.8, 1.2], xt: [1, 20, 40, 60], series: [{ cls: "a", pts: Array.from({ length: 60 }, (_, i) => [i + 1, 0.25 + 0.6 * Math.exp(-Math.pow((i - 25) / 9, 2)) + r() * 0.08]) }] });
+const g = [], gb = []; let m = 0; for (let l = 1; l <= 60; l++) { m += Math.pow(l / 60, 1.7) * 6; g.push([l, m]); gb.push([l, m * 0.55, m * 1.7]); }
+C.lines("gold", { w: 480, h: 250, x0: 1, x1: 60, y1: 260, yt: [0, 100, 200], yf: (v) => v + "g", xt: [1, 20, 40, 60], series: [{ cls: "g", pts: g, band: gb }] });
+C.hours("hours", (d, h) => { const eve = Math.exp(-Math.pow((h - 20) / 3.2, 2)), day = d > 4 ? Math.exp(-Math.pow((h - 15) / 4.5, 2)) : 0; return Math.min(4, Math.round((eve + day * 0.8) * 4 + r() * 0.5)); });
+C.heatmap("map", { seed: 5, hot: [[3600, 4800, 900, 520], [5600, 4200, 700, 380], [7200, 3300, 650, 300], [4700, 2600, 500, 160], [6400, 5300, 520, 150]], deaths: [[3900, 4500], [5200, 4400], [5750, 3900], [7100, 3000], [6900, 3600], [4500, 2700], [3300, 5100]] });
+`);
+
+// ------------------------------------------------------------------------------- rulesets
+page("rulesets.html", "Scarlet rulesets compared", "rulesets", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Rulesets compared</h1>
+    <p class="sub">A ruleset is how a character plays: the experience preset, hardcore or not, and a PvE or PvP server. Each row links to its own dashboard.</p></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w12 first last" aria-labelledby="h-tbl">
+      <h2 id="h-tbl" class="vh">Every ruleset</h2>
+      <div class="scroll-x"><table class="data">
+        <thead><tr><th>Ruleset</th><th class="n">Characters</th><th class="n">Hours</th><th class="n">Median to 60</th><th class="n">Deaths an hour</th><th class="n">Reached 60</th><th class="n">XP from quests</th></tr></thead>
+        <tbody>
+          <tr><td><a href="stats.html">Standard, PvE</a></td><td class="n">612</td><td class="n">19,870</td><td class="n">5d 21h</td><td class="n">0.41</td><td class="n">14%</td><td class="n">47%</td></tr>
+          <tr><td><a href="stats.html">Standard, PvP</a></td><td class="n">288</td><td class="n">9,412</td><td class="n">6d 9h</td><td class="n">0.58</td><td class="n">11%</td><td class="n">44%</td></tr>
+          <tr><td><a href="stats.html">Hardcore, PvE</a><span class="tag hc">HC</span></td><td class="n">204</td><td class="n">6,330</td><td class="n">7d 2h</td><td class="n">0.03</td><td class="n">4%</td><td class="n">52%</td></tr>
+          <tr><td><a href="stats.html">Slow, PvE</a></td><td class="n">131</td><td class="n">5,105</td><td class="n">11d 6h</td><td class="n">0.37</td><td class="n">3%</td><td class="n">49%</td></tr>
+          <tr><td><a href="stats.html">Hardcore, PvP</a><span class="tag hc">HC</span></td><td class="n">49</td><td class="n">1,190</td><td class="n">Too few characters</td><td class="n">0.05</td><td class="n">0%</td><td class="n">50%</td></tr>
+        </tbody></table></div>
+    </section>
+    <section class="mod w8 first" aria-labelledby="h-c">
+      <h2 id="h-c">Played time to reach each level</h2>
+      <div class="plot"><svg id="cmp" role="img" aria-label="Median played hours to each level for three rulesets"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--accent)"></i>Standard, PvE</li><li><i class="k-line" style="background:var(--fg)"></i>Hardcore, PvE</li><li><i class="k-line" style="background:var(--s-dungeon)"></i>Slow, PvE</li></ul>
+    </section>
+    <section class="mod last" aria-labelledby="h-s">
+      <h2 id="h-s">Hardcore characters still alive</h2>
+      <div class="plot"><svg id="surv" role="img" aria-label="Share of hardcore characters that reached each level without dying"></svg></div>
+      <p class="note">Half of hardcore characters die before level 19.</p>
+    </section>
+  </div>
+</div>`, `
+const mk = (k) => { const a = []; let t = 0; for (let l = 1; l <= 60; l++) { t += (0.12 + Math.pow(l / 60, 2.1) * 5.2) * k; a.push([l, t]); } return a; };
+Comp.lines("cmp", { x0: 1, x1: 60, y1: 300, yt: [0, 100, 200, 300], yf: (v) => v + "h", xt: [1, 10, 20, 30, 40, 50, 60], series: [{ cls: "c", pts: mk(1.85) }, { cls: "b", pts: mk(1.2) }, { cls: "a", pts: mk(1) }] });
+Comp.lines("surv", { w: 380, h: 250, x0: 1, x1: 60, y1: 100, yt: [0, 50, 100], yf: (v) => v + "%", xt: [1, 20, 40, 60], series: [{ cls: "a", pts: Array.from({ length: 60 }, (_, i) => [i + 1, 100 * Math.exp(-i / 26)]) }] });
+`);
+
+// --------------------------------------------------------------------------- leaderboards
+const lbRows = [["Maren-Ashlow", "Orc Warrior", "3d 19h 02m", "Standard, PvE", ""], ["Tolvir-Greane", "Troll Mage", "3d 22h 41m", "Standard, PvE", ""], ["Ysolde-Harrowick", "Undead Priest", "4d 01h 16m", "Standard, PvP", ""], ["Bram-Coldwater", "Tauren Druid", "4d 03h 50m", "Standard, PvE", ""], ["Senna-Vale", "Orc Hunter", "4d 06h 12m", "Hardcore, PvE", "hc"], ["Dorrin-Ashby", "Troll Shaman", "4d 09h 33m", "Standard, PvE", ""], ["Liss-Underhill", "Undead Rogue", "4d 11h 08m", "Standard, PvP", ""], ["Corwen-Pike", "Tauren Warrior", "4d 14h 47m", "Slow, PvE", ""]];
+page("leaderboards.html", "Scarlet leaderboards", "leaderboards", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Fastest to level 60</h1>
+    <p class="sub">Played time from the first recorded session to level 60. Only characters whose owner made them public, and whose recording covers every level, are listed.</p></div>
+    <div class="filters">
+      <select class="pick" aria-label="Board"><option>Fastest to level 60</option><option>Fastest to level 40</option><option>Fastest to level 20</option><option>Highest level without dying</option><option>Most quests turned in</option><option>Most dungeon runs</option><option>Most distance travelled</option></select>
+      ${rulesetSeg}
+    </div>
+  </section>
+  <div class="sheet">
+    <section class="mod w12 first last">
+      <div class="scroll-x"><table class="data" style="font-size:1rem">
+        <thead><tr><th></th><th>Character</th><th>Class</th><th class="n">Played to 60</th><th>Ruleset</th><th class="n">Deaths</th><th class="n">Reached</th></tr></thead>
+        <tbody>${lbRows.map((r, i) => `<tr${i === 4 ? ' class="me"' : ""}><td class="rk">${i + 1}</td><td><i class="dotc" aria-hidden="true"></i><a href="character.html">${r[0]}</a></td><td>${r[1]}</td><td class="n">${r[2]}</td><td>${r[3]}${r[4] ? '<span class="tag hc">HC</span>' : ""}</td><td class="n">${r[4] ? 0 : 20 + i * 7}</td><td class="n">${18 + i} Nov</td></tr>`).join("")}</tbody>
+      </table></div>
+      <p class="note">Your character is highlighted when you are signed in. 212 public characters have reached level 60. <a href="#">Next 50</a></p>
+    </section>
+  </div>
+</div>`);
+
+// --------------------------------------------------------------------------------- search
+page("search.html", "Search Scarlet", "search", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1" style="grid-template-columns:minmax(0,1fr)">
+    <div><h1 id="h1">Search</h1>
+      <form class="search-box" role="search"><label class="vh" for="sq">Search for</label><input id="sq" type="search" value="marsh"><button class="btn" type="submit">Search</button></form>
+      <p class="sub">23 results for "marsh". Characters appear only when their owner made them public.</p></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w12 first last" style="padding-bottom:1rem"><div class="seg" role="group" aria-label="Kind"><a href="#" aria-current="true">All 23</a><a href="#">Characters 2</a><a href="#">Creatures 9</a><a href="#">Items 6</a><a href="#">Zones 2</a><a href="#">Quests 4</a></div></section>
+    <section class="mod w5 first"><h2 class="kind">Characters <span>2</span></h2>
+      <a class="hit" href="character.html"><b>Marsha-Venn</b><span>Level 44 Troll Hunter · Standard, PvE</span><span class="val">5d 2h played</span></a>
+      <a class="hit" href="character.html"><b>Tolmarsh-Greane</b><span>Level 12 Orc Warrior · Hardcore, PvE</span><span class="val">9h played</span></a>
+      <h2 class="kind" style="margin-top:2rem">Zones <span>2</span></h2>
+      <a class="hit" href="zone.html"><b>Saltmarsh Reach</b><span>Levels 18 to 27 · 6,480 deaths</span><span class="val">3,912 hours</span></a>
+      <a class="hit" href="zone.html"><b>Marshlight Fen</b><span>Levels 33 to 38 · 1,022 deaths</span><span class="val">804 hours</span></a>
+    </section>
+    <section class="mod w7 last"><h2 class="kind">Creatures <span>9</span></h2>
+      <a class="hit" href="creature.html"><b>Marsh Stalker</b><span>Level 22 to 24 beast · Saltmarsh Reach</span><span class="val">88,412 kills · 2,104 deaths</span></a>
+      <a class="hit" href="creature.html"><b>Saltmarsh Raider</b><span>Level 23 to 25 humanoid · Saltmarsh Reach</span><span class="val">61,090 kills · 1,118 deaths</span></a>
+      <a class="hit" href="creature.html"><b>Marshlight Wisp</b><span>Level 34 elemental · Marshlight Fen</span><span class="val">12,733 kills · 96 deaths</span></a>
+      <p class="note"><a href="#">6 more creatures</a></p>
+      <h2 class="kind" style="margin-top:2rem">Items <span>6</span></h2>
+      <a class="hit" href="item.html"><b class="q3">Marshwalker Greaves</b><span>Item level 28 mail feet</span><span class="val">Drops from 3 creatures</span></a>
+      <a class="hit" href="item.html"><b class="q2">Saltmarsh Cleaver</b><span>Item level 26 two-handed axe</span><span class="val">Drops from 5 creatures</span></a>
+      <h2 class="kind" style="margin-top:2rem">Quests <span>4</span></h2>
+      <a class="hit" href="quest.html"><b>The Marsh Takes Its Due</b><span>Level 23 · Saltmarsh Reach</span><span class="val">4,210 turn-ins</span></a>
+    </section>
+  </div>
+</div>`);
+
+// ------------------------------------------------------------------------------- creature
+page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Marsh Stalker</h1><p class="sub">Level 22 to 24 beast (crocolisk), normal. Seen in <a href="zone.html">Saltmarsh Reach</a>.</p></div>
+    <div class="filters">${rulesetSeg}</div>
+  </section>
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Kills</dt><dd>88,412</dd></div><div><dt>Characters killed</dt><dd>2,104</dd></div><div><dt>Deaths per 1,000 kills</dt><dd>23.8</dd></div>
+    <div><dt>Median killer level</dt><dd>23</dd></div><div><dt>XP a kill at level 23</dt><dd>214</dd></div><div><dt>Corpses looted</dt><dd>61,377</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w7 first" aria-labelledby="h-d">
+      <div class="mod-head"><h2 id="h-d">Drops</h2>
+        <div class="seg" role="group" aria-label="Loot rule"><button type="button" aria-pressed="true">Solo</button><button type="button" aria-pressed="false">Group loot</button><button type="button" aria-pressed="false">Free for all</button></div></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Corpses</th><th class="n">Dropped</th></tr></thead>
+        <tbody>
+          <tr><td><a href="item.html">Stalker Hide</a></td><td class="n"><i class="bar" style="width:5.2rem"></i>41.2%</td><td class="n">38,904</td><td class="n">16,028</td></tr>
+          <tr><td><a href="item.html">Cracked Tooth</a></td><td class="n"><i class="bar" style="width:3.6rem"></i>28.5%</td><td class="n">38,904</td><td class="n">11,088</td></tr>
+          <tr><td><a href="item.html" class="q2">Saltmarsh Cleaver</a></td><td class="n"><i class="bar" style="width:.2rem"></i>1.4%</td><td class="n">38,904</td><td class="n">545</td></tr>
+          <tr><td><a href="item.html" class="q3">Marshwalker Greaves</a></td><td class="n"><i class="bar" style="width:2px"></i>0.21%</td><td class="n">38,904</td><td class="n">82</td></tr>
+        </tbody></table></div>
+      <p class="note">A drop rate is drops over corpses looted for the first time under that loot rule. Skinning and second looks are not counted.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-w">
+      <h2 id="h-w">Where it was met</h2>
+      <div class="mapbox"><canvas id="map" role="img" aria-label="Map cells where players stood when they met this creature"></canvas></div>
+      <p class="note">Cells mark where the player stood, not where the creature was.</p>
+    </section>
+    <section class="mod w7 first" aria-labelledby="h-l">
+      <h2 id="h-l">Deaths to it, by the character's level</h2>
+      <div class="plot"><svg id="dl" role="img" aria-label="Deaths to this creature by character level"></svg></div>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-h">
+      <h2 id="h-h">How it kills</h2>
+      <ol class="rank"><li><span class="who">Melee</span><span class="val">71% of killing blows</span><span class="track"><i style="width:71%"></i></span></li><li><span class="who">Rending Bite</span><span class="val">24%</span><span class="track"><i style="width:24%"></i></span></li><li><span class="who">Thrash</span><span class="val">5%</span><span class="track"><i style="width:5%"></i></span></li></ol>
+    </section>
+  </div>
+</div>`, `
+Comp.heatmap("map", { seed: 3, hot: [[3600, 4800, 800, 260], [5300, 4300, 500, 120]] });
+Comp.bars("dl", { x0: 14, x1: 34, y1: 400, yt: [0, 200, 400], xt: [15, 20, 25, 30], data: Array.from({ length: 19 }, (_, i) => [15 + i, 380 * Math.exp(-Math.pow((i - 7) / 3.4, 2)) + 6]) });
+`);
+
+// ----------------------------------------------------------------------------------- item
+page("item.html", "Marshwalker Greaves: where it drops", "search", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1" class="q3">Marshwalker Greaves</h1><p class="sub">Item level 28 mail feet. Requires level 23. Binds when equipped. Sells for <span class="money">21<i class="s">s</i>40<i class="c">c</i></span>.</p></div>
+    <div class="filters">${rulesetSeg}</div>
+  </section>
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Dropped</dt><dd>214</dd></div><div><dt>Sources</dt><dd>3</dd></div><div><dt>Best drop rate</dt><dd>0.34%</dd></div>
+    <div><dt>Won by need</dt><dd>61%</dd></div><div><dt>Median looter level</dt><dd>24</dd></div><div><dt>First recorded</dt><dd>15 Nov</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-s"><h2 id="h-s">Where it drops</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Source</th><th>Loot rule</th><th class="n">Drop rate</th><th class="n">Looted</th><th class="n">Dropped</th></tr></thead>
+        <tbody>
+          <tr><td><a href="creature.html">Hollow Warden</a></td><td>Solo</td><td class="n"><i class="bar" style="width:3.4rem"></i>0.34%</td><td class="n">22,110</td><td class="n">75</td></tr>
+          <tr><td><a href="creature.html">Marsh Stalker</a></td><td>Solo</td><td class="n"><i class="bar" style="width:2.1rem"></i>0.21%</td><td class="n">38,904</td><td class="n">82</td></tr>
+          <tr><td><a href="creature.html">Marsh Stalker</a></td><td>Group loot, uncommon and better</td><td class="n"><i class="bar" style="width:2.3rem"></i>0.23%</td><td class="n">19,640</td><td class="n">45</td></tr>
+          <tr><td><a href="creature.html">Saltmarsh Raider</a></td><td>Solo</td><td class="n"><i class="bar" style="width:.5rem"></i>0.05%</td><td class="n">24,018</td><td class="n">12</td></tr>
+        </tbody></table></div>
+    </section>
+    <section class="mod last" aria-labelledby="h-r"><h2 id="h-r">Rolls in groups</h2>
+      <ol class="rank"><li><span class="who">Need</span><span class="val">61% of wins</span><span class="track"><i style="width:61%"></i></span></li><li><span class="who">Greed</span><span class="val">33%</span><span class="track"><i style="width:33%"></i></span></li><li><span class="who">Everyone passed</span><span class="val">6%</span><span class="track"><i style="width:6%"></i></span></li></ol>
+    </section>
+  </div>
+</div>`);
+
+// ----------------------------------------------------------------------------------- zone
+page("zone.html", "Saltmarsh Reach: paths, deaths and levels", "search", `
+<section class="ch-head" aria-labelledby="h1" style="min-height:27rem">
+  <div class="stage"><canvas id="map" role="img" aria-label="Heat from every recorded path in Saltmarsh Reach, with deaths as crosses"></canvas></div>
+  <div class="ch-id wrap" style="padding-top:3rem">
+    <div><h1 class="ch-name" id="h1">Saltmarsh Reach</h1>
+      <p class="ch-sub"><span>Levels 18 to 27</span><span>3,912 hours played here</span><span>6,480 deaths</span></p></div>
+    <ul class="legend ch-map" aria-label="Map marks">
+      <li><svg viewBox="0 0 24 14" aria-hidden="true"><rect x="5" y="1" width="12" height="12" fill="#cf1f45"/></svg>paths, by how many characters</li>
+      <li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M7.5 2.5l9 9M16.5 2.5l-9 9" stroke="#f0f1f3" stroke-width="1.7" stroke-linecap="round"/></svg>deaths</li>
+    </ul>
+  </div>
+</section>
+<div class="wrap">
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Characters</dt><dd>811</dd></div><div><dt>Median stay</dt><dd>4h 50m</dd></div><div><dt>Arrive at level</dt><dd>19</dd></div>
+    <div><dt>Leave at level</dt><dd>26</dd></div><div><dt>Deaths an hour</dt><dd>1.66</dd></div><div><dt>Quests</dt><dd>62</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod first" aria-labelledby="h-k"><h2 id="h-k">Most killed</h2>
+      <ol class="rank plain"><li><a class="who" href="creature.html">Marsh Stalker</a><span class="val">88,412</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="creature.html">Saltmarsh Raider</a><span class="val">61,090</span><span class="track"><i style="width:69%"></i></span></li><li><a class="who" href="creature.html">Reed Snapper</a><span class="val">40,255</span><span class="track"><i style="width:46%"></i></span></li></ol></section>
+    <section class="mod" aria-labelledby="h-d"><h2 id="h-d">Deadliest</h2>
+      <ol class="rank"><li><a class="who" href="creature.html">Marsh Stalker</a><span class="val">2,104 deaths</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="creature.html">Saltmarsh Raider</a><span class="val">1,118</span><span class="track"><i style="width:53%"></i></span></li><li><span class="who">Drowning</span><span class="val">402</span><span class="track"><i style="width:19%"></i></span></li></ol></section>
+    <section class="mod last" aria-labelledby="h-x"><h2 id="h-x">Experience here</h2>
+      <ol class="rank"><li><span class="who">Quests</span><span class="val">49%</span><span class="track"><i class="c-quest" style="width:49%"></i></span></li><li><span class="who">Kills</span><span class="val">44%</span><span class="track"><i style="width:44%"></i></span></li><li><span class="who">Exploring</span><span class="val">7%</span><span class="track"><i class="c-explore" style="width:7%"></i></span></li></ol></section>
+    <section class="mod w12 first last" aria-labelledby="h-q"><h2 id="h-q">Quests turned in here</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem"><thead><tr><th>Quest</th><th class="n">Turn-ins</th><th class="n">Median level</th><th class="n">XP</th><th class="n">Abandoned</th></tr></thead>
+      <tbody><tr><td><a href="quest.html">The Marsh Takes Its Due</a></td><td class="n">4,210</td><td class="n">23</td><td class="n">2,450</td><td class="n">3%</td></tr><tr><td><a href="quest.html">Reeds for the Weaver</a></td><td class="n">3,980</td><td class="n">20</td><td class="n">1,700</td><td class="n">1%</td></tr><tr><td><a href="quest.html">What the Tide Left</a></td><td class="n">2,644</td><td class="n">25</td><td class="n">2,900</td><td class="n">11%</td></tr></tbody></table></div></section>
+  </div>
+</div>`, `
+Comp.heatmap("map", { seed: 5, hot: [[3600, 4800, 900, 620], [5600, 4200, 700, 420], [7200, 3300, 650, 340], [4700, 2600, 500, 200], [6400, 5300, 520, 180]], deaths: [[3900, 4500], [5200, 4400], [5750, 3900], [7100, 3000], [6900, 3600], [4500, 2700], [3300, 5100], [6100, 5200]] });
+`);
+
+// ---------------------------------------------------------------------------------- quest
+page("quest.html", "The Marsh Takes Its Due: turn-ins and levels", "search", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">The Marsh Takes Its Due</h1><p class="sub">Level 23 quest in <a href="zone.html">Saltmarsh Reach</a>. Pays 2,450 XP and <span class="money">18<i class="s">s</i></span>.</p></div>
+    <div class="filters">${rulesetSeg}</div>
+  </section>
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Turn-ins</dt><dd>4,210</dd></div><div><dt>Accepted</dt><dd>4,366</dd></div><div><dt>Abandoned</dt><dd>3%</dd></div>
+    <div><dt>Median level</dt><dd>23</dd></div><div><dt>Median time to finish</dt><dd>26m</dd></div><div><dt>Deaths while on it</dt><dd>0.4</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w7 first" aria-labelledby="h-l"><h2 id="h-l">Level when turned in</h2><div class="plot"><svg id="ql" role="img" aria-label="Turn-ins by character level"></svg></div></section>
+    <section class="mod w5 last" aria-labelledby="h-r"><h2 id="h-r">Reward chosen</h2>
+      <ol class="rank"><li><a class="who q2" href="item.html">Reedbound Bracers</a><span class="val">58%</span><span class="track"><i style="width:58%"></i></span></li><li><a class="who q2" href="item.html">Tidewatcher Cord</a><span class="val">42%</span><span class="track"><i style="width:42%"></i></span></li></ol></section>
+  </div>
+</div>`, `
+Comp.bars("ql", { x0: 17, x1: 32, y1: 1200, yt: [0, 600, 1200], xt: [18, 22, 26, 30], cls: "t", data: Array.from({ length: 14 }, (_, i) => [18 + i, 1150 * Math.exp(-Math.pow((i - 5) / 2.3, 2)) + 10]) });
+`);
+
+// ------------------------------------------------------------------------------ character
+page("character.html", "Maren-Ashlow: character", "search", `
+<section class="ch-head" aria-labelledby="h1">
+  <div class="stage"><canvas id="map" role="img" aria-label="Every path the character walked in Saltmarsh Reach, with deaths as crosses"></canvas></div>
+  <div class="ch-id wrap" style="padding-top:3rem">
+    <div><h1 class="ch-name" id="h1">Maren-Ashlow</h1>
+      <p class="ch-sub"><i class="dot" aria-hidden="true"></i><span>Level 38 Orc Warrior</span><span>Horde</span><span>Standard, PvE</span><span>4d 0h played</span></p>
+      <div class="lvl"><div class="lvl-bar" role="img" aria-label="Progress to the next level"><i style="width:38%"></i></div><p>38% to level 39 · 51,274 XP to go · level 40 in about 6h 10m played</p></div></div>
+    <ul class="legend ch-map" aria-label="Map marks"><li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M1 7h22" stroke="#ff2d55" stroke-width="2"/></svg>every path walked in Saltmarsh Reach</li><li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M7.5 2.5l9 9M16.5 2.5l-9 9" stroke="#f0f1f3" stroke-width="1.7" stroke-linecap="round"/></svg>death</li></ul>
+  </div>
+</section>
+<div class="wrap">
+  <div class="own" aria-label="Only you see this bar">
+    <span class="state on">Public page</span><span>Economy hidden from visitors</span><span>Last upload 12 minutes ago, 214 sessions</span>
+    <span class="sp"><a href="account.html">Sharing and privacy</a><label class="sw"><input type="checkbox" checked aria-label="Public page"><i></i></label></span>
+  </div>
+  <section class="week" aria-labelledby="h-week">
+    <div><h2 id="h-week">This week</h2><p>Mon 16 to Sun 22 Nov</p></div>
+    <div><dt>Played</dt><dd>8h 48m</dd></div><div><dt>Dungeons</dt><dd>1</dd></div><div><dt>Quests</dt><dd>26</dd></div><div><dt>Gold</dt><dd>+9g 52s</dd></div><div><dt>Zones</dt><dd>4</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-pace">
+      <div class="mod-head"><h2 id="h-pace">Levelling against other Standard, PvE characters</h2></div>
+      <div class="plot"><svg id="pace" role="img" aria-label="This character's played hours to each level against the median and middle half of its ruleset"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--fg)"></i>Maren-Ashlow</li><li><i class="k-line" style="background:var(--accent)"></i>Median</li><li><i style="background:rgba(255,45,85,.3)"></i>Middle half</li></ul>
+      <p class="readout">Reached <b>level 38</b> in 96h played, 9h faster than the median. Faster than 68% of characters.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-gold"><h2 id="h-gold">Gold <span class="priv">Only you</span></h2>
+      <p class="big"><span class="money">64<i class="g">g</i>12<i class="s">s</i></span></p><p class="sub">+9g 52s over the last 7 sessions</p>
+      <div class="plot"><svg id="gold" role="img" aria-label="Balance at the end of each of the last 30 sessions"></svg></div></section>
+    <section class="mod w12 first last"><p class="note" style="margin:0">Below this the page is the character overview as it is today: experience by level, dungeons and raids, played with, deaths, play time by day, distance, play history. "Played with" shows names to the owner only when Social is shared; visitors see a name only when that player's own character is public.</p></section>
+  </div>
+</div>`, `
+const mk = (k, n, j) => { const a = [], r = Comp.rng(4); let t = 0; for (let l = 1; l <= n; l++) { t += (0.12 + Math.pow(l / 60, 2.1) * 5.2) * k * (j ? 0.8 + r() * 0.4 : 1); a.push([l, t]); } return a; };
+const med = mk(1, 60);
+Comp.lines("pace", { x0: 1, x1: 60, y1: 200, yt: [0, 50, 100, 150, 200], yf: (v) => v + "h", xt: [1, 10, 20, 30, 40, 50, 60], series: [{ cls: "a thin", pts: med, band: med.map(([l, t]) => [l, t * 0.78, t * 1.29]) }, { cls: "b", pts: mk(0.9, 38, true), mark: 37 }] });
+const r = Comp.rng(9); let m = 20; Comp.lines("gold", { w: 380, h: 130, x0: 0, x1: 29, y1: 80, yt: [0, 40, 80], yf: (v) => v + "g", xt: [], series: [{ cls: "g", pts: Array.from({ length: 30 }, (_, i) => [i, (m += r() * 4 - 0.6)]) }] });
+(function () { const cv = document.getElementById("map"), M = ScarletMap, b = cv.getBoundingClientRect(); const view = M.fit({ x0: 1500, y0: 500, x1: 9800, y1: 6100 }, { x: 0, y: 0, w: b.width, h: b.height }); M.terrain(cv, view, b.width, b.height, []); })();
+`, true);
+
+// -------------------------------------------------------------------------------- account
+const GROUPS = [["Character and sessions", "Sessions, levels, the zones you enter, your ruleset. Needed by every chart, so it is always sent while uploading is on.", 1, 1], ["Experience and levelling", "Experience gains and where they came from.", 1], ["Quests", "Accepts, turn-ins, objectives and rewards.", 1], ["Combat, kills and deaths", "Kills, deaths and what killed you, fights, bosses, casts.", 1], ["PvP and duels", "Honor, player kills, battlegrounds, duels.", 1], ["Movement and map paths", "Where you walked, flew and teleported.", 1], ["Creatures and places seen", "Creatures and objects you met and where you stood.", 1], ["Loot, items and drop rates", "What you looted and from what, loot rules and rolls.", 1], ["Gold, vendors, auctions, mail and trade", "Money, purchases, auctions, mail and trades.", 0], ["Professions and crafting", "Skills, crafts and recipes.", 1], ["Character build and gear", "Stats, gear, talents, spells and pets.", 1], ["Social and the players you meet", "Groups, guild, friends and players seen. Other players' names are sent only with this on.", 0], ["Collections, achievements, Legacy and reputation", "Legacy Challenges and points, mounts, pets, reputation.", 1], ["Game client and addons loaded", "Client checks, the addon list, UI errors, screenshots taken.", 1], ["Other addons", "What Scarlet records from other addons you run.", 1]];
+page("account.html", "Your Scarlet account", "", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1"><div><h1 id="h1">Your account</h1><p class="sub">Signed in with Google. Scarlet stores the sign-in's id and nothing else about you: no email, no name.</p></div>
+    <div class="filters"><a class="btn quiet" href="#">Sign out</a></div></section>
+  <div class="sheet">
+    <section class="mod w7 first" aria-labelledby="h-c"><h2 id="h-c">Characters</h2>
+      <div class="rows">
+        <div class="row"><b><a href="character.html">Maren-Ashlow</a></b><p>Level 38 Orc Warrior · 214 sessions · last upload 12 minutes ago</p><div class="act"><span class="state on">Public</span><label class="sw"><input type="checkbox" checked aria-label="Public page for Maren-Ashlow"><i></i></label></div></div>
+        <div class="row"><b>Show gold and trades on the public page</b><p>Off: visitors see no balance, vendors, auctions, mail or trades for Maren-Ashlow.</p><div class="act"><label class="sw"><input type="checkbox" aria-label="Show economy for Maren-Ashlow"><i></i></label></div></div>
+        <div class="row"><b><a href="character.html">Tolvir-Greane</a></b><p>Level 12 Troll Mage · 31 sessions · last upload 3 days ago</p><div class="act"><span class="state">Private</span><label class="sw"><input type="checkbox" aria-label="Public page for Tolvir-Greane"><i></i></label></div></div>
+      </div>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-i"><h2 id="h-i">Installs</h2>
+      <div class="rows">
+        <div class="row"><b>Windows PC, linked 20 Nov 2026</b><p>Last upload 12 minutes ago · 2 characters</p><div class="act"><button class="btn danger" type="button">Revoke</button></div></div>
+        <div class="row"><b>Windows PC, linked 2 Nov 2026</b><p>Last upload 18 days ago · 1 character</p><div class="act"><button class="btn danger" type="button">Revoke</button></div></div>
+      </div>
+      <p class="note">A revoked install can no longer upload. What it uploaded stays until you remove it.</p>
+      <h2 style="margin-top:2rem;font-size:1.9rem">Sign-in methods</h2>
+      <div class="rows"><div class="row"><b>Google</b><p>Linked 2 Nov 2026</p><div class="act"><span class="state on">Linked</span></div></div><div class="row"><b>Battle.net</b><p>Not linked. Your BattleTag is never stored.</p><div class="act"><a class="btn quiet" href="#">Link</a></div></div></div>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-s"><div class="mod-head"><h2 id="h-s">What you share</h2><p class="state">Switches change what the app sends next. Recording and the app on your PC are never affected.</p></div>
+      <div class="rows">${GROUPS.map(([n, d, on, lock]) => `<div class="row"><b>${n}</b><p>${d}</p><div class="act">${on ? "" : '<button class="btn danger" type="button">Remove from server</button>'}<label class="sw"><input type="checkbox"${on ? " checked" : ""}${lock ? " disabled" : ""} aria-label="Share ${n}"><i></i></label></div></div>`).join("")}</div>
+    </section>
+    <section class="mod w7 first" aria-labelledby="h-k"><h2 id="h-k">API keys</h2>
+      <div class="rows"><div class="row"><b>guild dashboard</b><p>Made 19 Nov 2026 · last used today · 600 requests a minute</p><div class="act"><button class="btn danger" type="button">Delete</button></div></div></div>
+      <p style="margin-top:1rem"><a class="btn quiet" href="#">Make a key</a></p>
+      <p class="note">The <a href="developers.html">public API</a> needs no key at 60 requests a minute.</p></section>
+    <section class="mod w5 last" aria-labelledby="h-x"><h2 id="h-x">Delete everything you uploaded</h2>
+      <p class="sub">Removes every character, session and number that came from your installs, and takes them out of the totals. Your recordings on your PC are not touched.</p>
+      <p style="margin-top:1.1rem"><button class="btn danger" type="button">Delete everything I uploaded</button></p></section>
+  </div>
+</div>`, "", true);
+
+// ------------------------------------------------------------------------- login and link
+const sso = `<div class="sso">
+  <a href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#f0f1f3" d="M21.6 12.2c0-.7-.1-1.3-.2-1.9H12v3.7h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#cdced4" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.100v2.6A10 10 0 0 0 12 22z"/><path fill="#8a8a93" d="M6.400 14a6 6 0 0 1 0-3.900V7.500H3.100a10 10 0 0 0 0 9z"/><path fill="#f0f1f3" d="M12 5.900c1.500 0 2.800.5 3.800 1.500l2.900-2.800A10 10 0 0 0 3.100 7.500l3.300 2.600C7.200 7.700 9.400 5.900 12 5.900z"/></svg>Continue with Google</a>
+  <a href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#f0f1f3" stroke-width="2"/><path d="M12 3c3 3.500 3 14.500 0 18M12 3c-3 3.500-3 14.500 0 18M3.500 9h17M3.500 15h17" fill="none" stroke="#f0f1f3" stroke-width="1.4"/></svg>Continue with Battle.net</a>
+</div>`;
+const mapOnly = `(function () { const cv = document.getElementById("map"), M = ScarletMap, b = cv.getBoundingClientRect(); const view = M.fit({ x0: 1500, y0: 500, x1: 9800, y1: 6100 }, { x: 0, y: 0, w: b.width, h: b.height }); M.terrain(cv, view, b.width, b.height, []); })();`;
+page("login.html", "Sign in to Scarlet", "", `
+<div class="gate">
+  <div class="gate-in">
+    <h1>Sign in</h1>
+    <p>See your own characters in full, choose which are public, and control what you share.</p>
+    ${sso}
+    <p class="note">Scarlet stores the sign-in's id and nothing else: no email, no name, no BattleTag. Uploading from the app works without an account.</p>
+  </div>
+  <div class="stage"><canvas id="map" role="img" aria-label="An invented survey map"></canvas></div>
+</div>`, mapOnly);
+page("link.html", "Link the Scarlet app to your account", "", `
+<div class="gate">
+  <div class="gate-in">
+    <h1>Link this app</h1>
+    <p>The Scarlet app on your PC is showing this code. Check that it matches, then link it.</p>
+    <p class="code" aria-label="Link code">K7QM-2XVD</p>
+    <p style="margin-top:1.6rem;display:flex;gap:.8rem;flex-wrap:wrap"><button class="btn" type="button">Link to my account</button><a class="btn quiet" href="#">Cancel</a></p>
+    <p class="note">Linking puts the characters this app uploads under your account. You can revoke the app at any time. The code works once and expires in 10 minutes.</p>
+  </div>
+  <div class="stage"><canvas id="map" role="img" aria-label="An invented survey map"></canvas></div>
+</div>`, mapOnly, true);
+
+// ----------------------------------------------------------------------------- developers
+const eps = [
+  ["GET", "/api/v1/public/stats", "Totals and the series of the global dashboard.", [["ruleset", "A ruleset id. Leave out for all rulesets"], ["class", "A class file, such as WARRIOR"]]],
+  ["GET", "/api/v1/public/rulesets", "Every ruleset with its totals.", []],
+  ["GET", "/api/v1/public/rulesets/{id}/levels", "Played time to reach each level: median, quartiles, fastest tenth, characters.", []],
+  ["GET", "/api/v1/public/leaderboards/{board}", "A leaderboard of public characters.", [["ruleset", "A ruleset id"], ["cursor", "From next_cursor of the last answer"]]],
+  ["GET", "/api/v1/public/search", "Public characters, creatures, items, zones and quests by name.", [["q", "At least 2 characters"], ["kind", "character, creature, item, zone or quest"]]],
+  ["GET", "/api/v1/public/characters/{name}", "A character whose owner made it public. 404 otherwise.", []],
+  ["GET", "/api/v1/public/creatures/{id}", "Kills, deaths and drop rates by loot rule.", [["ruleset", "A ruleset id"]]],
+  ["GET", "/api/v1/public/items/{id}", "Item facts and where it drops.", []],
+  ["GET", "/api/v1/public/zones/{id}", "Time, deaths, kills and quests in a zone.", []],
+  ["GET", "/api/v1/public/maps/{id}/heat", "Path and death counts per map cell.", [["layer", "paths or deaths"]]],
+];
+const slug = (p) => p.replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+page("developers.html", "Scarlet public API reference", "developers", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1"><div><h1 id="h1">Public API</h1><p class="sub">Everything public on this site is readable as JSON. Read-only, no sign-up, version 1.</p></div></section>
+  <div class="ref">
+    <nav class="ref-nav" aria-label="Endpoints"><div><h3>Basics</h3><a href="#use">Using the API</a><a href="#limits">Limits and keys</a><a href="#pages">Pagination</a></div><div><h3>Endpoints</h3>${eps.map((e) => `<a href="#${slug(e[1])}">${e[1].replace("/api/v1/public", "")}</a>`).join("")}</div></nav>
+    <div>
+      <section class="ep" id="use"><h2>Using the API</h2><p>The base is <code>https://&lt;host&gt;/api/v1/public</code>. Answers are JSON in UTF-8. Times are ISO 8601 in UTC, durations are seconds, money is copper. Any origin may call it from a browser. Answers can be cached for five minutes and carry an <code>ETag</code>.</p>
+        <pre class="json">curl https://&lt;host&gt;/api/v1/public/stats?ruleset=3</pre></section>
+      <section class="ep" id="limits"><h2>Limits and keys</h2><p>60 requests a minute per IP address without a key. A free key from your account page raises that to 600. Send it as <code>Authorization: Bearer &lt;key&gt;</code>. Over the limit the answer is <code>429</code> with <code>Retry-After</code>.</p></section>
+      <section class="ep" id="pages"><h2>Pagination</h2><p>Lists return <code>data</code> and <code>next_cursor</code>. Pass it back as <code>?cursor=</code>. A null cursor is the end. Numbers a bucket cannot show because too few characters contributed come back as <code>null</code>.</p></section>
+      ${eps.map((e) => `<section class="ep" id="${slug(e[1])}"><h2><b>${e[0]}</b>${e[1]}</h2><p>${e[2]}</p>${e[3].length ? `<table class="data"><thead><tr><th>Parameter</th><th>Meaning</th></tr></thead><tbody>${e[3].map((p) => `<tr><td><code>${p[0]}</code></td><td>${p[1]}</td></tr>`).join("")}</tbody></table>` : ""}${e[1].endsWith("/stats") ? `<pre class="json">{
+  <b>"characters"</b>: 1284,
+  <b>"played_seconds"</b>: 150865200,
+  <b>"levels"</b>: [{ <b>"level"</b>: 40, <b>"median_seconds"</b>: 220800, <b>"p25"</b>: 172800, <b>"p75"</b>: 284400, <b>"characters"</b>: 311 }],
+  <b>"updated_at"</b>: <i>"2026-11-20T21:08:00Z"</i>
+}</pre>` : ""}</section>`).join("")}
+    </div>
+  </div>
+</div>`);
+console.log("wrote", fs.readdirSync(out).filter((f) => f.endsWith(".html")).join(" "));

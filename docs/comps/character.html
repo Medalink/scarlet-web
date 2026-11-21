@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maren-Ashlow: character</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html" aria-current="page">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="account.html">Account</a>
+  </div>
+</header>
+<main>
+
+<section class="ch-head" aria-labelledby="h1">
+  <div class="stage"><canvas id="map" role="img" aria-label="Every path the character walked in Saltmarsh Reach, with deaths as crosses"></canvas></div>
+  <div class="ch-id wrap" style="padding-top:3rem">
+    <div><h1 class="ch-name" id="h1">Maren-Ashlow</h1>
+      <p class="ch-sub"><i class="dot" aria-hidden="true"></i><span>Level 38 Orc Warrior</span><span>Horde</span><span>Standard, PvE</span><span>4d 0h played</span></p>
+      <div class="lvl"><div class="lvl-bar" role="img" aria-label="Progress to the next level"><i style="width:38%"></i></div><p>38% to level 39 · 51,274 XP to go · level 40 in about 6h 10m played</p></div></div>
+    <ul class="legend ch-map" aria-label="Map marks"><li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M1 7h22" stroke="#ff2d55" stroke-width="2"/></svg>every path walked in Saltmarsh Reach</li><li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M7.5 2.5l9 9M16.5 2.5l-9 9" stroke="#f0f1f3" stroke-width="1.7" stroke-linecap="round"/></svg>death</li></ul>
+  </div>
+</section>
+<div class="wrap">
+  <div class="own" aria-label="Only you see this bar">
+    <span class="state on">Public page</span><span>Economy hidden from visitors</span><span>Last upload 12 minutes ago, 214 sessions</span>
+    <span class="sp"><a href="account.html">Sharing and privacy</a><label class="sw"><input type="checkbox" checked aria-label="Public page"><i></i></label></span>
+  </div>
+  <section class="week" aria-labelledby="h-week">
+    <div><h2 id="h-week">This week</h2><p>Mon 16 to Sun 22 Nov</p></div>
+    <div><dt>Played</dt><dd>8h 48m</dd></div><div><dt>Dungeons</dt><dd>1</dd></div><div><dt>Quests</dt><dd>26</dd></div><div><dt>Gold</dt><dd>+9g 52s</dd></div><div><dt>Zones</dt><dd>4</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-pace">
+      <div class="mod-head"><h2 id="h-pace">Levelling against other Standard, PvE characters</h2></div>
+      <div class="plot"><svg id="pace" role="img" aria-label="This character's played hours to each level against the median and middle half of its ruleset"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--fg)"></i>Maren-Ashlow</li><li><i class="k-line" style="background:var(--accent)"></i>Median</li><li><i style="background:rgba(255,45,85,.3)"></i>Middle half</li></ul>
+      <p class="readout">Reached <b>level 38</b> in 96h played, 9h faster than the median. Faster than 68% of characters.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-gold"><h2 id="h-gold">Gold <span class="priv">Only you</span></h2>
+      <p class="big"><span class="money">64<i class="g">g</i>12<i class="s">s</i></span></p><p class="sub">+9g 52s over the last 7 sessions</p>
+      <div class="plot"><svg id="gold" role="img" aria-label="Balance at the end of each of the last 30 sessions"></svg></div></section>
+    <section class="mod w12 first last"><p class="note" style="margin:0">Below this the page is the character overview as it is today: experience by level, dungeons and raids, played with, deaths, play time by day, distance, play history. "Played with" shows names to the owner only when Social is shared; visitors see a name only when that player's own character is public.</p></section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+const mk = (k, n, j) => { const a = [], r = Comp.rng(4); let t = 0; for (let l = 1; l <= n; l++) { t += (0.12 + Math.pow(l / 60, 2.1) * 5.2) * k * (j ? 0.8 + r() * 0.4 : 1); a.push([l, t]); } return a; };
+const med = mk(1, 60);
+Comp.lines("pace", { x0: 1, x1: 60, y1: 200, yt: [0, 50, 100, 150, 200], yf: (v) => v + "h", xt: [1, 10, 20, 30, 40, 50, 60], series: [{ cls: "a thin", pts: med, band: med.map(([l, t]) => [l, t * 0.78, t * 1.29]) }, { cls: "b", pts: mk(0.9, 38, true), mark: 37 }] });
+const r = Comp.rng(9); let m = 20; Comp.lines("gold", { w: 380, h: 130, x0: 0, x1: 29, y1: 80, yt: [0, 40, 80], yf: (v) => v + "g", xt: [], series: [{ cls: "g", pts: Array.from({ length: 30 }, (_, i) => [i, (m += r() * 4 - 0.6)]) }] });
+(function () { const cv = document.getElementById("map"), M = ScarletMap, b = cv.getBoundingClientRect(); const view = M.fit({ x0: 1500, y0: 500, x1: 9800, y1: 6100 }, { x: 0, y: 0, w: b.width, h: b.height }); M.terrain(cv, view, b.width, b.height, []); })();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+code	field	when	note
+QA	2		player who shared the quest
+DP	2		group member
+RZ	1		player offering a resurrection
+DU	1		challenger
+DW	2		opponent
+DQ	2		challenger
+PK	1		player killed
+HN	2		victim
+LM	3		master looter
+LT	2		receiver
+LD	2		roller
+RW	5	field 1 is l	winner
+ML	2		sender or recipient
+TR	2		trade partner
+DR	3	field 11 is p	killer, when a player
+DR	15		killer guild

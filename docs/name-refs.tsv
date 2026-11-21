@@ -1,0 +1,129 @@
+code	field	kind	when	shape	note
+K	1	npc		id	
+NS	1	npc		id	
+I	4	npc		id	
+NI	2	npc		id	
+QD	3	npc		id	
+GS	1	npc		id	
+GO	1	npc		id	
+VB	5	npc		id	
+VS	1	npc		id	
+VG	4	npc		id	
+TB	1	npc		id	
+TC	1	npc		id	
+NW	3	npc	field 1 is 1	id	open event only
+NP	3	npc	field 1 is n	id	kind n is a creature, kind o an object with no name line
+LO	2	npc	field 1 is c	id	source kind c is a creature
+X	5	npc	field 4 is k	id	experience from a kill
+C	1	spell		id	
+CH	1	spell		id	
+CI	1	spell		id	
+DS	2	spell		id	
+A	2	spell		id	
+CP	2	spell		id	
+DR	1	spell		id	
+CC	2	spell		id	
+CB	1	spell		id	
+RD	1	spell		id	
+RT	1	spell		id	
+LS	1	spell		id	
+LN	8	spell		id	
+TW	2	spell		id	
+TA	7	spell		id	
+AR	2	spell		id	
+SO	2	spell		id	
+MO	2	spell		id	
+TE	2	spell		id	
+CW	4	spell		id	
+RR	4	spell		id	
+CR	5	spell		id	recipeSpellID; absent on older lines
+CA	7	spell	field 1 is mount	id	extra is the mount spell
+SR	2	spell	field 1 is 0	id	optionType 0 is a spell
+SB	4	spell		list	spellID:rank joined by commas
+AB	3	spell	field 2 is spell	id	
+AB	5	spell	field 4 is spell	id	what the slot held before
+O	1	item		id	
+G	2	item		id	
+PG	2	item		id	
+CR	1	item		id	
+AU	3	item		id	
+EN	2	item		id	
+IU	1	item		id	
+DI	1	item		id	
+RL	2	item		id	
+RW	2	item		id	
+LT	3	item		id	
+LD	3	item		id	
+QR	3	item		id	
+EC	2	item		id	
+RR	3	item		id	
+TE	3	item		id	
+AL	8	item		id	
+TX	5	item		id	
+CA	6	item		id	
+QR	5	item		list	every itemID offered
+EN	4	item		list	gems
+EN	6	item		list	previous gems
+LO	2	item	field 1 is i	id	an item opened from the bags; empty when unknown
+LO	4	item		lo	elements itemIDxquantity; mxN is coin and skipped; c<currencyID>xquantity is a currency (kind currency)
+VS	3	item		list	elements itemID:price:stack:limit:cost; cost can name i<itemID>x<n> or c<currencyID>x<n> and is not read
+ML	5	item		list	elements itemID:count
+TR	6	item	field 1 is 0	list	gave, elements itemID:count
+TR	7	item	field 1 is 0	list	got, elements itemID:count
+SR	2	item	field 1 is 1	id	optionType 1 is an item
+AB	3	item	field 2 is item	id	
+AB	5	item	field 4 is item	id	what the slot held before
+BR	2	item	field 1 is item	id	
+BR	2	currency	field 1 is currency	id	
+Q	2	quest		id	
+QI	1	quest		id	
+QP	1	quest		id	
+QS	1	quest		id	
+QA	1	quest		id	
+QD	2	quest		id	
+QR	1	quest		id	
+QW	1	quest		id	
+X	5	quest	field 4 is q	id	experience from a quest turn-in
+SU	3	quest	field 2 is q	id	
+GS	2	quest		list	questIDs the NPC can give
+GS	3	quest		list	questIDs of yours it can take; a trailing * marks complete
+CU	1	currency		id	
+CW	1	currency		id	
+SL	1	skill		id	
+PS	1	skill		id	
+PU	1	skill		id	
+PG	4	skill		id	
+WS	1	statistic		id	
+AC	1	achievement		id	
+AD	1	achievement		id	
+AE	1	achievement		id	
+AT	1	achievement		id	
+LA	1	achievement		id	
+CK	2	achievement	field 1 is 2	id	content type 2 is an achievement
+RF	1	faction		id	
+RG	1	faction		id	
+RV	2	faction		id	
+RR	1	faction		id	
+GO	2	gossip		id	
+GS	4	gossip		list	gossip option ids
+BS	15	stat		list	elements id:value
+TF	1	flight		id	
+TF	2	flight		id	
+TG	7	talenttab		list	elements groupID:spent:available
+TA	8	talenttab		id	
+N	1	npc		def	defines the name of the id in field 1
+SN	1	spell		def	defines the name of the id in field 1
+IN	1	item		def	defines the name of the id in field 1
+II	1	item		def	item fact; sent with the item
+IT	1	item		def	item fact; sent with the item
+IQ	1	item		def	item fact; sent with the item
+QN	1	quest		def	defines the name of the id in field 1
+CN	1	currency		def	defines the name of the id in field 1
+KN	1	skill		def	defines the name of the id in field 1
+WN	1	statistic		def	defines the name of the id in field 1
+AN	1	achievement		def	defines the name of the id in field 1
+FN	1	faction		def	defines the name of the id in field 1
+GN	1	gossip		def	defines the name of the id in field 1
+BN	1	stat		def	defines the name of the id in field 1
+TN	1	flight		def	defines the name of the id in field 1
+TY	1	talenttab		def	defines the name of the id in field 1
