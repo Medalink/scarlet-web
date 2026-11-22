@@ -24,7 +24,8 @@ class KillLoot
      * What a creature gives, set against the kills of its corpses (docs/LOOT.md, Metrics, Corpses looted of kills): the
      * corpses read for loot over the kills, and the same for each item those corpses listed. A kill with a corpse key
      * is one corpse whoever got the credit and at any group size; it is looted when a window kept for that corpse was
-     * read for loot. Kills with no key are the credited kills of a character playing alone, set against the windows
+     * read for loot. Kills with no key are the kills of a character playing alone that it made the last hit on or that
+     * its pet or a damage-over-time spell did from its threat list (`credit` 1 and 2), set against the windows
      * read for loot at a group size of 0 or 1, and only under all rules or solo. `$rule` narrows the kills with a key to
      * one loot rule (without it, every rule but personal loot) and `$soloOnly` to a group size of 0 or 1. It is a lower
      * bound on a drop rate, since a kill with no window is an empty corpse or one nobody looted. Kills and windows
@@ -69,7 +70,7 @@ class KillLoot
     private function kills(int $npcId, ?string $rule, bool $soloOnly): ?array
     {
         $keyed = $this->keyed(DB::table(KeyedKills::Kills->value), $rule, $soloOnly)->selectRaw('kills, looted, characters')->where('npc_id', $npcId);
-        $union = $this->withUnkeyed($rule) ? DB::table(Rollup::KillsSoloUnkeyedDaily->value)->selectRaw('kills, 0::bigint as looted, characters')->where('npc_id', $npcId)->unionAll($keyed) : $keyed;
+        $union = $this->withUnkeyed($rule) ? DB::table(Rollup::KillsSoloAttributedDaily->value)->selectRaw('kills, 0::bigint as looted, characters')->where('npc_id', $npcId)->unionAll($keyed) : $keyed;
         $row = $this->read->rows(DB::query()->fromSub($union, 'k')
             ->selectRaw('sum(kills) as kills, sum(looted) as looted, distinct_count(rollup(characters)) as characters')
             ->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')]))[0] ?? null;

@@ -34,13 +34,16 @@ final readonly class RateEstimate implements JsonSerializable
     ) {}
 
     /**
+     * More listings than windows (`k` over `n`) is a count that does not describe a share, so it is kept as it is and
+     * stated as counts only, never cut down to `n`.
+     *
      * @param  list<RateFlag>  $flags
      */
     public static function of(int $k, int $n, array $flags = [], string $unit = self::UNIT_WINDOW): self
     {
         $n = max(0, $n);
-        $k = min(max(0, $k), $n);
-        if ($n === 0) {
+        $k = max(0, $k);
+        if ($n === 0 || $k > $n) {
             return new self($k, $n, 0.0, 0.0, 1.0, RateSample::Counts, $unit, $flags);
         }
         $range = RateMath::wilson($k, $n);

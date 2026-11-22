@@ -101,7 +101,7 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
 - **Corpses looted of kills** (phase 2, grouped play in phase 7): a figure in the strip labelled `Corpses looted of
   kills`: `76.9%` with `40 of 52` beside it, a dash in place of the share under 10 kills, and no figure when the
   creature has no such kills. It counts a kill with a corpse key at any group size, once however many members got
-  credit, and a credited solo kill with no key. Drops gains an **Of kills** column (`24 of 52`), the windows that
+  credit, and a solo kill with no key that the character made itself (credit 1 or 2). Drops gains an **Of kills** column (`24 of 52`), the windows that
   listed the item over the same kills. Both follow the rule control: under one loot rule only the kills with a key
   of that rule are counted, and the kills with no key (solo play) only under All rules and Solo. A kill nobody
   looted counts against it, so the page says `of kills`, never `drop rate`.
@@ -231,7 +231,7 @@ window       loot_opens where counted and has_items and first_read is not false 
 window item  loot_drops where counted and via = 'window' and first_read is not false and source_id is not null
 receipt      loot_drops where counted and via = 'receipt'
 member kill  kills where counted and not player
-solo kill    member kill where credit = 1 and group_size in (0, 1) and at >= 2026-11-20 21:00 UTC
+solo kill    member kill where credit in (1, 2) and group_size in (0, 1) and at >= 2026-11-20 21:00 UTC
 ```
 
 A window also carries `read`. A drop table reads `read = 'loot'`, a skinning table `read = 'skin'`, and fishing,
@@ -278,14 +278,16 @@ Notes on the definitions:
   Opens-to-kills ratios over all time mix periods and no page shows one. The two conditions are met by the rows
   themselves: `kills.group_size` is null without a `loot` part and `read` is null without a `combat` part, so a
   solo kill and a window with a `read` both come from a session that holds both. For kills with no key,
-  `kills_solo_unkeyed_daily` holds the solo kills and the page reads the windows from `loot_windows_unkeyed_daily`
+  `kills_solo_attributed_daily` holds the solo kills and the page reads the windows from `loot_windows_unkeyed_daily`
   and `loot_items_unkeyed_daily` at a group size of 0 or 1. For kills with a key `loot_kills_keyed_daily` and
   `loot_kill_items_keyed_daily` hold the kill corpses of every group size, each with whether and what its corpse
   gave.
-  Two picks, both the narrower reading: a solo kill is one the character got credit for (`credit = 1`; an
-  unattributed kill cannot be looted), and the cutoff is 15:00 in the addon author's time, UTC-6, so 21:00 UTC; the
+  Two picks, both the narrower reading: a solo kill is one the character's own play made, `credit` 1 (its last hit) or
+  2 (a pet or a damage-over-time spell it had on the creature's threat list: a warlock's kills are mostly these, and
+  every one of them has a window; `credit` 0 is a party member's and a missing credit is a `?` the client kept
+  secret), and the cutoff is 15:00 in the addon author's time, UTC-6, so 21:00 UTC; the
   lines name no time zone, and the later instant drops a few hours of kills rather than count kills that had no
-  window.
+  window. Counts a window listed more often than there are kills stay as counts (`25 of 20`), with no rate.
 - **A kill with no window** is either an empty corpse or one nobody looted. The two are not told apart until the
   corpse key exists, so Drop rate a kill is a lower bound and the page says `of kills`, never `drop rate`, for it.
 - **Kept by the looter** needs no dedupe: both sides are one uploader's own rows. Both sides are summed quantities,
@@ -500,7 +502,7 @@ object is labelled by what it gives.
   character's windows with its own receipts read (What the looter kept, Your share of group loot).
 - **Corpses counted once (phase 7).** Windows without a key are the same aggregates over `corpse_key is null`:
   `loot_windows_unkeyed_daily`, `loot_items_unkeyed_daily`, `loot_windows_character_unkeyed_daily`,
-  `loot_freeforall_items_unkeyed_daily` and `kills_solo_unkeyed_daily`. Windows with a key cannot be a sum of daily
+  `loot_freeforall_items_unkeyed_daily` and `kills_solo_attributed_daily`. Windows with a key cannot be a sum of daily
   buckets, since one corpse is in the days of every character that read it, so `RebuildKeyedLoot` fills five plain
   tables whole (`loot_windows_keyed_daily`, `loot_items_keyed_daily`, `loot_windows_character_keyed_daily`,
   `loot_kills_keyed_daily`, `loot_kill_items_keyed_daily`) in one transaction at the end of every aggregate refresh,
