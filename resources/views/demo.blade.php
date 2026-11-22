@@ -1,4 +1,4 @@
-<x-layouts.site :demo="true" title="Maren-Ashlow: a Scarlet character overview with demo data" description="The character overview Scarlet builds from its log: experience by level and source, gold, dungeon runs, deaths, travel and every session. The data on this page is invented.">
+<x-layouts.site :demo="true" title="Maren-Ashlow: a Scarlet character overview with demo data" description="The character overview Scarlet builds from its log: experience by level and source, gold, dungeon runs, deaths, travel and every session. The data on this page is invented." :brand="false">
   <section class="ch-head" aria-labelledby="h1">
     <div class="stage"><canvas role="img" aria-label="An invented map of Saltmarsh Reach. Every path the character walked is drawn as a thin scarlet line, so the routes used most glow brightest. Crosses mark six deaths."></canvas></div>
     <div class="ch-id wrap">

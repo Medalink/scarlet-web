@@ -1,4 +1,4 @@
-<x-layouts.app title="Scarlet release notes" current="" description="What changed in each version of the Scarlet website and API, and the build that is running now.">
+<x-layouts.app title="Scarlet release notes" current="" description="What changed in each version of the Scarlet website and API, and the build that is running now." :brand="false">
 <div class="wrap">
   <x-page-head title="Release notes" :single="true">
     <x-slot:sub>Running v{{ $d['build']['full'] }}. {{ \App\View\Format::count($d['count'], 'release') }} published.</x-slot:sub>

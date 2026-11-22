@@ -1,5 +1,5 @@
 {{-- The frame of the landing page and the demo character: the header lies over the page, as on the static site. --}}
-@props(['title', 'description', 'demo' => false])
+@props(['title', 'description', 'demo' => false, 'canonical' => null, 'index' => true, 'brand' => true])
 @php
     $jump = $demo ? '/' : '';
     // Stats and Map stay in the header on a phone; the other pages drop out first (site.css, landing.css).
@@ -8,7 +8,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<x-layouts.head :title="$title" :description="$description" :entries="$demo ? ['resources/css/site.css', 'resources/css/landing.css', 'resources/js/demo.js'] : ['resources/css/site.css', 'resources/css/landing.css', 'resources/js/landing.js']" />
+<x-layouts.head :title="$title" :description="$description" :entries="$demo ? ['resources/css/site.css', 'resources/css/landing.css', 'resources/js/demo.js'] : ['resources/css/site.css', 'resources/css/landing.css', 'resources/js/landing.js']" :canonical="$canonical" :index="$index" :brand="$brand" />
+@isset($head){{ $head }}@endisset
 </head>
 <body>
 

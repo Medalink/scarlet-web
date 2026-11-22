@@ -1,4 +1,4 @@
-<x-layouts.app title="Scarlet world map: where characters go and die" current="world" description="Paths, deaths and creatures met on one world map, from what players chose to upload.">
+<x-layouts.app title="WoW Forever world map: where characters go and die" current="world" description="Paths, deaths and creatures met on one world map, from what players chose to upload.">
 <x-world>
   <x-slot:map>
     <div class="world-map">

@@ -45,6 +45,23 @@ final class CharacterPage
         $quests = CharacterLists::quests($r['questsDone']);
         $creatures = CharacterLists::creatures($r['creaturesMet']);
         $steps = CharacterSkills::chart($r['skillHistory'], $r['playBuckets']);
+        $facts = array_values(array_filter([
+            ['text' => Format::character(null, $character->race, $character->class), 'href' => null],
+            ['text' => $character->faction, 'href' => null],
+            $ruleset === null ? null : ['text' => $ruleset['name'], 'href' => '/rulesets/'.$ruleset['slug']],
+            $character->whole_life || $character->first_level === null ? null : ['text' => 'First recorded at level '.$character->first_level, 'href' => null],
+        ], fn (?array $fact): bool => $fact !== null && (string) $fact['text'] !== ''));
+        $figures = array_values(array_filter([
+            ['label' => 'Level', 'value' => (string) $character->level, 'count' => $character->level, 'icon' => 'level'],
+            $character->played_known
+                ? ['label' => 'Played', 'value' => Format::duration($character->played_seconds), 'icon' => 'hours']
+                : ['label' => 'Recorded'.$since, 'value' => Format::duration($character->recorded_seconds), 'icon' => 'hours'],
+            $cap === null ? null : ['label' => 'Time at level '.$cap['level'].($cap['observed'] ? $since : ''), 'value' => Format::duration($cap['seconds_at_cap']), 'icon' => null],
+            ['label' => 'Kills'.$since, 'value' => Format::number($totals['kills']), 'icon' => 'kills'],
+            ['label' => 'Deaths'.$since, 'value' => Format::number($totals['deaths']), 'icon' => 'deaths'],
+            ['label' => 'Quests'.$since, 'value' => Format::number($totals['quests']), 'icon' => 'quests'],
+            round($totals['distance'], 1) > 0 ? ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1), 'icon' => 'distance'] : null,
+        ]));
 
         return [
             'id' => $character->id,
@@ -52,23 +69,9 @@ final class CharacterPage
             'owner' => $r['owner'],
             'economy' => $economy,
             'since' => $since,
-            'facts' => array_values(array_filter([
-                ['text' => Format::character(null, $character->race, $character->class), 'href' => null],
-                ['text' => $character->faction, 'href' => null],
-                $ruleset === null ? null : ['text' => $ruleset['name'], 'href' => '/rulesets/'.$ruleset['slug']],
-                $character->whole_life || $character->first_level === null ? null : ['text' => 'First recorded at level '.$character->first_level, 'href' => null],
-            ], fn (?array $fact): bool => $fact !== null && (string) $fact['text'] !== '')),
-            'figures' => array_values(array_filter([
-                ['label' => 'Level', 'value' => (string) $character->level, 'count' => $character->level, 'icon' => 'level'],
-                $character->played_known
-                    ? ['label' => 'Played', 'value' => Format::duration($character->played_seconds), 'icon' => 'hours']
-                    : ['label' => 'Recorded'.$since, 'value' => Format::duration($character->recorded_seconds), 'icon' => 'hours'],
-                $cap === null ? null : ['label' => 'Time at level '.$cap['level'].($cap['observed'] ? $since : ''), 'value' => Format::duration($cap['seconds_at_cap']), 'icon' => null],
-                ['label' => 'Kills'.$since, 'value' => Format::number($totals['kills']), 'icon' => 'kills'],
-                ['label' => 'Deaths'.$since, 'value' => Format::number($totals['deaths']), 'icon' => 'deaths'],
-                ['label' => 'Quests'.$since, 'value' => Format::number($totals['quests']), 'icon' => 'quests'],
-                round($totals['distance'], 1) > 0 ? ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1), 'icon' => 'distance'] : null,
-            ])),
+            'share' => self::share($character, $facts, $figures, $since),
+            'facts' => $facts,
+            'figures' => $figures,
             'classKey' => strtoupper((string) $character->class),
             'levelRule' => self::levelRule($character->level),
             'chapters' => CharacterLayout::chapters($cap !== null, $r['gold'] !== null, $quests !== null, $creatures !== null, $steps !== null, $r['talents'] !== null, $levels !== null),
@@ -95,6 +98,31 @@ final class CharacterPage
             'talents' => CharacterTalents::data($r['talents']),
             'sessions' => self::sessions($sessions, $economy),
             'more' => count($sessions) >= $r['history'] && $r['history'] < CharacterRequest::MAX_HISTORY ? '/c/'.$character->name.'?sessions='.min($r['history'] * 4, CharacterRequest::MAX_HISTORY) : null,
+        ];
+    }
+
+    /**
+     * What a link to this character shows when it is shared: its name, level, race and class, then what it has done.
+     * A character not seen from its first level says once, at the end, since when its counts run.
+     *
+     * @param  list<array<string, mixed>>  $facts
+     * @param  list<array<string, mixed>>  $figures
+     * @return array{title: string, description: string}
+     */
+    private static function share(Character $character, array $facts, array $figures, string $since): array
+    {
+        $raceAndClass = Format::character(null, $character->race, $character->class);
+        $list = ucfirst(implode(', ', array_map(
+            fn (array $figure): string => lcfirst($since === '' ? (string) $figure['label'] : str_replace($since, '', (string) $figure['label'])).' '.$figure['value'],
+            $figures,
+        ))).($since === '' ? '' : ', counted'.$since);
+        $lead = implode(', ', array_map(fn (array $fact): string => (string) $fact['text'], $facts));
+
+        return [
+            'title' => $character->level === null || $raceAndClass === ''
+                ? $character->name.': character overview'
+                : $character->name.', level '.$character->level.' '.$raceAndClass,
+            'description' => ($lead === '' ? '' : $lead.'. ').$list.'. Recorded by Scarlet in WoW Forever.',
         ];
     }
 

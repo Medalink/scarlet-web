@@ -1,4 +1,9 @@
-<x-layouts.site title="Scarlet: a record of what you do in WoW Forever" description="Scarlet is an addon and desktop app for WoW Forever. The addon writes a timestamped line for each thing you do and keeps it on your PC.">
+@php($origin = rtrim((string) config('app.url'), '/'))
+@php($website = ['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'Scarlet', 'url' => $origin.'/'])
+<x-layouts.site title="Scarlet: a record of what you do in WoW Forever" description="Scarlet is an addon and desktop app for WoW Forever. The addon writes a timestamped line for each thing you do and keeps it on your PC." :brand="false">
+  <x-slot:head>
+    <script type="application/ld+json">@json($website)</script>
+  </x-slot:head>
   <section class="hero" aria-labelledby="h1">
     <div class="hero-copy">
       <h1 id="h1">Scarlet records what you do in WoW Forever and keeps it on your PC</h1>

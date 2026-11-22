@@ -1,4 +1,4 @@
-<x-layouts.app title="Download the Scarlet app" current="download" description="Download the Scarlet desktop app for Windows. It installs the addon for WoW Forever and keeps it current.">
+<x-layouts.app title="Download the Scarlet app" current="download" description="Download the Scarlet desktop app for Windows. It installs the addon for WoW Forever and keeps it current." :brand="false">
 <div class="wrap">
   <x-page-head title="Download the Scarlet app" :single="true">
     <x-slot:sub>Windows only. The installer sets up the app for your user and needs no administrator rights.</x-slot:sub>

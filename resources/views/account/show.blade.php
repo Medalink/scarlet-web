@@ -1,4 +1,4 @@
-<x-layouts.app title="Your Scarlet account" current="" :signed-in="true">
+<x-layouts.app title="Your Scarlet account" current="" :signed-in="true" :index="false" :brand="false">
 <div class="wrap">
   <x-page-head title="Your account">
     <x-slot:sub>Scarlet stores the sign-in's id and nothing else about you: no email, no name.</x-slot:sub>

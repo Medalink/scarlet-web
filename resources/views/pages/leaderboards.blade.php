@@ -1,4 +1,4 @@
-<x-layouts.app title="Scarlet leaderboards" current="leaderboards" description="{{ $d['sub'] }}">
+<x-layouts.app title="WoW Forever leaderboards" current="leaderboards" :description="$d['sub']">
 <div class="wrap">
   <x-page-head title="Leaderboards">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>

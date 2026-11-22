@@ -1,4 +1,4 @@
-<x-layouts.app title="Scarlet public API" current="developers" description="Everything public on Scarlet as read-only JSON: statistics, rulesets, leaderboards, search, characters, creatures, items, zones, quests and map heat.">
+<x-layouts.app title="Scarlet public API" current="developers" description="Everything public on Scarlet as read-only JSON: statistics, rulesets, leaderboards, search, characters, creatures, items, zones, quests and map heat." :brand="false">
 <div class="wrap">
   <x-page-head title="Public API" :single="true">
     <x-slot:sub>Everything public on this site is readable as JSON. Read-only, no sign-up, version 1.</x-slot:sub>

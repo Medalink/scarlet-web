@@ -1,6 +1,6 @@
 {{-- The page frame of the web app: the comps' header, the page, the footer. `base` puts every link under a
      prefix, which the design gallery uses to stay inside /design. --}}
-@props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => ''])
+@props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => '', 'canonical' => null, 'index' => true, 'brand' => true])
 @php
     $signedIn = $signedIn || auth()->check();
     $items = ['stats' => ['Stats', '/stats'], 'world' => ['Map', '/map'], 'rulesets' => ['Rulesets', '/rulesets'], 'talents' => ['Talents', '/talents'], 'leaderboards' => ['Leaderboards', '/leaderboards'], 'search' => ['Search', '/search'], 'developers' => ['API', '/developers']];
@@ -8,7 +8,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/site.css', 'resources/css/app.css', 'resources/css/game.css', 'resources/js/app.js']" />
+<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/site.css', 'resources/css/app.css', 'resources/css/game.css', 'resources/js/app.js']" :canonical="$canonical" :index="$index" :brand="$brand" />
 </head>
 <body class="art">
 <header class="top solid">

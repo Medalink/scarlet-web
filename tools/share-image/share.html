@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Scarlet share image, 1200 by 630</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:wght@400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=block">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #141416; }
+  .card { position: relative; width: 1200px; height: 630px; background: #141416; color: #f0f1f3; }
+  .contours { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .9; }
+  .shade { position: absolute; inset: 0; background: radial-gradient(ellipse 62% 70% at 50% 52%, rgba(20,20,22,.8) 0%, rgba(20,20,22,.5) 60%, rgba(20,20,22,0) 100%); }
+  .trace { position: absolute; inset: 0; }
+  .copy { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  h1 { margin: 0; font: 800 236px/0.82 "Sofia Sans Extra Condensed", sans-serif; letter-spacing: -1px; text-transform: uppercase; }
+  p { margin: 30px 0 0; font: 500 40px/1.15 "Sofia Sans", sans-serif; color: #cdced4; }
+  .host { position: absolute; left: 0; right: 0; bottom: 44px; text-align: center; font: 500 22px/1 "Martian Mono", monospace; font-stretch: 87.5%; letter-spacing: 1px; color: #8a8a93; }
+</style>
+<div class="card">
+  <img class="contours" src="../../public/art/contours.svg" alt="">
+  <img class="contours" src="../../public/art/contours.svg" alt="">
+  <img class="contours" src="../../public/art/contours.svg" alt="">
+  <div class="shade"></div>
+  <svg class="trace" viewBox="0 0 1200 630" fill="none" aria-hidden="true">
+    <path d="M-20 492C92 492 150 424 212 362S324 270 424 288S604 332 704 290S862 198 962 190S1066 124 1112 100" stroke="#ff2d55" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="1124" cy="94" r="17" fill="#ff2d55"/>
+    <g stroke="#f0f1f3" stroke-width="3.2" stroke-linecap="round">
+      <circle cx="150" cy="424" r="9" fill="#141416"/>
+      <path d="M1024 146l16 16M1040 146l-16 16"/>
+    </g>
+  </svg>
+  <div class="copy">
+    <h1>Scarlet</h1>
+    <p>A record of what you do in WoW Forever</p>
+  </div>
+  <div class="host">scarletweb.io</div>
+</div>

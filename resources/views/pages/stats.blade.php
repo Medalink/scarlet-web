@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Scarlet stats: '.$d['title']" current="stats" description="How characters level in WoW Forever: time to each level, deaths, dungeons, skills and where people play.">
+<x-layouts.app :title="$d['title'].': WoW Forever levelling stats'" current="stats" description="How characters level in WoW Forever: time to each level, deaths, dungeons, skills and where people play." :canonical="$canonical">
 <section class="pg-hero">
   <div class="stage" inert><x-world-canvas id="hero-map" label="" :spec="$map" /></div>
   <div class="wrap">

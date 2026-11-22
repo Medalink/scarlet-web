@@ -1,0 +1,24 @@
+#!/bin/sh
+# Draws public/share.png (1200 by 630, the image a shared link shows) and public/apple-touch-icon.png (180 by 180)
+# from share.html and icon.html with headless Chrome. The pages load the site's fonts from Google Fonts.
+#
+#   tools/share-image/build            CHROME names the browser when it is not the Windows default path
+set -eu
+
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(cd "$here/../.." && pwd)
+chrome=${CHROME:-/c/Program Files/Google/Chrome/Application/chrome.exe}
+profile=$(mktemp -d)
+trap 'rm -rf "$profile"' EXIT
+
+native() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else printf '%s' "$1"; fi; }
+
+shot() {
+  "$chrome" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+    --user-data-dir="$(native "$profile")" --window-size="$2" --virtual-time-budget=10000 \
+    --screenshot="$(native "$root/public/$3")" "file:///$(native "$here/$1" | sed 's#^/##')" >/dev/null 2>&1
+  echo "wrote public/$3"
+}
+
+shot share.html 1200,630 share.png
+shot icon.html 180,180 apple-touch-icon.png

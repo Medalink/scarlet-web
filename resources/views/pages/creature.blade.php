@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Scarlet creature: '.$d['name']" description="Kills, deaths, drops and where players met {{ $d['name'] }}.">
+<x-layouts.app :title="$d['name'].': kills, drops and where it is found'" :description="$d['sub'].' Kills, deaths, drops and where players met '.$d['name'].' in WoW Forever.'">
 <div class="wrap">
   <x-page-head :title="$d['name']">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>

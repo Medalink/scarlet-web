@@ -44,6 +44,7 @@ class StatsController extends Controller
             'filters' => Filters::for($scope, $rulesets),
             'talents' => TalentSpecPage::block($talents->handle($scope)),
             'map' => MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $zones),
+            'canonical' => $scope->ruleset === null ? '/stats' : '/rulesets/'.$scope->ruleset->slug(),
         ]);
     }
 }

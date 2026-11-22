@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Scarlet item: '.$d['name']" description="Where {{ $d['name'] }} drops and how often.">
+<x-layouts.app :title="$d['name'].': where it drops and how often'" :description="trim($d['sub'].' Where '.$d['name'].' drops in WoW Forever and how often.')">
 <div class="wrap">
   <x-page-head :title="$d['name']" :class="$d['quality']" :single="true">
     <x-slot:sub>{{ $d['sub'] }}@if ($d['sell']) Sells for {{ $d['sell'] }}.@endif</x-slot:sub>

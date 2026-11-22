@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['name'].': a Scarlet character overview'" description="Records, hours, experience and deaths in each level, dungeons, loot and play history of {{ $d['name'] }}, from what the player chose to upload.">
+<x-layouts.app :title="$d['share']['title']" :description="$d['share']['description']" :canonical="'/c/'.rawurlencode($d['name'])" :index="! $d['owner']">
 <section @class(['ch-head', 'ch-rich', 'ch-bare' => ! $d['hasMap']]) aria-labelledby="h1">
   @if ($d['hasMap'])
   <div class="stage"><x-world-canvas id="map" :behind-head="true" label="Every path {{ $d['name'] }} walked, with deaths as crosses. Drag to move, click the map and scroll to zoom." :spec="$d['map']" />

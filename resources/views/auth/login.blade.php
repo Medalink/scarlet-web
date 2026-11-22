@@ -1,4 +1,4 @@
-<x-layouts.app title="Sign in to Scarlet" current="">
+<x-layouts.app title="Sign in to Scarlet" current="" :index="false" :brand="false">
 <x-gate map-label="An invented survey map" :spec="$map">
     <h1>Sign in</h1>
     <p>See your own characters in full, choose which are public, and control what you share.</p>
