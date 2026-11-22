@@ -327,12 +327,13 @@ the R2 dump of 2026-11-21 19:50 UTC and the real `bin/deploy` commands:
 
 - `pgbackrest check` passed on the new primary; the first full backup was 137 MB.
 - A point-in-time restore into a scratch container matched `count(*)` and `bit_xor` over `parts` at the target time
-  (1830 rows, `bit_xor(hashtextextended(id || md5(body), 0))` -82657367288691036) and differed from the table after it
-  (1850 rows, 1401747352500066592).
+  (1815 rows, `bit_xor` 2251567104037075678) and differed from the table after it (1835 rows, 4593370470403114045).
 - A loop of 10 reads and 1 signed write per second (`deploy/db-probe.mjs`: `/release-notes`, `/stats` and
-  `POST /api/v1/installs/link-code`) ran through each move: 0 failed reads in 5,188; the writes failed for 3 to 4 seconds
-  (4 of 518). `db-move rollback` under the same loop: 0 failed reads in 3,862, 4 failed writes of 386. A normal
-  `bin/deploy` against the remote database: 0 failures in 3,482 requests, and the replica container was not recreated.
+  `POST /api/v1/installs/link-code`) ran through each move. The first rehearsal had 0 failed reads in 5,188 and writes
+  failing for 3 to 4 seconds. The second, on the code as shipped, had 2 failed reads in 5,004 (both "socket hang up",
+  1 ms apart, at the nginx switch) and 4 failed writes of 500 in a 3.2 second window; `db-move rollback` had 0 failed
+  reads in 4,048 and 4 failed writes of 404. A normal `bin/deploy` against the remote database: 0 failures in 3,502
+  requests, and the replica container was not recreated.
 - The app's connections reach Postgres from the app droplet's VPC address with TLS on; Postgres listens on the VPC
   address and loopback only.
 
