@@ -214,6 +214,11 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `talent_snapshots` | `TG`, `TA` | build | the build as ranks, tab points, build hash and loadout, one row per change of it |
 | `talent_respecs` | `TA`, `TQ` | build | refunds that came together: points moved, cost, hash before and after |
 | `talent_group_spans` | `TG` | build | the talent group that was active: one row when a session's first build is read (why `s`) and when the active group changes (why `w`); a span ends at the next row of its session or the session's end, which is where the play time per spec group comes from |
+| `hardcore_deaths` | `HD` | social | the server's notice that a hardcore character died: who, the level of the dead character, the notice text. The notice reaches every uploader online, so each uploader has a row and a page counts a death once, by who (the notice text when it names nobody), the level and the minute |
+| `who_results` | `WH` | social | one row of a /who result: name, level, class file, race, zone name, guild. Stored for later pages |
+| `inspected_gear` | `IG` | social | the gear of a player the uploader inspected: name and the `slot:itemID:enchantID:suffixID` list. Stored for later pages |
+| `battleground_matches` | `BM` | pvp | a match that ended: instance, zone name, rated, arena, the uploader's team, the winning side, duration, result, whether it affects rating |
+| `battleground_scores` | `BO` | social | another player's scoreboard row, read after the match: name, faction, class file, killing blows, honorable kills, deaths, honor, damage, healing, the objective stats. `match_at` is the end of the match (the last `BM 0` before the row), so one uploader's rows of one match share it |
 
 Dictionaries, plain tables: `names(kind, id, name)` from the name lines, `items` from `II`, `zones`, `rulesets`,
 `talent_trees` and `talent_nodes` (the class tree layouts of `TV` and `TD`, one per tree, client build and layout hash;

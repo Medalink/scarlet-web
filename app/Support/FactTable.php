@@ -30,6 +30,11 @@ enum FactTable: string
     case TalentGroupSpans = 'talent_group_spans';
     case CampStays = 'camp_stays';
     case CampBenefits = 'camp_benefits';
+    case HardcoreDeaths = 'hardcore_deaths';
+    case WhoResults = 'who_results';
+    case InspectedGear = 'inspected_gear';
+    case BattlegroundMatches = 'battleground_matches';
+    case BattlegroundScores = 'battleground_scores';
 
     /** `money_changes.src` of a balance carried over from the `S` line (core), against `M` money lines (economy). */
     public const string MONEY_LINE = 'M';
@@ -53,7 +58,8 @@ enum FactTable: string
             self::SkillUps, self::Crafts => SharingGroup::PROFESSIONS,
             self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,
-            self::Emotes => SharingGroup::SOCIAL,
+            self::Emotes, self::HardcoreDeaths, self::WhoResults, self::InspectedGear, self::BattlegroundScores => SharingGroup::SOCIAL,
+            self::BattlegroundMatches => SharingGroup::PVP,
             self::TalentChanges, self::TalentSnapshots, self::TalentRespecs, self::TalentGroupSpans => SharingGroup::BUILD,
         };
     }
@@ -127,6 +133,7 @@ enum FactTable: string
     {
         return match ($this) {
             self::DungeonRuns => ['left_at'],
+            self::BattlegroundScores => ['match_at'],
             default => [],
         };
     }
