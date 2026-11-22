@@ -22,21 +22,24 @@ class StoreDecodedSession
         private readonly SummarizeCharacter $summaries,
         private readonly SessionRows $sessionRows,
         private readonly MeasureDistance $distance,
+        private readonly MarkPartsDecoded $markDecoded,
     ) {}
 
     /**
      * Replace one session's rows with a fresh decode, in one short transaction: delete the session's rows,
      * insert the new ones, write the session row and the dictionaries, then bring the character's levels,
-     * dungeon runs and summary up to date. A character is locked while this runs, so sessions of one
+     * dungeon runs and summary up to date. The parts the decode read are marked decoded, also when they hold nothing
+     * to store, so the sweep does not queue them again. A character is locked while this runs, so sessions of one
      * character are stored one at a time. Safe to run twice.
      *
+     * @param  list<string>  $partIds  lower-case hex ids of the parts `$decoded` came from
      * @return array{from: int, until: int}|null epoch seconds the rollups must look at again
      */
-    public function handle(int $characterId, int $sessionStart, DecodedSession $decoded): ?array
+    public function handle(int $characterId, int $sessionStart, DecodedSession $decoded, array $partIds): ?array
     {
         $ruleset = $decoded->summary === null ? null : $this->rulesets->handle($characterId, $decoded->summary);
 
-        return DB::transaction(function () use ($characterId, $sessionStart, $decoded, $ruleset): ?array {
+        return DB::transaction(function () use ($characterId, $sessionStart, $decoded, $ruleset, $partIds): ?array {
             if (! DB::table('characters')->where('id', $characterId)->lockForUpdate()->exists()) {
                 return null;
             }
@@ -52,6 +55,7 @@ class StoreDecodedSession
             $this->dungeonJoins->handle($characterId, $sessionStart);
             $this->summaries->handle($characterId);
             $this->talents->handle($characterId);
+            $this->markDecoded->handle($characterId, $sessionStart, $partIds);
 
             return $range;
         });
@@ -76,7 +80,6 @@ class StoreDecodedSession
         $this->distance->handle($characterId, $sessionStart);
         $this->dictionaries->handle($characterId, $decoded, countVotes: ! $namesCounted);
         $this->layouts->handle($decoded, countUpload: ! $namesCounted);
-        DB::table('parts')->where('character_id', $characterId)->where('session_start', $sessionStart)->update(['decoded_at' => now()]);
 
         return $span;
     }

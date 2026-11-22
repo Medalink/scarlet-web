@@ -55,6 +55,9 @@ return [
         'tries' => 3,
         'memory_mb' => 768,
         'insert_rows' => 4000,
+        'sweep_after_seconds' => 300,
+        'sweep_give_up_hours' => 72,
+        'sweep_limit' => 500,
     ],
     // The Forever Armory names the ruleset of a character (docs/DESIGN.md, Rulesets). One request at a time.
     'armory' => [

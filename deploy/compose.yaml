@@ -12,6 +12,8 @@ x-app: &app
   env_file: ../.env
   restart: unless-stopped
   networks: [backend]
+  environment:
+    REDIS_CACHE_HOST: redis-cache
   volumes:
     - logs:/app/storage/logs
     - /srv/scarlet-web/maps:/maps:ro
@@ -20,6 +22,7 @@ x-app: &app
 x-after-databases: &after-databases
   depends_on:
     redis: {condition: service_healthy}
+    redis-cache: {condition: service_healthy}
 
 services:
   # The local Postgres runs until `bin/deploy db-move` moves the database to its own host (deploy/compose.db.yaml). Then it
@@ -76,6 +79,33 @@ services:
       REDISCLI_AUTH: ${REDIS_PASSWORD}
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  redis-cache:
+    image: redis:8.10.3-alpine@sha256:7958cfbb9d152f87dadfbc89f1b0b15938f0b81ff8982feb327476f4911935c3
+    restart: unless-stopped
+    networks: [backend]
+    command:
+      - redis-server
+      - --save
+      - "60"
+      - "1"
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 192mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --requirepass
+      - ${REDIS_PASSWORD}
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    volumes:
+      - rediscachedata:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
       interval: 10s
@@ -167,5 +197,6 @@ networks:
 volumes:
   pgdata:
   redisdata:
+  rediscachedata:
   registrydata:
   logs:

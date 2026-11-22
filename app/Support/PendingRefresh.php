@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -15,9 +17,9 @@ final class PendingRefresh
     /** Widen the pending range to take in `$from` to `$until` (epoch seconds). */
     public static function add(int $from, int $until): void
     {
-        Cache::lock(self::lockKey(), 10)->block(5, function () use ($from, $until): void {
+        self::lock()->block(5, function () use ($from, $until): void {
             $kept = self::peek();
-            Cache::put(self::key(), [
+            Cache::store('durable')->put(self::key(), [
                 'from' => $kept === null ? $from : min($kept['from'], $from),
                 'until' => $kept === null ? $until : max($kept['until'], $until),
             ], self::KEPT_SECONDS);
@@ -31,9 +33,9 @@ final class PendingRefresh
      */
     public static function take(): ?array
     {
-        return Cache::lock(self::lockKey(), 10)->block(5, function (): ?array {
+        return self::lock()->block(5, function (): ?array {
             $kept = self::peek();
-            Cache::forget(self::key());
+            Cache::store('durable')->forget(self::key());
 
             return $kept;
         });
@@ -43,7 +45,15 @@ final class PendingRefresh
     private static function peek(): ?array
     {
         /** @var array{from: int, until: int}|null */
-        return Cache::get(self::key());
+        return Cache::store('durable')->get(self::key());
+    }
+
+    private static function lock(): Lock
+    {
+        /** @var LockProvider $store */
+        $store = Cache::store('durable')->getStore();
+
+        return $store->lock(self::lockKey(), 10);
     }
 
     private static function key(): string
