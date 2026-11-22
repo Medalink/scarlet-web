@@ -252,7 +252,7 @@ say how many windows were left out.
 | Drop rate by rule | as Drop rate, inside one `loot_rule` | windows of the source under that rule | window | phase 4 |
 | Drop rate by size | as Drop rate, inside one `loot_rule` and `group_size` | windows of that arm | window | phase 4 |
 | Rule difference | rate under rule A minus rate under rule B, one source | n of each arm | window | phase 4 |
-| Kept by the looter | receipts whose source is the window (last `LO` within 5 s) | window items of the same windows | receipt over window item | phase 4 |
+| Kept by the looter | sum of `quantity` of the receipts whose source is the window (last `LO` within 5 s) | sum of `quantity` of the window items of the same windows | quantity | phase 4 |
 | Corpses looted of kills | corpses of the creature with a loot window, and solo loot windows with no key | kill corpses with a key, and solo member kills with no key | kill | phase 2, phase 7 |
 | Drop rate a kill | windows that list the item, of those corpses | the same kills | kill | phase 2, phase 7 |
 | Kills an hour by size | member kills while grouped at the size | member seconds grouped at the size / 3600 | member kill | phase 2 |
@@ -281,7 +281,9 @@ Notes on the definitions:
   window.
 - **A kill with no window** is either an empty corpse or one nobody looted. The two are not told apart until the
   corpse key exists, so Drop rate a kill is a lower bound and the page says `of kills`, never `drop rate`, for it.
-- **Kept by the looter** needs no dedupe: both sides are one uploader's own rows.
+- **Kept by the looter** needs no dedupe: both sides are one uploader's own rows. Both sides are summed quantities,
+  since a window lists a stack of one item as one row and the looter's client writes an `O` line for each stack it picks
+  up, so counting rows would put 2 receipts over 1 window item and pass 100%.
 - **Share of group loot** needs no dedupe either: it is one uploader's view of its own group, and pooling
   uploaders gives the mean share per member.
 - **Quest items** (`items.bind_type = 4`) keep their rate and carry the tag `quest item`: the denominator includes

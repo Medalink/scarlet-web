@@ -16,7 +16,8 @@ class LooterKept
     /**
      * What the looter kept (docs/LOOT.md, Loot rules and group size): by loot rule and group size, the corpses read for
      * loot, the items those corpses held and the items the looter received from them (`loot_receipts_daily`, a receipt
-     * whose source window is known). A receipt is the uploader's own row, as is its window, so nothing is counted twice.
+     * whose source window is known), both as the sum of the quantities. A receipt is the uploader's own row, as is its
+     * window, so nothing is counted twice.
      * `other` is true for a size that no source seen under it was also seen under another size of the same rule, so a
      * difference from another size may be a difference of creatures. Personal loot is its own row. A rule and size
      * under `scarlet.min_characters` characters are left out; the smallest group first, then the most corpses.
@@ -29,8 +30,8 @@ class LooterKept
         $windows = $this->read->rows(LootGroupScope::of(DB::table(Rollup::LootWindowsCharacterDaily->value), $source, personal: true)
             ->selectRaw('loot_rule, group_size, sum(windows) as windows')->groupBy('loot_rule', 'group_size')
             ->havingRaw('count(distinct character_id) >= ?', [$threshold]));
-        $items = $this->totals(Rollup::LootItemsDaily, false, $source);
-        $received = $this->totals(Rollup::LootReceiptsDaily, true, $source);
+        $items = $this->quantities(Rollup::LootItemsDaily, $source);
+        $received = $this->quantities(Rollup::LootReceiptsDaily, $source);
 
         $by = [];
         foreach ($windows as $row) {
@@ -63,12 +64,15 @@ class LooterKept
     }
 
     /**
+     * The items of one side, stacks added up: a window lists a stack of one item as one row with its summed quantity, and
+     * each stack the looter picked up is one receipt, so only the quantities are the same unit on both sides.
+     *
      * @return list<array<string, mixed>> loot_rule, group_size, total
      */
-    private function totals(Rollup $rollup, bool $receipts, ?LootSourceRef $source): array
+    private function quantities(Rollup $rollup, ?LootSourceRef $source): array
     {
         return $this->read->rows(LootGroupScope::of(DB::table($rollup->value), $source, personal: true)
-            ->selectRaw($receipts ? 'loot_rule, group_size, sum(receipts) as total' : 'loot_rule, group_size, sum(windows) as total')->groupBy('loot_rule', 'group_size'));
+            ->selectRaw('loot_rule, group_size, sum(quantity) as total')->groupBy('loot_rule', 'group_size'));
     }
 
     /**
