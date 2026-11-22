@@ -112,22 +112,22 @@
     add(1112, "R", "released spirit");
     add(1175, "W", "running as a ghost · 612 yd · 60 s");
     add(1178, "U", "back to life");
-    add(1205, "GI", "invite from Tovin-Greywake");
+    add(1205, "GI", "invite from Tovin Greywake");
     add(1209, "GP", "joined a group of 2");
-    add(1209.3, "GM", "Tovin-Greywake is in your group");
+    add(1209.3, "GM", "Tovin Greywake is in your group");
     add(1210, "LM", "loot rule · group loot from uncommon");
     add(1296, "F", "combat started");
     add(1352, "K", "Old Rimeclaw died · by a party member", "kill");
     add(1352.8, "X", "+486 XP · kill");
     add(1354, "F", "combat ended · 58 s");
-    add(1355, "DP", "damage · Tovin-Greywake · 6,912");
+    add(1355, "DP", "damage · Tovin Greywake · 6,912");
     add(1357, "LO", "creature · Old Rimeclaw · 2 items, coin");
     add(1358, "RW", "roll offered · Rimeclaw Talon");
     add(1361, "RL", "you rolled need");
-    add(1363, "LD", "Tovin-Greywake rolled need · 41");
+    add(1363, "LD", "Tovin Greywake rolled need · 41");
     add(1366, "RW", "you won · rolled 87");
     add(1366.4, "O", "Rimeclaw Talon ×1");
-    add(1367, "LT", "Tovin-Greywake looted Thick Bear Pelt ×1");
+    add(1367, "LT", "Tovin Greywake looted Thick Bear Pelt ×1");
     add(1368, "M", "+9s 40c");
     add(1425, "F", "combat started");
     add(1447, "K", "Fellcrag Mauler died · by you", "kill");
@@ -272,11 +272,11 @@
     const week = { p: wk.reduce((a, s) => a + s.p, 0), r: wk.reduce((a, s) => a + s.r, 0), q: wk.reduce((a, s) => a + s.q, 0), g: wk.reduce((a, s) => a + s.g - s.s, 0), z: new Set(wk.flatMap((s) => s.zn)).size };
 
     return {
-      name: "Maren-Ashlow", level: LEVEL, race: "Orc", cls: "Warrior", faction: "Horde", zone: "Hollowmere",
+      name: "Maren Ashlow", level: LEVEL, race: "Orc", cls: "Warrior", faction: "Horde", zone: "Hollowmere",
       xp: Math.round(xpMax(LEVEL) * PROGRESS), xpMax: xpMax(LEVEL), played, money: balance,
       sessions, levels, days, week,
       runs: Object.entries(runs).sort((a, b) => b[1] - a[1]),
-      mates: [["Tovin-Greywake", 42000, 9], ["Isolde-Fennmoor", 21900, 5], ["Dagny-Stonehollow", 7920, 2]],
+      mates: [["Tovin Greywake", 42000, 9], ["Isolde Fennmoor", 21900, 5], ["Dagny Stonehollow", 7920, 2]],
       deathZones: tally("zone"), killers: tally("killer"), deaths: deaths.length,
       lastDeath: { when: T0 + 1108000, zone: "Saltmarsh Reach", hits: [["killing blow", "Old Rimeclaw · Maul", "418 · 96 overkill"], ["1.9 s before", "Old Rimeclaw · Rend Flesh", "164"], ["3.8 s before", "Old Rimeclaw · Maul", "391"]] },
       travel: [["Running", 498200], ["Mounted", 163400], ["Swimming", 11950], ["Walking", 6300]],

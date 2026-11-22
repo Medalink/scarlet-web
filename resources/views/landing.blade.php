@@ -201,7 +201,7 @@
 
   <section class="close" aria-labelledby="h-close">
     <div class="wrap">
-      <h2 id="h-close">The demo character Maren-Ashlow has <span data-hours>96</span> hours of play on record</h2>
+      <h2 id="h-close">The demo character Maren Ashlow has <span data-hours>96</span> hours of play on record</h2>
       <p>The overview shows experience by level and source, gold, dungeon runs, deaths and every session, all drawn from invented data.</p>
       <p class="close-links">
         <a class="btn on-scarlet" href="/demo">Open the character overview

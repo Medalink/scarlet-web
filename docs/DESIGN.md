@@ -29,7 +29,8 @@ This file is the design. Build nothing that contradicts it; change it first. Num
 
 - **Install**: one copy of the Scarlet app on one PC, with its own key.
 - **Account**: a signed-in person. Owns installs and the characters they upload.
-- **Character**: `Name-Surname`. WoW Forever has no realms.
+- **Character**: `Name-Surname`. WoW Forever has no realms. Pages show the first name and surname apart, `Name Surname`
+  (`Format::characterName`); URLs, the API and the database keep `Name-Surname`. Search finds a character by either.
 - **Session**: from an `S` line to its `ES` (login or reload to logout or reload). Keyed by its start in epoch seconds.
 - **Sharing group**: a set of line codes a player can stop sharing. Every code is in exactly one group
   ([groups.tsv](groups.tsv)).

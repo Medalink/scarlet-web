@@ -2,7 +2,9 @@
 
 namespace App\View;
 
+use App\Support\PlayerNameShape;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 /**
  * Every number, duration and amount of money the pages show is formatted here, so a figure reads the same
@@ -151,6 +153,18 @@ final class Format
         }
 
         return self::RACES[$file] ?? trim((string) preg_replace('/(?<=[a-z])(?=[A-Z])/', ' ', $file));
+    }
+
+    /** A character's first name and surname as the pages show them: "Name-Surname" → "Name Surname". Links and the API keep the stored name. */
+    public static function characterName(string $name): string
+    {
+        return Str::replaceFirst('-', ' ', $name);
+    }
+
+    /** A killer as the pages show it: a player's "First-Last" as a character name, a creature or anything else as it is. */
+    public static function killerName(string $killer): string
+    {
+        return preg_match(PlayerNameShape::NAME, $killer) === 1 ? self::characterName($killer) : $killer;
     }
 
     /** "Level 12 Orc Warrior" from the parts that are known. */

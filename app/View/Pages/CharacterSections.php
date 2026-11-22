@@ -46,7 +46,7 @@ final class CharacterSections
         $rows = array_map(fn (array $row): array => ['cells' => [
             $row['level'] === null ? '' : (string) $row['level'],
             $row['zone_id'] !== null && $row['zone'] !== null ? ['text' => (string) $row['zone'], 'href' => '/zones/'.$row['zone_id']] : (string) ($row['zone'] ?? ''),
-            $row['killer'] ?? 'Killer not recorded',
+            $row['killer'] === null ? 'Killer not recorded' : Format::killerName($row['killer']),
             $row['damage'] === null ? '' : Format::number($row['damage']),
         ]], $log['rows']);
         $zones = array_map(fn (array $row): string => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']).' '.$row['deaths'], array_slice($deaths['zones'], 0, self::DEATH_ZONES));
@@ -86,7 +86,7 @@ final class CharacterSections
             $biggest = $damage > (int) $dated[$biggest]['damage'] ? $i : $biggest;
             $say[] = Format::line(
                 'Level '.$row['level'].($row['zone'] === null ? '' : ', '.$row['zone']),
-                ': '.($row['killer'] ?? 'Killer not recorded').($damage > 0 ? ', '.Format::number($damage).' damage' : ''),
+                ': '.($row['killer'] === null ? 'Killer not recorded' : Format::killerName($row['killer'])).($damage > 0 ? ', '.Format::number($damage).' damage' : ''),
             );
         }
         $top = max($level, ...array_map(fn (array $row): int => (int) $row['level'], $dated));

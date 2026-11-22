@@ -10,7 +10,7 @@
       <x-icon :name="$board['icon']" />
       <a class="board" href="{{ $board['href'] }}">{{ $board['title'] }}</a>
       @if ($board['name'])
-      <span class="lead" data-class="{{ $board['class'] }}"><i class="dotc" aria-hidden="true"></i><a href="/c/{{ $board['name'] }}">{{ $board['name'] }}</a></span>
+      <span class="lead" data-class="{{ $board['class'] }}"><i class="dotc" aria-hidden="true"></i><a href="{{ $board['page'] }}">{{ $board['name'] }}</a></span>
       <span class="val">{{ $board['value'] }}<small>{{ $board['count'] }}</small></span>
       @else
       <span class="lead none">{{ $board['none'] }}</span>

@@ -1,9 +1,9 @@
-<x-layouts.site :demo="true" title="Maren-Ashlow: a Scarlet character overview with demo data" description="The character overview Scarlet builds from its log: experience by level and source, gold, dungeon runs, deaths, travel and every session. The data on this page is invented." :brand="false">
+<x-layouts.site :demo="true" title="Maren Ashlow: a Scarlet character overview with demo data" description="The character overview Scarlet builds from its log: experience by level and source, gold, dungeon runs, deaths, travel and every session. The data on this page is invented." :brand="false">
   <section class="ch-head" aria-labelledby="h1">
     <div class="stage"><canvas role="img" aria-label="An invented map of Saltmarsh Reach. Every path the character walked is drawn as a thin scarlet line, so the routes used most glow brightest. Crosses mark six deaths."></canvas></div>
     <div class="ch-id wrap">
       <div>
-        <h1 class="ch-name" id="h1">Maren-Ashlow</h1>
+        <h1 class="ch-name" id="h1">Maren Ashlow</h1>
         <p class="ch-sub"><i class="dot" aria-hidden="true"></i><span id="c-line">Level 38 Orc Warrior</span><span>Horde</span><span id="c-zone">in Hollowmere</span><span id="c-played">4d 0h played</span></p>
         <div class="lvl">
           <div class="lvl-bar" role="img" aria-label="Progress to the next level"><i id="c-bar" style="width:38%"></i></div>
@@ -122,7 +122,7 @@
         <div class="win-bar"><span>/scarlet</span><span>Scarlet</span></div>
         <ul class="win-nav"><li aria-current="page">Character</li><li>This session</li><li>Stats</li><li>People</li><li>Live</li><li>Settings</li></ul>
         <div class="win-page">
-          <p class="nm"><b>Maren-Ashlow</b><span id="i-line">Level 38 · Hollowmere</span></p>
+          <p class="nm"><b>Maren Ashlow</b><span id="i-line">Level 38 · Hollowmere</span></p>
           <div class="lvl-bar"><i style="width:38%"></i></div>
           <p class="win-note" id="i-level">38% to 39 · this level 4h 40m so far</p>
           <div class="win-grid">

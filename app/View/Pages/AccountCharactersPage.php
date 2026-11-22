@@ -60,7 +60,7 @@ final class AccountCharactersPage
         return [
             'columns' => [['label' => 'Character'], ['label' => 'Level', 'numeric' => true], ['label' => 'Class'], ['label' => 'Ruleset'], ['label' => 'Played', 'numeric' => true], ['label' => 'Last played'], ['label' => 'Gold', 'numeric' => true], ['label' => 'Page']],
             'rows' => array_map(fn (array $c): array => ['cells' => [
-                ['text' => $c['name'], 'href' => '/c/'.rawurlencode($c['name']), 'dot' => self::color($classes[$c['id']])],
+                ['text' => Format::characterName($c['name']), 'href' => '/c/'.rawurlencode($c['name']), 'dot' => self::color($classes[$c['id']])],
                 $c['level'] === null ? '' : (string) $c['level'],
                 trim(Format::raceName($c['race']).' '.Format::className($c['class'])),
                 $c['ruleset_id'] === null ? '' : (string) ($labels[$c['ruleset_id']] ?? ''),
@@ -88,7 +88,7 @@ final class AccountCharactersPage
         $parts = [];
         foreach ($characters as $c) {
             $class = $classes[$c['id']];
-            $parts[$class] ??= ['label' => $class === self::OTHER ? 'Other' : $c['name'], 'ids' => []];
+            $parts[$class] ??= ['label' => $class === self::OTHER ? 'Other' : Format::characterName($c['name']), 'ids' => []];
             $parts[$class]['ids'][] = $c['id'];
         }
         $data = $say = $ticks = [];
@@ -138,7 +138,7 @@ final class AccountCharactersPage
         foreach ($characters as $c) {
             $own = $gold['totals'][$c['id']] ?? ['earned' => 0, 'spent' => 0, 'transfer' => 0];
             $balance = $c['balance'] ?? 0;
-            $rows[] = ['cells' => [$c['name'], Format::moneyText($balance), Format::moneyText($own['earned']), Format::moneyText($own['spent']), Format::moneyText($own['earned'] - $own['spent'], true), Format::moneyText($own['transfer'], true)]];
+            $rows[] = ['cells' => [Format::characterName($c['name']), Format::moneyText($balance), Format::moneyText($own['earned']), Format::moneyText($own['spent']), Format::moneyText($own['earned'] - $own['spent'], true), Format::moneyText($own['transfer'], true)]];
             $sum = ['balance' => $sum['balance'] + $balance, 'earned' => $sum['earned'] + $own['earned'], 'spent' => $sum['spent'] + $own['spent'], 'transfer' => $sum['transfer'] + $own['transfer']];
         }
         $rows[] = ['class' => 'me', 'cells' => ['All characters', Format::moneyText($sum['balance']), Format::moneyText($sum['earned']), Format::moneyText($sum['spent']), Format::moneyText($sum['earned'] - $sum['spent'], true), Format::moneyText($sum['transfer'], true)]];
@@ -198,7 +198,7 @@ final class AccountCharactersPage
         return [
             'columns' => [['label' => 'Characters'], ['label' => 'Online together', 'numeric' => true], ['label' => 'Sessions', 'numeric' => true], ['label' => 'Last time']],
             'rows' => array_map(fn (array $pair): array => ['cells' => [
-                ($names[$pair['a']] ?? '').' and '.($names[$pair['b']] ?? ''),
+                Format::characterName($names[$pair['a']] ?? '').' and '.Format::characterName($names[$pair['b']] ?? ''),
                 Format::duration($pair['seconds']),
                 Format::number($pair['sessions']),
                 Carbon::parse($pair['last'])->format('j M Y'),
@@ -219,7 +219,7 @@ final class AccountCharactersPage
         foreach ($characters as $c) {
             $chart = CharacterSections::levelTimes($levelTimes[$c['id']]);
             if ($chart !== null) {
-                $charts[] = ['id' => 'level-times-'.$c['id'], 'name' => $c['name'], ...$chart];
+                $charts[] = ['id' => 'level-times-'.$c['id'], 'name' => Format::characterName($c['name']), ...$chart];
             }
         }
 
@@ -251,7 +251,7 @@ final class AccountCharactersPage
         }
 
         return [
-            'columns' => [['label' => 'Profession'], ...array_map(fn (array $c): array => ['label' => $c['name'], 'numeric' => true], $characters)],
+            'columns' => [['label' => 'Profession'], ...array_map(fn (array $c): array => ['label' => Format::characterName($c['name']), 'numeric' => true], $characters)],
             'rows' => $rows,
         ];
     }

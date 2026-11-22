@@ -53,7 +53,7 @@ final class LeaderboardHallPage
     /**
      * @param  array<string, mixed>|null  $lead
      * @param  array<string, string|null>  $query
-     * @return array{icon: string, title: string, href: string, name: string|null, class: string|null, none: string, value: string|null, count: string}
+     * @return array{icon: string, title: string, href: string, name: string|null, page: string|null, class: string|null, none: string, value: string|null, count: string}
      */
     private static function entry(Board $board, ?array $lead, int $total, array $query): array
     {
@@ -63,7 +63,8 @@ final class LeaderboardHallPage
             'icon' => $board->icon(),
             'title' => $board->title(),
             'href' => LeaderboardPage::link($board, $query),
-            'name' => $lead === null ? null : (string) $lead['name'],
+            'name' => $lead === null ? null : Format::characterName((string) $lead['name']),
+            'page' => $lead === null ? null : '/c/'.rawurlencode((string) $lead['name']),
             'class' => $lead === null ? null : (string) $lead['class'],
             'none' => $level === null ? 'No public character yet' : 'Nobody has a recorded level-up to '.$level.' yet',
             'value' => $lead === null ? null : $board->format($lead['value']),

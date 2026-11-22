@@ -65,7 +65,7 @@ final class CharacterPage
 
         return [
             'id' => $character->id,
-            'name' => $character->name,
+            'name' => Format::characterName($character->name),
             'owner' => $r['owner'],
             'economy' => $economy,
             'since' => $since,

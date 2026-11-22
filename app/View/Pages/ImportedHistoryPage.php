@@ -25,7 +25,7 @@ final class ImportedHistoryPage
                 continue;
             }
             $rows[] = ['cells' => [
-                ['text' => $c['name'], 'href' => '/c/'.rawurlencode($c['name'])],
+                ['text' => Format::characterName($c['name']), 'href' => '/c/'.rawurlencode($c['name'])],
                 implode(', ', $h['sources']),
                 self::day($h['first']).' to '.self::day($h['last']),
                 Format::number($h['sales']),

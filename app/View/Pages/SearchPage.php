@@ -158,7 +158,10 @@ final class SearchPage
     public static function hit(SearchKind $kind, array $hit, string $term = ''): array
     {
         $fuzzy = self::tier($hit) === SearchMatch::Fuzzy;
-        $line = ['href' => $hit['path'], 'title' => $hit['name'], 'quality' => null, 'marks' => $fuzzy ? Marks::plain((string) $hit['name']) : Marks::cut((string) $hit['name'], $term), 'fuzzy' => $fuzzy];
+        [$name, $marked] = $kind === SearchKind::Characters
+            ? [Format::characterName((string) $hit['name']), str_replace('-', ' ', $term)]
+            : [(string) $hit['name'], $term];
+        $line = ['href' => $hit['path'], 'title' => $name, 'quality' => null, 'marks' => $fuzzy ? Marks::plain($name) : Marks::cut($name, $marked), 'fuzzy' => $fuzzy];
 
         return $line + match ($kind) {
             SearchKind::Characters => [

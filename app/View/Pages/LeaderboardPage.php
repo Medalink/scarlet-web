@@ -35,7 +35,7 @@ final class LeaderboardPage
             'class' => $row['mine'] ? 'me' : null,
             'cells' => [
                 (string) $row['rank'],
-                ['text' => (string) $row['name'], 'href' => '/c/'.$row['name'], 'dot' => true, 'characterClass' => (string) $row['class']],
+                ['text' => Format::characterName((string) $row['name']), 'href' => '/c/'.rawurlencode((string) $row['name']), 'dot' => true, 'characterClass' => (string) $row['class']],
                 Format::character(null, $row['race'], $row['class']),
                 $board->format($row['value']).($board->level() === null ? $since($row) : ''),
                 ['text' => (string) ($row['ruleset_label'] ?? ''), 'tag' => $row['hardcore'] ? 'HC' : null],
@@ -95,8 +95,8 @@ final class LeaderboardPage
         return [
             'rank' => (int) $row['rank'],
             'mine' => (bool) $row['mine'],
-            'name' => (string) $row['name'],
-            'href' => '/c/'.$row['name'],
+            'name' => Format::characterName((string) $row['name']),
+            'href' => '/c/'.rawurlencode((string) $row['name']),
             'class' => (string) $row['class'],
             'what' => Format::character(null, $row['race'], $row['class']),
             'value' => $board->format($row['value']),
