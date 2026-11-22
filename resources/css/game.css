@@ -1,6 +1,3 @@
-/* Scarlet web app: the art and game layer of the stats pages (docs/DESIGN.md, "Art and game layer"). The sheet stays
-   the survey sheet: contour lines behind it, the world map as the hero, metals for ranks and feats, the game's class
-   colours for names. Loads after app.css and restyles nothing it owns. */
 :root {
   --contours: url("/art/contours.svg");
   --horde: #d8473b;
@@ -13,7 +10,6 @@
 [data-class="ROGUE"] { --class: var(--cl-rogue); } [data-class="PRIEST"] { --class: var(--cl-priest); } [data-class="SHAMAN"] { --class: var(--cl-shaman); }
 [data-class="MAGE"] { --class: var(--cl-mage); } [data-class="WARLOCK"] { --class: var(--cl-warlock); } [data-class="DRUID"] { --class: var(--cl-druid); }
 
-/* The sheet behind every app page: contours and a scarlet glow at the head, fading into the plain sheet. */
 body.art { position: relative; }
 body.art::before {
   content: ""; position: absolute; inset: 0 0 auto 0; height: min(58rem, 100%); z-index: -1; pointer-events: none;
@@ -22,10 +18,8 @@ body.art::before {
 }
 html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 
-/* Icons: one authored set, 24 units, one stroke. */
 .ico { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
-/* A page head over the world map: the map is the art, the sheet fades in over its left and lower edges. */
 .pg-hero { position: relative; isolation: isolate; border-bottom: 1px solid var(--line2); overflow: clip; }
 .pg-hero .stage { position: absolute; inset: 0 0 0 32%; z-index: -1; pointer-events: none; }
 .pg-hero .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -33,9 +27,8 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .pg-hero .pg-head { border-bottom: 0; padding-block: clamp(3.4rem, 8vw, 6.5rem) 2.2rem; }
 .pg-hero .pg-head h1 { font-size: clamp(3.4rem, 7.2vw + 0.6rem, 7rem); line-height: 0.86; }
 .pg-hero .sub { color: var(--fg); }
-.pg-hero .credit { position: absolute; right: var(--gut); top: 0.7rem; margin: 0; font-size: 0.74rem; background: rgba(20, 20, 22, 0.7); padding: 0.15rem 0.5rem; border-radius: 2px; }
+.pg-hero .stage .world-zoom, .pg-hero .stage .world-credit { display: none; }
 
-/* The tally under a hero: each figure has its glyph, and counts up once when the page opens. */
 .tally { display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); border-top: 1px solid var(--line2); }
 .tally > div { display: grid; align-content: start; gap: 0.4rem; min-width: 0; padding: 1.2rem 1.2rem 1.5rem; }
 .tally > div + div { border-left: 1px solid var(--line); }
@@ -45,16 +38,14 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .tally dd { font: 750 clamp(2.3rem, 3.3vw, 3.2rem)/0.95 var(--display); color: var(--fg); white-space: nowrap; }
 .tally dd small { font: 400 0.92rem/1 var(--body); color: var(--muted); margin-left: 0.35rem; }
 
-/* Records: the character page's grid, each with its glyph in the corner. */
 .rec-grid li { position: relative; }
 .rec-ico { position: absolute; top: 1.05rem; right: 1.05rem; width: 1.35rem; height: 1.35rem; color: var(--muted); }
 .rec-lead .rec-ico { width: 2.4rem; height: 2.4rem; top: 1.4rem; right: 1.4rem; color: var(--ink); stroke-width: 1.4; }
+.rec-lead .rec-v { padding-right: 3rem; }
 .rec-grid li:has(.rec-ico) .rec-l { padding-right: 2rem; }
 .rec-grid a { color: inherit; text-decoration-color: currentColor; text-decoration-thickness: 1px; }
 .rec-grid li:not(.rec-lead):hover { background: rgba(255, 255, 255, 0.025); }
 
-/* Milestones: a count read off a survey rule. The fill is the count, the white mark is where it stands, the right
-   end is the next round number. */
 .rules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.7rem 2.6rem; margin-top: 1.3rem; }
 .rules li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 1rem; align-items: end; min-width: 0; }
 .rule-l { display: flex; align-items: center; gap: 0.5rem; color: var(--text); font-size: 0.95rem; }
@@ -67,7 +58,6 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .rule-t { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.35rem; font-size: 0.86rem; color: var(--muted); }
 .rule-t b { color: var(--text); font-weight: 500; }
 
-/* The climb: the levelling curve as a ridge from level 1 to the cap, a flag where characters stand now. */
 .plate { position: relative; isolation: isolate; }
 .plate::before { content: ""; position: absolute; inset: 0 auto 0 50%; width: 100vw; translate: -50% 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(255, 45, 85, 0.07), rgba(255, 45, 85, 0) 70%), var(--contours) center / 1500px auto; mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.15), #000 30%, #000 70%, rgba(0, 0, 0, 0.15)); }
 .ascent { margin-top: 1.2rem; }
@@ -86,7 +76,6 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .ascent .summit .pennant { fill: var(--gold); } .ascent .summit .staff, .ascent .summit .foot { stroke: var(--gold); }
 @media (max-width: 720px) { .ascent svg { min-width: 44rem; } }
 
-/* Who plays: classes in the game's colours, the two factions as one bar. */
 .rank .track i.cl { background: var(--class); }
 .who .dotc, .dotc { background: var(--class); }
 .split { display: flex; gap: 2px; height: 0.9rem; margin-top: 1.2rem; }
@@ -97,7 +86,6 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .split-key b { font: 750 1.5rem/1 var(--display); color: var(--fg); }
 .split-key i { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--tone); align-self: center; }
 
-/* The podium: the first three of a board on plinths of gold, silver and copper. */
 .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; margin-top: 1.6rem; border-bottom: 1px solid var(--line2); }
 .podium li { display: grid; gap: 0.25rem; min-width: 0; padding: 0 1.5rem; }
 .podium .p1 { order: 2; --metal: var(--gold); --rise: 8.5rem; } .podium .p2 { order: 1; --metal: var(--silver); --rise: 5rem; } .podium .p3 { order: 3; --metal: var(--copper); --rise: 2.6rem; }
@@ -112,7 +100,6 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .data .rk b { color: var(--fg); font-weight: 700; }
 .data td .dotc { vertical-align: 0.02em; }
 
-/* The hall: every board with its leader. */
 .hall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line2); }
 .hall li { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: 0.2rem 1rem; align-items: center; padding: 1.4rem 1.6rem 1.5rem 0; border-bottom: 1px solid var(--line); min-width: 0; }
 .hall li:nth-child(even) { padding: 1.4rem 0 1.5rem 1.6rem; border-left: 1px solid var(--line); }
@@ -125,8 +112,6 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .hall .val small { display: block; margin-top: 0.3rem; font: 400 0.86rem/1 var(--body); color: var(--muted); }
 .hall .none { color: var(--muted); }
 
-/* Feats: what a character has earned, struck in copper, silver, gold and scarlet. A feat not yet earned is a dashed
-   ring with what it takes. */
 .feats { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1.7rem 2.4rem; margin-top: 1.4rem; }
 .feat { display: grid; grid-template-columns: 4.4rem minmax(0, 1fr); column-gap: 1rem; align-items: center; --metal: var(--muted); }
 .feat.t1 { --metal: var(--copper); } .feat.t2 { --metal: var(--silver); } .feat.t3 { --metal: var(--gold); } .feat.t4 { --metal: var(--accent); }
@@ -148,11 +133,9 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .feats-sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 1.4rem; margin-top: 0.5rem; color: var(--text); }
 .feats-sum b { font: 750 1.9rem/1 var(--display); color: var(--fg); margin-right: 0.35rem; }
 
-/* Chapter heads on a dashboard get the display size back and a rule that starts scarlet. */
 .sheet > .sect { position: relative; }
 .sheet > .sect::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 3.5rem; height: 2px; background: var(--accent); }
 
-/* Phone widths. */
 @media (max-width: 900px) {
   .rules { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hall { grid-template-columns: minmax(0, 1fr); }
@@ -167,6 +150,7 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
   .tally > div:nth-child(even) { border-left: 1px solid var(--line) !important; padding-left: 0.9rem; }
   .tally dd { font-size: 2.2rem; white-space: normal; }
   .rec-lead .rec-ico { width: 1.7rem; height: 1.7rem; top: 1rem; right: 0.8rem; }
+  .rec-lead .rec-v { padding-right: 2.2rem; }
   .podium { grid-template-columns: minmax(0, 1fr); border-bottom: 0; }
   .podium li { grid-template-columns: 4.2rem minmax(0, 1fr); column-gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--line); }
   .podium .p1, .podium .p2, .podium .p3 { order: 0; }
@@ -178,8 +162,6 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 }
 @media (max-width: 560px) { .rules { grid-template-columns: minmax(0, 1fr); } }
 
-/* Motion: marks on a rule and plinths grow in as they scroll into view. Decoration only, so a browser without
-   view timelines shows the finished state. */
 @media (prefers-reduced-motion: no-preference) {
   @supports ((animation-timeline: view()) and (animation-range: entry)) {
     @keyframes grow-x { from { scale: 0 1; } }
