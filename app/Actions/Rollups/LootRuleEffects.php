@@ -3,12 +3,12 @@
 namespace App\Actions\Rollups;
 
 use App\Support\LootArm;
+use App\Support\LootCounted;
 use App\Support\LootGroupScope;
 use App\Support\LootRule;
 use App\Support\LootSourceRef;
 use App\Support\RateMath;
 use App\Support\RateSample;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
@@ -23,8 +23,8 @@ class LootRuleEffects
      * each, and their difference, over the sources seen under both rules with `RateSample::HOLLOW_FROM` corpses or more
      * in each, pooled with Mantel-Haenszel weights. The figure over all sources is never made: a rule is played on
      * other creatures than another. `$first` and `$second` choose the rules; without them it is the two with the most
-     * corpses on sources seen under two rules. A free-for-all arm of two or more characters counts its one reader
-     * (`LootArm`). `more` counts the sources seen under both rules with fewer corpses in one of them.
+     * corpses on sources seen under two rules. A corpse with a key counts once (docs/LOOT.md, Units of counting, rule 7); the windows with no key of a free-for-all
+     * arm of two or more characters count their one reader (`LootArm`). `more` counts the sources seen under both rules with fewer corpses in one of them.
      *
      * @return array{seen: list<array{rule: string, windows: int, sources: int}>, pair: list<string>, rows: list<array{rule: string, items: float, corpses: int}>, sources: int, windows: int, difference: array{difference: float, low: float, high: float}|null, more: int}
      */
@@ -55,7 +55,7 @@ class LootRuleEffects
 
     private function perSource(?LootSourceRef $source): Builder
     {
-        return LootGroupScope::of(DB::table(Rollup::LootWindowsCharacterDaily->value), $source)
+        return LootGroupScope::of(DB::table(LootCounted::WindowsCharacter->value), $source)
             ->whereIn('loot_rule', LootGroupScope::knownRules())
             ->selectRaw('source_kind, source_id, loot_rule, sum(windows) as windows')->groupBy('source_kind', 'source_id', 'loot_rule');
     }
@@ -92,27 +92,27 @@ class LootRuleEffects
 
     /**
      * @param  list<string>  $pair
-     * @return array<string, array<string, array<int, array{windows: int, items: int, squares: int}>>> by source, rule and character
+     * @return array<string, array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>> by source, rule, whether the windows have a corpse key, and character
      */
     private function arms(?LootSourceRef $source, array $pair): array
     {
-        $both = LootGroupScope::of(DB::table(Rollup::LootWindowsCharacterDaily->value), $source)
+        $both = LootGroupScope::of(DB::table(LootCounted::WindowsCharacter->value), $source)
             ->whereIn('loot_rule', $pair)->select('source_kind', 'source_id')->groupBy('source_kind', 'source_id')->havingRaw('count(distinct loot_rule) = 2');
-        $rows = $this->read->rows(LootGroupScope::of(DB::table(Rollup::LootWindowsCharacterDaily->value.' as t'), $source, 't.')
+        $rows = $this->read->rows(LootGroupScope::of(DB::table(LootCounted::WindowsCharacter->value.' as t'), $source, 't.')
             ->whereIn('t.loot_rule', $pair)
             ->joinSub($both, 'b', fn (JoinClause $join) => $join->on('b.source_kind', '=', 't.source_kind')->on('b.source_id', '=', 't.source_id'))
-            ->selectRaw('t.source_kind, t.source_id, t.loot_rule, t.character_id, sum(t.windows) as windows, sum(t.item_rows) as items, sum(t.item_rows_squared) as squares')
-            ->groupBy('t.source_kind', 't.source_id', 't.loot_rule', 't.character_id'));
+            ->selectRaw('t.source_kind, t.source_id, t.loot_rule, t.character_id, t.keyed::int as keyed, sum(t.windows) as windows, sum(t.item_rows) as items, sum(t.item_rows_squared) as squares')
+            ->groupBy('t.source_kind', 't.source_id', 't.loot_rule', 't.character_id', 't.keyed'));
         $by = [];
         foreach ($rows as $row) {
-            $by[$row['source_kind'].$row['source_id']][(string) $row['loot_rule']][(int) $row['character_id']] = ['windows' => (int) $row['windows'], 'items' => (int) $row['items'], 'squares' => (int) $row['squares']];
+            $by[$row['source_kind'].$row['source_id']][(string) $row['loot_rule']][(int) $row['keyed'] === 1 ? 'keyed' : 'unkeyed'][(int) $row['character_id']] = ['windows' => (int) $row['windows'], 'items' => (int) $row['items'], 'squares' => (int) $row['squares']];
         }
 
         return $by;
     }
 
     /**
-     * @param  array<string, array<string, array<int, array{windows: int, items: int, squares: int}>>>  $sources
+     * @param  array<string, array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>>  $sources
      * @param  list<string>  $pair
      * @return array{0: array{difference: float, low: float, high: float, first: float, second: float, sources: int, windows: int}|null, 1: list<int>, 2: int}
      */
@@ -140,19 +140,27 @@ class LootRuleEffects
     }
 
     /**
-     * The windows, item rows and their squares of one rule's arm on one source: every character's, or its one reader's.
+     * The windows, item rows and their squares of one rule's arm on one source: the corpses with a key, and of the windows
+     * with no key every character's, or its one reader's.
      *
-     * @param  array<int, array{windows: int, items: int, squares: int}>  $byCharacter
+     * @param  array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}  $parts
      * @return array{n: int, sum: int, squares: int}|null
      */
-    private function arm(string $rule, array $byCharacter): ?array
+    private function arm(string $rule, array $parts): ?array
     {
-        $arm = LootArm::of($rule, LootRule::words($rule), array_map(fn (array $row): int => $row['windows'], $byCharacter), $rule === LootRule::FreeForAll->value, false, false, (int) config('scarlet.min_characters'));
+        $unkeyed = $parts['unkeyed'] ?? [];
+        $keyed = $parts['keyed'] ?? [];
+        $windows = fn (array $row): int => $row['windows'];
+        $arm = LootArm::of($rule, LootRule::words($rule), array_map($windows, $unkeyed), array_map($windows, $keyed), $rule === LootRule::FreeForAll->value, false, false, (int) config('scarlet.min_characters'));
         if ($arm === null) {
             return null;
         }
-        $counted = array_intersect_key($byCharacter, array_flip($arm->characters));
+        $counted = array_filter($unkeyed, fn (int $character): bool => $arm->countsUnkeyedOf($character), ARRAY_FILTER_USE_KEY);
 
-        return ['n' => $arm->windows, 'sum' => array_sum(array_column($counted, 'items')), 'squares' => array_sum(array_column($counted, 'squares'))];
+        return [
+            'n' => $arm->windows,
+            'sum' => array_sum(array_column($counted, 'items')) + array_sum(array_column($keyed, 'items')),
+            'squares' => array_sum(array_column($counted, 'squares')) + array_sum(array_column($keyed, 'squares')),
+        ];
     }
 }

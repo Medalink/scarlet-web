@@ -4,6 +4,7 @@ namespace App\Actions\Rollups;
 
 use App\Support\ArmSplit;
 use App\Support\LootArm;
+use App\Support\LootCounted;
 use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\LootSourceKind;
@@ -12,7 +13,6 @@ use App\Support\NameKind;
 use App\Support\RateDifference;
 use App\Support\RateEstimate;
 use App\Support\RateSample;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -83,7 +83,7 @@ class LootMarks
 
     private function windows(): Builder
     {
-        return LootRead::Loot->within(DB::table(Rollup::LootWindowsCharacterDaily->value))
+        return LootRead::Loot->within(DB::table(LootCounted::WindowsCharacter->value))
             ->whereIn('source_kind', [LootSourceKind::Creature->value, LootSourceKind::Object->value])->whereNotNull('source_id');
     }
 

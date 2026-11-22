@@ -5,6 +5,7 @@ namespace App\Actions\Rollups;
 use App\Support\ArmSplit;
 use App\Support\ItemBind;
 use App\Support\LootArm;
+use App\Support\LootCounted;
 use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\RateDifference;
@@ -24,7 +25,7 @@ class SourceRuleArms
     /**
      * One source's drop table split into arms, by loot rule or by group size inside one rule (docs/LOOT.md, Creature
      * drops): a row for each item with 10 drops or more, and the rate in each arm that has 10 windows or more, over
-     * windows read for loot. A free-for-all arm of two or more characters counts its one reader (`LootArm`). The two
+     * windows read for loot, each corpse with a key once (docs/LOOT.md, Units of counting, rule 7). The windows with no key of a free-for-all arm of two or more characters count their one reader (`LootArm`). The two
      * drawn arms with the most windows, never personal loot, are compared, and each row carries their difference over
      * the items of the chart. `rules` and `sizes` list what was recorded, for the empty states; `rule` is the rule a
      * size split reads (`$rule` when the source has windows under it, else the rule with the most windows).
@@ -54,23 +55,23 @@ class SourceRuleArms
     }
 
     /**
-     * @return list<array{loot_rule: string, size: int|null, character: int, windows: int}>
+     * @return list<array{loot_rule: string, size: int|null, character: int, keyed: bool, windows: int}>
      */
     private function windows(string $sourceKind, int $sourceId): array
     {
-        $rows = $this->read->rows(LootRead::Loot->within(DB::table(Rollup::LootWindowsCharacterDaily->value))
-            ->selectRaw('loot_rule, group_size, character_id, sum(windows) as windows')
+        $rows = $this->read->rows(LootRead::Loot->within(DB::table(LootCounted::WindowsCharacter->value))
+            ->selectRaw('loot_rule, group_size, character_id, keyed::int as keyed, sum(windows) as windows')
             ->where('source_kind', $sourceKind)->where('source_id', $sourceId)
-            ->groupBy('loot_rule', 'group_size', 'character_id'));
+            ->groupBy('loot_rule', 'group_size', 'character_id', 'keyed'));
 
         return array_map(fn (array $row): array => [
             'loot_rule' => (string) $row['loot_rule'], 'size' => $row['group_size'] === null ? null : max(1, (int) $row['group_size']),
-            'character' => (int) $row['character_id'], 'windows' => (int) $row['windows'],
+            'character' => (int) $row['character_id'], 'keyed' => (int) $row['keyed'] === 1, 'windows' => (int) $row['windows'],
         ], $rows);
     }
 
     /**
-     * @param  list<array{loot_rule: string, size: int|null, character: int, windows: int}>  $windows
+     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, windows: int}>  $windows
      * @return list<array{rule: string, windows: int}>
      */
     private function rulesSeen(array $windows): array
@@ -98,7 +99,7 @@ class SourceRuleArms
     }
 
     /**
-     * @param  list<array{loot_rule: string, size: int|null, character: int, windows: int}>  $windows
+     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, windows: int}>  $windows
      * @return list<array{size: int, windows: int}>
      */
     private function sizesSeen(array $windows, string $rule): array
@@ -115,7 +116,7 @@ class SourceRuleArms
     }
 
     /**
-     * @param  list<array{loot_rule: string, size: int|null, character: int, windows: int}>  $windows
+     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, windows: int}>  $windows
      * @return list<LootArm>
      */
     private function arms(ArmSplit $split, array $windows, ?string $chosen): array
@@ -126,14 +127,15 @@ class SourceRuleArms
                 continue;
             }
             $key = $split === ArmSplit::Rule ? $row['loot_rule'] : (string) $row['size'];
-            $groups[$key][$row['character']] = ($groups[$key][$row['character']] ?? 0) + $row['windows'];
+            $part = $row['keyed'] ? 'keyed' : 'unkeyed';
+            $groups[$key][$part][$row['character']] = ($groups[$key][$part][$row['character']] ?? 0) + $row['windows'];
         }
         $arms = [];
-        foreach ($groups as $key => $byCharacter) {
+        foreach ($groups as $key => $parts) {
             $key = (string) $key;
             $rule = $split === ArmSplit::Rule ? $key : (string) $chosen;
             $arm = LootArm::of(
-                $key, $split === ArmSplit::Rule ? LootRule::words($key) : 'Size '.$key, $byCharacter,
+                $key, $split === ArmSplit::Rule ? LootRule::words($key) : 'Size '.$key, $parts['unkeyed'] ?? [], $parts['keyed'] ?? [],
                 $rule === LootRule::FreeForAll->value, $split === ArmSplit::Rule && $rule === LootRule::Personal->value, $rule === LootRule::Unknown->value,
                 (int) config('scarlet.min_characters'),
             );
@@ -163,24 +165,24 @@ class SourceRuleArms
     }
 
     /**
-     * @return list<array<string, mixed>> item_id, item, bind_type, loot_rule, group_size, drops
+     * @return list<array<string, mixed>> item_id, item, bind_type, loot_rule, group_size, keyed, drops
      */
     private function items(string $sourceKind, int $sourceId): array
     {
-        return $this->read->rows(LootRead::Loot->within(DB::table(Rollup::LootItemsDaily->value.' as d'), 'd.read')
+        return $this->read->rows(LootRead::Loot->within(DB::table(LootCounted::Items->value.' as d'), 'd.read')
             ->leftJoin('items as i', 'i.item_id', '=', 'd.item_id')
             ->selectRaw("d.item_id, (select n.name from names n where n.kind = 'item' and n.id = d.item_id order by n.votes desc, n.name limit 1) as item")
-            ->selectRaw('i.bind_type, d.loot_rule, d.group_size, sum(d.windows) as drops')
+            ->selectRaw('i.bind_type, d.loot_rule, d.group_size, d.keyed::int as keyed, sum(d.windows) as drops')
             ->where('d.source_kind', $sourceKind)->where('d.source_id', $sourceId)
-            ->groupBy('d.item_id', 'i.bind_type', 'd.loot_rule', 'd.group_size'));
+            ->groupBy('d.item_id', 'i.bind_type', 'd.loot_rule', 'd.group_size', 'd.keyed'));
     }
 
     /**
-     * @return array<int, array<int, array<int, int>>> windows that listed the item, by item, size and character, free for all
+     * @return array<int, array<int, array<int, int>>> windows with no corpse key that listed the item, by item, size and character, free for all
      */
     private function readerItems(string $sourceKind, int $sourceId): array
     {
-        $rows = $this->read->rows(LootRead::Loot->within(DB::table(Rollup::LootFreeForAllItemsDaily->value))
+        $rows = $this->read->rows(LootRead::Loot->within(DB::table(Rollup::LootFreeForAllItemsUnkeyedDaily->value))
             ->selectRaw('item_id, group_size, character_id, sum(windows) as windows')
             ->where('source_kind', $sourceKind)->where('source_id', $sourceId)
             ->groupBy('item_id', 'group_size', 'character_id'));
@@ -245,26 +247,24 @@ class SourceRuleArms
     }
 
     /**
-     * Windows of the arm that listed the item: its reader's, or every character's.
+     * Windows of the arm that listed the item: the corpses with a key, and of the windows with no key its reader's or
+     * every character's.
      *
      * @param  list<array<string, mixed>>  $items
      * @param  array<int, array<int, array<int, int>>>  $readers
      */
     private function listing(int $itemId, LootArm $arm, array $items, array $readers, ArmSplit $split, ?string $chosen): int
     {
+        $count = 0;
         if ($arm->reader !== null) {
-            $count = 0;
             foreach ($readers[$itemId] ?? [] as $size => $byCharacter) {
                 if ($split === ArmSplit::Rule || (string) $size === $arm->key) {
                     $count += $byCharacter[$arm->reader] ?? 0;
                 }
             }
-
-            return $count;
         }
-        $count = 0;
         foreach ($items as $row) {
-            if ((int) $row['item_id'] !== $itemId) {
+            if ((int) $row['item_id'] !== $itemId || ($arm->reader !== null && (int) $row['keyed'] !== 1)) {
                 continue;
             }
             $size = $row['group_size'] === null ? null : max(1, (int) $row['group_size']);

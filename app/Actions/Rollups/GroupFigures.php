@@ -2,9 +2,9 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\LootCounted;
 use App\Support\LootGroupScope;
 use App\Support\LootSourceRef;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +24,7 @@ class GroupFigures
      */
     public function handle(?LootSourceRef $source): array
     {
-        $row = $this->read->rows(LootGroupScope::of(DB::table(Rollup::LootWindowsCharacterDaily->value), $source)
+        $row = $this->read->rows(LootGroupScope::of(DB::table(LootCounted::WindowsCharacter->value), $source)
             ->selectRaw('sum(windows) as corpses, count(distinct loot_rule) filter (where loot_rule = any (?::text[])) as rules, max(group_size) as largest, count(distinct character_id) as characters, min(bucket) as first_at, max(bucket) as last_at', ['{'.implode(',', LootGroupScope::knownRules()).'}'])
             ->havingRaw('count(distinct character_id) >= ?', [$this->read->threshold(null)]))[0] ?? null;
         if ($row === null) {
@@ -57,7 +57,7 @@ class GroupFigures
 
     private function several(?LootSourceRef $source): int
     {
-        $per = LootGroupScope::of(DB::table(Rollup::LootWindowsCharacterDaily->value), $source)
+        $per = LootGroupScope::of(DB::table(LootCounted::WindowsCharacter->value), $source)
             ->whereIn('loot_rule', LootGroupScope::knownRules())
             ->selectRaw('source_kind, source_id')->groupBy('source_kind', 'source_id')->havingRaw('count(distinct loot_rule) >= 2');
 

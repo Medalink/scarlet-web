@@ -32,8 +32,8 @@ Four findings shape the design more than any layout choice.
    with most modules saying what is missing.
 
 Free-for-all corpses are read twice: 157 of 421 free-for-all first-read windows have another uploader's
-first-read window on the same source within 300 s (37%). That is why a free-for-all arm that two characters
-contributed to counts one reader (Units of counting, rule 6) until the corpse key lands.
+first-read window on the same source within 300 s (37%). That is why the windows with no corpse key of a
+free-for-all arm that two characters contributed to count one reader (Units of counting, rule 6).
 
 ## Views
 
@@ -185,11 +185,13 @@ Rules the design follows:
 5. The server cannot rebuild corpse identity from time and contents. A duo kills the same creature type every few
    seconds, so "same source within 5 minutes" merges different corpses, and it drops small windows first, which
    pushes every rate up. The design does not do it.
-6. So: sum first reads across characters, except in a free-for-all arm that two or more characters contributed to.
-   That arm uses **one reader**: rate and range come from the character with the most windows in the arm, as
-   `BossDrops` takes the uploader who saw most, and the arm carries the tag `one reader`. It loses up to half the
-   sample and cannot double count. 37% of free-for-all windows have another uploader's window on the same source
-   inside 300 s, past the 5% that triggers it.
+6. So: sum first reads across characters, except for the windows with no corpse key (rule 7) of a free-for-all arm
+   that two or more characters contributed to. Those use **one reader**: rate and range come from the character with
+   the most of them in the arm, as `BossDrops` takes the uploader who saw most, and the arm carries the tag `one
+   reader`. It loses up to half the sample and cannot double count. 37% of free-for-all windows have another
+   uploader's window on the same source inside 300 s, past the 5% that triggers it. The windows with a key count
+   whole in the same arm, each corpse once, and an arm whose windows all have a key has neither one reader nor the
+   tag.
 7. **The corpse key (phase 7, decoder version 12).** `K`, `LO` and `LW` carry a key that is the same on every client
    for one corpse, stored as `corpse_key` on `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops`. A
    window with a key counts once per corpse, however many characters read it or were sent it. A window without one (a
@@ -312,8 +314,9 @@ API), because the likeliest cause is counting. Ivory Boar Tusk is the proof: +24
 caused by skin windows.
 
 **Which arms are compared.** A chart compares the two arms with the most windows that are drawn (10 or more).
-`personal` is drawn and never compared. A free-for-all arm of two or more characters is counted by its one reader
-before any ladder step or comparison, so its `n` is that character's windows. The items compared are the rows of
+`personal` is drawn and never compared. The windows with no corpse key of a free-for-all arm of two or more characters
+are counted by its one reader before any ladder step or comparison, so its `n` is that character's windows with no
+key plus the corpses with a key. The items compared are the rows of
 the chart; a mark needs 0.05 divided by that number to keep the range off zero, with the Newcombe range rebuilt
 from Wilson ranges at the matching quantile. `different characters` is set on a mark whose two arms share no
 character.
@@ -332,7 +335,7 @@ tag of the estimate. The enum holds the tags of the phases built so far.
 | --- | --- | --- | --- |
 | `1 character` | `one_character` | every window of the row or arm is from one character | phase 1 |
 | `quest item` | `quest_item` | the item binds as a quest item | phase 1 |
-| `one reader` | `one_reader` | a free-for-all arm that two or more characters contributed to | phase 4 |
+| `one reader` | `one_reader` | a free-for-all arm that holds windows with no corpse key from two or more characters | phase 4, narrowed in phase 7 |
 | `different characters` | `different_characters` | the two arms of a comparison share no character | phase 4 |
 | `rule unknown` | `rule_unknown` | windows from before the first `LM` line of the session | phase 4 |
 | `other creatures` | `other_creatures` | a group-size arm exists only on sources no other size has, so no comparison is drawn | phase 4 |
