@@ -243,9 +243,9 @@ fi
 new=$1
 docker image inspect "scarlet-web-app:$new" >/dev/null
 t_migrate=$(date +%s.%N)
-$dc pull --quiet --policy missing redis web
+$dc pull --quiet --policy missing redis redis-cache web
 if grep -qx "DB_HOST=postgres" .env; then $dc up -d --no-recreate --wait postgres; fi
-$dc up -d --wait redis web
+$dc up -d --wait redis redis-cache web
 [ "$nginx_changed" -eq 0 ] || reload_nginx
 phase compose-up "$t_migrate"
 t_migrate=$(date +%s.%N)

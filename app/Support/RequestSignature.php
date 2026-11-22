@@ -31,7 +31,7 @@ final class RequestSignature
     /** True the first time a signature is seen within the window, false for a replay. */
     public static function firstSeen(string $signatureBase64): bool
     {
-        return Cache::add(self::replayKey($signatureBase64), 1, self::REMEMBER_SECONDS);
+        return Cache::store('durable')->add(self::replayKey($signatureBase64), 1, self::REMEMBER_SECONDS);
     }
 
     private static function replayKey(string $signatureBase64): string

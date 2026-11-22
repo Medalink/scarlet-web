@@ -23,6 +23,13 @@ return [
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
         ],
 
+        'durable' => [
+            'driver' => 'redis',
+            'connection' => 'default',
+            'lock_connection' => 'default',
+            'prefix' => env('CACHE_DURABLE_PREFIX', 'scarlet_durable_'),
+        ],
+
     ],
 
     'prefix' => env('CACHE_PREFIX', 'scarlet_cache_'),

@@ -8,15 +8,18 @@ class StoreImportedRecords
 {
     private const int ROWS_PER_INSERT = 500;
 
+    public function __construct(private readonly MarkPartsDecoded $markDecoded) {}
+
     /**
      * Replace the imported records of one UTC day of one character with a fresh decode. A character
      * is locked while this runs, as for a session. Safe to run twice.
      *
      * @param  list<array<string, mixed>>  $rows  `imported` rows of `scarlet-part decode --imports`
+     * @param  list<string>  $partIds  lower-case hex ids of the parts `$rows` came from, marked decoded
      */
-    public function handle(int $characterId, int $dayStart, array $rows): void
+    public function handle(int $characterId, int $dayStart, array $rows, array $partIds): void
     {
-        DB::transaction(function () use ($characterId, $dayStart, $rows): void {
+        DB::transaction(function () use ($characterId, $dayStart, $rows, $partIds): void {
             if (! DB::table('characters')->where('id', $characterId)->lockForUpdate()->exists()) {
                 return;
             }
@@ -41,11 +44,7 @@ class StoreImportedRecords
                 DB::table('imported_records')->insert($chunk);
             }
 
-            DB::table('parts')
-                ->where('character_id', $characterId)
-                ->where('session_start', $dayStart)
-                ->where('group_key', 'imports')
-                ->update(['decoded_at' => now()]);
+            $this->markDecoded->handle($characterId, $dayStart, $partIds);
         });
     }
 }

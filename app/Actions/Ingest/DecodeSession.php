@@ -4,6 +4,7 @@ namespace App\Actions\Ingest;
 
 use App\Jobs\RefreshRollups;
 use App\Models\Part;
+use App\Support\Database\BinaryValue;
 use App\Support\DecodedSession;
 use App\Support\PartTool;
 use App\Support\SharingGroup;
@@ -25,23 +26,28 @@ class DecodeSession
     {
         $bodies = [];
         $imported = [];
+        $partIds = [];
+        $importedIds = [];
         $parts = Part::query()
             ->where('character_id', $characterId)
             ->where('session_start', $sessionStart)
             ->orderBy('group_key')
             ->orderBy('id')
-            ->get(['group_key', 'body']);
+            ->get(['id', 'group_key', 'body']);
         foreach ($parts as $part) {
+            $id = bin2hex((string) BinaryValue::read($part->getAttributes()['id']));
             if ($part->group_key === SharingGroup::IMPORTS) {
                 $imported[] = $part->body();
+                $importedIds[] = $id;
 
                 continue;
             }
             $bodies[] = $part->body();
+            $partIds[] = $id;
         }
 
         if ($imported !== []) {
-            $this->imports->handle($characterId, $sessionStart, $this->tool->decodeImports($imported));
+            $this->imports->handle($characterId, $sessionStart, $this->tool->decodeImports($imported), $importedIds);
             if ($bodies === []) {
                 return;
             }
@@ -49,7 +55,7 @@ class DecodeSession
 
         $decoded = $bodies === [] ? DecodedSession::empty() : DecodedSession::parse($this->tool->decode($bodies));
 
-        $window = $this->store->handle($characterId, $sessionStart, $decoded);
+        $window = $this->store->handle($characterId, $sessionStart, $decoded, $partIds);
         if ($window !== null) {
             RefreshRollups::dispatch($window['from'], $window['until']);
         }

@@ -10,7 +10,7 @@ PostgreSQL on a block volume. The code that builds, ships and runs it is in `bin
 | --- | --- |
 | App droplet | `scarlet-web`, region nyc3, `s-2vcpu-4gb` (2 vCPU, 4 GB RAM, 80 GB disk), Ubuntu 24.04, 2 GB swap, DigitalOcean backups and monitoring on |
 | Cloudflare | Zone `scarletweb.io` on the Free plan. Proxied `A` and `AAAA` records for the apex and `www`. SSL mode Full (strict), Authenticated Origin Pulls on, Always Use HTTPS on, minimum TLS 1.2, HSTS off |
-| Containers | `web` (nginx), `app-blue` or `app-green` (php-fpm, one serves), `horizon-a`, `-b` or `-c` (the newest one works the queues), `schedule`, `registry` (image layers, loopback only), `redis`. `deploy/compose.yaml`. Its `postgres` service is the database until `bin/deploy db-move` runs, then a replica for 48 hours |
+| Containers | `web` (nginx), `app-blue` or `app-green` (php-fpm, one serves), `horizon-a`, `-b` or `-c` (the newest one works the queues), `schedule`, `registry` (image layers, loopback only), `redis` (queue and Horizon), `redis-cache` (cache and sessions). `deploy/compose.yaml`. Its `postgres` service is the database until `bin/deploy db-move` runs, then a replica for 48 hours |
 | Database droplet | `scarlet-db`, nyc3, `s-1vcpu-2gb` (1 vCPU, 2 GB RAM, 50 GB disk), Ubuntu 24.04, 2 GB swap, monitoring on, DigitalOcean backups off (they do not cover volumes). One container, `postgres` (TimescaleDB 2.32 with the Toolkit, PostgreSQL 18, `shared_buffers` 512 MB), `deploy/compose.db.yaml`. Data on the 50 GB volume `scarlet-db-data`, mounted at `/mnt/scarlet-db-data` |
 | Access | Tailscale only. `ssh ops@scarlet-web` and `ssh ops@scarlet-db` with the servers' own key. The DigitalOcean web console is the fallback |
 | Files on the app droplet | `/srv/scarlet-web`: `.env` (mode 600), `tls/`, `maps/`, `backups/`, `deploy/`; `/etc/scarlet-web/r2.env` (R2 credentials, root only) |
@@ -25,8 +25,8 @@ see the visitor, not Cloudflare. `www` redirects to the apex in nginx.
 
 - The DigitalOcean cloud firewall `scarlet-web` (tag `scarlet-web`) lets in tcp 80 and 443 from Cloudflare's IPv4 and
   IPv6 ranges and nothing else. There is no inbound 22. Outbound is open. Docker publishes ports around `ufw`, so
-  the cloud firewall is the guard, and nothing else is published: php-fpm listens on `127.0.0.1:9000` and Redis is on
-  the compose network only.
+  the cloud firewall is the guard, and nothing else is published: php-fpm listens on `127.0.0.1:9000` and both Redis
+  instances are on the compose network only.
 - The cloud firewall `scarlet-web-db` (tag `scarlet-db`) lets in tcp 5432 from droplets with the tag `scarlet-app` and
   nothing else: no 22, no public 5432. The app droplet has the tags `scarlet-web` and `scarlet-app`; the database droplet
   has only `scarlet-db`, so the public firewall does not apply to it and a `scarlet-load-*` droplet is not a source.
@@ -356,6 +356,46 @@ the R2 dump of 2026-11-21 19:50 UTC and the real `bin/deploy` commands:
 
 If self-hosting stops being worth it, Tiger Cloud (Timescale's managed service) runs the same extensions from about $30
 to $36 a month at this size. Migrations would have to run without superuser rights first.
+
+## Redis
+
+Two Redis instances run on the app droplet, so a full cache cannot stop the queue.
+
+| Instance | Holds | Memory cap and policy |
+| --- | --- | --- |
+| `redis` | The queues, Horizon's records (failed jobs, metrics, supervisors), job and scheduler locks, and the `durable` cache store: the pending rollup range and the replay check of upload signatures. Connection `default`, database 0, key prefix `scarlet_` | 256 MB, `noeviction`. A full instance refuses writes and says so, it never drops a job |
+| `redis-cache` | The cache and the sessions of visitors. Connection `cache` (database 1) and connection `session` (database 2), the same host. Settings `REDIS_CACHE_HOST`, `REDIS_CACHE_DB`, `REDIS_SESSION_DB`; compose sets the host for every app container, and without it both fall back to `REDIS_HOST`, which is how a development checkout runs on one instance | 192 MB, `allkeys-lru`. A full instance drops the least recently used keys: an evicted cache entry is built again, an evicted session signs one visitor out |
+
+Both save a snapshot after 60 seconds with one change and keep it in their own volume (`redisdata`, `rediscachedata`),
+so the 04:30 reboot does not sign anyone out. The caps add up to 448 MB on a droplet with 4 GB, 1.3 GB in use before the
+change. `INFO memory`, `INFO keyspace` and `CONFIG GET maxmemory*` show an instance:
+
+```sh
+bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec redis-cache redis-cli info keyspace'
+```
+
+A cache entry that must not be evicted uses `Cache::store('durable')`. A lock never lands on `redis-cache`: every store
+sets `lock_connection` to `default`. Rate-limit counters are cache entries, so under memory pressure a counter can reset
+early. The upload manifest list (`WantedParts`) is a cache entry too: an install that lost it sends its manifest again.
+
+### Parts that were never decoded
+
+`ingest:sweep` runs every 5 minutes (`routes/console.php`). It finds parts stored more than 5 minutes ago, still without
+`decoded_at`, and no older than 72 hours, and queues `IngestSession` for their sessions, 500 at most and the oldest
+first. A job that is still queued is skipped by its identity (`ShouldBeUniqueUntilProcessing`, 15 minutes), so a slow
+queue is not queued twice, and a job lost together with its lock is found within 15 minutes of the loss at the latest.
+The query reads the partial index `parts_undecoded_created_at_index`, which holds only the parts that wait. A decode
+marks the parts it read as decoded, also when the session holds no rows to store (the empty case), and a part stored
+while a decode ran stays marked as waiting. Settings are in `config/scarlet.php` (`ingest.sweep_*`). Parts older than 72
+hours are left to `php artisan ingest:redecode`. `horizon:snapshot` runs every 5 minutes, which Horizon's metrics pages
+need.
+
+### Change the caps
+
+Edit `--maxmemory` in `deploy/compose.yaml` and run `bin/deploy`; `up -d --wait` recreates the instance, which loads its
+snapshot. After the first deploy with two instances the old cache keys are still in database 1 of `redis` and the old
+sessions in its database 0 until they expire (two hours for sessions). `redis-cli -n 1 flushdb` on `redis` clears the
+cache keys; never flush database 0 there, it holds the queue.
 
 ## Map art
 
