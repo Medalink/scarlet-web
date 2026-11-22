@@ -73,7 +73,7 @@
           <tr><td>Support ticket and report text, and who a report was about</td><td>That a report was sent, and its type.</td></tr>
           <tr><td>Guild notes, the message of the day and rank names</td><td>Your rank number, and whether you are an officer or the leader.</td></tr>
           <tr><td>Calendar titles, friend notes and group finder comments</td><td>Counts: invites waiting, list sizes, listings found.</td></tr>
-          <tr><td>Other players' GUIDs, account names and account friend tags</td><td>The character names of players you group, trade, mail or roll against.</td></tr>
+          <tr><td>Other players' GUIDs, account names and account friend tags</td><td>Character names only: players you group, trade, mail or roll against, players you inspect and the gear they wear, players a /who search lists, other rows of a battleground scoreboard, and the character a hardcore death notice names.</td></tr>
           <tr><td>Screenshots</td><td>The file name and the time. Scarlet takes none and never reads one.</td></tr>
         </tbody>
       </table>
@@ -83,15 +83,14 @@
 
   <section class="band" id="capture" aria-labelledby="h-capture">
     <div class="wrap">
-      <h2 id="h-capture">The capture map: all <span data-cap="recorded">624</span> client data points worth recording are recorded</h2>
+      <h2 id="h-capture">The capture map: <span data-cap="recorded">789</span> of <span data-cap="points">4,132</span> client data points are recorded</h2>
       <div class="capture">
       <div>
-        <p class="intro">The capture map lists every function and event the WoW Forever client documents, build <span id="build">1.60.1.70959</span>, sorted by what it is about. A data point is an event, or a function that reads state. It is live when the client's own interface files call it.</p>
+        <p class="intro">The capture map lists every function and event the WoW Forever client documents, build <span id="build">1.60.1.70959</span>, and the globals its own interface calls that the documentation leaves out, sorted by what they are about. A data point is an event, or a function that returns a value.</p>
         <dl class="funnel">
-          <div><dt data-cap="documented">3,482</dt><dd>data points documented in game domains</dd></div>
-          <div><dt data-cap="live">2,522</dt><dd>live in the WoW Forever client</dd></div>
-          <div><dt data-cap="leftOut">1,898</dt><dd>reviewed and left out, each with a written reason</dd></div>
-          <div><dt data-cap="recorded">624</dt><dd>recorded by Scarlet, which is every one that remains</dd></div>
+          <div><dt data-cap="points">4,132</dt><dd>data points in the capture map</dd></div>
+          <div><dt data-cap="leftOut">3,343</dt><dd>left out, each with a written reason</dd></div>
+          <div><dt data-cap="recorded">789</dt><dd>recorded by Scarlet</dd></div>
         </dl>
       </div>
       <div id="matrix">

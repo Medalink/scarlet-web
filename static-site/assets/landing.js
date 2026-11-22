@@ -146,18 +146,18 @@
   for (const el of document.querySelectorAll("[data-codes]")) el.textContent = F.count;
   $("#build").textContent = CAP.build;
   const matrix = $("#matrix");
-  matrix.insertAdjacentHTML("beforeend", CAP.domains.map((d, i) => `<div class="dom"><h3>${esc(d.name)}</h3><p>${d.recorded} of ${d.live - d.leftOut} recorded · ${d.leftOut} left out</p><canvas data-i="${i}" role="img" aria-label="${d.recorded} recorded and ${d.leftOut} left out of ${d.live} live data points"></canvas></div>`).join(""));
+  matrix.insertAdjacentHTML("beforeend", CAP.domains.map((d, i) => `<div class="dom"><h3>${esc(d.name)}</h3><p>${d.recorded} of ${d.points} recorded · ${d.leftOut} left out</p><canvas data-i="${i}" role="img" aria-label="${d.recorded} recorded and ${d.leftOut} left out of ${d.points} data points"></canvas></div>`).join(""));
   function cells() {
     const ratio = Math.min(window.devicePixelRatio || 1, 2), pitch = 7;
     for (const cv of matrix.querySelectorAll("canvas")) {
       cv.style.width = "100%";
-      const d = CAP.domains[+cv.dataset.i], per = Math.max(10, Math.floor(cv.clientWidth / pitch)), rows = Math.ceil(d.live / per);
+      const d = CAP.domains[+cv.dataset.i], per = Math.max(10, Math.floor(cv.clientWidth / pitch)), rows = Math.ceil(d.points / per);
       cv.style.width = per * pitch + "px";
       cv.style.height = rows * pitch + "px";
       cv.width = Math.round(per * pitch * ratio); cv.height = Math.round(rows * pitch * ratio);
       const c = cv.getContext("2d");
       c.setTransform(ratio, 0, 0, ratio, 0, 0);
-      for (let n = 0; n < d.live; n++) {
+      for (let n = 0; n < d.points; n++) {
         c.fillStyle = n < d.recorded ? "#ff2d55" : "rgba(255,255,255,0.13)";
         c.fillRect((n % per) * pitch, Math.floor(n / per) * pitch, 5, 5);
       }
