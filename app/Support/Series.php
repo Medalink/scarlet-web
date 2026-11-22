@@ -6,6 +6,7 @@ namespace App\Support;
 enum Series: string
 {
     case Levels = 'levels';
+    case Cap = 'cap';
     case Xp = 'xp';
     case Deaths = 'deaths';
     case Dungeons = 'dungeons';
@@ -16,7 +17,8 @@ enum Series: string
     public function summary(): string
     {
         return match ($this) {
-            self::Levels => 'Characters, median time to reach each level, and the middle half',
+            self::Levels => 'Characters that recorded each level-up, median time to reach each level, the middle half, and characters that have reached each level',
+            self::Cap => 'Characters at the level cap, and what was recorded at the cap since each was first seen',
             self::Xp => 'Experience by level and source',
             self::Deaths => 'Deaths by level, top killers and the zones with most deaths',
             self::Dungeons => 'Runs, time and bosses by dungeon',

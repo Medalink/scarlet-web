@@ -25,23 +25,26 @@ final class StatsPage
     public static function data(array $r, PageScope $scope, int $target): array
     {
         $levels = self::rows($r['levels']);
+        $reached = self::rows($r['reached']);
         $totals = self::totals($r['totals']);
         $characters = $totals['characters'];
+        $top = self::top($r);
 
         return [
             'title' => $scope->ruleset?->label() ?? ($scope->server->warMode() === null ? 'All characters' : 'All characters, '.$scope->server->label()),
             'sub' => self::sub($totals, $r['coverage']),
-            'figures' => self::figures($r, $levels, $target),
-            'curve' => self::curve($levels),
-            'reach' => self::reach($levels),
-            'xp' => self::xp(self::rows($r['xp_sources'])),
-            'ltime' => self::levelTime(self::rows($r['level_time'])),
-            'dph' => self::deathsPerHour(self::rows($r['deaths_by_level']), self::rows($r['play_by_level'])),
+            'figures' => self::figures($r, $reached, $target),
+            'cap' => self::cap($r, $reached, $target),
+            'curve' => self::curve($levels, $top),
+            'reach' => self::reach($reached, $top),
+            'xp' => self::xp(self::rows($r['xp_sources']), $top),
+            'ltime' => self::levelTime(self::rows($r['level_time']), $top),
+            'dph' => self::deathsPerHour(self::rows($r['deaths_by_level']), self::rows($r['play_by_level']), $top),
             'killers' => self::killers(self::rows($r['killers'])),
             'deathZones' => self::deathZones(self::rows($r['death_zones'])),
             'dungeons' => self::dungeons(self::rows($r['dungeons'])),
             'professions' => self::professions(self::rows($r['professions']), $characters),
-            'gold' => self::gold(self::rows($r['gold'])),
+            'gold' => self::gold(self::rows($r['gold']), $top),
             'hours' => self::hours(self::rows($r['weekdays'])),
             'zones' => array_map(fn (array $zone): array => ['id' => (int) $zone['zone_id'], 'name' => (string) ($zone['zone'] ?? 'Zone '.$zone['zone_id'])], self::rows($r['zones'])),
         ];
@@ -89,29 +92,38 @@ final class StatsPage
 
     /**
      * @param  array<string, mixed>  $r
-     * @param  list<array<string, mixed>>  $levels
+     */
+    private static function top(array $r): int
+    {
+        $levels = [];
+        foreach (['reached', 'levels', 'level_time', 'xp_sources', 'deaths_by_level', 'play_by_level', 'gold'] as $key) {
+            foreach (self::rows($r[$key]) as $row) {
+                $levels[] = (int) ($row['level'] ?? 0);
+            }
+        }
+
+        return max([2, ...$levels]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $r
+     * @param  list<array<string, mixed>>  $reached
      * @return list<array<string, string>>
      */
-    private static function figures(array $r, array $levels, int $target): array
+    private static function figures(array $r, array $reached, int $target): array
     {
         $totals = self::totals($r['totals']);
         $number = fn (int|float|null $value): array => $value === null ? ['value' => '–', 'unit' => Format::TOO_FEW] : ['value' => Format::number($value)];
-
-        $reached = null;
-        foreach ($levels as $row) {
-            if ((int) $row['level'] <= $target) {
-                $reached = $row;
-            }
-        }
-        $median = $reached === null
-            ? ['value' => '–', 'unit' => 'none yet']
-            : ['value' => Format::duration((float) $reached['median']), 'unit' => 'played'];
+        $byLevel = array_column($reached, 'characters', 'level');
+        $highest = $reached === [] ? null : (int) $reached[count($reached) - 1]['level'];
+        $characters = $totals['characters'];
         $runs = array_sum(array_map(fn (array $row): int => (int) $row['runs'], self::rows($r['dungeons'])));
 
         return [
-            ['label' => 'Characters', ...$number($totals['characters'])],
+            ['label' => 'Characters', ...$number($characters)],
+            ['label' => 'At level '.$target, ...($characters === null ? $number(null) : ['value' => Format::number((int) ($byLevel[$target] ?? 0)), 'unit' => 'of '.Format::number($characters)])],
+            ['label' => 'Highest level', ...($highest === null ? ['value' => '–', 'unit' => 'none yet'] : ['value' => (string) $highest, 'unit' => Format::count((int) $byLevel[$highest], 'character')])],
             ['label' => 'Hours recorded', ...($totals['played_seconds'] === null ? $number(null) : ['value' => Format::number(round((float) $totals['played_seconds'] / 3600))])],
-            ['label' => 'Median to level '.($reached['level'] ?? $target), ...$median],
             ['label' => 'Deaths', ...$number($totals['deaths'] ?? null)],
             ['label' => 'Quests turned in', ...$number($totals['quests'] ?? null)],
             ['label' => 'Dungeon runs', ...$number($runs)],
@@ -119,10 +131,44 @@ final class StatsPage
     }
 
     /**
+     * @param  array<string, mixed>  $r
+     * @param  list<array<string, mixed>>  $reached
+     * @return array{heading: string, rows: list<array{cells: list<string>}>, note: string|null}
+     */
+    private static function cap(array $r, array $reached, int $target): array
+    {
+        $totals = self::totals($r['totals']);
+        $at = (int) (array_column($reached, 'characters', 'level')[$target] ?? 0);
+        $since = ', since first seen';
+        $row = fn (string $label, string $value, string $basis): array => ['cells' => [$label, $value, $basis]];
+        $figure = function (string $label, ?array $data, callable $value) use ($row): array {
+            return $data === null ? $row($label, '–', Format::TOO_FEW) : $row($label, $value($data), Format::count((int) $data['characters'], 'character'));
+        };
+        $cap = is_array($r['at_cap'] ?? null) ? $r['at_cap'] : [];
+        $money = $cap['money'] ?? null;
+        $purse = fn (string $label, string $key): array => $money === null
+            ? $row($label, '–', 'No economy data shared')
+            : $row($label, Format::moneyText((float) $money[$key]), Format::count((int) $money['characters'], 'character'));
+
+        return [
+            'heading' => 'At the level cap',
+            'rows' => $at === 0 ? [] : [
+                $row('Characters at level '.$target, Format::number($at), $totals['characters'] === null ? Format::TOO_FEW : 'of '.Format::count((int) $totals['characters'], 'character')),
+                $figure('Recorded time at level '.$target.$since, $cap['seconds'] ?? null, fn (array $d): string => Format::duration((float) $d['seconds'])),
+                $purse('Gold earned at level '.$target.$since, 'earned'),
+                $purse('Gold spent at level '.$target.$since, 'spent'),
+                $figure('Dungeon runs at level '.$target.$since, $cap['runs'] ?? null, fn (array $d): string => Format::number((int) $d['runs'])),
+                $figure('Deaths at level '.$target.$since, $cap['deaths'] ?? null, fn (array $d): string => Format::number((int) $d['deaths'])),
+            ],
+            'note' => $at === 0 ? 'No character is at level '.$target.' yet.' : null,
+        ];
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $levels
      * @return array{spec: array<string, mixed>, line: array{0: string, 1: string}}|null
      */
-    private static function curve(array $levels): ?array
+    private static function curve(array $levels, int $top): ?array
     {
         if (count($levels) < 2) {
             return null;
@@ -134,16 +180,14 @@ final class StatsPage
             $median[] = [$level, $hours('median')];
             $band[] = [$level, $hours('q1'), $hours('q3')];
             $fast[] = [$level, $hours('p10')];
-            $say[] = Format::line('Level '.$level, ' is reached after a median of '.Format::hours((float) $row['median']).' played. The middle half is '.Format::hours((float) $row['q1'], false).' to '.Format::hours((float) $row['q3'], false).'.');
+            $say[] = Format::line('Level '.$level, ' is reached after a median of '.Format::hours((float) $row['median']).' played, from '.Format::count((int) $row['characters'], 'character').'. The middle half is '.Format::hours((float) $row['q1'], false).' to '.Format::hours((float) $row['q3'], false).'.');
         }
         $axis = Axis::nice((float) max([0, ...array_column($band, 2)]));
         $last = count($levels) - 1;
-        $first = (int) $levels[0]['level'];
-        $end = (int) $levels[$last]['level'];
 
         return [
             'spec' => Charts::line(
-                ['x0' => $first, 'x1' => $end, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread($first, $end))],
+                ['x0' => 1, 'x1' => $top, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread(1, $top))],
                 [['cls' => 'a', 'pts' => $median, 'band' => $band, 'mark' => $last], ['cls' => 'b thin', 'pts' => $fast]],
                 $say, $last, 'curve-out',
             ),
@@ -152,43 +196,43 @@ final class StatsPage
     }
 
     /**
-     * @param  list<array<string, mixed>>  $levels
+     * @param  list<array<string, mixed>>  $reached
      * @return array<string, mixed>|null
      */
-    private static function reach(array $levels): ?array
+    private static function reach(array $reached, int $top): ?array
     {
-        if ($levels === []) {
+        if ($reached === []) {
             return null;
         }
+        $byLevel = array_column($reached, 'characters', 'level');
         $data = $say = [];
-        foreach ($levels as $row) {
-            $data[] = [(int) $row['level'], (int) $row['characters']];
-            $say[] = Format::line('Level '.$row['level'], ': '.Format::count((int) $row['characters'], 'character'));
+        for ($level = 1; $level <= $top; $level++) {
+            $count = (int) ($byLevel[$level] ?? 0);
+            $data[] = [$level, $count];
+            $say[] = Format::line('Level '.$level, ': '.Format::count($count, 'character'));
         }
-        $axis = Axis::nice((float) max(array_column($data, 1)), 2);
-        $first = $data[0][0];
-        $end = $data[count($data) - 1][0];
+        $axis = Axis::nice((float) max([0, ...array_column($data, 1)]), 2);
 
-        return Charts::bars(['w' => 380, 'h' => 250, 'x0' => $first - 1, 'x1' => $end + 1, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks']), 'xt' => Charts::ticks(Axis::spread($first, $end, 3))], $data, 't', $say, null, 'reach-out');
+        return Charts::bars(['w' => 380, 'h' => 250, 'x0' => 0, 'x1' => $top + 1, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks']), 'xt' => Charts::ticks(Axis::spread(1, $top, 3))], $data, 't', $say, null, 'reach-out');
     }
 
     /**
      * @param  list<array<string, mixed>>  $rows
      * @return array{spec: array<string, mixed>, line: array{0: string, 1: string}, x: list<int>}|null
      */
-    public static function xp(array $rows): ?array
+    public static function xp(array $rows, int $top): ?array
     {
         $byLevel = [];
         foreach ($rows as $row) {
             $byLevel[(int) $row['level']][(string) $row['source']] = (float) $row['xp'];
         }
-        ksort($byLevel);
         if ($byLevel === []) {
             return null;
         }
         $order = [XpSource::Kill, XpSource::Dungeon, XpSource::Quest, XpSource::Exploring, XpSource::Other];
         $shares = $say = [];
-        foreach ($byLevel as $level => $sources) {
+        for ($level = 1; $level <= $top; $level++) {
+            $sources = $byLevel[$level] ?? [];
             $total = array_sum($sources);
             $row = array_map(fn (XpSource $source): float => $total > 0 ? ($sources[$source->value] ?? 0.0) / $total : 0.0, $order);
             $shares[] = $row;
@@ -200,19 +244,18 @@ final class StatsPage
                     $text[] = $name.' '.Format::percent($share);
                 }
             }
-            $say[] = Format::line('Level '.$level, ': '.implode(', ', $text).'.');
+            $say[] = Format::line('Level '.$level, $text === [] ? ': no experience recorded.' : ': '.implode(', ', $text).'.');
         }
-        $last = count($shares) - 1;
-        $levels = array_keys($byLevel);
+        $last = (int) max(array_keys($byLevel)) - 1;
 
-        return ['spec' => Charts::shares($shares, $say, $last), 'line' => $say[$last], 'x' => Axis::spread($levels[0], $levels[$last], 4)];
+        return ['spec' => Charts::shares($shares, $say, $last), 'line' => $say[$last], 'x' => Axis::spread(1, $top, 4)];
     }
 
     /**
      * @param  list<array<string, mixed>>  $rows
      * @return array{chart: array<string, mixed>, note: string}|null
      */
-    private static function levelTime(array $rows): ?array
+    private static function levelTime(array $rows, int $top): ?array
     {
         if ($rows === []) {
             return null;
@@ -221,16 +264,14 @@ final class StatsPage
         $slowest = $rows[0];
         foreach ($rows as $row) {
             $data[] = [(int) $row['level'], (float) $row['median'] / 3600];
-            $say[] = Format::line('Level '.$row['level'], ': '.Format::duration((float) $row['median']).' median');
+            $say[] = Format::line('Level '.$row['level'], ': '.Format::duration((float) $row['median']).' median, from '.Format::count((int) $row['completed'], 'character'));
             $slowest = (float) $row['median'] > (float) $slowest['median'] ? $row : $slowest;
         }
         $axis = Axis::nice((float) max(array_column($data, 1)), 3);
-        $first = $data[0][0];
-        $end = $data[count($data) - 1][0];
 
         return [
-            'chart' => Charts::bars(['w' => 380, 'h' => 250, 'x0' => $first - 1, 'x1' => $end + 1, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread($first, $end, 3))], $data, '', $say, null, 'ltime-out'),
-            'note' => 'The slowest level is '.$slowest['level'].', at a median of '.Format::duration((float) $slowest['median']).'.',
+            'chart' => Charts::bars(['w' => 380, 'h' => 250, 'x0' => 0, 'x1' => $top + 1, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread(1, $top, 3))], $data, '', $say, null, 'ltime-out'),
+            'note' => 'The slowest level is '.$slowest['level'].', at a median of '.Format::duration((float) $slowest['median']).', from '.Format::count((int) $slowest['completed'], 'character').'.',
         ];
     }
 
@@ -239,9 +280,10 @@ final class StatsPage
      * @param  list<array<string, mixed>>  $played
      * @return array{chart: array<string, mixed>, note: string}|null
      */
-    private static function deathsPerHour(array $deaths, array $played): ?array
+    private static function deathsPerHour(array $deaths, array $played, int $top): ?array
     {
         $seconds = array_column($played, 'seconds', 'level');
+        $characters = array_column($played, 'characters', 'level');
         $pts = $say = [];
         $worst = null;
         foreach ($deaths as $row) {
@@ -251,19 +293,17 @@ final class StatsPage
             }
             $rate = (int) $row['deaths'] / ($time / 3600);
             $pts[] = [(int) $row['level'], $rate];
-            $say[] = Format::line('Level '.$row['level'], ': '.Format::number($rate, 2).' deaths an hour');
-            $worst = $worst === null || $rate > $worst[1] ? [(int) $row['level'], $rate] : $worst;
+            $say[] = Format::line('Level '.$row['level'], ': '.Format::number($rate, 2).' deaths an hour, from '.Format::count((int) $characters[$row['level']], 'character'));
+            $worst = $worst === null || $rate > $worst[1] ? [(int) $row['level'], $rate, (int) $characters[$row['level']]] : $worst;
         }
         if (count($pts) < 2 || $worst === null) {
             return null;
         }
         $axis = Axis::nice(max(array_column($pts, 1)), 3);
-        $first = $pts[0][0];
-        $end = $pts[count($pts) - 1][0];
 
         return [
-            'chart' => Charts::line(['w' => 380, 'h' => 250, 'x0' => $first, 'x1' => $end, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks']), 'xt' => Charts::ticks(Axis::spread($first, $end, 3))], [['cls' => 'a', 'pts' => $pts]], $say, count($pts) - 1, 'dph-out'),
-            'note' => 'Most dangerous: level '.$worst[0].', at '.Format::number($worst[1], 2).' deaths an hour.',
+            'chart' => Charts::line(['w' => 380, 'h' => 250, 'x0' => 1, 'x1' => $top, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks']), 'xt' => Charts::ticks(Axis::spread(1, $top, 3))], [['cls' => 'a', 'pts' => $pts]], $say, count($pts) - 1, 'dph-out'),
+            'note' => 'Most dangerous: level '.$worst[0].', at '.Format::number($worst[1], 2).' deaths an hour, from '.Format::count($worst[2], 'character').'.',
         ];
     }
 
@@ -341,7 +381,7 @@ final class StatsPage
      * @param  list<array<string, mixed>>  $rows
      * @return array<string, mixed>|null
      */
-    private static function gold(array $rows): ?array
+    private static function gold(array $rows, int $top): ?array
     {
         $rows = array_values(array_filter($rows, fn (array $row): bool => $row['level'] !== null && (int) $row['characters'] > 0));
         if (count($rows) < 2) {
@@ -352,13 +392,11 @@ final class StatsPage
             $n = (int) $row['characters'];
             $earned[] = [(int) $row['level'], (float) $row['earned'] / $n / 10000];
             $spent[] = [(int) $row['level'], (float) $row['spent'] / $n / 10000];
-            $say[] = Format::line('Level '.$row['level'], ': '.Format::moneyText((float) $row['earned'] / $n).' earned, '.Format::moneyText((float) $row['spent'] / $n).' spent a character');
+            $say[] = Format::line('Level '.$row['level'], ': '.Format::moneyText((float) $row['earned'] / $n).' earned, '.Format::moneyText((float) $row['spent'] / $n).' spent a character, from '.Format::count($n, 'character'));
         }
         $axis = Axis::nice((float) max([0, ...array_column($earned, 1), ...array_column($spent, 1)]), 3);
-        $first = $earned[0][0];
-        $end = $earned[count($earned) - 1][0];
 
-        return Charts::line(['w' => 480, 'h' => 250, 'x0' => $first, 'x1' => $end, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'g'), 'xt' => Charts::ticks(Axis::spread($first, $end))], [['cls' => 'g', 'pts' => $earned], ['cls' => 'b thin', 'pts' => $spent]], $say, count($earned) - 1, 'gold-out');
+        return Charts::line(['w' => 480, 'h' => 250, 'x0' => 1, 'x1' => $top, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'g'), 'xt' => Charts::ticks(Axis::spread(1, $top))], [['cls' => 'g', 'pts' => $earned], ['cls' => 'b thin', 'pts' => $spent]], $say, count($earned) - 1, 'gold-out');
     }
 
     /**

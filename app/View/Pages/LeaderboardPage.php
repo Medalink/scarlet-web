@@ -74,6 +74,6 @@ final class LeaderboardPage
         $who = Format::count($total, 'public character');
         $level = $board->level();
 
-        return $level === null ? $who.' on this board.' : $who.($total === 1 ? ' has' : ' have').' reached level '.$level.'.';
+        return $level === null ? $who.' on this board.' : $who.($total === 1 ? ' has' : ' have').' a recorded level-up to '.$level.'.';
     }
 }

@@ -8,6 +8,14 @@
   <x-figures :items="$d['figures']" />
 
   <x-sheet>
+    <x-module span="w12" :first="true" :last="true" id="h-cap" :heading="$d['cap']['heading']">
+      @if ($d['cap']['rows'])
+      <x-table :columns="[['label' => 'Measure'], ['label' => 'Total', 'numeric' => true], ['label' => 'Based on', 'numeric' => true]]" :rows="$d['cap']['rows']" />
+      @else
+      <x-note>{{ $d['cap']['note'] }}</x-note>
+      @endif
+    </x-module>
+
     <x-module span="w8" :first="true" id="h-curve" heading="Played time to reach each level">
       @if ($d['curve'])
       <x-plot id="curve" label="Median played hours to reach each level, with the middle half of characters as a band" :spec="$d['curve']['spec']" />

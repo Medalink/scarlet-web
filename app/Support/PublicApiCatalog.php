@@ -42,7 +42,7 @@ final class PublicApiCatalog
                 'name' => 'rulesets', 'group' => 'Statistics', 'path' => '/rulesets', 'action' => [StatsController::class, 'rulesets'],
                 'summary' => 'Every ruleset with the numbers of the comparison table and its levelling curve.',
                 'params' => [],
-                'returns' => '`data`: a list of rulesets with `slug`, `label`, `hardcore`, `war_mode`, `kind` (`normal`, `pvp`, `roleplay`, `roleplay-pvp` or `hardcore`, `null` while Scarlet cannot tell which ruleset a character is on), `recorded` (false for the ruleset of sessions whose rules were not recorded), `characters`, `seconds`, `deaths`, `xp`, `quest_xp`, `reached`, `median_to_target` and `levelling` (level, median seconds, characters).',
+                'returns' => '`data`: a list of rulesets with `slug`, `label`, `hardcore`, `war_mode`, `kind` (`normal`, `pvp`, `roleplay`, `roleplay-pvp` or `hardcore`, `null` while Scarlet cannot tell which ruleset a character is on), `recorded` (false for the ruleset of sessions whose rules were not recorded), `characters`, `seconds`, `deaths`, `xp`, `quest_xp`, `reached` (characters whose level is at least the target, whether or not Scarlet saw them level up), `median_to_target` (only from recorded level-ups) and `levelling` (level, median seconds, characters that recorded the level-up).',
                 'example' => '/rulesets', 'where' => [],
             ],
             [
@@ -54,7 +54,7 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'series', 'group' => 'Statistics', 'path' => '/rulesets/{slug}/series/{series}', 'action' => [StatsController::class, 'series'],
-                'summary' => 'One series of a ruleset: `levels`, `xp`, `deaths`, `dungeons`, `professions`, `gold` or `activity`. Use `all` as the slug for every ruleset.',
+                'summary' => 'One series of a ruleset: `levels`, `cap`, `xp`, `deaths`, `dungeons`, `professions`, `gold` or `activity`. Use `all` as the slug for every ruleset.',
                 'params' => [['slug', 'path', 'string', 'A ruleset slug, or `all`.'], ['series', 'path', 'string', 'The series name.']],
                 'returns' => '`data`: the rows of the series. Buckets with fewer than `meta.min_characters` characters are left out.',
                 'example' => '/rulesets/all/series/levels', 'where' => ['slug' => '[a-z0-9-]+', 'series' => '[a-z]+'],

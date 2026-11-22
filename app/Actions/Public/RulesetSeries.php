@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public;
 
+use App\Actions\Rollups\AtLevelCap;
 use App\Actions\Rollups\BusiestZones;
 use App\Actions\Rollups\DeathsByLevel;
 use App\Actions\Rollups\DeathZones;
@@ -11,6 +12,8 @@ use App\Actions\Rollups\LevellingCurve;
 use App\Actions\Rollups\PlayTimeByLevel;
 use App\Actions\Rollups\PlayTimeByWeekday;
 use App\Actions\Rollups\Professions;
+use App\Actions\Rollups\ReachedLevels;
+use App\Actions\Rollups\RulesetSummaries;
 use App\Actions\Rollups\TimePerLevel;
 use App\Actions\Rollups\TopKillers;
 use App\Actions\Rollups\XpSourcesByLevel;
@@ -22,6 +25,8 @@ class RulesetSeries
     public function __construct(
         private readonly ResolveScope $resolveScope,
         private readonly LevellingCurve $curve,
+        private readonly ReachedLevels $reached,
+        private readonly AtLevelCap $atCap,
         private readonly TimePerLevel $timePerLevel,
         private readonly XpSourcesByLevel $xp,
         private readonly DeathsByLevel $deathsByLevel,
@@ -50,7 +55,8 @@ class RulesetSeries
         $ids = $scope->ids;
 
         return match ($series) {
-            Series::Levels => ['levels' => $this->curve->handle($ids), 'time_per_level' => $this->timePerLevel->handle($ids)],
+            Series::Levels => ['levels' => $this->curve->handle($ids), 'reached' => $this->reached->handle($ids), 'time_per_level' => $this->timePerLevel->handle($ids)],
+            Series::Cap => ['level' => RulesetSummaries::TARGET_LEVEL, 'reached' => collect($this->reached->handle($ids))->firstWhere('level', RulesetSummaries::TARGET_LEVEL)['characters'] ?? 0, ...$this->atCap->handle(RulesetSummaries::TARGET_LEVEL, $ids)],
             Series::Xp => ['xp_by_level' => $this->xp->handle($ids)],
             Series::Deaths => ['by_level' => $this->deathsByLevel->handle($ids), 'killers' => $this->killers->handle($ids, 20), 'zones' => $this->deathZones->handle($ids, limit: 20)],
             Series::Dungeons => ['dungeons' => $this->dungeons->handle($ids)],

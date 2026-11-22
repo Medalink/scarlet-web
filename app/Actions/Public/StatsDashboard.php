@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public;
 
+use App\Actions\Rollups\AtLevelCap;
 use App\Actions\Rollups\BusiestZones;
 use App\Actions\Rollups\Coverage;
 use App\Actions\Rollups\DeathsByLevel;
@@ -12,6 +13,8 @@ use App\Actions\Rollups\LevellingCurve;
 use App\Actions\Rollups\PlayTimeByLevel;
 use App\Actions\Rollups\PlayTimeByWeekday;
 use App\Actions\Rollups\Professions;
+use App\Actions\Rollups\ReachedLevels;
+use App\Actions\Rollups\RulesetSummaries;
 use App\Actions\Rollups\TimePerLevel;
 use App\Actions\Rollups\TopKillers;
 use App\Actions\Rollups\Totals;
@@ -25,6 +28,8 @@ class StatsDashboard
     public function __construct(
         private readonly Totals $totals,
         private readonly LevellingCurve $curve,
+        private readonly ReachedLevels $reached,
+        private readonly AtLevelCap $atCap,
         private readonly TimePerLevel $timePerLevel,
         private readonly XpSourcesByLevel $xp,
         private readonly DeathsByLevel $deathsByLevel,
@@ -62,6 +67,8 @@ class StatsDashboard
             'rulesets' => $this->rulesets->handle(),
             'totals' => $this->totals->handle($ids),
             'levels' => $this->curve->handle($ids),
+            'reached' => $this->reached->handle($ids),
+            'at_cap' => $this->atCap->handle(RulesetSummaries::TARGET_LEVEL, $ids),
             'level_time' => $this->timePerLevel->handle($ids),
             'xp_sources' => $this->xp->handle($ids),
             'deaths_by_level' => $this->deathsByLevel->handle($ids),

@@ -262,6 +262,14 @@ two, and an observed number says "since <first seen date>" wherever a lifetime t
 - **Characters.** `played_known`, `recorded_seconds`, `first_level` and `whole_life` (first session from level 1, no
   broken join) are set by `SummarizeCharacter`. `highest-without-dying` lists whole-life characters only; the other
   boards say "since" on the date a character was first recorded.
+- **Reaching a level.** A character's level is the game's own number, so a character at level N has reached every
+  level from 1 to N whether or not Scarlet saw the dings. "Characters that reached each level", the ruleset table's
+  "Reached 60", the hardcore survival chart, the characters at the level cap and the highest level read
+  `max(sessions.level_end)` per character (`ReachedLevels`), never `character_levels`. Only durations and rates need
+  complete observed intervals. The "At the level cap" block (`AtLevelCap`) counts what Scarlet recorded at the cap since
+  it first saw each character: play time, deaths, dungeon runs and the money rows of the character's own purse, which are
+  read from `money_changes` because `money_daily_ruleset` leaves out a level that is not complete and the level a
+  character is first seen at is never complete. Every figure carries the number of characters it rests on.
 - **Talents.** Order and unspent-point facts use picks seen live between two seen dings. Talents held at the first
   snapshot have no order and no level.
 - **Re-decode.** `php artisan ingest:redecode` queues every session for a fresh decode (decoder version change), then

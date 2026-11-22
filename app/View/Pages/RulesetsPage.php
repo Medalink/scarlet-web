@@ -38,7 +38,7 @@ final class RulesetsPage
             'kinds' => array_map(fn (RulesetKind $kind): array => ['name' => $kind->label().($kind->available() ? '' : ' (not out yet)'), 'summary' => $kind->summary()], RulesetKind::cases()),
             'rows' => $table,
             'compare' => self::compare($rows, $byId, $curves),
-            'survival' => self::survival($rulesets, $curves),
+            'survival' => self::survival($r['hardcore']),
         ];
     }
 
@@ -60,9 +60,9 @@ final class RulesetsPage
             $name,
             Format::number($characters),
             Format::number(round($hours)),
-            $row['median_to_target'] === null ? 'None reached' : Format::duration((float) $row['median_to_target']),
+            $row['median_to_target'] === null ? 'None recorded' : Format::duration((float) $row['median_to_target']),
             $hours > 0 ? Format::number((int) $row['deaths'] / $hours, 2) : '–',
-            Format::percent((int) $row['reached'] / $characters),
+            Format::percent((int) $row['reached'] / $characters).' ('.Format::number((int) $row['reached']).')',
             (int) $row['xp'] > 0 ? Format::percent((int) $row['quest_xp'] / (int) $row['xp']) : '–',
         ]];
     }
@@ -110,32 +110,25 @@ final class RulesetsPage
     }
 
     /**
-     * Of the hardcore characters, the share that reached each level: a hardcore character that dies is done.
+     * Of the hardcore characters, the share that reached each level, by the level the game reports: a hardcore
+     * character that dies is done.
      *
-     * @param  list<array{id: int, hardcore: bool}>  $rulesets
-     * @param  array<int, list<array{level: int, seconds: float, characters: int}>>  $curves
+     * @param  list<array{level: int, characters: int}>  $reached
      * @return array<string, mixed>|null
      */
-    private static function survival(array $rulesets, array $curves): ?array
+    private static function survival(array $reached): ?array
     {
-        $byLevel = [];
-        foreach ($rulesets as $ruleset) {
-            foreach ($ruleset['hardcore'] ? ($curves[$ruleset['id']] ?? []) : [] as $point) {
-                $byLevel[$point['level']] = ($byLevel[$point['level']] ?? 0) + $point['characters'];
-            }
-        }
-        ksort($byLevel);
-        if (count($byLevel) < 2) {
+        if (count($reached) < 2) {
             return null;
         }
-        $start = (float) reset($byLevel);
+        $start = (float) $reached[0]['characters'];
         $pts = $say = [];
-        foreach ($byLevel as $level => $count) {
-            $pts[] = [$level, min(100, $count / $start * 100)];
-            $say[] = Format::line('Level '.$level, ': '.Format::percent(min(1, $count / $start)).' of hardcore characters reached it');
+        foreach ($reached as $row) {
+            $pts[] = [$row['level'], min(100, $row['characters'] / $start * 100)];
+            $say[] = Format::line('Level '.$row['level'], ': '.Format::percent(min(1, $row['characters'] / $start)).' of '.Format::count((int) $start, 'hardcore character').' reached it');
         }
-        $first = (int) array_key_first($byLevel);
-        $last = (int) array_key_last($byLevel);
+        $first = $reached[0]['level'];
+        $last = $reached[count($reached) - 1]['level'];
 
         return Charts::line(['w' => 380, 'h' => 250, 'x0' => $first, 'x1' => $last, 'y1' => 100, 'yt' => Charts::ticks([0, 50, 100], '%'), 'xt' => Charts::ticks(Axis::spread($first, $last, 3))], [['cls' => 'a', 'pts' => $pts]], $say, count($pts) - 1);
     }
