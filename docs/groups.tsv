@@ -17,4 +17,4 @@ imports	Imported history from other addons	YG YS YB YM
 names	Names and item facts (sent only with a line that uses them)	N SN IN QN CN KN WN AN FN GN BN TN TY II IT IQ
 addons	Other addons	*
 # A `none` row holds owner-only codes: the addon writes them, nothing uploads them.
-none	Owner-only	BC
+none	Owner-only	BC LW
