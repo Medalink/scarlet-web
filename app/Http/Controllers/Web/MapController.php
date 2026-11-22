@@ -8,7 +8,7 @@ use App\Http\Requests\Web\MapRequest;
 use App\View\Pages\MapPage;
 use Illuminate\Contracts\View\View;
 
-/** The world map: heat from paths, deaths and creatures on the world's sheet or a zone's. Public. */
+/** The world map: heat from paths, deaths and creatures on the world, opened on a zone when the address names one. Public. */
 class MapController extends Controller
 {
     public function __invoke(MapRequest $request, WorldMapPage $page): View

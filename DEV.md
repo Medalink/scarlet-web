@@ -149,7 +149,7 @@ the file into `map_rects`; it can run again at any time. `node check-rects.mjs <
 
 ## Map sheets
 
-The Survey look's sheets are in git, under `public/map-sheets` (docs/DESIGN.md, Maps, Sheets). To remake them after
+The Survey look's tiles are in git, under `public/map-sheets` (docs/DESIGN.md, Maps, Sheets). To remake them after
 the app's sheets, OpenMap's land masks, the label tables or `docs/map-rects.tsv` change:
 
 ```sh
@@ -158,8 +158,9 @@ pnpm install --frozen-lockfile
 node sheets.mjs <scarlet-app checkout>/app/maps-dark "<WoW folder>/_forever_/Interface/AddOns/OpenMap" <folder of <uiMapID>.labels.json>
 ```
 
-The label tables are the files the app's `tools/map-labels.mjs` writes next to its maps. `manifest.json` carries a
-version, a hash of everything written, which the viewer puts on each picture's address.
+It takes about 15 seconds and 1.5 GB of memory, and replaces the folder: the tiles are under a version, a hash of
+everything that went in, so a new build is a new set of addresses. The label tables are the files the app's
+`tools/map-labels.mjs` writes next to its maps.
 
 ## Troubleshooting
 

@@ -17,14 +17,14 @@ final class MapPage
 
     public const string ZONE_PAGE = 'map-zone-page';
 
-    /** The uiMapID of the world's sheet (public/map-sheets/manifest.json, `world`). */
+    /** The uiMapID of the whole world, which the World row of the zone list carries. */
     public const int WORLD_SHEET = 947;
 
     private const int ZONES_LISTED = 12;
 
     /**
      * @param  array<string, mixed>  $r
-     * @param  int|null  $zone  the uiMapID of the zone whose sheet the map opens on
+     * @param  int|null  $zone  the uiMapID of the zone the map opens on
      * @return array<string, mixed>
      */
     public static function data(array $r, ?int $zone = null): array

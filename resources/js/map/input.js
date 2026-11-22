@@ -1,9 +1,13 @@
-// Moving the map: drag, wheel, pinch and the keyboard. Handlers get canvas-relative CSS px. With `pageScrolls` a
+// Moving the map: drag, wheel, double click, pinch and the keyboard. Handlers get canvas-relative CSS px. The wheel
+// and a double click ask for an eased zoom (`glideAt`, `doubleAt`); a pinch zooms as the fingers move (`zoomAt`). With `pageScrolls` a
 // one-finger vertical swipe stays the page's, and so does the wheel until the map is clicked or dragged: from then the
 // wheel zooms, until the pointer leaves the map, the map loses focus or Escape is pressed. Ctrl or Command with the
 // wheel always zooms.
 
-const WHEEL = 0.0015;
+const WHEEL = 0.0035;
+const PINCH_WHEEL = 0.012;
+const MOST_PER_EVENT = 300;
+const DOUBLE_CLICK = 2;
 const STEP = 1.5;
 const TAP = 5;
 
@@ -71,10 +75,15 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
             return;
         }
         event.preventDefault();
-        handlers.start();
         const lines = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 400 : 1;
+        const delta = Math.max(-MOST_PER_EVENT, Math.min(MOST_PER_EVENT, event.deltaY * lines));
         const at = local(event);
-        handlers.zoomAt(Math.exp(-event.deltaY * lines * WHEEL), at.x, at.y);
+        handlers.glideAt(Math.exp(-delta * (event.ctrlKey ? PINCH_WHEEL : WHEEL)), at.x, at.y);
+    };
+
+    const twice = (event) => {
+        const at = local(event);
+        handlers.doubleAt(event.shiftKey ? 1 / DOUBLE_CLICK : DOUBLE_CLICK, at.x, at.y);
     };
 
     const key = (event) => {
@@ -120,6 +129,7 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
     canvas.addEventListener('pointercancel', up);
     canvas.addEventListener('pointerleave', leave);
     canvas.addEventListener('wheel', wheel, { passive: false });
+    canvas.addEventListener('dblclick', twice);
     canvas.addEventListener('keydown', key);
     canvas.addEventListener('blur', release);
 
@@ -130,6 +140,7 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
         canvas.removeEventListener('pointercancel', up);
         canvas.removeEventListener('pointerleave', leave);
         canvas.removeEventListener('wheel', wheel);
+        canvas.removeEventListener('dblclick', twice);
         canvas.removeEventListener('keydown', key);
         canvas.removeEventListener('blur', release);
     };

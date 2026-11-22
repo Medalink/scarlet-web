@@ -1,5 +1,5 @@
 // Page glue for the world map viewer: mounts every canvas that carries a `data-world-map` spec, wires the pointer
-// readout, the layer buttons (which read the public API), the zone picker and the list that opens a zone's sheet
+// readout, the layer buttons (which read the public API), the zone picker and the list that moves the map to a zone
 // (`a[data-map-sheet]`). The drawing is resources/js/map.
 // Text the readout shows comes in the spec already formatted, so nothing is formatted here.
 
@@ -33,12 +33,12 @@ function mount(canvas) {
         reveal: plan?.at(0),
         manifestUrl: MANIFEST,
         sheets: SHEETS,
-        onSheet: (id) => {
-            resting = config.zones.find((z) => z.id === id)?.name ?? 'World';
+        onZone: (zone) => {
+            resting = zone?.name ?? 'World';
             paint(under, resting);
-            showSheet(canvas.id, config, id);
+            showZone(canvas.id, config, zone);
         },
-        onZoneClick: config.sheetList ? (zone) => map.openSheet(zone.id) || (zone.href && window.location.assign(zone.href)) : undefined,
+        onZoneClick: config.sheetList ? (zone) => map.fit(zone.id) : undefined,
         pageScrolls: 'behindHead' in canvas.dataset,
         zones: config.zones,
         layers: config.layers,
@@ -57,23 +57,22 @@ function mount(canvas) {
     }
 }
 
-function showSheet(canvasId, config, id) {
+function showZone(canvasId, config, zone) {
     const links = [...document.querySelectorAll(`a[data-map-sheet][data-map-for="${canvasId}"]`)];
     if (links.length === 0) {
         return;
     }
-    links.forEach((link) => (Number(link.dataset.mapSheet) === id ? link.setAttribute('aria-current', 'true') : link.removeAttribute('aria-current')));
-    const zone = config.zones.find((z) => z.id === id && z.href);
+    const on = (link) => (zone ? Number(link.dataset.mapSheet) === zone.id : link.dataset.mapWorld !== undefined);
+    links.forEach((link) => (on(link) ? link.setAttribute('aria-current', 'true') : link.removeAttribute('aria-current')));
     const page = document.getElementById(config.zonePage);
     if (page) {
-        page.hidden = !zone;
+        page.hidden = !zone?.href;
         page.href = zone?.href ?? '';
-        page.textContent = zone ? `${zone.name} zone page` : '';
+        page.textContent = zone?.href ? `${zone.name} zone page` : '';
     }
-    const world = links.find((link) => link.dataset.mapWorld !== undefined);
     const withZone = (address) => {
         const url = new URL(address, window.location.href);
-        Number(world?.dataset.mapSheet) === id ? url.searchParams.delete('zone') : url.searchParams.set('zone', id);
+        zone ? url.searchParams.set('zone', zone.id) : url.searchParams.delete('zone');
         return url.pathname + url.search + url.hash;
     };
     window.history.replaceState(null, '', withZone(window.location.href));
@@ -98,8 +97,14 @@ document.querySelectorAll('button[data-map-layer]').forEach((button) => {
 
 document.querySelectorAll('a[data-map-sheet]').forEach((link) => {
     link.addEventListener('click', (event) => {
-        if (maps.get(link.dataset.mapFor)?.map.openSheet(Number(link.dataset.mapSheet))) {
+        const entry = maps.get(link.dataset.mapFor);
+        const id = Number(link.dataset.mapSheet);
+        if (entry && link.dataset.mapWorld !== undefined) {
             event.preventDefault();
+            entry.map.fitWorld();
+        } else if (entry?.config.zones.some((z) => z.id === id)) {
+            event.preventDefault();
+            entry.map.fit(id);
         }
     });
 });

@@ -41,7 +41,7 @@ class MapRequest extends FormRequest
         return is_string($slug) ? $slug : null;
     }
 
-    /** The uiMapID of the zone whose sheet the map opens on. */
+    /** The uiMapID of the zone the map opens on. */
     public function zone(): ?int
     {
         $zone = $this->validated('zone');
