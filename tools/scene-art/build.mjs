@@ -12,6 +12,18 @@ const SCENES = {
         models: { bobber: 201000, school: 219405, box: 189092, pole: 189093, rack: 189091 },
         icons: { 4603: 133887, 13755: 133899, 13422: 133897, 6362: 133890, 6359: 134299, 7973: 134433, 13754: 134301, 21153: 133907, 6351: 132765 },
     },
+    herbalism: {
+        models: { peacebloom: 219481, silverleaf: 219487, mageroyal: 219470, briarthorn: 219502, bruiseweed: 219440, kingsblood: 219443, fadeleaf: 219449, khadgar: 219468, goldthorn: 219462, lotus: 219483 },
+        icons: {},
+    },
+    mining: {
+        models: { copper: 219514, tin: 219568, iron: 219532, gold: 219524, mithril: 219541, truesilver: 219569, thorium: 219566, forge: 219412, pick: 166560, cart: 189827, lantern: 190869 },
+        icons: {},
+    },
+    skinning: {
+        models: { rack: 197200, hides: 199795, pile: 199796, bag: 878854, lantern: 190869 },
+        icons: {},
+    },
 };
 
 const [name, out, server = 'http://127.0.0.1:5123'] = process.argv.slice(2);

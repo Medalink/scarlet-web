@@ -6,4 +6,7 @@ namespace App\Support;
 enum Scene: string
 {
     case Fishing = 'fishing';
+    case Herbalism = 'herbalism';
+    case Mining = 'mining';
+    case Skinning = 'skinning';
 }

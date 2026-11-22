@@ -5,10 +5,11 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { Emitter } from './emitter.js';
 import { mulberry } from './math.js';
 import { buildModel, loadTextures } from './model.js';
+import { ground } from './settings/ground.js';
 import { water } from './settings/water.js';
 
 const SHEET = 0x141416;
-const SETTINGS = { water };
+const SETTINGS = { water, ground };
 const SHADOWS = { plain: THREE.PCFShadowMap };
 const WIDE = 820;
 

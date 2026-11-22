@@ -20,6 +20,8 @@ reads models with the same `m2.mjs`.
 node tools/scene-art/build.mjs fishing storage/app/maps/fishing [server address]
 ```
 
+The scenes are `fishing`, `herbalism`, `mining` and `skinning`; each goes to a folder of its own name.
+
 ## Output
 
 ```

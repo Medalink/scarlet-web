@@ -1,50 +1,5 @@
 import * as THREE from 'three';
-
-function dirt(rand, tint) {
-    const size = 512, cv = document.createElement('canvas');
-    cv.width = cv.height = size;
-    const ctx = cv.getContext('2d');
-    ctx.fillStyle = tint;
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 26000; i++) {
-        const v = 60 + rand() * 90;
-        ctx.fillStyle = `rgba(${v + 6},${v + 4},${v - 2},${0.05 + rand() * 0.16})`;
-        const r = 0.4 + rand() * 1.9;
-        ctx.beginPath();
-        ctx.ellipse(rand() * size, rand() * size, r, r * (0.5 + rand() * 0.6), rand() * 3.14, 0, 6.283);
-        ctx.fill();
-    }
-    for (let i = 0; i < 260; i++) {
-        const dark = rand() < 0.6, r = 6 + rand() * 30, x = rand() * size, y = rand() * size;
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-        g.addColorStop(0, dark ? 'rgba(20,18,16,0.3)' : 'rgba(190,180,160,0.2)');
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) { ctx.setTransform(1, 0, 0, 1, dx, dy); ctx.fillRect(x - r, y - r, r * 2, r * 2); }
-    }
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const map = new THREE.CanvasTexture(cv);
-    map.wrapS = map.wrapT = THREE.RepeatWrapping;
-    map.repeat.set(14, 7);
-    map.colorSpace = THREE.SRGBColorSpace;
-    return map;
-}
-
-function buildBank(rand, bank) {
-    const R = bank.radius, top = bank.height;
-    const geo = new THREE.SphereGeometry(R, 160, 96, 0, Math.PI * 2, 0, 0.5);
-    const pos = geo.attributes.position, shade = new Float32Array(pos.count * 3);
-    for (let i = 0; i < pos.count; i++) {
-        const h = pos.getY(i) - (R - top), k = Math.min(1, Math.max(0, h / 0.3)), v = 0.3 + 0.7 * k * k * (3 - 2 * k);
-        shade.set([v, v, v * (1.08 - 0.08 * k)], i * 3);
-    }
-    geo.setAttribute('color', new THREE.BufferAttribute(shade, 3));
-    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: dirt(rand, '#6a6252'), vertexColors: true }));
-    mesh.position.set(bank.x, top - R, bank.z);
-    mesh.receiveShadow = true;
-    const lift = (x, z) => Math.sqrt(Math.max(0, R * R - (x - bank.x) ** 2 - (z - bank.z) ** 2)) - (R - top);
-    return { mesh, lift };
-}
+import { mound } from './land.js';
 
 function buildWater(moonDir, sheet) {
     const mat = new THREE.ShaderMaterial({
@@ -92,7 +47,7 @@ function buildWater(moonDir, sheet) {
 export function water(config, { scene, rand, spot, sheet }) {
     const moonDir = new THREE.Vector3(...config.moon.from);
     const bankAt = spot(config.bank.at);
-    const bank = buildBank(rand, { x: bankAt.x, z: bankAt.z, height: config.bank.height, radius: config.bank.radius });
+    const bank = mound(rand, { x: bankAt.x, z: bankAt.z, height: config.bank.height, radius: config.bank.radius, tint: '#6a6252', shore: true });
     const sea = buildWater(moonDir, sheet);
     scene.add(bank.mesh, sea.mesh);
 

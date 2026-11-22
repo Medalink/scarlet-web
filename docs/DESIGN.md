@@ -652,8 +652,11 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   `data-state="off"` list) and loads one scene's spec and `resources/js/scene/mount.js` as chunks of their own. A scene is
   a data file in `resources/js/scene/scenes/` (`fishing.js` is the first): the props with where each stands, how each
   model's emitters are tuned, the point each callout stands on, the camera, fog and bloom, and a `setting`, which is
-  what the page draws itself. The one setting so far is `water`: still water with the moon's glitter and a low bank
-  under moonlight. A scene that needs another adds a module to `scene/settings/` and names it in the spec. A
+  what the page draws itself. There are two settings. `water` is still water with the moon's glitter and a low bank
+  under moonlight (Fishing). `ground` is open ground under one low light, with any number of small warm lights that
+  flicker, such as a forge or a lantern (Herbalism, a meadow at first light; Mining, a mine floor lit by a forge;
+  Skinning, tanning racks at dusk). Both draw their earth with `settings/land.js`. A scene that needs another adds a
+  module to `scene/settings/` and names it in the spec. A prop's `emit` may name `all` in place of an index. A
   prop's `emit` lists the model's emitters to draw by index, each with its own rate, size and brightness (an emitter the
   spec leaves out is not drawn). The core draws one facing the camera, stretched along its velocity (`streak`, or by
   the model's tail) or flat on the model's ground plane for water rings (flag `0x1000`), additive and alpha-blended
@@ -663,8 +666,8 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   `data-scene`, `data-models` and `data-texture`. The art lives on the `maps` disk under the scene's name
   (`fishing/fishing.json`, `tex/<file id>.png`, `icons/<id>.png`), is written by `tools/scene-art` and is served by
   `/scene-art/{scene}/models.json`, `/tex/{id}.png` and `/icons/{id}.png` with the camp art's cache headers and `?v=`
-  rule; `App\Support\Scene` names the scenes and `App\Support\SceneArt` owns the folder. `/design/scenes/fishing`
-  (local environment only) shows the Fishing head over invented facts. The camp scene still has its own module; it
+  rule; `App\Support\Scene` names the scenes and `App\Support\SceneArt` owns the folder. `/design/scenes/{scene}`
+  (local environment only) shows a scene's head over invented facts. The camp scene still has its own module; it
   moves onto this one in later ships, and its smoke, ground, fire flicker and point lights become settings then. The
   scene builds with three 0.187, which has dropped the soft shadow filter the approved prototype was tuned on: shadows
   use the plain filter.
