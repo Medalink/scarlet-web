@@ -20,6 +20,8 @@ final class SharingGroup
 
     public const string WORLD = 'world';
 
+    public const string COLLECTIONS = 'collections';
+
     public const string LOOT = 'loot';
 
     public const string ECONOMY = 'economy';

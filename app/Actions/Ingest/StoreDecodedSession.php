@@ -15,6 +15,7 @@ class StoreDecodedSession
         private readonly UpsertDictionaries $dictionaries,
         private readonly UpsertTalentLayouts $layouts,
         private readonly SummarizeTalents $talents,
+        private readonly SummarizeBaselines $baselines,
         private readonly MarkSessionJoins $joins,
         private readonly RebuildCharacterLevels $levels,
         private readonly FlagCompleteLevelMoney $moneyLevels,
@@ -55,6 +56,7 @@ class StoreDecodedSession
             $this->dungeonJoins->handle($characterId, $sessionStart);
             $this->summaries->handle($characterId);
             $this->talents->handle($characterId);
+            $this->baselines->handle($characterId);
             $this->markDecoded->handle($characterId, $sessionStart, $partIds);
 
             return $range;

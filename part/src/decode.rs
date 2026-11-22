@@ -5,6 +5,7 @@
 //! (dungeon runs, the balance walk back) are for the ingest job and are in
 //! ROWS.md.
 
+use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::build::parse_header;
 use crate::camp::{Camp, Known};
 use crate::rows::Rows;
@@ -18,7 +19,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 4;
+pub const DECODER_VERSION: u32 = 5;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -208,6 +209,7 @@ struct Dec<'o> {
     talents: Talents,
     camp: Camp,
     social: Social,
+    baselines: Baselines,
 }
 
 pub(crate) fn prefix(
@@ -231,6 +233,15 @@ impl Dec<'_> {
     fn fact(&mut self, table: &str, at: i64) {
         let (s, l, z) = (self.session, self.lvl(), self.zone_id);
         prefix(&mut self.w, table, s, at, l, z);
+    }
+
+    fn baseline_ctx(&self, at: i64) -> BaselineCtx {
+        BaselineCtx {
+            session: self.session,
+            at,
+            level: self.lvl(),
+            zone_id: self.zone_id,
+        }
     }
 
     fn rule(&mut self) {
@@ -504,6 +515,22 @@ impl Dec<'_> {
                 self.camp.on_aura(t, &f, level, zone_id);
             }
             "C" => self.camp.on_cast(t, &f),
+            "QB" => {
+                let ctx = self.baseline_ctx(t);
+                self.baselines.on_qb(ctx, &mut self.w, &f);
+            }
+            "KT" => {
+                let ctx = self.baseline_ctx(t);
+                self.baselines.on_kt(ctx, &mut self.w, &f);
+            }
+            "EB" => {
+                let ctx = self.baseline_ctx(t);
+                self.baselines.on_eb(ctx, &mut self.w, &f);
+            }
+            "IS" => {
+                let ctx = self.baseline_ctx(t);
+                self.baselines.on_is(ctx, &mut self.w, &f);
+            }
             "CR" => {
                 self.camp.on_craft(t);
                 self.fact("crafts", t);
@@ -924,6 +951,7 @@ impl Dec<'_> {
             crafts: self.has.professions,
         };
         std::mem::take(&mut self.camp).finish(s, self.end_ms, known, &mut self.w);
+        self.baselines.finish(&mut self.w);
         for d in std::mem::take(&mut self.death_list) {
             prefix(&mut self.w, "deaths", s, d.t, d.level, d.zone_id);
             let (m, x, y) = d
@@ -1278,6 +1306,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         talents: Talents::default(),
         camp: Camp::default(),
         social: Social::default(),
+        baselines: Baselines::default(),
     };
     for l in &lines {
         d.line(l);

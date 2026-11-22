@@ -44,6 +44,7 @@ final class CharacterPage
 
         $quests = CharacterLists::quests($r['questsDone']);
         $creatures = CharacterLists::creatures($r['creaturesMet']);
+        $lifetime = CharacterLifetime::data($r['lifetime']);
         $steps = CharacterSkills::chart($r['skillHistory'], $r['playBuckets']);
         $facts = array_values(array_filter([
             ['text' => Format::character(null, $character->race, $character->class), 'href' => null],
@@ -75,7 +76,7 @@ final class CharacterPage
             'figures' => $figures,
             'classKey' => strtoupper((string) $character->class),
             'levelRule' => self::levelRule($character->level),
-            'chapters' => CharacterLayout::chapters($cap !== null, $r['gold'] !== null, $quests !== null, $creatures !== null, $steps !== null, $r['talents'] !== null, $levels !== null),
+            'chapters' => CharacterLayout::chapters($cap !== null, $r['gold'] !== null, $quests !== null, $creatures !== null, $steps !== null, $r['talents'] !== null, $levels !== null, $lifetime !== null),
             'map' => CharacterReplay::map($r['heat'], $r['marks'], '/c/'.rawurlencode($character->name).'/heat'),
             'hasMap' => $r['heat']['cells'] !== [],
             'deathCount' => count($r['marks']),
@@ -87,6 +88,7 @@ final class CharacterPage
             'standings' => CharacterStandings::rows($r['standings']),
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
             'quests' => $quests,
+            'lifetime' => $lifetime,
             'creatures' => $creatures,
             'runs' => CharacterLists::runs($r['dungeonRuns'], $dungeons),
             'killed' => CharacterLists::killed($r['killed']),

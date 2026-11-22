@@ -2,6 +2,7 @@
 //! sharing groups, the part format, the wire batch and the decoder, used by the
 //! desktop companion and by the server. See docs/DESIGN.md.
 
+pub mod baselines;
 pub mod build;
 pub mod camp;
 pub mod compare;

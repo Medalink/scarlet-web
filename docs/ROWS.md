@@ -303,6 +303,51 @@ Enchanted Lute. `at` is when it was gained.
 | `carried` | bool | already on at the session start (`A 1` initial `s`) |
 | `lost_to_death` | bool | a `D` line within 2 s of the aura ending, before or after. False when the session ended it or a new gain replaced it |
 
+### `quest_baselines` (quests: `QB`)
+
+One row per read of the quests the client says the character completed: a lifetime list, whatever Scarlet saw. The
+`QB` lines of one read come in a row with the same total, 400 ids a line, so the decoder joins them: a read ends when
+its ids reach `total`, when a `QB` of another total comes, or when the session ends. `at` is the first line of the read.
+
+| Key | Type | |
+| --- | --- | --- |
+| `total` | int | the size of the whole list |
+| `ids` | string | the questIDs of the read, comma-separated, in the order the lines gave them. Shorter than `total` when a line is missing |
+
+### `title_baselines` (collections: `KT`)
+
+One row per `KT` line: the titles the character knows. `total` (int) is how many it knows and `ids` (string) their ids,
+comma-separated.
+
+### `explored_baselines` (world: `EB`)
+
+One row per read of how much of each zone map the character uncovered. The `EB` lines of one read follow each other
+(at most 150 maps a line), so the decoder joins the lines that come within 5 seconds of the one before. `at` is the
+first line of the read.
+
+| Key | Type | |
+| --- | --- | --- |
+| `zones` | int | the maps of the read with at least one explored overlay |
+| `maps` | string | `uiMapID:overlays` for each map, comma-separated, in map order; a map named twice keeps its larger count |
+
+### `instance_locks` (combat: `IS`)
+
+One row per `IS` line: an instance lock from the client's raid info list, or a world boss lock. Keys after the common ones:
+
+| Key | Type | |
+| --- | --- | --- |
+| `name` | string or null | the instance's or world boss's name |
+| `instance_id` | int or null | the instance's map id, or the client's world boss id for raid `2`. Null when the client gives none |
+| `difficulty_id`, `max_players`, `done`, `total` | int or null | empty for a world boss lock |
+| `reset_seconds` | int or null | the time until the lock resets, counted from `at` |
+| `locked`, `extended` | bool | |
+| `raid` | int | `1` a raid, `2` a world boss lock, `0` otherwise |
+| `why` | string or null | `s` the first read of a session, `c` a lock that is new or whose `done` moved |
+
+The client leaves out a lock that has run out and is not extended, so a lock still holds while its latest row has
+`at + reset_seconds` ahead and `locked` or `extended`. A lock that was reset early still shows until then, since nothing
+is written for it.
+
 ### `creature_sightings` (world: `NS`)
 
 `npc_id`, `npc_level` (int or null; -1 when the client hides it), `classification` (string or null),

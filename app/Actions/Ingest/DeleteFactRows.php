@@ -8,6 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 class DeleteFactRows
 {
+    /** The character column that copies the latest lifetime read of each group, which its removal clears. */
+    private const array BASELINE_COLUMNS = [
+        SharingGroup::QUESTS => 'quests_completed',
+        SharingGroup::COLLECTIONS => 'titles_known',
+        SharingGroup::WORLD => 'zones_explored',
+    ];
+
     /**
      * Delete decoded rows of some characters: those of one sharing group, or of every table; of one
      * session, or of every session. The rollups learn of it from TimescaleDB's invalidation log.
@@ -41,6 +48,13 @@ class DeleteFactRows
         }
         if ($sessionStart === null && ($group === null || $group === SharingGroup::BUILD)) {
             DB::table('characters')->whereIn('id', $characterIds)->update(['spec_tab_id' => null, 'talent_points' => null, 'build_hash' => null]);
+        }
+        if ($sessionStart === null) {
+            foreach (self::BASELINE_COLUMNS as $baselineGroup => $column) {
+                if ($group === null || $group === $baselineGroup) {
+                    DB::table('characters')->whereIn('id', $characterIds)->update([$column => null]);
+                }
+            }
         }
         if ($group === null && $sessionStart === null) {
             $deleted += DB::table('character_levels')->whereIn('character_id', $characterIds)->delete();

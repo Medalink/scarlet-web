@@ -348,7 +348,7 @@ Example: `curl https://<host>/api/v1/public/rulesets/all/series/levels`
 
 #### `GET /public/leaderboards`
 
-The boards: fastest to level 20, 40 and 60, highest level without dying, most quests, most kills, most dungeon runs and most distance.
+The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most dungeon runs and most distance.
 
 `data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).
 

@@ -15,9 +15,10 @@ final class CharacterLayout
      * @param  bool  $steps  the skills module leads with its step lines and takes eight columns
      * @param  bool  $talents  the character has a stored talent build, which gets a chapter after combat
      * @param  bool  $levels  the character has a Levels figure; without one, quests lead the levelling chapter or it is left out
+     * @param  bool  $lifetime  the character has a stored lifetime read or an instance lock, which gets a chapter before play time
      * @return list<array{id: string, title: string, rows: list<list<array{module: string, span: string|null, level: int}>>}>
      */
-    public static function chapters(bool $capped, bool $gold, bool $quests, bool $creatures, bool $steps, bool $talents, bool $levels): array
+    public static function chapters(bool $capped, bool $gold, bool $quests, bool $creatures, bool $steps, bool $talents, bool $levels, bool $lifetime): array
     {
         $levelling = match (true) {
             $levels => self::chapter('Levelling', 'levelling', 'levels', $quests ? [['quests', 8]] : []),
@@ -29,7 +30,9 @@ final class CharacterLayout
         $build = self::chapter('Talents', 'talents', 'talents', [['respecs', 4], ['talent-order', 12], ['talent-facts', 12]]);
         $time = self::chapter('Play time', 'time', 'hours', [['distance', 12], ['zones', 12], ['history', 12]]);
 
-        $chapters = $capped ? [$combat, $loot, $time, $levelling] : [$levelling, $combat, $loot, $time];
+        $baselines = $lifetime ? self::chapter('Lifetime', 'lifetime', 'lifetime', []) : null;
+
+        $chapters = $capped ? [$combat, $loot, $baselines, $time, $levelling] : [$levelling, $combat, $loot, $baselines, $time];
         if ($talents) {
             array_splice($chapters, 2, 0, [$build]);
         }

@@ -35,6 +35,10 @@ enum FactTable: string
     case InspectedGear = 'inspected_gear';
     case BattlegroundMatches = 'battleground_matches';
     case BattlegroundScores = 'battleground_scores';
+    case QuestBaselines = 'quest_baselines';
+    case TitleBaselines = 'title_baselines';
+    case ExploredBaselines = 'explored_baselines';
+    case InstanceLocks = 'instance_locks';
 
     /** `money_changes.src` of a balance carried over from the `S` line (core), against `M` money lines (economy). */
     public const string MONEY_LINE = 'M';
@@ -51,8 +55,10 @@ enum FactTable: string
         return match ($this) {
             self::PlaySpans, self::LevelUps => SharingGroup::CORE,
             self::XpGains => SharingGroup::XP,
-            self::Kills, self::Deaths, self::DungeonRuns, self::CampStays, self::CampBenefits => SharingGroup::COMBAT,
-            self::QuestEvents => SharingGroup::QUESTS,
+            self::Kills, self::Deaths, self::DungeonRuns, self::CampStays, self::CampBenefits, self::InstanceLocks => SharingGroup::COMBAT,
+            self::QuestEvents, self::QuestBaselines => SharingGroup::QUESTS,
+            self::TitleBaselines => SharingGroup::COLLECTIONS,
+            self::ExploredBaselines => SharingGroup::WORLD,
             self::MoneyChanges => SharingGroup::ECONOMY,
             self::LootOpens, self::LootDrops => SharingGroup::LOOT,
             self::SkillUps, self::Crafts => SharingGroup::PROFESSIONS,

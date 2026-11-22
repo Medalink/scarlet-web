@@ -10,6 +10,7 @@ use App\Actions\Public\Character\DungeonRuns;
 use App\Actions\Public\Character\HeatCells;
 use App\Actions\Public\Character\HourlyPlay;
 use App\Actions\Public\Character\ItemsFound;
+use App\Actions\Public\Character\LifetimeBaselines;
 use App\Actions\Public\Character\MostCrafted;
 use App\Actions\Public\Character\MostKilled;
 use App\Actions\Public\Character\QuestsDone;
@@ -65,6 +66,7 @@ class CharacterOverview
         private readonly SkillHistory $skillHistory,
         private readonly ShowCharacterFeats $feats,
         private readonly Standings $standings,
+        private readonly LifetimeBaselines $lifetime,
     ) {}
 
     /**
@@ -119,6 +121,7 @@ class CharacterOverview
             'crafted' => $this->mostCrafted->handle($id),
             'dungeonRuns' => $this->dungeonRuns->handle($id),
             'questsDone' => $this->questsDone->handle($id),
+            'lifetime' => $this->lifetime->handle($id),
             'creaturesMet' => $this->creaturesMet->handle($id),
             'totals' => $totals,
             'days' => $play['days'],

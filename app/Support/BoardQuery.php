@@ -14,6 +14,8 @@ class BoardQuery
 
     private const string BY_QUESTS = 's.quests desc, c.id';
 
+    private const string BY_QUESTS_COMPLETED = 'c.quests_completed desc, c.id';
+
     private const string BY_KILLS = 's.kills desc, c.id';
 
     private const string BY_JUMPS = 's.jumps desc, c.id';
@@ -57,6 +59,7 @@ class BoardQuery
             Board::FastestTo60, Board::FastestTo40, Board::FastestTo20 => self::BY_TIME,
             Board::HighestWithoutDying => self::BY_LEVEL,
             Board::MostQuests => self::BY_QUESTS,
+            Board::MostQuestsCompleted => self::BY_QUESTS_COMPLETED,
             Board::MostKills => self::BY_KILLS,
             Board::MostJumps => self::BY_JUMPS,
             Board::MostDungeonRuns => self::BY_RUNS,
@@ -75,6 +78,7 @@ class BoardQuery
             Board::FastestTo60, Board::FastestTo40, Board::FastestTo20 => 'row_number() over (order by '.self::BY_TIME.') as place, count(*) over () as total',
             Board::HighestWithoutDying => 'row_number() over (order by '.self::BY_LEVEL.') as place, count(*) over () as total',
             Board::MostQuests => 'row_number() over (order by '.self::BY_QUESTS.') as place, count(*) over () as total',
+            Board::MostQuestsCompleted => 'row_number() over (order by '.self::BY_QUESTS_COMPLETED.') as place, count(*) over () as total',
             Board::MostKills => 'row_number() over (order by '.self::BY_KILLS.') as place, count(*) over () as total',
             Board::MostJumps => 'row_number() over (order by '.self::BY_JUMPS.') as place, count(*) over () as total',
             Board::MostDungeonRuns => 'row_number() over (order by '.self::BY_RUNS.') as place, count(*) over () as total',
@@ -114,6 +118,7 @@ class BoardQuery
         return match ($board) {
             Board::HighestWithoutDying => $query->where('c.whole_life', true)->where('s.deaths', 0)->where('s.deaths_known', true)->whereNotNull('s.level')->addSelect('s.level as value'),
             Board::MostQuests => $query->where('s.quests', '>', 0)->addSelect('s.quests as value'),
+            Board::MostQuestsCompleted => $query->where('c.quests_completed', '>', 0)->addSelect('c.quests_completed as value'),
             Board::MostKills => $query->where('s.kills', '>', 0)->addSelect('s.kills as value'),
             Board::MostJumps => $query->where('s.jumps', '>', 0)->addSelect('s.jumps as value'),
             Board::MostDungeonRuns => $query->where('s.runs', '>', 0)->addSelect('s.runs as value'),
