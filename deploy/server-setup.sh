@@ -4,7 +4,9 @@
 set -eu
 base=/srv/scarlet-web
 cd "$base"
-install -d -m 750 tls maps backups
+install -d -m 750 tls backups
+install -d -m 755 maps
+chmod -R a+rX maps
 umask 077
 
 # The environment of every container. Secrets are made here and stay here.
