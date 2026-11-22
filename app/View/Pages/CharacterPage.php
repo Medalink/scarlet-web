@@ -69,7 +69,7 @@ final class CharacterPage
                 round($totals['distance'], 1) > 0 ? ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1)] : null,
             ])),
             'chapters' => CharacterLayout::chapters($cap !== null, $r['gold'] !== null, $quests !== null, $creatures !== null, $steps !== null, $r['talents'] !== null, $levels !== null),
-            'map' => CharacterReplay::map($r['heat'], $r['marks']),
+            'map' => CharacterReplay::map($r['heat'], $r['marks'], '/c/'.rawurlencode($character->name).'/heat'),
             'hasMap' => $r['heat']['cells'] !== [],
             'deathCount' => count($r['marks']),
             'week' => $week === null ? null : self::week($week, $economy),
