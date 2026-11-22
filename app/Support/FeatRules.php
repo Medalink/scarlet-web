@@ -37,7 +37,7 @@ final class FeatRules
         Feat::Templar->value => [TalentTree::PaladinProtection, FeatMeasure::Hours, []],
         Feat::Sealbearer->value => [TalentTree::PaladinRetribution, FeatMeasure::Casts, ['Seal of *']],
         Feat::Hammerfall->value => [TalentTree::PaladinRetribution, FeatMeasure::Casts, ['Hammer of Wrath']],
-        Feat::Zealot->value => [TalentTree::PaladinRetribution, FeatMeasure::Casts, ['Crusader Strike']],
+        Feat::Zealot->value => [TalentTree::PaladinRetribution, FeatMeasure::Casts, ['Repentance']],
         Feat::Crusader->value => [TalentTree::PaladinRetribution, FeatMeasure::Hours, []],
         Feat::PlayingDead->value => [PlayerClass::Hunter, FeatMeasure::Casts, ['Feign Death']],
         Feat::Trapper->value => [PlayerClass::Hunter, FeatMeasure::Casts, ['* Trap']],

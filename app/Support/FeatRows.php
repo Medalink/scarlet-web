@@ -113,7 +113,7 @@ final class FeatRows
             Feat::Templar => ['talents', 'hour as Protection', 'hours as Protection', [2, 40, 150, 400, 1500]],
             Feat::Sealbearer => ['spell', 'seal', 'seals', [25, 1500, 7500, 25000, 100000]],
             Feat::Hammerfall => ['kills', 'hammer of wrath', 'hammers of wrath', [10, 400, 2000, 6000, 25000]],
-            Feat::Zealot => ['kills', 'crusader strike', 'crusader strikes', [25, 1500, 7500, 25000, 100000]],
+            Feat::Zealot => ['spell', 'repentance', 'repentances', [5, 100, 500, 1500, 6000]],
             Feat::Crusader => ['talents', 'hour as Retribution', 'hours as Retribution', [2, 40, 150, 400, 1500]],
             Feat::PlayingDead => ['deaths', 'feigned death', 'feigned deaths', [5, 100, 500, 1500, 6000]],
             Feat::Trapper => ['pin', 'trap laid', 'traps laid', [10, 400, 2000, 6000, 25000]],

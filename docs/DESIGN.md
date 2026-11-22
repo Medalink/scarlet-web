@@ -1263,7 +1263,7 @@ renamed shows up.
 | Templar | Paladin, Protection | hours played with Protection as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Sealbearer | Paladin, Retribution | casts of Seal of * | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Hammerfall | Paladin, Retribution | casts of Hammer of Wrath | 10 | 400 | 2,000 | 6,000 | 25,000 |
-| Zealot | Paladin, Retribution | casts of Crusader Strike | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Zealot | Paladin, Retribution | casts of Repentance | 5 | 100 | 500 | 1,500 | 6,000 |
 | Crusader | Paladin, Retribution | hours played with Retribution as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Playing Dead | Hunter | casts of Feign Death | 5 | 100 | 500 | 1,500 | 6,000 |
 | Trapper | Hunter | casts of * Trap | 10 | 400 | 2,000 | 6,000 | 25,000 |
@@ -1545,8 +1545,8 @@ class and level bracket. The app reads the same lines from the character's own l
 
 **Class feats.** The first design gave each class six feats of its own (most soul shards held at once, deaths within
 5 seconds of a Life Tap). The class, talent-tree and role feats landed the same day, so the page shows those and the
-six were dropped; what they counted stays on the page as modules. One feat cannot be earned on this client: Zealot
-counts Crusader Strike, which build 1.60.1.71037 has no player spell for.
+six were dropped; what they counted stays on the page as modules. Zealot counts Repentance: Crusader Strike exists
+on build 1.60.1.71037 only as a creature spell, so a rule naming it could never be earned.
 
 **The app.** The Scarlet app gets a view named for the character's class, after Talents in its navigation, shown
 only for that class's characters. It carries the same charts from the character's own log with no upload: a banner
