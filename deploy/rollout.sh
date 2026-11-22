@@ -58,11 +58,20 @@ phase() { awk -v a="$2" -v b="${3:-$(date +%s.%N)}" -v n="$1" 'BEGIN { printf "p
 nginx_cmd='nginx -c /etc/nginx/scarlet/nginx.conf'
 reload_nginx() { $dc exec -T web $nginx_cmd -t && $dc exec -T web $nginx_cmd -s reload; }
 
+fpm_listening() {
+  $dc exec -T "app-$1" php -r 'exit(@fsockopen("127.0.0.1", 9000) ? 0 : 1);' >/dev/null 2>&1
+}
+
 healthy() {
   port=$(check_port "$1")
   good=0
   tries=0
   while [ "$tries" -lt 240 ]; do
+    if ! fpm_listening "$1"; then
+      tries=$((tries + 1))
+      sleep 0.5
+      continue
+    fi
     up=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/up" || true)
     if [ "$up" = 200 ]; then good=$((good + 1)); else good=0; fi
     if [ "$good" -ge 5 ]; then
