@@ -135,6 +135,19 @@ final class Charts
     }
 
     /**
+     * The hour grid drawn from the 168 UTC cells of the week, Monday 00:00 first; resources/js/local-time.js
+     * reads them in the viewer's time zone. $busiest is the cell the page names as the busiest hour, so a tie picks
+     * the same hour in the grid.
+     *
+     * @param  array<int, float>  $cells
+     * @return array<string, mixed>
+     */
+    public static function weekCells(array $cells, ?int $busiest, ?string $out = null): array
+    {
+        return self::reading(['kind' => 'hours', 'cells' => $cells, 'busiest' => $busiest], null, null, $out);
+    }
+
+    /**
      * Play time by day: $days is [[level 0 to 4, hidden]] a week at a time from Monday; $months has one label per week.
      *
      * @param  list<array{0: int, 1: int}>  $days

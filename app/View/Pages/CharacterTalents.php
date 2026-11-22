@@ -202,7 +202,8 @@ final class CharacterTalents
         return [
             'columns' => $columns,
             'rows' => array_map(function (array $row) use ($several): array {
-                $cells = [Carbon::parse((string) $row['at'])->format('j M Y H:i'), (string) ($row['level'] ?? ''), (RespecKind::tryFrom((string) $row['kind'])?->label() ?? (string) $row['kind']), Format::number($row['moved']), $row['cost'] === null ? '' : Format::moneyText($row['cost'])];
+                $at = Carbon::parse((string) $row['at'])->utc();
+                $cells = [['instant' => $at->toIso8601ZuluString(), 'format' => 'j M Y H:i', 'text' => $at->format('j M Y H:i')], (string) ($row['level'] ?? ''), (RespecKind::tryFrom((string) $row['kind'])?->label() ?? (string) $row['kind']), Format::number($row['moved']), $row['cost'] === null ? '' : Format::moneyText($row['cost'])];
                 if ($several) {
                     array_splice($cells, 2, 0, [(string) $row['group']]);
                 }

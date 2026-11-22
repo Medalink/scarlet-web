@@ -4,6 +4,7 @@
 // by App\View\Format, so numbers are formatted in one place. No chart library.
 import './site/map.js';
 import { drawPlay } from './play.js';
+import { localWeek, localWeekHour, weekGrid } from './local-time.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAP_CELL = 83;
@@ -334,6 +335,10 @@ const draw = {
 
     // Hour by weekday grid. levels[day][hour] is 0 to 4.
     hours(box, spec, signal) {
+        if (spec.cells) {
+            box.setAttribute('aria-label', 'Play time by weekday and hour of day, in your time zone');
+            spec = { out: spec.out, ...weekGrid(localWeek(spec.cells), spec.busiest == null ? null : localWeekHour(spec.busiest)) };
+        }
         box.replaceChildren(htmlEl('span'));
         for (let h = 0; h < 24; h++) box.append(htmlEl('span', 'h', h % 3 ? '' : String(h)));
         spec.days.forEach((name, d) => {

@@ -85,7 +85,7 @@ final class AccountCharactersGame
                 continue;
             }
             $name = (string) $leader['name'];
-            $records[] = ['icon' => $icon, 'value' => $detail($top), 'href' => '/c/'.rawurlencode($name), 'label' => $label, 'detail' => Format::characterName($name), 'class' => $records === [] ? 'rec-lead' : null];
+            $records[] = ['icon' => $icon, 'value' => $detail($top), 'href' => '/c/'.rawurlencode($name), 'label' => $label, 'detail' => Format::characterName($name), 'class' => $records === [] ? 'rec-lead' : null, 'week' => null, 'local' => null];
         }
 
         return $records;

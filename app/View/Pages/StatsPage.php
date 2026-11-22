@@ -46,6 +46,7 @@ final class StatsPage
             'professions' => self::professions(self::rows($r['professions']), $characters),
             'gold' => self::gold(self::rows($r['gold']), $top),
             'hours' => self::hours(self::rows($r['weekdays'])),
+            'hoursSummary' => self::hoursSummary(self::rows($r['weekdays'])),
             'zones' => array_map(fn (array $zone): array => ['id' => (int) $zone['zone_id'], 'name' => (string) ($zone['zone'] ?? 'Zone '.$zone['zone_id'])], self::rows($r['zones'])),
         ];
     }
@@ -457,6 +458,9 @@ final class StatsPage
     }
 
     /**
+     * The 168 UTC cells of the week, Monday 00:00 first, which resources/js/local-time.js reads in the
+     * viewer's time zone.
+     *
      * @param  list<array<string, mixed>>  $rows  weekday (0 is Sunday), hour, seconds
      * @return array<string, mixed>|null
      */
@@ -465,27 +469,27 @@ final class StatsPage
         if ($rows === []) {
             return null;
         }
-        $cell = [];
+        $cells = array_fill(0, 168, 0.0);
         foreach ($rows as $row) {
-            $cell[(int) $row['weekday']][(int) $row['hour']] = (float) $row['seconds'];
+            $cells[((int) $row['weekday'] + 6) % 7 * 24 + (int) $row['hour']] = (float) $row['seconds'];
         }
-        $top = max(array_map(fn (array $day): float => max($day), $cell));
-        $names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        $words = ['Quiet', 'Light', 'Moderate', 'Busy', 'Busiest'];
-        $levels = $say = [];
+
         $peak = self::busiest($rows);
-        $busiest = $peak === null ? null : $peak['day'] * 24 + $peak['hour'];
-        foreach ($names as $d => $name) {
-            for ($h = 0; $h < 24; $h++) {
-                $value = $cell[($d + 1) % 7][$h] ?? 0.0;
-                $level = $value <= 0 ? 0 : max(1, (int) ceil($value / $top * 4));
-                $levels[$d][] = $level;
-                $say[] = Format::line($name.' '.str_pad((string) $h, 2, '0', STR_PAD_LEFT).':00', ', '.$words[$level].($value > 0 ? ', '.Format::duration($value).' played' : ''));
-            }
-        }
 
-        $summary = $busiest === null ? null : Format::line('Busiest hour', ': '.$names[intdiv($busiest, 24)].' '.str_pad((string) ($busiest % 24), 2, '0', STR_PAD_LEFT).':00 UTC');
+        return Charts::weekCells($cells, $peak === null ? null : $peak['day'] * 24 + $peak['hour'], 'hours-out');
+    }
 
-        return Charts::hours($levels, $say, 'hours-out', $busiest, $summary);
+    /**
+     * The UTC summary line of the hour grid, which the readout shows until the browser rewrites it.
+     *
+     * @param  list<array<string, mixed>>  $rows  weekday (0 is Sunday), hour, seconds
+     * @return array{0: string, 1: string}|null
+     */
+    public static function hoursSummary(array $rows): ?array
+    {
+        $peak = self::busiest($rows);
+        $names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        return $peak === null ? null : Format::line('Busiest hour', ': '.$names[$peak['day']].' '.str_pad((string) $peak['hour'], 2, '0', STR_PAD_LEFT).':00 UTC');
     }
 }

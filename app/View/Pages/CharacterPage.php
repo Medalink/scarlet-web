@@ -217,7 +217,7 @@ final class CharacterPage
             'columns' => $columns,
             'rows' => array_map(function (array $row) use ($economy, $longest): array {
                 $levels = $row['level_start'] === null ? '' : ($row['level_start'] === $row['level_end'] ? (string) $row['level_start'] : $row['level_start'].' to '.$row['level_end']);
-                $cells = [Carbon::parse((string) $row['at'])->format('j M H:i'), Format::duration($row['seconds']), ['text' => '', 'bar' => round($row['seconds'] / $longest * self::BAR_REM, 2).'rem'], self::xpPerHour((int) ($row['xp'] ?? 0), (int) $row['seconds']), $levels, Format::number($row['xp'] ?? 0), Format::number($row['kills'] ?? 0), Format::number($row['deaths'] ?? 0), Format::number($row['quests'] ?? 0)];
+                $cells = [['instant' => $row['at'], 'format' => 'j M H:i', 'text' => Carbon::parse((string) $row['at'])->format('j M H:i')], Format::duration($row['seconds']), ['text' => '', 'bar' => round($row['seconds'] / $longest * self::BAR_REM, 2).'rem'], self::xpPerHour((int) ($row['xp'] ?? 0), (int) $row['seconds']), $levels, Format::number($row['xp'] ?? 0), Format::number($row['kills'] ?? 0), Format::number($row['deaths'] ?? 0), Format::number($row['quests'] ?? 0)];
                 if ($economy) {
                     $cells[] = Format::moneyText($row['gold'] ?? 0, true);
                 }

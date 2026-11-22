@@ -13,7 +13,7 @@ use App\View\Format;
  * next round numbers, the climb and who plays, from the answer of App\Actions\Public\StatsDashboard.
  *
  * @phpstan-type Tile array{icon: string, label: string, value: string, count: int|null, unit: string|null}
- * @phpstan-type Record array{icon: string, value: string, href: string|null, label: string, detail: string, class: string|null}
+ * @phpstan-type Record array{icon: string, value: string, href: string|null, label: string, detail: string, class: string|null, week: int|null, local: string|null}
  *
  * @phpstan-import-type Rule from RoundNumbers
  *
@@ -132,11 +132,14 @@ final class StatsGame
     }
 
     /**
+     * A record tile. $week is the hour of the week the value shows, Monday 00:00 UTC first, and $local the
+     * label's local wording; both go to resources/js/local-time.js and stay null on the other tiles.
+     *
      * @return Record
      */
-    private static function record(string $icon, string $value, ?string $href, string $label, string $detail, ?string $class = null): array
+    private static function record(string $icon, string $value, ?string $href, string $label, string $detail, ?string $class = null, ?int $week = null, ?string $local = null): array
     {
-        return ['icon' => $icon, 'value' => $value, 'href' => $href, 'label' => $label, 'detail' => $detail, 'class' => $class];
+        return ['icon' => $icon, 'value' => $value, 'href' => $href, 'label' => $label, 'detail' => $detail, 'class' => $class, 'week' => $week, 'local' => $local];
     }
 
     /**
@@ -196,7 +199,10 @@ final class StatsGame
     {
         $peak = StatsPage::busiest($rows);
 
-        return $peak === null ? null : self::record('clock', self::DAYS[$peak['day']].' '.str_pad((string) $peak['hour'], 2, '0', STR_PAD_LEFT).':00', null, 'Busiest hour, UTC', Format::duration($peak['seconds']).' played');
+        return $peak === null ? null : self::record(
+            'clock', self::DAYS[$peak['day']].' '.str_pad((string) $peak['hour'], 2, '0', STR_PAD_LEFT).':00', null, 'Busiest hour, UTC',
+            Format::duration($peak['seconds']).' played', class: null, week: $peak['day'] * 24 + $peak['hour'], local: 'Busiest hour',
+        );
     }
 
     /**
