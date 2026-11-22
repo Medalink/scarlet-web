@@ -20,8 +20,8 @@ sha=${FLOW_SHA:?the flow engine sets FLOW_SHA}
 release=$(printf '%s' "$sha" | cut -c1-12)
 skipped=${TMPDIR:-/tmp}/scarlet-ring-skipped-$release
 
-ssh_ring() { ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 "$@"; }
-entry() { ssh_ring "ops@$host" "$@"; }
+ssh_opts="-i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30"
+entry() { ssh $ssh_opts "ops@$host" "$@"; }
 skip() {
   : > "$skipped"
   echo "skip: $1"
@@ -48,7 +48,7 @@ deploy() {
   take_lock
   bash deploy/build.sh "$repo" "$sha" | tee /dev/stderr | grep -qx "built $sha" || { echo "ring: the build gave no image" >&2; exit 1; }
   entry registry
-  ssh_ring -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$port:127.0.0.1:5077" "ops@$host" &
+  ssh $ssh_opts -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$port:127.0.0.1:5077" "ops@$host" > /dev/null 2>&1 &
   tunnel=$!
   tries=0
   until curl -sf --max-time 2 -o /dev/null "http://127.0.0.1:$port/v2/"; do
@@ -62,6 +62,7 @@ deploy() {
   sudo -n docker push -q "$at" > /dev/null || pushed=1
   sudo -n docker rmi "$at" > /dev/null 2>&1 || true
   kill "$tunnel" 2>/dev/null || true
+  wait "$tunnel" 2>/dev/null || true
   tunnel=
   [ "$pushed" = 0 ] || { echo "ring: the image did not reach the droplet's registry" >&2; exit 1; }
 
