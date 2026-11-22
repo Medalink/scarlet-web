@@ -14,6 +14,9 @@ class QuestRecord
     /** The event of a quest turned in (quest_events.event). */
     public const string TURNED_IN = 'turned_in';
 
+    /** The event of a quest abandoned (quest_events.event). */
+    public const string ABANDONED = 'abandoned';
+
     public function __construct(
         private readonly RollupRead $read,
         private readonly ResolveScope $resolveScope,

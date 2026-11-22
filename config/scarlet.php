@@ -106,5 +106,10 @@ return [
         'read_fresh_seconds' => 60,
         'read_stale_seconds' => 300,
     ],
+    'feats' => [
+        'timeout' => 120,
+        'tries' => 2,
+        'memory_mb' => 256,
+    ],
 
 ];

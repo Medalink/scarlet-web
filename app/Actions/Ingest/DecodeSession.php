@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Jobs\RefreshCharacterFeats;
 use App\Jobs\RefreshRollups;
 use App\Models\Part;
 use App\Support\Database\BinaryValue;
@@ -56,6 +57,7 @@ class DecodeSession
         $decoded = $bodies === [] ? DecodedSession::empty() : DecodedSession::parse($this->tool->decode($bodies));
 
         $window = $this->store->handle($characterId, $sessionStart, $decoded, $partIds);
+        RefreshCharacterFeats::dispatch($characterId);
         if ($window !== null) {
             RefreshRollups::dispatch($window['from'], $window['until']);
         }

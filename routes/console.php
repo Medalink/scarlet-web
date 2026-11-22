@@ -9,3 +9,4 @@ Schedule::command('rulesets:detect')->everyTenMinutes()->withoutOverlapping()->o
 Schedule::command('search:scores')->hourly()->withoutOverlapping()->onOneServer();
 // A safety net: sessions that sit under another ruleset than their character's are decoded again.
 Schedule::command('rulesets:refile')->dailyAt('04:30')->withoutOverlapping()->onOneServer();
+Schedule::command('feats:refresh')->dailyAt('04:10')->withoutOverlapping()->onOneServer();

@@ -44,10 +44,9 @@ class Feats
             Feat::Tracker->value => $this->raresFound($character->id),
         ];
         $rows = [];
-        foreach (Feat::cases() as $feat) {
-            $value = $counts[$feat->value];
+        foreach ($counts as $key => $value) {
             if ($value !== null) {
-                $rows[] = $this->row($feat, $value);
+                $rows[] = $this->row(Feat::from($key), $value);
             }
         }
         usort($rows, fn (array $a, array $b): int => $b['tier'] <=> $a['tier']);

@@ -594,25 +594,92 @@ reached, so its counts by tier add up to the feats held.
 
 | Feat | Counts | Copper | Silver | Gold | Scarlet | Legend |
 | --- | --- | --- | --- | --- | --- | --- |
-| Summit | level reached | 10 | 25 | 45 | 55 | 60 |
+| Summit | levels reached | 10 | 25 | 45 | 55 | 60 |
+| Veteran | hours played | 2 | 50 | 200 | 500 | 2,500 |
+| Devoted | days played | 3 | 14 | 60 | 150 | 365 |
+| Steadfast | days played in a row | 2 | 7 | 21 | 60 | 180 |
+| Seasoned | weeks played | 1 | 4 | 12 | 26 | 52 |
+| Regular | sessions played | 5 | 60 | 250 | 600 | 3,000 |
+| Long Haul | sessions of two hours or more | 1 | 15 | 60 | 150 | 600 |
+| Longstanding | days since the first recorded session | 7 | 30 | 90 | 180 | 365 |
+| Unbroken | levels reached without dying (only for a character recorded from level 1) | 10 | 20 | 35 | 50 | 60 |
 | Slayer | kills | 100 | 2,500 | 10,000 | 30,000 | 150,000 |
+| Bestiary | kinds of creature killed | 10 | 250 | 750 | 1,250 | 2,000 |
+| Finisher | killing blows of your own | 50 | 1,000 | 5,000 | 15,000 | 75,000 |
+| Gladiator | players killed | 1 | 25 | 100 | 500 | 2,500 |
+| Rampage | kills in one session | 50 | 300 | 600 | 1,000 | 2,000 |
+| Fallen | deaths | 1 | 10 | 40 | 100 | 400 |
+| Flattened | points of damage in the biggest killing blow from a creature | 50 | 300 | 1,000 | 2,500 | 5,000 |
+| Nemesis | deaths to one killer | 2 | 4 | 8 | 15 | 30 |
+| Territorial | kills in one zone | 50 | 500 | 1,500 | 4,000 | 12,000 |
+| Roamer | zones with 100 kills or more | 1 | 8 | 16 | 24 | 32 |
 | Questing | quests turned in | 10 | 150 | 500 | 1,000 | 1,500 |
+| Errand Runner | quests turned in in one session | 3 | 10 | 20 | 35 | 50 |
+| Fickle | quests abandoned | 1 | 20 | 75 | 150 | 300 |
+| Cartographer | areas discovered | 5 | 100 | 300 | 600 | 800 |
+| Local Hero | zones with 25 quests or more turned in | 1 | 4 | 8 | 12 | 18 |
+| Thorough | quests turned in in one zone | 10 | 30 | 60 | 90 | 110 |
 | Delver | dungeon runs | 1 | 20 | 75 | 200 | 500 |
+| Vanquisher | dungeon bosses killed | 1 | 50 | 250 | 1,000 | 2,500 |
+| Spelunker | dungeons and raids entered | 1 | 5 | 12 | 18 | 22 |
+| Raider | raid runs | 1 | 10 | 40 | 100 | 250 |
+| Conqueror | raid bosses killed | 1 | 25 | 100 | 300 | 800 |
+| Deep Dweller | hours inside dungeons | 1 | 20 | 75 | 200 | 600 |
+| Flawless | dungeon runs with a boss killed and no death | 1 | 10 | 40 | 100 | 300 |
+| Familiar | runs of one dungeon | 2 | 8 | 20 | 50 | 120 |
+| Soloist | dungeon runs alone | 1 | 5 | 20 | 50 | 150 |
+| Full House | dungeon runs in a group of five | 1 | 20 | 75 | 200 | 500 |
 | Explorer | zones entered | 5 | 20 | 40 | 55 | 65 |
-| Veteran | hours played: the game's /played when known, else recorded time | 2 | 50 | 200 | 500 | 2,500 |
-| Devoted | days with play, from the play calendar | 3 | 14 | 60 | 150 | 365 |
-| Wayfarer | distance in world widths | 1 | 15 | 60 | 150 | 750 |
+| Globetrotter | zones with an hour or more of play | 2 | 10 | 20 | 30 | 40 |
+| Local | hours in one zone | 2 | 15 | 40 | 100 | 300 |
+| Wayfarer | world widths walked | 1 | 15 | 60 | 150 | 750 |
 | Jumper | jumps | 100 | 5,000 | 20,000 | 50,000 | 250,000 |
 | Swimmer | yards swum | 500 | 10,000 | 50,000 | 125,000 | 600,000 |
-| Unbroken | level reached before the first death, for a character recorded from level 1 only; left out for any other | 10 | 20 | 35 | 50 | 60 |
-| Artisan | profession ranks, all professions added up | 75 | 300 | 750 | 1,350 | 1,500 |
-| Crafter | items crafted | 5 | 500 | 2,500 | 10,000 | 25,000 |
+| Runner | yards run | 1,000 | 400,000 | 1,500,000 | 4,000,000 | 15,000,000 |
+| Rider | yards ridden | 1,000 | 100,000 | 1,000,000 | 4,000,000 | 20,000,000 |
+| Stroller | yards walked | 100 | 2,000 | 10,000 | 50,000 | 250,000 |
+| Flyer | yards flown | 1,000 | 150,000 | 600,000 | 1,500,000 | 7,500,000 |
+| Tracker | rare creatures seen | 1 | 10 | 30 | 60 | 100 |
+| Scout | elite creatures seen | 5 | 75 | 250 | 500 | 900 |
+| Witness | bosses seen | 1 | 5 | 15 | 30 | 50 |
+| Naturalist | kinds of creature seen | 25 | 750 | 2,000 | 3,500 | 5,000 |
+| Skullseer | creatures seen whose level the game hides | 1 | 5 | 20 | 50 | 100 |
+| Looter | corpses looted | 10 | 1,500 | 6,000 | 15,000 | 75,000 |
+| Scavenger | poor items looted | 5 | 250 | 1,000 | 3,000 | 12,000 |
+| Lucky | uncommon items looted | 1 | 100 | 400 | 1,000 | 4,000 |
+| Collector | rare items looted | 1 | 15 | 60 | 150 | 500 |
+| Jackpot | epic items looted | 1 | 3 | 10 | 25 | 75 |
+| Curator | kinds of item received | 25 | 600 | 1,500 | 2,500 | 4,000 |
+| Unboxer | containers opened from the bags | 1 | 25 | 100 | 300 | 1,000 |
 | Angler | fish caught | 10 | 250 | 1,500 | 5,000 | 15,000 |
+| Fishmonger | kinds of catch | 3 | 15 | 30 | 45 | 60 |
+| Wading | zones fished in | 1 | 5 | 10 | 20 | 30 |
 | Gatherer | nodes gathered | 10 | 250 | 1,500 | 5,000 | 15,000 |
-| Tracker | rare and rare elite creatures seen, the two counts of "Creatures met" added up | 1 | 10 | 30 | 60 | 100 |
+| Forager | zones gathered in | 1 | 5 | 10 | 20 | 30 |
+| Artisan | profession ranks | 75 | 300 | 750 | 1,350 | 1,500 |
+| Master | professions at rank 300 | 1 | 2 | 3 | 4 | 5 |
+| Practised | skill-ups | 10 | 300 | 1,000 | 1,800 | 2,500 |
+| Crafter | items crafted | 5 | 500 | 2,500 | 10,000 | 25,000 |
+| Repertoire | kinds of item crafted | 3 | 25 | 75 | 150 | 300 |
+| Earner | gold earned (only when the owner shows the economy) | 1 | 100 | 1,000 | 5,000 | 25,000 |
+| Spender | gold spent (only when the owner shows the economy) | 1 | 100 | 1,000 | 5,000 | 25,000 |
+| Tycoon | gold carried at once (only when the owner shows the economy) | 1 | 50 | 500 | 2,000 | 10,000 |
+| Windfall | gold earned in one session (only when the owner shows the economy) | 1 | 10 | 50 | 200 | 1,000 |
+| Expressive | emotes used | 10 | 250 | 1,000 | 5,000 | 25,000 |
+| Mime | kinds of emote used | 3 | 15 | 40 | 80 | 120 |
+| Signature | uses of one emote | 5 | 100 | 500 | 2,000 | 10,000 |
+| Indecisive | talent respecs | 1 | 3 | 10 | 25 | 60 |
 
-The feats and their thresholds are one table in code (`App\Support\Feat`). Nothing is stored: a feat is computed
-from the character's totals on each read, so a re-decode or a removal changes it with no migration.
+The feats and their thresholds are one table in code (`App\Support\Feat`). The counts are stored in
+`character_feats` (one row per character and feat, the `value` and when it was counted): `RefreshCharacterFeats`
+runs after every decode of the character and `feats:refresh` queues it for one character or for every
+character with a session, as a daily safety net. `CountFeats` and its counters under
+`App\Actions\Feats\Counts` read the base tables only, `sessions` and the fact tables, never a continuous
+aggregate, so a count never lags the decode that triggered it. The tier is not stored: it is read from the
+value with `Feat::tier()`, so a threshold change needs no recount. Values that are hours, gold or days are
+rounded down before they are stored, and Wayfarer down to one decimal, so a value never shows a tier it has
+not reached. The emote feats leave out `Emote::READ`, as the emote rankings do. Until the next ship the character page still computes its sixteen ladders on read; the stored
+rows are not read yet.
 
 ### Search
 
