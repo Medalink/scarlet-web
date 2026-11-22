@@ -23,9 +23,10 @@ Four findings shape the design more than any layout choice.
    all 14 of 42 (33.3%), group loot 6 of 71 (8.5%). The 95% ranges do not overlap. The drop table is the same
    under both rules. Under group loot 53 of the 71 windows gave leather or hide, under free for all 19 of 42, so
    the two denominators differ in kind. A rule difference is a counting fault until shown otherwise.
-3. **The group lines are not where one would expect.** `LW` is in the `none` row of `groups.tsv`: the addon
-   writes it and nothing uploads it. `GP`, `GM` and `GL` are in `social`. `LT`, `LD`, `RW` and `RL` are in `loot`
-   and reach the server today, undecoded. Objects have no name line at all (FORMAT.md, `NP`).
+3. **The group lines are not where one would expect.** `GP`, `GM` and `GL` are in `social`. `LT`, `LD`, `RW` and
+   `RL` are in `loot` and reach the server today, undecoded. `LW` was in the `none` row of `groups.tsv` (the addon
+   wrote it and nothing uploaded it) until it moved to `loot` with its sender as a pseudonym; the decoder does not
+   read it yet. Objects were unnamed until the `ON` name line (group `names`), kind `object`.
 4. **Five characters fill three drop tables.** Three creatures have 30 or more windows, 37 have 10 or more.
    Rule comparison rests on one source. No source has two group sizes with 30 windows each. Pages must read well
    with most modules saying what is missing.
@@ -387,8 +388,8 @@ and a roll that arrives from both chat and history is one row.
 | `loot_rule`, `threshold`, `group_size` | | |
 
 **`peer_opens`, `peer_drops`** (`LW`). The same keys as `loot_opens` and `loot_drops`, plus `who` (pseudonym) and
-`late_s`. Kept in their own tables so no existing query can count them. They need `LW` moved from `none` to `loot`
-in `groups.tsv` and a `LW 1 sender` row in `player-fields.tsv`. What they add: the windows of group members who run
+`late_s`. Kept in their own tables so no existing query can count them. `LW` is in `loot` in `groups.tsv`, with a
+`LW 1 sender` row in `player-fields.tsv`. What they add: the windows of group members who run
 Scarlet and do not upload, the source of a member's receipt, and who opened each corpse (how evenly group loot
 rotates). When the peer also uploads, the row repeats that peer's own `LO`; pseudonyms are per install, so the two
 cannot be joined by name, and only the corpse key removes the repeat.

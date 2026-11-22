@@ -12,8 +12,9 @@ VG	4	npc		id
 TB	1	npc		id	
 TC	1	npc		id	
 NW	3	npc	field 1 is 1	id	open event only
-NP	3	npc	field 1 is n	id	kind n is a creature, kind o an object with no name line
+NP	2	npc	field 1 is n	id	kind n is a creature
 LO	2	npc	field 1 is c	id	source kind c is a creature
+LW	3	npc	field 2 is c	id	source kind c is a creature
 X	5	npc	field 4 is k	id	experience from a kill
 C	1	spell		id	
 CH	1	spell		id	
@@ -68,6 +69,7 @@ EN	4	item		list	gems
 EN	6	item		list	previous gems
 LO	2	item	field 1 is i	id	an item opened from the bags; empty when unknown
 LO	4	item		lo	elements itemIDxquantity; mxN is coin and skipped; c<currencyID>xquantity is a currency (kind currency)
+LW	5	item		lo	elements itemIDxquantity; mxN is coin and skipped; c<currencyID>xquantity is a currency (kind currency)
 VS	3	item		list	elements itemID:price:stack:limit:cost; cost can name i<itemID>x<n> or c<currencyID>x<n> and is not read
 ML	5	item		list	elements itemID:count
 TR	6	item	field 1 is 0	list	gave, elements itemID:count
@@ -137,3 +139,7 @@ SD	1	spell		def	spell fact; sent with the spell
 EL	2	item		id	
 AQ	2	item		id	
 IG	2	item		part2	slot:itemID:enchantID:suffixID joined by commas
+ON	1	object		def	defines the name of the id in field 1
+LO	2	object	field 1 is g	id	source kind g is an object
+LW	3	object	field 2 is g	id	source kind g is an object
+NP	2	object	field 1 is o	id	kind o is an object

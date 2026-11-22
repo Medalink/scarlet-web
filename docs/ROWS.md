@@ -578,7 +578,7 @@ for the other, and the app keeps the known value. One row per spell of the sessi
 ### `names` (names group)
 
 `session`, `kind` (`npc`, `spell`, `item`, `quest`, `currency`, `skill`, `statistic`, `achievement`, `faction`,
-`gossip`, `stat`, `flight`, `talenttab`), `id` (int), `name` (string). One row per distinct (kind, id) of the
+`gossip`, `stat`, `flight`, `talenttab`, `object`), `id` (int), `name` (string). One row per distinct (kind, id) of the
 session. A name becomes the shown one for an id when most uploads agree on it (DESIGN.md).
 
 ### `items` (names group: `II`, `IT`, `IQ`)

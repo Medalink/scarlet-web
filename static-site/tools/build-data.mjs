@@ -26,7 +26,8 @@ const GROUPS = [
   ["Collections and appearance", "NC CL CA CX SP PT PD SG BT TX TO TI BA KT"],
   ["Reputation, achievements and Legacy", "RP RF RG RV RR AC AD AT AP AE CK LV LB LA LN"],
   ["Client and interface", "WS UE AO AX AF TT UW TU CV"],
-  ["Names for ids", "SN IN N QN KN WN AN FN CN GN BN TY SI SD"],
+  ["The Fishing Log", "JP JR JJ JZ JH JW JB JX JY JF JQ JG JK JN JI JO JT JA JE JD JU JV JC JM JS JL JCH"],
+  ["Names for ids", "SN IN N ON QN KN WN AN FN CN GN BN TY SI SD"],
 ];
 
 // Codes with several rows in FORMAT.md (start and end, or several kinds) get one sentence that covers them.

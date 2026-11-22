@@ -6,7 +6,7 @@ combat	Combat, kills and deaths	K D R U F E B DL DR DM DS DP RZ SH SR SKN C CH C
 pvp	PvP and duels	PV ZP HK HN PK HL BQ BM BS PP DU DW DQ
 movement	Movement and map paths	P W T TE TF MO WP SU HB SM MP
 world	Creatures and places seen	NS SZ NP NI NW VG AI UW EB WX
-loot	Loot, items and drop rates	O LO LM LT LD RL RW BR LP I BG DI EL
+loot	Loot, items and drop rates	O LO LM LT LD RL RW BR LP I BG DI EL LW
 economy	Gold, vendors, auctions, mail and trade	M VB VS AU AV ML TR BK RE TK CU AQ
 professions	Professions and crafting	SK SL CR CB CS CW RD RT TS PG PS PU PO CO LR EC RA RQ
 build	Character build and gear	ST SC SX G EN WE IU DB EQ TG TA TQ TV TD TL SB LS AB TI PD PT SG TB TC BA TX TO
@@ -15,7 +15,7 @@ collections	Collections, achievements, Legacy and reputation	AC AD AE AP AT CK N
 client	Game client and addons loaded	LG PR AO AX AF UE TU TT LK LL SS CV RM
 imports	Imported history from other addons	YG YS YB YM
 fishing	The Fishing Log: records, sessions, bounties and leaderboards	JP JR JJ JZ JH JW JB JX JY JF JQ JG JK JN JI JO JT JA JE JD JU JV JC JM JS JL JCH
-names	Names and item facts (sent only with a line that uses them)	N SN IN QN CN KN WN AN FN GN BN TN TY II IT IQ SI SD
+names	Names and item facts (sent only with a line that uses them)	N SN IN QN CN KN WN AN FN GN BN TN TY II IT IQ SI SD ON
 addons	Other addons	*
 # A `none` row holds owner-only codes: the addon writes them, nothing uploads them.
-none	Owner-only	BC LW
+none	Owner-only	BC

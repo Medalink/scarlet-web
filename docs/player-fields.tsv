@@ -10,6 +10,7 @@ HN	2		victim
 LM	3		master looter
 LT	2		receiver
 LD	2		roller
+LW	1		sender
 RW	5	field 1 is l	winner
 ML	2		sender or recipient
 TR	2		trade partner
