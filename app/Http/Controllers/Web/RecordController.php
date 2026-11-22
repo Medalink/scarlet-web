@@ -8,6 +8,7 @@ use App\Actions\Public\ItemRecord;
 use App\Actions\Public\ObjectRecord;
 use App\Actions\Public\QuestRecord;
 use App\Actions\Public\SpellRecord;
+use App\Actions\Public\ZoneLoot;
 use App\Actions\Public\ZoneRecord;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\RecordRequest;
@@ -17,6 +18,7 @@ use App\View\Pages\EncounterPage;
 use App\View\Pages\ObjectPage;
 use App\View\Pages\RecordPages;
 use App\View\Pages\SpellPage;
+use App\View\Pages\ZoneLootModule;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -66,12 +68,12 @@ class RecordController extends Controller
         return view('pages.encounter', ['d' => EncounterPage::from($answer)]);
     }
 
-    public function zone(RecordRequest $request, ZoneRecord $record, int $id): View
+    public function zone(RecordRequest $request, ZoneRecord $record, ZoneLoot $loot, int $id): View
     {
         $answer = $record->handle($id, $request->rulesetSlug(), $request->serverFilter());
         abort_if($answer === null, 404);
 
-        return view('pages.zone', ['d' => RecordPages::zone($answer)]);
+        return view('pages.zone', ['d' => RecordPages::zone($answer), 'loot' => ZoneLootModule::from($id, $answer['name'], $loot->handle($id))]);
     }
 
     public function quest(RecordRequest $request, QuestRecord $record, int $id): View

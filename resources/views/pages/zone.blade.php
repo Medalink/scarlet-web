@@ -52,6 +52,17 @@
       <x-note>No creatures recorded here yet.</x-note>
       @endif
     </x-module>
+    @if ($loot)
+    <x-module span="w12" :first="true" :last="true" id="h-l" heading="Looted here">
+      @if ($loot['sources'])
+      <x-table :rows="$loot['sources']" :columns="[['label' => 'Source'], ['label' => 'Corpses looted', 'numeric' => true], ['label' => 'Most common item']]" style="margin-top:1.1rem" />
+      @endif
+      @if ($loot['items'])
+      <x-table :rows="$loot['items']" :columns="[['label' => 'Item'], ['label' => 'Dropped', 'numeric' => true], ['label' => 'Best source']]" style="margin-top:1.1rem" />
+      @endif
+      <p class="note">Loot covers every ruleset. <a href="{{ $loot['href'] }}">{{ $loot['label'] }}</a></p>
+    </x-module>
+    @endif
   </x-sheet>
 </div>
 </x-layouts.app>

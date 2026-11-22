@@ -785,6 +785,20 @@ page("groups.html", "Loot rules and group size", "search", `
 </div>`);
 
 // ----------------------------------------------------------------------------------- zone
+const hereRate = (name, href, k, n, cls = "") => {
+  const { p, low, high } = wilson(k, n);
+  return `<a href="${href}"${cls ? ` class="${cls}"` : ""}>${name}</a> <span class="mut">${pct(p)}%, ${pct(low)} to ${pct(high)}</span>`;
+};
+const hereSources = [["Marsh Stalker", 214, "Stalker Hide", 121], ["Saltmarsh Raider", 188, "Raider's Wristwraps", 36], ["Reedwing", 97, "Reed Feather", 61], ["Mire Crawler", 64, "Crawler Chitin", 22], ["Brackwater Snapper", 41, "Snapper Meat", 27]]
+  .map(([name, corpses, item, k]) => `<tr><td><a href="creature.html">${name}</a></td><td class="n">${corpses}</td><td>${hereRate(item, "item.html", k, corpses)}</td></tr>`).join("");
+const hereItems = [["Stalker Hide", "", 121, "Marsh Stalker", 214], ["Reed Feather", "", 74, "Reedwing", 97], ["Raider's Wristwraps", "q2", 36, "Saltmarsh Raider", 188], ["Snapper Meat", "", 27, "Brackwater Snapper", 41], ["Crawler Chitin", "", 26, "Mire Crawler", 64]]
+  .map(([item, cls, dropped, source, n]) => `<tr><td><a href="item.html"${cls ? ` class="${cls}"` : ""}>${item}</a></td><td class="n">${dropped}</td><td>${hereRate(source, "creature.html", dropped, n)}</td></tr>`).join("");
+const hereLoot = `
+    <section class="mod w12 first last" aria-labelledby="h-l"><h2 id="h-l">Looted here</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem"><thead><tr><th>Source</th><th class="n">Corpses looted</th><th>Most common item</th></tr></thead><tbody>${hereSources}</tbody></table></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem"><thead><tr><th>Item</th><th class="n">Dropped</th><th>Best source</th></tr></thead><tbody>${hereItems}</tbody></table></div>
+      <p class="note">Loot covers every ruleset. <a href="loot.html">All loot in Saltmarsh Reach</a></p>
+    </section>`;
 page("zone.html", "Saltmarsh Reach: paths, deaths and levels", "search", `
 <section class="ch-head" aria-labelledby="h1" style="min-height:27rem">
   <div class="stage"><canvas id="map" role="img" aria-label="Heat from every recorded path in Saltmarsh Reach, with deaths as crosses"></canvas></div>
@@ -811,7 +825,7 @@ page("zone.html", "Saltmarsh Reach: paths, deaths and levels", "search", `
       <ol class="rank"><li><span class="who">Quests</span><span class="val">49%</span><span class="track"><i class="c-quest" style="width:49%"></i></span></li><li><span class="who">Kills</span><span class="val">44%</span><span class="track"><i style="width:44%"></i></span></li><li><span class="who">Exploring</span><span class="val">7%</span><span class="track"><i class="c-explore" style="width:7%"></i></span></li></ol></section>
     <section class="mod w12 first last" aria-labelledby="h-q"><h2 id="h-q">Quests turned in here</h2>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem"><thead><tr><th>Quest</th><th class="n">Turn-ins</th><th class="n">Median level</th><th class="n">XP</th><th class="n">Abandoned</th></tr></thead>
-      <tbody><tr><td><a href="quest.html">The Marsh Takes Its Due</a></td><td class="n">4,210</td><td class="n">23</td><td class="n">2,450</td><td class="n">3%</td></tr><tr><td><a href="quest.html">Reeds for the Weaver</a></td><td class="n">3,980</td><td class="n">20</td><td class="n">1,700</td><td class="n">1%</td></tr><tr><td><a href="quest.html">What the Tide Left</a></td><td class="n">2,644</td><td class="n">25</td><td class="n">2,900</td><td class="n">11%</td></tr></tbody></table></div></section>
+      <tbody><tr><td><a href="quest.html">The Marsh Takes Its Due</a></td><td class="n">4,210</td><td class="n">23</td><td class="n">2,450</td><td class="n">3%</td></tr><tr><td><a href="quest.html">Reeds for the Weaver</a></td><td class="n">3,980</td><td class="n">20</td><td class="n">1,700</td><td class="n">1%</td></tr><tr><td><a href="quest.html">What the Tide Left</a></td><td class="n">2,644</td><td class="n">25</td><td class="n">2,900</td><td class="n">11%</td></tr></tbody></table></div></section>${hereLoot}
   </div>
 </div>`, `
 Comp.heatmap("map", { seed: 5, hot: [[3600, 4800, 900, 620], [5600, 4200, 700, 420], [7200, 3300, 650, 340], [4700, 2600, 500, 200], [6400, 5300, 520, 180]], deaths: [[3900, 4500], [5200, 4400], [5750, 3900], [7100, 3000], [6900, 3600], [4500, 2700], [3300, 5100], [6100, 5200]] });

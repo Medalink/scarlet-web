@@ -4,16 +4,12 @@ namespace App\View\Pages;
 
 use App\Actions\Public\LootIndex;
 use App\Support\Cursor;
-use App\Support\ItemIcons;
 use App\Support\ItemQuality;
 use App\Support\LootFilter;
 use App\Support\LootRule;
 use App\Support\LootSort;
-use App\Support\LootSourceKind;
 use App\Support\LootView;
-use App\Support\RateEstimate;
 use App\View\Format;
-use App\View\ItemTypes;
 
 /** The data of the loot index (docs/comps/loot.html) from the answer of App\Actions\Public\LootIndex. */
 final class LootPage
@@ -60,7 +56,7 @@ final class LootPage
             'columns' => $items
                 ? [['label' => 'Item'], ['label' => 'Dropped', 'numeric' => true], ['label' => 'Sources', 'numeric' => true], ['label' => 'Best source'], ['label' => 'Zone']]
                 : [['label' => 'Source'], ['label' => 'Zone'], ['label' => $filter->view === LootView::Creatures ? 'Level' : 'Looter level', 'numeric' => true], ['label' => $filter->view->opened(), 'numeric' => true], ['label' => 'Items seen', 'numeric' => true], ['label' => 'Most common item'], ['label' => 'Characters', 'numeric' => true]],
-            'rows' => $items ? self::itemRows($table['rows']) : self::sourceRows($filter->view, $table['rows']),
+            'rows' => $items ? LootRows::items($table['rows'], true) : LootRows::sources($filter->view, $table['rows'], true),
             'prev' => $offset > 0 ? self::url([...$filter->params(), 'cursor' => $offset - LootIndex::PAGE > 0 ? Cursor::encode($offset - LootIndex::PAGE) : null]) : null,
             'next' => $table['more'] ? self::url([...$filter->params(), 'cursor' => Cursor::encode($offset + LootIndex::PAGE)]) : null,
             'step' => LootIndex::PAGE,
@@ -131,78 +127,6 @@ final class LootPage
                 ? [['value' => LootSort::Windows->value, 'label' => 'Dropped'], ['value' => LootSort::Items->value, 'label' => 'Sources']]
                 : [['value' => LootSort::Windows->value, 'label' => $filter->view->opened()], ['value' => LootSort::Items->value, 'label' => 'Items seen'], ['value' => LootSort::Level->value, 'label' => 'Level']],
         ];
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $rows
-     * @return list<array{cells: list<array<string, mixed>|string>}>
-     */
-    private static function sourceRows(LootView $view, array $rows): array
-    {
-        $kind = $view->sourceKind() ?? LootSourceKind::Other;
-
-        return array_map(function (array $row) use ($kind): array {
-            $id = (int) $row['source_id'];
-            $top = $row['top'];
-            /** @var array{id: int, name: string|null}|null $zone */
-            $zone = $row['zone'];
-
-            return ['cells' => [
-                ['text' => $kind->title($row['name'], $id), 'href' => $kind->page($id)],
-                $zone === null ? '–' : ['text' => $zone['name'] ?? 'Zone '.$zone['id'], 'href' => '/zones/'.$zone['id']],
-                self::levels($row['level_min'], $row['level_max']),
-                Format::number($row['windows']),
-                Format::number($row['items']),
-                $top === null ? '–' : self::rated('/items/'.$top['item_id'], $top['item'] ?? 'Item '.$top['item_id'], $top['estimate']),
-                Format::number($row['characters']),
-            ]];
-        }, $rows);
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $rows
-     * @return list<array{cells: list<array<string, mixed>|string>}>
-     */
-    private static function itemRows(array $rows): array
-    {
-        $icons = array_filter(ItemIcons::icons(array_map(fn (array $row): int => (int) $row['item_id'], $rows)));
-
-        return array_map(function (array $row) use ($icons): array {
-            $id = (int) $row['item_id'];
-            $best = $row['best'];
-            $zone = $row['zone'];
-            $kind = $best === null ? null : LootSourceKind::tryFrom($best['source_kind']);
-
-            return ['cells' => [
-                [...($icons === [] ? [] : ['icon' => $icons[$id] ?? null]), 'text' => $row['name'] ?? 'Item '.$id, 'href' => '/items/'.$id, 'class' => ItemTypes::quality($row['quality'])],
-                Format::number($row['dropped']),
-                Format::number($row['sources']),
-                $best === null || $kind === null ? '–' : self::rated($kind->page($best['source_id']), $kind->title($best['source'], $best['source_id']), $best['estimate']),
-                $zone === null ? '–' : ['text' => $zone['name'] ?? 'Zone '.$zone['id'], 'href' => '/zones/'.$zone['id']],
-            ]];
-        }, $rows);
-    }
-
-    /**
-     * A link with its rate and 95% range after it, or its counts while the sample is under 10.
-     *
-     * @return array<string, mixed>
-     */
-    private static function rated(?string $href, string $text, RateEstimate $estimate): array
-    {
-        return ['text' => $text, 'href' => $href, 'note' => $estimate->stated() ? $estimate->percent().', '.$estimate->range() : $estimate->counts()];
-    }
-
-    private static function levels(?int $low, ?int $high): string
-    {
-        if ($low === null || $high === null) {
-            return '–';
-        }
-        if ($low < 0 || $high < 0) {
-            return 'Boss';
-        }
-
-        return $low === $high ? (string) $low : $low.' to '.$high;
     }
 
     private static function note(LootView $view): string
