@@ -37,7 +37,7 @@ class TalentOutcomes
 
         $levels = $this->under($held, 'level_ups', $hashes, $from, $to, 'e.reached')
             ->where('e.ding', true)
-            ->join('character_levels as cl', fn (JoinClause $join) => $join->on('cl.character_id', '=', 'e.character_id')->whereRaw('cl.level = e.reached - 1')->where('cl.completed', true))
+            ->join('character_levels as cl', fn (JoinClause $join) => $join->on('cl.character_id', '=', 'e.character_id')->whereRaw('cl.level = e.reached - 1')->where('cl.completed', true)->where('cl.xp_off_spent', false))
             ->selectRaw('i.build_hash, count(*) as n, percentile_cont(0.5) within group (order by cl.seconds) as median_s')->get()->keyBy('build_hash');
         $deaths = $this->under($held, 'deaths', $hashes, $from, $to, 'e.level')
             ->selectRaw('i.build_hash, count(*) as n')->get()->keyBy('build_hash');

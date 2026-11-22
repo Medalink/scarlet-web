@@ -14,6 +14,10 @@ class RebuildCharacterLevels
      * the first recorded session began at level 1 with the played counter at about zero. The level a character was at
      * when first seen has no row, so it has no time to reach it.
      *
+     * `xp_off_reach` is true when a session with experience off began at or before the level's start, so the played
+     * total before the level includes play that gave no experience; `xp_off_spent` is the same up to the level's end.
+     * The levelling statistics leave those rows out of the figure they would skew and keep them in the rest.
+     *
      * `completed` is true when Scarlet also saw the start of the next level and no session between the two follows
      * unrecorded play (`sessions.joins`). `seconds` is then the counter's difference between the two starts; on any
      * other row it is the time recorded at the level.
@@ -29,7 +33,7 @@ class RebuildCharacterLevels
         DB::delete('delete from character_levels where character_id = ?', [$characterId]);
         DB::insert(
             <<<'SQL'
-            insert into character_levels (at, character_id, session_start, ruleset_id, level, zone_id, counted, reached, seconds, before_seconds, completed)
+            insert into character_levels (at, character_id, session_start, ruleset_id, level, zone_id, counted, reached, seconds, before_seconds, completed, xp_off_reach, xp_off_spent)
             with seen as (
                 select distinct on (d.reached) d.reached as level, d.at as entry_at, d.session_start, d.ruleset_id,
                        s.counter_start_ms + round(greatest(extract(epoch from (d.at - s.start_at)), 0) * 1000) as anchor
@@ -48,7 +52,7 @@ class RebuildCharacterLevels
             select e.entry_at, ?, e.session_start, e.ruleset_id, e.level, null, coalesce(sp.all_counted, true), e.level,
                    round(case when done.completed then (e.next_anchor - e.anchor) / 1000.0 else coalesce(sp.spent_ms, 0) / 1000.0 end)::int,
                    round(e.anchor / 1000.0)::int,
-                   done.completed
+                   done.completed, done.xp_off_reach, done.xp_off_spent
             from (
                 select cur.*, nxt.anchor as next_anchor, nxt.session_start as next_session
                 from entries cur left join entries nxt on nxt.level = cur.level + 1
@@ -62,12 +66,18 @@ class RebuildCharacterLevels
                     select 1 from sessions x
                     where x.character_id = ? and x.session_start > e.session_start and x.session_start <= e.next_session
                       and coalesce(x.joins, ?) in (?, ?)
-                ) as completed
+                ) as completed,
+                exists (
+                    select 1 from sessions x where x.character_id = ? and x.xp_off and x.session_start <= e.session_start
+                ) as xp_off_reach,
+                exists (
+                    select 1 from sessions x where x.character_id = ? and x.xp_off and x.session_start <= coalesce(e.next_session, 9223372036854775807)
+                ) as xp_off_spent
             ) done
             SQL,
             [
                 $characterId, $characterId, $tolerance, $characterId, $characterId, $characterId,
-                SessionJoin::Unknown->value, ...SessionJoin::BROKEN,
+                SessionJoin::Unknown->value, ...SessionJoin::BROKEN, $characterId, $characterId,
             ],
         );
 

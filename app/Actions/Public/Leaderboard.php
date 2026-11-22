@@ -71,6 +71,7 @@ class Leaderboard
             ->where('c.is_public', true)
             ->where('cl.counted', true)
             ->where('cl.level', $level)
+            ->where('cl.xp_off_reach', false)
             ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('cl.ruleset_id', $scope->ids))
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('cl.ruleset_id', $scope->ids))
             ->select('c.name', 'c.race', 'c.class', 'c.account_id', 'c.whole_life', 'c.first_seen_at', 's.deaths', 's.ruleset_id', 'cl.before_seconds as value', 'cl.at')

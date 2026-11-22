@@ -26,7 +26,17 @@ enum RulesetKind: string
         };
     }
 
-    /** The part of a ruleset's slug that names the kind. No other part of a slug starts with `k`. */
+    /** The `rulesets.war_mode` of a kind's row: the server filter of the pages keeps PvE and PvP kinds apart by it. */
+    public function warMode(): string
+    {
+        return match ($this) {
+            self::Normal, self::Roleplay => Ruleset::WAR_MODE_OFF,
+            self::Pvp, self::RoleplayPvp => Ruleset::WAR_MODE_ON,
+            self::Hardcore => Ruleset::WAR_MODE_UNKNOWN,
+        };
+    }
+
+    /** The part of a slug from before kinds that names the kind. No other part of such a slug starts with `k`. */
     public function slugToken(): string
     {
         return match ($this) {

@@ -352,27 +352,48 @@ ruleset of a character is found outside the recording, in this order:
    realm learns its kind from the Armory's answer for any character that lives on it, so one answer files every
    character of that realm, and a disagreement between two answers keeps the first and is logged.
 
-A character with neither answer is "Not identified". The ruleset row a session is filed under carries the kind of its
-character: `rulesets.kind` is part of the row's key (`|knormal`) and slug (`-kn`, `-kp`, `-kr`, `-krp`, `-kh`), so
-rows that differ only in kind are two rows. A slug from before the kind was part of the identity still opens the row
-that has sessions under it. When a character's kind becomes known, `RefileSessions` decodes each of its sessions again
-(the ingest files it under the right row and refreshes the rollups); `rulesets:refile` does the same by hand, and
-daily. Only the hardcore flag of a session names a ruleset by itself (`RulesetKind::of()`).
+A character with neither answer is "Not identified". A ruleset is its kind and nothing else: `rulesets` has one row
+for each kind (key and slug `normal`, `pvp`, `roleplay`, `roleplay-pvp`, `hardcore`) and one for characters whose kind
+is not known yet (`unidentified`). Every session of a character is filed under the row of its kind, since the kind is
+permanent; a session with the hardcore flag is filed under Hardcore, which is the only signal of a session that names a
+ruleset by itself (`RulesetKind::of()`). When a character's kind becomes known, `RefileSessions` decodes each of its
+sessions again (the ingest files it under the right row and refreshes the rollups); `rulesets:refile` does the same by
+hand, and daily.
+
+The other signals a session reports are data of the session, not of its ruleset. They stay in the session's `extra`
+(`gr_preset`, `gr_hardcore`, `war_mode`, `game_mode`, `mode_record`), and `sessions.xp_off` carries experience gain:
 
 | Signal | Line | Values |
 | --- | --- | --- |
-| Experience preset | `GR` preset | the client's preset number (0 Classic, 1 Enhanced); not a ruleset |
+| Experience preset | `GR` preset | the client's preset number (0 Classic, 1 Enhanced) |
 | Hardcore | `GR` hardcore | on, off |
-| War mode | `PB` warModeActive | on, off, unknown; not a ruleset |
-| Experience gain | `XD` | on, off |
+| War mode | `PB` warModeActive | on, off, unknown |
+| Experience gain | `XD` | on, off (`sessions.xp_off`) |
 | Game mode | `GA` | the client's mode number |
 | Game mode record | `RU` record | the record id the realm picker switches by |
 
-`rulesets(id, preset, hardcore, war_mode, xp_off, game_mode, mode_record, kind)` has one row per combination seen and
-kind of character; a row without a record or a kind keeps the key it had before either was known. Class, race and faction are filters on a page, not part of
-the ruleset. The `S` line's server fields are empty on Forever and are not used; `RU` carries the server number from
-the character's GUID, which becomes `characters.home_realm_id`. The loot rule (`LM`) is a property of a
-drop, not of a character.
+Class, race and faction are filters on a page, not part of the ruleset. The `S` line's server fields are empty on
+Forever and are not used; `RU` carries the server number from the character's GUID, which becomes
+`characters.home_realm_id`. The loot rule (`LM`) is a property of a drop, not of a character. A row's `war_mode` is
+its kind's (`RulesetKind::warMode()`: Normal and Roleplay `off`, PvP and Roleplay PvP `on`, Hardcore `unknown`), and
+the PvE and PvP server filters of the pages read it, so "PvE" shows Normal and Roleplay and "PvP" shows PvP and
+Roleplay PvP; Not identified shows only under "PvE and PvP".
+
+**Rows from before kinds.** Until 2026-11-22 a ruleset was a combination of every signal a session reported, so each
+addon version that reported more made a new row and one Normal character ended up under five. Those rows stay in
+`rulesets` with `merged_into` naming the row that took their sessions, and each session keeps the row it had in
+`sessions.original_ruleset_id`. `rulesets:merge` moves the sessions and every fact row of them to the kind's row, then
+refreshes every rollup and checks that row counts and each character's hours, deaths and experience, and the rollup
+sums, did not move. It is safe to run twice. `rulesets:merge --undo` puts the sessions back; that is only sound
+together with the code from before, since a session decoded again is filed under its kind. An old address (a slug of
+signals with or without the kind token, or a row id) opens the page of the row its ruleset was merged into, and
+`/rulesets/{slug}` redirects there.
+
+**Experience off.** A character that played with experience off (`sessions.xp_off`) gains nothing in that time, so its
+played time would stretch every level after it. `character_levels.xp_off_reach` is true when such a session began at or
+before a level's start, and `xp_off_spent` when one began before the level's end. The level-time rollup (levelling
+curve, time per level, median to 60), the fastest-to boards and the talent outcomes leave those rows out of the figure
+they would skew. Everything else counts the character's play as usual.
 
 ## Security
 
@@ -505,9 +526,8 @@ least 7 days old) turns git history into a version and release notes.
 - **Ruleset names** are the five of WoW Forever: Normal, PvP, Roleplay, Roleplay PvP and Hardcore. A row that no
   signal or realm names is "Not identified", listed last on /rulesets and left out of the filters unless it is the one
   on show. Hardcore is not out yet, so the filters and /rulesets show it as "Hardcore (not out yet)", greyed out and
-  without a link, until a hardcore ruleset has data. Two rows of one name are told apart by a count, "(2)". The
-  address of a row (`p1-std-pve-g1-kn`) is its signals and the kind of its characters; an address without the kind
-  opens the row that has sessions under it. Rows with no sessions are not listed.
+  without a link, until a hardcore ruleset has data. The address of a ruleset is its kind (`/rulesets/normal`); an
+  address from before kinds redirects to the ruleset that took it over. Rows with no sessions are not listed.
 - **Class filter**: leaderboards filter by class (`characters.class`). The dashboards and result pages do not: no
   aggregate carries the class.
 - **Reach**: "Characters that reached each level" in place of the comp's wording; the chart counts characters.

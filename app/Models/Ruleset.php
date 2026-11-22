@@ -5,7 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A combination of the signals that make two characters comparable (docs/DESIGN.md, Rulesets).
+ * A ruleset of WoW Forever, or the one for characters whose kind is not known yet (docs/DESIGN.md, Rulesets). The
+ * rows from before a ruleset was its kind are kept, each with `merged_into` naming the row that took its sessions.
  *
  * @property int $id
  * @property string $key
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $game_mode
  * @property int|null $mode_record
  * @property string|null $kind
+ * @property int|null $merged_into
  */
 class Ruleset extends Model
 {
@@ -25,8 +27,14 @@ class Ruleset extends Model
 
     public const string WAR_MODE_OFF = 'off';
 
-    /** The slug of a ruleset none of whose signals the client reported. */
+    /** The slug of a row from before kinds none of whose signals the client reported. */
     public const string UNKNOWN_SLUG = 'unknown';
+
+    /** The key and slug of the row for characters whose kind is not known yet. */
+    public const string UNIDENTIFIED_KEY = 'unidentified';
+
+    /** The label of the ruleset of characters whose kind is not known yet. */
+    public const string UNIDENTIFIED_LABEL = 'Not identified';
 
     public $timestamps = false;
 
@@ -38,39 +46,37 @@ class Ruleset extends Model
         return ['hardcore' => 'boolean', 'xp_off' => 'boolean'];
     }
 
-    /**
-     * The identity of a combination of signals and the kind of its characters. A session with no game mode record and
-     * no kind has the five-part key it always had, so the rulesets stored before either was known keep their rows.
-     *
-     * @param  array{preset: int|null, hardcore: bool|null, war_mode: string, xp_off: bool|null, game_mode: int|null, mode_record: int|null, kind?: string|null}  $signals
-     */
-    public static function keyFor(array $signals): string
+    /** The key of the row for a kind, or for no kind. Rows from before kinds are keyed by their signals instead. */
+    public static function keyFor(?RulesetKind $kind): string
     {
-        $key = implode('|', array_map(fn ($value): string => match (true) {
-            $value === null => '-',
-            is_bool($value) => $value ? '1' : '0',
-            default => (string) $value,
-        }, [$signals['preset'], $signals['hardcore'], $signals['war_mode'], $signals['xp_off'], $signals['game_mode']]));
+        return $kind === null ? self::UNIDENTIFIED_KEY : $kind->value;
+    }
 
-        $key = $signals['mode_record'] === null ? $key : $key.'|r'.$signals['mode_record'];
+    /** @return list<string> the keys of the rows that are rulesets: one for each kind and the unidentified one */
+    public static function kindKeys(): array
+    {
+        return [...array_map(fn (RulesetKind $kind): string => $kind->value, RulesetKind::cases()), self::UNIDENTIFIED_KEY];
+    }
 
-        return ($signals['kind'] ?? null) === null ? $key : $key.'|k'.$signals['kind'];
+    /** False for a row from before a ruleset was its kind: such a row has no sessions once merged. */
+    public function isKindRow(): bool
+    {
+        return in_array($this->key, self::kindKeys(), true);
     }
 
     /**
-     * The path segment of a ruleset: every signal that was reported has a part, so two rulesets never share one.
-     * `p1-std-pve-xp-g1` is preset 1, not hardcore, war mode off, experience on, game mode 1. The slug is an
-     * identity, not a name: it keeps the form it had, so the address of every ruleset keeps working. The kind of the
-     * row's characters ends it (`-kn` for Normal), so rows that differ only in kind have different slugs.
+     * The path segment of a ruleset: its kind (`normal`, `roleplay-pvp`) or `unidentified`. A row from before kinds keeps
+     * the slug it had, built from every signal it recorded (`p1-std-pve-xp-g1-r15-kn`), so the address of each old
+     * ruleset can still be matched and sent to the ruleset that took it over.
      */
     public function slug(): string
     {
-        return $this->slugOf(withKind: true);
+        return $this->isKindRow() ? $this->key : $this->slugOf(withKind: true);
     }
 
     /**
-     * The slug without its kind: what an address from before the kind was part of a ruleset's identity says. A page
-     * that gets one shows the oldest row that has it (`ResolveScope`).
+     * The slug of a row from before kinds without its kind: what an address from before the kind was part of a
+     * ruleset's identity says.
      */
     public function slugWithoutKind(): string
     {
@@ -105,9 +111,6 @@ class Ruleset extends Model
         return $parts === [] ? self::UNKNOWN_SLUG : implode('-', $parts);
     }
 
-    /** The label of a ruleset that no checked signal names yet. */
-    public const string UNIDENTIFIED_LABEL = 'Not identified';
-
     /** The ruleset of WoW Forever this row is, or null while neither a signal nor its characters name it. */
     public function kind(): ?RulesetKind
     {
@@ -120,7 +123,7 @@ class Ruleset extends Model
         return $this->kind === null ? null : RulesetKind::tryFrom($this->kind);
     }
 
-    /** The name a page shows: the ruleset's name, or "Not identified" for a row no checked signal names. */
+    /** The name a page shows: the ruleset's name, or "Not identified" while its kind is not known. */
     public function label(): string
     {
         return $this->kind()?->label() ?? self::UNIDENTIFIED_LABEL;

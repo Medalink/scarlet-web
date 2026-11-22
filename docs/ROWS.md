@@ -330,8 +330,9 @@ One per decode, last. Keys in order:
 | `sex`, `class_id`, `race_id` | int or null | the first `CD` line |
 | `flags` | string[] | plausibility flags, below |
 
-**Ruleset** of a session: (`gr_preset`, `gr_hardcore`, `war_mode`, `xp_off`, `game_mode`, `mode_record`), the signals of
-DESIGN.md "Rulesets". The `rulesets` row is looked up or created from them.
+**Ruleset** of a session: the kind of its character (hardcore flag, then Armory, declared kind, home realm), DESIGN.md
+"Rulesets". The `rulesets` row of that kind is looked up or created. `gr_preset`, `gr_hardcore`, `war_mode`, `game_mode`
+and `mode_record` stay in the session's `extra`; `xp_off` is the column `sessions.xp_off`.
 
 **Plausibility flags** (a character with any flag in a session stays out of leaderboards and rollups until the
 flags stop; thresholds are the decoder's):

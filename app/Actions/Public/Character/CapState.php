@@ -25,7 +25,7 @@ class CapState
      */
     public function handle(int $characterId): ?array
     {
-        $session = DB::table('sessions')->where('character_id', $characterId)->orderByDesc('end_at')->first(['ruleset_id', 'level_end']);
+        $session = DB::table('sessions')->where('character_id', $characterId)->orderByDesc('end_at')->first(['xp_off', 'level_end']);
         $character = DB::table('characters')->where('id', $characterId)->first(['level', 'played_seconds', 'played_known']);
         if ($session === null || $character === null) {
             return null;
@@ -35,7 +35,7 @@ class CapState
             return null;
         }
         $level = (int) $level;
-        if (DB::table('rulesets')->where('id', $session->ruleset_id)->where('xp_off', true)->exists()) {
+        if ($session->xp_off === true) {
             return null;
         }
         $recorded = (int) round((float) DB::table('play_spans')->where('character_id', $characterId)->where('counted', true)->where('level', $level)->sum('ms') / 1000);

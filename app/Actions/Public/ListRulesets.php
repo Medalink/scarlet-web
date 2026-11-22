@@ -8,37 +8,34 @@ use App\Models\RulesetKind;
 class ListRulesets
 {
     /**
-     * Every ruleset that has sessions filed under it, for filters and links: the identified ones in the order of the rulesets,
-     * then the ones no checked signal names yet, and last the one whose sessions recorded no rules at all. Two
-     * rows of one label are told apart by a count, "(2)", in `label`; `name` keeps the label alone.
+     * Every ruleset that has sessions filed under it, for filters and links: the rulesets of WoW Forever in their order,
+     * then the one for characters whose kind is not known yet. A row from before kinds that is not merged yet is listed
+     * too, after the others of its label.
      *
      * @return list<array{id: int, slug: string, name: string, label: string, kind: string|null, hardcore: bool, war_mode: string, recorded: bool}>
      */
     public function handle(): array
     {
         $order = array_flip(array_map(fn (RulesetKind $kind): string => $kind->value, RulesetKind::cases()));
-        $rank = fn (array $row): array => [$row['kind'] === null, $row['recorded'] ? 0 : 1, $row['kind'] === null ? 0 : $order[$row['kind']], $row['id']];
+        $rank = fn (array $row): array => [$row['kind'] === null, $row['kind'] === null ? 0 : $order[$row['kind']], $row['id']];
         $rows = [];
-        foreach (Ruleset::query()->whereExists(fn ($sessions) => $sessions->selectRaw('1')->from('sessions')->whereColumn('sessions.ruleset_id', 'rulesets.id'))->orderBy('id')->get() as $ruleset) {
+        $listed = Ruleset::query()->whereNull('merged_into')
+            ->whereExists(fn ($sessions) => $sessions->selectRaw('1')->from('sessions')->whereColumn('sessions.ruleset_id', 'rulesets.id'))
+            ->orderBy('id')->get();
+        foreach ($listed as $ruleset) {
             $rows[] = [
                 'id' => $ruleset->id,
                 'slug' => $ruleset->slug(),
                 'name' => $ruleset->label(),
                 'label' => $ruleset->label(),
                 'kind' => $ruleset->kind()?->value,
-                'hardcore' => $ruleset->hardcore === true,
+                'hardcore' => $ruleset->kind() === RulesetKind::Hardcore,
                 'war_mode' => $ruleset->war_mode,
-                'recorded' => $ruleset->slugWithoutKind() !== Ruleset::UNKNOWN_SLUG,
+                'recorded' => $ruleset->kind() !== null,
             ];
         }
         usort($rows, fn (array $a, array $b): int => $rank($a) <=> $rank($b));
 
-        $seen = [];
-
-        return array_map(function (array $row) use (&$seen): array {
-            $count = $seen[$row['label']] = ($seen[$row['label']] ?? 0) + 1;
-
-            return $count === 1 ? $row : [...$row, 'label' => $row['label'].' ('.$count.')'];
-        }, $rows);
+        return $rows;
     }
 }
