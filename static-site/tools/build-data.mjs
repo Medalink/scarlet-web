@@ -10,14 +10,15 @@ if (!repo) throw new Error("usage: node tools/build-data.mjs <path to the Scarle
 const here = dirname(fileURLToPath(import.meta.url));
 
 const GROUPS = [
-  ["Sessions and time", "S ES TP AFK RS RX XD GA GR LL LK LG SS PR"],
+  ["Sessions and time", "S ES TP AFK RS RX XD GA GR LL LK LG SS PR RU"],
   ["Movement and travel", "Z SZ P W T TN TF MO WP SM HB CP EX VG AI MP ZP MT TE"],
   ["Combat", "F C CH CI K NS A CC DM DS DP TW AR SO"],
   ["Deaths", "D R U DL DR RZ SH SKN SR DB"],
-  ["Experience, stats and talents", "X L XR ST SC SX CD SK SL TL TG TA TQ LS SB AB TB TC"],
+  ["Experience, stats and talents", "X L XR RO ST SC SX CD SK SL TL TG TA TQ TV TD LS SB AB TB TC"],
   ["Quests and NPCs", "Q QI QP QS QA QD QR QW QY QK NI NW GS GO GC PC IR SE SU NP"],
-  ["Loot and items", "O LO LT LD LM RL RW BR IQ I II IT G EN WE IU DI BG LP EQ"],
+  ["Loot and items", "O LO LT LD LM RL RW BR IQ I II IT G EN WE IU DI BG LP EQ BC"],
   ["Gold and trade", "M VB VS RE AU AV ML TR BK TK CU"],
+  ["Imported history", "YG YS YB YM"],
   ["Crafting and professions", "CR CB CS CW TS RD RT PG PS PU PO CO LR EC RA"],
   ["Groups and people", "GP GM GL GI RC LF IV PM AL FR FC GU GH CT WD EM DU DW DQ CE CM RM"],
   ["Dungeons and raids", "E B IL IB DF TM"],
@@ -176,6 +177,14 @@ Object.assign(MEANING, {
   UE: "The client showed a UI error. Its name is kept, not its text",
   AX: "The client restricted what addons can read, which is why some fields are written as ?",
   AF: "The client blocked or forbade an addon's call",
+  RO: "Rested XP at logout: how much you had, the level's XP maximum and whether you were resting",
+  TV: "A class talent tree's layout, once per tree per session, with a hash over its nodes' fields",
+  TD: "One visible node of a class talent tree: its position, type, entries and edges",
+  RU: "Every client signal that might name the character's ruleset (Normal, PvP, RP, RP-PvP, Hardcore), read together",
+  YG: "Imported history: a gold balance another addon logged (TSM), written by the companion, never by the addon",
+  YS: "Imported history: a sale another addon booked, with the amount received after the house's cut",
+  YB: "Imported history: a purchase another addon booked, like YS",
+  YM: "Imported history: other income or expense another addon booked, copper signed",
 });
 
 const text = readFileSync(join(repo, "docs", "FORMAT.md"), "utf8");
