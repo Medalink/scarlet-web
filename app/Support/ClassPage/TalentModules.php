@@ -19,7 +19,7 @@ final class TalentModules
         PlayerClass::Warrior->value => ['Mortal Strike', 'Sweeping Strikes', 'Enrage', 'Death Wish', 'Flurry', 'Last Stand', 'Shield Slam'],
         PlayerClass::Paladin->value => ['Seal of Command', 'Repentance', 'Consecration', 'Divine Favor', 'Holy Shock', 'Holy Shield', 'Blessing of Kings'],
         PlayerClass::Hunter->value => ['Bestial Wrath', 'Intimidation', 'Aimed Shot', 'Scatter Shot', 'Deterrence', 'Counterattack'],
-        PlayerClass::Rogue->value => ['Blade Flurry', 'Adrenaline Rush', 'Riposte'],
+        PlayerClass::Rogue->value => ['Blade Flurry', 'Adrenaline Rush', 'Riposte', 'Cold Blood', 'Remorseless Attacks', 'Ghostly Strike', 'Premeditation'],
         PlayerClass::Priest->value => ['Inner Focus', 'Spirit of Redemption', 'Lightwell'],
         PlayerClass::Shaman->value => ['Stormstrike', 'Elemental Focus', 'Flurry'],
         PlayerClass::Mage->value => ['Ice Barrier', 'Cold Snap', 'Ice Block', 'Presence of Mind', 'Arcane Power', 'Pyroblast', 'Combustion'],

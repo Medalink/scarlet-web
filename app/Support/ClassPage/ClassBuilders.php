@@ -6,6 +6,7 @@ use App\Actions\Public\ClassPage\DruidBuilder;
 use App\Actions\Public\ClassPage\HunterBuilder;
 use App\Actions\Public\ClassPage\MageBuilder;
 use App\Actions\Public\ClassPage\PaladinBuilder;
+use App\Actions\Public\ClassPage\RogueBuilder;
 use App\Actions\Public\ClassPage\WarlockBuilder;
 use App\Actions\Public\ClassPage\WarriorBuilder;
 use App\Contracts\ClassBuilder;
@@ -24,6 +25,7 @@ final class ClassBuilders
             PlayerClass::Hunter => HunterBuilder::class,
             PlayerClass::Paladin => PaladinBuilder::class,
             PlayerClass::Warrior => WarriorBuilder::class,
+            PlayerClass::Rogue => RogueBuilder::class,
             PlayerClass::Warlock => WarlockBuilder::class,
             PlayerClass::Mage => MageBuilder::class,
             PlayerClass::Druid => DruidBuilder::class,
