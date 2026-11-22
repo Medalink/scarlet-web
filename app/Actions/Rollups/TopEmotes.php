@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\Emote;
 use App\Support\Rollup;
 use App\Support\RollupRead;
 
@@ -11,7 +12,7 @@ class TopEmotes
 
     /**
      * The emotes characters use most, most used first. A token fewer than `config('scarlet.min_characters')`
-     * characters used is left out.
+     * characters used is left out, and so is Emote::READ.
      *
      * @param  int|list<int>|null  $rulesetId
      * @return list<array<string, mixed>> token, uses, characters
@@ -21,6 +22,7 @@ class TopEmotes
         $query = $this->read->from(Rollup::EmotesDailyRuleset, $rulesetId)
             ->selectRaw('token, sum(uses) as uses, distinct_count(rollup(characters)) as characters')
             ->whereNotNull('token')
+            ->where('token', '<>', Emote::READ)
             ->groupBy('token')
             ->orderByRaw('sum(uses) desc')
             ->orderBy('token')

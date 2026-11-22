@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public\Character;
 
+use App\Support\Emote;
 use App\Support\GameObjects;
 use App\Support\KillerKind;
 use App\Support\LootSourceKind;
@@ -18,7 +19,7 @@ class Records
      * biggest one a creature dealt: a death with no known killer, or one by a player, is not a candidate. `nodes` counts
      * gathering windows opened on an object other than the fishing bobber, `fish` those opened on the bobber. `topNode`
      * and `topFish` are the item taken most from each, by quantity, and `topNode` leaves out the items the bobber gave.
-     * `jumps` and `swam` are the movement stretches' counts, `topEmote` the emote used most and `modes` the yards by
+     * `jumps` and `swam` are the movement stretches' counts, `topEmote` the emote used most other than Emote::READ and `modes` the yards by
      * movement mode, most first.
      *
      * @return array{
@@ -63,7 +64,7 @@ class Records
     /** @return array{token: string, uses: int}|null */
     private function topEmote(int $characterId): ?array
     {
-        $row = DB::table('emotes')->where('character_id', $characterId)->where('counted', true)->whereNotNull('token')
+        $row = DB::table('emotes')->where('character_id', $characterId)->where('counted', true)->whereNotNull('token')->where('token', '<>', Emote::READ)
             ->groupBy('token')->selectRaw('token, count(*) as uses')->orderByDesc('uses')->orderBy('token')->first();
 
         return $row === null ? null : ['token' => (string) $row->token, 'uses' => (int) $row->uses];
