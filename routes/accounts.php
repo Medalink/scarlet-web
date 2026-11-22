@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\AccountCharactersController;
 use App\Http\Controllers\Web\AccountController;
+use App\Http\Controllers\Web\AccountProfessionsController;
 use App\Http\Controllers\Web\AuthCallbackController;
 use App\Http\Controllers\Web\AuthDevelopmentController;
 use App\Http\Controllers\Web\AuthLoginController;
@@ -9,6 +10,8 @@ use App\Http\Controllers\Web\AuthLogoutController;
 use App\Http\Controllers\Web\AuthRedirectController;
 use App\Http\Controllers\Web\LinkConfirmController;
 use App\Http\Controllers\Web\LinkShowController;
+use App\Http\Controllers\Web\ProfessionController;
+use App\Http\Requests\Web\ScopeRequest;
 use App\Models\IdentityProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +29,8 @@ if (IdentityProvider::developmentAllowed()) {
 Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account', AccountController::class);
     Route::get('/account/characters', AccountCharactersController::class);
+    Route::get('/account/professions', AccountProfessionsController::class);
+    Route::get('/account/professions/{slug}', ProfessionController::class)->where('slug', '[a-z-]+')->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
     Route::get('/link', LinkShowController::class);
     Route::post('/link', LinkConfirmController::class);
 });

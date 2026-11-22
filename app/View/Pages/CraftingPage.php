@@ -31,7 +31,8 @@ final class CraftingPage
      */
     public static function data(Profession $profession, array $r): array
     {
-        $w = self::words($profession);
+        $own = ProfessionPage::own($r);
+        $w = [...self::words($profession), 'players' => $own ? 'you' : 'players'];
         $t = StatsPage::totals($r['totals']);
         $few = $t['characters'] === null;
         $hours = StatsPage::rows($r['hours']);
@@ -50,17 +51,18 @@ final class CraftingPage
         ]);
 
         return [
-            'title' => $w['title'].': recipes, materials and places in WoW Forever',
+            'title' => ($own ? 'Your ' : '').$w['title'].': recipes, materials and places in WoW Forever',
+            'own' => $own,
             'words' => $w,
-            'facts' => self::facts($t, $few),
+            'facts' => self::facts($t, $few, $own),
             'callouts' => CraftingCallouts::for($r),
-            'figures' => self::figures($t, $few),
+            'figures' => self::figures($t, $few, $own),
             'modules' => $arranged['modules'],
-            'heads' => self::heads($w),
+            'heads' => self::heads($w, $own),
             'layout' => $arranged['layout'],
             'dots' => null,
             'hoursSummary' => ProfessionPage::hoursSummary($hours, 'crafts'),
-            'note' => $few ? ProfessionPage::few($w['attempts']) : null,
+            'note' => $few ? ProfessionPage::few($w['attempts'], $own) : null,
         ];
     }
 
@@ -78,18 +80,18 @@ final class CraftingPage
      * @param  array<string, string>  $w
      * @return array<string, string>
      */
-    private static function heads(array $w): array
+    private static function heads(array $w, bool $own): array
     {
         return [
             'recipes' => 'What gets made',
             'difficulty' => 'How hard the recipe was when it was made',
             'points' => ucfirst($w['results']).' for a skill point, by skill',
             'levels' => $w['title'].' skill, by character level',
-            'when' => 'When players '.$w['doing'],
+            'when' => 'When '.$w['players'].' '.$w['doing'],
             'sitting' => 'A sitting',
             'reagents' => 'What the crafts used',
             'zones' => 'Zones with the most '.$w['results'],
-            'board' => 'Most '.$w['results'],
+            'board' => $own ? 'Your characters by '.$w['results'] : 'Most '.$w['results'],
         ];
     }
 
@@ -97,13 +99,13 @@ final class CraftingPage
      * @param  array<string, int|float|null>  $t
      * @return list<string>
      */
-    private static function facts(array $t, bool $few): array
+    private static function facts(array $t, bool $few, bool $own): array
     {
         if ($few) {
-            return [Format::TOO_FEW];
+            return [ProfessionPage::withoutNumbers($t, $own)];
         }
 
-        $facts = [Format::count((int) $t['crafts'], 'craft'), Format::count((int) $t['characters'], 'character')];
+        $facts = [Format::count((int) $t['crafts'], 'craft'), ProfessionPage::by($t, $own)];
         if ((int) $t['made'] > 0) {
             $facts[] = Format::count((int) $t['made'], 'item').' made';
         }
@@ -115,7 +117,7 @@ final class CraftingPage
      * @param  array<string, int|float|null>  $t
      * @return list<array{label: string, value: string, icon: string}>
      */
-    private static function figures(array $t, bool $few): array
+    private static function figures(array $t, bool $few, bool $own): array
     {
         $row = fn (string $label, ?string $value, string $icon): array => ProfessionPage::figure($few, $label, $value, $icon);
 
@@ -123,7 +125,7 @@ final class CraftingPage
             $row('Crafts that give a skill point', CampsPage::share(min((int) $t['skill_ups'], (int) $t['crafts']), (int) $t['crafts']), 'shield'),
             $row('Recipes crafted', (int) $t['recipes'] > 0 ? Format::number((int) $t['recipes']) : null, 'item'),
             $row('Items made', (int) $t['made'] > 0 ? Format::number((int) $t['made']) : null, 'tack'),
-            $row('Characters who craft', CampsPage::share((int) $t['characters'], (int) $t['scope_characters']), 'characters'),
+            ...($own ? [] : [$row('Characters who craft', CampsPage::share((int) $t['characters'], (int) $t['scope_characters']), 'characters')]),
             $row('Median skill', $t['median_skill'] === null ? null : Format::number((float) $t['median_skill']), 'skills'),
             $row('Characters at '.Profession::SKILL_CAP, $t['at_cap'] === null ? null : Format::number((int) $t['at_cap']), 'crown'),
         ];

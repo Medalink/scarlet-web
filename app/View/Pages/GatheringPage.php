@@ -30,7 +30,8 @@ final class GatheringPage
      */
     public static function data(GatherKind $kind, array $r, ?MapRect $rect): array
     {
-        $w = GatheringWords::of($kind);
+        $own = ProfessionPage::own($r);
+        $w = [...GatheringWords::of($kind), 'players' => $own ? 'you' : 'players'];
         $t = StatsPage::totals($r['totals']);
         $few = $t['characters'] === null;
         $hours = StatsPage::rows($r['hours']);
@@ -53,17 +54,18 @@ final class GatheringPage
         ]);
 
         return [
-            'title' => $w['title'].': '.$w['results'].', times and places in WoW Forever',
+            'title' => ($own ? 'Your ' : '').$w['title'].': '.$w['results'].', times and places in WoW Forever',
+            'own' => $own,
             'words' => $w,
-            'facts' => self::facts($t, $few, $w),
+            'facts' => self::facts($t, $few, $w, $own),
             'callouts' => GatheringCallouts::for($kind, $r),
-            'figures' => self::figures($t, $few, $w),
+            'figures' => self::figures($t, $few, $w, $own),
             'modules' => $arranged['modules'],
-            'heads' => self::heads($w),
+            'heads' => self::heads($w, $own),
             'layout' => $arranged['layout'],
             'dots' => CampsPage::dots($heat, $rect),
             'hoursSummary' => ProfessionPage::hoursSummary($hours, 'gathers'),
-            'note' => $few ? ProfessionPage::few($w['attempts']) : null,
+            'note' => $few ? ProfessionPage::few($w['attempts'], $own) : null,
         ];
     }
 
@@ -71,7 +73,7 @@ final class GatheringPage
      * @param  array<string, string>  $w
      * @return array<string, string>
      */
-    private static function heads(array $w): array
+    private static function heads(array $w, bool $own): array
     {
         return [
             'items' => 'What comes up',
@@ -79,14 +81,14 @@ final class GatheringPage
             'waits' => 'How long a '.$w['wait'].' takes',
             'points' => ucfirst($w['results']).' for a skill point, by skill',
             'levels' => $w['title'].' skill, by character level',
-            'when' => 'When players '.$w['doing'],
+            'when' => 'When '.$w['players'].' '.$w['doing'],
             'trip' => $w['trip'],
-            'where' => 'Where players '.$w['doing'],
+            'where' => 'Where '.$w['players'].' '.$w['doing'],
             'zones' => 'Zones with the most '.$w['results'],
             'contents' => 'What the clams, crates and trunks hold',
             'poles' => 'Poles in hand',
             'creatures' => 'What gets skinned',
-            'board' => 'Most '.$w['results'],
+            'board' => $own ? 'Your characters by '.$w['results'] : 'Most '.$w['results'],
         ];
     }
 
@@ -95,12 +97,12 @@ final class GatheringPage
      * @param  array<string, string>  $w
      * @return list<string>
      */
-    private static function facts(array $t, bool $few, array $w): array
+    private static function facts(array $t, bool $few, array $w, bool $own): array
     {
         if ($few) {
-            return [Format::TOO_FEW];
+            return [ProfessionPage::withoutNumbers($t, $own)];
         }
-        $facts = [Format::count((int) $t['attempts'], $w['attempt']), Format::count((int) $t['characters'], 'character')];
+        $facts = [Format::count((int) $t['attempts'], $w['attempt']), ProfessionPage::by($t, $own)];
         if ($w['at'] !== '') {
             $facts[] = Format::number(round((int) $t['seconds'] / 3600)).' '.$w['at'];
         }
@@ -113,7 +115,7 @@ final class GatheringPage
      * @param  array<string, string>  $w
      * @return list<array{label: string, value: string, icon: string}>
      */
-    private static function figures(array $t, bool $few, array $w): array
+    private static function figures(array $t, bool $few, array $w, bool $own): array
     {
         $played = (int) $t['played_seconds'];
         $row = fn (string $label, ?string $value, string $icon): array => ProfessionPage::figure($few, $label, $value, $icon);
@@ -123,7 +125,7 @@ final class GatheringPage
             $row($w['lands'], $of($t['looted'], $t['attempts']), 'shield'),
             $row($w['median'], $t['median_seconds'] === null ? null : Format::number((float) $t['median_seconds'], 1).'s', 'clock'),
             $row(ucfirst($w['results']).' a played hour', $played > 0 ? Format::number((int) $t['looted'] / ($played / 3600), 1) : null, 'level'),
-            $row($w['who'], $of($t['characters'], $t['scope_characters']), 'characters'),
+            ...($own ? [] : [$row($w['who'], $of($t['characters'], $t['scope_characters']), 'characters')]),
             $row('Median skill', $t['median_skill'] === null ? null : Format::number((float) $t['median_skill']), 'skills'),
             $row('Reached '.GatherKind::SKILL_CAP, $t['at_cap'] === null ? null : $of($t['at_cap'], $t['characters']), 'crown'),
         ];

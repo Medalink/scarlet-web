@@ -1,4 +1,4 @@
-<x-layouts.app :title="$title" :description="$d['words']['description']" current="professions" :canonical="$canonical">
+<x-layouts.app :title="$title" :description="$own ? null : $d['words']['description']" current="professions" :canonical="$canonical" :index="! $own">
 @if ($art)
 @vite('resources/js/scene.js')
 @endif
@@ -12,7 +12,7 @@
   @endif
   <div class="ch-id wrap">
     <div><h1 class="ch-name" id="h1">{{ $d['words']['title'] }}</h1>
-      <p class="ch-sub">@foreach ($d['facts'] as $fact)<span>{{ $fact }}</span>@endforeach</p></div>
+      <p class="ch-sub">@foreach ($d['facts'] as $fact)<span>{{ $fact }}</span>@endforeach{{ '' }}@if ($own)<span><a href="{{ $everyone }}">Everyone's {{ $d['words']['title'] }}</a></span>@endif</p></div>
     <div class="filters"><x-scope-filters :filters="$filters" /></div>
   </div>
 </section>
@@ -24,7 +24,7 @@
   @endif
   <p class="credit">{{ $scene->credit() }}</p>
   @endif
-  <x-figures :items="$d['figures']" />
+  <x-figures :items="$d['figures']" :five="$own" />
   @if ($d['note'])<x-note>{{ $d['note'] }}</x-note>@endif
   <x-sheet>
     @foreach ($d['layout'] as $row)

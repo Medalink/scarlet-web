@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { InstallClient } from "../client.mjs";
-import { NAME, PROBE, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool } from "../support.mjs";
+import { NAME, PROBE, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool, rollupsRefreshed } from "../support.mjs";
 
 const CONCURRENCY = 6;
 export const ERROR_PAGE = /Server Error|Whoops|Stack Trace|Illuminate\\|laravel-exceptions|Undefined (variable|array key)|Call to (undefined|a member)/i;
@@ -124,8 +124,27 @@ export function missingPageIs404(route) {
   };
 }
 
+const PUBLIC_PAGES = ["/professions/fishing", "/camps"];
+
+/** A visitor with no cookie reads the public pages: they keep what the edge cache needs and none of the words of a player's own page. */
+export async function publicPagesStayPublic(ctx) {
+  await rollupsRefreshed(ctx);
+  const problems = await pool(PUBLIC_PAGES, CONCURRENCY, async (route) => {
+    const answer = await ctx.http.request(route, { headers: { Accept: "text/html" } });
+    if (answer.status !== 200) return `${route}: expected 200, saw ${answer.status}`;
+    const wrong = [];
+    if (!answer.text.includes('<link rel="canonical" href="')) wrong.push("no canonical link");
+    if (answer.text.includes("noindex")) wrong.push("a noindex");
+    if (!answer.headers.get("cache-control")?.includes("public")) wrong.push(`no public Cache-Control (${answer.headers.get("cache-control")})`);
+    if (answer.headers.getSetCookie().length > 0) wrong.push(`a Set-Cookie (${answer.headers.getSetCookie().join(", ")})`);
+    if (/Everyone(&#0?39;|')s/.test(answer.text)) wrong.push("the words Everyone's of an own page");
+    return wrong.length > 0 ? `${route}: ${wrong.join(", ")}` : null;
+  });
+  failOn(problems, PUBLIC_PAGES.length, "public pages");
+}
+
 export async function accountIsClosedToVisitors(ctx) {
-  for (const route of ["/account", "/link"]) {
+  for (const route of ["/account", "/link", "/account/professions", "/account/professions/fishing"]) {
     const answer = await ctx.http.page(route, { redirect: "manual" });
     const location = answer.headers.get("location") ?? "";
     if (answer.status !== 302 || new URL(location, ctx.base).pathname !== "/login") {

@@ -15,7 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { InstallClient } from "./client.mjs";
 import { Gate } from "./gate.mjs";
-import { ECHO, Http, Jar, LOCAL_HOSTS, NAME, PROBE, Skip } from "./support.mjs";
+import { ECHO, Http, Jar, LOCAL_HOSTS, NAME, PROBE, STRANGER, Skip } from "./support.mjs";
 import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
@@ -23,11 +23,13 @@ import * as professions from "./checks/professions.mjs";
 import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
 import * as owner from "./checks/owner.mjs";
+import * as own from "./checks/own.mjs";
 import * as removal from "./checks/removal.mjs";
 
 const LANES = ["upload", "api", "pages", "browser", "owner"];
 const SERVER_CONNECTIONS = 3;
 const INSTALL_LABEL = "scarlet-web e2e install";
+const STRANGER_LABEL = "scarlet-web e2e stranger install";
 
 const REGISTRY = [
   { lane: "upload", name: "/up answers 200", run: upload.healthy },
@@ -36,7 +38,7 @@ const REGISTRY = [
   { lane: "upload", name: "installs/me refuses an unsigned request", run: upload.meUnsigned },
   { lane: "upload", name: "installs/me refuses a wrong signature", run: upload.meWrongSignature },
   { lane: "upload", name: "what an earlier run left is removed", run: upload.leftoversRemoved },
-  { lane: "upload", name: `${NAME}, ${PROBE} and ${ECHO} upload side by side: sync, manifest, parts, sync`, run: upload.bothUpload },
+  { lane: "upload", name: `${NAME}, ${PROBE} and ${ECHO} upload side by side, and ${STRANGER} from another install: sync, manifest, parts, sync`, run: upload.bothUpload },
   { lane: "upload", name: "the same manifest needs nothing", run: upload.sameManifestNeedsNothing },
   { lane: "upload", name: "the upload is decoded", run: upload.decoded },
   { lane: "api", name: "every public endpoint answers data and meta", run: api.everyEndpointAnswers },
@@ -56,6 +58,7 @@ const REGISTRY = [
   { lane: "pages", name: "a missing character is a 404 page", independent: true, run: pages.missingPageIs404("/c/Nobody-Here") },
   { lane: "pages", name: "a profession without a page is a 404 page", independent: true, run: pages.missingPageIs404("/professions/lockpicking") },
   { lane: "pages", name: "a missing creature is a 404 page", independent: true, run: pages.missingPageIs404("/creatures/999999999") },
+  { lane: "pages", name: "the public profession and camps pages stay public: canonical, indexed, edge cacheable, no cookie, no own-page words", run: pages.publicPagesStayPublic },
   { lane: "pages", name: "the account pages are closed to visitors", independent: true, run: pages.accountIsClosedToVisitors },
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },
   { lane: "pages", name: "the twelve profession pages show what the upload recorded", run: professions.pagesShowTheUpload },
@@ -65,8 +68,12 @@ const REGISTRY = [
   { lane: "browser", name: "the narrow pages fit at 390", run: browser.narrowPagesFit },
   { lane: "browser", name: "search suggests while typing", run: browser.searchSuggestsWhileTyping },
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
+  { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
+  { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "removal", name: "removal answers and empties the status", run: removal.removalAnswersAndEmptiesStatus },
+  { lane: "removal", name: "the stranger install's upload is removed too", run: removal.strangerIsRemoved },
   { lane: "removal", name: "the character is no longer served", run: removal.characterIsNoLongerServed },
+  { lane: "removal", name: "an account with no character sees its profession page in the plain state", run: own.accountWithNoCharacterSeesThePlainState },
 ];
 
 function usage(message) {
@@ -106,6 +113,7 @@ const ctx = {
   http,
   base: gate.origin,
   client: new InstallClient(gate.origin, INSTALL_LABEL, http.fetch),
+  stranger: new InstallClient(gate.origin, STRANGER_LABEL, http.fetch),
   jar: new Jar(),
   keepDir: options.keep ?? path.join(os.tmpdir(), "scarlet-web-e2e-shots"),
   browserPath: options.browser ?? null,

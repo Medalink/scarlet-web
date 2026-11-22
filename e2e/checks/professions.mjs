@@ -1,8 +1,9 @@
-import { ECHO, answerOf, expectStatus, failOn, pool, rollupsRefreshed } from "../support.mjs";
+import { ECHO, STRANGER, answerOf, expectStatus, failOn, pool, rollupsRefreshed } from "../support.mjs";
 import { ERROR_PAGE, heading } from "./pages.mjs";
 
 const CONCURRENCY = 6;
 const SHOWN = ECHO.replace("-", " ");
+export const STRANGER_SHOWN = STRANGER.replace("-", " ");
 
 export const GATHER_KEYS = ["kind", "totals", "items", "contents", "waits", "per_point", "by_level", "hours", "lures", "lured", "poles", "creatures", "zones", "heat", "board", "rulesets"];
 const CRAFT_KEYS = ["profession", "totals", "recipes", "difficulty", "per_point", "by_level", "hours", "reagents", "zones", "board", "rulesets"];
@@ -113,11 +114,11 @@ export async function apiShowsTheUpload(ctx) {
 
 const escaped = (phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const holdsWithNoDigitBeside = (text, phrase) => new RegExp(`(?<![0-9])${escaped(phrase)}(?![0-9])`).test(text);
+export const holdsWithNoDigitBeside = (text, phrase) => new RegExp(`(?<![0-9])${escaped(phrase)}(?![0-9])`).test(text);
 
-const textOf = (html) => html.replace(/<(script|style|svg)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+export const textOf = (html) => html.replace(/<(script|style|svg)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 
-const PAGES = [
+export const PAGES = [
   { slug: "fishing", title: "Fishing", shows: ["6 casts", "Casts that catch 67%", "Raw Brilliant Smallfish", "Raw Slitherskin Mackerel", "Big-mouth Clam", "Black Pearl", "Shiny Bauble", "Fishing Pole", SHOWN] },
   { slug: "herbalism", title: "Herbalism", shows: ["Picks that give an herb 100%", "Peacebloom", "Silverleaf", SHOWN] },
   { slug: "mining", title: "Mining", shows: ["3 strikes", "Copper Ore", "First strike on a vein 67%", "Later strike on the same vein 33%", SHOWN] },
@@ -127,7 +128,7 @@ const PAGES = [
   { slug: "enchanting", title: "Enchanting", shows: [] },
   { slug: "engineering", title: "Engineering", shows: [] },
   { slug: "leatherworking", title: "Leatherworking", shows: [] },
-  { slug: "tailoring", title: "Tailoring", shows: [] },
+  { slug: "tailoring", title: "Tailoring", shows: ["2 crafts", "Bolt of Linen Cloth", STRANGER_SHOWN] },
   { slug: "cooking", title: "Cooking", shows: ["3 crafts", "Charred Wolf Meat", "Medium 2 50%", "Easy 1 0%", SHOWN] },
   { slug: "first-aid", title: "First Aid", shows: [] },
 ];

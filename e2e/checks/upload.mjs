@@ -1,5 +1,5 @@
 import { xorDigest } from "../client.mjs";
-import { ECHO, NAME, PROBE, expectError, expectJson, expectStatus, loadFixture, rollupsRefreshed, sleep } from "../support.mjs";
+import { ECHO, NAME, PROBE, STRANGER, expectError, expectJson, expectStatus, loadFixture, rollupsRefreshed, sleep } from "../support.mjs";
 
 const DECODE_WAIT_MS = 20_000;
 const DECODE_POLL_MS = 250;
@@ -10,10 +10,12 @@ export async function healthy(ctx) {
 }
 
 export async function register(ctx) {
-  const answer = await ctx.client.register();
-  if (answer.status !== 201 && answer.status !== 200) expectStatus(answer, 201, "POST /api/v1/installs");
-  if (typeof expectJson(answer, "POST /api/v1/installs").install?.id !== "string") {
-    throw new Error(`POST /api/v1/installs: no install id in: ${answer.text.slice(0, 300)}`);
+  for (const client of [ctx.client, ctx.stranger]) {
+    const answer = await client.register();
+    if (answer.status !== 201 && answer.status !== 200) expectStatus(answer, 201, "POST /api/v1/installs");
+    if (typeof expectJson(answer, "POST /api/v1/installs").install?.id !== "string") {
+      throw new Error(`POST /api/v1/installs: no install id in: ${answer.text.slice(0, 300)}`);
+    }
   }
 }
 
@@ -35,12 +37,13 @@ export async function meWrongSignature(ctx) {
 
 export async function leftoversRemoved(ctx) {
   expectStatus(await ctx.client.remove(), 200, "DELETE /api/v1/upload");
+  expectStatus(await ctx.stranger.remove(), 200, "DELETE /api/v1/upload of the stranger install");
 }
 
-export function uploads(name) {
+export function uploads(name, install = "client") {
   return async (ctx) => {
     const fixture = loadFixture(name);
-    const { client } = ctx;
+    const client = ctx[install];
     const count = fixture.ids.length;
     const digest = xorDigest(fixture.ids);
 
@@ -69,7 +72,7 @@ export function uploads(name) {
 }
 
 export async function bothUpload(ctx) {
-  await Promise.all([uploads(NAME)(ctx), uploads(PROBE)(ctx), uploads(ECHO)(ctx)]);
+  await Promise.all([uploads(NAME)(ctx), uploads(PROBE)(ctx), uploads(ECHO)(ctx), uploads(STRANGER, "stranger")(ctx)]);
 }
 
 export async function sameManifestNeedsNothing(ctx) {
@@ -83,13 +86,16 @@ export async function sameManifestNeedsNothing(ctx) {
 }
 
 export async function decoded(ctx) {
-  const wanted = [loadFixture(NAME), loadFixture(PROBE), loadFixture(ECHO)];
+  const wanted = [[loadFixture(NAME), "client"], [loadFixture(PROBE), "client"], [loadFixture(ECHO), "client"], [loadFixture(STRANGER), "stranger"]];
   const deadline = Date.now() + DECODE_WAIT_MS;
   for (;;) {
-    const answer = expectStatus(await ctx.client.status(), 200, "GET /api/v1/upload/status");
-    const characters = expectJson(answer, "GET /api/v1/upload/status").characters ?? [];
-    const done = wanted.every((fixture) => {
-      const seen = characters.find((character) => character.name === fixture.name);
+    const answers = {};
+    for (const install of ["client", "stranger"]) {
+      const answer = expectStatus(await ctx[install].status(), 200, "GET /api/v1/upload/status");
+      answers[install] = { answer, characters: expectJson(answer, "GET /api/v1/upload/status").characters ?? [] };
+    }
+    const done = wanted.every(([fixture, install]) => {
+      const seen = answers[install].characters.find((character) => character.name === fixture.name);
       return seen && seen.parts === fixture.ids.length && seen.sessions === fixture.sessions && seen.sessions_waiting === 0;
     });
     if (done) {
@@ -97,7 +103,7 @@ export async function decoded(ctx) {
       return;
     }
     if (Date.now() > deadline) {
-      throw new Error(`the upload was not decoded within ${DECODE_WAIT_MS / 1000}s (is Horizon running?), the status says: ${answer.text.slice(0, 300)}`);
+      throw new Error(`the upload was not decoded within ${DECODE_WAIT_MS / 1000}s (is Horizon running?), the statuses say: ${Object.values(answers).map(({ answer }) => answer.text.slice(0, 300)).join(" and ")}`);
     }
     await sleep(DECODE_POLL_MS);
   }

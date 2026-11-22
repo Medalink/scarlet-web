@@ -1,7 +1,7 @@
 <x-layouts.app title="Your characters" current="" :signed-in="true" :index="false" :brand="false">
 <div class="wrap">
   <x-page-head title="Your characters">
-    <x-slot:filters><x-btn kind="quiet" href="/account">Account</x-btn></x-slot:filters>
+    <x-slot:filters><x-btn kind="quiet" href="/account/professions">Your professions</x-btn> <x-btn kind="quiet" href="/account">Account</x-btn></x-slot:filters>
   </x-page-head>
 @if ($d['empty'])
   <x-note>No characters uploaded yet.</x-note>

@@ -1,4 +1,4 @@
-import { ECHO, NAME, PROBE, expectJson, expectStatus, loadFixture } from "../support.mjs";
+import { ECHO, NAME, PROBE, STRANGER, expectJson, expectStatus, loadFixture } from "../support.mjs";
 
 export async function removalAnswersAndEmptiesStatus(ctx) {
   const answer = expectStatus(await ctx.client.remove(), 200, "DELETE /api/v1/upload");
@@ -10,6 +10,15 @@ export async function removalAnswersAndEmptiesStatus(ctx) {
   const status = expectStatus(await ctx.client.status(), 200, "GET /api/v1/upload/status after the removal");
   const left = expectJson(status, "the status after the removal").characters ?? [];
   if (left.length !== 0) throw new Error(`the status should list no characters after the removal, saw ${status.text.slice(0, 300)}`);
+}
+
+export async function strangerIsRemoved(ctx) {
+  const answer = expectStatus(await ctx.stranger.remove(), 200, "DELETE /api/v1/upload of the stranger install");
+  const removed = expectJson(answer, "DELETE /api/v1/upload of the stranger install");
+  const parts = loadFixture(STRANGER).ids.length;
+  if (removed.characters_removed !== 1 || removed.parts_removed !== parts) {
+    throw new Error(`the removal of the stranger install should report 1 character and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
+  }
 }
 
 export async function characterIsNoLongerServed(ctx) {

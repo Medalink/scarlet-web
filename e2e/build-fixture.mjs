@@ -1,7 +1,8 @@
 /**
  * Writes the gathering and crafting session of the fixture character Echo-Witness (e2e/fixture/Echo-Witness): one
- * session of fishing, mining, herbalism, skinning, cooking and blacksmithing, as the recorder would write it. Each
- * line is `[milliseconds since the session began, code, ...fields]`; the builder splits the lines into the parts of
+ * session of fishing, mining, herbalism, skinning, cooking and blacksmithing, as the recorder would write it, and the
+ * session of Tailor-Stranger (e2e/fixture/Tailor-Stranger), a character of another install that no account of the lane
+ * is linked to, with two tailoring crafts. Each line is `[milliseconds since the session began, code, ...fields]`; the builder splits the lines into the parts of
  * their sharing groups (docs/groups.tsv), writes each part under the SHA-256 of its text and rewrites the manifest.
  * Parts of the character's other sessions are kept as they are, so running it twice changes nothing.
  *
@@ -14,9 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { xorDigest } from "./client.mjs";
 
-const CHARACTER = "Echo-Witness";
-const SESSION = 1795270000;
-const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture", CHARACTER);
+const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
 
 const ELWYNN = 1429;
 const FISHING_POLE = 6256;
@@ -26,6 +25,7 @@ const HERBALISM = 182;
 const MINING = 186;
 const SKINNING = 393;
 const COOKING = 185;
+const TAILORING = 197;
 const BLACKSMITHING = 164;
 
 const FISHING_CAST = 7620;
@@ -51,6 +51,9 @@ const CHARRED_WOLF_MEAT = 2679;
 const WOLF_MEAT_RECIPE = 2538;
 const SHARPENING_STONE = 2862;
 const SHARPENING_RECIPE = 2660;
+const LINEN_CLOTH = 2589;
+const LINEN_BOLT = 2996;
+const LINEN_BOLT_RECIPE = 2963;
 
 const GROUP_OF = {
   S: "core", Z: "core", ES: "core",
@@ -68,7 +71,7 @@ const bobber = (items) => ["LO", "g", FISHING_BOBBER, 1, items, 0];
 const gather = (spell, seconds) => ["C", spell, seconds];
 const node = (id, items, again) => ["LO", "g", id, 1, items, again];
 
-const LINES = [
+const ECHO_LINES = [
   [0, "S", "1.15.8", "ROGUE", "Human", 3, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
   [1000, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
   [100, "IN", SMALLFISH, "Raw Brilliant Smallfish"],
@@ -167,7 +170,31 @@ const LINES = [
   [290000, "ES"],
 ];
 
-function partsOf(lines) {
+const STRANGER_LINES = [
+  [0, "S", "1.15.8", "MAGE", "Human", 3, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
+  [1000, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
+  [100, "IN", LINEN_CLOTH, "Linen Cloth"],
+  [100, "IN", LINEN_BOLT, "Bolt of Linen Cloth"],
+  [100, "SN", LINEN_BOLT_RECIPE, "Bolt of Linen Cloth"],
+  [500, "SL", TAILORING, 10, 75, 0, "s"],
+
+  [5000, "TS", 1, TAILORING, "Tailoring", 10, 75, 0, ""],
+  [6000, "CB", LINEN_BOLT_RECIPE],
+  [9000, ...craft(LINEN_BOLT, LINEN_BOLT_RECIPE)],
+  [12000, "CB", LINEN_BOLT_RECIPE],
+  [15000, ...craft(LINEN_BOLT, LINEN_BOLT_RECIPE)],
+  [16000, "CS", 0],
+  [17000, "TS", 0],
+
+  [20000, "ES"],
+];
+
+const BUILDS = [
+  { character: "Echo-Witness", session: 1795270000, lines: ECHO_LINES },
+  { character: "Tailor-Stranger", session: 1795360000, lines: STRANGER_LINES },
+];
+
+function partsOf(character, session, lines) {
   const byGroup = new Map();
   for (const [at, code, ...fields] of lines) {
     const group = GROUP_OF[code];
@@ -182,25 +209,31 @@ function partsOf(lines) {
       before = at;
       return row;
     });
-    const text = [["scarlet-part", 1, CHARACTER, SESSION, group].join("\t"), ...rows].join("\n") + "\n";
+    const text = [["scarlet-part", 1, character, session, group].join("\t"), ...rows].join("\n") + "\n";
     return { group, text, lines: rows.length };
   });
 }
 
-const manifestPath = path.join(DIR, "manifest.json");
-const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-const kept = manifest.parts.filter((part) => part.session !== SESSION);
-for (const part of manifest.parts) {
-  if (part.session === SESSION) fs.rmSync(path.join(DIR, `${part.id}.part`), { force: true });
+function build({ character, session, lines }) {
+  const dir = path.join(FIXTURES, character);
+  fs.mkdirSync(dir, { recursive: true });
+  const manifestPath = path.join(dir, "manifest.json");
+  const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, "utf8")) : { character, parts: [] };
+  const kept = manifest.parts.filter((part) => part.session !== session);
+  for (const part of manifest.parts) {
+    if (part.session === session) fs.rmSync(path.join(dir, `${part.id}.part`), { force: true });
+  }
+
+  const added = partsOf(character, session, lines).map(({ group, text, lines: count }) => {
+    const id = crypto.createHash("sha256").update(text).digest("hex");
+    fs.writeFileSync(path.join(dir, `${id}.part`), text);
+    return { group, id, lines: count, raw_bytes: Buffer.byteLength(text), session };
+  });
+
+  manifest.parts = [...kept, ...added];
+  manifest.set_digest = xorDigest(manifest.parts.map((part) => part.id));
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  console.log(`${character}: ${kept.length} parts kept, ${added.length} written for session ${session}`);
 }
 
-const added = partsOf(LINES).map(({ group, text, lines }) => {
-  const id = crypto.createHash("sha256").update(text).digest("hex");
-  fs.writeFileSync(path.join(DIR, `${id}.part`), text);
-  return { group, id, lines, raw_bytes: Buffer.byteLength(text), session: SESSION };
-});
-
-manifest.parts = [...kept, ...added];
-manifest.set_digest = xorDigest(manifest.parts.map((part) => part.id));
-fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-console.log(`${CHARACTER}: ${kept.length} parts kept, ${added.length} written for session ${SESSION}`);
+for (const one of BUILDS) build(one);

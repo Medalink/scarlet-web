@@ -49,8 +49,8 @@ It runs on Windows with Node 24 and no packages, takes 9 to 13 seconds and exits
 drops all of it (7 to 9 seconds); `ship` runs that on medaware before a change lands. It refuses
 any host that is not 127.0.0.1, localhost or [::1], because it deletes what it uploads.
 
-- upload: registers an install, signs requests, uploads the two invented characters of `e2e/fixture` and waits for
-  Horizon to decode them.
+- upload: registers two installs, signs requests, uploads the invented characters of `e2e/fixture` (one from the second
+  install, which no account is linked to) and waits for Horizon to decode them.
 - api: every endpoint the `/developers` page lists, the uploaded character's facts, search, 404 and 422 answers, and
   the numbers of the six professions the fixture has lines for.
 - pages: every public page shows its own heading, missing pages are 404, `/account` is closed, an app links to the
@@ -63,8 +63,9 @@ Public API answers are cached for 30 seconds at the origin, so every read adds a
 
 The server needs Horizon running, `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than
 the default rate limits for repeated runs: `SCARLET_RATE_REGISTRATION_PER_IP=100` and
-`SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 2 registrations, about 30 public API requests, about 100 page
-requests and 11 requests on the `throttle:60,1` routes, which no setting lifts.
+`SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 3 registrations (the third is the install of a character no account is
+linked to), about 30 public API requests, about 160 page requests and 23 requests on the `throttle:60,1` routes, which
+no setting lifts: wait a minute between runs.
 
 The profession checks read rollup numbers, which arrive seconds after the upload, and the server keeps a rollup read for
 60 seconds, an empty one too. So the lane waits until Horizon's `/horizon/api/jobs/pending` lists no job on three

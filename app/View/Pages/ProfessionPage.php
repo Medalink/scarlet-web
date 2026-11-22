@@ -3,6 +3,7 @@
 namespace App\View\Pages;
 
 use App\Support\Board;
+use App\Support\PageScope;
 use App\View\Charts;
 use App\View\Format;
 
@@ -10,8 +11,8 @@ use App\View\Format;
  * What the page of a gathering and the page of a crafting profession share. Each page class returns the same keys, and
  * resources/views/pages/profession.blade.php reads these: `title` (the page title), `words` (`title`, `description` and the
  * `attempt`, `attempts`, `result`, `results` and `doing` the module views read), `facts`, `callouts`, `figures`, `note`,
- * `heads` and `modules` by module key, `layout` (rows of `key`, `span`, `class`), `hoursSummary` and `dots`, which the
- * controller turns into a map when it is not null.
+ * `heads` and `modules` by module key, `layout` (rows of `key`, `span`, `class`), `hoursSummary`, `own` (the numbers are one
+ * account's) and `dots`, which the controller turns into a map when it is not null.
  */
 final class ProfessionPage
 {
@@ -61,9 +62,53 @@ final class ProfessionPage
         return ['label' => $label, 'value' => $few ? '–' : ($value ?? '–'), 'icon' => $icon];
     }
 
-    public static function few(string $what): string
+    public static function few(string $what, bool $own = false): string
     {
-        return 'The numbers show once more characters have recorded '.$what.'.';
+        return $own
+            ? 'Scarlet records this once a character of yours has recorded '.$what.'.'
+            : 'The numbers show once more characters have recorded '.$what.'.';
+    }
+
+    /**
+     * Whether an answer is a player's own: its scope holds the characters of one account.
+     *
+     * @param  array<string, mixed>  $r
+     */
+    public static function own(array $r): bool
+    {
+        return $r['scope'] instanceof PageScope && $r['scope']->characters !== null;
+    }
+
+    /** "your 2 characters", "1 of your 3 characters" when only some of them took part, or "No play recorded for your characters yet" when none has played. */
+    public static function whose(int $took, int $of): string
+    {
+        if ($of === 0) {
+            return 'No play recorded for your characters yet';
+        }
+        $all = Format::count($of, 'character');
+
+        return $took >= $of ? 'your '.$all : Format::number($took).' of your '.$all;
+    }
+
+    /**
+     * The characters a page counts in its head: how many characters took part, or on a player's own page how many of the
+     * account's characters that have played.
+     *
+     * @param  array<string, int|float|null>  $t  the page's totals, with `characters` and `scope_characters`
+     */
+    public static function by(array $t, bool $own): string
+    {
+        return $own ? self::whose((int) $t['characters'], (int) $t['scope_characters']) : Format::count((int) $t['characters'], 'character');
+    }
+
+    /**
+     * The one fact of a head whose scope is under the character threshold.
+     *
+     * @param  array<string, int|float|null>  $t
+     */
+    public static function withoutNumbers(array $t, bool $own): string
+    {
+        return $own ? self::whose(0, (int) $t['scope_characters']) : Format::TOO_FEW;
     }
 
     /** "15 seconds", "3.2 seconds": a whole number from ten seconds up. */

@@ -1,0 +1,27 @@
+{
+  "character": "Tailor-Stranger",
+  "parts": [
+    {
+      "group": "core",
+      "id": "b34fd13963329d2ba4e04261f2b30fa58b40cdcc06d4660c135fae09ee567f3b",
+      "lines": 3,
+      "raw_bytes": 182,
+      "session": 1795360000
+    },
+    {
+      "group": "professions",
+      "id": "825172b9205de771a64ac4573f960078552fe833b6d73f1f4ed0f9a0b49d847c",
+      "lines": 8,
+      "raw_bytes": 218,
+      "session": 1795360000
+    },
+    {
+      "group": "names",
+      "id": "c9ba6597b5eec8fbb39a8f4ac286f7ae0dd3e9d9604306ed82c11c8cafcaaf3f",
+      "lines": 3,
+      "raw_bytes": 132,
+      "session": 1795360000
+    }
+  ],
+  "set_digest": "f8a4c617f681b2a1b130097c0fa3f873d3bccc26d0405ffedf4e4b25f5015478"
+}

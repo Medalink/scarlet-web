@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Account\OwnCharacterIds;
 use App\Actions\Public\CraftingDashboard;
 use App\Actions\Public\GatheringDashboard;
 use App\Actions\Public\MapZones;
@@ -20,20 +21,25 @@ use App\View\Pages\MapSpec;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
-/** The page of one profession, gathering or crafting: what players do with it and how. Public. */
+/**
+ * The page of one profession, gathering or crafting: what players do with it and how. Public at `/professions/{slug}`;
+ * at `/account/professions/{slug}` the same page over only the signed-in account's characters.
+ */
 class ProfessionController extends Controller
 {
-    public function __invoke(ScopeRequest $request, GatheringDashboard $gathering, CraftingDashboard $crafting, MapZones $mapZones, string $slug): View|RedirectResponse
+    public function __invoke(ScopeRequest $request, GatheringDashboard $gathering, CraftingDashboard $crafting, MapZones $mapZones, OwnCharacterIds $ownIds, string $slug): View|RedirectResponse
     {
         $profession = Profession::fromSlug($slug);
         $scene = $profession?->scene();
         abort_if($profession === null || $scene === null, 404);
 
+        $characters = $request->ownCharacters($ownIds);
+        $own = $characters !== null;
         $asked = $request->rulesetSlug();
         $kind = $profession->gatherKind();
         $answer = $kind === null
-            ? $crafting->handle($profession, $asked, $request->serverFilter())
-            : $gathering->handle($kind, $asked, $request->serverFilter());
+            ? $crafting->handle($profession, $asked, $request->serverFilter(), $characters)
+            : $gathering->handle($kind, $asked, $request->serverFilter(), $characters);
         abort_if($answer === null, 404);
 
         /** @var PageScope $scope */
@@ -45,8 +51,9 @@ class ProfessionController extends Controller
         $rulesets = $answer['rulesets'];
         $rect = is_array($answer['heat'] ?? null) ? MapRect::query()->find((int) $answer['heat']['map']) : null;
         $page = $kind === null ? CraftingPage::data($profession, $answer) : GatheringPage::data($kind, $answer, $rect);
-        $map = $page['dots'] === null ? null : MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $mapZones->handle($scope->ids), dots: $page['dots']);
-        $path = '/professions/'.$slug;
+        $map = $page['dots'] === null ? null : MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $mapZones->handle($scope->rollup()), dots: $page['dots']);
+        $prefix = $own ? '/account' : '';
+        $path = $prefix.'/professions/'.$slug;
         $query = array_filter(['ruleset' => $scope->ruleset?->slug(), 'server' => $scope->server === Server::All ? null : $scope->server->value]);
 
         return view('pages.profession', [
@@ -54,7 +61,9 @@ class ProfessionController extends Controller
             'scene' => $scene,
             'art' => SceneArt::stage($scene),
             'filters' => Filters::onPage($scope, $rulesets, $path),
-            'trades' => $this->trades($slug, $query === [] ? '' : '?'.http_build_query($query)),
+            'trades' => $this->trades($slug, $query === [] ? '' : '?'.http_build_query($query), $prefix),
+            'own' => $own,
+            'everyone' => '/professions/'.$slug,
             'map' => $map,
             'title' => $page['title'],
             'canonical' => $path,
@@ -62,10 +71,10 @@ class ProfessionController extends Controller
     }
 
     /** @return list<array{label: string, href: string, current: bool}> every profession that has a page, each linked with the scope kept */
-    private function trades(string $slug, string $query): array
+    private function trades(string $slug, string $query, string $prefix): array
     {
         return array_map(
-            fn (Profession $profession): array => ['label' => $profession->value, 'href' => '/professions/'.$profession->slug().$query, 'current' => $profession->slug() === $slug],
+            fn (Profession $profession): array => ['label' => $profession->value, 'href' => $prefix.'/professions/'.$profession->slug().$query, 'current' => $profession->slug() === $slug],
             Profession::withPages(),
         );
     }

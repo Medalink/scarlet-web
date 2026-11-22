@@ -14,6 +14,8 @@ export const SHOWN = NAME.replace("-", " ");
 export const PROBE = "Probe-Lane";
 /** A third uploader that heard the same hardcore death notice as PROBE in the same minute. */
 export const ECHO = "Echo-Witness";
+/** A character of a second install that no account is linked to, with tailoring crafts the other characters have none of. */
+export const STRANGER = "Tailor-Stranger";
 export const LOCAL_HOSTS = ["127.0.0.1", "localhost", "[::1]"];
 /** A remember cookie makes EdgeCacheable treat the reader as signed in, so a page read reaches the origin, not the 60 s page cache. */
 export const ORIGIN_COOKIE = { name: "remember_web_e2e", value: "lane" };
