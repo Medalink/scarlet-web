@@ -13,7 +13,7 @@ const USAGE: &str = "usage:
   loadgen prepare --root <companion out dir> --folders a,b,c --out <template file>
   loadgen info --template <file>
   loadgen check --template <file>
-  loadgen run --target https://scarlet-load-app --template <file> [--ca <cert.pem>] [--rate <installs per hour>] [--ramp-to <installs per hour>]
+  loadgen run --connect scarlet-load-app --template <file> [--host scarletweb.io] [--ca <cert.pem>] [--rate <installs per hour>] [--ramp-to <installs per hour>]
               [--duration <s>] [--concurrency <n>] [--characters <n>] [--history-hours <h>] [--spread-days <n>] [--sources A,B]
               [--salt <text>] [--offset <n>] [--poll-rate <requests/s>] [--drain-seconds <s>] [--no-poll] [--retries <n>] [--log <file>] [--dry-run]";
 
@@ -146,7 +146,8 @@ fn run_command(f: &Flags) -> Result<(), String> {
         None
     } else {
         Some(client::Api::new(
-            need(f, "target")?,
+            need(f, "connect")?,
+            f.get("host").map_or("scarletweb.io", String::as_str),
             f.get("ca").map(Path::new),
         )?)
     };
@@ -210,7 +211,8 @@ fn main() -> ExitCode {
         "run" => flags(
             args,
             &[
-                "target",
+                "connect",
+                "host",
                 "template",
                 "ca",
                 "rate",

@@ -53,7 +53,7 @@ install_stack() {
   local db_ip app_ip
   "$here/bin/deploy" server
   on app 'sudo systemctl disable --now scarlet-backup.timer >/dev/null 2>&1; true'
-  on app 'cd /srv/scarlet-web && openssl req -x509 -key tls/origin.key -subj /CN=scarlet-load-app -addext subjectAltName=DNS:scarlet-load-app -days 5 -out tls/origin.pem && chmod 644 tls/origin.pem'
+  on app 'cd /srv/scarlet-web && openssl req -x509 -key tls/origin.key -subj /CN=scarlet-load-app -addext subjectAltName=DNS:scarletweb.io -addext basicConstraints=critical,CA:FALSE -days 5 -out tls/origin.pem && chmod 644 tls/origin.pem'
   printf '%s\n' "$lifted_limits" | on app 'cat >> /srv/scarlet-web/.env'
   "$here/bin/deploy" db-server
   on db '/srv/scarlet-db/deploy/db-host.sh up && /srv/scarlet-db/deploy/db-host.sh primary-ready'
@@ -85,7 +85,7 @@ case "${1:-help}" in
     ;;
   sample)
     seconds=${2:-60}
-    for role in app db; do on "$role" "cd /srv/scarlet-$([ $role = app ] && echo web || echo db) && timeout $((seconds + 5)) deploy/load-sample.sh $role $seconds" > "${TMPDIR:-/tmp}/sample-$role.tsv" & done
+    for role in app db; do on "$role" "cd /srv/scarlet-$([ $role = app ] && echo web || echo db) && timeout $((seconds + 5)) bash deploy/load-sample.sh $role $seconds" > "${TMPDIR:-/tmp}/sample-$role.tsv" & done
     wait
     ;;
   down)

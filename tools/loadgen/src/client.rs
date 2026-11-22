@@ -3,10 +3,12 @@
 use ed25519_dalek::{Signer, SigningKey};
 use scarlet_part::pseudo::hex;
 use sha2::{Digest, Sha256};
-use std::net::ToSocketAddrs;
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::Path;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use ureq::tls::{Certificate, RootCerts, TlsConfig};
+use ureq::unversioned::resolver::{ResolvedSocketAddrs, Resolver};
+use ureq::unversioned::transport::{DefaultConnector, NextTimeout};
 
 pub struct Reply {
     pub status: u16,
@@ -63,22 +65,40 @@ impl Identity {
     }
 }
 
-/// Only a host named scarlet-load-* that resolves to a private or tailnet address is a target: production's name never is.
-pub fn guard_target(base: &str) -> Result<(), String> {
-    let rest = base
-        .strip_prefix("https://")
-        .ok_or("the target must be an https URL")?;
-    let host = rest.split(['/', ':']).next().unwrap_or("");
+#[derive(Debug)]
+struct Fixed(SocketAddr);
+
+impl Resolver for Fixed {
+    fn resolve(
+        &self,
+        _uri: &ureq::http::Uri,
+        _config: &ureq::config::Config,
+        _timeout: NextTimeout,
+    ) -> Result<ResolvedSocketAddrs, ureq::Error> {
+        let mut addresses = self.empty();
+        addresses.push(self.0);
+        Ok(addresses)
+    }
+}
+
+/// The only address a request can reach: the one `name` resolves to, when `name` is scarlet-load-* and that is a private or
+/// tailnet address. Every lookup the HTTP client makes answers with it, whatever the Host header says.
+pub fn guard_connect(name: &str) -> Result<SocketAddr, String> {
+    let host = name.split(':').next().unwrap_or("");
     let allowed = host.starts_with("scarlet-load-")
         && host
             .bytes()
             .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-');
-    if !allowed || host.contains("scarletweb") {
+    if !allowed {
         return Err(format!(
-            "{host} is not a scarlet-load-* host; the generator never targets anything else"
+            "{host} is not a scarlet-load-* host; the generator never connects to anything else"
         ));
     }
-    let addresses: Vec<_> = (host, 443)
+    let port: u16 = name
+        .split_once(':')
+        .map_or(Ok(443), |(_, p)| p.parse())
+        .map_err(|_| "bad port")?;
+    let addresses: Vec<SocketAddr> = (host, port)
         .to_socket_addrs()
         .map_err(|e| format!("{host}: {e}"))?
         .collect();
@@ -88,17 +108,17 @@ pub fn guard_target(base: &str) -> Result<(), String> {
         }
         std::net::IpAddr::V6(_) => false,
     };
-    if addresses.is_empty() || !addresses.iter().all(|a| private(a.ip())) {
-        return Err(format!(
+    match addresses.first() {
+        Some(a) if addresses.iter().all(|x| private(x.ip())) => Ok(*a),
+        _ => Err(format!(
             "{host} resolves to {addresses:?}, which is not a private or tailnet address"
-        ));
+        )),
     }
-    Ok(())
 }
 
 impl Api {
-    pub fn new(base: &str, ca: Option<&Path>) -> Result<Api, String> {
-        guard_target(base)?;
+    pub fn new(connect: &str, host: &str, ca: Option<&Path>) -> Result<Api, String> {
+        let address = guard_connect(connect)?;
         let mut tls = TlsConfig::builder();
         if let Some(path) = ca {
             let pem = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
@@ -114,8 +134,8 @@ impl Api {
             .tls_config(tls.build())
             .build();
         Ok(Api {
-            agent: config.into(),
-            base: base.trim_end_matches('/').to_string(),
+            agent: ureq::Agent::with_parts(config, DefaultConnector::default(), Fixed(address)),
+            base: format!("https://{host}"),
         })
     }
 

@@ -264,7 +264,7 @@ fn upload(
             path: "/api/v1/upload/sync",
             who: Some(who),
             content_type: "application/json",
-            body: sync.as_bytes(),
+            body: format!("{sync}\n").as_bytes(),
         },
     )?;
     Ok((sent, b["match"] == json!(true)))
