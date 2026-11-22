@@ -529,13 +529,13 @@ What the layer adds to each page:
 | `/stats`, `/rulesets/{slug}` | The hero and a tally of seven figures with glyphs (characters, highest level, hours, kills, deaths, quests, dungeon runs). **Records across every character**: the deadliest creature, where most characters die, the most dangerous level, the slowest level, the busiest hour, the most run dungeon, the most trained profession and the share of experience from quests at the highest level, each from a figure the page already reads, each left out when its figure is missing. **The next round numbers**: kills, hours, quests, deaths, dungeon runs and gold earned read off a rule whose right end is the next of 10, 25, 50, 100, 250, 500 and so on. **The climb**: the median played time to each level as a ridge from level 1 to the cap, with a flag at each level where characters stand now (the published reach counts, level by level: reached L less reached L + 1) and a dotted line from the highest level anyone holds to the cap. The dotted line is not data and says so. **Classes played** and **Horde and Alliance**: characters by class and by faction (`Rollups\Roster`), a class under the character threshold left out. The modules sit in chapters: Levelling, Danger, Dungeons and skills, Gold and time, The world |
 | `/leaderboards` | The hall: every board with the character that leads it now and how many characters are on it. It replaces the redirect to one board |
 | `/leaderboards/{board}` | The first three rows of the first page stand on a podium of gold, silver and copper plinths; the table lists the rest. A new board, `most-kills` |
-| `/c/{name}` | **Marks earned**, eleven marks in four tiers (below). A mark not yet earned shows what it takes; an earned one shows what the next tier takes. `GET /public/characters/{name}` carries the same list as `marks` |
+| `/c/{name}` | **Feats**, eleven feats in four tiers (below). A feat not yet earned shows what it takes; an earned one shows what the next tier takes. `GET /public/characters/{name}` carries the same list as `feats` |
 
-Marks read numbers the character page already shows, so a mark never reveals more than its page. An observed count
+Feats read numbers the character page already shows, so a feat never reveals more than its page. An observed count
 (DESIGN "Mid-life characters") starts when Scarlet first saw the character, and the module says "since" that date
 for a character not recorded from level 1.
 
-| Mark | Counts | Copper | Silver | Gold | Scarlet |
+| Feat | Counts | Copper | Silver | Gold | Scarlet |
 | --- | --- | --- | --- | --- | --- |
 | Summit | level reached | 15 | 30 | 45 | 60 |
 | Slayer | kills | 250 | 2,500 | 10,000 | 50,000 |
@@ -549,7 +549,7 @@ for a character not recorded from level 1.
 | Angler | fish caught | 50 | 250 | 1,000 | 5,000 |
 | Gatherer | nodes gathered | 50 | 250 | 1,000 | 5,000 |
 
-The marks and their thresholds are one table in code (`App\Support\Mark`). Nothing is stored: a mark is computed
+The feats and their thresholds are one table in code (`App\Support\Feat`). Nothing is stored: a feat is computed
 from the character's totals on each read, so a re-decode or a removal changes it with no migration.
 
 ### Versions and release notes
@@ -582,7 +582,7 @@ least 7 days old) turns git history into a version and release notes.
   without a link, until a hardcore ruleset has data. The address of a ruleset is its kind (`/rulesets/normal`); an
   address from before kinds redirects to the ruleset that took it over. Rows with no sessions are not listed.
 - **Art and game layer**: the contour sheet, the map hero, the tally, records, rules, the climb, the roster, the hall,
-  the podium and marks are not in the comps or in the gallery that rebuilds them (`/design/*`). "Art and game
+  the podium and feats are not in the comps or in the gallery that rebuilds them (`/design/*`). "Art and game
   layer" above is their design.
 - **Class filter**: leaderboards filter by class (`characters.class`). The dashboards and result pages do not: no
   aggregate carries the class.

@@ -1,5 +1,5 @@
 /* Scarlet web app: the art and game layer of the stats pages (docs/DESIGN.md, "Art and game layer"). The sheet stays
-   the survey sheet: contour lines behind it, the world map as the hero, metals for ranks and marks, the game's class
+   the survey sheet: contour lines behind it, the world map as the hero, metals for ranks and feats, the game's class
    colours for names. Loads after app.css and restyles nothing it owns. */
 :root {
   --contours: url("/art/contours.svg");
@@ -125,28 +125,28 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .hall .val small { display: block; margin-top: 0.3rem; font: 400 0.86rem/1 var(--body); color: var(--muted); }
 .hall .none { color: var(--muted); }
 
-/* Marks: what a character has earned, struck in copper, silver, gold and scarlet. A mark not yet earned is a dashed
+/* Feats: what a character has earned, struck in copper, silver, gold and scarlet. A feat not yet earned is a dashed
    ring with what it takes. */
-.marks { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1.7rem 2.4rem; margin-top: 1.4rem; }
-.mark { display: grid; grid-template-columns: 4.4rem minmax(0, 1fr); column-gap: 1rem; align-items: center; --metal: var(--muted); }
-.mark.t1 { --metal: var(--copper); } .mark.t2 { --metal: var(--silver); } .mark.t3 { --metal: var(--gold); } .mark.t4 { --metal: var(--accent); }
+.feats { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1.7rem 2.4rem; margin-top: 1.4rem; }
+.feat { display: grid; grid-template-columns: 4.4rem minmax(0, 1fr); column-gap: 1rem; align-items: center; --metal: var(--muted); }
+.feat.t1 { --metal: var(--copper); } .feat.t2 { --metal: var(--silver); } .feat.t3 { --metal: var(--gold); } .feat.t4 { --metal: var(--accent); }
 .seal { position: relative; width: 4.4rem; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; color: var(--metal); border: 2px solid currentColor; background: radial-gradient(circle, color-mix(in srgb, var(--metal) 20%, transparent) 0 54%, transparent 55%); }
 .seal::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: repeating-conic-gradient(currentColor 0 1.4deg, transparent 1.4deg 15deg); mask-image: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px)); }
 .seal .ico { width: 1.7rem; height: 1.7rem; }
-.mark.t4 .seal { background: var(--accent); color: var(--ink); border-color: var(--accent); }
-.mark.t0 .seal { border-style: dashed; border-width: 1.5px; background: none; }
-.mark.t0 .seal::before { content: none; }
-.mark-n { display: flex; align-items: baseline; gap: 0.5rem; font: 750 1.45rem/1 var(--display); color: var(--fg); }
-.mark.t0 .mark-n { color: var(--text); }
-.mark-n small { font: 500 0.66rem/1 var(--mono); font-stretch: 85%; color: var(--metal); border: 1px solid color-mix(in srgb, var(--metal) 50%, transparent); border-radius: 2px; padding: 0.2rem 0.38rem; translate: 0 -0.15em; }
-.mark.t4 .mark-n small { color: var(--soft); }
-.mark-d { margin-top: 0.3rem; font-size: 0.9rem; color: var(--text); }
-.mark.t0 .mark-d { color: var(--muted); }
-.mark-to { display: block; height: 3px; margin-top: 0.55rem; background: var(--line2); border-radius: 2px; }
-.mark-to i { display: block; height: 100%; width: var(--at); min-width: 3px; background: var(--metal); border-radius: 2px; transform-origin: left center; }
-.mark.t4 .mark-to i { background: var(--accent); }
-.marks-sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 1.4rem; margin-top: 0.5rem; color: var(--text); }
-.marks-sum b { font: 750 1.9rem/1 var(--display); color: var(--fg); margin-right: 0.35rem; }
+.feat.t4 .seal { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+.feat.t0 .seal { border-style: dashed; border-width: 1.5px; background: none; }
+.feat.t0 .seal::before { content: none; }
+.feat-n { display: flex; align-items: baseline; gap: 0.5rem; font: 750 1.45rem/1 var(--display); color: var(--fg); }
+.feat.t0 .feat-n { color: var(--text); }
+.feat-n small { font: 500 0.66rem/1 var(--mono); font-stretch: 85%; color: var(--metal); border: 1px solid color-mix(in srgb, var(--metal) 50%, transparent); border-radius: 2px; padding: 0.2rem 0.38rem; translate: 0 -0.15em; }
+.feat.t4 .feat-n small { color: var(--soft); }
+.feat-d { margin-top: 0.3rem; font-size: 0.9rem; color: var(--text); }
+.feat.t0 .feat-d { color: var(--muted); }
+.feat-to { display: block; height: 3px; margin-top: 0.55rem; background: var(--line2); border-radius: 2px; }
+.feat-to i { display: block; height: 100%; width: var(--at); min-width: 3px; background: var(--metal); border-radius: 2px; transform-origin: left center; }
+.feat.t4 .feat-to i { background: var(--accent); }
+.feats-sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 1.4rem; margin-top: 0.5rem; color: var(--text); }
+.feats-sum b { font: 750 1.9rem/1 var(--display); color: var(--fg); margin-right: 0.35rem; }
 
 /* Chapter heads on a dashboard get the display size back and a rule that starts scarlet. */
 .sheet > .sect { position: relative; }
@@ -185,7 +185,7 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
     @keyframes grow-x { from { scale: 0 1; } }
     @keyframes grow-y { from { scale: 1 0; } }
     @keyframes rise { from { opacity: 0; translate: 0 0.8rem; } }
-    .rule i, .mark-to i, .rank .track i { animation: grow-x linear backwards; animation-timeline: view(); animation-range: entry 10% cover 28%; animation-timing-function: var(--ease-out); }
+    .rule i, .feat-to i, .rank .track i { animation: grow-x linear backwards; animation-timeline: view(); animation-range: entry 10% cover 28%; animation-timing-function: var(--ease-out); }
     .rank .track i { transform-origin: left center; }
     .podium .plinth { animation: grow-y linear backwards; animation-timeline: view(); animation-range: entry 0% cover 30%; }
     .ascent .flag { animation: rise linear backwards; animation-timeline: view(); animation-range: entry 20% cover 35%; }
