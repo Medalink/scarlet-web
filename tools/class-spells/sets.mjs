@@ -1,3 +1,6 @@
+// Spell names grouped into the sets that part/src/sets.rs holds as ids. `seal` and `judge` list the seals and judgements
+// that the client's paladin skill lines (Holy, Protection, Retribution) teach, not every spell with such a name; every
+// `Aspect of the` spell is a hunter spell of the Beast Mastery line, so `aspect` matches the prefix.
 const prefix = (text) => ({ prefix: text });
 const renamed = (name, client, ids) => ({ name, client, ids });
 
@@ -14,8 +17,27 @@ export const SETS = {
         'Frost Resistance Aura',
         'Shadow Resistance Aura',
     ],
-    seal: [prefix('Seal of ')],
-    judge: [prefix('Judgement')],
+    seal: [
+        'Seal of Command',
+        'Seal of Fury',
+        'Seal of Justice',
+        'Seal of Light',
+        'Seal of Martyrdom',
+        'Seal of Righteousness',
+        'Seal of the Crusader',
+        'Seal of Wisdom',
+    ],
+    judge: [
+        'Judgement',
+        'Judgement of Command',
+        'Judgement of Fury',
+        'Judgement of Justice',
+        'Judgement of Light',
+        'Judgement of Martyrdom',
+        'Judgement of Righteousness',
+        'Judgement of Wisdom',
+        'Judgement of the Crusader',
+    ],
     opener: ['Cheap Shot', 'Ambush', 'Garrote', 'Sap', 'Pounce', 'Ravage'],
     finisher: ['Eviscerate', 'Slice and Dice', 'Kidney Shot', 'Rupture', 'Expose Armor', 'Ferocious Bite', 'Rip'],
     stealth: ['Stealth', 'Prowl'],

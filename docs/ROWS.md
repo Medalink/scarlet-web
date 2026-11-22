@@ -147,7 +147,11 @@ The spell id sets that `class_tallies` matches (`form`, `stance`, `aspect`, `pal
 `finisher`, `stealth`, `watch`) are ids, because the decoder cannot rely on a session's name lines.
 `tools/class-spells/build.mjs` writes them to `part/src/sets.rs` from the client's `SpellName` table and the name
 patterns of `tools/class-spells/sets.mjs`, every rank of a name. Edit the patterns and run the tool again; never edit
-`sets.rs`.
+`sets.rs`. `seal` and `judge` name the seals and judgements that the client's paladin skill lines (Holy, Protection and
+Retribution) teach, so `Seal of the Dawn` (an item's aura), `Seal of Might`, the `Seal of Fire` tests and the
+`Judgement` spells of creatures are not in them; `aspect` takes every `Aspect of the` spell, all of which are on the
+hunter's Beast Mastery line. The sets hold `form` 23 ids, `stance` 7, `aspect` 22, `pal_aura` 34, `seal` 74, `judge` 63,
+`opener` 57, `finisher` 58, `stealth` 30 and `watch` 169.
 
 **Values a line may carry.** The six tables read lines that an addon or a hand-made part can fill with anything, so a
 value is held to what its column stores:
