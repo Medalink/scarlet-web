@@ -191,6 +191,9 @@ spell was instant.
 | `streak` | int | the longest run of `C` lines of this spell with no `C` of another spell between them. `CH` and `CI` lines do not break a run, and a run goes on across a level-up: the row holds the longest run that reached a cast at its level (decoder version 14) |
 
 A page that wants a spell's casts in the session sums `casts` over the spell's rows, and takes the largest `streak`.
+`fight_casts`, `channel_ms`, `interrupts` and `streak` are columns added to a table that has compressed chunks, so they
+are nullable with no default: a row stored before decoder version 14 reads null in them until its session is decoded
+again, and a reader treats null as 0. The decoder always writes a value.
 
 ### `meter_totals` (combat: `DM`, `DP`)
 
@@ -201,7 +204,7 @@ total that is not a number writes nothing.
 | Key | Type | |
 | --- | --- | --- |
 | `meter` | string | `d` damage, `h` healing, `t` damage taken, `a` absorbs, `i` interrupts, `x` dispels |
-| `place` | string | the instance type in force at the `DM` line: `w` open world (`none`, or no `Z` line yet), `d` dungeon (`party`, `scenario`), `r` raid, `b` battleground or arena (`pvp`, `arena`). The column is null on a row stored before decoder version 14 |
+| `place` | string | the instance type in force at the `DM` line: `w` open world (`none`, or no `Z` line yet), `d` dungeon (`party`, `scenario`), `r` raid, `b` battleground or arena (`pvp`, `arena`). The column is null on a row stored before decoder version 14, as are `group_total`, `group_own` and `group_fights`, which a reader treats as 0 |
 | `total` | int | the fights' totals summed |
 | `best` | int | the largest single fight total |
 | `fights` | int | the meter's `DM` lines |
