@@ -10,6 +10,7 @@ const RECORDS = { characters: NAME, creatures: "113", items: "769", quests: "783
 const SHAPES = [
   ["/stats", ["totals", "coverage", "rulesets"]],
   ["/camps", ["totals", "fires", "camp_benefits", "benefits", "lengths", "by_level", "hours", "buffed", "zones", "heat", "board", "rulesets"]],
+  ["/professions/{slug}", ["kind", "totals", "items", "contents", "waits", "per_point", "by_level", "hours", "lures", "lured", "poles", "creatures", "zones", "heat", "board", "rulesets"]],
   ["/rulesets", ["slug", "label", "kind", "hardcore", "recorded"]],
   ["/rulesets/{slug}", ["totals", "coverage", "rulesets"]],
   ["/rulesets/{slug}/series/{series}", ["levels", "reached", "time_per_level"]],

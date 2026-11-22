@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Public\CampsController;
 use App\Http\Controllers\Api\V1\Public\CharacterController;
 use App\Http\Controllers\Api\V1\Public\LeaderboardController;
 use App\Http\Controllers\Api\V1\Public\MapController;
+use App\Http\Controllers\Api\V1\Public\ProfessionController;
 use App\Http\Controllers\Api\V1\Public\RecordController;
 use App\Http\Controllers\Api\V1\Public\SearchController;
 use App\Http\Controllers\Api\V1\Public\StatsController;
@@ -20,7 +21,7 @@ final class PublicApiCatalog
     public const string ROUTE_PREFIX = 'public.';
 
     /** The endpoints whose answers name characters. */
-    public const array NAMES_CHARACTERS = ['leaderboard', 'camps', 'search', 'character', 'character-series'];
+    public const array NAMES_CHARACTERS = ['leaderboard', 'camps', 'profession', 'search', 'character', 'character-series'];
 
     /** The shared parameters, named once and referred to by the endpoints. */
     public const array PARAMS = [
@@ -53,6 +54,13 @@ final class PublicApiCatalog
                 'example' => '/camps', 'where' => [],
             ],
             [
+                'name' => 'profession', 'group' => 'Statistics', 'path' => '/professions/{slug}', 'action' => ProfessionController::class,
+                'summary' => 'How characters gather with one gathering profession: attempts and catches, the time they take, what they give, the rank characters reach, where and when they gather, and the characters with the most catches. `fishing`, `herbalism`, `mining` and `skinning` answer; every other profession answers 404.',
+                'params' => [['slug', 'path', 'string', 'A profession slug: `fishing`, `herbalism`, `mining` or `skinning`.'], 'ruleset', 'server'],
+                'returns' => '`data.kind` (`fish`, `herb`, `ore` or `skin`), `totals` (`attempts`, `looted`, `characters`, `scope_characters`, `seconds`, `played_seconds`, `median_seconds`, `trips` with their median length and attempts, `in_combat`, `skill_ups`, `median_skill`, `at_cap`, `items`, `container_catches`, and `schools` for fishing or `first_strikes` for mining, `null` for the others), `items` and `contents` (what came out of caught containers), `waits` (looted attempts by `step` of 2 seconds, 15 is 30 seconds and over), `per_point` (by `band` of 25 ranks), `by_level`, `hours` (attempt starts by UTC `weekday`, 0 is Sunday, and `hour`), `lures`, `lured` and `poles` (fishing), `creatures` (skinning), `zones`, `heat` (cells of the zone map with the most attempts, counted as `visits`), `board` (the first rows of the board of looted attempts) and `rulesets`. A figure is `null` or its row is left out while fewer than `meta.min_characters` characters contributed to it.',
+                'example' => '/professions/fishing', 'where' => ['slug' => '[a-z-]+'],
+            ],
+            [
                 'name' => 'rulesets', 'group' => 'Statistics', 'path' => '/rulesets', 'action' => [StatsController::class, 'rulesets'],
                 'summary' => 'Every ruleset with the numbers of the comparison table and its levelling curve.',
                 'params' => [],
@@ -75,7 +83,7 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'leaderboards', 'group' => 'Leaderboards', 'path' => '/leaderboards', 'action' => [LeaderboardController::class, 'index'],
-                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most jumps, most dungeon runs, most distance and most time by the fire.',
+                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most jumps, most dungeon runs, most distance, most time by the fire, most fish caught, most herbs gathered, most ore mined and most creatures skinned.',
                 'params' => [],
                 'returns' => '`data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).',
                 'example' => '/leaderboards', 'where' => [],

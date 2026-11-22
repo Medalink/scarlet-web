@@ -272,7 +272,7 @@ built from FORMAT.md (a cast, then an `LO c` of the creature) and no recording h
 | `skill_up` | bool | the rank rose within 2 s after the loot window (after the end of the cast without one). Read from the `SL` rank, not from `SK`, which is named by locale |
 | `gap` | number or null | seconds from the end of the previous attempt of the same kind (its loot window when it had one) to `at`, when that is 120 s or less and not negative. Null starts a new trip |
 | `lure_spell` | int or null | fishing: the spell cast for the last lure applied to the pole in the main hand, in this session |
-| `lure_age` | number or null | fishing: seconds from that application to `at`. A page decides how long a lure lasts |
+| `lure_age` | number or null | fishing: seconds from that application to `at`. A page decides how long a lure lasts: `GatherKind::LURE_SECONDS` is 600, the classic length, and no recording has confirmed it |
 | `pole_item` | int or null | fishing: the main hand item (`G` slot 16) at the cast, or the item a lure was applied to (see `crafts`) when no `G` of the slot came before. Null when the session has said neither; a removed `build` group nulls it |
 | `in_combat` | bool or null | an `F 1` is open at the cast |
 | `map`, `x`, `y` | int or null | the last `P` at or before the cast, as `path_points` reads it. Null without a `movement` part or before a first `P` |

@@ -18,6 +18,33 @@ enum Board: string
     case MostDungeonRuns = 'most-dungeon-runs';
     case MostDistance = 'most-distance';
     case MostTimeByTheFire = 'most-time-by-the-fire';
+    case MostFishCaught = 'most-fish-caught';
+    case MostHerbsGathered = 'most-herbs-gathered';
+    case MostOreMined = 'most-ore-mined';
+    case MostCreaturesSkinned = 'most-creatures-skinned';
+
+    /** The board of a gathering: its most looted attempts. */
+    public static function ofGathering(GatherKind $kind): self
+    {
+        return match ($kind) {
+            GatherKind::Fish => self::MostFishCaught,
+            GatherKind::Herb => self::MostHerbsGathered,
+            GatherKind::Ore => self::MostOreMined,
+            GatherKind::Skin => self::MostCreaturesSkinned,
+        };
+    }
+
+    /** The gathering a board counts, null for the others. */
+    public function gathering(): ?GatherKind
+    {
+        return match ($this) {
+            self::MostFishCaught => GatherKind::Fish,
+            self::MostHerbsGathered => GatherKind::Herb,
+            self::MostOreMined => GatherKind::Ore,
+            self::MostCreaturesSkinned => GatherKind::Skin,
+            default => null,
+        };
+    }
 
     public function title(): string
     {
@@ -31,6 +58,10 @@ enum Board: string
             self::MostDungeonRuns => 'Most dungeon runs',
             self::MostDistance => 'Most distance travelled',
             self::MostTimeByTheFire => 'Most time by the fire',
+            self::MostFishCaught => 'Most fish caught',
+            self::MostHerbsGathered => 'Most herbs gathered',
+            self::MostOreMined => 'Most ore mined',
+            self::MostCreaturesSkinned => 'Most creatures skinned',
         };
     }
 
@@ -46,6 +77,8 @@ enum Board: string
             self::MostDungeonRuns => 'dungeons',
             self::MostDistance => 'distance',
             self::MostTimeByTheFire => 'hours',
+            self::MostFishCaught => 'fish',
+            self::MostHerbsGathered, self::MostOreMined, self::MostCreaturesSkinned => 'gather',
         };
     }
 
@@ -61,6 +94,10 @@ enum Board: string
             self::MostDungeonRuns => 'Dungeon runs by public characters, counted from each one\'s first recorded session.',
             self::MostDistance => 'The length of the recorded path on the world map, in world widths: 1.0 is the width of the map. Teleports and loading screens are left out.',
             self::MostTimeByTheFire => 'Time spent near a campfire by public characters, counted from each one\'s first recorded session.',
+            self::MostFishCaught => 'Casts that caught something, by public characters, counted from each one\'s first recorded session.',
+            self::MostHerbsGathered => 'Herbs gathered by public characters, counted from each one\'s first recorded session.',
+            self::MostOreMined => 'Veins mined by public characters, counted from each one\'s first recorded session.',
+            self::MostCreaturesSkinned => 'Creatures skinned by public characters, counted from each one\'s first recorded session.',
         };
     }
 
@@ -88,6 +125,10 @@ enum Board: string
             self::MostDungeonRuns => 'Runs',
             self::MostDistance => 'World widths',
             self::MostTimeByTheFire => 'Time by the fire',
+            self::MostFishCaught => 'Fish',
+            self::MostHerbsGathered => 'Herbs',
+            self::MostOreMined => 'Veins',
+            self::MostCreaturesSkinned => 'Creatures',
         };
     }
 

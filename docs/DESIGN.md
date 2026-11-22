@@ -370,12 +370,21 @@ public gold-by-level means, while `money_daily_character` reads every row. `kill
 | `camp_heat_daily_ruleset` | 1 day | map, 100 x 100 cell | visits |
 | `camp_benefits_daily_ruleset` | 1 day | spell, level | gains, seconds held, lost to death, experience and the seconds it was known for, deaths |
 | `camp_stays_daily_character` | 1 day | character | seconds, visits; read by the board of time by the fire |
+| `gathers_hourly_ruleset` | 1 hour | kind, level, zone | attempts, looted, seconds, gap seconds, trips (rows with no gap), in combat, skill-ups, first strikes, looted seconds as a percentile sketch |
+| `gathers_daily_shape_ruleset` | 1 day | kind, wait step (seconds / 2, at most 15, looted only), rank band (25) | looted, skill-ups |
+| `gathers_daily_source_ruleset` | 1 day | kind, source (the loot window's object or creature) | attempts, looted |
+| `gathers_daily_gear_ruleset` | 1 day | kind, lure spell, lure age in whole minutes (rounded up, at most 30), pole item | casts |
+| `gathers_heat_daily_ruleset` | 1 day | kind, map, 100 x 100 cell | attempts |
+| `gathers_daily_character` | 1 day | kind, character, level | attempts, looted, skill-ups, highest rank; read by the four gathering boards and the rank medians |
+| `gather_items_daily_ruleset` | 1 day | kind, item, container item, zone | item rows, quantity, rank as a percentile sketch |
+
+Every gathering aggregate except the by-character one carries the characters that contributed, as a hyperloglog.
 
 Reads go through one Action per question in `app/Actions/Rollups/` (`LevellingCurve`, `TimePerLevel`, `XpSourcesByLevel`,
 `DeathsByLevel`, `TopKillers`, `DeathZones`, `DungeonRuns`, `Professions`, `GoldByLevel`, `PlayTimeByWeekday`,
 `PathHeatCells`, `DeathHeatCells`, `CreatureKills`, `DropRates`, `ItemSources`, `QuestTurnIns`, `TopEmotes`, `Totals`, and for the camps
 `CampTotals`, `CampFires`, `CampLengths`, `CampByLevel`, `CampHours`, `CampZones`, `CampHeat`, `CampBenefitsBySpell` and
-`CampBuffed`). Each takes an
+`CampBuffed`, and for the gatherings the `Gather*` reads from `GatherTotals` to `GatherSchools`). Each takes an
 optional ruleset (none sums every ruleset) and leaves out any group that fewer than `config('scarlet.min_characters')`
 characters contributed to; `Totals` returns null for such a total. Pages and the public API call these and never query a
 fact table. The drop aggregates carry no ruleset, so `DropRates` and `ItemSources` take none. Heat cells are zone-map
@@ -390,6 +399,20 @@ seconds from `xp_daily_ruleset`, `deaths_daily_ruleset` and `play_hourly_ruleset
 enter the sum, a level nobody played is left out and the sum is scaled up to all the seconds held. A figure that counts visits or gains is
 shown by the characters who had one, not by those who only carried a stay or a buff in. A scope under
 the character threshold answers zero totals and no rows; a campfire tier or benefit under it counts zero.
+
+**Gathering.** `GatheringDashboard` is the one read of `/public/professions/{slug}` for the four gathering professions
+(`Profession::gatherKind()` is the one owner of slug, skill line and kind for all twelve professions with a page; a
+crafting slug is 404 until its page ships). It is built from the seven gathering aggregates through `Gather*` reads under
+`app/Actions/Rollups/`, `Leaderboard` for the four boards (`most-fish-caught`, `most-herbs-gathered`, `most-ore-mined`,
+`most-creatures-skinned`, looted attempts of public characters, from `gathers_daily_character`), and `play_hourly_ruleset`
+for the time played. One figure reads the rows of the last 90 days, since no aggregate carries a median over runs: `GatherTrips` (a trip
+is a run of attempts of one session chained by `gap`, from its first cast to the end of its last; a run the session
+starts with after a cancelled cast counts as a trip too, so the median can run over more trips than `trips`, which counts
+the rows with no gap). The medians of rank are over characters, from `gathers_daily_character`. `seconds` of fishing adds
+the gaps between casts, which is the time at the water. A lure counts while its age is at most `GatherKind::LURE_SECONDS`,
+which is read when the answer is built, so the aggregate keeps whole minutes. `container_catches` counts the item rows
+that were later opened as a container in the scope, so a cast that gave two of them counts twice. `heat` counts attempts
+as `visits`, like the camps' heat. A scope under the character threshold answers zero totals and no rows.
 
 Aggregates refresh on a policy and once more, for the affected time range, after a decode or a removal. Removing a
 group or everything deletes the fact rows; TimescaleDB records the change and the refresh takes the contribution out
@@ -546,7 +569,7 @@ Versioned by path: `/api/v1`. A breaking change is `/api/v2`; fields are only ev
   `PUT|DELETE /upload/groups/{key}`, `DELETE /upload`.
 - **Public**, read-only JSON, no sign-in: `GET /public/stats`, `/public/rulesets`, `/public/rulesets/{id}` and its
   series (`/levels`, `/xp`, `/deaths`, `/dungeons`, `/professions`, `/gold`, `/activity`), `/public/leaderboards/{board}`,
-  `/public/camps`, `/public/search?q=`, `/public/characters/{name}` and its series, `/public/creatures/{id}`, `/public/items/{id}`,
+  `/public/camps`, `/public/professions/{slug}`, `/public/search?q=`, `/public/characters/{name}` and its series, `/public/creatures/{id}`, `/public/items/{id}`,
   `/public/spells/{id}`, `/public/encounters/{id}`, `/public/zones/{id}`, `/public/quests/{id}`, `/public/map/heat`. `Access-Control-Allow-Origin: *`,
   `Cache-Control: public, max-age=300` with an `ETag`, cursor pagination (`?cursor=`, `next_cursor` in the answer),
   60 requests a minute per IP, 600 with a free API key (a Sanctum token made on the account page, sent as a bearer
@@ -678,7 +701,7 @@ What the layer adds to each page:
 | --- | --- |
 | `/stats`, `/rulesets/{slug}` | The hero and a tally of seven figures with glyphs (characters, highest level, hours, kills, deaths, quests, dungeon runs). **Records across every character**: the deadliest creature, where most characters die, the most dangerous level, the slowest level, the busiest hour, the most run dungeon, the most trained profession (professions only, not weapon skills), the most used emote across characters and the share of experience from quests at the highest level, each from a figure the page already reads, each left out when its figure is missing. One death is not a record: the creature and the place need two. **The next round numbers**: kills, hours, quests, deaths, dungeon runs, jumps and gold earned read off a rule whose right end is the next of 10, 25, 50, 100, 250, 500 and so on. **The climb**: the median played time to each level as a ridge from level 1 to the cap, with a flag at each level where characters stand now (the published reach counts, level by level: reached L less reached L + 1) and a dotted line from the end of the ridge to the cap. The dotted line is not data and says so; a flag at a level past the ridge stands on it. A flag is one level's own count, so one under the character threshold is not drawn. The climb is left out until the curve has two levels. **Classes played** and **Horde and Alliance**: characters by class and by faction (`Rollups\Roster`), a class under the character threshold left out. The modules sit in chapters: Levelling, Danger, Dungeons and skills, Who plays, Gold and time, The world. The tally replaces the old figures row; the count at the level cap stays in the level cap table |
 | `/leaderboards` | The hall: every board with the character that leads it now and how many characters are on it, for the chosen ruleset and server. It replaces the redirect to one board, and the board picker's first choice, "All boards", leads back to it |
-| `/leaderboards/{board}` | The first three rows of the first page stand on a podium of gold, silver and copper plinths; the table lists the rest, and later pages are the table alone. New boards: `most-kills`, creatures killed, and `most-jumps`, jumps, both counted from the first recorded session, and `most-time-by-the-fire`, seconds near a campfire (`camp_stays_daily_character`, counted stays) |
+| `/leaderboards/{board}` | The first three rows of the first page stand on a podium of gold, silver and copper plinths; the table lists the rest, and later pages are the table alone. New boards: `most-kills`, creatures killed, and `most-jumps`, jumps, both counted from the first recorded session, and `most-time-by-the-fire`, seconds near a campfire (`camp_stays_daily_character`, counted stays), and `most-fish-caught`, `most-herbs-gathered`, `most-ore-mined` and `most-creatures-skinned`, looted gathering attempts (`gathers_daily_character`, counted rows) |
 | `/c/{name}` | The head carries the class colour on its dot, a glyph on each figure and a rule from level 1 to the cap with the character's level marked. Record tiles carry glyphs. **Standings**: the character's place on every board it is on, among public characters of every ruleset, with gold, silver and copper for the first three places, each linking to its board; shown for a public character only, since a board lists no other. `GET /public/characters/{name}` carries the same list as `standings`. Records tiles for **Jumps** and the **Favourite emote**, and a bar of **distance by mode** (running, walking, mounted, swimming, flying, in yards): each shown only when the character has rows for it, so an owner who stopped sharing `movement` or `social` loses nothing. **Feats**, 75 feats of five tiers each (below). The page shows the six rarest the character has earned in two rows of three, and "View all" opens a dialog with every feat: those earned first, then those not yet earned. **Pinned feats**: the owner pins up to three feats (`characters.pinned_feats`, a list of feat keys in pin order, limit `Character::MAX_PINNED_FEATS`) with a toggle on each card in the dialog, whose header shows "2 of 3 pinned". Pinned feats show for every viewer in a row of their own above the six, in pin order, in the same three-column grid. A pinned feat is not also one of the six: the next feat in the order takes its place. In the dialog a pinned feat stays in its group. A fourth pin is refused until one is unpinned. A pinned feat with no row for the viewer (a gold feat while the economy is hidden, or a feat not stored) is skipped. The toggles are a Livewire component for the owner only (`?as=visitor` shows none); visitors get plain HTML with no Livewire. The dialog stays open at its scroll position while a pin saves. A visitor's page is edge-cached for a short time and the API answer for 30 seconds, so a visitor may see the old pins until they expire. The summary counts feats (`{held} of {total} feats`) and, by the tier each holds now, how many are legend, scarlet, gold, silver and copper. A feat not yet earned shows what copper takes; one with a tier shows what the next takes, and a track of five segments shows how far up it is. The order is rarity: the fewest characters holding the tier this character holds, ties by the higher tier, then the order of the table below; the feats not yet earned follow, closest to copper first. Rarity orders the list and is never shown or published. The gold feats (Earner, Spender, Tycoon, Windfall) are listed only when the economy is shown. `GET /public/characters/{name}` carries the same list as `feats`, each with `pinned`; a pinned feat keeps its place in that list |
 
 A feat counts what the character shares, and the gold feats follow the economy switch. An observed count

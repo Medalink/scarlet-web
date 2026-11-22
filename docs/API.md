@@ -305,7 +305,7 @@ Take the slugs from `GET /public/rulesets`.
 - Over the limit the answer is `429 rate_limited` with `Retry-After` in seconds and `retry_after` in the body.
   `X-RateLimit-Limit` and `X-RateLimit-Remaining` are on every answer.
 - `Cache-Control: public, max-age=300` and an `ETag` on every successful answer; `max-age=30` on the answers that name
-  characters (leaderboards, camps, search and characters). Send the tag back as `If-None-Match`: an unchanged answer is `304`
+  characters (leaderboards, camps, professions, search and characters). Send the tag back as `If-None-Match`: an unchanged answer is `304`
   with no body. `Vary: Authorization`.
 - CORS is open: `Access-Control-Allow-Origin: *` for `GET` and `OPTIONS`, with `ETag`, `Retry-After` and the rate-limit
   headers exposed to scripts.
@@ -380,6 +380,47 @@ cached for 30 seconds.
 
 Example: `curl https://<host>/api/v1/public/camps`
 
+#### `GET /public/professions/{slug}`
+
+How characters gather with one gathering profession: attempts and catches, the time they take, what they give, the rank characters reach, where and when they gather, and the characters with the most catches. `fishing`, `herbalism`, `mining` and `skinning` answer; every other profession slug, and a slug that names none, answers `404 not_found`.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `slug` | path | string | A profession slug: `fishing`, `herbalism`, `mining` or `skinning`. |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
+
+An attempt is one cast of the gathering spell; it is looted when a loot window followed it. `data`:
+
+- `kind`: `fish`, `herb`, `ore` or `skin`.
+- `totals`: `attempts`, `looted`, `characters`, `scope_characters` (characters with any play in the scope), `seconds`
+  (the time cast; for fishing also the gaps between casts, which is the time at the water), `played_seconds` (all play in
+  the scope), `median_seconds` (of the looted attempts: for fishing the wait for a bite), `trips` (attempts that start a
+  run, one with no gap of 120 seconds or less before it) with `median_trip_seconds` and `median_trip_attempts`, `in_combat`,
+  `skill_ups`, `median_skill` (over characters, of the highest rank each had), `at_cap` (characters at rank 300),
+  `items` (different items given), `container_catches` (item rows that were opened later as a container) and, for
+  fishing, `schools` (catches from a school, not the bobber's) or, for mining, `first_strikes` (`null` for the others).
+- `items`: the twelve items attempts gave most, with `quantity`, `gathers` (item rows), `characters`, `median_skill` and
+  the `zone` where it came up most. `contents`: the eight items most often taken out of caught containers
+  (`quantity`, `opens`).
+- `waits`: looted attempts by `step` of two seconds, 15 meaning 30 seconds and over. `per_point`: `looted` and
+  `skill_ups` by `band` of 25 ranks. `by_level`: `median_skill` and `characters` at each character level.
+  `hours`: attempt starts by UTC `weekday` (0 is Sunday) and `hour`.
+- Fishing: `lures` (the six lures most casts were made under, `spell_id`, `name`, `casts`; a lure counts for 600 seconds,
+  the classic length, which no recording has confirmed), `lured` (the casts counted in `lures`) and `poles` (the six
+  poles most casts were made with, `item_id`, `name`, `casts`). Both lists are empty and `lured` is `null` for the others.
+- Skinning: `creatures`, the ten creatures most often skinned (`npc_id`, `name`, `gathers`, `characters`); empty for the others.
+- `zones`: the ten zones with the most looted attempts. `heat`: the zone map with the most attempts (`zone_id`, `map`,
+  `name`) and its 100 by 100 `cells`, with the attempts as `visits`.
+- `board`: the first ten rows of the board of looted attempts (`most-fish-caught`, `most-herbs-gathered`, `most-ore-mined`
+  or `most-creatures-skinned`), shaped like `/leaderboards/{board}`, and `rulesets`.
+
+A figure is `null` or its row is left out while fewer than `meta.min_characters` characters contributed to it. Under
+that limit for the whole scope, the totals are 0 and `characters` is `null`. This answer names characters, so it is
+cached for 30 seconds.
+
+Example: `curl https://<host>/api/v1/public/professions/fishing`
+
 #### `GET /public/rulesets`
 
 Every ruleset with the numbers of the comparison table and its levelling curve.
@@ -417,7 +458,7 @@ Example: `curl https://<host>/api/v1/public/rulesets/all/series/levels`
 
 #### `GET /public/leaderboards`
 
-The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most dungeon runs, most distance and most time by the fire.
+The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most dungeon runs, most distance, most time by the fire, most fish caught, most herbs gathered, most ore mined and most creatures skinned.
 
 `data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).
 

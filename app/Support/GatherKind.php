@@ -13,6 +13,15 @@ enum GatherKind: string
     case Ore = 'ore';
     case Skin = 'skin';
 
+    /** The `LO` object id of a fishing bobber: a looted catch from any other source is a school's. */
+    public const int BOBBER = 35591;
+
+    /** How long a lure lasts, in seconds: a whole number of minutes, 1800 at most (the aggregate groups every older lure as one). This is the classic length and no recording has confirmed it. */
+    public const int LURE_SECONDS = 600;
+
+    /** The rank a gathering skill stops at. */
+    public const int SKILL_CAP = 300;
+
     /** The skill line the gathering skill's rank is read from; a child line (2943, 2944, 2946, 2947) counts as it. */
     public function skillLine(): int
     {
@@ -43,6 +52,12 @@ enum GatherKind: string
             self::Ore => 'Mining',
             self::Skin => 'Skinning',
         };
+    }
+
+    /** Whether the time between casts is time at the water: fishing waits for a bite, the others gather one thing at a time. */
+    public function countsGaps(): bool
+    {
+        return $this === self::Fish;
     }
 
     public static function ofSpell(int $spell): ?self

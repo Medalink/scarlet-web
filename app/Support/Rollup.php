@@ -41,4 +41,11 @@ enum Rollup: string
     case CampHeatDailyRuleset = 'camp_heat_daily_ruleset';
     case CampBenefitsDailyRuleset = 'camp_benefits_daily_ruleset';
     case CampStaysDailyCharacter = 'camp_stays_daily_character';
+    case GathersHourlyRuleset = 'gathers_hourly_ruleset';
+    case GathersDailyShapeRuleset = 'gathers_daily_shape_ruleset';
+    case GathersDailySourceRuleset = 'gathers_daily_source_ruleset';
+    case GathersDailyGearRuleset = 'gathers_daily_gear_ruleset';
+    case GathersHeatDailyRuleset = 'gathers_heat_daily_ruleset';
+    case GathersDailyCharacter = 'gathers_daily_character';
+    case GatherItemsDailyRuleset = 'gather_items_daily_ruleset';
 }
