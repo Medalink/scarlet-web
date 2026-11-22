@@ -1,0 +1,25 @@
+[package]
+name = "scarlet-loadgen"
+version = "0.1.0"
+edition = "2024"
+description = "Load generator for the Scarlet upload API: real parts under new names and times, sent with the real protocol"
+publish = false
+license = "GPL-3.0-only"
+repository = "https://github.com/Medalink/scarlet-web"
+
+[[bin]]
+name = "loadgen"
+path = "src/main.rs"
+
+[dependencies]
+scarlet-part = { path = "../../part" }
+ed25519-dalek = "=2.2.0"
+lexopt = "=0.3.2"
+serde_json = "=1.0.154"
+sha2 = "=0.11.1"
+ureq = { version = "=3.5.2", default-features = false, features = ["rustls"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 4

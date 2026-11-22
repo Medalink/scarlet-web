@@ -7,6 +7,8 @@
 #   bin/load deploy [ref]      bin/deploy for the load app (a sha or main)
 #   bin/load put <file> <app|db|gen> <path>   copy a file to a droplet
 #   bin/load sh <app|db|gen> [command]        a shell on a droplet
+#   bin/load gen-install <template>   build tools/loadgen on the generator droplet, install oha 1.17.0 (checked by sha256), copy the
+#                              template made by `loadgen prepare` and the load app's certificate
 #   bin/load sample <seconds>  run deploy/load-sample.sh on the app and database droplets, print both TSVs when it ends
 #   bin/load down              purge the load prefixes in R2, then delete the droplets, volume, firewalls and tags
 #   bin/load status            what DigitalOcean and the tailnet hold under the name scarlet-load
@@ -65,12 +67,22 @@ case "${1:-help}" in
   up)
     provision web & provision db & provision gen &
     wait
+    for name in scarlet-load-app scarlet-load-db scarlet-load-gen; do ssh-keygen -R "$name" >/dev/null 2>&1 || true; done
     install_stack
     "$here/bin/deploy" "${2:-main}"
     ;;
   deploy) shift; exec "$here/bin/deploy" "$@" ;;
   put) scp "${ssh_opts[@]}" "${2:?file}" "ops@$(host_of "${3:?droplet}"):${4:?path}" ;;
   sh) shift; target=${1:?droplet}; shift; on "$target" "$@" ;;
+  gen-install)
+    template=${2:?the template file made by loadgen prepare}
+    tar -C "$here" --exclude=target -czf "${TMPDIR:-/tmp}/loadgen-src.tgz" tools/loadgen part docs/groups.tsv docs/player-fields.tsv docs/name-refs.tsv
+    "$0" put "${TMPDIR:-/tmp}/loadgen-src.tgz" gen /tmp/loadgen-src.tgz
+    "$0" put "$template" gen /tmp/template.bin
+    on app 'cat /srv/scarlet-web/tls/origin.pem' | on gen 'cat > /tmp/load-ca.pem'
+    on gen 'sudo apt-get install -y -qq build-essential pkg-config >/dev/null && mkdir -p ~/src && tar -C ~/src -xzf /tmp/loadgen-src.tgz && { command -v cargo >/dev/null || curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal >/dev/null; } && . ~/.cargo/env && cargo build --release --locked --manifest-path ~/src/tools/loadgen/Cargo.toml 2>&1 | tail -2 && sudo install -m 755 ~/src/tools/loadgen/target/release/loadgen /usr/local/bin/loadgen'
+    on gen 'curl -fsSL -o /tmp/oha https://github.com/hatoo/oha/releases/download/v1.17.0/oha-linux-amd64 && echo "85c6eb98066b8c8bd513b2dd96fafd8f9863249ea653606bae1ca2e3a75c43d2  /tmp/oha" | sha256sum -c - && sudo install -m 755 /tmp/oha /usr/local/bin/oha'
+    ;;
   sample)
     seconds=${2:-60}
     for role in app db; do on "$role" "cd /srv/scarlet-$([ $role = app ] && echo web || echo db) && timeout $((seconds + 5)) deploy/load-sample.sh $role $seconds" > "${TMPDIR:-/tmp}/sample-$role.tsv" & done
@@ -88,6 +100,6 @@ case "${1:-help}" in
           console.log(k+':',(r[k]||[]).map(x=>x.name).filter(n=>n.startsWith('scarlet-load')).join(', ')||'none');}})()" "$secrets/do-token"
     tailscale status | grep scarlet-load || echo "tailnet: no scarlet-load node"
     ;;
-  help | -h | --help) sed -n '2,15p' "$0" ;;
+  help | -h | --help) sed -n '2,20p' "$0" ;;
   *) echo "load: unknown command $1" >&2; exit 2 ;;
 esac
