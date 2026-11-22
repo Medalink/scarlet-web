@@ -232,7 +232,29 @@ bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec horizon-a php artisan hori
 ```
 
 The Laravel log is also in the `logs` volume (`storage/logs/laravel.log` in the app containers). Docker keeps three
-10 MB files per container.
+10 MB files per container. Every Laravel log record is one line (`App\Support\Logging\OneLineFormatter`):
+`SCARLET-LOG level=ERROR at=<time> class=<exception class> file=<path without line> msg=<message> | trace <frames> | ctx <json>`.
+A 4xx `ApiException` answer is logged at `info` (`error` for a 5xx one), so it never reaches the error watch.
+
+## Error watch
+
+The flow engine on medaware follows the droplet's logs and starts one agent run for each new kind of error
+(roster `flows/scarlet-web.toml`, watch `logs`; `flows/README.md`, "Watches"; `flows/agent.md`, `scarlet-web`).
+
+- **Stream.** `ssh scarlet-logs@scarlet-web` with `~/.config/scarlet-web/logs_ed25519` on medaware. The user's only line in
+  `/home/scarlet-logs/.ssh/authorized_keys` (root-owned) is `restrict,command="sudo -n /usr/local/sbin/scarlet-log-stream"`
+  with the key in `deploy/log-stream.pub`. `/etc/sudoers.d/scarlet-logs` lets that user run that one path as root, and
+  `/etc/ssh/sshd_config.d/20-scarlet-logs.conf` adds the user to `AllowUsers`. The key has no shell, no port forward and
+  no pty, and the script (`deploy/log-stream.sh`) takes no argument.
+- **Output.** First `SCARLET-RELEASE <release>`, repeated when `release.env` changes. Then the `SCARLET-LOG` lines of
+  the `logs` volume's `laravel.log`, `SCARLET-5XX <status> <method> <route>` for each nginx access line that answered 5xx,
+  and the other output of the app slots, Horizon, the scheduler and nginx's error log. `SCARLET-HEARTBEAT` every 30
+  seconds.
+- **Install.** `bin/deploy server` runs `deploy/install-log-user.sh` (from `server-setup.sh`), so a rebuilt droplet gets
+  the user back with the same key. Rotate the key: make a new one on medaware, replace `deploy/log-stream.pub`, ship, run
+  `bin/deploy server`.
+- **Check.** `ssh -i ~/.config/scarlet-web/logs_ed25519 scarlet-logs@scarlet-web` from medaware prints the release line and
+  follows the logs; `ssh ... id` prints the stream, not a user id.
 
 ## Backups
 

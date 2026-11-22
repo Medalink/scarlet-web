@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Logging\OneLineFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -62,6 +63,7 @@ return [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
+            'formatter' => OneLineFormatter::class,
             'replace_placeholders' => true,
         ],
 
@@ -109,7 +111,7 @@ return [
             'handler_with' => [
                 'stream' => 'php://stderr',
             ],
-            'formatter' => env('LOG_STDERR_FORMATTER'),
+            'formatter' => env('LOG_STDERR_FORMATTER', OneLineFormatter::class),
             'processors' => [PsrLogMessageProcessor::class],
         ],
 
