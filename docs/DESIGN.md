@@ -456,6 +456,28 @@ after that.
 - Leaderboards read Scarlet's rows only, until the owner decides otherwise.
 - A public figure split by origin is shown only when each side passes the character threshold; a player's own pages
   always show the split.
+- The flag. `ADDON_COUNTS_PAGES` (`scarlet.addon_counts_pages`, false until the environment sets it) switches these
+  reads on for the fishing page, public at `/professions/fishing` and the player's own at
+  `/account/professions/fishing`, and for the Fish caught tile of a character page. Only the web controllers read it:
+  with it off no page reads `addon_claims`, and the public API never does. Deploys leave it off.
+- What a page reads. The terms are the `counted` amounts of character-scope `fishing` claims whose status is `counted`
+  or `residual`. Dated are the windows other than `life`, undated the `life` windows, one query each. A claim is read
+  only while its character has no `addon_days` row with a null `reconcile_version`, so a character whose claims
+  reconcile has not decided again adds nothing. A claim with no ruleset (its character has no session) is missing from
+  a page narrowed to a ruleset or a server.
+- The fishing page. A table of casts, catches and fish gives Scarlet, From addons and Total: `casts`, `landed` and
+  `items` of the claims against Scarlet's attempts, looted attempts and the quantity of the item rows that did not
+  come out of a container. The head counts the total casts. The figures, ends, waits, hours, trips, poles, lures,
+  creatures and the board stay Scarlet's, and the table's columns say which is which. The page has no chart over time,
+  so it has no per-day term.
+- The threshold. The addon term is read only when at least the scope's threshold of characters have a counted claim in
+  it (the larger of the dated and undated counts, never their sum). Under it the page adds nothing, and does not show
+  the split alone either: the public API gives Scarlet's figure, and the total would give away the difference. A
+  player's own pages have a threshold of 1. A scope with no Scarlet fishing rows adds nothing either: the page shows
+  its empty state, so a character whose history is only in an addon shows no addon total until Scarlet records a cast.
+- The character page. The Fish caught tile adds the claims' `landed` and says "From addons" with their count, to the
+  character's owner, and to a visitor only where `scarlet.min_characters` is 1. Most caught, the feats and the
+  standings stay Scarlet's.
 
 ### Checks
 
@@ -463,7 +485,10 @@ after that.
 prints per character and kind the table that explains the total (one line per status, with its claims, what they
 claimed, what counts and the rule most of them name, then Scarlet's own term and the total), and fails on any
 violation. It runs on demand; a schedule that logs breaches comes with the first page that reads statuses. Checks 1
-to 5, 8, 9 and 11 run now; 6, 7 and 10 need a page and come with it.
+to 5, 8, 9 and 11 run now. Check 6 runs in `e2e/addon-counts.mjs` with `ADDON_COUNTS_PAGES=true`, which compares the
+terms on the fishing pages and the character page with the totals read from the database. Check 10 is the rule of the
+read above. Check 7 is the comparison of the same pages with the flag off before and after a change, which
+`ADDON_PAGES_DIR` keeps.
 
 Besides the numbered checks it prints the claims and summed amounts per character, scope and kind, and holds the
 checks that need no status: every claim has a carrying part and takes the amounts of the one whose id sorts highest (a

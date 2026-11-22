@@ -16,6 +16,7 @@ final class GatheringPage
 
     /** The modules of a row in the page's order, the spans a row of two takes and the span a row of one takes. */
     private const array ROWS = [
+        [['totals'], [], 'w12'],
         [['items', 'ends'], ['w7', 'w5'], 'w12'],
         [['waits', 'points', 'levels'], ['w7', 'w5'], 'w12'],
         [['when', 'trip'], ['w8', null], 'w12'],
@@ -37,7 +38,9 @@ final class GatheringPage
         $hours = StatsPage::rows($r['hours']);
         $heat = is_array($r['heat'] ?? null) ? $r['heat'] : null;
         $levels = ProfessionCharts::byLevel(StatsPage::rows($r['by_level']));
+        $addons = is_array($r['addons'] ?? null) ? $r['addons'] : null;
         $arranged = ProfessionPage::arrange(self::ROWS, $few ? [] : [
+            'totals' => self::totals($addons, $w),
             'items' => self::items(StatsPage::rows($r['items']), $t, $w),
             'ends' => self::ends($kind, $t, StatsPage::rows($r['lures']), (int) ($r['lured'] ?? 0), $w),
             'waits' => GatheringCharts::waits(StatsPage::rows($r['waits']), $w),
@@ -57,7 +60,7 @@ final class GatheringPage
             'title' => ($own ? 'Your ' : '').$w['title'].': '.$w['results'].', times and places in WoW Forever',
             'own' => $own,
             'words' => $w,
-            'facts' => self::facts($t, $few, $w, $own),
+            'facts' => self::facts($t, $few, $w, $own, $addons === null ? null : (int) $addons['total']['casts']),
             'callouts' => GatheringCallouts::for($kind, $r),
             'figures' => self::figures($t, $few, $w, $own),
             'modules' => $arranged['modules'],
@@ -76,6 +79,7 @@ final class GatheringPage
     private static function heads(array $w, bool $own): array
     {
         return [
+            'totals' => 'Casts, catches and fish',
             'items' => 'What comes up',
             'ends' => 'How a '.$w['attempt'].' ends',
             'waits' => 'How long a '.$w['wait'].' takes',
@@ -97,12 +101,12 @@ final class GatheringPage
      * @param  array<string, string>  $w
      * @return list<string>
      */
-    private static function facts(array $t, bool $few, array $w, bool $own): array
+    private static function facts(array $t, bool $few, array $w, bool $own, ?int $casts): array
     {
         if ($few) {
             return [ProfessionPage::withoutNumbers($t, $own)];
         }
-        $facts = [Format::count((int) $t['attempts'], $w['attempt']), ProfessionPage::by($t, $own)];
+        $facts = [Format::count($casts ?? (int) $t['attempts'], $w['attempt']), ProfessionPage::by($t, $own)];
         if ($w['at'] !== '' && (int) $t['seconds'] > 0) {
             $hours = (int) round((int) $t['seconds'] / 3600);
             $facts[] = ($hours > 0 ? Format::count($hours, 'hour') : Format::duration((int) $t['seconds'])).' '.$w['at'];
@@ -129,6 +133,29 @@ final class GatheringPage
             ...($own ? [] : [$row($w['who'], $of($t['characters'], $t['scope_characters']), 'characters')]),
             $row('Median skill', $t['median_skill'] === null ? null : Format::number((float) $t['median_skill']), 'skills'),
             $row('Reached '.GatherKind::SKILL_CAP, $t['at_cap'] === null ? null : $of($t['at_cap'], $t['characters']), 'crown'),
+        ];
+    }
+
+    /**
+     * @param  array<mixed, mixed>|null  $addons
+     * @param  array<string, string>  $w
+     * @return array{columns: list<array<string, mixed>>, rows: list<array<string, mixed>>}|null
+     */
+    private static function totals(?array $addons, array $w): ?array
+    {
+        if ($addons === null) {
+            return null;
+        }
+        $row = fn (string $label, string $metric): array => ['cells' => [
+            $label,
+            Format::number((int) $addons['scarlet'][$metric]),
+            Format::number((int) $addons['dated'][$metric] + (int) $addons['undated'][$metric]),
+            Format::number((int) $addons['total'][$metric]),
+        ]];
+
+        return [
+            'columns' => [['label' => 'Count', 'hide' => true], ['label' => 'Scarlet', 'numeric' => true], ['label' => 'From addons', 'numeric' => true], ['label' => 'Total', 'numeric' => true]],
+            'rows' => [$row(ucfirst($w['attempts']), 'casts'), $row(ucfirst($w['results']), 'landed'), $row('Fish', 'items')],
         ];
     }
 

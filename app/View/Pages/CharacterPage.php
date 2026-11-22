@@ -82,7 +82,7 @@ final class CharacterPage
             'deathCount' => count($r['marks']),
             'week' => $week === null ? null : self::week($week, $economy),
             'levels' => $levels,
-            'records' => CharacterRecords::tiles($r['records'], $totals, $since),
+            'records' => CharacterRecords::tiles($r['records'], $totals, $since, $r['addons'] ?? null),
             'feats' => CharacterFeatWall::section($r['feats'], $character),
             'modes' => CharacterSections::distance($r['records']['modes'], $since),
             'standings' => CharacterStandings::rows($r['standings']),

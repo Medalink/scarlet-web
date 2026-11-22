@@ -18,14 +18,20 @@
  *   node e2e/boot.mjs -- node e2e/addon-counts.mjs
  *
  * It needs the app's database settings, which boot.mjs hands to its command. It is not part of the default lane.
+ *
+ * With both installs linked it also reads the public and the account's own fishing page and the character's page.
+ * With ADDON_COUNTS_PAGES unset they show Scarlet's own numbers and nothing from addons; run with
+ * ADDON_COUNTS_PAGES=true (boot.mjs passes it on) they show Scarlet, what the addons added and the total, which equal
+ * the database's. ADDON_PAGES_DIR=<folder> keeps the pages read, for a before and after comparison.
  */
 
 import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { linkToAccount, signIn } from "./checks/pages.mjs";
 import { InstallClient } from "./client.mjs";
-import { Http, Jar, expectJson, expectStatus, sleep } from "./support.mjs";
+import { Http, Jar, expectJson, expectStatus, rollupsRefreshed, sleep } from "./support.mjs";
 
 const repo = path.resolve(import.meta.dirname, "..");
 const base = process.env.E2E_URL;
@@ -43,7 +49,7 @@ const FISHING_SKILL_LINE = 356;
 const STONETUSK_BOAR = 113;
 const TRIPS_WITHOUT_LOOT = [0, 1];
 const LOOT_DELAY = 0.6;
-const GROUP_OF = { S: "core", Z: "core", ES: "core", C: "combat", CH: "combat", LO: "loot", SL: "professions" };
+const GROUP_OF = { S: "core", Z: "core", ES: "core", K: "combat", C: "combat", CH: "combat", LO: "loot", SL: "professions" };
 const GROUP_ORDER = ["core", "combat", "loot", "professions", "counts"];
 const SETTLE_MS = 120_000;
 const STEADY_POLLS = 6;
@@ -109,6 +115,7 @@ const header = () => [
   [0, "S", "1.15.8", "ROGUE", "Human", 3, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
   [100, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
   [150, "SL", FISHING_SKILL_LINE, 5, 75, 0, "s"],
+  [160, "K", STONETUSK_BOAR],
 ];
 
 function sessionOf(casts, { tag, loot = true } = {}) {
@@ -299,6 +306,45 @@ async function upload(held, name = NAME, app = client) {
 }
 
 const audit = (name = NAME) => artisan("addons:audit", name);
+const PAGES = [
+  ["public", "/professions/fishing", false],
+  ["own", "/account/professions/fishing", true],
+  ["character", `/c/${NAME}`, false],
+  ["character-owner", `/c/${NAME}`, true],
+];
+const PAGES_DIR = process.env.ADDON_PAGES_DIR ?? "";
+const PAGES_ON = process.env.ADDON_COUNTS_PAGES === "true";
+
+const plain = (html) => html.replace(/<(script|style)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+async function pagesRead() {
+  await rollupsRefreshed({ http });
+  const jar = new Jar();
+  await signIn(http, jar);
+  const read = {};
+  for (const [name, route, signed] of PAGES) {
+    const answer = expectStatus(await http.page(route, signed ? { jar } : {}), 200, `GET ${route}${signed ? " signed in" : ""}`);
+    read[name] = plain(answer.text);
+    if (PAGES_DIR) fs.writeFileSync(path.join(PAGES_DIR, `${name}.html`), answer.text);
+  }
+  return read;
+}
+
+async function pages(state) {
+  const shown = await pagesRead();
+  const count = (n) => n.toLocaleString("en-US");
+  const terms = ["Casts", "Catches", "Fish"].map((label, k) => `${label} ${count(state.scarlet[k])} ${count(state.counted[k])} ${count(state.total[k])}`).join(" ");
+  const addonPages = ["public", "own"];
+  if (PAGES_ON) {
+    check(`the public and the account's own fishing page show the three terms, ${terms}`, addonPages.every((name) => shown[name].includes(terms)), addonPages.map((name) => shown[name].slice(0, 400)).join(" | "));
+    check(`their heads count the total casts, ${count(state.total[0])}`, addonPages.every((name) => shown[name].includes(`Fishing ${count(state.total[0])} casts`)));
+    check(`the character page counts the catches with the addons' ${count(state.counted[1])} beside them, to the owner and to a visitor`, ["character", "character-owner"].every((name) => shown[name].includes(`${count(state.total[1])} Fish caught From addons ${count(state.counted[1])}`)), shown.character);
+    return;
+  }
+  check("with the flag off no page shows what addons counted", Object.values(shown).every((text) => !text.includes("From addons")));
+  check(`the fishing pages count Scarlet's own ${count(state.scarlet[0])} casts and the character page its ${count(state.scarlet[1])} catches`, addonPages.every((name) => shown[name].includes(`Fishing ${count(state.scarlet[0])} casts`)) && shown.character.includes(`${count(state.scarlet[1])} Fish caught since`));
+}
+
 const sum = (rows) => rows.join("/");
 const claimOfTrip = (trip) => `${own(NAME)} and origin = 'fl' and addon_claims.window = 'session' and to_at = ${TRIPS[trip].to}`;
 const claimCount = (name, where) => Number(db(`select count(*) from addon_claims c join characters ch on ch.id = c.character_id where ch.name = '${name}' and ${where}`));
@@ -411,6 +457,7 @@ async function linked() {
   check(`linking both installs to one account decides again with no new upload: the twin counts nothing, ${FULL_TOTAL}`, sum(twin.total) === "0/0/0" && sum(after.total) === FULL_TOTAL && after.hash === hashFull, `${sum(after.total)} and ${sum(twin.total)}`);
   const audited = artisan("addons:audit");
   check("addons:audit passes after the link", audited.status === 0, audited.stdout + audited.stderr);
+  await pages(after);
 }
 
 async function main() {

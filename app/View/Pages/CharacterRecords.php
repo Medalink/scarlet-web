@@ -23,9 +23,10 @@ final class CharacterRecords
     /**
      * @param  array<string, mixed>  $records  the answer of App\Actions\Public\Character\Records
      * @param  array<string, mixed>  $totals  the answer of App\Actions\Public\Character\SessionTotals
+     * @param  array{dated: array{landed: int}, undated: array{landed: int}}|null  $addons  the claims other addons counted, which add to the catches
      * @return array{lead: array<string, string|null>, tiles: list<array<string, string|null>>}|null
      */
-    public static function tiles(array $records, array $totals, string $since = ''): ?array
+    public static function tiles(array $records, array $totals, string $since = '', ?array $addons = null): ?array
     {
         $since = ltrim($since);
         $tiles = [];
@@ -47,8 +48,9 @@ final class CharacterRecords
         if ($records['nodes'] > 0) {
             $tiles[] = self::tile('gather', Format::number($records['nodes']), 'Objects looted', $since, self::taken('Most looted', $records['topNode']));
         }
-        if ($records['fish'] > 0) {
-            $tiles[] = self::tile('fish', Format::number($records['fish']), 'Fish caught', $since, self::taken('Most caught', $records['topFish']));
+        $addonFish = $addons === null ? 0 : $addons['dated']['landed'] + $addons['undated']['landed'];
+        if ($records['fish'] + $addonFish > 0) {
+            $tiles[] = self::tile('fish', Format::number($records['fish'] + $addonFish), 'Fish caught', $addonFish > 0 ? 'From addons '.Format::number($addonFish) : $since, self::taken('Most caught', $records['topFish']));
         }
         if ($records['jumps'] > 0) {
             $tiles[] = self::tile('jumps', Format::number($records['jumps']), 'Jumps', $since);

@@ -21,9 +21,11 @@ use App\Actions\Public\Character\SkillRanks;
 use App\Actions\Public\Character\Standings;
 use App\Actions\Public\Character\Talents;
 use App\Actions\Public\Character\ZoneHours;
+use App\Actions\Rollups\AddonFishingTerms;
 use App\Actions\Rollups\LevellingCurve;
 use App\Actions\Rollups\TimePerLevel;
 use App\Models\Character;
+use App\Support\CharacterScope;
 use App\Support\KillerKind;
 use App\Support\PlayerNameShape;
 use App\Support\Rollup;
@@ -67,6 +69,7 @@ class CharacterOverview
         private readonly ShowCharacterFeats $feats,
         private readonly Standings $standings,
         private readonly LifetimeBaselines $lifetime,
+        private readonly AddonFishingTerms $addonTerms,
     ) {}
 
     /**
@@ -74,9 +77,13 @@ class CharacterOverview
      * it public, and always to its owner (`$viewerAccountId` is the signed-in account). Money is in the answer only
      * for the owner, or when the owner chose to show the economy. Null when the character is unknown or private.
      *
+     * With `$addons` the answer also has `addons`, what other addons counted of the character's fishing
+     * (`AddonFishingTerms`): to its owner, and to everyone only where one character is enough to show a bucket
+     * (`scarlet.min_characters` of 1). Null otherwise.
+     *
      * @return array<string, mixed>|null
      */
-    public function handle(string $name, ?int $viewerAccountId, int $history = self::HISTORY): ?array
+    public function handle(string $name, ?int $viewerAccountId, int $history = self::HISTORY, bool $addons = false): ?array
     {
         $character = Character::query()->where('name_key', Character::keyFor($name))->first();
         if ($character === null || ! $character->visibleTo($viewerAccountId)) {
@@ -93,8 +100,7 @@ class CharacterOverview
         $dungeons = $this->dungeons($id);
         $skills = $this->skillRanks->handle($id);
         $records = $this->records->handle($id);
-
-        return [
+        $answer = [
             'character' => $character,
             'owner' => $owner,
             'economy' => $economy,
@@ -132,6 +138,18 @@ class CharacterOverview
             'distance' => $totals['distance'],
             'history' => $history,
         ];
+
+        return $addons ? [...$answer, 'addons' => $this->addonsOf($id, $owner)] : $answer;
+    }
+
+    /** @return array{dated: array{casts: int, landed: int, items: int}, undated: array{casts: int, landed: int, items: int}, characters: int}|null */
+    private function addonsOf(int $id, bool $owner): ?array
+    {
+        if (! $owner && (int) config('scarlet.min_characters') > 1) {
+            return null;
+        }
+
+        return $this->addonTerms->handle(new CharacterScope([$id], null));
     }
 
     /** @return list<array{kind: string, u: float, v: float, day: string}> the deaths on the map, oldest first, each with its UTC day */

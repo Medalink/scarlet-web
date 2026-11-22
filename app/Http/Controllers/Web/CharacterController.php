@@ -20,7 +20,7 @@ class CharacterController extends Controller
     public function __invoke(CharacterRequest $request, CharacterOverview $overview, ShowImportedHistory $imported, CountBattlegroundMatches $matches, string $name): View
     {
         $viewer = $request->viewerAccountId();
-        $answer = $overview->handle($name, $request->asVisitor() ? null : $viewer, $request->history());
+        $answer = $overview->handle($name, $request->asVisitor() ? null : $viewer, $request->history(), (bool) config('scarlet.addon_counts_pages'));
         abort_if($answer === null, 404);
 
         $d = CharacterPage::data($answer);

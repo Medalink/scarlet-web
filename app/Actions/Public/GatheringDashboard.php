@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public;
 
+use App\Actions\Rollups\AddonFishingTerms;
 use App\Actions\Rollups\GatherByLevel;
 use App\Actions\Rollups\GatherContents;
 use App\Actions\Rollups\GatherCreatures;
@@ -12,6 +13,7 @@ use App\Actions\Rollups\GatherItemTotals;
 use App\Actions\Rollups\GatherLures;
 use App\Actions\Rollups\GatherPerPoint;
 use App\Actions\Rollups\GatherPoles;
+use App\Actions\Rollups\GatherQuantity;
 use App\Actions\Rollups\GatherSchools;
 use App\Actions\Rollups\GatherSkill;
 use App\Actions\Rollups\GatherTotals;
@@ -50,6 +52,8 @@ class GatheringDashboard
         private readonly GatherSchools $schools,
         private readonly GatherZones $zones,
         private readonly GatherHeat $heat,
+        private readonly AddonFishingTerms $addonTerms,
+        private readonly GatherQuantity $quantity,
     ) {}
 
     /**
@@ -59,10 +63,14 @@ class GatheringDashboard
      * the scope's threshold of characters contributed to (`RollupRead::threshold()`) is null or missing: the totals are
      * zero and `characters` is null while the whole scope is under the threshold.
      *
+     * With `$addons` a fishing answer also has `addons`: the casts, catches and items of Scarlet, of the claims other
+     * addons counted (dated and undated) and their total, or null when there is nothing to add or too few characters
+     * counted it. Every other number stays Scarlet's own.
+     *
      * @param  list<int>|null  $characters
      * @return array<string, mixed>|null null when the ruleset is not known
      */
-    public function handle(GatherKind $kind, ?string $ruleset = null, Server $server = Server::All, ?array $characters = null): ?array
+    public function handle(GatherKind $kind, ?string $ruleset = null, Server $server = Server::All, ?array $characters = null, bool $addons = false): ?array
     {
         $scope = $this->resolveScope->handle($ruleset, $server, $characters);
         if ($scope === null) {
@@ -70,8 +78,7 @@ class GatheringDashboard
         }
         $ids = $scope->rollup();
         $lures = $kind === GatherKind::Fish ? $this->lures->handle($kind, $ids) : null;
-
-        return [
+        $answer = [
             'scope' => $scope,
             'rulesets' => $this->rulesets->handle(),
             'kind' => $kind->value,
@@ -89,6 +96,33 @@ class GatheringDashboard
             'zones' => $this->zones->handle($kind, $ids),
             'heat' => $this->heatOf($kind, $ids),
             'board' => $this->boardOf($kind, $ruleset, $server, $characters),
+        ];
+
+        return $addons && $kind === GatherKind::Fish ? [...$answer, 'addons' => $this->addonsOf($ids, $answer['totals'])] : $answer;
+    }
+
+    /**
+     * @param  int|list<int>|CharacterScope|null  $ids
+     * @param  array<string, mixed>  $totals
+     * @return array{scarlet: array{casts: int, landed: int, items: int}, dated: array{casts: int, landed: int, items: int}, undated: array{casts: int, landed: int, items: int}, total: array{casts: int, landed: int, items: int}}|null
+     */
+    private function addonsOf(int|array|CharacterScope|null $ids, array $totals): ?array
+    {
+        $terms = $totals['characters'] === null ? null : $this->addonTerms->handle($ids);
+        if ($terms === null) {
+            return null;
+        }
+        $scarlet = ['casts' => (int) $totals['attempts'], 'landed' => (int) $totals['looted'], 'items' => $this->quantity->handle(GatherKind::Fish, $ids)];
+
+        return [
+            'scarlet' => $scarlet,
+            'dated' => $terms['dated'],
+            'undated' => $terms['undated'],
+            'total' => [
+                'casts' => $scarlet['casts'] + $terms['dated']['casts'] + $terms['undated']['casts'],
+                'landed' => $scarlet['landed'] + $terms['dated']['landed'] + $terms['undated']['landed'],
+                'items' => $scarlet['items'] + $terms['dated']['items'] + $terms['undated']['items'],
+            ],
         ];
     }
 

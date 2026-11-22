@@ -40,7 +40,7 @@ class ProfessionController extends Controller
         $kind = $profession->gatherKind();
         $answer = $kind === null
             ? $crafting->handle($profession, $asked, $request->serverFilter(), $characters)
-            : $gathering->handle($kind, $asked, $request->serverFilter(), $characters);
+            : $gathering->handle($kind, $asked, $request->serverFilter(), $characters, (bool) config('scarlet.addon_counts_pages'));
         abort_if($answer === null, 404);
 
         /** @var PageScope $scope */
