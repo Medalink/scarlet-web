@@ -73,11 +73,10 @@ links) is checked against the totals its history has. It waits until the charact
 so it needs the app's job queue running, and compares hashes after that. It needs the app's database settings, which
 `boot.mjs` gives its command, `psql` and the development sign-in (`SCARLET_DEV_LOGIN=true`) for the account link.
 
-`ADDON_COUNTS_PAGES` (`scarlet.addon_counts_pages`) is false unless the environment sets it. When it is true the fishing
+`ADDON_COUNTS_PAGES` (`scarlet.addon_counts_pages`) is true unless the environment sets it to false. When it is true the fishing
 page, the account's own fishing page and the Fish caught tile of a character page add what other addons counted
-(docs/DESIGN.md, Addon counts, Reading). The lane reads those three pages once the claims are reconciled: unset, it checks that
-they count Scarlet's own 343 casts and 295 catches and show nothing from addons; with `ADDON_COUNTS_PAGES=true` in its
-environment, that the table reads Scarlet 343, 295 and 316, from addons 0, 39 and 40, total 343, 334 and 356.
+(docs/DESIGN.md, Addon counts, Reading). The lane reads those three pages once the claims are reconciled: with `ADDON_COUNTS_PAGES=false` in its
+environment it checks that they count Scarlet's own 343 casts and 295 catches and show nothing from addons; unset, that the table reads Scarlet 343, 295 and 316, from addons 0, 39 and 40, total 343, 334 and 356.
 An invented character that uploads only a `counts` part, and so has no Scarlet row, is then read the same way: with the
 flag on its pages show Scarlet 0 and from addons 65, 56 and 65, with it off they show no addon figure.
 `ADDON_PAGES_DIR=<folder>` writes the pages it read there (`only-` before the name for that character), so two runs can

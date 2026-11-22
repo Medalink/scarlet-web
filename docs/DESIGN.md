@@ -465,10 +465,10 @@ after that.
 - Leaderboards read Scarlet's rows only, until the owner decides otherwise.
 - A public figure split by origin is shown only when each side passes the character threshold, or when Scarlet's side
   has no character at all, which gives nothing away; a player's own pages always show the split.
-- The flag. `ADDON_COUNTS_PAGES` (`scarlet.addon_counts_pages`, false until the environment sets it) switches these
+- The flag. `ADDON_COUNTS_PAGES` (`scarlet.addon_counts_pages`, true unless the environment sets it to false) switches these
   reads on for the fishing page, public at `/professions/fishing` and the player's own at
   `/account/professions/fishing`, and for the Fish caught tile of a character page. Only the web controllers read it:
-  with it off no page reads `addon_claims`, and the public API never does. Deploys leave it off.
+  with it off no page reads `addon_claims`, and the public API never does. On since 2026-11-22, after the owner's 38 Fishing Log claims reconciled in production to the verdicts the design predicts; `ADDON_COUNTS_PAGES=false` turns it off.
 - What a page reads. The terms are the `counted` amounts of character-scope `fishing` claims whose status is `counted`
   or `residual`. Dated are the windows other than `life`, undated the `life` windows, one query each. A claim is read
   only while its character has no `addon_days` row with a null `reconcile_version`, so a character whose claims
@@ -501,7 +501,7 @@ after that.
 prints per character and kind the table that explains the total (one line per status, with its claims, what they
 claimed, what counts and the rule most of them name, then Scarlet's own term and the total), and fails on any
 violation. It runs on demand; a schedule that logs breaches comes with the first page that reads statuses. Checks 1
-to 5, 8, 9 and 11 run now. Check 6 runs in `e2e/addon-counts.mjs` with `ADDON_COUNTS_PAGES=true`, which compares the
+to 5, 8, 9 and 11 run now. Check 6 runs in `e2e/addon-counts.mjs` with the flag on (its default), which compares the
 terms on the fishing pages and the character page with the totals read from the database. Check 10 is the rule of the
 read above. Check 7 is the comparison of the same pages with the flag off before and after a change, which
 `ADDON_PAGES_DIR` keeps.

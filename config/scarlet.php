@@ -8,7 +8,7 @@ return [
 
     'continuity_seconds' => 300,
 
-    'addon_counts_pages' => (bool) env('ADDON_COUNTS_PAGES', false),
+    'addon_counts_pages' => (bool) env('ADDON_COUNTS_PAGES', true),
 
     // A third sign-in button for local development. It exists only in the `local` environment, whatever this says.
     'dev_login' => (bool) env('SCARLET_DEV_LOGIN', false),

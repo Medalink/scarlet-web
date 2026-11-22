@@ -20,9 +20,8 @@
  * It needs the app's database settings, which boot.mjs hands to its command. It is not part of the default lane.
  *
  * With both installs linked it also reads the public and the account's own fishing page and the character's page.
- * With ADDON_COUNTS_PAGES unset they show Scarlet's own numbers and nothing from addons; run with
- * ADDON_COUNTS_PAGES=true (boot.mjs passes it on) they show Scarlet, what the addons added and the total, which equal
- * the database's. ADDON_PAGES_DIR=<folder> keeps the pages read, for a before and after comparison.
+ * By default they show Scarlet, what the addons added and the total, which equal the database's; run with
+ * ADDON_COUNTS_PAGES=false (boot.mjs passes it on) they show Scarlet's own numbers and nothing from addons. ADDON_PAGES_DIR=<folder> keeps the pages read, for a before and after comparison.
  */
 
 import crypto from "node:crypto";
@@ -331,7 +330,7 @@ function forgetReads() {
   });
 }
 const PAGES_DIR = process.env.ADDON_PAGES_DIR ?? "";
-const PAGES_ON = process.env.ADDON_COUNTS_PAGES === "true";
+const PAGES_ON = process.env.ADDON_COUNTS_PAGES !== "false";
 
 const plain = (html) => html.replace(/<(script|style)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
