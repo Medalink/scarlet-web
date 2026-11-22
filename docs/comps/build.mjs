@@ -9,7 +9,7 @@ const TRADES_ALL = ["Fishing", "Herbalism", "Mining", "Skinning", "Alchemy", "Bl
 const TRADES = (cur) => TRADES_ALL.map((name) => `<a href="#"${name === cur ? ' aria-current="page"' : ""}>${name}</a>`).join("");
 const mark = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>`;
 
-function page(file, title, cur, body, script = "", signedIn = false) {
+function page(file, title, cur, body, script = "", signedIn = false, { sheets = ["assets/site.css", "assets/app.css"], bodyClass = "", main = "" } = {}) {
   const nav = NAV.map(([k, l]) => `<a href="${k}.html"${k === cur ? ' aria-current="page"' : ""}>${l}</a>`).join("");
   const html = `<!doctype html>
 <html lang="en">
@@ -22,10 +22,9 @@ function page(file, title, cur, body, script = "", signedIn = false) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
-<link rel="stylesheet" href="assets/site.css">
-<link rel="stylesheet" href="assets/app.css">
+${sheets.map((href) => `<link rel="stylesheet" href="${href}">`).join("\n")}
 </head>
-<body>
+<body${bodyClass ? ` class="${bodyClass}"` : ""}>
 <header class="top solid">
   <div class="top-in wrap">
     <a class="brand" href="stats.html" aria-label="Scarlet, home">${mark}Scarlet</a>
@@ -34,7 +33,7 @@ function page(file, title, cur, body, script = "", signedIn = false) {
     <a class="acct" href="${signedIn ? "account.html" : "login.html"}">${signedIn ? "Account" : "Sign in"}</a>
   </div>
 </header>
-<main>
+<main${main ? ` ${main}` : ""}>
 ${body}
 </main>
 <footer class="foot">
@@ -889,13 +888,276 @@ page("quest.html", "The Marsh Takes Its Due: turn-ins and levels", "search", `
 Comp.bars("ql", { x0: 17, x1: 32, y1: 1200, yt: [0, 600, 1200], xt: [18, 22, 26, 30], cls: "t", data: Array.from({ length: 14 }, (_, i) => [18 + i, 1150 * Math.exp(-Math.pow((i - 5) / 2.3, 2)) + 10]) });
 `);
 
+const warlock = (() => {
+  const n = (v) => Math.round(v).toLocaleString("en-US");
+  const short = (v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? Math.round(v / 1e3) + "k" : String(Math.round(v)));
+  const pct = (a, b) => Math.round((a / b) * 100) + "%";
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const rng = (seed) => { let s = seed >>> 0; return () => ((s = Math.imul(s ^ (s >>> 15), 2246822507) + 0x9e3779b9 >>> 0) / 4294967296); };
+
+  const NAMES = {
+    drainsoul: "Drain Soul", shadowburn: "Shadowburn", soulfire: "Soul Fire", ritual: "Ritual of Summoning", corruption: "Corruption", agony: "Bane of Agony",
+    elements: "Curse of the Elements", recklessness: "Curse of Recklessness", tongues: "Curse of Tongues", weakness: "Curse of Weakness", exhaustion: "Curse of Exhaustion", doom: "Bane of Doom",
+    shadowbolt: "Shadow Bolt", siphon: "Siphon Life", drainlife: "Drain Life", nightfall: "Nightfall", fear: "Fear", deathcoil: "Death Coil", howl: "Howl of Terror", banish: "Banish",
+    enslave: "Subjugate Demon", funnel: "Health Funnel",
+  };
+  const gi = () => `<i class="buff-none" aria-hidden="true"></i>`;
+  const sp = (k) => gi() + NAMES[k];
+
+  const DEMONS = [["imp", "Imp", "Piptik", "d-imp"], ["voidwalker", "Voidwalker", "Zharmok", "d-void"], ["succubus", "Succubus", "Nethira", "d-succ"], ["felhunter", "Felhunter", "Shaadrun", "d-fel"], [null, "No demon out", "", "d-none"]];
+  const RANKS = [[6, 30], [16, 75], [26, 140], [36, 220], [46, 310]];
+  const r1 = rng(11), tapRows = [];
+  for (let level = 6; level <= 52; level++) {
+    const base = RANKS.filter(([at]) => at <= level).pop()[1];
+    const taps = Math.round((70 + level * 5.4) * (0.72 + r1() * 0.6));
+    const health = taps * Math.round(base * (1 + level * 0.012));
+    tapRows.push({ level, taps, health, mana: Math.round(health * (level >= 14 ? 1.2 : 1)) });
+  }
+  const TAPS = sum(tapRows.map((t) => t.taps)), HEALTH = sum(tapRows.map((t) => t.health));
+  const TAPS_MAX = Math.ceil(Math.max(...tapRows.map((t) => t.mana)) / 50000) * 50000;
+  const peak = tapRows.reduce((a, b) => (b.mana > a.mana ? b : a));
+
+  const r2 = rng(5), demonRows = [];
+  for (let level = 1; level <= 52; level++) {
+    const w = [level < 10 ? 1 : 0.5 - Math.min(0.32, (level - 10) * 0.02), level < 10 ? 0 : level < 20 ? 1.1 : 0.95 - Math.min(0.4, (level - 20) * 0.014),
+      level < 20 ? 0 : 0.22 + (level > 34 ? 0.2 : 0), level < 30 ? 0 : 0.16 + (level > 44 ? 0.16 : 0), 0.35 + (level < 4 ? 0.5 : 0)];
+    const j = w.map((v) => v * (0.75 + r2() * 0.5)), t = sum(j);
+    demonRows.push(j.map((v) => v / t));
+  }
+  const HOURS = 212;
+  const demonHours = DEMONS.map((_, i) => (sum(demonRows.map((row) => row[i])) / demonRows.length) * HOURS);
+  const WITH = HOURS - demonHours[4];
+  const outMost = DEMONS.slice(0, 4).sort((a, b) => demonHours[DEMONS.indexOf(b)] - demonHours[DEMONS.indexOf(a)])[0];
+
+  const CURSES = [["agony", 6120], ["elements", 1380], ["recklessness", 890], ["tongues", 610], ["weakness", 480], ["exhaustion", 300], ["doom", 90]];
+  const DAMAGE = [["corruption", 24], ["shadowbolt", 22], ["agony", 19], ["siphon", 11], ["drainlife", 9], ["shadowburn", 8], [null, 7]];
+  const KILLS = [["Your killing blow", 58], ["A curse, a bane or the demon, after you looked away", 31], ["A party member", 11]];
+  const CONTROL = [["fear", 2210], ["deathcoil", 301], ["howl", 96], ["banish", 44], ["enslave", 38]];
+  const FEATS = [
+    [3, "Soul Hoarder", "Gold", "32 soul shards held at once", [100, 100, 100, 40, 0]],
+    [2, "Blood for Mana", "Silver", `${n(TAPS)} Life Taps of 25,000`, [100, 100, 46, 0, 0]],
+    [2, "Summoner", "Silver", "186 players summoned of 250", [100, 100, 62, 0, 0]],
+    [1, "Stone Giver", "Copper", "41 healthstones handed out of 50", [100, 82, 0, 0, 0]],
+    [1, "Tapped Out", "Copper", "6 deaths within 5 seconds of a Life Tap", [100, 60, 0, 0, 0]],
+    [0, "Back from the Stone", "", "9 of 10 deaths undone by your own soulstone", [90, 0, 0, 0, 0]],
+  ];
+  const SOURCES = [["drainsoul", NAMES.drainsoul, 4314], ["shadowburn", NAMES.shadowburn, 498]];
+  const SPENDS = [
+    ["voidwalker", "Summoning a demon", 1480, "class"], ["shadowburn", NAMES.shadowburn, 1190, "class"], ["shard", "Destroyed to make room", 870, "lost"], ["soulfire", NAMES.soulfire, 402, "class"],
+    ["createhealthstone", "Healthstones", 312, "class"], ["createsoulstone", "Soulstones", 268, "class"], ["ritual", NAMES.ritual, 186, "class"], [null, "Other spells", 82, "class"], ["shard", "In the bags now", 22, "held"],
+  ];
+  const SHARDS = sum(SOURCES.map((s) => s[2]));
+  if (SHARDS !== sum(SPENDS.map((s) => s[2]))) throw new Error("shard flow does not balance");
+  const AGAINST = [
+    ["Soul shards a played hour", (SHARDS / HOURS).toFixed(1), 71], ["Life Taps an hour in combat", "142", 88], ["Time with a demon out", pct(WITH, HOURS), 34],
+    ["Time spent drinking", "1.1%", 79], ["Healthstones handed out", "41", 62], ["Shards destroyed", "18%", 22],
+  ];
+
+  const flowChart = ({ sources, spends, unit, label }) => {
+    const total = sum(sources.map((s) => s[2]));
+    const W = 900, k = 300 / total, xL = 204, xT = 445, xR = 686, nw = 10, gapL = 18, gapR = 5, slotMin = 26, is = 20;
+    const lh = sources.map((s) => s[2] * k), rh = spends.map((s) => s[2] * k), slots = rh.map((h) => Math.max(h, slotMin));
+    const leftH = sum(lh) + gapL * (lh.length - 1), rightH = sum(slots) + gapR * (slots.length - 1), body = Math.max(300, leftH, rightH), top = 40, H = top + body + 12;
+    const f = (v) => v.toFixed(1);
+    const ribbon = (x0, a0, b0, x1, a1, b1, cls) => { const m = (x0 + x1) / 2; return `<path class="fl ${cls}" d="M${x0} ${f(a0)}C${m} ${f(a0)} ${m} ${f(a1)} ${x1} ${f(a1)}L${x1} ${f(b1)}C${m} ${f(b1)} ${m} ${f(b0)} ${x0} ${f(b0)}Z"/>`; };
+    const pic = (key, x, y, cls = "") => (key ? `<rect class="fi${cls ? ` ${cls}` : ""}" x="${f(x)}" y="${f(y - is / 2)}" width="${is}" height="${is}" rx="3"/>` : "");
+    let out = "", t0 = top + (body - 300) / 2, t = t0, y = top + (body - leftH) / 2;
+    sources.forEach(([key, name, v], i) => {
+      const mid = y + lh[i] / 2;
+      out += ribbon(xL + nw, y, y + lh[i], xT, t, t + lh[i], "class") + `<rect class="fn class" x="${xL}" y="${f(y)}" width="${nw}" height="${f(lh[i])}" rx="1.5"/>` + pic(key, xL - 12 - is, mid);
+      out += `<text class="fl-l" x="${xL - 20 - is}" y="${f(mid - 2)}" text-anchor="end">${name}</text><text class="fl-v" x="${xL - 20 - is}" y="${f(mid + 14)}" text-anchor="end">${n(v)} · ${pct(v, total)}</text>`;
+      y += lh[i] + gapL; t += lh[i];
+    });
+    t = t0; y = top + (body - rightH) / 2;
+    spends.forEach(([key, name, v, cls], i) => {
+      const a = y + (slots[i] - rh[i]) / 2, h = Math.max(rh[i], 1.6), mid = y + slots[i] / 2;
+      out += ribbon(xT + nw, t, t + rh[i], xR, a, a + h, cls) + `<rect class="fn ${cls}" x="${xR}" y="${f(a)}" width="${nw}" height="${f(h)}" rx="1.5"/>` + pic(key, xR + nw + 10, mid, cls === "lost" ? "dim" : "");
+      out += `<text x="${xR + nw + 18 + is}" y="${f(mid + 4.5)}"><tspan class="fl-l">${name}</tspan><tspan class="fl-v" dx="9">${n(v)}</tspan></text>`;
+      y += slots[i] + gapR; t += rh[i];
+    });
+    out += `<rect class="fn held" x="${xT}" y="${t0}" width="${nw}" height="300" rx="1.5"/><text class="fl-n" x="${xT + nw / 2}" y="${t0 - 13}" text-anchor="middle">${n(total)} ${unit}</text>`;
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${out}</svg>`;
+  };
+
+  const mirrorChart = ({ rows, series, max, ticks, peakLabel, label }) => {
+    const W = 760, H = 290, L = 44, R = 6, T = 10, B = 24, half = (H - T - B) / 2, mid = T + half;
+    const lo = rows[0].x, span = rows[rows.length - 1].x - lo + 1;
+    const x = (v) => L + ((v - (lo - 0.5)) / span) * (W - L - R), bw = ((W - L - R) / span) * 0.72;
+    let out = "";
+    for (const tick of [max, max / 2, 0, -max / 2, -max]) {
+      const y = mid - (tick / max) * half;
+      out += `<line class="${tick ? "grid" : "axis"}" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/><text x="${L - 8}" y="${y + 3.5}" text-anchor="end">${tick ? short(Math.abs(tick)) : 0}</text>`;
+    }
+    for (const t of ticks) out += `<text x="${x(t)}" y="${H - 6}" text-anchor="middle">${t}</text>`;
+    const hi = rows.reduce((a, b) => (b.up > a.up ? b : a));
+    for (const t of rows) {
+      const up = (t.up / max) * half, down = (t.down / max) * half, on = t === hi ? " on" : "";
+      out += `<rect class="bar ${series[0]}${on}" x="${(x(t.x) - bw / 2).toFixed(1)}" y="${(mid - up).toFixed(1)}" width="${bw.toFixed(1)}" height="${up.toFixed(1)}" rx="1.5"/><rect class="bar ${series[1]}${on}" x="${(x(t.x) - bw / 2).toFixed(1)}" y="${mid + 1}" width="${bw.toFixed(1)}" height="${down.toFixed(1)}" rx="1.5"/>`;
+    }
+    out += `<text class="lab" x="${x(hi.x)}" y="${(mid - (hi.up / max) * half - 6).toFixed(1)}" text-anchor="middle">${peakLabel(hi.x)}</text>`;
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${out}</svg>`;
+  };
+
+  const bag = (held, slots, noun) => `<div class="bagslots" role="img" aria-label="${held} of ${slots} bag slots hold a ${noun}">${Array.from({ length: slots }, (_, i) => `<i class="slot${i < held ? " held" : ""}"></i>`).join("")}</div>`;
+  const rank = (rows, total, o = {}) => `<ol class="rank${o.plain ? " plain" : ""}">${rows.map(([who, v, cls]) => `<li><span class="who">${who}</span><span class="val">${o.unit ? o.unit(v) : n(v)}</span><span class="track"><i${cls || o.cls ? ` class="${cls || o.cls}"` : ""} style="width:${Math.max(1, (v / total) * 100).toFixed(1)}%"></i></span></li>`).join("")}</ol>`;
+  const pair = (rows) => `<dl class="pair">${rows.map(([l, v]) => `<div><dt>${l}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+  const tal = (text) => `<span class="tal">${text}</span>`;
+  const split = (used) => `<div class="split" aria-hidden="true"><i class="used" style="flex:${used}"></i><i class="lost" style="flex:${100 - used}"></i></div>`;
+  const splitKey = (a, b) => `<p class="split-key"><span><i class="used"></i>${a}</span><span><i class="lost"></i>${b}</span></p>`;
+  const stackBars = ({ rows, series, label }) => `<div class="xp-plot"><div class="xp-y" aria-hidden="true"><span>100%</span><span>50%</span><span>0</span></div>
+  <div class="xp-bars" role="img" aria-label="${label}">${rows.map((row) => `<div class="xp-bar">${row.map((v, i) => `<i class="${series[i].cls}" style="height:${(v * 100).toFixed(1)}%"></i>`).join("")}</div>`).join("")}</div>
+  <div class="xp-x" aria-hidden="true">${rows.map((_, i) => `<span>${(i + 1) % 10 === 0 || i === 0 ? i + 1 : ""}</span>`).join("")}</div></div>
+  <ul class="key">${series.map((s) => `<li><i class="${s.cls}"></i>${s.label}</li>`).join("")}</ul>`;
+  const callout = (i, side) => `<p class="callout${side === "left" ? " left" : ""}" data-key="${DEMONS[i][0]}" hidden><b>${DEMONS[i][2]}</b><span>${DEMONS[i][1]}, out ${n(demonHours[i])} hours</span><em>${pct(demonHours[i], WITH)} of demon time</em></p>`;
+
+  const FLOW = { sources: SOURCES, spends: SPENDS, unit: "shards", label: "Soul shards by the spell that made them, on the left, and by what they were spent on, on the right" };
+  const MIRROR = { rows: tapRows.map((t) => ({ x: t.level, up: t.mana, down: t.health })), series: ["mana", "health"], max: TAPS_MAX, ticks: [10, 20, 30, 40, 50], peakLabel: (x) => `level ${x}`, label: "Mana gained from Life Tap, above the line, and the health it cost, below, at each level from 6 to 52" };
+  const STACK = { rows: demonRows, series: DEMONS.map(([, name, , cls]) => ({ label: name, cls })), label: "Share of played time each demon was out at each level from 1 to 52" };
+
+  const body = `
+<section class="ch-head scene-head cls-head" aria-labelledby="h1">
+  <div class="stage" data-state="off" role="img" aria-label="The Voidwalker, the Imp, the Succubus and the Felhunter standing on a warlock's ritual circle, drawn from the game's own models">
+    <div class="callouts" aria-hidden="true">${callout(1)}${callout(2)}${callout(0, "left")}${callout(3)}</div>
+  </div>
+  <div class="ch-id wrap">
+    <div><h1 class="ch-name" id="h1">Warlock</h1>
+      <p class="ch-sub">${gi()}<span><a href="character.html">Name-Surname</a></span><span>Level 52</span><span><a href="#">Affliction 30 / 0 / 12</a></span><span>${HOURS} hours played</span></p></div>
+  </div>
+</section>
+<div class="wrap">
+  <nav class="trades" aria-label="Pages of Name-Surname"><a href="character.html">Character</a><a href="class.html" aria-current="page">Warlock</a><a href="#">Battlegrounds</a></nav>
+  <p class="credit">Imp, Voidwalker, Succubus and Felhunter models, the ritual circle, their textures and every spell and item icon © Blizzard Entertainment, read from the WoW Forever client. The ground and the light are drawn by this page.</p>
+  <dl class="tally" style="--n:6" aria-label="Totals">
+    <div><dt>${gi()}Soul shards made</dt><dd>${n(SHARDS)}</dd></div>
+    <div><dt>${gi()}Life Taps</dt><dd>${n(TAPS)}</dd></div>
+    <div><dt>${gi()}Hours with a demon</dt><dd>${n(WITH)}<small>of ${HOURS}</small></dd></div>
+    <div><dt>${gi()}Healthstones made</dt><dd>312</dd></div>
+    <div><dt>${gi()}Soulstones made</dt><dd>268</dd></div>
+    <div><dt>${gi()}Players summoned</dt><dd>186</dd></div>
+  </dl>
+
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-flow">
+      <h2 id="h-flow">Where soul shards came from and what they bought</h2>
+      <div class="plot flow">${flowChart(FLOW)}</div>
+      <p class="note">870 shards were destroyed to make room in the bags, more than went into Healthstones and Soulstones together.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-bag">
+      <h2 id="h-bag">Shards in the bags</h2>
+      ${bag(22, 32, "soul shard")}
+      ${pair([["Most held at once", "32"], ["Held at a typical pull", "9"], ["Pulls with none", "4%"]])}
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-tap">
+      <h2 id="h-tap">Health traded for mana, by level</h2>
+      <div class="plot taps">${mirrorChart(MIRROR)}</div>
+      <ul class="key"><li><i class="k-mana"></i>Mana gained</li><li><i class="c-kill"></i>Health spent</li></ul>
+      <p class="note">Level ${peak.level} had the most: ${n(peak.taps)} taps, ${short(peak.health)} health for ${short(peak.mana)} mana.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-taps">
+      <h2 id="h-taps">${gi()}Life Tap</h2>
+      ${pair([["Health traded", short(HEALTH)], ["Taps in combat", "71%"], ["Most taps in a row", "7"]])}
+      <h3 class="chart-name">${gi()}Time spent drinking, of played time</h3>
+      ${rank([["Name-Surname", 1.1, "cl"], ["Warlocks", 1.6], ["Every class", 5.9]], 5.9, { plain: true, unit: (v) => v + "%" })}
+      <p class="note">6 deaths came within 5 seconds of a Life Tap.</p>
+    </section>
+
+    <section class="mod w8 first" aria-labelledby="h-out">
+      <h2 id="h-out">The demon that was out, by level</h2>
+      ${stackBars(STACK)}
+      <p class="note">The Voidwalker was out for most of every level from 10 to 24.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-demons">
+      <h2 id="h-demons">Demons</h2>
+      ${rank(DEMONS.map(([, name, pet, cls], i) => [gi() + (pet ? `${name} <small class="pet">${pet}</small>` : name), demonHours[i], cls]), Math.max(...demonHours), { unit: (v) => n(v) + " h" })}
+      ${pair([["Summons", "1,480"], [NAMES.funnel, "3.2 h"], ["Sacrificed", "0"]])}
+    </section>
+
+    <section class="mod first" aria-labelledby="h-curse">
+      <h2 id="h-curse">Curses and banes cast</h2>
+      ${rank(CURSES.map(([key, v]) => [sp(key), v]), CURSES[0][1], { cls: "cl" })}
+    </section>
+    <section class="mod" aria-labelledby="h-dmg">
+      <h2 id="h-dmg">Damage by spell</h2>
+      ${rank(DAMAGE.map(([key, v]) => [key ? sp(key) : gi() + "Every other spell", v]), DAMAGE[0][1], { unit: (v) => v + "%" })}
+    </section>
+    <section class="mod last" aria-labelledby="h-kill">
+      <h2 id="h-kill">What finished the kill</h2>
+      ${rank(KILLS, KILLS[0][1], { plain: true, unit: (v) => v + "%" })}
+      <p class="note">8,912 creatures died to a curse, a bane or the demon with no killing blow of yours.</p>
+    </section>
+
+    <h2 class="sect" id="talents">From the talents</h2>
+    <section class="mod first" aria-labelledby="h-night">
+      <h2 id="h-night">${gi()}${NAMES.nightfall} ${tal("2 of 2")}</h2>
+      ${pair([["Shadow Trances", "1,204"], ["Used", "81%"], ["Seconds to use one", "2.1"]])}
+      ${split(81)}
+      ${splitKey("Spent on an instant Shadow Bolt", "Ran out")}
+    </section>
+    <section class="mod" aria-labelledby="h-burn">
+      <h2 id="h-burn">${gi()}${NAMES.shadowburn} ${tal("1 of 1")}</h2>
+      ${pair([["Casts", "1,190"], ["Paid the shard back", "42%"], ["Shards lost to it", "692"]])}
+      ${split(42)}
+      ${splitKey("The target died in 5 seconds", "It lived")}
+    </section>
+    <section class="mod last" aria-labelledby="h-siphon">
+      <h2 id="h-siphon">${gi()}${NAMES.siphon} ${tal("1 of 1")}</h2>
+      ${pair([["Casts", "3,412"], ["Of your healing", "38%"], ["Fights with it", "64%"]])}
+      ${split(64)}
+      ${splitKey("Fights it was cast in", "Fights without")}
+    </section>
+
+    <h2 class="sect" id="party">For the party</h2>
+    <section class="mod first" aria-labelledby="h-stones">
+      <h2 id="h-stones">Stones</h2>
+      ${rank([[gi() + "Healthstones made", 312, "cl"], [gi() + "Eaten", 204], [gi() + "Handed to another player", 41], [gi() + "Soulstones made", 268, "cl"], [gi() + "Deaths undone by your own", 9]], 312)}
+    </section>
+    <section class="mod" aria-labelledby="h-summon">
+      <h2 id="h-summon">${gi()}Summons</h2>
+      ${pair([["Players summoned", "186"], ["At a dungeon door", "71%"], ["Most in a day", "14"]])}
+      ${rank([["Greywatch Ford", 48], ["Saltmarsh Reach", 31], ["Pale Rest", 22], ["Hollowmere", 17]], 48, { plain: true })}
+    </section>
+    <section class="mod last" aria-labelledby="h-fear">
+      <h2 id="h-fear">Fear and control</h2>
+      ${rank(CONTROL.map(([key, v]) => [sp(key), v]), CONTROL[0][1], { cls: "cl" })}
+      <p class="note">3% of Fear casts were cut short.</p>
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-vs">
+      <h2 id="h-vs">Against other warlocks</h2>
+      <p class="sub">Public warlocks of every ruleset, level 50 to 59. 1,204 characters.</p>
+      <ol class="rules">${AGAINST.map(([label, value, at]) => `<li><span class="rule-l">${gi()}${label}</span><b class="rule-v">${value}</b><span class="rule" style="--at:${at}%"><i></i></span><span class="rule-t"><b>More than ${at}% of warlocks</b><span></span></span></li>`).join("")}</ol>
+    </section>
+  </div>
+
+  <section class="recs" aria-labelledby="h-feats">
+    <h2 id="h-feats">Warlock feats</h2>
+    <p class="feats-sum"><span><b>5</b>of 6 feats</span><span><b>1</b>Gold</span><span><b>2</b>Silver</span><span><b>2</b>Copper</span></p>
+    <ul class="feats feats-top">${FEATS.map(([tier, name, tierName, detail, track]) => `<li class="feat t${tier}"><span class="seal">${gi()}</span><div><p class="feat-n">${name}${tierName ? `<small>${tierName}</small>` : ""}</p><p class="feat-d">${detail}</p><span class="feat-to" aria-hidden="true">${track.map((s) => `<i style="--at:${s}%"></i>`).join("")}</span></div></li>`).join("")}</ul>
+  </section>
+</div>`;
+
+  const band = `
+  <section class="week cls-band" aria-labelledby="h-band">
+    <div><h2 id="h-band">${gi()}Warlock</h2><p><a href="class.html">All warlock numbers</a></p></div>
+    <dl><dt>${gi()}Soul shards made</dt><dd>${n(SHARDS)}</dd></dl>
+    <dl><dt>${gi()}Life Taps</dt><dd>${n(TAPS)}</dd></dl>
+    <dl><dt>${gi()}Demon out most</dt><dd>${outMost[1]}</dd></dl>
+    <dl><dt>${gi()}Healthstones made</dt><dd>312</dd></dl>
+    <dl><dt>${gi()}Players summoned</dt><dd>186</dd></dl>
+  </section>`;
+  return { body, band };
+})();
+
+page("class.html", "Name-Surname the warlock: shards, Life Taps and demons", "search", warlock.body, "", false, { sheets: ["../../resources/css/site.css", "../../resources/css/app.css", "../../resources/css/game.css", "assets/class.css"], bodyClass: "art", main: 'data-class="WARLOCK"' });
+
 // ------------------------------------------------------------------------------ character
 page("character.html", "Maren-Ashlow: character", "search", `
 <section class="ch-head" aria-labelledby="h1">
   <div class="stage"><canvas id="map" role="img" aria-label="Every path the character walked in Saltmarsh Reach, with deaths as crosses"></canvas></div>
   <div class="ch-id wrap" style="padding-top:3rem">
     <div><h1 class="ch-name" id="h1">Maren-Ashlow</h1>
-      <p class="ch-sub"><i class="dot" aria-hidden="true"></i><span>Level 38 Orc Warrior</span><span>Horde</span><span>Standard, PvE</span><span>4d 0h played</span></p>
+      <p class="ch-sub"><i class="dot" aria-hidden="true"></i><span>Level 38 Orc Warlock</span><span>Horde</span><span>Standard, PvE</span><span>4d 0h played</span></p>
       <div class="lvl"><div class="lvl-bar" role="img" aria-label="Progress to the next level"><i style="width:38%"></i></div><p>38% to level 39 · 51,274 XP to go · level 40 in about 6h 10m played</p></div></div>
     <ul class="legend ch-map" aria-label="Map marks"><li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M1 7h22" stroke="#ff2d55" stroke-width="2"/></svg>every path walked in Saltmarsh Reach</li><li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M7.5 2.5l9 9M16.5 2.5l-9 9" stroke="#f0f1f3" stroke-width="1.7" stroke-linecap="round"/></svg>death</li></ul>
   </div>
@@ -904,7 +1166,7 @@ page("character.html", "Maren-Ashlow: character", "search", `
   <div class="own" aria-label="Only you see this bar">
     <span class="state on">Public page</span><span>Economy hidden from visitors</span><span>Last upload 12 minutes ago, 214 sessions</span>
     <span class="sp"><a href="account.html">Sharing and privacy</a><label class="sw"><input type="checkbox" checked aria-label="Public page"><i></i></label></span>
-  </div>
+  </div>${warlock.band}
   <section class="week" aria-labelledby="h-week">
     <div><h2 id="h-week">This week</h2><p>Mon 16 to Sun 22 Nov</p></div>
     <div><dt>Played</dt><dd>8h 48m</dd></div><div><dt>Dungeons</dt><dd>1</dd></div><div><dt>Quests</dt><dd>26</dd></div><div><dt>Gold</dt><dd>+9g 52s</dd></div><div><dt>Zones</dt><dd>4</dd></div>
@@ -927,7 +1189,7 @@ const med = mk(1, 60);
 Comp.lines("pace", { x0: 1, x1: 60, y1: 200, yt: [0, 50, 100, 150, 200], yf: (v) => v + "h", xt: [1, 10, 20, 30, 40, 50, 60], series: [{ cls: "a thin", pts: med, band: med.map(([l, t]) => [l, t * 0.78, t * 1.29]) }, { cls: "b", pts: mk(0.9, 38, true), mark: 37 }] });
 const r = Comp.rng(9); let m = 20; Comp.lines("gold", { w: 380, h: 130, x0: 0, x1: 29, y1: 80, yt: [0, 40, 80], yf: (v) => v + "g", xt: [], series: [{ cls: "g", pts: Array.from({ length: 30 }, (_, i) => [i, (m += r() * 4 - 0.6)]) }] });
 (function () { const cv = document.getElementById("map"), M = ScarletMap, b = cv.getBoundingClientRect(); const view = M.fit({ x0: 1500, y0: 500, x1: 9800, y1: 6100 }, { x: 0, y: 0, w: b.width, h: b.height }); M.terrain(cv, view, b.width, b.height, []); })();
-`, true);
+`, true, { sheets: ["assets/site.css", "assets/app.css", "assets/class.css"], main: 'style="--class: #a79bf5"' });
 
 // -------------------------------------------------------------------------------- account
 const GROUPS = [["Character and sessions", "Sessions, levels, the zones you enter, your ruleset. Needed by every chart, so it is always sent while uploading is on.", 1, 1], ["Experience and levelling", "Experience gains and where they came from.", 1], ["Quests", "Accepts, turn-ins, objectives and rewards.", 1], ["Combat, kills and deaths", "Kills, deaths and what killed you, fights, bosses, casts.", 1], ["PvP and duels", "Honor, player kills, battlegrounds, duels.", 1], ["Movement and map paths", "Where you walked, flew and teleported.", 1], ["Creatures and places seen", "Creatures and objects you met and where you stood.", 1], ["Loot, items and drop rates", "What you looted and from what, loot rules and rolls.", 1], ["Gold, vendors, auctions, mail and trade", "Money, purchases, auctions, mail and trades.", 0], ["Professions and crafting", "Skills, crafts and recipes.", 1], ["Character build and gear", "Stats, gear, talents, spells and pets.", 1], ["Social and the players you meet", "Groups, guild, friends and players seen. Other players' names are sent only with this on.", 0], ["Collections, achievements, Legacy and reputation", "Legacy Challenges and points, mounts, pets, reputation.", 1], ["Game client and addons loaded", "Client checks, the addon list, UI errors, screenshots taken.", 1], ["Other addons", "What Scarlet records from other addons you run.", 1]];
