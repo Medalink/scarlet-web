@@ -147,6 +147,20 @@ uses (`node rects.mjs <folder of the UiMap and UiMapAssignment tables as CSV>`).
 the file into `map_rects`; it can run again at any time. `node check-rects.mjs <OpenMap folder> <tables folder>
 <events.csv>...` compares the table with recorded flight points and border crossings.
 
+## Map sheets
+
+The Survey look's sheets are in git, under `public/map-sheets` (docs/DESIGN.md, Maps, Sheets). To remake them after
+the app's sheets, OpenMap's land masks, the label tables or `docs/map-rects.tsv` change:
+
+```sh
+cd tools/map-tiles
+pnpm install --frozen-lockfile
+node sheets.mjs <scarlet-app checkout>/app/maps-dark "<WoW folder>/_forever_/Interface/AddOns/OpenMap" <folder of <uiMapID>.labels.json>
+```
+
+The label tables are the files the app's `tools/map-labels.mjs` writes next to its maps. `manifest.json` carries a
+version, a hash of everything written, which the viewer puts on each picture's address.
+
 ## Troubleshooting
 
 - `The image scarlet-web-dev:latest does not exist`: run `bin/dev image`.

@@ -16,6 +16,11 @@
 //   reveal        { cells, marks }: draw only the heat of that many cells and that many marks, from the first, as a replay does; default all
 //   look          'survey' or 'game'; default is the last one chosen on this device, else survey
 //   fit           a rectangle or zone id to open on; default is the whole world
+//   sheets        the manifest of the survey sheets (public/map-sheets/manifest.json). With it the map shows one sheet
+//                 at a time and the camera stays on it: the smallest sheet that holds `fit`, else the world's. Zooming
+//                 past a sheet's closest zoom opens the zone under the pointer, zooming out past its widest opens the
+//                 sheet above. Without it the map is the tile pyramid alone.
+//   onSheet       (uiMapID) => void, when another sheet is shown
 //   onPointer     ({ u, v, zone } | null) => void, as the pointer moves over the map
 //   onZoneClick   (zone) => void, for a click on a zone name; default follows its href
 //   onView        ({ u, v, scale, bounds }) => void, after the view moved
@@ -27,18 +32,22 @@
 //                 does the wheel until the map is clicked or dragged (or Ctrl or Command is held); default false,
 //                 the wheel zooms
 //   label         the canvas's accessible name
-// returns { fit, fitWorld, zoomBy, setLayers, setReveal, setLook, look, view, pending, destroy }
+// returns { fit, fitWorld, zoomBy, openSheet (false for a map with no sheet), setLayers, setReveal, setLook, look, view, pending, destroy }
 
 import { addLookSwitch, addZoomAndCredit, LOOKS } from './chrome.js';
 import { attachInput, ZOOM_STEP } from './input.js';
 import { Heat } from './density.js';
-import { drawDots, drawHead, drawMarks, drawPaths, drawZoneNames } from './layers.js';
+import { drawDots, drawHead, drawMarks, drawPaths, drawPlaceNames, drawZoneNames } from './layers.js';
+import { loadSheets } from './sheets.js';
 import { loadManifest, TileSource } from './tiles.js';
 import { TILE, View } from './view.js';
 
 const STORAGE_KEY = 'scarlet.map.look';
 const DEFAULT_LOOK = 'survey';
 const BACKGROUND = { survey: '#0e0e10', game: '#2b3a42' };
+const SHEET_GROUND = '#141416';
+const SHEET_MAGNIFIED = 3;
+const ALL_NAMES_FROM_WIDTH = 700;
 const LABEL = 'The world map. Drag to move, scroll or press plus and minus to zoom.';
 const ANIMATION_MS = 260;
 
@@ -78,6 +87,9 @@ export function mountMap(canvas, options) {
     }
     let manifest = null;
     let tiles = null;
+    let sheets = null;
+    let sheet = null;
+    let masked = null;
     let frame = 0;
     let animation = 0;
     let boxes = [];
@@ -153,15 +165,66 @@ export function mountMap(canvas, options) {
         const rect = rectOf(target);
         if (rect) {
             moved = true;
+            turnTo(sheets?.containing(rect));
             go(view.framing(rect, padding), animate);
         }
     };
 
-    const fitWorld = (animate = true) => go(view.worldFraming(), animate);
+    const fitWorld = (animate = true) => {
+        turnTo(sheets?.world);
+        go(view.worldFraming(), animate);
+    };
+
+    const frameOpening = () => {
+        const open = options.fit && rectOf(options.fit);
+        Object.assign(view, open ? view.framing(open) : view.worldFraming());
+        view.clamp();
+    };
+
+    const showSheet = (next, { keepView = false } = {}) => {
+        sheet = next;
+        view.setLimit(next, (next.width / ((next.u1 - next.u0) * view.W)) * SHEET_MAGNIFIED);
+        if (!keepView) {
+            go(view.worldFraming());
+        }
+        options.onSheet?.(next.id);
+        schedule();
+    };
+
+    const turnTo = (next) => {
+        if (next && next !== sheet) {
+            showSheet(next, { keepView: true });
+        }
+    };
+
+    const openSheet = (id) => {
+        const next = sheets?.get(id) ?? null;
+        if (next) {
+            moved = true;
+            showSheet(next);
+        }
+        return next !== null;
+    };
+
+    const stepSheet = (scale, x, y) => {
+        if (!sheet || (scale <= view.maxScale && scale >= view.minScale)) {
+            return false;
+        }
+        const [u, v] = view.toWorld(x, y);
+        const next = scale > view.maxScale ? sheets.inner(sheet, u, v) : sheets.outer(sheet);
+        if (next) {
+            stop();
+            showSheet(next, { keepView: true });
+            view.anchor(u, v, x, y);
+        }
+        return next !== null;
+    };
 
     const zoomBy = (factor) => {
         moved = true;
-        go({ cx: view.cx, cy: view.cy, s: Math.min(view.maxScale, Math.max(view.minScale, view.s * factor)) });
+        if (!stepSheet(view.s * factor, view.width / 2, view.height / 2)) {
+            go({ cx: view.cx, cy: view.cy, s: Math.min(view.maxScale, Math.max(view.minScale, view.s * factor)) });
+        }
     };
 
     const setLook = (next) => {
@@ -185,9 +248,7 @@ export function mountMap(canvas, options) {
         view.resize(width, height, dpr);
         if (first || !moved) {
             initial = false;
-            const open = options.fit && rectOf(options.fit);
-            Object.assign(view, open ? view.framing(open) : view.worldFraming());
-            view.clamp();
+            frameOpening();
         }
         schedule();
     };
@@ -240,25 +301,64 @@ export function mountMap(canvas, options) {
         tiles.want(look, wanted);
     }
 
+    function sheetBox() {
+        const [x0, y0] = view.toScreen(sheet.u0, sheet.v0);
+        const [x1, y1] = view.toScreen(sheet.u1, sheet.v1);
+        return [x0, y0, x1 - x0, y1 - y0];
+    }
+
+    function drawHeatOnLand(land) {
+        masked ??= document.createElement('canvas');
+        if (masked.width !== canvas.width || masked.height !== canvas.height) {
+            masked.width = canvas.width;
+            masked.height = canvas.height;
+        }
+        const only = masked.getContext('2d');
+        only.setTransform(1, 0, 0, 1, 0, 0);
+        only.clearRect(0, 0, masked.width, masked.height);
+        only.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+        heat.draw(only, view, reveal?.cells);
+        only.globalCompositeOperation = 'destination-in';
+        only.drawImage(land, ...sheetBox());
+        only.globalCompositeOperation = 'source-over';
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(masked, 0, 0);
+        ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+    }
+
     function draw() {
         frame = 0;
+        const onSheet = sheet !== null && look === 'survey';
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.fillStyle = BACKGROUND[look];
+        ctx.fillStyle = onSheet ? SHEET_GROUND : BACKGROUND[look];
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        if (tiles) {
+        if (!onSheet && tiles) {
             drawTiles();
         }
         ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
-        heat.draw(ctx, view, reveal?.cells);
+        const picture = onSheet ? sheets.image(sheet) : null;
+        if (picture) {
+            ctx.drawImage(picture, ...sheetBox());
+        }
+        const land = onSheet && sheets.land(sheet);
+        if (land) {
+            drawHeatOnLand(land);
+        } else if (land === false) {
+            heat.draw(ctx, view, reveal?.cells);
+        }
         drawDots(ctx, view, layers.dots);
         drawPaths(ctx, view, layers.paths);
         drawMarks(ctx, view, reveal ? layers.marks.slice(0, reveal.marks) : layers.marks);
         if (reveal) {
             drawHead(ctx, view, heat.head(reveal.cells));
         }
-        boxes = drawZoneNames(ctx, view, zones);
+        const onThisSheet = (z) => (z.u0 + z.u1) / 2 >= sheet.u0 && (z.u0 + z.u1) / 2 <= sheet.u1 && (z.v0 + z.v1) / 2 >= sheet.v0 && (z.v0 + z.v1) / 2 <= sheet.v1;
+        boxes = drawZoneNames(ctx, view, onSheet ? zones.filter(onThisSheet) : zones);
+        if (onSheet) {
+            drawPlaceNames(ctx, view, sheet.names, boxes, sheetBox()[2] >= ALL_NAMES_FROM_WIDTH);
+        }
         options.onView?.({ u: view.cx / view.W, v: view.cy / view.H, scale: view.s, bounds: view.bounds() });
     }
 
@@ -294,7 +394,9 @@ export function mountMap(canvas, options) {
                 schedule();
             },
             zoomAt: (factor, x, y) => {
-                view.zoomAt(factor, x, y);
+                if (!stepSheet(view.s * factor, x, y)) {
+                    view.zoomAt(factor, x, y);
+                }
                 schedule();
             },
             zoomCentre: (factor) => zoomBy(factor),
@@ -331,8 +433,7 @@ export function mountMap(canvas, options) {
             manifest = loaded;
             view.setWorld(loaded.world);
             if (!moved) {
-                const open = options.fit && rectOf(options.fit);
-                Object.assign(view, open ? view.framing(open) : view.worldFraming());
+                frameOpening();
             }
             tiles = new TileSource(loaded, { tileBase, onLoad: schedule });
             schedule();
@@ -342,12 +443,26 @@ export function mountMap(canvas, options) {
             options.onError?.(error);
         });
 
+    if (options.sheets) {
+        loadSheets(options.sheets, schedule)
+            .then((loaded) => {
+                sheets = loaded;
+                const open = options.fit && rectOf(options.fit);
+                showSheet(open ? sheets.containing(open) : sheets.world, { keepView: true });
+                if (!moved) {
+                    frameOpening();
+                }
+            })
+            .catch((error) => console.error(error));
+    }
+
     resize();
 
     return {
         fit,
         fitWorld,
         zoomBy,
+        openSheet,
         setLayers,
         setReveal: (next) => {
             reveal = next;
@@ -358,7 +473,7 @@ export function mountMap(canvas, options) {
             return look;
         },
         view: () => ({ u: view.cx / view.W, v: view.cy / view.H, scale: view.s, bounds: view.bounds() }),
-        pending: () => (tiles ? tiles.pending() : 1) + heat.loading,
+        pending: () => (tiles ? tiles.pending() : 1) + heat.loading + (sheet ? sheets.pending(sheet) : 0),
         destroy: () => {
             stop();
             heat.destroy();

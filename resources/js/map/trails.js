@@ -303,7 +303,7 @@ export class Trails {
         if (visible.length === 0) {
             return;
         }
-        const grow = Math.min(1.5, Math.max(1, px / 9));
+        const grow = Math.min(1.5, Math.max(0.7, px / 5));
         ctx.save();
         ctx.translate(x0, y0);
         ctx.scale(px, px);

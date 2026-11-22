@@ -6,6 +6,8 @@ export const TILE = 256;
 
 // The most the art is magnified past its own pixels (16 px per world unit at the top zoom): twice, in device px.
 const MAX_DEVICE_PX_PER_UNIT = 32;
+const WORLD_LIMIT = { u0: 0, v0: 0, u1: 1, v1: 1 };
+const CLOSEST_OVER_FIT = 4;
 
 export class View {
     constructor(world) {
@@ -17,6 +19,15 @@ export class View {
         this.cx = this.W / 2;
         this.cy = this.H / 2;
         this.s = 1;
+        this.limit = WORLD_LIMIT;
+        this.deepest = MAX_DEVICE_PX_PER_UNIT;
+    }
+
+    /** Keeps the camera on a rectangle of the world (a sheet), with `deepest` device px per world unit as its closest zoom; null for the whole world. */
+    setLimit(rect, deepest = MAX_DEVICE_PX_PER_UNIT) {
+        this.limit = rect ?? WORLD_LIMIT;
+        this.deepest = deepest;
+        this.clamp();
     }
 
     setWorld(world) {
@@ -31,9 +42,9 @@ export class View {
         this.clamp();
     }
 
-    // The scale at which the whole world is in view.
+    /** The scale at which the whole limit is in view. */
     get fitScale() {
-        return Math.min(this.width / this.W, this.height / this.H);
+        return Math.min(this.width / ((this.limit.u1 - this.limit.u0) * this.W), this.height / ((this.limit.v1 - this.limit.v0) * this.H));
     }
 
     get minScale() {
@@ -41,13 +52,13 @@ export class View {
     }
 
     get maxScale() {
-        return MAX_DEVICE_PX_PER_UNIT / this.dpr;
+        return Math.max(this.deepest / this.dpr, this.fitScale * CLOSEST_OVER_FIT);
     }
 
     clamp() {
         this.s = Math.min(this.maxScale, Math.max(this.minScale, this.s));
-        this.cx = Math.min(this.W, Math.max(0, this.cx));
-        this.cy = Math.min(this.H, Math.max(0, this.cy));
+        this.cx = Math.min(this.limit.u1 * this.W, Math.max(this.limit.u0 * this.W, this.cx));
+        this.cy = Math.min(this.limit.v1 * this.H, Math.max(this.limit.v0 * this.H, this.cy));
     }
 
     toScreen(u, v) {
@@ -71,14 +82,19 @@ export class View {
         this.clamp();
     }
 
+    /** Put the world point (u, v) under screen (x, y), as far as the limit allows. */
+    anchor(u, v, x, y) {
+        this.cx = u * this.W - (x - this.width / 2) / this.s;
+        this.cy = v * this.H - (y - this.height / 2) / this.s;
+        this.clamp();
+    }
+
     // Zoom by `factor`, keeping the world point under screen (x, y) where it is.
     zoomAt(factor, x, y) {
         const [u, v] = this.toWorld(x, y);
         this.s *= factor;
         this.s = Math.min(this.maxScale, Math.max(this.minScale, this.s));
-        this.cx = u * this.W - (x - this.width / 2) / this.s;
-        this.cy = v * this.H - (y - this.height / 2) / this.s;
-        this.clamp();
+        this.anchor(u, v, x, y);
     }
 
     // The camera that shows a rectangle of the world, with `padding` of its size around it.
@@ -90,7 +106,7 @@ export class View {
     }
 
     worldFraming() {
-        return { cx: this.W / 2, cy: this.H / 2, s: this.fitScale };
+        return { cx: ((this.limit.u0 + this.limit.u1) / 2) * this.W, cy: ((this.limit.v0 + this.limit.v1) / 2) * this.H, s: this.fitScale };
     }
 
     // The tile zoom to draw at: the coarsest level whose pixels are not magnified much, within the manifest's range.

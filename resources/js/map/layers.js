@@ -191,3 +191,80 @@ export function drawZoneNames(ctx, view, zones) {
     ctx.restore();
     return boxes;
 }
+
+const NAME_FONT = '"Sofia Sans", "Bahnschrift", sans-serif';
+const NAME_ORDER = { town: 0, spot: 1, flight: 1, area: 2, zone: 2 };
+
+/**
+ * The place names of a sheet, as the Scarlet app letters them: names is [[name, kind, u, v], ...]. Towns first, then
+ * spots and flight points, then areas. A town or a spot is a dot with its name beside it, an area is spaced capitals on
+ * its middle. A name that would run over one already drawn (`taken`: the boxes of the zone names) or off the map tries
+ * its other sides and is left out when none is free. Without `every` only the towns are lettered, for a sheet drawn small.
+ */
+export function drawPlaceNames(ctx, view, names, taken, every) {
+    const boxes = taken.map((b) => [b.x, b.y, b.x + b.w, b.y + b.h]);
+    const zoneNames = new Set(taken.map((b) => b.zone.name));
+    const hit = (b) => boxes.some((t) => b[0] < t[2] && b[2] > t[0] && b[1] < t[3] && b[3] > t[1]);
+    const off = (b) => b[0] < 0 || b[1] < 0 || b[2] > view.width || b[3] > view.height;
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.textBaseline = 'alphabetic';
+    const spaced = 'letterSpacing' in ctx;
+    for (const [name, kind, u, v] of [...names].sort((a, b) => NAME_ORDER[a[1]] - NAME_ORDER[b[1]])) {
+        const [x, y] = view.toScreen(u, v);
+        if ((!every && kind !== 'town') || zoneNames.has(name) || x < -60 || y < -20 || x > view.width + 60 || y > view.height + 20) {
+            continue;
+        }
+        if (kind === 'area' || kind === 'zone') {
+            const text = name.toUpperCase();
+            ctx.font = `600 10px ${NAME_FONT}`;
+            if (spaced) {
+                ctx.letterSpacing = '1.6px';
+            }
+            const width = ctx.measureText(text).width;
+            for (const dy of [3.5, -9, 16]) {
+                const box = [x - width / 2 - 4, y + dy - 10, x + width / 2 + 4, y + dy + 4];
+                if (hit(box) || off(box)) {
+                    continue;
+                }
+                boxes.push(box);
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = 'rgba(20,20,22,0.7)';
+                ctx.lineWidth = 3;
+                ctx.strokeText(text, x, y + dy);
+                ctx.fillStyle = 'rgba(240,241,243,0.42)';
+                ctx.fillText(text, x, y + dy);
+                break;
+            }
+            if (spaced) {
+                ctx.letterSpacing = '0px';
+            }
+            continue;
+        }
+        const town = kind === 'town';
+        ctx.font = `${town ? 600 : 500} ${town ? 12 : 11.5}px ${NAME_FONT}`;
+        const width = ctx.measureText(name).width;
+        const dot = [x - 5, y - 5, x + 5, y + 5];
+        if (hit(dot)) {
+            continue;
+        }
+        for (const [tx, ty, align] of [[x + 8, y + 4, 'left'], [x - 8, y + 4, 'right'], [x, y - 8, 'center'], [x, y + 16, 'center']]) {
+            const left = align === 'left' ? tx : align === 'right' ? tx - width : tx - width / 2;
+            const box = [left - 3, ty - 11, left + width + 3, ty + 4];
+            if (hit(box) || off(box)) {
+                continue;
+            }
+            boxes.push(box, dot);
+            ctx.textAlign = align;
+            ctx.strokeStyle = 'rgba(20,20,22,0.82)';
+            ctx.lineWidth = 3.5;
+            ctx.strokeText(name, tx, ty);
+            ctx.strokeRect(x - 2, y - 2, 4, 4);
+            ctx.fillStyle = `rgba(240,241,243,${town ? 0.9 : 0.6})`;
+            ctx.fillRect(x - 2, y - 2, 4, 4);
+            ctx.fillText(name, tx, ty);
+            break;
+        }
+    }
+    ctx.restore();
+}

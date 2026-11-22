@@ -2,7 +2,6 @@
 
 namespace App\Actions\Public;
 
-use App\Actions\Rollups\BusiestZones;
 use App\Actions\Rollups\WorldHeat;
 use App\Support\Server;
 use App\Support\WorldLayer;
@@ -14,7 +13,6 @@ class WorldMapPage
         private readonly ListRulesets $rulesets,
         private readonly WorldHeat $heat,
         private readonly MapZones $zones,
-        private readonly BusiestZones $busiest,
     ) {}
 
     /**
@@ -35,7 +33,6 @@ class WorldMapPage
             'rulesets' => $this->rulesets->handle(),
             'heat' => $this->heat->handle($layer, $scope->ids, level: 0),
             'zones' => $this->zones->handle($scope->ids),
-            'busiest' => $this->busiest->handle($scope->ids, 8),
         ];
     }
 }

@@ -818,8 +818,8 @@ once a second, 0.16 world units apart at the median, so the 1536 grid (0.65 unit
 `GET /api/v1/public/map/density?layer&level&ruleset&creature` answers one whole level: `columns`, `rows` and `cells`, a
 flat list of pairs (cell index minus the previous cell's index, counter), cells in index order with `index = j * columns
 + i`. It is cached at the edge for `scarlet.edge.api_seconds`. Pages carry no heat cells: the viewer asks for the level
-that suits its zoom (the finest one whose cells are at least 3.5 CSS px wide; it keeps the coarser one on screen while
-the finer one loads, and switches back only when a cell falls under 2.8 px).
+that suits its zoom (the finest one whose cells are at least 2.4 CSS px wide; it keeps the coarser one on screen while
+the finer one loads, and switches back only when a cell falls under 1.9 px).
 
 **Drawing heat.** The counters of a level go into a grid, are blurred with a Gaussian of 0.6 cell, put through a log
 scale that tops out at the 98th percentile of the nonzero cells (so one hotspot does not saturate the rest), and coloured
@@ -830,8 +830,9 @@ walked. The page does not carry those cells: its map spec names `/c/{name}/heat`
 (a flat list of cell_i, cell_j and points, in the order first walked) to exactly the viewers who may open the page, and the
 viewer reads it after the first paint; a replay waits for it like it waits for tiles.
 
-**Lines.** Paths are drawn as lines once a cell of the finest grid is 2 CSS px wide (fully from 3.2 px; the texture
-stays under them at 0.3 of its strength, as the glow). The viewer builds them from the cells, once per level
+**Lines.** Paths are drawn as lines once a cell of the finest grid is 1.9 CSS px wide (fully from 2.6 px; the texture
+stays under them at 0.3 of its strength, as the glow, and fades further once a cell is over 14 px so it never washes
+over a city). The viewer builds them from the cells, once per level
 (`resources/js/map/trails.js`, about 40 ms for 20,000 cells): gaps of up to 3 cells that walked cells enclose are
 closed, the walked cells are thinned to their one-cell-wide middle (Zhang-Suen), and a cell that thinning removed
 with every neighbour comes back as a dot. Each cell left is a point at the middle of the counters of its 3 by 3
@@ -839,16 +840,38 @@ neighbourhood, weighted by them, which puts a road that runs between two rows of
 are joined, three passes move each point to the mean of itself and the points it is joined to, and each point is
 stroked as a curve from halfway to one neighbour to halfway to the other. Width and colour follow the counters round
 the point against the median point: five steps from a 1 px wine line at a quarter of the median to a 2.7 px rose line
-at four times it, so a map of one character is a plain scarlet line and a shared road stands out. Lines are vectors,
+at four times it, so a map of one character is a plain scarlet line and a shared road stands out. The widths are
+scaled by a fifth of the cell's width in px, between 0.7 and 1.5, so a whole zone is fine lines. Lines are vectors,
 drawn 32 by 32 cells at a time from the chunks in view, so they stay sharp at every zoom. Deaths and creatures are
 places, not routes, and stay the texture. A replay draws the points walked so far.
+
+**Sheets.** The Survey look is the Scarlet app's: one drawn dark sheet per zone map, shown one at a time, so the web map
+and the app's Map view read the same. `public/map-sheets` holds them, built by `tools/map-tiles/sheets.mjs` and
+committed (3.3 MB): `<uiMapID>.webp` is the app's sheet (`app/maps-dark`, drawn by its `tools/render-dark.mjs`, no pixel
+of the game's art in it), `<uiMapID>.mask.png` the zone's own land from OpenMap's `MapZoneLand`, feathered a few pixels
+past the shore, and `manifest.json` each sheet's rectangle on the world, its size and its place names (the client's
+area, town and flight point names, from the app's label tables) in world coordinates. 52 sheets: the world (947), the
+two continents, 43 zones with a mask and 6 cities. The viewer opens on the smallest sheet that holds the rectangle the
+page asks for, else the world's, and keeps the camera on it. Heat and lines are drawn through the sheet's mask, so a
+zone's sheet shows what was walked in that zone and its neighbours stay the flat tone the sheet gives them. Names are
+lettered as the app letters them: towns with a dot, areas in spaced capitals, only the towns while the sheet is under
+700 px wide. Zooming in past a sheet's closest zoom (3 device px to a sheet pixel, at least 4 times its fit) opens the
+zone under the pointer, or the city inside a zone; zooming out past its widest opens the zone round a city, else the
+world. The camera does not jump: the next sheet takes the view as it is and keeps the point under the pointer there. The Game look keeps the tile pyramid, held to
+the same rectangle and unmasked. The world map page lists the 12 zones with the most recorded play, busiest first, with
+the world on top and the opened zone added when it is not among them: a row opens that sheet, `/map?zone=<uiMapID>`
+opens on it, and the address and the ruleset links follow the sheet on screen. A `zone` that is no uiMapID is ignored.
+Moving to a zone from a page's zone picker opens its sheet, and showing the whole world opens the world's. The line
+under the map names the sheet on screen while the pointer is off it. A sheet whose mask cannot be read draws its heat
+unmasked, and a map with no sheet manifest is the tile pyramid alone. `zone` is one of the query parameters the page
+cache keeps (`EdgeCacheable`), so each opened zone is its own cached page.
 
 **Creatures.** A creature page marks where it was met with dots. Neither a sighting nor a kill records the creature's
 position, so a dot is the nearest position the same character's path recorded within ten seconds of the sighting, else
 the middle of the sighting's cell. A dot carries no time and no character. A creature met more than 600 times is drawn
 as the same density surface instead (768 grid). The map opens on the dots' bounding box, never wider than a zone.
 
-**The viewer** is the site's own canvas module, with no map library: tiles by zoom, drag and wheel and pinch to move,
+**The viewer** is the site's own canvas module, with no map library: a sheet or tiles by zoom, drag and wheel and pinch to move,
 plus and minus keys, a heat layer drawn as a density surface, paths as scarlet lines, death crosses, zone names from the dictionary at the zooms where they fit, and a link from a zone's name to its page. It
 loads only the tiles in view. The wheel zooms a map, except one that lies behind a page head (a character page,
 a zone page): there the wheel and a one-finger vertical swipe scroll the page, so a visitor is never stopped on the way

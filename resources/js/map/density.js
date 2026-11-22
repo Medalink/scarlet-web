@@ -9,8 +9,8 @@ const SIGMA = 0.6;
 const PERCENTILE = 0.98;
 const BINS = 2048;
 const FLOOR = 0.02;
-const FINER_AT = 3.5;
-const COARSER_AT = 2.8;
+const FINER_AT = 2.4;
+const COARSER_AT = 1.9;
 const BASE_COLUMNS = 192;
 
 const RAMP = [
@@ -21,9 +21,10 @@ const RAMP = [
     [1, 255, 143, 166, 0.96],
 ];
 
-const LINES_FROM = 2;
-const LINES_FULL = 3.2;
+const LINES_FROM = 1.9;
+const LINES_FULL = 2.6;
 const GLOW = 0.3;
+const GLOW_FADES_FROM = 14;
 
 function gaussian(sigma) {
     const radius = Math.ceil(sigma * 2.5);
@@ -198,7 +199,7 @@ export class Surface {
             return;
         }
         const mix = this.lines ? Math.min(1, Math.max(0, (sx - LINES_FROM) / (LINES_FULL - LINES_FROM))) : 0;
-        ctx.globalAlpha = 1 - mix * (1 - GLOW);
+        ctx.globalAlpha = 1 - mix * (1 - GLOW * Math.min(1, GLOW_FADES_FROM / sx));
         ctx.drawImage(this.canvas, from, top, to - from, bottom - top, x0 + from * sx, y0 + top * sy, (to - from) * sx, (bottom - top) * sy);
         ctx.globalAlpha = 1;
         if (mix > 0) {

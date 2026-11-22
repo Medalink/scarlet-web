@@ -15,9 +15,15 @@
     </div>
     <x-density-key low="Few" high="Many characters" />
     <x-readout id="map-out" :line="$d['line']" />
+    <p class="world-zone"><a id="{{ \App\View\Pages\MapPage::ZONE_PAGE }}" href="{{ $d['zonePage']['href'] ?? '' }}" @if (! $d['zonePage']) hidden @endif>{{ $d['zonePage']['label'] ?? '' }}</a></p>
     @if ($d['empty'])<x-note>No {{ $d['layerWord'] }} are recorded on the world map yet.</x-note>@endif
     <h2>Busiest zones</h2>
-    @if ($d['zonesList'])<x-rank :rows="$d['zonesList']" plain />@else<x-note>No play time recorded yet.</x-note>@endif
+    @if ($d['zonesList'])
+    <ol class="rank plain world-zones">
+      <li><a class="who" href="{{ $d['world']['href'] }}" data-map-sheet="{{ $d['world']['sheet'] }}" data-map-for="map" data-map-world @if ($d['world']['on']) aria-current="true" @endif>World</a></li>
+      @foreach ($d['zonesList'] as $row)<li><a class="who" href="{{ $row['href'] }}" data-map-sheet="{{ $row['sheet'] }}" data-map-for="map" @if ($row['on']) aria-current="true" @endif>{{ $row['label'] }}</a><span class="val">{{ $row['value'] }}</span><span class="track"><i style="width:{{ round($row['share'], 1) }}%"></i></span></li>@endforeach
+    </ol>
+    @else<x-note>No play time recorded yet.</x-note>@endif
   </aside>
 </x-world>
 </x-layouts.app>
