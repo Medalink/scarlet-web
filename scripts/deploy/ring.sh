@@ -8,9 +8,13 @@
 #   ring.sh rollback   move visitors back to the release before, only when $FLOW_SHA is the one that serves
 #
 # It reaches the droplet with the ring's own key, which may run scripts/deploy/ring-entry.sh there and nothing else
-# (docs/HOSTING.md, "Deploy ring"). That key cannot install a deploy folder, so when a file a rollout reads there
-# ($rollout_reads) differs between $FLOW_SHA and the droplet the ring prints `skip:` and deploys nothing until
-# `bin/deploy` runs once with the ops key. The rest of deploy/ runs from a PC or on another host and is not compared.
+# (docs/HOSTING.md, "Deploy ring"). Every ship rolls out. When a file a rollout reads on the droplet ($rollout_files)
+# differs between $FLOW_SHA and the droplet, the ring sends this commit's copies to the entry's `install` verb before
+# the rollout, and fails when the entry refuses them. The rest of deploy/ runs from a PC or on another host and is not
+# compared.
+#
+# A deploy lock someone else holds is waited for, $lock_wait seconds at most: the droplet clears a lock older than 40
+# minutes, so the wait ends with the lock. Any other answer to the lock request fails the ring at once.
 set -eu
 
 key=${SCARLET_RING_KEY:-$HOME/.config/scarlet-web/ring_ed25519}
@@ -20,17 +24,14 @@ repo=${DEPLOY_REPO:-https://github.com/Medalink/scarlet-web.git}
 port=${SCARLET_RING_PORT:-15078}
 sha=${FLOW_SHA:?the flow engine sets FLOW_SHA}
 release=$(printf '%s' "$sha" | cut -c1-12)
-skipped=${TMPDIR:-/tmp}/scarlet-ring-skipped-$release
-rollout_reads='[ *][.]/(rollout[.]sh|dc|compose[.]yaml|compose[.]redis-vpc[.]yaml|nginx/.*)$'
+rollout_files='rollout.sh dc compose.yaml compose.redis-vpc.yaml nginx'
+rollout_reads="^[0-9a-f]{64}  [.]/($(printf '%s' "$rollout_files" | sed 's/[.]/[.]/g; s/ /|/g'))(/|\$)"
+lock_wait=2520
+lock_held=75
 kept_images=5
 
 ssh_opts="-i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30"
 entry() { ssh $ssh_opts "ops@$host" "$@"; }
-skip() {
-  : > "$skipped"
-  echo "skip: $1"
-  exit 0
-}
 
 another_ring_runs() {
   pids=$(mktemp)
@@ -44,15 +45,23 @@ another_ring_runs() {
 }
 
 take_lock() {
-  tries=0
-  until entry lock; do
-    tries=$((tries + 1))
-    if [ "$tries" -eq 1 ] && ! another_ring_runs; then
-      echo "ring: no other ring runs here, so a ring lock on the droplet was left by a killed ring; freeing it" >&2
-      entry unlock || true
-      continue
+  give_up_at=$(($(date +%s) + lock_wait))
+  waits=0
+  while :; do
+    answer=0
+    if [ "$waits" -eq 0 ]; then entry lock || answer=$?; else entry lock 2> /dev/null || answer=$?; fi
+    [ "$answer" -ne 0 ] || break
+    [ "$answer" -eq "$lock_held" ] || { echo "ring: the droplet did not give the deploy lock (exit $answer)" >&2; exit 1; }
+    waits=$((waits + 1))
+    if [ "$waits" -eq 1 ]; then
+      echo "ring: waiting for the deploy lock" >&2
+      if ! another_ring_runs; then
+        echo "ring: no other ring runs here, so a ring lock on the droplet was left by a killed ring; freeing it" >&2
+        entry unlock || true
+        continue
+      fi
     fi
-    [ "$tries" -lt 200 ] || { echo "ring: the deploy lock stayed taken for 10 minutes" >&2; exit 1; }
+    [ "$(date +%s)" -lt "$give_up_at" ] || { echo "ring: the deploy lock stayed taken for $((lock_wait / 60)) minutes" >&2; exit 1; }
     sleep 3
   done
   trap 'entry unlock || true; [ -z "${tunnel:-}" ] || kill "$tunnel" 2>/dev/null || true' EXIT
@@ -61,14 +70,37 @@ take_lock() {
   trap 'exit 129' HUP
 }
 
+sums_here() { (cd deploy && find . -type f | LC_ALL=C sort | xargs sha256sum | grep -E "$rollout_reads"); }
+sums_there() {
+  all=$(entry sums)
+  printf '%s\n' "$all" | grep -E "$rollout_reads" || true
+}
+differing() {
+  { printf '%s\n' "$1"; printf '%s\n' "$2"; } | LC_ALL=C sort | uniq -u | cut -c69- | sed '/^$/d' | LC_ALL=C sort -u | tr '\n' ' ' | sed 's/ $//'
+}
+
+carry_rollout_files() {
+  mine=$(sums_here) || { echo "ring: this commit has none of the files a rollout reads under deploy/" >&2; exit 1; }
+  theirs=$(sums_there) || { echo "ring: the droplet did not list its deploy/ files" >&2; exit 1; }
+  [ "$mine" != "$theirs" ] || return 0
+  changed=$(differing "$mine" "$theirs")
+  present=
+  for name in $rollout_files; do
+    [ ! -e "deploy/$name" ] || present="$present $name"
+  done
+  pack=$(mktemp)
+  (cd deploy && tar -cf "$pack" $present) || { rm -f "$pack"; echo "ring: could not pack this commit's copy of: $changed" >&2; exit 1; }
+  installed=0
+  entry install "$release" "$(sha256sum < "$pack" | cut -c1-64)" < "$pack" || installed=$?
+  rm -f "$pack"
+  [ "$installed" -eq 0 ] || { echo "ring: the droplet did not install this commit's copy of: $changed (exit $installed)" >&2; exit 1; }
+  [ "$mine" = "$(sums_there)" ] || { echo "ring: the droplet's copy still differs after the install: $changed" >&2; exit 1; }
+  echo "ring: installed this commit's copy of: $changed"
+}
+
 deploy() {
-  rm -f "$skipped"
-  [ -f "$key" ] || skip "medaware has no ring key at $key (docs/HOSTING.md, Deploy ring)"
+  [ -f "$key" ] || { echo "ring: medaware has no ring key at $key (docs/HOSTING.md, Deploy ring)" >&2; exit 1; }
   [ "$(entry release)" != "$release" ] || { echo "ring: $release already serves"; return 0; }
-  mine=$(cd deploy && find . -type f | LC_ALL=C sort | xargs sha256sum | grep -E "$rollout_reads")
-  theirs=$(entry sums)
-  theirs=$(printf '%s\n' "$theirs" | grep -E "$rollout_reads" || true)
-  [ "$mine" = "$theirs" ] || skip "the files a rollout reads under deploy/ at $release differ from the droplet's; run bin/deploy once with the ops key"
 
   take_lock
   built=$(mktemp)
@@ -96,6 +128,7 @@ deploy() {
   [ "$pushed" = 0 ] || { echo "ring: the image did not reach the droplet's registry" >&2; exit 1; }
 
   entry pull "$release"
+  carry_rollout_files
   entry rollout "$release"
   echo "ring: $release is live"
   sudo -n docker images scarlet-web-app --format '{{.Tag}}' | grep -vx "$release" | tail -n +"$kept_images" | while read -r tag; do
@@ -104,11 +137,6 @@ deploy() {
 }
 
 check() {
-  if [ -e "$skipped" ]; then
-    rm -f "$skipped"
-    echo "skip: nothing was deployed"
-    return 0
-  fi
   serving=$(entry release)
   [ "$serving" = "$release" ] || { echo "ring: $serving serves, not $release" >&2; exit 1; }
   bad=0
@@ -122,7 +150,6 @@ check() {
 
 rollback() {
   [ -f "$key" ] || return 0
-  rm -f "$skipped"
   if [ "$(entry release)" != "$release" ]; then
     echo "ring: $release does not serve, so there is nothing to roll back"
     return 0

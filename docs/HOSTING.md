@@ -50,7 +50,7 @@ see the visitor, not Cloudflare. `www` redirects to the apex in nginx.
 
 A ship to `main` deploys through the `live` ring (see "Deploy ring"); `flow status scarlet-web` shows the result. Run
 `bin/deploy` by hand for what the ring cannot do, or for a manual rollout or rollback. It takes the same deploy lock as
-the ring, so check `flow status scarlet-web` first and do not run it while the ring is running.
+the ring, so each waits for the other.
 
 From medaviper (Git Bash) or medaware, in a checkout of this repository:
 
@@ -200,30 +200,51 @@ Every ship to `main` deploys by itself. The flow's `live` ring (roster, `flows/s
 
 | Stage | What it does | When it fails |
 |---|---|---|
-| `deploy` | Builds the image, pushes its new layers to the droplet's registry and runs `deploy/rollout.sh`, as `bin/deploy` does | The old release keeps serving |
+| `deploy` | Builds the image, pushes its new layers to the droplet's registry, brings the files a rollout reads to the commit's copies (see below) and runs `deploy/rollout.sh`, as `bin/deploy` does | The old release keeps serving |
 | `pages` | Reads the release that serves and requests `/up`, `/stats`, `/leaderboards`, `/rulesets`, `/talents`, `/map`, `/search` and the public API with a `v=<release>` parameter no cache has seen, so each answer is rendered by the new release | The ring rolls back |
 | `rollback` | `rollout.sh --rollback`, only when the failed commit is the release that serves | The failure is posted with the log |
 
 The ring uses a key of its own, `~/.config/scarlet-web/ring_ed25519` on medaware. Its line in
 `~ops/.ssh/authorized_keys2` on the droplet forces `/usr/local/sbin/scarlet-deploy-entry` (`scripts/deploy/ring-entry.sh`)
-and allows one port forward, to the loopback registry. The entry takes nine verbs (lock, unlock, registry, pull,
-rollout, rollback, release, sums, status) and a release must be 12 hex digits. The key gets no shell, cannot write a
-file, cannot install a deploy folder and is not on the database host. The ops key stays on medaviper.
+and allows one port forward, to the loopback registry. The entry takes ten verbs (lock, unlock, registry, pull,
+install, rollout, rollback, release, sums, status) and a release must be 12 hex digits. The key gets no shell and is not
+on the database host. `install` replaces the five paths a rollout reads and nothing else, and a rollout runs
+`deploy/rollout.sh` as `ops`, so the ring's key is as strong as `ops` on the app droplet (owner, 2026-11-22: "I want
+code to keep shipping when it's valid and deploys heal", and "Yes" to this). `ssh -i ~/.config/scarlet-web/ring_ed25519
+ops@scarlet-web verbs` on medaware prints the verbs the droplet's entry takes. The ops key stays on medaviper.
 
 The ring takes the deploy lock before it builds and frees it on exit, including on SIGTERM, SIGINT and SIGHUP. A
 SIGKILL, such as the one an engine restart sends, leaves the lock behind. Only one ring runs at a time, so when the
 lock is taken and no other `ring.sh deploy` runs on medaware, the ring calls `unlock` once, which frees a lock the ring
-took and leaves one `bin/deploy` took. Otherwise it waits up to 10 minutes. The droplet clears any lock older than 40
-minutes on its own.
+took and leaves one `bin/deploy` took. Otherwise it waits up to 42 minutes: the droplet clears any lock older than 40
+minutes on its own, so a hand command that holds the lock delays the ring and does not fail it. Any other answer to the
+lock request, such as a droplet that does not answer, fails the ring at once.
 
-What the ring cannot do, and `bin/deploy` with the ops key still does:
+### Files a rollout reads
 
-- **A change to a file a rollout reads on the droplet**: `deploy/rollout.sh`, `deploy/dc`, `deploy/compose.yaml`,
-  `deploy/compose.redis-vpc.yaml` and `deploy/nginx/`. The ring compares those at the commit with the droplet's
-  (`sums`). When they differ it prints `skip:` and deploys nothing, for that commit and every later one, until
-  `bin/deploy` runs once. A change to any other file under `deploy/` (provisioning, backups, the database host, load
-  tools) does not stop it, because a rollout never runs them.
-- Everything else `bin/deploy` lists: the server setup, TLS, DNS, cache rules, backups, maps and the database host.
+A rollout on the droplet reads `deploy/rollout.sh`, `deploy/dc`, `deploy/compose.yaml`, `deploy/compose.redis-vpc.yaml`
+and `deploy/nginx/`. Every ship rolls out, whatever it changed. Once the image is on the droplet the ring compares those
+five paths at the commit with the droplet's (`sums`):
+
+- **They match.** The rollout runs.
+- **They differ.** The ring sends the commit's copies to `install` as a plain tar with its sha256. The entry replaces
+  the droplet's only under the ring's own lock once no rollout or other install runs, only when the archive has that
+  sha256, only for those names as plain files (no link, no other path, no compression, 1 MiB at most packed and
+  unpacked), and only when `sh -n` parses both scripts, `docker compose config` accepts the stack with the droplet's `.env`, and `nginx -t` accepts the
+  configuration in a throwaway container of the image that serves, with the droplet's certificate and upstream. It
+  appends the release and the archive's sha256 to `state/ring-installs.log`. Then the rollout runs with the new
+  copies. A refusal changes nothing and fails the ring, like any commit that cannot deploy: the fix is a ship.
+
+The ring never puts an older copy back: after a failed rollout or a rollback the droplet keeps the newest copies it was
+given, and the next ship brings its own. `nginx -t` runs in the image that serves, so a change that needs a newer nginx
+ships in two steps: the pin in `deploy/compose.yaml` first, then the configuration. A droplet whose entry is older than
+`install` fails the ring on such a ship until `bin/deploy ring-key` has run there.
+
+A change to any other file under `deploy/` (provisioning, backups, the database host, load tools) never reaches the
+droplet through the ring, because a rollout never runs them.
+
+What the ring cannot do, and `bin/deploy` with the ops key still does: the server setup, TLS, DNS, cache rules, backups,
+maps and the database host.
 
 Set up or rotate the key:
 
@@ -231,6 +252,9 @@ Set up or rotate the key:
 ssh medaware 'mkdir -p -m 700 ~/.config/scarlet-web && ssh-keygen -q -t ed25519 -N "" -C scarlet-ring@medaware -f ~/.config/scarlet-web/ring_ed25519 && cat ~/.config/scarlet-web/ring_ed25519.pub' > ring.pub
 bin/deploy ring-key ring.pub      # with the ops key: installs the entry and replaces authorized_keys2
 ```
+
+`bin/deploy ring-key` also installs this checkout's `scripts/deploy/ring-entry.sh` as the entry, so it is the command
+that gives the droplet a newer entry, `install` included.
 
 To stop the ring: `flow freeze scarlet-web --ring live`, or empty `~ops/.ssh/authorized_keys2` on the droplet.
 
