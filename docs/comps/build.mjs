@@ -467,7 +467,7 @@ const dropRow = (name, href, k, n, per, cls = "", how = null) => {
   const rate = n < 10
     ? `<td class="n"><span class="mut">–</span></td><td class="n">–</td>`
     : `<td class="n"><span class="rb${n < 30 ? " hollow" : ""}" role="img" aria-label="${pct(p)}, range ${pct(low)} to ${pct(high)} percent"><i class="rng" style="left:${(low * 100).toFixed(1)}%;width:${((high - low) * 100).toFixed(1)}%"></i><i class="pt" style="left:${(p * 100).toFixed(1)}%"></i></span>${pct(p)}%</td><td class="n">${pct(low)} to ${pct(high)}</td>`;
-  return { low: n < 10 ? -1 : low, k, html: `<tr><td>${link}</td>${how === null ? "" : `<td>${how}</td>`}${rate}<td class="n">${k} of ${n}</td><td class="n">${per}</td></tr>` };
+  return { low: n < 10 ? -1 : low, k, html: `<tr><td>${link}</td>${how === null ? "" : `<td>${how}</td>`}${rate}<td class="n">${k} of ${n}</td>${per === null ? "" : `<td class="n">${per}</td>`}</tr>` };
 };
 const ranked = (rows) => rows.sort((a, b) => b.low - a.low || b.k - a.k).map((row) => row.html).join("\n          ");
 
@@ -501,7 +501,16 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
       <h2 id="h-l">Deaths to it, by the character's level</h2>
       <div class="plot"><svg id="dl" role="img" aria-label="Deaths to this creature by character level"></svg></div>
     </section>
-    <section class="mod w5 last" aria-labelledby="h-h">
+    <section class="mod w5 last" aria-labelledby="h-k">
+      <h2 id="h-k">Skinning</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Item</th><th class="n">Share of skins</th><th class="n">Range</th><th class="n">Skins</th></tr></thead>
+        <tbody>
+          ${ranked([dropRow("Light Leather", "item.html", 52, 78, null), dropRow("Ruined Leather Scraps", "item.html", 9, 78, null), dropRow("Scaly Marsh Hide", "item.html", 15, 78, null)])}
+        </tbody></table></div>
+      <p class="note">A share is skins that held the item over skins of this creature read for the first time. The band is the 95% range. Skinning does not depend on the loot rule.</p>
+    </section>
+    <section class="mod w7 first last" aria-labelledby="h-h">
       <h2 id="h-h">How it kills</h2>
       <ol class="rank"><li><span class="who">Melee</span><span class="val">71% of killing blows</span><span class="track"><i style="width:71%"></i></span></li><li><span class="who">Rending Bite</span><span class="val">24%</span><span class="track"><i style="width:24%"></i></span></li><li><span class="who">Thrash</span><span class="val">5%</span><span class="track"><i style="width:5%"></i></span></li></ol>
     </section>

@@ -41,6 +41,8 @@ final class RecordPages
         $deaths = $r['deaths'];
         /** @var array{rule: string|null, windows: int, characters: int, unread: int, rules: list<array{rule: string, windows: int}>, rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $table */
         $table = $r['drop_table'];
+        /** @var array{rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $skin */
+        $skin = $r['skin_table'];
         /** @var list<array{id: int, name: string}> $zones */
         $zones = $facts['zones'];
 
@@ -76,6 +78,12 @@ final class RecordPages
                 $row['estimate']->counts(),
                 Format::number($row['per_drop'], 1),
             ]], $table['rows']),
+            'skinning' => array_map(fn (array $row): array => ['cells' => [
+                ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id']],
+                ['rate' => $row['estimate']],
+                $row['estimate']->stated() ? $row['estimate']->range() : '–',
+                $row['estimate']->counts(),
+            ]], $skin['rows']),
             'map' => MapSpec::density(WorldLayer::Creatures, $scope->ruleset?->slug(), $r['map_zones'], $r['points'] === null ? ($zones[0]['id'] ?? null) : null, creature: (int) $r['id'], dots: $r['points']),
             'hasMap' => $r['points'] !== null || $r['heat'] !== [],
             'dots' => $r['points'] !== null,

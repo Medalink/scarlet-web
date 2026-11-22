@@ -80,8 +80,9 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
   band on it runs from the low to the high end of the range. The rule segment gains **All rules** as the default,
   because the table is one table, and keeps a view per rule. A rule with fewer than 10 windows is disabled. Rows
   rank by the low end of the range. `personal` windows are never pooled into All rules.
-- **Skinning** (w5, phase 2): its own table over skin windows: Item, Share of skins, Skins. Left out when there
-  are none.
+- **Skinning** (w5, beside Deaths to it): its own table over the creature's skin windows (`read = 'skin'`, first
+  reads, whatever the loot rule): Item, Share of skins, Range, Skins (`k of n`). It ranks and draws by the same
+  ladder as Drops. Left out when the creature has no skin windows. The API answer gains `skinning`.
 - **Drop rate by loot rule** (w12, phase 4): one row per item with 10 or more drops, one mark per rule on a shared
   0 to 100% axis: a dot for the rate and a line for the range, with `k of n` beside it. Arms of 10 to 29 windows
   are drawn hollow, arms under 10 are not drawn. A row whose ranges do not overlap gets a mark and the tags that

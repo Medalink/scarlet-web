@@ -26,6 +26,7 @@ class RecordController extends PublicController
         return $this->respond([
             'id' => $answer['id'], 'name' => $answer['name'], 'facts' => $answer['facts'], 'kills' => $answer['kills'],
             'deaths' => $answer['deaths'], 'deaths_by_level' => $answer['deaths_by_level'], 'drops' => $answer['drops'],
+            'skinning' => ['windows' => $answer['skin_table']['windows'], 'rows' => $answer['skin_table']['rows']],
             'cells' => array_map(fn (array $cell, array $level): array => [...$cell, 'level' => $level[2]], $heat, HeatLevels::assign($answer['heat'])),
         ], $answer['scope']->describe());
     }

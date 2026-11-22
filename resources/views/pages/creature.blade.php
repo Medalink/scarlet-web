@@ -28,13 +28,19 @@
       <x-note>No sightings are placed on the world map yet.</x-note>
       @endif
     </x-module>
-    <x-module span="w7" :first="true" :last="true" id="h-l" heading="Deaths to it, by the character's level">
+    <x-module span="w7" :first="true" :last="! $d['skinning']" id="h-l" heading="Deaths to it, by the character's level">
       @if ($d['byLevel'])
       <x-plot id="by-level" label="Deaths to this creature at each character level" :spec="$d['byLevel']" />
       @else
       <x-note>No character has died to it yet.</x-note>
       @endif
     </x-module>
+    @if ($d['skinning'])
+    <x-module span="w5" :last="true" id="h-k" heading="Skinning">
+      <x-table :rows="$d['skinning']" :columns="[['label' => 'Item'], ['label' => 'Share of skins', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Skins', 'numeric' => true]]" style="margin-top:1.1rem" />
+      <p class="note">A share is skins that held the item over skins of this creature read for the first time. The band is the 95% range. Skinning does not depend on the loot rule.</p>
+    </x-module>
+    @endif
   </x-sheet>
 </div>
 </x-layouts.app>
