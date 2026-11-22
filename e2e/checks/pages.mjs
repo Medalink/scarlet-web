@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { InstallClient } from "../client.mjs";
-import { NAME, Skip, expectStatus, expectJson, failOn, pool } from "../support.mjs";
+import { NAME, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool } from "../support.mjs";
 
 const CONCURRENCY = 6;
 const ERROR_PAGE = /Server Error|Whoops|Stack Trace|Illuminate\\|laravel-exceptions|Undefined (variable|array key)|Call to (undefined|a member)/i;
@@ -8,7 +8,7 @@ const heading = (text) => new RegExp(`<h1[^>]*>\\s*${text}`);
 
 const PAGES = [
   { path: "/", shows: heading("Scarlet records what you do in WoW Forever") },
-  { path: "/demo", shows: heading("Maren-Ashlow") },
+  { path: "/demo", shows: heading("Maren Ashlow") },
   { path: "/stats", shows: heading("All characters") },
   { path: "/map", shows: heading("World map") },
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
@@ -20,7 +20,7 @@ const PAGES = [
   { path: "/talents", shows: heading("Talents") },
   { path: "/rulesets", shows: heading("Rulesets compared") },
   { path: "/rulesets/unidentified", shows: heading("Not identified") },
-  { path: `/c/${NAME}`, shows: heading(NAME) },
+  { path: `/c/${NAME}`, shows: heading(SHOWN) },
   { path: `/c/${NAME}/heat`, shows: /^\{"data":/ },
   { path: "/creatures/113", shows: heading("Stonetusk Boar") },
   { path: "/items/769", shows: heading("Chunk of Boar Meat") },
@@ -75,7 +75,9 @@ export async function appLinksToAccount(ctx) {
   const { http, jar } = ctx;
   const login = expectStatus(await http.request("/login", { jar, headers: { Accept: "text/html" } }), 200, "GET /login");
   if (!login.text.includes('action="/auth/development"')) {
-    throw new Skip("the development sign-in is off: set SCARLET_DEV_LOGIN=true in the server's .env");
+    const off = "the development sign-in is off: set SCARLET_DEV_LOGIN=true in the server's .env";
+    if (STRICT) throw new Error(`${off} (E2E_STRICT=1 means the server was started with it, so the login page lost its form)`);
+    throw new Skip(off);
   }
   const signedIn = await http.request("/auth/development", { ...form({ _token: tokenIn(login.text) }), method: "POST", jar, redirect: "manual" });
   if (signedIn.status !== 302 || !(signedIn.headers.get("location") ?? "").endsWith("/account")) {

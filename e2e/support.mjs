@@ -9,10 +9,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const NAME = "Testa-Fixture";
+/** NAME as pages draw it: first name and surname. */
+export const SHOWN = NAME.replace("-", " ");
 export const PROBE = "Probe-Lane";
 export const LOCAL_HOSTS = ["127.0.0.1", "localhost", "[::1]"];
 /** A remember cookie makes EdgeCacheable treat the reader as signed in, so a page read reaches the origin, not the 60 s page cache. */
-export const ORIGIN_COOKIE ={ name: "remember_web_e2e", value: "lane" };
+export const ORIGIN_COOKIE = { name: "remember_web_e2e", value: "lane" };
+/** True when a caller that guarantees the whole setup (e2e/boot.mjs) asks that a check it set up for never skips. */
+export const STRICT = process.env.E2E_STRICT === "1";
+const MAX_REDIRECTS = 5;
 export const ORIGIN_HEADERS = { Cookie: `${ORIGIN_COOKIE.name}=${ORIGIN_COOKIE.value}` };
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
@@ -48,12 +53,29 @@ export class Http {
     if (limiter !== null) this.counts.set(limiter, (this.counts.get(limiter) ?? 0) + 1);
   }
 
+  /**
+   * fetch that never leaves the local server: a write is never resent to where a redirect points, and a read follows
+   * a redirect only to a local address.
+   */
   fetch = async (url, options = {}) => {
-    this.count(url);
-    try {
-      return await fetch(url, options);
-    } catch (error) {
-      throw new Error(`${options.method ?? "GET"} ${url} got no answer: ${error.cause?.code ?? error.cause?.message ?? error.message}`);
+    const method = options.method ?? "GET";
+    const follows = (options.redirect ?? "follow") === "follow" && (method === "GET" || method === "HEAD");
+    let at = String(url);
+    for (let hop = 0; ; hop++) {
+      this.count(at);
+      let response;
+      try {
+        response = await fetch(at, { ...options, redirect: "manual" });
+      } catch (error) {
+        throw new Error(`${method} ${at} got no answer: ${error.cause?.code ?? error.cause?.message ?? error.message}`);
+      }
+      const location = response.headers.get("location");
+      if (!follows || response.status < 300 || response.status > 399 || !location) return response;
+      const next = new URL(location, at);
+      if (!LOCAL_HOSTS.includes(next.hostname)) throw new Error(`${method} ${at} redirects to ${next.origin}, which is not a local server`);
+      if (hop === MAX_REDIRECTS) throw new Error(`${method} ${url} was still redirecting after ${MAX_REDIRECTS} hops`);
+      await response.body?.cancel();
+      at = next.href;
     }
   };
 

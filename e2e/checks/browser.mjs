@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { Browser, browserCommand } from "../cdp.mjs";
-import { NAME, Skip, failOn, pool } from "../support.mjs";
+import { NAME, SHOWN, Skip, failOn, pool } from "../support.mjs";
 
 const WIDE = ["/", "/stats", "/map", "/leaderboards", "/search?q=Testa", `/c/${NAME}`];
 const NARROW = ["/", "/stats"];
@@ -47,6 +47,7 @@ async function mapArtInstalled(ctx) {
 
 export async function mapArtIsServed(ctx) {
   if (await mapArtInstalled(ctx)) return;
+  if (process.env.E2E_MAP_ART === "1") throw new Error("the server has map art (E2E_MAP_ART=1), but /map-tiles/manifest.json does not answer 200");
   throw new Skip("this server has no map art (storage/app/maps/manifest.json), so the 404 of its manifest and the map script's error about it are not counted against the pages");
 }
 
@@ -83,9 +84,9 @@ export async function searchSuggestsWhileTyping(ctx) {
     await tab.evaluate(`document.querySelector("#sq").focus()`);
     await tab.send("Input.insertText", { text: "Testa" });
     await tab.until(
-      `[...document.querySelectorAll(".find-opt")].some((option) => option.textContent.includes(${JSON.stringify(NAME)}))`,
+      `[...document.querySelectorAll(".find-opt")].some((option) => option.textContent.includes(${JSON.stringify(SHOWN)}))`,
       SUGGEST_MS,
-      `typing Testa into the search box never listed ${NAME} in the suggestions (${tab.problems.join(" | ") || "no page errors"})`,
+      `typing Testa into the search box never listed ${SHOWN} in the suggestions (${tab.problems.join(" | ") || "no page errors"})`,
     );
   } catch (error) {
     throw new Error(await withScreenshot(ctx, tab, "search-typing", error));

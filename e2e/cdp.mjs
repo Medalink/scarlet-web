@@ -73,9 +73,10 @@ export class Browser {
       windowsHide: true,
     });
     const browser = new Browser(child, port, scratch, onRequest);
-    child.on("error", () => {});
+    let refused = null;
+    child.on("error", (error) => (refused = error));
     const deadline = Date.now() + BOOT_MS;
-    while (Date.now() < deadline && child.exitCode === null) {
+    while (Date.now() < deadline && child.exitCode === null && !refused) {
       try {
         const list = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(CALL_MS) }).then((response) => response.json());
         if (Array.isArray(list)) return browser;
@@ -84,6 +85,7 @@ export class Browser {
       }
     }
     browser.stopNow();
+    if (refused) throw new Error(`the browser ${command} did not start: ${refused.message}`);
     throw new Error(`the browser ${command} did not answer on debug port ${port} within ${BOOT_MS / 1000}s`);
   }
 
@@ -111,8 +113,12 @@ export class Browser {
     if (this.#stopped) return;
     this.#stopped = true;
     process.off("exit", this.#onExit);
-    killTree(this.pid);
-    fs.rmSync(this.#scratch, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    if (this.pid !== undefined) killTree(this.pid);
+    try {
+      fs.rmSync(this.#scratch, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    } catch (error) {
+      console.error(`the browser profile ${this.#scratch} could not be removed: ${error.message}`);
+    }
   }
 
   async stop() {

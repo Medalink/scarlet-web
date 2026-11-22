@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
-import { NAME, escapeRegExp, expectError, expectJson, expectStatus, failOn, pool } from "../support.mjs";
+import { NAME, escapeRegExp, expectError, expectJson, expectStatus, failOn, pool, sleep } from "../support.mjs";
 
 const CONCURRENCY = 6;
 const RULESET = "unidentified";
+const FACTS_WAIT_MS = 10_000;
+const FACTS_POLL_MS = 250;
 const RECORDS = { characters: NAME, creatures: "113", items: "769", quests: "783", zones: "1436" };
 
 const SHAPES = [
@@ -80,15 +82,14 @@ export async function everyEndpointAnswers(ctx) {
     }
     const template = templates.find((entry) => templateExpression(entry).test(route));
     const shape = SHAPES.find(([entry]) => entry === template);
-    const missing = shape ? missingKeys(answer.json.data, shape[1]) : [];
+    if (!shape) return `${route}: /developers lists ${template}, which this lane has no expected fields for; add it to SHAPES`;
+    const missing = missingKeys(answer.json.data, shape[1]);
     return missing.length > 0 ? `${route}: data lacks ${missing.join(", ")}: ${answer.text.slice(0, 300)}` : null;
   });
   failOn(problems, paths.length, "public endpoints");
 }
 
-export async function characterIsServed(ctx) {
-  const answer = expectStatus(await answerOf(ctx, `/characters/${NAME}`), 200, `GET /api/v1/public/characters/${NAME}`);
-  const data = expectJson(answer, "the character answer").data;
+function wrongFacts(data) {
   const facts = {
     name: NAME, race: "Human", class: "WARRIOR", faction: "Alliance", level: 6, first_level: 5, whole_life: false,
     ruleset: "unidentified", recorded_seconds: 255,
@@ -97,7 +98,20 @@ export async function characterIsServed(ctx) {
   const slayer = data.feats?.find((feat) => feat.key === "slayer")?.value;
   if (slayer !== 2) wrong.push(`feats.slayer.value: expected 2 kills, saw ${JSON.stringify(slayer)}`);
   if (data.week?.quests !== 1) wrong.push(`week.quests: expected 1, saw ${JSON.stringify(data.week?.quests)}`);
-  if (wrong.length > 0) throw new Error(`${NAME} is served with other facts than the fixture holds:\n${wrong.join("\n")}`);
+  return wrong;
+}
+
+/** Feats are written by a job that runs after the decode, so the answer is read again until it holds them or FACTS_WAIT_MS pass. */
+export async function characterIsServed(ctx) {
+  const deadline = Date.now() + FACTS_WAIT_MS;
+  for (;;) {
+    const route = "/api/v1/public" + uncached(`/characters/${NAME}`, crypto.randomInt(2, 101));
+    const answer = expectStatus(await ctx.http.api(route), 200, `GET /api/v1/public/characters/${NAME}`);
+    const wrong = wrongFacts(expectJson(answer, "the character answer").data);
+    if (wrong.length === 0) return;
+    if (Date.now() > deadline) throw new Error(`${NAME} is served with other facts than the fixture holds, ${FACTS_WAIT_MS / 1000}s after the decode:\n${wrong.join("\n")}`);
+    await sleep(FACTS_POLL_MS);
+  }
 }
 
 export async function recordsAreServed(ctx) {
