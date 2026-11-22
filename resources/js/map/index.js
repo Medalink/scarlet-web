@@ -355,7 +355,6 @@ export function mountMap(canvas, options) {
             return look;
         },
         view: () => ({ u: view.cx / view.W, v: view.cy / view.H, scale: view.s, bounds: view.bounds() }),
-        // how many tiles and heat cells are still on their way: 0 once the picture is complete
         pending: () => (tiles ? tiles.pending() : 1) + heat.loading,
         destroy: () => {
             stop();

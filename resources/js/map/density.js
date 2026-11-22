@@ -20,13 +20,13 @@ const RAMP = [
     [1, 255, 143, 166, 0.96],
 ];
 
-/** Past `from` px per cell the finest level is drawn from the cells again, `scale` texels to a cell and blurred by `sigma` cells. */
 const DETAIL = [
-    { from: 6, scale: 3, sigma: 0.5 },
-    { from: 10, scale: 5, sigma: 0.3 },
-    { from: 18, scale: 7, sigma: 0.18 },
-    { from: 30, scale: 9, sigma: 0.12 },
+    { from: 6, scale: 3, sigma: 0.4 },
+    { from: 10, scale: 5, sigma: 0.35 },
+    { from: 18, scale: 7, sigma: 0.3 },
+    { from: 30, scale: 9, sigma: 0.25 },
 ];
+const LINE_GAIN = 0.665;
 
 function gaussian(sigma) {
     const radius = Math.ceil(sigma * 2.5);
@@ -196,7 +196,6 @@ export class Surface {
         const size = span * scale;
         const x0 = cx * CHUNK - margin;
         const y0 = cy * CHUNK - margin;
-        const middle = (scale - 1) / 2;
         const field = new Float32Array(size * size);
         let any = false;
         for (let by = cy - 1; by <= cy + 1; by++) {
@@ -205,7 +204,12 @@ export class Surface {
                     const i = this.cells[n] - x0;
                     const j = this.cells[n + 1] - y0;
                     if (i >= 0 && j >= 0 && i < span && j < span) {
-                        field[(j * scale + middle) * size + i * scale + middle] += Math.log1p(this.cells[n + 2]) * scale * scale;
+                        const value = Math.log1p(this.cells[n + 2]);
+                        for (let row = j * scale; row < (j + 1) * scale; row++) {
+                            for (let column = i * scale; column < (i + 1) * scale; column++) {
+                                field[row * size + column] += value;
+                            }
+                        }
                         any = true;
                     }
                 }
@@ -215,7 +219,7 @@ export class Surface {
         if (any) {
             const soft = blur(field, size, size, kernel);
             const rgba = new Uint8ClampedArray(soft.length * 4);
-            const gain = (tier.sigma / SIGMA) * (255 / this.reference);
+            const gain = (LINE_GAIN * 255) / this.reference;
             for (let p = 0; p < soft.length; p++) {
                 const level = Math.min(255, Math.round(soft[p] * gain));
                 rgba.set(LUT.subarray(level * 4, level * 4 + 4), p * 4);

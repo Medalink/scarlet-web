@@ -571,7 +571,15 @@ scale that tops out at the 98th percentile of the nonzero cells (so one hotspot 
 by a ramp that is transparent at low density and scarlet to rose at high. The result is one texture per level, drawn
 scaled with bilinear filtering; a frame is a single `drawImage` of the visible part. A character's page draws its own
 cells (1536 grid, no threshold) the same way, and the replay shows a texel once the first cell that touches it has been
-walked.
+walked. The page does not carry those cells: its map spec names `/c/{name}/heat`, which answers `data.grid` and `data.cells`
+(a flat list of cell_i, cell_j and points, in the order first walked) to exactly the viewers who may open the page, and the
+viewer reads it after the first paint; a replay waits for it like it waits for tiles.
+
+**Deep zoom.** The blur is 0.6 of a cell, which is 9 px or more once a cell is 15 px wide, and joins neighbouring paths into
+blobs. From 6 CSS px a cell on the finest level, the viewer stops scaling that texture and draws the cells again, 64 by 64
+cells at a time, at 3 to 9 texels to a cell with a blur of 0.5 down to 0.12 cell (3 to 5 px on screen at every zoom, with the
+same brightness for a line). Chunks are built when they come into view and the last 48 are kept. A replay that is still
+revealing cells draws the plain texture.
 
 **Creatures.** A creature page marks where it was met with dots. Neither a sighting nor a kill records the creature's
 position, so a dot is the nearest position the same character's path recorded within ten seconds of the sighting, else
