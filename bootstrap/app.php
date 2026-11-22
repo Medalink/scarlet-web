@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EdgeCacheable;
 use App\Http\Middleware\PageStatementTimeout;
+use App\Http\Middleware\PublicArt;
 use App\Http\Middleware\RateLimitRequests;
 use App\Http\Middleware\VerifyInstallSignature;
 use App\Support\Exceptions\ApiException;
@@ -25,9 +26,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'scarlet.signed' => VerifyInstallSignature::class,
             'scarlet.rate' => RateLimitRequests::class,
             'scarlet.timeout' => PageStatementTimeout::class,
+            'scarlet.art' => PublicArt::class,
             'scarlet.edge' => EdgeCacheable::class,
         ]);
         $middleware->prependToPriorityList(before: StartSession::class, prepend: EdgeCacheable::class);
+        $middleware->prependToPriorityList(before: StartSession::class, prepend: PublicArt::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (ApiException $e): void {

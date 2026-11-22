@@ -52,6 +52,7 @@ const REGISTRY = [
   { lane: "pages", name: "one death heard by two uploaders is counted once", run: pages.deathIsCountedOnce },
   { lane: "pages", name: "a match's scoreboard is shown without the players' names", run: pages.scoreboardIsShownWithoutNames },
   { lane: "pages", name: "a recipe, a spell and a boss encounter show what the uploads recorded", run: pages.recipeSpellAndBossLootAreShown },
+  { lane: "pages", name: "the art answers set no cookie", independent: true, run: pages.artAnswersSetNoCookie },
   { lane: "pages", name: "a missing character is a 404 page", independent: true, run: pages.missingPageIs404("/c/Nobody-Here") },
   { lane: "pages", name: "a profession without a page is a 404 page", independent: true, run: pages.missingPageIs404("/professions/lockpicking") },
   { lane: "pages", name: "a missing creature is a 404 page", independent: true, run: pages.missingPageIs404("/creatures/999999999") },

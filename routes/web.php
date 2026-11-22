@@ -18,6 +18,6 @@ if (app()->environment('local')) {
     Route::get('/design/{page}', [DesignController::class, 'show'])->where('page', implode('|', array_keys(Gallery::PAGES)));
 }
 
-require __DIR__.'/maps.php';
+Route::middleware('scarlet.art')->group(__DIR__.'/maps.php');
 require __DIR__.'/accounts.php';
 Route::middleware(['scarlet.rate:'.RateLimitRequests::PAGE, 'scarlet.timeout', 'scarlet.edge'])->group(__DIR__.'/pages.php');

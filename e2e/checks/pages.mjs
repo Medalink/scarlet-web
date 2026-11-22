@@ -99,6 +99,21 @@ export async function recipeSpellAndBossLootAreShown(ctx) {
   if (problems.length > 0) throw new Error(`expected ${problems.join(", ")}`);
 }
 
+/** The art answers PHP serves set no cookie, so the edge may cache them (docs/HOSTING.md, "Edge cache"). */
+export async function artAnswersSetNoCookie(ctx) {
+  const routes = ["/scene-art/camp/models.json", "/dungeon-maps/1/1.webp", "/map-tiles/manifest.json", "/item-icons/1.png"];
+  const problems = await pool(routes, CONCURRENCY, async (route) => {
+    const answer = await ctx.http.page(route);
+    const cookies = answer.headers.getSetCookie();
+    if (cookies.length > 0) return `${route}: sets ${cookies.join(", ")}`;
+    if (answer.status === 200 && !answer.headers.get("cache-control")?.includes("public")) {
+      return `${route}: a 200 without a public Cache-Control (${answer.headers.get("cache-control")})`;
+    }
+    return null;
+  });
+  failOn(problems, routes.length, "art answers");
+}
+
 export function missingPageIs404(route) {
   return async (ctx) => {
     const answer = await ctx.http.page(route);
