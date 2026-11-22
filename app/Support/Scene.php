@@ -9,4 +9,12 @@ enum Scene: string
     case Herbalism = 'herbalism';
     case Mining = 'mining';
     case Skinning = 'skinning';
+    case Alchemy = 'alchemy';
+    case Blacksmithing = 'blacksmithing';
+    case Enchanting = 'enchanting';
+    case Engineering = 'engineering';
+    case Leatherworking = 'leatherworking';
+    case Tailoring = 'tailoring';
+    case Cooking = 'cooking';
+    case FirstAid = 'first-aid';
 }

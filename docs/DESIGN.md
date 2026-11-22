@@ -678,7 +678,8 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   what the page draws itself. There are two settings. `water` is still water with the moon's glitter and a low bank
   under moonlight (Fishing). `ground` is open ground under one low light, with any number of small warm lights that
   flicker, such as a forge or a lantern (Herbalism, a meadow at first light; Mining, a mine floor lit by a forge;
-  Skinning, tanning racks at dusk). Both draw their earth with `settings/land.js`. A scene that needs another adds a
+  Skinning, tanning racks at dusk; and the eight crafting scenes, each a workshop with its station, where the props a
+  callout stands on are keyed `station`, `work` and `stock` in every one). Both draw their earth with `settings/land.js`. A scene that needs another adds a
   module to `scene/settings/` and names it in the spec. A prop's `emit` may name `all` in place of an index. A
   prop's `emit` lists the model's emitters to draw by index, each with its own rate, size and brightness (an emitter the
   spec leaves out is not drawn). The core draws one facing the camera, stretched along its velocity (`streak`, or by

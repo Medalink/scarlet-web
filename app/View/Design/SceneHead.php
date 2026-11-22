@@ -10,6 +10,24 @@ final class SceneHead
     /**
      * @return array{title: string, label: string, facts: list<string>, credit: string, callouts: list<array{key: string, title: string, text: string, share: string}>}
      */
+    private static function crafting(string $title, string $label, string $things, string $recipe, string $material): array
+    {
+        return [
+            'title' => $title,
+            'label' => $label,
+            'facts' => ['840,300 crafts', '3,210 characters', '412 recipes'],
+            'credit' => $things.' models, textures and effects © Blizzard Entertainment, read from the WoW Forever client. The ground and the light are drawn by this page.',
+            'callouts' => [
+                ['key' => 'station', 'title' => $recipe, 'text' => 'The most made recipe', 'share' => '22% of crafts'],
+                ['key' => 'work', 'title' => 'A sitting', 'text' => '6 crafts in a row', 'share' => '4 seconds apart'],
+                ['key' => 'stock', 'title' => $material, 'text' => 'The most used material', 'share' => '31% of materials'],
+            ],
+        ];
+    }
+
+    /**
+     * @return array{title: string, label: string, facts: list<string>, credit: string, callouts: list<array{key: string, title: string, text: string, share: string}>}
+     */
     public static function data(Scene $scene): array
     {
         return match ($scene) {
@@ -57,6 +75,14 @@ final class SceneHead
                     ['key' => 'bag', 'title' => 'Ruined Leather Scraps', 'text' => 'What a low skill gets', 'share' => '9% of skins'],
                 ],
             ],
+            Scene::Alchemy => self::crafting('Alchemy', "An alchemist's corner, drawn from the game's own models: two alchemy sets, a cauldron over a fire, and a table with a bubbling bowl and bottles", 'Alchemy set, cauldron, table, bowl, bottle and book', 'Minor Healing Potion', 'Peacebloom'),
+            Scene::Blacksmithing => self::crafting('Blacksmithing', "A smithy, drawn from the game's own models: an anvil with a hammer on it, a forge, a furnace, a grindstone, a weapon rack and a bench of metal bars", 'Anvil, hammer, forge, furnace, grindstone, weapon rack, bench and metal bar', 'Rough Sharpening Stone', 'Copper Bar'),
+            Scene::Enchanting => self::crafting('Enchanting', "An enchanter's study, drawn from the game's own models: a lectern, a column of light, stacks of books, candelabras and candles", 'Lectern, light, book, candelabra and candle', 'Enchant Bracer - Minor Health', 'Strange Dust'),
+            Scene::Engineering => self::crafting('Engineering', "An engineer's workshop, drawn from the game's own models: an autolathe, two gnomish machines, a toolbox, a wrench, a powder keg, dynamite and a mortar", 'Autolathe, machine, toolbox, wrench, powder keg, dynamite and mortar', 'Rough Blasting Powder', 'Rough Stone'),
+            Scene::Leatherworking => self::crafting('Leatherworking', "A leatherworker's yard, drawn from the game's own models: a tanning rack, a bench with boots on it, hides, two saddles, a leather bag and a lantern", 'Tanning rack, bench, boot, hide, saddle, leather bag and lantern', 'Light Armor Kit', 'Light Leather'),
+            Scene::Tailoring => self::crafting('Tailoring', "A tailor's room, drawn from the game's own models: a loom, a spinning wheel, a table of cloth and thread, and bolts of cloth", 'Loom, spinning wheel, table, bolt of cloth and spool', 'Bolt of Linen Cloth', 'Linen Cloth'),
+            Scene::Cooking => self::crafting('Cooking', "A cook's fire, drawn from the game's own models: a cooking pot over a fire, a boar on a spit, a rack of smoked meat, a table of food and a sack", 'Cooking pot, spit, smoked meat rack, table, food and sack', 'Spotted Yellowtail', 'Raw Spotted Yellowtail'),
+            Scene::FirstAid => self::crafting('First Aid', "A field hospital, drawn from the game's own models: a tent, a bed, first aid crates and a lantern", 'Tent, bed, first aid crate and lantern', 'Linen Bandage', 'Linen Cloth'),
         };
     }
 }
