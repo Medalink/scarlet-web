@@ -86,6 +86,7 @@ if (firstRecord) await indexed(`${firstRecord}?server=pvp&x=1`, firstRecord);
 await indexed('/stats/', '/stats');
 await indexed('/camps/', '/camps');
 await indexed('/camps?server=pvp&x=1', '/camps');
+await indexed('/professions/fishing?server=pvp&x=1', '/professions/fishing');
 await hidden('/search?q=wolf');
 await hidden('/login');
 await image('/share.png', 1200, 630);

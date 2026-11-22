@@ -54,6 +54,16 @@ enum GatherKind: string
         };
     }
 
+    public function scene(): Scene
+    {
+        return match ($this) {
+            self::Fish => Scene::Fishing,
+            self::Herb => Scene::Herbalism,
+            self::Ore => Scene::Mining,
+            self::Skin => Scene::Skinning,
+        };
+    }
+
     /** Whether the time between casts is time at the water: fishing waits for a bite, the others gather one thing at a time. */
     public function countsGaps(): bool
     {

@@ -336,7 +336,7 @@ const draw = {
     // Hour by weekday grid. levels[day][hour] is 0 to 4.
     hours(box, spec, signal) {
         if (spec.cells) {
-            box.setAttribute('aria-label', `${spec.count ? 'Camp visits' : 'Play time'} by weekday and hour of day, in your time zone`);
+            box.setAttribute('aria-label', `${spec.what ?? (spec.count ? 'Camp visits' : 'Play time')} by weekday and hour of day, in your time zone`);
             spec = { out: spec.out, ...weekGrid(localWeek(spec.cells), spec.busiest == null ? null : localWeekHour(spec.busiest), spec.count ?? null) };
         }
         box.replaceChildren(htmlEl('span'));

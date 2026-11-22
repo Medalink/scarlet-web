@@ -1,0 +1,1 @@
+<x-rank :rows="$m" />

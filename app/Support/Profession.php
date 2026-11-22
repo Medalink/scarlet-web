@@ -26,6 +26,19 @@ enum Profession: string
     /** The rank every profession stops at. */
     public const int SKILL_CAP = 300;
 
+    /**
+     * The professions with a page, gathering first, in the order the pages list them.
+     *
+     * @return list<self>
+     */
+    public static function withPages(): array
+    {
+        return [
+            self::Fishing, self::Herbalism, self::Mining, self::Skinning,
+            self::Alchemy, self::Blacksmithing, self::Enchanting, self::Engineering, self::Leatherworking, self::Tailoring, self::Cooking, self::FirstAid,
+        ];
+    }
+
     /** The path segment of the profession's page and of `/api/v1/public/professions/{slug}`, null when it has none. */
     public function slug(): ?string
     {

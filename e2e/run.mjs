@@ -51,6 +51,7 @@ const REGISTRY = [
   { lane: "pages", name: "a match's scoreboard is shown without the players' names", run: pages.scoreboardIsShownWithoutNames },
   { lane: "pages", name: "a recipe, a spell and a boss encounter show what the uploads recorded", run: pages.recipeSpellAndBossLootAreShown },
   { lane: "pages", name: "a missing character is a 404 page", independent: true, run: pages.missingPageIs404("/c/Nobody-Here") },
+  { lane: "pages", name: "a crafting profession has no page yet", independent: true, run: pages.missingPageIs404("/professions/alchemy") },
   { lane: "pages", name: "a missing creature is a 404 page", independent: true, run: pages.missingPageIs404("/creatures/999999999") },
   { lane: "pages", name: "the account pages are closed to visitors", independent: true, run: pages.accountIsClosedToVisitors },
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },

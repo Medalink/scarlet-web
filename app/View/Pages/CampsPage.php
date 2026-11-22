@@ -239,7 +239,7 @@ final class CampsPage
         }
         $peak = StatsPage::busiest(self::asSeconds($rows));
 
-        return Charts::weekCells($cells, $peak === null ? null : $peak['day'] * 24 + $peak['hour'], 'hours-out', 'visit');
+        return Charts::weekCells($cells, $peak === null ? null : $peak['day'] * 24 + $peak['hour'], 'hours-out', 'visit', 'Camp visits');
     }
 
     /**
@@ -293,7 +293,7 @@ final class CampsPage
      * @param  array<string, mixed>|null  $heat
      * @return list<array{0: float, 1: float}>|null
      */
-    private static function dots(?array $heat, ?MapRect $rect): ?array
+    public static function dots(?array $heat, ?MapRect $rect): ?array
     {
         if ($heat === null || $rect === null || $heat['cells'] === []) {
             return null;
@@ -370,7 +370,7 @@ final class CampsPage
         ]], $board);
     }
 
-    private static function share(int|float $part, int|float $whole): ?string
+    public static function share(int|float $part, int|float $whole): ?string
     {
         if ($whole <= 0) {
             return null;

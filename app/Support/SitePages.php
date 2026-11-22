@@ -30,6 +30,10 @@ final class SitePages
             self::page('Stats', '/stats', 'Dashboard of the recorded play of every ruleset', ['statistics', 'overview', 'numbers']),
             self::page('World map', '/map', 'Where characters walked, died and met creatures', ['map', 'heat', 'heatmap', 'deaths', 'paths']),
             self::page('Camps', '/camps', 'How players use the campsite: visits, Camp Benefits and what gets set up', ['camp', 'campfire', 'tent', 'chair', 'rested', 'benefits']),
+            self::page('Fishing', '/professions/fishing', 'What players catch, how long a bite takes and where they fish', ['fish', 'fishing', 'catch', 'bobber', 'profession']),
+            self::page('Herbalism', '/professions/herbalism', 'What players pick, how long a pick takes and where they pick herbs', ['herb', 'herbs', 'herbalism', 'pick', 'profession']),
+            self::page('Mining', '/professions/mining', 'What players mine, how many strikes a vein takes and where they mine', ['ore', 'mine', 'mining', 'vein', 'profession']),
+            self::page('Skinning', '/professions/skinning', 'What players skin, which creatures give the most and where they skin', ['skin', 'skinning', 'leather', 'hide', 'profession']),
             self::page('Rulesets', '/rulesets', 'The rulesets side by side', ['compare', 'comparison']),
             self::page('Hardcore deaths', '/hardcore-deaths', 'Hardcore deaths by level and by day', ['hardcore', 'deaths', 'died', 'death']),
         ];

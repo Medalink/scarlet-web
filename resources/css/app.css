@@ -557,3 +557,8 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
   .camp-mod .buff { gap: 0.45rem; }
   .camp-mod .benefits td:nth-child(2) { min-width: 0; }
 }
+.trades { display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; padding-block: 0.8rem; border-bottom: 1px solid var(--line); font-size: 0.95rem; }
+.trades a { color: var(--text); text-decoration: none; }
+.trades a:hover { color: var(--fg); }
+.trades a[aria-current="page"] { color: var(--fg); font-weight: 700; box-shadow: 0 2px 0 var(--accent); }
+.catches td { vertical-align: middle; }

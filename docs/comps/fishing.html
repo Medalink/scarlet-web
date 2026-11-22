@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet fishing: casts, catches and skill</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="world.html">Map</a><a href="camps.html">Camps</a><a href="fishing.html" aria-current="page">Professions</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<section class="ch-head scene-head" aria-labelledby="h1">
+  <div class="stage" data-state="off" role="img" aria-label="A fishing spot at night, drawn from the game's own models: a bobber on the water beside a school of fish, with a tackle box, a pole and a rack of fish on the bank">
+    <div class="callouts" aria-hidden="true">
+      <p class="callout left" data-key="bobber" hidden><b>Bobber</b><span>The wait for a bite is 15 seconds</span><em>82% of casts catch</em></p>
+      <p class="callout left" data-key="rack" hidden><b>Raw Spotted Yellowtail</b><span>The most caught fish</span><em>43% of catches</em></p>
+      <p class="callout left" data-key="box" hidden><b>Clams, crates and trunks</b><span>Catches that open for more</span><em>1 catch in 13</em></p>
+    </div>
+  </div>
+  <div class="ch-id wrap">
+    <div><h1 class="ch-name" id="h1">Fishing</h1>
+      <p class="ch-sub"><span>1,204,880 casts</span><span>4,310 characters</span><span>6,120 hours at the water</span></p></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Ruleset"><a href="#" aria-current="true">All</a><a href="#">Standard</a><a href="#">Hardcore</a><a href="#">Slow</a></div></div>
+  </div>
+</section>
+
+<div class="wrap">
+  <nav class="trades" aria-label="Professions">
+    <a href="#">Herbalism</a><a href="#">Mining</a><a href="#">Skinning</a><a href="#" aria-current="page">Fishing</a>
+  </nav>
+  <p class="credit">Bobber, fish school, tackle box, pole and fish rack models, textures, ripples and splashes © Blizzard Entertainment, read from the WoW Forever client. The water, the bank and the moonlight are drawn by this page.</p>
+  <dl class="week n6" aria-label="Totals">
+    <div><dt>Casts that catch</dt><dd>82%</dd></div><div><dt>Median wait for a bite</dt><dd>15.4s</dd></div><div><dt>Catches an hour</dt><dd>164</dd></div>
+    <div><dt>Characters who fish</dt><dd>38%</dd></div><div><dt>Median skill</dt><dd>142</dd></div><div><dt>Reached 300</dt><dd>11%</dd></div>
+  </dl>
+
+  <div class="sheet">
+    <section class="mod w7 first camp-mod" aria-labelledby="h-catch">
+      <h2 id="h-catch">What comes up</h2>
+      <div class="scroll-x"><table class="data catches" style="margin-top:1.1rem">
+        <thead><tr><th>Catch</th><th class="n">Of catches</th><th class="n">Median skill</th><th>Most common in</th></tr></thead>
+        <tbody>
+          <tr><td><a class="buff" href="#"><i class="buff-none" aria-hidden="true"></i>Raw Spotted Yellowtail</a></td><td class="n"><i class="bar" style="width:5.6rem"></i>43%</td><td class="n">268</td><td><a href="#">Saltmarsh Reach</a></td></tr>
+          <tr><td><a class="buff" href="#"><i class="buff-none" aria-hidden="true"></i>Raw Winter Squid</a></td><td class="n"><i class="bar" style="width:2rem"></i>15%</td><td class="n">281</td><td><a href="#">Saltmarsh Reach</a></td></tr>
+          <tr><td><a class="buff" href="#"><i class="buff-none" aria-hidden="true"></i>Stonescale Eel</a></td><td class="n"><i class="bar" style="width:1.45rem"></i>11%</td><td class="n">290</td><td><a href="#">Pale Rest</a></td></tr>
+          <tr><td><a class="buff" href="#"><i class="buff-none" aria-hidden="true"></i>Raw Rockscale Cod</a></td><td class="n"><i class="bar" style="width:1.15rem"></i>9%</td><td class="n">212</td><td><a href="#">Greywatch Ford</a></td></tr>
+          <tr><td><a class="buff" href="#"><i class="buff-none" aria-hidden="true"></i>Firefin Snapper</a></td><td class="n"><i class="bar" style="width:1.1rem"></i>8%</td><td class="n">196</td><td><a href="#">Greywatch Ford</a></td></tr>
+          <tr><td><a class="buff" href="#"><i class="buff-none" aria-hidden="true"></i>Big-mouth Clam</a></td><td class="n"><i class="bar" style="width:0.8rem"></i>6%</td><td class="n">255</td><td><a href="#">Saltmarsh Reach</a></td></tr>
+          <tr><td><a class="buff" href="#"><i class="buff-none" aria-hidden="true"></i>Raw Glossy Mightfish</a></td><td class="n"><i class="bar" style="width:0.5rem"></i>4%</td><td class="n">277</td><td><a href="#">Pale Rest</a></td></tr>
+          <tr><td><a class="buff" href="#"><i class="buff-none" aria-hidden="true"></i>Raw Greater Sagefish</a></td><td class="n"><i class="bar" style="width:0.3rem"></i>2%</td><td class="n">171</td><td><a href="#">Hollowmere</a></td></tr>
+        </tbody></table></div>
+      <p class="note">212 different items came up from casts.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-cast">
+      <h2 id="h-cast">How a cast ends</h2>
+      <ol class="rank">
+        <li><span class="who">Something on the line</span><span class="val">82% of casts</span><span class="track"><i style="width:100%"></i></span></li>
+        <li><span class="who">No bite, or the fish got away</span><span class="val">12%</span><span class="track"><i style="width:15%"></i></span></li>
+        <li><span class="who">In combat</span><span class="val">3%</span><span class="track"><i style="width:3%"></i></span></li>
+      </ol>
+      <h2 id="h-pole-on" style="margin-top:2rem">What is on the pole</h2>
+      <ol class="rank plain">
+        <li><span class="who">A lure</span><span class="val">34% of casts</span><span class="track"><i style="width:34%"></i></span></li>
+        <li><span class="who">Bright Baubles</span><span class="val">19%</span><span class="track"><i style="width:19%"></i></span></li>
+        <li><span class="who">Nightcrawlers</span><span class="val">9%</span><span class="track"><i style="width:9%"></i></span></li>
+        <li><span class="who">Shiny Bauble</span><span class="val">6%</span><span class="track"><i style="width:6%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod first" aria-labelledby="h-wait">
+      <h2 id="h-wait">How long a bite takes</h2>
+      <div class="plot"><svg id="wait" role="img" aria-label="Catches by the seconds between the cast and the bite"></svg></div>
+      <p class="note">Half of all bites come between 10 and 22 seconds.</p>
+    </section>
+    <section class="mod" aria-labelledby="h-pts">
+      <h2 id="h-pts">Catches for a skill point, by skill</h2>
+      <div class="plot"><svg id="pts" role="img" aria-label="Median catches between two skill points at each skill, with the middle half of characters"></svg></div>
+      <p class="note">The last 25 points take as many catches as the first 200.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-lvl">
+      <h2 id="h-lvl">Fishing skill, by character level</h2>
+      <div class="plot"><svg id="lvl" role="img" aria-label="Median fishing skill at each character level, with the middle half of characters who fish"></svg></div>
+    </section>
+
+    <section class="mod w8 first" aria-labelledby="h-when">
+      <h2 id="h-when">When players fish</h2>
+      <div class="hours" id="when" role="img" aria-label="Casts by weekday and hour of the player's own day"></div>
+      <p class="readout"><b>Busiest hour</b>: Tue 23:00 UTC</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-trip">
+      <h2 id="h-trip">A fishing trip</h2>
+      <dl class="pair" style="grid-template-columns:minmax(0,1fr)">
+        <div><dt>Median length</dt><dd>14m 20s<small>casts no more than two minutes apart, over the last 90 days</small></dd></div>
+      </dl>
+      <dl class="pair" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0.9rem">
+        <div><dt>Median casts</dt><dd>41</dd></div>
+        <div><dt>Trips</dt><dd>29,410</dd></div>
+      </dl>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-where">
+      <h2 id="h-where">Where players fish</h2>
+      <div class="mapbox" style="aspect-ratio:3/2"><canvas id="where" role="img" aria-label="Heat of casts on the world map"></canvas></div>
+      <p class="note"><a href="world.html">Open the world map</a></p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-zones">
+      <h2 id="h-zones">Zones with the most catches</h2>
+      <ol class="rank">
+        <li><a class="who" href="#">Saltmarsh Reach</a><span class="val">212,400 catches</span><span class="track"><i style="width:100%"></i></span></li>
+        <li><a class="who" href="#">Pale Rest</a><span class="val">148,010</span><span class="track"><i style="width:70%"></i></span></li>
+        <li><a class="who" href="#">Greywatch Ford</a><span class="val">96,318</span><span class="track"><i style="width:45%"></i></span></li>
+        <li><a class="who" href="#">Hollowmere</a><span class="val">71,950</span><span class="track"><i style="width:34%"></i></span></li>
+        <li><a class="who" href="#">Thornwall</a><span class="val">40,877</span><span class="track"><i style="width:19%"></i></span></li>
+        <li><a class="who" href="#">The Cinder Flats</a><span class="val">22,204</span><span class="track"><i style="width:10%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-open">
+      <h2 id="h-open">What the clams, crates and trunks hold</h2>
+      <ol class="rank plain">
+        <li><span class="who">Big-mouth Clam Meat</span><span class="val">found 18,204 times</span><span class="track"><i style="width:71%"></i></span></li>
+        <li><span class="who">Golden Pearl</span><span class="val">1,538</span><span class="track"><i style="width:6%"></i></span></li>
+        <li><span class="who">Coin</span><span class="val">1,282</span><span class="track"><i style="width:5%"></i></span></li>
+        <li><span class="who">Black Pearl</span><span class="val">513</span><span class="track"><i style="width:2%"></i></span></li>
+      </ol>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-pole">
+      <h2 id="h-pole">Poles in hand</h2>
+      <ol class="rank">
+        <li><a class="who" href="#">Fishing Pole</a><span class="val">58% of casts</span><span class="track"><i style="width:58%"></i></span></li>
+        <li><a class="who" href="#">Strong Fishing Pole</a><span class="val">23%</span><span class="track"><i style="width:23%"></i></span></li>
+        <li><a class="who" href="#">Big Iron Fishing Pole</a><span class="val">12%</span><span class="track"><i style="width:12%"></i></span></li>
+        <li><a class="who" href="#">Darkwood Fishing Pole</a><span class="val">7%</span><span class="track"><i style="width:7%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod w12 first last camp-mod" aria-labelledby="h-top">
+      <h2 id="h-top">Most catches</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th class="rk">#</th><th>Character</th><th>Class</th><th class="n">Catches</th><th>Ruleset</th></tr></thead>
+        <tbody>
+          <tr><td class="rk">1</td><td><a href="character.html">Name-Surname</a></td><td>Orc Warrior</td><td class="n">18,402</td><td>Hardcore</td></tr>
+          <tr><td class="rk">2</td><td><a href="character.html">Name-Surname</a></td><td>Human Mage</td><td class="n">15,977</td><td>Standard</td></tr>
+          <tr><td class="rk">3</td><td><a href="character.html">Name-Surname</a></td><td>Tauren Druid</td><td class="n">12,260</td><td>Slow</td></tr>
+          <tr><td class="rk">4</td><td><a href="character.html">Name-Surname</a></td><td>Night Elf Hunter</td><td class="n">9,871</td><td>Standard</td></tr>
+          <tr><td class="rk">5</td><td><a href="character.html">Name-Surname</a></td><td>Dwarf Paladin</td><td class="n">8,114</td><td>Hardcore</td></tr>
+        </tbody></table></div>
+    </section>
+  </div>
+</div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+(() => {
+  const rand = Comp.rng(33);
+  Comp.bars("wait", { w: 400, h: 250, x0: -1, x1: 31, y1: 14, yt: [0, 4, 8, 12], yf: (v) => v + "%", xt: [0, 6, 12, 18, 24, 30], xf: (v) => v + "s",
+    data: [[1, 0.4], [3, 0.6], [5, 0.9], [7, 5.1], [9, 10.4], [11, 12.9], [13, 9.6], [15, 10.2], [17, 7.8], [19, 11.1], [21, 10.7], [23, 11.2], [25, 6.4], [27, 2.5], [29, 0.2]] });
+  const pts = [], pband = [];
+  for (let s = 1; s <= 300; s += 5) {
+    const v = 1 + 9.5 * Math.pow(s / 300, 2.6) + (rand() - 0.5) * 0.4;
+    pts.push([s, v]); pband.push([s, Math.max(1, v * 0.7), v * 1.45]);
+  }
+  Comp.lines("pts", { w: 400, h: 250, x0: 1, x1: 300, y1: 16, yt: [0, 4, 8, 12, 16], xt: [1, 75, 150, 225, 300], series: [{ cls: "a", pts, band: pband, mark: 45 }] });
+  const lvl = [], lband = [];
+  for (let l = 5; l <= 60; l++) {
+    const v = Math.min(300, 6 + 260 * (1 - Math.exp(-(l - 5) / 26)) + (rand() - 0.5) * 8);
+    lvl.push([l, v]); lband.push([l, v * 0.45, Math.min(300, v * 1.5)]);
+  }
+  Comp.lines("lvl", { w: 400, h: 250, x0: 1, x1: 60, y1: 300, yt: [0, 75, 150, 225, 300], xt: [1, 10, 20, 30, 40, 50, 60], series: [{ cls: "a", pts: lvl, band: lband, mark: 34 }] });
+  Comp.hours("when", (d, h) => {
+    const late = Math.exp(-((h - 23) ** 2) / 9) + Math.exp(-((h + 1) ** 2) / 9) + 0.45 * Math.exp(-((h - 15) ** 2) / 16), week = d >= 5 ? 1.1 : 0.95;
+    return Math.max(0, Math.min(4, Math.round(late * week * 3.5 + (rand() - 0.5) * 0.9)));
+  });
+  Comp.heatmap("where", { seed: 14, hot: [[2100, 6900, 520, 300], [2500, 5200, 380, 190], [5200, 7600, 600, 260], [7900, 6800, 420, 210], [6900, 2100, 440, 150], [3700, 1700, 360, 120]] });
+})();
+</script>
+</body>
+</html>

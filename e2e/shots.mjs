@@ -82,7 +82,7 @@ async function realPages() {
   const board = (await get("/leaderboards/most-quests?limit=1")).data?.[0]?.name;
   const zone = (await get("/rulesets/all/series/deaths")).data?.zones?.[0]?.zone_id;
   const pages = [
-    ["stats", "/stats"], ["rulesets", "/rulesets"], ["map", "/map"], ["camps", "/camps"], ["developers", "/developers"], ["landing", "/"], ["demo", "/demo"],
+    ["stats", "/stats"], ["rulesets", "/rulesets"], ["map", "/map"], ["camps", "/camps"], ["fishing", "/professions/fishing"], ["developers", "/developers"], ["landing", "/"], ["demo", "/demo"],
     ["leaderboards", "/leaderboards/most-quests"], ["leaderboards-fastest", "/leaderboards/fastest-to-60"], ["leaderboards-class", "/leaderboards/most-quests?class=WARLOCK"],
     ["search", "/search?q=th"], ["search-items", "/search?q=th&kind=items"],
   ];
