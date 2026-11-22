@@ -22,6 +22,7 @@ pub mod pseudo;
 pub mod reconcile;
 pub mod reference;
 pub mod rows;
+pub mod sets;
 pub mod social;
 pub mod tables;
 pub mod talents;
