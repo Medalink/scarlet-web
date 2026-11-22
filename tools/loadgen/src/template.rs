@@ -250,11 +250,12 @@ fn shifted(text: &str, marker: &str, name: &str, session: i64, group: &str) -> S
 
 /// The history of one virtual character: consecutive sessions of `source` from a random place, wrapping round with the
 /// times moved on, until `hours` of play are in it, then the whole history moved by whole days so it ends within the last
-/// `spread_days` days before `now`. Whole days keep the hour of day of every session.
+/// `spread_days` days before `now`, no earlier than `min_age_days` days back. Whole days keep the hour of day of every session.
 pub fn instantiate(
     source: &Source,
     name: &str,
     hours: f64,
+    min_age_days: i64,
     spread_days: i64,
     now: i64,
     rng: &mut Rng,
@@ -276,7 +277,7 @@ pub fn instantiate(
         step += 1;
     }
     let end = picked.last().map_or(0, |(s, add)| s.key + add + s.seconds);
-    let back = rng.below(spread_days.max(1) as u64) as i64;
+    let back = min_age_days + rng.below(spread_days.max(1) as u64) as i64;
     let target_end = now - 3600 - back * DAY;
     let delta = (target_end - end).div_euclid(DAY) * DAY;
     let marker = format!("{MARK}{}", source.label);

@@ -14,7 +14,7 @@ const USAGE: &str = "usage:
   loadgen info --template <file>
   loadgen check --template <file>
   loadgen run --connect scarlet-load-app --template <file> [--host scarletweb.io] [--ca <cert.pem>] [--rate <installs per hour>] [--ramp-to <installs per hour>]
-              [--duration <s>] [--concurrency <n>] [--characters <n>] [--history-hours <h>] [--spread-days <n>] [--sources A,B]
+              [--duration <s>] [--concurrency <n>] [--characters <n>] [--history-hours <h>] [--spread-days <n>] [--min-age-days <n>] [--sources A,B]
               [--salt <text>] [--offset <n>] [--poll-rate <requests/s>] [--drain-seconds <s>] [--no-poll] [--retries <n>] [--log <file>] [--dry-run]";
 
 type Flags = BTreeMap<String, String>;
@@ -167,6 +167,7 @@ fn run_command(f: &Flags) -> Result<(), String> {
         characters: number(f, "characters", 1)?,
         hours: number(f, "history-hours", 3.0)?,
         spread_days: number(f, "spread-days", 7)?,
+        min_age_days: number(f, "min-age-days", 0)?,
         sources: f
             .get("sources")
             .map(|s| s.split(',').map(str::to_string).collect())
@@ -222,6 +223,7 @@ fn main() -> ExitCode {
                 "characters",
                 "history-hours",
                 "spread-days",
+                "min-age-days",
                 "sources",
                 "salt",
                 "offset",
