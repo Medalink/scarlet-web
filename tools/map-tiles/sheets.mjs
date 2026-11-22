@@ -8,7 +8,10 @@
 // tone over the land next door; both fade out towards the sheet's edge. Under the zones the world's sheet is blurred,
 // because its own lines, enlarged eight times, are thick smears beside a zone's. Each level is that world scaled down, mixed
 // with the world's sheet by ZONES_AT: the zones' drawing is noise when a zone is a thumbnail, so the far levels are
-// the world's sheet alone. The levels are cut into 256 px tiles, as build.mjs does for the game's art. Writes <out>/<version>/survey/<z>/<x>/<y>.webp and <out>/manifest.json: the tile
+// the world's sheet alone. A zone OpenMap has no MapZoneLand for but does have a MapCore for (Zephras Isle, its own
+// continent, placed by rects.mjs's AWAY) is cut to that, and since the world's sheet does not draw it, it is laid on
+// the far levels too. A city OpenMap has a MapCityMask for is cut to that and laid over its zone, without the pass
+// that reaches past the shore. The levels are cut into 256 px tiles, as build.mjs does for the game's art. Writes <out>/<version>/survey/<z>/<x>/<y>.webp and <out>/manifest.json: the tile
 // manifest build.mjs writes (so the viewer reads both the same way), plus `ground`, the colour of a tile that was
 // left out because it is the bare sheet, and `places`, each zone's rectangle and its names from
 // <labels folder>/<uiMapID>.labels.json (written by the app's tools/map-labels.mjs) as [name, kind, u, v] in world
@@ -23,7 +26,7 @@ import sharp from 'sharp';
 import { TILE, zoomCount } from './pyramid.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const RECIPE = 'sheet-tiles-4';
+const RECIPE = 'sheet-tiles-6';
 const WORLD_MAP = 947;
 const WORLD = { width: 1002, height: 668 };
 const PX_PER_UNIT = 16;
@@ -33,6 +36,8 @@ const LAND = { units: 1.2, clear: 0.25, solid: 0.75 };
 const EDGE_FADE = 0.09;
 const UNDER_ZONES_BLUR = 7;
 const ZONES_AT = { 6: 1, 5: 1, 4: 0.5 };
+const APART_PX_PER_UNIT = 2;
+const MASKS = [{ folder: 'MapZoneLand' }, { folder: 'MapCore', apart: true }, { folder: 'MapCityMask', city: true }];
 const FLAT_WITHIN = 3;
 const ENCODE = { quality: 80, effort: 5, smartSubsample: true };
 
@@ -46,6 +51,8 @@ if (!sheetsDir || !addon || !labelsDir) {
 
 const width = WORLD.width * PX_PER_UNIT;
 const height = WORLD.height * PX_PER_UNIT;
+const apart = { width: WORLD.width * APART_PX_PER_UNIT, height: WORLD.height * APART_PX_PER_UNIT };
+apart.cover = Buffer.alloc(apart.width * apart.height);
 
 function landAlpha(file) {
     const tga = readFileSync(file);
@@ -93,6 +100,9 @@ async function lay(world, zone, edge) {
     const h = Math.round((zone.rect[3] - zone.rect[1]) * height);
     const sheet = await sharp(zone.sheet).resize(w, h, { fit: 'fill', kernel: 'lanczos3' }).removeAlpha().raw().toBuffer();
     const cover = await coverage(zone.land, edge, w, h);
+    if (zone.apart) {
+        await keepOnFarLevels(cover, w, h, zone.rect);
+    }
     for (let y = Math.max(0, -y0); y < h && y0 + y < height; y++) {
         for (let x = Math.max(0, -x0); x < w && x0 + x < width; x++) {
             const a = cover[y * w + x];
@@ -104,6 +114,20 @@ async function lay(world, zone, edge) {
             world[to] += ((sheet[from] - world[to]) * a) / 255;
             world[to + 1] += ((sheet[from + 1] - world[to + 1]) * a) / 255;
             world[to + 2] += ((sheet[from + 2] - world[to + 2]) * a) / 255;
+        }
+    }
+}
+
+async function keepOnFarLevels(cover, w, h, rect) {
+    const x0 = Math.round(rect[0] * apart.width);
+    const y0 = Math.round(rect[1] * apart.height);
+    const sw = Math.round((rect[2] - rect[0]) * apart.width);
+    const sh = Math.round((rect[3] - rect[1]) * apart.height);
+    const small = await sharp(cover, { raw: { width: w, height: h, channels: 1 } }).resize(sw, sh, { fit: 'fill' }).toColourspace('b-w').raw().toBuffer();
+    for (let y = Math.max(0, -y0); y < sh && y0 + y < apart.height; y++) {
+        for (let x = Math.max(0, -x0); x < sw && x0 + x < apart.width; x++) {
+            const to = (y0 + y) * apart.width + x0 + x;
+            apart.cover[to] = Math.max(apart.cover[to], small[y * sw + x]);
         }
     }
 }
@@ -187,21 +211,22 @@ async function main() {
         rects.set(Number(id), rect.map(Number));
     }
 
-    const hash = createHash('sha1').update(JSON.stringify({ RECIPE, WORLD, PX_PER_UNIT, SHORE, LAND, EDGE_FADE, UNDER_ZONES_BLUR, ZONES_AT, FLAT_WITHIN, ENCODE }));
+    const hash = createHash('sha1').update(JSON.stringify({ RECIPE, WORLD, PX_PER_UNIT, SHORE, LAND, EDGE_FADE, UNDER_ZONES_BLUR, ZONES_AT, APART_PX_PER_UNIT, FLAT_WITHIN, ENCODE }));
     const worldSheet = readFileSync(join(sheetsDir, `${WORLD_MAP}.webp`));
     hash.update(worldSheet);
     const zones = [];
     for (const name of readdirSync(sheetsDir).filter((f) => f.endsWith('.webp')).sort((a, b) => parseInt(a, 10) - parseInt(b, 10))) {
         const id = parseInt(name, 10);
         const rect = rects.get(id);
-        const landFile = join(addon, 'Media', 'Textures', 'Forever', 'MapZoneLand', `${id}.tga`);
-        if (!rect || !existsSync(landFile)) {
+        const mask = MASKS.map((kind) => ({ ...kind, file: join(addon, 'Media', 'Textures', 'Forever', kind.folder, `${id}.tga`) })).find((kind) => existsSync(kind.file));
+        if (!rect || !mask) {
             continue;
         }
+        const landFile = mask.file;
         const sheet = readFileSync(join(sheetsDir, name));
         const names = placeNames(id, rect);
         hash.update(`${id}:${rect.join(',')}:`).update(sheet).update(readFileSync(landFile)).update(JSON.stringify(names));
-        zones.push({ id, rect, sheet, land: landAlpha(landFile), names });
+        zones.push({ id, rect, sheet, land: landAlpha(landFile), apart: mask.apart === true, city: mask.city === true, names });
     }
     zones.sort((a, b) => (b.rect[2] - b.rect[0]) * (b.rect[3] - b.rect[1]) - (a.rect[2] - a.rect[0]) * (a.rect[3] - a.rect[1]));
     const version = hash.digest('hex').slice(0, 10);
@@ -212,7 +237,7 @@ async function main() {
     const corner = await sharp(worldSheet).extract({ left: 0, top: 0, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
     const ground = [corner[0], corner[1], corner[2]];
     for (const edge of [SHORE, LAND]) {
-        for (const zone of zones) {
+        for (const zone of zones.filter((z) => edge === LAND || !z.city)) {
             await lay(world, zone, edge);
         }
     }
@@ -227,11 +252,15 @@ async function main() {
         const scale = 2 ** (maxZoom - z);
         const level = { width: Math.ceil(width / scale), height: Math.ceil(height / scale) };
         const share = ZONES_AT[z] ?? 0;
-        level.rgb = share === 0 ? await plain(level.width, level.height) : z === maxZoom ? world : await sharp(world, { raw: { width, height, channels: 3 } }).resize(level.width, level.height, { fit: 'fill', kernel: 'lanczos3' }).raw().toBuffer();
-        if (share > 0 && share < 1) {
+        level.rgb = z === maxZoom ? world : await sharp(world, { raw: { width, height, channels: 3 } }).resize(level.width, level.height, { fit: 'fill', kernel: 'lanczos3' }).raw().toBuffer();
+        if (share < 1) {
             const under = await plain(level.width, level.height);
-            for (let p = 0; p < under.length; p++) {
-                level.rgb[p] = under[p] + (level.rgb[p] - under[p]) * share;
+            const kept = await sharp(apart.cover, { raw: { width: apart.width, height: apart.height, channels: 1 } }).resize(level.width, level.height, { fit: 'fill' }).toColourspace('b-w').raw().toBuffer();
+            for (let p = 0; p < kept.length; p++) {
+                const zones = Math.max(share, kept[p] / 255);
+                for (let c = p * 3; c < p * 3 + 3; c++) {
+                    level.rgb[c] = under[c] + (level.rgb[c] - under[c]) * zones;
+                }
             }
         }
         const cols = Math.ceil(level.width / TILE);

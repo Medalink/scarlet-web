@@ -10,19 +10,26 @@ use Illuminate\Support\Facades\DB;
 /**
  * Fills `u, v` on the rows that have none, from `map_rects` (docs/DESIGN.md, Maps). It touches only rows whose map has a
  * rectangle, so it can run again whenever rectangles arrive, and a second run finds nothing to do. It works in
- * windows of seven days, so one statement stays small, then brings the world heat up to date over what it changed.
- * Must not be called from a transaction (the refresh is a CALL).
+ * windows of seven days, so one statement stays small, then brings the world heat up to date over what it changed and
+ * measures the sessions whose path points it placed, and any session with placed points and no distance yet. The
+ * deploy runs it after `maps:load-rects`, so a rectangle added to docs/map-rects.tsv reaches the points recorded
+ * before it. Must not be called from a transaction (the refresh is a CALL).
  */
 class PlaceWorldPoints
 {
     private const int WINDOW = 7 * 86400;
 
-    /** The placed tables, with the columns that hold their map, x and y; a sighting's cell is the middle of its cell. */
+    private const string WALKED = 'path_points';
+
+    /**
+     * The placed tables: the columns that hold their map, x and y, then x and y as a share of the map. A sighting's
+     * position is the middle of its cell. A row with no x or y cannot be placed and is left alone.
+     */
     private const array TABLES = [
-        'path_points' => ['map', 't.x / 10000.0', 't.y / 10000.0'],
-        'camp_stays' => ['map', 't.x / 10000.0', 't.y / 10000.0'],
-        'deaths' => ['map_id', 't.x / 10000.0', 't.y / 10000.0'],
-        'creature_sightings' => ['map', '(t.cell_x + 0.5) * 0.015', '(t.cell_y + 0.5) * 0.015'],
+        'path_points' => ['map', 'x', 'y', 't.x / 10000.0', 't.y / 10000.0'],
+        'camp_stays' => ['map', 'x', 'y', 't.x / 10000.0', 't.y / 10000.0'],
+        'deaths' => ['map_id', 'x', 'y', 't.x / 10000.0', 't.y / 10000.0'],
+        'creature_sightings' => ['map', 'cell_x', 'cell_y', '(t.cell_x + 0.5) * 0.015', '(t.cell_y + 0.5) * 0.015'],
     ];
 
     public function __construct(private readonly RefreshAggregates $refresh, private readonly MeasureDistance $distance) {}
@@ -33,16 +40,21 @@ class PlaceWorldPoints
         $placed = [];
         $from = null;
         $until = null;
+        $walked = [];
 
-        foreach (self::TABLES as $table => [$map, $x, $y]) {
+        foreach (self::TABLES as $table => [$map, $across, $down, $x, $y]) {
             $placed[$table] = 0;
-            $span = DB::table($table.' as t')
+            $unplaced = fn () => DB::table($table.' as t')
                 ->join('map_rects as r', 'r.ui_map_id', '=', 't.'.$map)
                 ->whereNull('t.u')
-                ->selectRaw('extract(epoch from min(t.at)) as first, extract(epoch from max(t.at)) as last')
-                ->first();
+                ->whereNotNull('t.'.$across)
+                ->whereNotNull('t.'.$down);
+            $span = $unplaced()->selectRaw('extract(epoch from min(t.at)) as first, extract(epoch from max(t.at)) as last')->first();
             if ($span === null || $span->first === null) {
                 continue;
+            }
+            if ($table === self::WALKED) {
+                $walked = $unplaced()->distinct()->get(['t.character_id', 't.session_start'])->all();
             }
             $first = (int) floor((float) $span->first);
             $last = (int) ceil((float) $span->last);
@@ -50,13 +62,14 @@ class PlaceWorldPoints
             $until = max($until ?? $last, $last);
 
             for ($start = $first; $start <= $last; $start += self::WINDOW) {
-                $placed[$table] += DB::transaction(function () use ($table, $map, $x, $y, $start): int {
+                $placed[$table] += DB::transaction(function () use ($table, $map, $across, $down, $x, $y, $start): int {
                     DecompressionLimit::lift();
 
                     return DB::update(
                         "update {$table} t set u = r.u0 + {$x} * (r.u1 - r.u0), v = r.v0 + {$y} * (r.v1 - r.v0)
                          from map_rects r
-                         where r.ui_map_id = t.{$map} and t.u is null and t.at >= to_timestamp(?) and t.at < to_timestamp(?)",
+                         where r.ui_map_id = t.{$map} and t.u is null and t.{$across} is not null and t.{$down} is not null
+                           and t.at >= to_timestamp(?) and t.at < to_timestamp(?)",
                         [$start, $start + self::WINDOW],
                     );
                 });
@@ -67,12 +80,22 @@ class PlaceWorldPoints
             $this->refresh->handle($from, $until);
         }
 
-        // Sessions stored before their points could be placed have no distance yet.
-        $placed['sessions'] = 0;
-        foreach (DB::table('sessions')->whereNull('distance')->get(['character_id', 'session_start']) as $session) {
-            $this->distance->handle((int) $session->character_id, (int) $session->session_start);
-            $placed['sessions']++;
+        $unmeasured = DB::table('sessions as s')
+            ->whereNull('s.distance')
+            ->whereExists(fn ($points) => $points->selectRaw('1')->from(self::WALKED.' as p')
+                ->whereColumn('p.character_id', 's.character_id')
+                ->whereColumn('p.session_start', 's.session_start')
+                ->whereNotNull('p.u'))
+            ->get(['s.character_id', 's.session_start'])
+            ->all();
+        $sessions = [];
+        foreach ([...$walked, ...$unmeasured] as $session) {
+            $sessions[$session->character_id.':'.$session->session_start] = $session;
         }
+        foreach ($sessions as $session) {
+            $this->distance->handle((int) $session->character_id, (int) $session->session_start);
+        }
+        $placed['sessions'] = count($sessions);
 
         return $placed;
     }

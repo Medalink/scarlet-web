@@ -5,6 +5,10 @@
 //
 // Columns: ui_map_id, name, u0, v0, u1, v1 (left, top, right, bottom of the map on the world, 0 to 1 across and down).
 //
+// A map whose continent the world's map does not hold (Zephras Isle, 2521, is game map 2991) has no rectangle in the
+// tables. AWAY gives it one: the middle of its map on the world, with its size worked out from its yards at the
+// world's own scale. The tables are read with either spelling of an array column, `Region_0` or `Region[0]`.
+//
 // The rectangle code is a port of World.rect and its helpers in OpenMap's tools/uimap.py, MIT licence,
 // Copyright (c) 2026 OpenMap contributors (tools/map-tiles/OPENMAP-LICENSE.txt).
 
@@ -14,6 +18,13 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const WORLD = 947;
+const EASTERN_KINGDOMS = 0;
+
+/**
+ * Where the middle of a map lies on the world when the tables cannot say: uiMapID => [u, v]. Zephras Isle is put
+ * on the island the world's own art paints south of the Maelstrom, island on island.
+ */
+export const AWAY = new Map([[2521, [0.5311, 0.6835]]]);
 
 function csv(text) {
     const rows = [];
@@ -55,7 +66,8 @@ function csv(text) {
         rows.push(row);
     }
     const [head, ...body] = rows;
-    return body.map((r) => Object.fromEntries(head.map((name, i) => [name, r[i]])));
+    const names = head.map((name) => name.replace(/\[(\d+)\]$/, '_$1'));
+    return body.map((r) => Object.fromEntries(names.map((name, i) => [name, r[i]])));
 }
 
 export class World {
@@ -174,8 +186,22 @@ export class World {
             break;
         }
 
+        out ??= this.away(id);
         this.cache.set(id, out);
         return out;
+    }
+
+    /** [l, r, t, b] of a map in AWAY: its own yards at the world's scale, about its middle; null for any other map. */
+    away(id) {
+        const middle = AWAY.get(id);
+        const a = this.assign.get(id)?.[0];
+        const scale = this.yards(EASTERN_KINGDOMS);
+        if (!middle || !a || !scale) {
+            return null;
+        }
+        const w = Math.abs(scale.bu) * (+a.Region_4 - +a.Region_1);
+        const h = Math.abs(scale.bv) * (+a.Region_3 - +a.Region_0);
+        return [middle[0] - w / 2, middle[0] + w / 2, middle[1] - h / 2, middle[1] + h / 2];
     }
 
     // how a continent's yards land on the world: a point (x, y) of game map `gameMap` is

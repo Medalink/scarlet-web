@@ -68,7 +68,7 @@ cannot reach the droplet, so medaware's `docker push` sends only new layers (a c
 droplet pulls them from its own registry. When the registry does not answer, or with `DEPLOY_TRANSPORT=stream`, it
 falls back to `docker save | zstd | ssh | docker load` of the whole image. `bin/deploy` prints the seconds each phase took when it ends. On the droplet `deploy/rollout.sh`:
 
-1. runs `migrate --force`, `maps:load-rects`, `app:release-notes:publish` and `cache:clear` with the new image while
+1. runs `migrate --force`, `maps:load-rects`, `maps:place-points`, `app:release-notes:publish` and `cache:clear` with the new image while
    the old release still serves;
 2. starts the new release as `app-blue` or `app-green`, whichever is idle, and waits for five answers in a row, half a second apart, from
    `/up` and `/release-notes` through nginx's own configuration (loopback ports 8091 and 8092);

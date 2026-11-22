@@ -839,13 +839,19 @@ map, with OpenMap linked. Data or code copied from OpenMap into this repo carrie
 
 **Where a recorded point is.** The recording gives a zone map and a position on it (`uiMapID`, x, y). The world
 position needs that zone's rectangle on the world, which the game computes. `map_rects(ui_map_id, u0, v0, u1, v1)`
-holds one row per zone map, loaded from `docs/map-rects.tsv`. Ingest stores `u, v` next to the zone position on
+holds one row per zone map, loaded from `docs/map-rects.tsv`. Zephras Isle (2521) is its own continent, which the
+game's world map does not hold, so the tables give it no rectangle: `tools/map-tiles/rects.mjs` places it by hand
+(`AWAY`) on the island the world's own art paints south of the Maelstrom, at the world's scale. The battlegrounds
+(1459 to 1461) and Darkspear Islands (2524) are not on the world either and have no rectangle; nothing has been
+recorded on them. The game's tables hold no map of a dungeon, and a recording carries no position inside one. Ingest stores `u, v` next to the zone position on
 `path_points`, `deaths` and `creature_sightings` (null for a map that is not on the world, such as a dungeon), and
 the heat rollups are keyed by a world cell: `cell_i = floor(u * 768)` and `cell_j = floor(v * 512)`, a grid of 768 by
 512. The world is 3:2 (16032 by 10688 px at the top zoom), so those cells are square: 20.875 px at the top zoom, about
 1.3 of the world's 1002 by 668 units a side. A point with no `u, v` is in no cell. `bin/artisan maps:place-points` fills
-the nulls of rows whose map has a rectangle, in windows of seven days, then refreshes the world heat; it finds nothing
-to do on a second run, so it can run whenever rectangles arrive, and nothing is uploaded again. Kills carry no
+the nulls of rows whose map has a rectangle, in windows of seven days, then refreshes the world heat and measures
+again the sessions whose path points it placed; it finds nothing to do on a second run. The deploy runs it after
+`maps:load-rects`, so a rectangle added to the table reaches the points recorded before it, and nothing is uploaded
+again. Kills carry no
 position, so the map's third layer is the creatures met (`creature_sightings`), not kills.
 
 **Heat levels.** Heat is kept at four cell sizes so that zooming in shows detail, not bigger squares. Level `n` is a grid
@@ -889,7 +895,10 @@ drawn by its `tools/render-dark.mjs`, no pixel of the game's art in them) stitch
 builds it into `public/map-sheets`, which is committed (2,959 tiles, 2.8 MiB): the world's sheet is the base, and each
 of the 43 zone sheets is laid on it at its rectangle, cut to the zone's own land from OpenMap's `MapZoneLand` mask, once
 7 world units past the shore so the coast is the zone's drawing and once on the land alone so no zone paints its flat
-neighbour tone over the land next door. Under the zones the world's sheet is blurred, because its lines enlarged eight
+neighbour tone over the land next door. Orgrimmar, Ironforge, Thunder Bluff and Undercity are laid over their zones
+the same way, cut by OpenMap's `MapCityMask` and without the shore pass, so a path through a city runs between its
+buildings; Stormwind City and Darnassus have no such mask and keep their zone's drawing. Zephras Isle is cut by
+`MapCore`, and because the world's sheet does not draw it, it is laid on every level. Under the zones the world's sheet is blurred, because its lines enlarged eight
 times are smears. A zone drawn as a thumbnail is noise, so levels 0 to 3 are the world's sheet alone, level 4 is half
 zones, and levels 5 and 6 are the zones. A tile that is the bare sheet is left out and the manifest's `ground` colour
 fills it. `manifest.json` is the tile manifest plus `places`: each zone's rectangle and its names (the client's area,
