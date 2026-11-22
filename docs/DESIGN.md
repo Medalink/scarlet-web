@@ -60,6 +60,7 @@ is in no group or in two, and the app, the decoder and the settings page all rea
 | `client` | Game client and addons loaded | Client checks, addon list, UI errors, screenshots, loading screens |
 | `addons` | Other addons | The whole addon stream of ADDONS.md, every integration |
 | `imports` | Imported history from other addons | Gold balances, sales, purchases and other income and expense read from other addons' saved variables; owner-only, never in a board |
+| `fishing` | The Fishing Log | Records, journal, fishing sessions, bounties and the spot leaderboards the companion read from The Fishing Log's saved variables; other anglers as pseudonyms |
 | `names` | Names and item facts | Not a switch. A name line (`N`, `SN`, `IN`, `II` and the like) is sent only in a session where a sent line uses that id |
 
 Rules:
@@ -85,7 +86,7 @@ A killing blow (`DR`) whose source the game did not identify (no killer kind) st
 name has a player's `First-Last` shape, it is replaced like a player's, so a player who lands an unidentified killing
 blow never reaches the server under their own name.
 
-Names appear in clear only in `social` parts. With `social` on, each social part also carries the pseudonyms that
+Names appear in clear only in `social` parts and, with `social` on, in the `pn` lines that open a `fishing` part (The Fishing Log, below). With `social` on, each social part also carries the pseudonyms that
 session used, as `pn` lines (`<dt>\tpn\t<pseudonym>\t<Name-Surname>`; lower-case codes are written by the app, never
 by the addon), so the uploader's own private view can show names. Turning `social` off and removing it leaves the
 server with pseudonyms only.
@@ -133,6 +134,26 @@ and observed numbers and stay apart from both:
   decoder skips the group, so no session, fact row, rollup or board ever sees them.
 - `imported_records` has no public reader. `ShowImportedHistory` feeds the signed-in owner's character page and the
   account's characters page, both labelled with the source. Removing the group or the character deletes its rows.
+
+### The Fishing Log
+
+The `fishing` group carries what the companion read from The Fishing Log's saved variables (Scarlet's FORMAT.md, "The
+Fishing Log"): the character's records, journal, fishing sessions and bounties, and its game account's shared record
+book, bounty boards, anglers met and surveys.
+
+- One part per UTC day, as imports. Every line is a snapshot with the time of what it describes, so a record that is
+  beaten or a count that grows changes its day's part, which replaces the old one in the next sync.
+- Other anglers' names (holders, standings, anglers met, champions) become pseudonyms by player-fields.tsv, the
+  character's own name stays. With `social` on, a fishing part starts with a `pn` line (`dt` 0) for each pseudonym it
+  uses, as a social part does, and they join the character's `pseudonyms`.
+- `DecodeSession` sends a key's `fishing` parts and `addons` parts to `scarlet-part decode --fishing`, and
+  `StoreFishingLines` replaces the key's rows in `fishing_lines`: one row per `J` line, and one per `fl C` catch of the
+  addon stream (code `fl.C`), with `code`, `at` (epoch seconds) and the line's fields by name in `fields` (jsonb). The
+  session decoder skips the group. A decode with no such part clears the key's rows, so a removed part takes its rows
+  with it.
+- The account's record book reaches the server once per character of the account and once per uploader who heard it;
+  a board takes the heaviest weight per spot, species, scope and season.
+- Nothing reads `fishing_lines` yet. Removing the `fishing` group deletes its `J` rows, removing `addons` its catches.
 
 ## Upload protocol
 

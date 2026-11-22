@@ -95,13 +95,23 @@ pub fn load_dir(payloads: &Path, addons: Option<&Path>) -> Result<Loaded, String
 /// The imported history of one character (`imports/payloads/*.scl`, magic `scarletimports`),
 /// when its header names `character`.
 pub fn load_imports(dir: &Path, character: &str) -> Vec<Ev> {
+    load_named(dir, "scarletimports", character)
+}
+
+/// What the companion read from The Fishing Log for one character (`fishing/payloads/*.scl`,
+/// magic `scarletfishing`), when its header names `character`.
+pub fn load_fishing(dir: &Path, character: &str) -> Vec<Ev> {
+    load_named(dir, "scarletfishing", character)
+}
+
+fn load_named(dir: &Path, magic: &str, character: &str) -> Vec<Ev> {
     let Ok(files) = scl_files(dir) else {
         return Vec::new();
     };
     let mut out = Vec::new();
     for path in files {
         let Ok(bytes) = fs::read(&path) else { continue };
-        if let Ok(p) = parse_scl(&bytes, "scarletimports")
+        if let Ok(p) = parse_scl(&bytes, magic)
             && p.character == character
         {
             out.extend(p.events);

@@ -3,6 +3,7 @@
 namespace App\Actions\Ingest;
 
 use App\Support\FactTable;
+use App\Support\FishingCode;
 use App\Support\SharingGroup;
 use Illuminate\Support\Facades\DB;
 
@@ -42,6 +43,16 @@ class DeleteFactRows
 
         if ($sessionStart === null && ($group === null || $group === SharingGroup::IMPORTS)) {
             $deleted += DB::table('imported_records')->whereIn('character_id', $characterIds)->delete();
+        }
+        if ($sessionStart === null && ($group === null || $group === SharingGroup::FISHING || $group === SharingGroup::ADDONS)) {
+            $query = DB::table('fishing_lines')->whereIn('character_id', $characterIds);
+            if ($group === SharingGroup::ADDONS) {
+                $query->where('code', FishingCode::Catch->value);
+            }
+            if ($group === SharingGroup::FISHING) {
+                $query->where('code', '<>', FishingCode::Catch->value);
+            }
+            $deleted += $query->delete();
         }
         if ($group === SharingGroup::SOCIAL && $sessionStart === null) {
             $deleted += DB::table('pseudonyms')->whereIn('character_id', $characterIds)->delete();

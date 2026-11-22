@@ -49,6 +49,25 @@ impl<'a> Rows<'a> {
         }
     }
 
+    /// A finite decimal, written in its shortest form.
+    pub fn num(&mut self, key: &str, v: f64) -> &mut Self {
+        let _ = write!(self.out, ",\"{key}\":{v}");
+        self
+    }
+
+    /// Finite decimals as an array.
+    pub fn nums(&mut self, key: &str, v: &[f64]) -> &mut Self {
+        let _ = write!(self.out, ",\"{key}\":[");
+        for (i, n) in v.iter().enumerate() {
+            if i > 0 {
+                self.out.push(',');
+            }
+            let _ = write!(self.out, "{n}");
+        }
+        self.out.push(']');
+        self
+    }
+
     pub fn str(&mut self, key: &str, v: &str) -> &mut Self {
         let _ = write!(self.out, ",\"{key}\":");
         self.quoted(v);

@@ -1248,7 +1248,8 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
             .index(group)
             .ok_or_else(|| format!("unknown group {group}"))?;
         keys.insert(gi);
-        let skip = group == "addons" || group == crate::imports::GROUP;
+        let skip =
+            group == "addons" || group == crate::imports::GROUP || group == crate::fishing::GROUP;
         let mut t = session * 1000;
         let mut after_line = false;
         for line in text.split('\n').skip(1) {

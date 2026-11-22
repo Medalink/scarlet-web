@@ -8,6 +8,7 @@ pub mod camp;
 pub mod compare;
 pub mod death;
 pub mod decode;
+pub mod fishing;
 pub mod groups;
 pub mod imports;
 pub mod load;

@@ -35,4 +35,8 @@ final class SharingGroup
     public const string BUILD = 'build';
 
     public const string IMPORTS = 'imports';
+
+    public const string FISHING = 'fishing';
+
+    public const string ADDONS = 'addons';
 }

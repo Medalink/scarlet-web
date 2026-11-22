@@ -79,14 +79,35 @@ class PartTool
      */
     public function decodeImports(array $bodies): array
     {
+        return $this->decodeRows($bodies, '--imports');
+    }
+
+    /**
+     * Decode the `fishing` parts and the `addons` parts of one part key into newline-delimited JSON: a `fishing` row
+     * per line and a `pn` row per pseudonym a fishing part explains.
+     *
+     * @param  list<string>  $bodies  the `body` column of each part
+     * @return list<array<string, mixed>>
+     */
+    public function decodeFishing(array $bodies): array
+    {
+        return $this->decodeRows($bodies, '--fishing');
+    }
+
+    /**
+     * @param  list<string>  $bodies
+     * @return list<array<string, mixed>>
+     */
+    private function decodeRows(array $bodies, string $mode): array
+    {
         $input = '';
         foreach ($bodies as $body) {
             $input .= pack('V', strlen($body)).$body;
         }
 
-        $run = Process::timeout(60)->input($input)->run([$this->binary(), 'decode', '--stdin', '--imports']);
+        $run = Process::timeout(60)->input($input)->run([$this->binary(), 'decode', '--stdin', $mode]);
         if (! $run->successful()) {
-            throw new RuntimeException('scarlet-part decode --imports failed: '.$this->message($run->errorOutput()));
+            throw new RuntimeException("scarlet-part decode {$mode} failed: ".$this->message($run->errorOutput()));
         }
 
         $rows = [];

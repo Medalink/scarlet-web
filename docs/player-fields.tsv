@@ -17,3 +17,12 @@ DR	3	field 11 is p	killer, when a player
 DR	3	field 11 is empty and field 3 is player-shaped	killer, when the game did not identify the source
 DR	15		killer guild
 EL	4		receiver
+JY	4		angler in a bounty's standings
+JO	4		angler on a bounty board
+JK	6		holder of a spot record
+JA	1		angler met
+JA	2		angler's guild
+JE	1		angler
+JD	5		angler who reported a frenzy
+JL	2		angler who reported skill-ups
+JCH	1		champion
