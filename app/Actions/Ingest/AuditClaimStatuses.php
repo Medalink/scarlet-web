@@ -36,7 +36,7 @@ class AuditClaimStatuses
             ...$this->listed($this->claims('c.status is null or c.status not in ('.$this->marks(ClaimStatus::cases()).')', array_map(fn (ClaimStatus $status): string => $status->value, ClaimStatus::cases()), $characterId), 'has no valid status'),
             ...$this->listed($this->claims($this->differs(), [], $characterId), 'does not add up: its amounts are not its counted amounts plus the stored difference'),
             ...$this->listed($this->claims($this->counts(), ClaimStatus::uncounted(), $characterId), 'counts a negative amount, more than it claimed, or an amount its status does not allow'),
-            ...$this->listed($this->claims("c.status in (?, ?) and not (jsonb_exists(c.evidence, 'with') or coalesce((c.evidence #>> '{rows,n}')::int, 0) > 0)", [ClaimStatus::Superseded->value, ClaimStatus::Residual->value], $characterId), 'is superseded or residual and names no evidence'),
+            ...$this->listed($this->claims("c.status in (?, ?) and not (jsonb_exists(c.evidence, 'with') or jsonb_exists(c.evidence, 'session') or coalesce((c.evidence #>> '{rows,n}')::int, 0) > 0)", [ClaimStatus::Superseded->value, ClaimStatus::Residual->value], $characterId), 'is superseded or residual and names no evidence'),
             ...$this->sharedRows($characterId),
             ...$this->overlaps($characterId),
             ...$this->twins($characterId),

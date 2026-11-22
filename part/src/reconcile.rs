@@ -388,6 +388,13 @@ impl Dated<'_> {
             return self.catch_started(c, &whole, &rows, before, prev);
         }
         if rows.is_empty() {
+            if let Some((first, last)) = rules::cancelled_in_session(self.rows, c, &whole) {
+                return nothing(
+                    c,
+                    Status::Superseded,
+                    json!({"rule": 3, "rows": {"n": 0}, "session": [first, last]}),
+                );
+            }
             return decide(
                 c,
                 Status::Counted,

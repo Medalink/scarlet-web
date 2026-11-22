@@ -371,8 +371,10 @@ Rules, in order:
    of an origin that both name `landed`: while one holds more looted rows than its `landed`, the other fewer, and the
    first one's row nearest the other lies within 3 s of the other's window, that row moves to the other (with the rows
    behind it, so the ranges stay disjoint). Without it a stop and a cast 1.2 s later, as a stop-and-cast macro makes,
-   counts one landed, its items and a cast twice. With no row assigned, the claim is `counted`. Otherwise, for
-   fishing:
+   counts one landed, its items and a cast twice. With no row assigned, the claim is `counted`, unless every cast of
+   it is `unknown` (and it names no landed or items) and its window lies inside a Scarlet session that recorded rows
+   of the kind: Scarlet recorded the window and dropped those casts as cancelled, so the claim is `superseded` with the
+   session's first and last row as evidence. Otherwise, for fishing:
    - casts: the claim's `casts - unknown` is at most the rows Scarlet keeps when it saw the whole window, because
      `unknown` holds the cancelled channels Scarlet drops. Counted casts = `casts` x the share of `casts - unknown`
      that the assigned rows do not cover.

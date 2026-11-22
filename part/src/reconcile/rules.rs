@@ -335,6 +335,21 @@ fn session_spans(rows: &[Row]) -> Vec<(i64, i64)> {
     spans.into_values().collect()
 }
 
+pub(super) fn cancelled_in_session(
+    rows: &[Row],
+    c: &Claim,
+    whole: &BTreeMap<String, i64>,
+) -> Option<(i64, i64)> {
+    let get = |k: &str| whole.get(k).copied().unwrap_or(0);
+    let every_cast_unknown = whole.contains_key("casts") && get("casts") - get("unknown") <= 0;
+    if !every_cast_unknown || get("landed") != 0 || get("items") != 0 {
+        return None;
+    }
+    session_spans(rows)
+        .into_iter()
+        .find(|&(first, last)| first <= start(c) * 1000 && c.to * 1000 <= last)
+}
+
 pub(super) fn match_events(claims: &[Claim], events: &[usize], rows: &[Row]) -> Vec<Event> {
     let mut verdicts: Vec<Option<Event>> = (0..events.len()).map(|_| None).collect();
     let mut used = vec![false; rows.len()];
