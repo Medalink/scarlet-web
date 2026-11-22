@@ -81,8 +81,10 @@ for the user and what stays the same, then `What changes` (concrete identifiers,
 scarletweb.io runs on one DigitalOcean droplet behind Cloudflare. A ship deploys: the flow's `live` ring rolls every
 commit that lands on main out to the droplet and checks the public pages. `flow status scarlet-web` shows the ring
 `passed` or `failed` at your SHA; wait for it before you report the change live. Run `bin/deploy` only for what the ring
-cannot do (a rollout-read file under `deploy/`, server setup, maps, the database host) or for a manual rollback, since
-it takes the same deploy lock the ring uses. [docs/HOSTING.md](docs/HOSTING.md) has the layout, the ring, rollback,
+cannot do (server setup, maps, the database host) or for a manual rollback; it takes the same deploy lock the ring uses.
+A change to a file a rollout reads (`deploy/rollout.sh`, `deploy/dc`, the compose files, `deploy/nginx/`) ships like any
+other and never stops the ring, but it can reach the droplet after its release has rolled out, so that release must
+also run on the copy before it. [docs/HOSTING.md](docs/HOSTING.md) has the layout, the ring, rollback,
 logs, backups and restore. Secrets live on the server and in the owner's secrets folder, never in the repo. Map art is
 copied to the droplet with `bin/deploy maps`, never committed.
 
