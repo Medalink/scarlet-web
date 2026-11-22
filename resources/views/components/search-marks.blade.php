@@ -1,0 +1,1 @@
+{{-- A result title as the pieces of SearchPage::hit()'s `marks`; the matched ones are <mark>. Nothing but the text is printed, so no space appears between pieces. --}}@props(['marks'])@foreach ($marks as [$text, $on])@if ($on)<mark>{{ $text }}</mark>@else{{ $text }}@endif@endforeach
