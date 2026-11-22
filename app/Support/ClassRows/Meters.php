@@ -6,7 +6,7 @@ namespace App\Support\ClassRows;
 final class Meters
 {
     /**
-     * @param  list<\stdClass>  $totals  columns meter, level, place, total, best, fights, fight_ms
+     * @param  list<\stdClass>  $totals  columns meter, level, place, total, best, fights, fight_ms, group_total, group_own, group_fights
      * @param  list<\stdClass>  $spells  columns meter, spell_id, amount, fights
      * @param  array<int, string>  $spellNames
      */
@@ -54,6 +54,42 @@ final class Meters
         ksort($by);
 
         return $by;
+    }
+
+    /**
+     * The meter's total by where the fights took place; a row stored before decoder version 14 has no place and is left out.
+     *
+     * @return array<string, int> by `MeterPlace` value
+     */
+    public function byPlace(Meter $meter): array
+    {
+        $by = [];
+        foreach ($this->totals as $row) {
+            if ($row->meter === $meter->value && $row->place !== null) {
+                $by[(string) $row->place] = ($by[(string) $row->place] ?? 0) + (int) $row->total;
+            }
+        }
+
+        return $by;
+    }
+
+    /**
+     * The fights that had the group's totals: how many, what the uploader did in them and what the whole group did.
+     *
+     * @return array{fights: int, own: int, total: int}
+     */
+    public function group(Meter $meter): array
+    {
+        $group = ['fights' => 0, 'own' => 0, 'total' => 0];
+        foreach ($this->totals as $row) {
+            if ($row->meter === $meter->value) {
+                $group['fights'] += (int) $row->group_fights;
+                $group['own'] += (int) $row->group_own;
+                $group['total'] += (int) $row->group_total;
+            }
+        }
+
+        return $group;
     }
 
     /**

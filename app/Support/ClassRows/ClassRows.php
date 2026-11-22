@@ -113,7 +113,7 @@ final class ClassRows
     {
         if ($this->meters === null) {
             $totals = self::fetch($this->counted('meter_totals')->groupBy('meter', 'level', 'place')
-                ->selectRaw('meter, level, place, least(coalesce(sum(total), 0), ?) as total, max(best) as best, least(coalesce(sum(fights), 0), ?) as fights, least(coalesce(sum(fight_ms), 0), ?) as fight_ms', array_fill(0, 3, self::CAP)));
+                ->selectRaw('meter, level, place, least(coalesce(sum(total), 0), ?) as total, max(best) as best, least(coalesce(sum(fights), 0), ?) as fights, least(coalesce(sum(fight_ms), 0), ?) as fight_ms, least(coalesce(sum(group_total), 0), ?) as group_total, least(coalesce(sum(group_own), 0), ?) as group_own, least(coalesce(sum(group_fights), 0), ?) as group_fights', array_fill(0, 6, self::CAP)));
             $spells = self::fetch($this->counted('meter_spells')->groupBy('meter', 'spell_id')
                 ->selectRaw('meter, spell_id, least(coalesce(sum(amount), 0), ?) as amount, least(coalesce(sum(fights), 0), ?) as fights', array_fill(0, 2, self::CAP)));
             $this->meters = new Meters($totals, $spells, $this->names->handle(NameKind::Spell, self::ids($spells, 'spell_id')));
@@ -172,6 +172,12 @@ final class ClassRows
         }
 
         return $text;
+    }
+
+    /** The deaths of the sessions that count. */
+    public function deaths(): int
+    {
+        return (int) $this->counted('deaths')->count();
     }
 
     /** Creatures that died to a party member's blow: the `kills` the character did not get the credit for. */
