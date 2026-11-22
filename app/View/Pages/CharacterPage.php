@@ -75,6 +75,7 @@ final class CharacterPage
             'week' => $week === null ? null : self::week($week, $economy),
             'levels' => $levels,
             'records' => CharacterRecords::tiles($r['records'], $totals, $since),
+            'feats' => CharacterFeats::section($r['feats'], $character),
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
             'quests' => $quests,
             'creatures' => $creatures,

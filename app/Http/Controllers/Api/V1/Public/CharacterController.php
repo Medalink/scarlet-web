@@ -28,7 +28,7 @@ class CharacterController extends PublicController
             $this->missing('The character');
         }
 
-        return $this->respond([...$this->profile($answer), 'week' => $answer['week'], 'distance' => $answer['distance']], ['economy' => $answer['economy']]);
+        return $this->respond([...$this->profile($answer), 'week' => $answer['week'], 'distance' => $answer['distance'], 'feats' => $answer['feats']], ['economy' => $answer['economy']]);
     }
 
     public function series(PublicRequest $request, CharacterOverview $overview, string $name, string $series): JsonResponse

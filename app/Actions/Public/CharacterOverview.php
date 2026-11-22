@@ -6,6 +6,7 @@ use App\Actions\Public\Character\CapState;
 use App\Actions\Public\Character\CreaturesMet;
 use App\Actions\Public\Character\DeathLog;
 use App\Actions\Public\Character\DungeonRuns;
+use App\Actions\Public\Character\Feats;
 use App\Actions\Public\Character\HeatCells;
 use App\Actions\Public\Character\HourlyPlay;
 use App\Actions\Public\Character\ItemsFound;
@@ -61,6 +62,7 @@ class CharacterOverview
         private readonly QuestsDone $questsDone,
         private readonly CreaturesMet $creaturesMet,
         private readonly SkillHistory $skillHistory,
+        private readonly Feats $feats,
     ) {}
 
     /**
@@ -84,6 +86,9 @@ class CharacterOverview
         $ruleset = collect($this->rulesets->handle())->firstWhere('id', $rulesetId);
         $totals = $this->totals->handle($id);
         $play = $this->hourlyPlay->handle($id);
+        $dungeons = $this->dungeons($id);
+        $skills = $this->skillRanks->handle($id);
+        $records = $this->records->handle($id);
 
         return [
             'character' => $character,
@@ -97,15 +102,16 @@ class CharacterOverview
             'pace' => ['character' => $this->levels($id), 'ruleset' => $rulesetId === null ? [] : $this->curve->handle($rulesetId)],
             'levelTimes' => ['character' => $this->levelTimes($id), 'ruleset' => $rulesetId === null ? [] : $this->timePerLevel->handle($rulesetId)],
             'xp' => $this->xp($id),
-            'dungeons' => $this->dungeons($id),
+            'dungeons' => $dungeons,
             'deaths' => $this->deaths($id, $owner),
             'deathLevels' => $this->deathLevels($id),
             'zoneHours' => $this->zoneHours->handle($id),
             'deathLog' => $this->deathLog->handle($id, $owner),
             'items' => $this->itemsFound->handle($id),
-            'skills' => $this->skillRanks->handle($id),
+            'skills' => $skills,
             'talents' => $this->talents->handle($id),
-            'records' => $this->records->handle($id),
+            'records' => $records,
+            'feats' => $last === null ? [] : $this->feats->handle($character, $totals, $records, $skills, $dungeons),
             'killed' => $this->mostKilled->handle($id),
             'crafted' => $this->mostCrafted->handle($id),
             'dungeonRuns' => $this->dungeonRuns->handle($id),
