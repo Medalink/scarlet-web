@@ -20,6 +20,7 @@ final readonly class LootArm implements JsonSerializable
     /**
      * @param  list<int>  $characters  the characters whose windows `windows` counts
      * @param  int|null  $reader  the character whose windows with no key are counted when only one character's are
+     * @param  array<string, array{unkeyed: bool, keyed: bool}>  $days  which windows each day counts, by day (`''` for an arm read without days)
      * @param  list<RateFlag>  $flags
      */
     private function __construct(
@@ -32,8 +33,65 @@ final readonly class LootArm implements JsonSerializable
         public ?int $reader,
         public bool $unkeyedCounted,
         public bool $keyedCounted,
+        public array $days,
         public array $flags,
     ) {}
+
+    /**
+     * Null while fewer than `$minimumCharacters` characters contributed to the arm. The one reader's larger-set rule
+     * (rule 6) applies on the days where it can matter: the reader has windows with no key and another character has
+     * windows with a key. Every other day counts all its windows with a key and the reader's windows with no key (or every
+     * character's, where no other has windows with no key), so old windows with no key and new ones with a key that fall
+     * on different days are all counted.
+     *
+     * @param  array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>  $days  windows by day, then by character id
+     */
+    public static function overDays(string $key, string $label, array $days, bool $freeForAll, bool $personal, bool $ruleUnknown, int $minimumCharacters): ?self
+    {
+        $unkeyed = $keyed = [];
+        foreach ($days as $parts) {
+            foreach ($parts['unkeyed'] as $character => $windows) {
+                $unkeyed[$character] = ($unkeyed[$character] ?? 0) + $windows;
+            }
+            foreach ($parts['keyed'] as $character => $windows) {
+                $keyed[$character] = ($keyed[$character] ?? 0) + $windows;
+            }
+        }
+        $contributors = array_keys($unkeyed + $keyed);
+        if (count($contributors) < max(1, $minimumCharacters)) {
+            return null;
+        }
+        $reader = self::busiest($unkeyed);
+        $contested = $freeForAll && $reader !== null
+            ? array_keys(array_filter($days, fn (array $parts): bool => ($parts['unkeyed'][$reader] ?? 0) > 0 && array_sum(array_diff_key($parts['keyed'], [$reader => 0])) > 0))
+            : [];
+        $oneReader = $freeForAll && $reader !== null && (count($unkeyed) >= 2 || $contested !== []);
+
+        $counted = [];
+        $characters = [];
+        $windows = 0;
+        foreach ($days as $day => $parts) {
+            $own = $oneReader ? ($parts['unkeyed'][$reader] ?? 0) : array_sum($parts['unkeyed']);
+            $whole = array_sum($parts['keyed']);
+            $keyedWins = ! in_array($day, $contested, true) || $whole >= $own;
+            $counted[$day] = ['unkeyed' => ! in_array($day, $contested, true) || ! $keyedWins, 'keyed' => $keyedWins];
+            $windows += ($counted[$day]['unkeyed'] ? $own : 0) + ($counted[$day]['keyed'] ? $whole : 0);
+            if ($counted[$day]['unkeyed']) {
+                array_push($characters, ...($oneReader ? ($own > 0 ? [$reader] : []) : array_keys($parts['unkeyed'])));
+            }
+            if ($counted[$day]['keyed']) {
+                array_push($characters, ...array_keys($parts['keyed']));
+            }
+        }
+        $characters = array_values(array_unique($characters));
+        sort($characters);
+
+        return new self(
+            $key, $label, $personal, array_sum($unkeyed) + array_sum($keyed), $windows, $characters, $oneReader ? $reader : null,
+            in_array(true, array_column($counted, 'unkeyed'), true), in_array(true, array_column($counted, 'keyed'), true), $counted,
+            RateFlag::tags($oneReader ? 0 : count($characters), false, $oneReader, $ruleUnknown),
+        );
+    }
 
     /**
      * Null while fewer than `$minimumCharacters` characters contributed to the arm.
@@ -61,6 +119,7 @@ final readonly class LootArm implements JsonSerializable
 
         return new self(
             $key, $label, $personal, array_sum($unkeyed) + array_sum($keyed), $windows, $characters, $oneReader && $unkeyedCounted ? $reader : null, $unkeyedCounted, $keyedCounted,
+            ['' => ['unkeyed' => $unkeyedCounted, 'keyed' => $keyedCounted]],
             RateFlag::tags($oneReader ? 0 : count($characters), false, $oneReader, $ruleUnknown),
         );
     }
@@ -81,6 +140,36 @@ final readonly class LootArm implements JsonSerializable
     public function countsUnkeyedOf(int $character): bool
     {
         return $this->unkeyedCounted && ($this->reader === null || $this->reader === $character);
+    }
+
+    /**
+     * The windows of an arm made by `overDays` that listed one item, from the windows that listed it each day: the ones with
+     * a key, the ones with no key of every character and the ones with no key of the one reader. Each day adds the sets
+     * the arm counts that day.
+     *
+     * @param  array<string, array{keyed: int, unkeyed: int, reader: int}>  $days
+     */
+    public function dropsOver(array $days): int
+    {
+        $drops = 0;
+        foreach ($days as $day => $listed) {
+            $counts = $this->days[$day] ?? ['unkeyed' => true, 'keyed' => true];
+            $drops += ($counts['keyed'] ? $listed['keyed'] : 0) + ($counts['unkeyed'] ? ($this->reader === null ? $listed['unkeyed'] : $listed['reader']) : 0);
+        }
+
+        return $drops;
+    }
+
+    /** Whether the arm counts this character's windows with no corpse key on the day: all of them, or its one reader's. */
+    public function countsUnkeyedOn(string $day, int $character): bool
+    {
+        return ($this->days[$day]['unkeyed'] ?? true) && ($this->reader === null || $this->reader === $character);
+    }
+
+    /** Whether the arm counts the windows with a corpse key of the day. */
+    public function countsKeyedOn(string $day): bool
+    {
+        return $this->days[$day]['keyed'] ?? true;
     }
 
     /** From 10 windows an arm is drawn; under that it has counts only and takes no part in a chart. */
