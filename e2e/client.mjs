@@ -55,6 +55,14 @@ export class InstallClient {
     return this.request("POST", "/api/v1/installs/link-code", options);
   }
 
+  feats(options) {
+    return this.request("GET", "/api/v1/installs/me/feats", options);
+  }
+
+  featsSeen(character, feats) {
+    return this.request("POST", "/api/v1/installs/me/feats/seen", { body: JSON.stringify({ character, feats }) });
+  }
+
   sync(character, groups, count, digest) {
     return this.request("POST", "/api/v1/upload/sync", { body: JSON.stringify({ character, groups, count, digest }) });
   }

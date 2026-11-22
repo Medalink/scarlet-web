@@ -19,6 +19,7 @@ import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
 import * as browser from "./checks/browser.mjs";
+import * as feats from "./checks/feats.mjs";
 import * as removal from "./checks/removal.mjs";
 
 const LANES = ["upload", "api", "pages", "browser"];
@@ -41,6 +42,8 @@ const REGISTRY = [
   { lane: "api", name: "search finds the character", run: api.searchFindsTheCharacter },
   { lane: "api", name: "an unknown character is 404 not_found", run: api.unknownCharacterIs404 },
   { lane: "api", name: "a bad parameter is 422 invalid_request", run: api.badParameterIs422 },
+  { lane: "api", name: "the app reads a character's new feats, and one it showed is not new again", run: feats.shownFeatIsNotNewAgain },
+  { lane: "api", name: "the feats requests refuse an unsigned read, another character, an unknown feat and a sixth tier", run: feats.featsRefuseWhatIsNotTheInstalls },
   { lane: "pages", name: "every public page answers and shows its own content", run: pages.everyPageShowsItself },
   { lane: "pages", name: "one death heard by two uploaders is counted once", run: pages.deathIsCountedOnce },
   { lane: "pages", name: "a match's scoreboard is shown without the players' names", run: pages.scoreboardIsShownWithoutNames },

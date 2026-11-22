@@ -658,6 +658,17 @@ decimal of a world width), so a feat never shows a tier its number has not reach
 down too, so a segment is full only when its tier is held. Unbroken is also left out when the first death has no
 level.
 
+A feat is **new** to its owner when the tier its stored value holds is above `character_feats.seen_tier`, the highest
+tier of that feat the owner has been shown (smallint, default 0). A `seen_tier` of 0 means the feat was earned for the
+first time; above 0 it was upgraded. A tier that falls and climbs back is not new again, since `seen_tier` never goes
+down. The migration that added the column set every existing row to the tier its value held, so nothing earned before
+the deploy is announced; a row inserted later starts at 0, so a new character's first feats are. The feat refresh
+(`StoreCharacterFeats`) never writes `seen_tier`. Only the owner reads it: the owner's feat wall (`ShowOwnedFeats`, as
+`new`, gold feats included) and the app's signed `GET /installs/me/feats` (docs/API.md). `MarkFeatsSeen` raises
+`seen_tier` to the tier shown, never above the tier the value holds now, and is safe to repeat and to run at once;
+`POST /installs/me/feats/seen` and `MarkOwnedFeatsSeen` call it. `GET /public/characters/{name}` carries neither
+`seen_tier` nor `new`.
+
 A feat is one tier of one ladder. Copper comes in the first session or two. Each later tier takes several times the
 play of the one before: silver about 50 hours, gold about 200, scarlet about 500 and legend, the top tier, about
 2,500 (owner, 2026-11-21: "much much much harder", "bronze can be easy to get people interested but then things get

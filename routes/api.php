@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Upload\InstallController;
+use App\Http\Controllers\Api\V1\Upload\InstallFeatController;
 use App\Http\Controllers\Api\V1\Upload\UploadController;
 use App\Http\Middleware\PublicApi;
 use App\Http\Middleware\RateLimitRequests;
@@ -22,6 +23,8 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['scarlet.rate:'.RateLimitRequests::IP, 'scarlet.signed', 'scarlet.rate:'.RateLimitRequests::INSTALL])->group(function (): void {
         Route::get('installs/me', [InstallController::class, 'show']);
         Route::post('installs/link-code', [InstallController::class, 'linkCode']);
+        Route::get('installs/me/feats', [InstallFeatController::class, 'show']);
+        Route::post('installs/me/feats/seen', [InstallFeatController::class, 'seen']);
 
         Route::prefix('upload')->group(function (): void {
             Route::post('sync', [UploadController::class, 'sync']);

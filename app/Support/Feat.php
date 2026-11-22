@@ -101,6 +101,14 @@ enum Feat: string
         return $tier;
     }
 
+    /** The tier a stored count holds: the count rounded the way a card shows it, then read with `tier()`. */
+    public function held(int|float $stored): int
+    {
+        $decimals = $this->decimals();
+
+        return $this->tier($decimals === 0 ? floor($stored) : round($stored, $decimals));
+    }
+
     /** @return array{0: int, 1: int, 2: int, 3: int, 4: int} the counts that earn copper, silver, gold, scarlet and legend */
     public function thresholds(): array
     {

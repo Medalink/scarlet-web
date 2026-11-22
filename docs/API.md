@@ -128,6 +128,38 @@ that already exists answers `200` with the same install, so a retry after a lost
 `linked` turns true once the player confirms a link code in the browser; the app polls this.
 `link_code_expires_at` is set while an unused code is waiting.
 
+### `GET /installs/me/feats`
+
+The feats of every character this install owns (uploaded by it, or on the account it is linked to) that has any,
+most recently seen first, with the economy shown. Each entry is what the character page's Feats section shows, plus
+the feats not yet shown to the owner:
+
+```json
+{"characters": [{
+  "name": "Name-Surname", "held": 31, "total": 75,
+  "tiers": [{"count": 2, "name": "gold"}, {"count": 29, "name": "copper"}],
+  "since": null, "limit": 3, "pinned": [],
+  "top": [{"key": "slayer", "pinned": false, "tier": 2, "icon": "kills", "name": "Slayer", "tier_name": "Silver",
+           "detail": "3,100 kills, 6,900 to gold at 10,000", "track": [100, 100, 3, 0, 0]}],
+  "earned": ["... every card with tier 1 or more"], "unearned": ["... every card with tier 0"],
+  "new": [{"key": "slayer", "name": "Slayer", "icon": "kills", "from": 1, "from_name": "Copper", "tier": 2, "tier_name": "Silver"}]
+}]}
+```
+
+`new` lists the feats whose tier is above the tier last shown, highest tier first. `from` is 0 and `from_name` null for
+a feat earned for the first time, and above 0 for an upgrade. `since` is the date an observed count started, or null.
+
+### `POST /installs/me/feats/seen`
+
+```json
+{"character": "Name-Surname", "feats": {"slayer": 2}}
+```
+
+Records the tier shown for each feat, so `new` stops listing it. `204` with no body. A tier above the one the
+character holds is lowered to it, a tier below the one recorded changes nothing, and sending it twice is safe. `404
+not_found` when the character is not this install's. `422 invalid_request` for a feat that does not exist or a tier
+outside 1 to 5.
+
 ### `POST /installs/link-code`
 
 No body. `201` with `{"code": "XXXX-XXXX", "expires_at": "...", "expires_in": 600}`. The app shows the code and opens
