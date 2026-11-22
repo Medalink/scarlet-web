@@ -965,6 +965,34 @@ from the browser.
 | Other players' names | only a name whose own character is public | yes, with `social` on | Otherwise "a player" |
 | Guild names of other players | no | yes, with `social` on | |
 | Raw parts | no | download of their own | |
+| Addresses that called the API | no | no | Kept 30 days for the operator's `/admin/api` page, then deleted (Admin) |
+
+## Admin
+
+`/admin` is the operator's view of the whole site: totals and trends, who calls the API, the database and the ingest
+pipeline. Four pages: `/admin` (overview), `/admin/api`, `/admin/database` and `/admin/ingest`.
+
+**Who sees it.** An account opens it when one of its sign-ins is listed in `scarlet.admins`, which `SCARLET_ADMINS`
+sets as `provider:subject` pairs separated by commas (`google:1234`). Email cannot be the key: no email is stored
+(Security, Accounts). The check runs on every request against the account's identities, so editing the variable
+grants or revokes at once, with no migration. Everyone else gets `404`. The account page shows each linked sign-in's
+`provider:subject`, so the operator can copy theirs. The pages are private (`Cache-Control: private, no-store`,
+`noindex`), stay out of the edge cache and cap each statement like every page.
+
+**API calls.** `App\Http\Middleware\RecordApiCall` counts every request to `/api/v1` that matched a route, after the
+answer is sent, into `api_calls`: one row per UTC day, surface (`public` or `upload`), endpoint (method and route path),
+address bucket (`ClientAddress::bucket`), account (from the API key, or the install's account) and install. A row holds
+the requests, the refused ones (status 400 and above, except 404) and the first and last time. A `200` or `304` answer
+that names a character also counts on that character's row of the day, which has no address, account or install, so
+walking many characters adds one row per character, not one per caller and character. Both writes run in one
+transaction capped at two seconds, and a failed write is reported without touching the answer, which has already gone.
+Answers the edge cache serves never reach the origin, so the counts are the origin's. `api-calls:prune` keeps today and
+the 30 full days before it, daily.
+
+**Numbers.** Each page reads one Action under `app/Actions/Admin` and keeps its answer 60 seconds. Row counts of big
+tables come from the planner's estimate (`approximate_row_count` for hypertables, `reltuples` for the rest), never
+`count(*)`; sizes, compression, jobs, cache hits, connections, vacuum and index use from the PostgreSQL and
+TimescaleDB catalogs.
 
 ## API
 

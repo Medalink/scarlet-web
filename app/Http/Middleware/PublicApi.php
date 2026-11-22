@@ -30,6 +30,9 @@ class PublicApi
     /** Unknown, expired or under-powered bearer tokens an address may send a minute before it is refused unread. */
     public const int BAD_TOKENS_PER_MINUTE = 10;
 
+    /** The request attribute that holds the id of the account whose API key was accepted. */
+    public const string ACCOUNT_ATTRIBUTE = 'api-account';
+
     public const int MAX_AGE = 300;
 
     /** The lifetime of an answer that names characters, so one made private or removed leaves it within a minute. */
@@ -98,6 +101,7 @@ class PublicApi
         if ($token->last_used_at === null || $token->last_used_at->diffInSeconds(now()) >= self::LAST_USED_EVERY_SECONDS) {
             $token->forceFill(['last_used_at' => now()])->save();
         }
+        $request->attributes->set(self::ACCOUNT_ATTRIBUTE, (int) $token->tokenable_id);
 
         return ['api-public-account:'.$token->tokenable_id, (int) config('scarlet.rate.public.token')];
     }

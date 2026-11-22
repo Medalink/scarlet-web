@@ -1567,3 +1567,372 @@ page("cooking.html", "Scarlet cooking: crafts, recipes and skill", "fishing", `
   });
 })();
 `);
+
+const ADMIN_PAGES = [["admin", "Overview"], ["admin-api", "API"], ["admin-database", "Database"], ["admin-ingest", "Ingest"]];
+const adminHead = (cur, title, sub) => `<section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">${title}</h1><p class="sub">${sub}</p></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Admin pages">${ADMIN_PAGES.map(([file, label]) => `<a href="${file}.html"${file === cur ? ' aria-current="true"' : ""}>${label}</a>`).join("")}</div></div>
+  </section>`;
+const figures = (items) => `<section class="week n${items.length}" aria-label="Totals">${items.map(([label, value, unit]) => `<dl><dt>${label}</dt><dd>${value}${unit ? `<small>${unit}</small>` : ""}</dd></dl>`).join("")}</section>`;
+const rankList = (rows, cls = "") => `<ol class="rank${cls ? ` ${cls}` : ""}">${rows.map(([who, val, share, whoCls = ""]) => `<li><span class="who${whoCls ? ` ${whoCls}` : ""}">${who}</span><span class="val">${val}</span>${share == null ? "" : `<span class="track"><i style="width:${Math.round(share * 10) / 10}%"></i></span>`}</li>`).join("")}</ol>`;
+const dataTable = (head, rows) => `<div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr>${head.map(([label, cls]) => `<th${cls ? ` class="${cls}"` : ""}>${label}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${rows.map((cells) => `<tr>${cells.map((cell, i) => `<td${head[i][1] ? ` class="${head[i][1]}"` : ""}>${cell}</td>`).join("")}</tr>`).join("\n          ")}
+        </tbody></table></div>`;
+const split = (label, parts) => `<div class="stack" role="img" aria-label="${label}">${parts.map(([cls, , count]) => `<i class="${cls}" style="flex-grow:${count}"></i>`).join("")}</div>
+      <dl class="pair parts" style="grid-template-columns:repeat(${parts.length},minmax(0,1fr))">${parts.map(([cls, name, count, share]) => `<div><dt><i class="${cls}"></i>${name}</dt><dd>${count.toLocaleString("en-US")}<small>${share}</small></dd></div>`).join("")}</dl>`;
+const barCell = (rem, text) => `<i class="bar" style="width:${rem}rem"></i>${text}`;
+const none = (text) => `<span class="mut">${text}</span>`;
+
+const adminRand = (seed) => { let s = seed >>> 0; return () => ((s = Math.imul(s ^ (s >>> 15), 2246822507) + 0x9e3779b9 >>> 0) / 4294967296); };
+const LAST_FULL_DAY = Date.UTC(2026, 10, 21);
+const dayAt = (i, n) => new Date(LAST_FULL_DAY - (n - 1 - i) * 864e5);
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dayName = (i, n) => `${dayAt(i, n).getUTCDate()} ${MONTHS[dayAt(i, n).getUTCMonth()]}`;
+const num = (v) => v.toLocaleString("en-US");
+const ramp = (lo, hi, pow, noise, bump) => (t, rand, weekend) => (lo + (hi - lo) * t ** pow) * (1 + (rand() - 0.5) * noise) * (weekend ? 1 + bump : 1);
+const daily = (n, seed, at) => { const rand = adminRand(seed); return Array.from({ length: n }, (_, i) => [i, Math.max(0, Math.round(at(i / (n - 1), rand, [0, 6].includes(dayAt(i, n).getUTCDay()))))]); };
+const fit = (pts, total) => {
+  const sum = pts.reduce((s, p) => s + p[1], 0), scaled = pts.map(([x, v]) => [x, Math.round((v * total) / sum)]);
+  const top = scaled.reduce((best, p) => (p[1] > best[1] ? p : best));
+  top[1] += total - scaled.reduce((s, p) => s + p[1], 0);
+  return scaled;
+};
+const peak = (pts) => pts.reduce((best, p) => (p[1] > best[1] ? p : best));
+const yAxis = (top, fmt) => {
+  const options = [3, 4, 5].flatMap((steps) => { const mag = 10 ** Math.floor(Math.log10(top / steps)); return [1, 2, 2.5, 5, 10].map((u) => ({ steps, unit: u * mag })).filter((o) => o.unit * o.steps >= top); });
+  const best = options.reduce((a, b) => (b.unit * b.steps < a.unit * a.steps ? b : a));
+  const yt = Array.from({ length: best.steps + 1 }, (_, i) => +(i * best.unit).toFixed(6));
+  const thousands = yt.at(-1) >= 10000;
+  return { y1: yt.at(-1), yt, yl: yt.map(fmt ?? ((v) => (thousands && v ? `${v / 1000}k` : num(v)))) };
+};
+const days = (n, ticks, lead = 0, tail = lead) => ({ x0: -lead, x1: n - 1 + tail, xt: ticks, xl: ticks.map((i) => dayName(i, n)) });
+const plot = (kind, id, { xl, yl, ...spec }) => `Comp.${kind}(${JSON.stringify(id)}, { ...${JSON.stringify(spec)}, xf: (v) => ${JSON.stringify(xl)}[${JSON.stringify(spec.xt)}.indexOf(v)], yf: (v) => ${JSON.stringify(yl)}[${JSON.stringify(spec.yt)}.indexOf(v)] });`;
+const QUARTER = days(90, [0, 30, 60, 89], 0, 2), QUARTER_THIRD = days(90, [0, 45, 89], 0, 3);
+const MONTH = days(30, [0, 7, 14, 21, 29], 0, 0.6), MONTH_THIRD = days(30, [0, 14, 29], 0, 1);
+const MONTH_BARS = days(30, [0, 7, 14, 21, 29], 1), MONTH_BARS_THIRD = days(30, [0, 14, 29], 1);
+const most = (pts, n, what) => { const [i, v] = peak(pts); return `Most in one day: ${num(v)} ${what} on ${dayName(i, n)}.`; };
+const THIRD = { w: 380, h: 250 };
+
+const grown = { accounts: daily(90, 31, ramp(8, 34, 1.4, 0.2, 0.12)), installs: daily(90, 32, ramp(20, 66, 1.4, 0.16, 0.12)), characters: daily(90, 33, ramp(14, 50, 1.4, 0.18, 0.12)) };
+const activeInstalls = daily(90, 34, ramp(380, 1210, 1.2, 0.07, 0.09));
+const partsDaily = daily(90, 35, ramp(600, 11400, 1.6, 0.14, 0.15));
+const megabytesDaily = partsDaily.map(([x, v], i) => [x, Math.round(v * (0.078 + 0.012 * Math.sin(i / 5)))]);
+const decodedDaily = daily(90, 36, ramp(150, 1080, 1.3, 0.12, 0.15));
+const CHARACTERS = 3406;
+const classCounts = [["Warrior", 562], ["Hunter", 498], ["Mage", 451], ["Rogue", 402], ["Priest", 371], ["Warlock", 356], ["Druid", 298], ["Paladin", 251], ["Shaman", 217]];
+const levelCounts = [["1–9", 902], ["10–19", 811], ["20–29", 598], ["30–39", 441], ["40–49", 304], ["50–59", 222], ["60", 128]];
+const rulesetCounts = [["Standard, PvE", "Standard", 1612], ["Standard, PvP", "Standard", 742], ["Hardcore, PvE", "Hardcore", 538], ["Slow, PvE", "Slow", 351], ["Hardcore, PvP", "Hardcore", 163]];
+
+page("admin.html", "Scarlet admin: totals and growth", "", `
+<div class="wrap">
+  ${adminHead("admin", "Admin", "Only your account can open these four pages. Days are UTC and the charts end at the last full day, 21 Nov. Counted 22 Nov 2026 at 14:06 UTC.")}
+  ${figures([["Accounts", "2,918"], ["Installs", "4,062"], ["Characters", "3,406"], ["Sessions", "61,240"], ["Parts", "412,906"], ["Hours played", "96,318"], ["Database size", "38.4", "GB"]])}
+
+  <div class="sheet">
+    <section class="mod first" aria-labelledby="h-keys">
+      <h2 id="h-keys">Accounts with an API key</h2>
+      ${split("312 of 2,918 accounts have an API key", [["c-s1", "With a key", 312, "10.7%"], ["c-o", "No key", 2606, "89.3%"]])}
+    </section>
+    <section class="mod" aria-labelledby="h-links">
+      <h2 id="h-links">Installs linked to an account</h2>
+      ${split("2,870 installs are linked to an account, 1,004 are not and 188 are revoked", [["c-s1", "Linked", 2870, "70.7%"], ["c-s5", "Not linked", 1004, "24.7%"], ["c-o", "Revoked", 188, "4.6%"]])}
+    </section>
+    <section class="mod last" aria-labelledby="h-vis">
+      <h2 id="h-vis">Public and private characters</h2>
+      ${split("1,284 characters are public and 2,122 are private", [["c-s1", "Public", 1284, "37.7%"], ["c-o", "Private", 2122, "62.3%"]])}
+    </section>
+
+    <section class="mod w8 first" aria-labelledby="h-new">
+      <h2 id="h-new">New accounts, installs and characters per day</h2>
+      <div class="plot"><svg id="new" role="img" aria-label="New accounts, new installs and new characters on each of the last 90 days"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--accent)"></i>Accounts</li><li><i class="k-line" style="background:var(--fg)"></i>Installs</li><li><i class="k-line" style="background:var(--s-dungeon)"></i>Characters</li></ul>
+      <p class="readout"><b>${dayName(89, 90)}</b>: ${grown.accounts[89][1]} accounts, ${grown.installs[89][1]} installs and ${grown.characters[89][1]} characters.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-active">
+      <h2 id="h-active">Installs uploading per day</h2>
+      <div class="plot"><svg id="active" role="img" aria-label="Installs with at least one upload on each of the last 90 days"></svg></div>
+      <dl class="pair"><div><dt>Today</dt><dd>1,318</dd></div><div><dt>Last 7 days</dt><dd>2,204</dd></div><div><dt>Last 30 days</dt><dd>2,951</dd></div></dl>
+    </section>
+
+    <section class="mod first" aria-labelledby="h-parts">
+      <h2 id="h-parts">Parts uploaded per day</h2>
+      <div class="plot"><svg id="parts" role="img" aria-label="Parts uploaded on each of the last 90 days"></svg></div>
+      <p class="note">${most(partsDaily, 90, "parts")}</p>
+    </section>
+    <section class="mod" aria-labelledby="h-bytes">
+      <h2 id="h-bytes">Megabytes uploaded per day</h2>
+      <div class="plot"><svg id="bytes" role="img" aria-label="Megabytes of compressed parts uploaded on each of the last 90 days"></svg></div>
+      <p class="note">${most(megabytesDaily, 90, "MB, compressed,")}</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-decoded">
+      <h2 id="h-decoded">Sessions decoded per day</h2>
+      <div class="plot"><svg id="decoded" role="img" aria-label="Sessions decoded on each of the last 90 days"></svg></div>
+      <p class="note">${most(decodedDaily, 90, "sessions")}</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-class">
+      <h2 id="h-class">Characters by class</h2>
+      ${rankList(classCounts.map(([name, n], i) => [name, `${num(n)}${i ? "" : " characters"} · ${Math.round((n / CHARACTERS) * 100)}%`, (n / classCounts[0][1]) * 100]))}
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-levels">
+      <h2 id="h-levels">Characters by level</h2>
+      <div class="plot"><svg id="levels" role="img" aria-label="Characters in each band of ten levels"></svg></div>
+      <p class="note">Half of all characters are below level 20.</p>
+    </section>
+
+    <section class="mod w5 first" aria-labelledby="h-faction">
+      <h2 id="h-faction">Characters by faction</h2>
+      ${split("1,871 Horde characters and 1,535 Alliance characters", [["c-s1", "Horde", 1871, "54.9%"], ["c-s4", "Alliance", 1535, "45.1%"]])}
+    </section>
+    <section class="mod w7 last" aria-labelledby="h-rulesets">
+      <h2 id="h-rulesets">Characters by ruleset</h2>
+      ${dataTable([["Ruleset"], ["Kind"], ["Characters", "n"], ["Of all characters", "n"]], rulesetCounts.map(([name, kind, n]) => [`<a href="stats.html">${name}</a>`, kind, barCell(((n / rulesetCounts[0][2]) * 5.6).toFixed(1), num(n)), `${((n / CHARACTERS) * 100).toFixed(1)}%`]))}
+    </section>
+  </div>
+</div>`, `
+${plot("lines", "new", { ...QUARTER, ...yAxis(Math.max(...Object.values(grown).map((pts) => peak(pts)[1]))), series: [{ cls: "c thin", pts: grown.characters }, { cls: "b thin", pts: grown.installs }, { cls: "a", pts: grown.accounts, mark: 89 }] })}
+${plot("lines", "active", { ...THIRD, ...QUARTER_THIRD, ...yAxis(peak(activeInstalls)[1]), series: [{ cls: "a", pts: activeInstalls }] })}
+${plot("lines", "parts", { ...THIRD, ...QUARTER_THIRD, ...yAxis(peak(partsDaily)[1]), series: [{ cls: "a", pts: partsDaily, mark: peak(partsDaily)[0] }] })}
+${plot("lines", "bytes", { ...THIRD, ...QUARTER_THIRD, ...yAxis(peak(megabytesDaily)[1]), series: [{ cls: "a", pts: megabytesDaily, mark: peak(megabytesDaily)[0] }] })}
+${plot("lines", "decoded", { ...THIRD, ...QUARTER_THIRD, ...yAxis(peak(decodedDaily)[1]), series: [{ cls: "a", pts: decodedDaily, mark: peak(decodedDaily)[0] }] })}
+${plot("bars", "levels", { w: 480, h: 250, x0: -0.5, x1: 6.5, xt: [0, 1, 2, 3, 4, 5, 6], xl: levelCounts.map(([band]) => band), ...yAxis(levelCounts[0][1]), cls: "t", data: levelCounts.map(([, n], i) => [i, n]) })}
+`, true);
+
+const API_TOTALS = { anonymous: 218440, keyed: 96112, upload: 71905 };
+const anonymousDaily = fit(daily(30, 41, ramp(5200, 8600, 1, 0.16, 0.22)), API_TOTALS.anonymous);
+const keyedDaily = fit(daily(30, 42, ramp(2300, 3900, 1, 0.2, 0.05)), API_TOTALS.keyed);
+const uploadDaily = fit(daily(30, 43, ramp(1700, 3000, 1, 0.1, 0.16)), API_TOTALS.upload);
+const addressDaily = daily(30, 44, ramp(130, 240, 1, 0.2, 0.2));
+const keyAccountDaily = daily(30, 45, ramp(9, 20, 1, 0.3, 0));
+const uploaderDaily = activeInstalls.slice(60).map(([, v], i) => [i, v]);
+const endpointCounts = [["GET /public/characters/{name}", 96410], ["GET /public/stats", 61208], ["POST /upload/parts", 48930], ["GET /public/search", 44871], ["GET /public/creatures/{id}", 38112], ["GET /public/leaderboards/{board}", 27560], ["POST /upload/manifest", 14204], ["GET /public/map/heat", 12930]];
+const addressRows = [["203.0.113.48", 31204, 6, "23 Oct", "22 Nov 14:02", "#1042"], ["2001:db8:4a1c:7::/64", 22870, 4, "2 Nov", "22 Nov 13:58", "#2231"], ["198.51.100.17", 18441, 11, "23 Oct", "22 Nov 14:05", ""], ["192.0.2.201", 12096, 2, "9 Nov", "21 Nov 23:40", "#1042"], ["2001:db8:91:c300::/64", 9318, 3, "30 Oct", "22 Nov 11:12", ""], ["198.51.100.230", 7702, 1, "18 Nov", "22 Nov 14:04", "#871"], ["203.0.113.9", 6015, 8, "26 Oct", "20 Nov 08:31", ""], ["192.0.2.77", 4480, 5, "12 Nov", "22 Nov 09:50", ""]];
+const keyRows = [["#1042", 2, 43300, "22 Nov 14:02"], ["#2231", 1, 22870, "22 Nov 13:58"], ["#871", 1, 7702, "22 Nov 14:04"], ["#1630", 3, 6118, "21 Nov 19:20"], ["#402", 1, 4905, "22 Nov 02:14"], ["#2790", 1, 2204, "17 Nov 10:45"]];
+const lookedUp = [["Maren-Ashlow", 8204], ["Tolvir-Greane", 6118], ["Ysolde-Harrowick", 4470], ["Bram-Coldwater", 3902], ["Senna-Vale", 3316], ["Dorrin-Ashby", 2240], ["Liss-Underhill", 1871], ["Corwen-Pike", 1402]];
+const character = (name) => `<a href="character.html">${name}</a>`;
+const uploadRows = [["a41f09c2", "#1042", `${character("Maren-Ashlow")}, ${character("Tolvir-Greane")}`, "1.84 GB", 2960], ["7be2d410", "#318", character("Hesk-Brannoch"), "1.41 GB", 2204], ["0c93f7aa", "", `${character("Ysolde-Varr")} and 2 more`, "1.12 GB", 1918], ["e5d18b36", "#2231", character("Dunmar-Keel"), "904 MB", 1502], ["31aa60fe", "#1907", `${character("Senna-Vale")}, ${character("Bram-Coldwater")}`, "877 MB", 1377], ["9d04c2b1", "", character("Dorrin-Ashby"), "640 MB", 1090]];
+
+page("admin-api.html", "Scarlet admin: who uses the API", "", `
+<div class="wrap">
+  ${adminHead("admin-api", "API use", "Requests that reached the origin in the last 30 days. An anonymous answer served from the edge cache never reaches the origin, so it is not counted here. Addresses are kept for 30 days.")}
+  ${figures([["Anonymous requests", num(API_TOTALS.anonymous)], ["Requests with a key", num(API_TOTALS.keyed)], ["Upload requests", num(API_TOTALS.upload)], ["Addresses", "1,906"], ["Accounts using a key", "41"], ["Installs uploading", "2,951"]])}
+
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-public">
+      <h2 id="h-public">Public API requests per day</h2>
+      <div class="plot"><svg id="public" role="img" aria-label="Requests to the public read API on each of the last 30 days, anonymous and with an API key"></svg></div>
+      ${key([["c-s1", "Anonymous"], ["c-s5", "With an API key"]])}
+      <p class="readout"><b>${dayName(29, 30)}</b>: ${num(anonymousDaily[29][1] + keyedDaily[29][1])} requests, ${num(anonymousDaily[29][1])} anonymous and ${num(keyedDaily[29][1])} with a key.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-upload">
+      <h2 id="h-upload">Upload API requests per day</h2>
+      <div class="plot"><svg id="upload" role="img" aria-label="Requests to the upload API on each of the last 30 days"></svg></div>
+      <p class="note">Every upload request is signed by an app install.</p>
+    </section>
+
+    <section class="mod first" aria-labelledby="h-addr-day">
+      <h2 id="h-addr-day">Addresses per day</h2>
+      <div class="plot"><svg id="addr-day" role="img" aria-label="Distinct addresses that called the API on each of the last 30 days"></svg></div>
+      <p class="note">${most(addressDaily, 30, "addresses")}</p>
+    </section>
+    <section class="mod" aria-labelledby="h-acct-day">
+      <h2 id="h-acct-day">Accounts using a key per day</h2>
+      <div class="plot"><svg id="acct-day" role="img" aria-label="Distinct accounts whose API key was used on each of the last 30 days"></svg></div>
+      <p class="note">${most(keyAccountDaily, 30, "accounts")}</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-inst-day">
+      <h2 id="h-inst-day">Installs uploading per day</h2>
+      <div class="plot"><svg id="inst-day" role="img" aria-label="Distinct app installs that uploaded on each of the last 30 days"></svg></div>
+      <p class="note">${most(uploaderDaily, 30, "installs")}</p>
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-addresses">
+      <h2 id="h-addresses">Addresses with the most requests</h2>
+      ${dataTable([["#", "rk"], ["Address"], ["Requests", "n"], ["Endpoints", "n"], ["First seen", "n"], ["Last seen", "n"], ["Account"]], addressRows.map(([address, requests, endpoints, first, last, account], i) => [i + 1, `<code>${address}</code>`, barCell(((requests / addressRows[0][1]) * 9).toFixed(1), num(requests)), endpoints, first, last, account || none("No key sent")]))}
+      <p class="note">An IPv6 caller is counted as its /64 prefix.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-keys">
+      <h2 id="h-keys">Accounts by API key use</h2>
+      ${dataTable([["Account"], ["Keys", "n"], ["Requests", "n"], ["Last used", "n"]], keyRows.map(([account, keys, requests, last]) => [account, keys, barCell(((requests / keyRows[0][2]) * 9).toFixed(1), num(requests)), last]))}
+      <p class="note">35 more accounts sent ${num(API_TOTALS.keyed - keyRows.reduce((sum, row) => sum + row[2], 0))} requests with a key.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-endpoints">
+      <h2 id="h-endpoints">Endpoints by requests</h2>
+      ${rankList(endpointCounts.map(([path, n], i) => [path, `${num(n)}${i ? "" : " requests"}`, (n / endpointCounts[0][1]) * 100, "mono"]))}
+      <p class="note">19 more endpoints took ${num(API_TOTALS.anonymous + API_TOTALS.keyed + API_TOTALS.upload - endpointCounts.reduce((sum, row) => sum + row[1], 0))} requests.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-uploaders">
+      <h2 id="h-uploaders">Installs that upload the most</h2>
+      ${dataTable([["Install"], ["Account"], ["Characters"], ["Uploaded", "n"], ["Requests", "n"]], uploadRows.map(([install, account, names, bytes, requests]) => [`<code>${install}</code>`, account || none("Not linked"), names, bytes, num(requests)]))}
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-looked">
+      <h2 id="h-looked">Characters looked up most</h2>
+      ${rankList(lookedUp.map(([name, n], i) => [character(name), `${num(n)}${i ? "" : " requests"}`, (n / lookedUp[0][1]) * 100]), "plain")}
+      <p class="note">Requests to the public API that named the character and were answered.</p>
+    </section>
+  </div>
+</div>`, `
+${plot("stack", "public", { ...MONTH_BARS, ...yAxis(Math.max(...anonymousDaily.map(([, v], i) => v + keyedDaily[i][1]))), cls: ["s1", "s5"], data: anonymousDaily.map(([x, v], i) => [x, [v, keyedDaily[i][1]]]) })}
+${plot("bars", "upload", { ...THIRD, ...MONTH_BARS_THIRD, ...yAxis(peak(uploadDaily)[1]), cls: "t", data: uploadDaily })}
+${plot("lines", "addr-day", { ...THIRD, ...MONTH_THIRD, ...yAxis(peak(addressDaily)[1]), series: [{ cls: "a", pts: addressDaily, mark: peak(addressDaily)[0] }] })}
+${plot("lines", "acct-day", { ...THIRD, ...MONTH_THIRD, ...yAxis(peak(keyAccountDaily)[1]), series: [{ cls: "a", pts: keyAccountDaily, mark: peak(keyAccountDaily)[0] }] })}
+${plot("lines", "inst-day", { ...THIRD, ...MONTH_THIRD, ...yAxis(peak(uploaderDaily)[1]), series: [{ cls: "a", pts: uploaderDaily, mark: peak(uploaderDaily)[0] }] })}
+`, true);
+
+const size = (mb) => (mb >= 1000 ? `${(mb / 1000).toFixed(1)} GB` : mb ? `${mb} MB` : none("–"));
+const sizeRows = [["path_points", 9800, 3900, 0], ["parts", 600, 300, 8200], ["creature_sightings", 3400, 1500, 0], ["kills", 2200, 1100, 100], ["xp_gains", 1300, 700, 0], ["loot_drops", 900, 500, 0], ["money_changes", 612, 301, 0], ["quest_events", 410, 198, 22], ["sessions", 190, 110, 80], ["play_spans", 204, 121, 0]];
+const DATABASE_MB = 38400;
+const sizeBar = ([, heap, indexes, toast], widest) => `<span class="stack" style="width:${(((heap + indexes + toast) / widest) * 12).toFixed(2)}rem" role="img" aria-label="Heap ${heap} MB, indexes ${indexes} MB, TOAST ${toast} MB">${[["c-s1", heap], ["c-s5", indexes], ["c-s2", toast]].filter(([, mb]) => mb).map(([cls, mb]) => `<i class="${cls}" style="flex-grow:${mb}"></i>`).join("")}</span>`;
+const rowEstimates = [["path_points", "214M", 214], ["creature_sightings", "31.2M", 31.2], ["kills", "12.8M", 12.8], ["xp_gains", "6.4M", 6.4], ["loot_drops", "3.9M", 3.9], ["money_changes", "2.1M", 2.1], ["quest_events", "1.3M", 1.3], ["play_spans", "912K", 0.912]];
+const hypertables = [["path_points", 96, 88, 71200, 6100], ["creature_sightings", 96, 88, 18400, 2000], ["kills", 14, 12, 9600, 1200], ["xp_gains", 14, 12, 5100, 712], ["loot_drops", 14, 12, 2900, 498], ["money_changes", 14, 12, 1600, 310], ["quest_events", 14, 12, 1100, 236], ["talent_group_spans", 3, 0, 0, 0]];
+const packed = hypertables.reduce(([before, after], row) => [before + row[3], after + row[4]], [0, 0]);
+const failed = `<i class="dotc" style="background:var(--accent)" aria-hidden="true"></i>Failed`;
+const jobRows = [["creature_facts_daily", "Continuous aggregate", "Every hour", "22 Nov 14:00", "Succeeded", "4.1s", "22 Nov 15:00"], ["kills_daily_character", "Continuous aggregate", "Every hour", "22 Nov 14:00", "Succeeded", "2.6s", "22 Nov 15:00"], ["kills_solo_daily", "Continuous aggregate", "Every hour", "22 Nov 14:00", "Succeeded", "1.9s", "22 Nov 15:00"], ["level_time_ruleset", "Continuous aggregate", "Every 30 minutes", "22 Nov 14:00", "Succeeded", "0.8s", "22 Nov 14:30"], ["money_daily_ruleset", "Continuous aggregate", "Every hour", "22 Nov 14:00", failed, "30.0s", "22 Nov 15:00"], ["path_points", "Compression", "Every day", "22 Nov 03:10", "Succeeded", "3m 42s", "23 Nov 03:10"], ["creature_sightings", "Compression", "Every day", "22 Nov 03:14", "Succeeded", "1m 08s", "23 Nov 03:14"], ["kills", "Compression", "Every day", "22 Nov 03:15", "Succeeded", "41s", "23 Nov 03:15"]];
+const scanRows = [["path_points_character_id_at_index", "48.2M", 48.2], ["parts_pkey", "31.9M", 31.9], ["kills_character_id_at_index", "22.4M", 22.4], ["sessions_character_id_start_index", "18.7M", 18.7], ["characters_name_unique", "9.6M", 9.6], ["creature_sightings_character_id_at_index", "6.1M", 6.1], ["installs_pkey", "4.4M", 4.4]];
+const idleIndexes = [["path_points_character_id_session_start_index", "1.8 GB", 1800], ["creature_sightings_character_id_session_start_index", "690 MB", 690], ["kills_character_id_session_start_index", "480 MB", 480], ["money_changes_character_id_session_start_index", "142 MB", 142], ["search_scores_kind_index", "9 MB", 9]];
+const vacuumRows = [["sessions", "61K", 4870, 7.4, "22 Nov 11:42", "22 Nov 11:42"], ["parts", "413K", 21300, 4.9, "22 Nov 09:15", "22 Nov 13:01"], ["upload_usage", "88K", 3912, 4.3, "21 Nov 22:08", "22 Nov 06:30"], ["installs", "4,062", 141, 3.4, "20 Nov 04:11", "21 Nov 16:20"], ["characters", "3,406", 96, 2.7, "19 Nov 13:37", "21 Nov 16:20"], ["search_scores", "212K", 4410, 2.0, "22 Nov 02:00", "22 Nov 02:00"], ["accounts", "2,918", 12, 0.4, "", "14 Nov 08:02"]];
+
+page("admin-database.html", "Scarlet admin: the database", "", `
+<div class="wrap">
+  ${adminHead("admin-database", "Database", "38.4 GB in 61 tables, 8 of them hypertables. Row counts are the planner's estimates. Times are UTC. Read from the catalogs 22 Nov 2026 at 14:06 UTC.")}
+  ${figures([["Size", "38.4", "GB"], ["Tables", "61"], ["Rows, estimated", "274M"], ["Chunks", num(hypertables.reduce((sum, row) => sum + row[1], 0))], ["Compression", `${(packed[0] / packed[1]).toFixed(1)}×`], ["Connections", "14"]])}
+
+  <div class="sheet">
+    <section class="mod first" aria-labelledby="h-conn">
+      <h2 id="h-conn">Connections by state</h2>
+      ${rankList([["Active", "3 of 14", (3 / 14) * 100], ["Idle", "9", (9 / 14) * 100], ["Idle in transaction", "2", (2 / 14) * 100]])}
+    </section>
+    <section class="mod" aria-labelledby="h-cache">
+      <h2 id="h-cache">Block reads served from cache</h2>
+      ${rankList([["Tables", "99.2%", 99.2], ["Indexes", "99.8%", 99.8]], "plain")}
+    </section>
+    <section class="mod last" aria-labelledby="h-packed">
+      <h2 id="h-packed">Bytes before and after compression</h2>
+      ${rankList([["Before", size(packed[0]), 100], ["After", size(packed[1]), (packed[1] / packed[0]) * 100]])}
+      <p class="note">Compressed chunks only.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-size">
+      <h2 id="h-size">Size by table</h2>
+      ${key([["c-s1", "Heap"], ["c-s5", "Indexes"], ["c-s2", "TOAST"]])}
+      ${dataTable([["Table"], [`<span class="vh">Heap, indexes and TOAST as one bar</span>`], ["Size", "n"], ["Heap", "n"], ["Indexes", "n"], ["TOAST", "n"]], sizeRows.map((row) => [`<code>${row[0]}</code>`, sizeBar(row, 13700), size(row[1] + row[2] + row[3]), size(row[1]), size(row[2]), size(row[3])]))}
+      <p class="note">51 more tables hold ${size(DATABASE_MB - sizeRows.reduce((sum, row) => sum + row[1] + row[2] + row[3], 0))}.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-rows">
+      <h2 id="h-rows">Estimated rows by table</h2>
+      ${rankList(rowEstimates.map(([name, label, millions], i) => [name, `${label}${i ? "" : " rows"}`, (millions / rowEstimates[0][2]) * 100, "mono"]), "plain")}
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-hyper">
+      <h2 id="h-hyper">Hypertables</h2>
+      ${dataTable([["Hypertable"], ["Chunks", "n"], ["Compressed chunks", "n"], ["Before compression", "n"], ["After compression", "n"], ["Ratio", "n"]], hypertables.map(([name, chunks, compressed, before, after]) => [`<code>${name}</code>`, chunks, compressed, size(before), size(after), after ? barCell(((before / after / 11.7) * 9).toFixed(1), `${(before / after).toFixed(1)}×`) : none("No chunk compressed yet")]))}
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-jobs">
+      <h2 id="h-jobs">Continuous aggregates and background jobs</h2>
+      ${dataTable([["Name"], ["Kind"], ["Schedule"], ["Last run", "n"], ["Last status"], ["Run time", "n"], ["Next run", "n"]], jobRows.map(([name, ...rest]) => [`<code>${name}</code>`, ...rest]))}
+      <p class="note">1 of 8 jobs failed its last run.</p>
+    </section>
+
+    <section class="mod w5 first" aria-labelledby="h-scans">
+      <h2 id="h-scans">Scans per index</h2>
+      ${rankList(scanRows.map(([name, label, millions], i) => [name, `${label}${i ? "" : " scans"}`, (millions / scanRows[0][2]) * 100, "mono"]))}
+      <p class="note">Scans are counted since the statistics were last reset.</p>
+    </section>
+    <section class="mod w7 last" aria-labelledby="h-idle">
+      <h2 id="h-idle">Indexes with no scans</h2>
+      ${rankList(idleIndexes.map(([name, label, mb]) => [name, label, (mb / idleIndexes[0][2]) * 100, "mono"]), "plain")}
+      <p class="note">5 indexes with no scans hold ${size(idleIndexes.reduce((sum, row) => sum + row[2], 0))}.</p>
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-vacuum">
+      <h2 id="h-vacuum">Dead rows and the last autovacuum</h2>
+      ${dataTable([["Table"], ["Rows, estimated", "n"], ["Dead rows", "n"], ["Dead share", "n"], ["Last autovacuum", "n"], ["Last autoanalyze", "n"]], vacuumRows.map(([name, rows, dead, share, vacuumed, analyzed]) => [`<code>${name}</code>`, rows, num(dead), barCell(((share / vacuumRows[0][3]) * 9).toFixed(1), `${share.toFixed(1)}%`), vacuumed || none("Never"), analyzed]))}
+    </section>
+  </div>
+</div>`, "", true);
+
+const GROUP_KEYS = ["core", "movement", "combat", "loot", "social"];
+const GROUP_SHARES = [0.33, 0.26, 0.19, 0.1, 0.05];
+const groupRand = adminRand(57);
+const partsByGroup = partsDaily.slice(60).map(([, total], i) => { const named = GROUP_SHARES.map((share) => Math.round(total * share * (0.94 + groupRand() * 0.12))); return [i, [...named, total - named.reduce((sum, v) => sum + v, 0)]]; });
+const lastParts = partsByGroup[29][1];
+const SPIKE_DAY = 17;
+const medianDaily = daily(30, 51, (t, rand) => 36 + rand() * 16 + (Math.round(t * 29) === SPIKE_DAY ? 34 : 0)).map(([x, v]) => [x, v / 10]);
+const p90Daily = daily(30, 52, (t, rand) => 150 + rand() * 90 + (Math.round(t * 29) === SPIKE_DAY ? 330 : 0)).map(([x, v]) => [x, v / 10]);
+const decodedMonth = decodedDaily.slice(60).map(([, v], i) => [i, v]);
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const uploadHours = (() => {
+  const rand = adminRand(61);
+  const raw = WEEKDAYS.map((_, d) => Array.from({ length: 24 }, (_, h) => (Math.exp(-((h - 20) ** 2) / 12) + 0.45 * Math.exp(-((h - 13) ** 2) / 16)) * (d >= 5 ? 1.3 : d === 4 ? 1.05 : 0.9) + rand() * 0.08));
+  const top = Math.max(...raw.flat()), at = raw.flat().indexOf(top);
+  return { levels: raw.map((row) => row.map((v) => Math.min(4, Math.floor((v / top) * 4.999)))), busiest: `${WEEKDAYS[Math.floor(at / 24)]} ${String(at % 24).padStart(2, "0")}:00 UTC` };
+})();
+const queueRows = [["ingest", "41 waiting, 2 failed", 100, "mono"], ["backfill", "12 waiting", (12 / 41) * 100, "mono"], ["rollups", "5 waiting, 1 failed", (5 / 41) * 100, "mono"], ["armory", "Empty", null, "mono"]];
+const todayRows = [["a41f09c2", "#1042", 214, 212], ["7be2d410", "#318", 188, 188], ["0c93f7aa", "", 150, 141], ["e5d18b36", "#2231", 97, 96], ["31aa60fe", "#1907", 80, 77], ["9d04c2b1", "", 51, 52]];
+const SESSIONS = 61240;
+const addonVersions = [["1.4.2", 28410], ["1.4.1", 16902], ["1.4.0", 9118], ["1.3.5", 4470], ["1.3.4", 1612], ["Older", 728]];
+const decoderVersions = [["0.9.2", 41870], ["0.9.1", 14204], ["0.9.0", 5166]];
+const versionRank = (rows, cls) => rankList(rows.map(([version, n], i) => [version, `${num(n)}${i ? "" : " sessions"} · ${Math.round((n / SESSIONS) * 100)}%`, (n / rows[0][1]) * 100]), cls);
+const seconds = (v) => `${v}s`;
+
+page("admin-ingest.html", "Scarlet admin: ingest", "", `
+<div class="wrap">
+  ${adminHead("admin-ingest", "Ingest", "From an uploaded part to a decoded session. Days and hours are UTC and the charts end at the last full day, 21 Nov. Counted 22 Nov 2026 at 14:06 UTC.")}
+  ${figures([["Parts uploaded today", "9,412"], ["Parts waiting to decode", "37"], ["Sessions decoded today", "1,104"], ["Median time to decode", "4.2s"], ["Jobs waiting", "58"], ["Failed jobs", "3"]])}
+
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-groups">
+      <h2 id="h-groups">Parts uploaded per day, by sharing group</h2>
+      <div class="plot"><svg id="groups" role="img" aria-label="Parts uploaded on each of the last 30 days, stacked by sharing group"></svg></div>
+      ${key([...GROUP_KEYS.map((group, i) => [`c-s${i + 1}`, `<code>${group}</code>`]), ["c-o", "Other groups"]])}
+      <p class="readout"><b>${dayName(29, 30)}</b>: ${num(lastParts.reduce((sum, v) => sum + v, 0))} parts. ${GROUP_KEYS.map((group, i) => `${group} ${num(lastParts[i])}`).join(", ")}, other groups ${num(lastParts[5])}.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-queues">
+      <h2 id="h-queues">Jobs waiting in each queue</h2>
+      ${rankList(queueRows)}
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-wait">
+      <h2 id="h-wait">Seconds from upload to decode, per day</h2>
+      <div class="plot"><svg id="wait" role="img" aria-label="Median and 90th percentile seconds from a part's upload to its decode, on each of the last 30 days"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--accent)"></i>Median</li><li><i class="k-line" style="background:var(--fg)"></i>Nine parts in ten</li></ul>
+      <p class="readout"><b>${dayName(29, 30)}</b>: median ${seconds(medianDaily[29][1])}, nine parts in ten within ${seconds(p90Daily[29][1])}.</p>
+      <p class="note">Slowest day: ${dayName(SPIKE_DAY, 30)}, when one part in ten waited longer than ${seconds(p90Daily[SPIKE_DAY][1])}.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-decoded">
+      <h2 id="h-decoded">Sessions decoded per day</h2>
+      <div class="plot"><svg id="decoded" role="img" aria-label="Sessions decoded on each of the last 30 days"></svg></div>
+      <p class="note">${most(decodedMonth, 30, "sessions")}</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-when">
+      <h2 id="h-when">Uploads by weekday and hour</h2>
+      <div class="hours" id="when" role="img" aria-label="Parts uploaded by weekday and hour of day, in UTC"></div>
+      <p class="readout"><b>Busiest hour</b>: ${uploadHours.busiest}</p>
+      <p class="heat-key"><span>Quiet</span><i style="background:rgba(255,255,255,.055)"></i><i style="background:#4b1626"></i><i style="background:#861a34"></i><i style="background:#cf1f45"></i><i style="background:#ff5d7e"></i><span>Busiest</span><span style="margin-left:1rem">Hours are UTC</span></p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-today">
+      <h2 id="h-today">Installs that uploaded the most today</h2>
+      ${dataTable([["Install"], ["Account"], ["Requests", "n"], ["Uploaded", "n"]], todayRows.map(([install, account, requests, mb]) => [`<code>${install}</code>`, account || none("Not linked"), requests, barCell(((mb / todayRows[0][3]) * 5.6).toFixed(1), `${mb} MB`)]))}
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-addon">
+      <h2 id="h-addon">Sessions by addon version</h2>
+      ${versionRank(addonVersions, "")}
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-decoder">
+      <h2 id="h-decoder">Sessions by decoder version</h2>
+      ${versionRank(decoderVersions, "plain")}
+    </section>
+  </div>
+</div>`, `
+${plot("stack", "groups", { ...MONTH_BARS, ...yAxis(Math.max(...partsByGroup.map(([, parts]) => parts.reduce((sum, v) => sum + v, 0)))), cls: ["s1", "s2", "s3", "s4", "s5", "o"], data: partsByGroup })}
+${plot("lines", "wait", { w: 660, h: 250, ...MONTH, ...yAxis(peak(p90Daily)[1], seconds), series: [{ cls: "b thin", pts: p90Daily }, { cls: "a", pts: medianDaily, mark: 29 }] })}
+${plot("bars", "decoded", { w: 480, h: 250, ...MONTH_BARS_THIRD, ...yAxis(peak(decodedMonth)[1]), data: decodedMonth })}
+Comp.hours("when", (d, h) => ${JSON.stringify(uploadHours.levels)}[d][h]);
+`, true);

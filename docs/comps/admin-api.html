@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet admin: who uses the API</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="world.html">Map</a><a href="loot.html">Loot</a><a href="camps.html">Camps</a><a href="fishing.html">Professions</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="account.html">Account</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">API use</h1><p class="sub">Requests that reached the origin in the last 30 days. An anonymous answer served from the edge cache never reaches the origin, so it is not counted here. Addresses are kept for 30 days.</p></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Admin pages"><a href="admin.html">Overview</a><a href="admin-api.html" aria-current="true">API</a><a href="admin-database.html">Database</a><a href="admin-ingest.html">Ingest</a></div></div>
+  </section>
+  <section class="week n6" aria-label="Totals"><dl><dt>Anonymous requests</dt><dd>218,440</dd></dl><dl><dt>Requests with a key</dt><dd>96,112</dd></dl><dl><dt>Upload requests</dt><dd>71,905</dd></dl><dl><dt>Addresses</dt><dd>1,906</dd></dl><dl><dt>Accounts using a key</dt><dd>41</dd></dl><dl><dt>Installs uploading</dt><dd>2,951</dd></dl></section>
+
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-public">
+      <h2 id="h-public">Public API requests per day</h2>
+      <div class="plot"><svg id="public" role="img" aria-label="Requests to the public read API on each of the last 30 days, anonymous and with an API key"></svg></div>
+      <ul class="key"><li><i class="c-s1"></i>Anonymous</li><li><i class="c-s5"></i>With an API key</li></ul>
+      <p class="readout"><b>21 Nov</b>: 15,200 requests, 10,708 anonymous and 4,492 with a key.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-upload">
+      <h2 id="h-upload">Upload API requests per day</h2>
+      <div class="plot"><svg id="upload" role="img" aria-label="Requests to the upload API on each of the last 30 days"></svg></div>
+      <p class="note">Every upload request is signed by an app install.</p>
+    </section>
+
+    <section class="mod first" aria-labelledby="h-addr-day">
+      <h2 id="h-addr-day">Addresses per day</h2>
+      <div class="plot"><svg id="addr-day" role="img" aria-label="Distinct addresses that called the API on each of the last 30 days"></svg></div>
+      <p class="note">Most in one day: 314 addresses on 21 Nov.</p>
+    </section>
+    <section class="mod" aria-labelledby="h-acct-day">
+      <h2 id="h-acct-day">Accounts using a key per day</h2>
+      <div class="plot"><svg id="acct-day" role="img" aria-label="Distinct accounts whose API key was used on each of the last 30 days"></svg></div>
+      <p class="note">Most in one day: 20 accounts on 17 Nov.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-inst-day">
+      <h2 id="h-inst-day">Installs uploading per day</h2>
+      <div class="plot"><svg id="inst-day" role="img" aria-label="Distinct app installs that uploaded on each of the last 30 days"></svg></div>
+      <p class="note">Most in one day: 1,295 installs on 21 Nov.</p>
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-addresses">
+      <h2 id="h-addresses">Addresses with the most requests</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th class="rk">#</th><th>Address</th><th class="n">Requests</th><th class="n">Endpoints</th><th class="n">First seen</th><th class="n">Last seen</th><th>Account</th></tr></thead>
+        <tbody>
+          <tr><td class="rk">1</td><td><code>203.0.113.48</code></td><td class="n"><i class="bar" style="width:9.0rem"></i>31,204</td><td class="n">6</td><td class="n">23 Oct</td><td class="n">22 Nov 14:02</td><td>#1042</td></tr>
+          <tr><td class="rk">2</td><td><code>2001:db8:4a1c:7::/64</code></td><td class="n"><i class="bar" style="width:6.6rem"></i>22,870</td><td class="n">4</td><td class="n">2 Nov</td><td class="n">22 Nov 13:58</td><td>#2231</td></tr>
+          <tr><td class="rk">3</td><td><code>198.51.100.17</code></td><td class="n"><i class="bar" style="width:5.3rem"></i>18,441</td><td class="n">11</td><td class="n">23 Oct</td><td class="n">22 Nov 14:05</td><td><span class="mut">No key sent</span></td></tr>
+          <tr><td class="rk">4</td><td><code>192.0.2.201</code></td><td class="n"><i class="bar" style="width:3.5rem"></i>12,096</td><td class="n">2</td><td class="n">9 Nov</td><td class="n">21 Nov 23:40</td><td>#1042</td></tr>
+          <tr><td class="rk">5</td><td><code>2001:db8:91:c300::/64</code></td><td class="n"><i class="bar" style="width:2.7rem"></i>9,318</td><td class="n">3</td><td class="n">30 Oct</td><td class="n">22 Nov 11:12</td><td><span class="mut">No key sent</span></td></tr>
+          <tr><td class="rk">6</td><td><code>198.51.100.230</code></td><td class="n"><i class="bar" style="width:2.2rem"></i>7,702</td><td class="n">1</td><td class="n">18 Nov</td><td class="n">22 Nov 14:04</td><td>#871</td></tr>
+          <tr><td class="rk">7</td><td><code>203.0.113.9</code></td><td class="n"><i class="bar" style="width:1.7rem"></i>6,015</td><td class="n">8</td><td class="n">26 Oct</td><td class="n">20 Nov 08:31</td><td><span class="mut">No key sent</span></td></tr>
+          <tr><td class="rk">8</td><td><code>192.0.2.77</code></td><td class="n"><i class="bar" style="width:1.3rem"></i>4,480</td><td class="n">5</td><td class="n">12 Nov</td><td class="n">22 Nov 09:50</td><td><span class="mut">No key sent</span></td></tr>
+        </tbody></table></div>
+      <p class="note">An IPv6 caller is counted as its /64 prefix.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-keys">
+      <h2 id="h-keys">Accounts by API key use</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Account</th><th class="n">Keys</th><th class="n">Requests</th><th class="n">Last used</th></tr></thead>
+        <tbody>
+          <tr><td>#1042</td><td class="n">2</td><td class="n"><i class="bar" style="width:9.0rem"></i>43,300</td><td class="n">22 Nov 14:02</td></tr>
+          <tr><td>#2231</td><td class="n">1</td><td class="n"><i class="bar" style="width:4.8rem"></i>22,870</td><td class="n">22 Nov 13:58</td></tr>
+          <tr><td>#871</td><td class="n">1</td><td class="n"><i class="bar" style="width:1.6rem"></i>7,702</td><td class="n">22 Nov 14:04</td></tr>
+          <tr><td>#1630</td><td class="n">3</td><td class="n"><i class="bar" style="width:1.3rem"></i>6,118</td><td class="n">21 Nov 19:20</td></tr>
+          <tr><td>#402</td><td class="n">1</td><td class="n"><i class="bar" style="width:1.0rem"></i>4,905</td><td class="n">22 Nov 02:14</td></tr>
+          <tr><td>#2790</td><td class="n">1</td><td class="n"><i class="bar" style="width:0.5rem"></i>2,204</td><td class="n">17 Nov 10:45</td></tr>
+        </tbody></table></div>
+      <p class="note">35 more accounts sent 9,013 requests with a key.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-endpoints">
+      <h2 id="h-endpoints">Endpoints by requests</h2>
+      <ol class="rank"><li><span class="who mono">GET /public/characters/{name}</span><span class="val">96,410 requests</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who mono">GET /public/stats</span><span class="val">61,208</span><span class="track"><i style="width:63.5%"></i></span></li><li><span class="who mono">POST /upload/parts</span><span class="val">48,930</span><span class="track"><i style="width:50.8%"></i></span></li><li><span class="who mono">GET /public/search</span><span class="val">44,871</span><span class="track"><i style="width:46.5%"></i></span></li><li><span class="who mono">GET /public/creatures/{id}</span><span class="val">38,112</span><span class="track"><i style="width:39.5%"></i></span></li><li><span class="who mono">GET /public/leaderboards/{board}</span><span class="val">27,560</span><span class="track"><i style="width:28.6%"></i></span></li><li><span class="who mono">POST /upload/manifest</span><span class="val">14,204</span><span class="track"><i style="width:14.7%"></i></span></li><li><span class="who mono">GET /public/map/heat</span><span class="val">12,930</span><span class="track"><i style="width:13.4%"></i></span></li></ol>
+      <p class="note">19 more endpoints took 42,232 requests.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-uploaders">
+      <h2 id="h-uploaders">Installs that upload the most</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Install</th><th>Account</th><th>Characters</th><th class="n">Uploaded</th><th class="n">Requests</th></tr></thead>
+        <tbody>
+          <tr><td><code>a41f09c2</code></td><td>#1042</td><td><a href="character.html">Maren-Ashlow</a>, <a href="character.html">Tolvir-Greane</a></td><td class="n">1.84 GB</td><td class="n">2,960</td></tr>
+          <tr><td><code>7be2d410</code></td><td>#318</td><td><a href="character.html">Hesk-Brannoch</a></td><td class="n">1.41 GB</td><td class="n">2,204</td></tr>
+          <tr><td><code>0c93f7aa</code></td><td><span class="mut">Not linked</span></td><td><a href="character.html">Ysolde-Varr</a> and 2 more</td><td class="n">1.12 GB</td><td class="n">1,918</td></tr>
+          <tr><td><code>e5d18b36</code></td><td>#2231</td><td><a href="character.html">Dunmar-Keel</a></td><td class="n">904 MB</td><td class="n">1,502</td></tr>
+          <tr><td><code>31aa60fe</code></td><td>#1907</td><td><a href="character.html">Senna-Vale</a>, <a href="character.html">Bram-Coldwater</a></td><td class="n">877 MB</td><td class="n">1,377</td></tr>
+          <tr><td><code>9d04c2b1</code></td><td><span class="mut">Not linked</span></td><td><a href="character.html">Dorrin-Ashby</a></td><td class="n">640 MB</td><td class="n">1,090</td></tr>
+        </tbody></table></div>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-looked">
+      <h2 id="h-looked">Characters looked up most</h2>
+      <ol class="rank plain"><li><span class="who"><a href="character.html">Maren-Ashlow</a></span><span class="val">8,204 requests</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who"><a href="character.html">Tolvir-Greane</a></span><span class="val">6,118</span><span class="track"><i style="width:74.6%"></i></span></li><li><span class="who"><a href="character.html">Ysolde-Harrowick</a></span><span class="val">4,470</span><span class="track"><i style="width:54.5%"></i></span></li><li><span class="who"><a href="character.html">Bram-Coldwater</a></span><span class="val">3,902</span><span class="track"><i style="width:47.6%"></i></span></li><li><span class="who"><a href="character.html">Senna-Vale</a></span><span class="val">3,316</span><span class="track"><i style="width:40.4%"></i></span></li><li><span class="who"><a href="character.html">Dorrin-Ashby</a></span><span class="val">2,240</span><span class="track"><i style="width:27.3%"></i></span></li><li><span class="who"><a href="character.html">Liss-Underhill</a></span><span class="val">1,871</span><span class="track"><i style="width:22.8%"></i></span></li><li><span class="who"><a href="character.html">Corwen-Pike</a></span><span class="val">1,402</span><span class="track"><i style="width:17.1%"></i></span></li></ol>
+      <p class="note">Requests to the public API that named the character and were answered.</p>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+Comp.stack("public", { ...{"x0":-1,"x1":30,"xt":[0,7,14,21,29],"y1":20000,"yt":[0,5000,10000,15000,20000],"cls":["s1","s5"],"data":[[0,[4746,2404]],[1,[6744,2738]],[2,[6720,2398]],[3,[5120,2735]],[4,[5685,2487]],[5,[5222,2887]],[6,[5857,2512]],[7,[6324,2687]],[8,[7330,2743]],[9,[7370,2836]],[10,[6404,3113]],[11,[6431,2984]],[12,[6628,3091]],[13,[6742,3036]],[14,[6927,2914]],[15,[8162,3126]],[16,[7796,3319]],[17,[7169,3065]],[18,[7229,3410]],[19,[7173,3366]],[20,[7950,3709]],[21,[7986,3778]],[22,[9136,3541]],[23,[9321,3972]],[24,[7936,3867]],[25,[8415,3458]],[26,[8720,3961]],[27,[7754,3746]],[28,[8735,3737]],[29,[10708,4492]]]}, xf: (v) => ["23 Oct","30 Oct","6 Nov","13 Nov","21 Nov"][[0,7,14,21,29].indexOf(v)], yf: (v) => ["0","5k","10k","15k","20k"][[0,5000,10000,15000,20000].indexOf(v)] });
+Comp.bars("upload", { ...{"w":380,"h":250,"x0":-1,"x1":30,"xt":[0,14,29],"y1":4000,"yt":[0,1000,2000,3000,4000],"cls":"t","data":[[0,1595],[1,2040],[2,1972],[3,1710],[4,1898],[5,1879],[6,1856],[7,1964],[8,2249],[9,2264],[10,2193],[11,2139],[12,2139],[13,2160],[14,2337],[15,2604],[16,2768],[17,2344],[18,2439],[19,2459],[20,2519],[21,2706],[22,2941],[23,3045],[24,2792],[25,2632],[26,2798],[27,2972],[28,2985],[29,3506]]}, xf: (v) => ["23 Oct","6 Nov","21 Nov"][[0,14,29].indexOf(v)], yf: (v) => ["0","1,000","2,000","3,000","4,000"][[0,1000,2000,3000,4000].indexOf(v)] });
+Comp.lines("addr-day", { ...{"w":380,"h":250,"x0":0,"x1":30,"xt":[0,14,29],"y1":400,"yt":[0,100,200,300,400],"series":[{"cls":"a","pts":[[0,134],[1,145],[2,155],[3,135],[4,160],[5,154],[6,163],[7,144],[8,200],[9,190],[10,166],[11,162],[12,166],[13,191],[14,173],[15,230],[16,243],[17,194],[18,189],[19,187],[20,193],[21,201],[22,250],[23,242],[24,217],[25,223],[26,243],[27,247],[28,239],[29,314]],"mark":29}]}, xf: (v) => ["23 Oct","6 Nov","21 Nov"][[0,14,29].indexOf(v)], yf: (v) => ["0","100","200","300","400"][[0,100,200,300,400].indexOf(v)] });
+Comp.lines("acct-day", { ...{"w":380,"h":250,"x0":0,"x1":30,"xt":[0,14,29],"y1":20,"yt":[0,5,10,15,20],"series":[{"cls":"a","pts":[[0,8],[1,9],[2,9],[3,10],[4,9],[5,9],[6,10],[7,12],[8,12],[9,13],[10,11],[11,13],[12,14],[13,12],[14,14],[15,16],[16,17],[17,15],[18,18],[19,17],[20,17],[21,18],[22,15],[23,18],[24,18],[25,20],[26,20],[27,20],[28,20],[29,18]],"mark":25}]}, xf: (v) => ["23 Oct","6 Nov","21 Nov"][[0,14,29].indexOf(v)], yf: (v) => ["0","5","10","15","20"][[0,5,10,15,20].indexOf(v)] });
+Comp.lines("inst-day", { ...{"w":380,"h":250,"x0":0,"x1":30,"xt":[0,14,29],"y1":1500,"yt":[0,500,1000,1500],"series":[{"cls":"a","pts":[[0,918],[1,970],[2,1019],[3,948],[4,964],[5,953],[6,943],[7,982],[8,1033],[9,1070],[10,978],[11,1029],[12,1018],[13,1012],[14,1024],[15,1136],[16,1200],[17,1056],[18,1109],[19,1115],[20,1091],[21,1138],[22,1241],[23,1252],[24,1189],[25,1194],[26,1191],[27,1218],[28,1222],[29,1295]],"mark":29}]}, xf: (v) => ["23 Oct","6 Nov","21 Nov"][[0,14,29].indexOf(v)], yf: (v) => ["0","500","1,000","1,500"][[0,500,1000,1500].indexOf(v)] });
+</script>
+</body>
+</html>

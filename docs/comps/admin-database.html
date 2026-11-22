@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet admin: the database</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="world.html">Map</a><a href="loot.html">Loot</a><a href="camps.html">Camps</a><a href="fishing.html">Professions</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="account.html">Account</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Database</h1><p class="sub">38.4 GB in 61 tables, 8 of them hypertables. Row counts are the planner's estimates. Times are UTC. Read from the catalogs 22 Nov 2026 at 14:06 UTC.</p></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Admin pages"><a href="admin.html">Overview</a><a href="admin-api.html">API</a><a href="admin-database.html" aria-current="true">Database</a><a href="admin-ingest.html">Ingest</a></div></div>
+  </section>
+  <section class="week n6" aria-label="Totals"><dl><dt>Size</dt><dd>38.4<small>GB</small></dd></dl><dl><dt>Tables</dt><dd>61</dd></dl><dl><dt>Rows, estimated</dt><dd>274M</dd></dl><dl><dt>Chunks</dt><dd>265</dd></dl><dl><dt>Compression</dt><dd>9.9×</dd></dl><dl><dt>Connections</dt><dd>14</dd></dl></section>
+
+  <div class="sheet">
+    <section class="mod first" aria-labelledby="h-conn">
+      <h2 id="h-conn">Connections by state</h2>
+      <ol class="rank"><li><span class="who">Active</span><span class="val">3 of 14</span><span class="track"><i style="width:21.4%"></i></span></li><li><span class="who">Idle</span><span class="val">9</span><span class="track"><i style="width:64.3%"></i></span></li><li><span class="who">Idle in transaction</span><span class="val">2</span><span class="track"><i style="width:14.3%"></i></span></li></ol>
+    </section>
+    <section class="mod" aria-labelledby="h-cache">
+      <h2 id="h-cache">Block reads served from cache</h2>
+      <ol class="rank plain"><li><span class="who">Tables</span><span class="val">99.2%</span><span class="track"><i style="width:99.2%"></i></span></li><li><span class="who">Indexes</span><span class="val">99.8%</span><span class="track"><i style="width:99.8%"></i></span></li></ol>
+    </section>
+    <section class="mod last" aria-labelledby="h-packed">
+      <h2 id="h-packed">Bytes before and after compression</h2>
+      <ol class="rank"><li><span class="who">Before</span><span class="val">109.9 GB</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who">After</span><span class="val">11.1 GB</span><span class="track"><i style="width:10.1%"></i></span></li></ol>
+      <p class="note">Compressed chunks only.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-size">
+      <h2 id="h-size">Size by table</h2>
+      <ul class="key"><li><i class="c-s1"></i>Heap</li><li><i class="c-s5"></i>Indexes</li><li><i class="c-s2"></i>TOAST</li></ul>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Table</th><th><span class="vh">Heap, indexes and TOAST as one bar</span></th><th class="n">Size</th><th class="n">Heap</th><th class="n">Indexes</th><th class="n">TOAST</th></tr></thead>
+        <tbody>
+          <tr><td><code>path_points</code></td><td><span class="stack" style="width:12.00rem" role="img" aria-label="Heap 9800 MB, indexes 3900 MB, TOAST 0 MB"><i class="c-s1" style="flex-grow:9800"></i><i class="c-s5" style="flex-grow:3900"></i></span></td><td class="n">13.7 GB</td><td class="n">9.8 GB</td><td class="n">3.9 GB</td><td class="n"><span class="mut">–</span></td></tr>
+          <tr><td><code>parts</code></td><td><span class="stack" style="width:7.97rem" role="img" aria-label="Heap 600 MB, indexes 300 MB, TOAST 8200 MB"><i class="c-s1" style="flex-grow:600"></i><i class="c-s5" style="flex-grow:300"></i><i class="c-s2" style="flex-grow:8200"></i></span></td><td class="n">9.1 GB</td><td class="n">600 MB</td><td class="n">300 MB</td><td class="n">8.2 GB</td></tr>
+          <tr><td><code>creature_sightings</code></td><td><span class="stack" style="width:4.29rem" role="img" aria-label="Heap 3400 MB, indexes 1500 MB, TOAST 0 MB"><i class="c-s1" style="flex-grow:3400"></i><i class="c-s5" style="flex-grow:1500"></i></span></td><td class="n">4.9 GB</td><td class="n">3.4 GB</td><td class="n">1.5 GB</td><td class="n"><span class="mut">–</span></td></tr>
+          <tr><td><code>kills</code></td><td><span class="stack" style="width:2.98rem" role="img" aria-label="Heap 2200 MB, indexes 1100 MB, TOAST 100 MB"><i class="c-s1" style="flex-grow:2200"></i><i class="c-s5" style="flex-grow:1100"></i><i class="c-s2" style="flex-grow:100"></i></span></td><td class="n">3.4 GB</td><td class="n">2.2 GB</td><td class="n">1.1 GB</td><td class="n">100 MB</td></tr>
+          <tr><td><code>xp_gains</code></td><td><span class="stack" style="width:1.75rem" role="img" aria-label="Heap 1300 MB, indexes 700 MB, TOAST 0 MB"><i class="c-s1" style="flex-grow:1300"></i><i class="c-s5" style="flex-grow:700"></i></span></td><td class="n">2.0 GB</td><td class="n">1.3 GB</td><td class="n">700 MB</td><td class="n"><span class="mut">–</span></td></tr>
+          <tr><td><code>loot_drops</code></td><td><span class="stack" style="width:1.23rem" role="img" aria-label="Heap 900 MB, indexes 500 MB, TOAST 0 MB"><i class="c-s1" style="flex-grow:900"></i><i class="c-s5" style="flex-grow:500"></i></span></td><td class="n">1.4 GB</td><td class="n">900 MB</td><td class="n">500 MB</td><td class="n"><span class="mut">–</span></td></tr>
+          <tr><td><code>money_changes</code></td><td><span class="stack" style="width:0.80rem" role="img" aria-label="Heap 612 MB, indexes 301 MB, TOAST 0 MB"><i class="c-s1" style="flex-grow:612"></i><i class="c-s5" style="flex-grow:301"></i></span></td><td class="n">913 MB</td><td class="n">612 MB</td><td class="n">301 MB</td><td class="n"><span class="mut">–</span></td></tr>
+          <tr><td><code>quest_events</code></td><td><span class="stack" style="width:0.55rem" role="img" aria-label="Heap 410 MB, indexes 198 MB, TOAST 22 MB"><i class="c-s1" style="flex-grow:410"></i><i class="c-s5" style="flex-grow:198"></i><i class="c-s2" style="flex-grow:22"></i></span></td><td class="n">630 MB</td><td class="n">410 MB</td><td class="n">198 MB</td><td class="n">22 MB</td></tr>
+          <tr><td><code>sessions</code></td><td><span class="stack" style="width:0.33rem" role="img" aria-label="Heap 190 MB, indexes 110 MB, TOAST 80 MB"><i class="c-s1" style="flex-grow:190"></i><i class="c-s5" style="flex-grow:110"></i><i class="c-s2" style="flex-grow:80"></i></span></td><td class="n">380 MB</td><td class="n">190 MB</td><td class="n">110 MB</td><td class="n">80 MB</td></tr>
+          <tr><td><code>play_spans</code></td><td><span class="stack" style="width:0.28rem" role="img" aria-label="Heap 204 MB, indexes 121 MB, TOAST 0 MB"><i class="c-s1" style="flex-grow:204"></i><i class="c-s5" style="flex-grow:121"></i></span></td><td class="n">325 MB</td><td class="n">204 MB</td><td class="n">121 MB</td><td class="n"><span class="mut">–</span></td></tr>
+        </tbody></table></div>
+      <p class="note">51 more tables hold 1.7 GB.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-rows">
+      <h2 id="h-rows">Estimated rows by table</h2>
+      <ol class="rank plain"><li><span class="who mono">path_points</span><span class="val">214M rows</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who mono">creature_sightings</span><span class="val">31.2M</span><span class="track"><i style="width:14.6%"></i></span></li><li><span class="who mono">kills</span><span class="val">12.8M</span><span class="track"><i style="width:6%"></i></span></li><li><span class="who mono">xp_gains</span><span class="val">6.4M</span><span class="track"><i style="width:3%"></i></span></li><li><span class="who mono">loot_drops</span><span class="val">3.9M</span><span class="track"><i style="width:1.8%"></i></span></li><li><span class="who mono">money_changes</span><span class="val">2.1M</span><span class="track"><i style="width:1%"></i></span></li><li><span class="who mono">quest_events</span><span class="val">1.3M</span><span class="track"><i style="width:0.6%"></i></span></li><li><span class="who mono">play_spans</span><span class="val">912K</span><span class="track"><i style="width:0.4%"></i></span></li></ol>
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-hyper">
+      <h2 id="h-hyper">Hypertables</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Hypertable</th><th class="n">Chunks</th><th class="n">Compressed chunks</th><th class="n">Before compression</th><th class="n">After compression</th><th class="n">Ratio</th></tr></thead>
+        <tbody>
+          <tr><td><code>path_points</code></td><td class="n">96</td><td class="n">88</td><td class="n">71.2 GB</td><td class="n">6.1 GB</td><td class="n"><i class="bar" style="width:9.0rem"></i>11.7×</td></tr>
+          <tr><td><code>creature_sightings</code></td><td class="n">96</td><td class="n">88</td><td class="n">18.4 GB</td><td class="n">2.0 GB</td><td class="n"><i class="bar" style="width:7.1rem"></i>9.2×</td></tr>
+          <tr><td><code>kills</code></td><td class="n">14</td><td class="n">12</td><td class="n">9.6 GB</td><td class="n">1.2 GB</td><td class="n"><i class="bar" style="width:6.2rem"></i>8.0×</td></tr>
+          <tr><td><code>xp_gains</code></td><td class="n">14</td><td class="n">12</td><td class="n">5.1 GB</td><td class="n">712 MB</td><td class="n"><i class="bar" style="width:5.5rem"></i>7.2×</td></tr>
+          <tr><td><code>loot_drops</code></td><td class="n">14</td><td class="n">12</td><td class="n">2.9 GB</td><td class="n">498 MB</td><td class="n"><i class="bar" style="width:4.5rem"></i>5.8×</td></tr>
+          <tr><td><code>money_changes</code></td><td class="n">14</td><td class="n">12</td><td class="n">1.6 GB</td><td class="n">310 MB</td><td class="n"><i class="bar" style="width:4.0rem"></i>5.2×</td></tr>
+          <tr><td><code>quest_events</code></td><td class="n">14</td><td class="n">12</td><td class="n">1.1 GB</td><td class="n">236 MB</td><td class="n"><i class="bar" style="width:3.6rem"></i>4.7×</td></tr>
+          <tr><td><code>talent_group_spans</code></td><td class="n">3</td><td class="n">0</td><td class="n"><span class="mut">–</span></td><td class="n"><span class="mut">–</span></td><td class="n"><span class="mut">No chunk compressed yet</span></td></tr>
+        </tbody></table></div>
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-jobs">
+      <h2 id="h-jobs">Continuous aggregates and background jobs</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Name</th><th>Kind</th><th>Schedule</th><th class="n">Last run</th><th>Last status</th><th class="n">Run time</th><th class="n">Next run</th></tr></thead>
+        <tbody>
+          <tr><td><code>creature_facts_daily</code></td><td>Continuous aggregate</td><td>Every hour</td><td class="n">22 Nov 14:00</td><td>Succeeded</td><td class="n">4.1s</td><td class="n">22 Nov 15:00</td></tr>
+          <tr><td><code>kills_daily_character</code></td><td>Continuous aggregate</td><td>Every hour</td><td class="n">22 Nov 14:00</td><td>Succeeded</td><td class="n">2.6s</td><td class="n">22 Nov 15:00</td></tr>
+          <tr><td><code>kills_solo_daily</code></td><td>Continuous aggregate</td><td>Every hour</td><td class="n">22 Nov 14:00</td><td>Succeeded</td><td class="n">1.9s</td><td class="n">22 Nov 15:00</td></tr>
+          <tr><td><code>level_time_ruleset</code></td><td>Continuous aggregate</td><td>Every 30 minutes</td><td class="n">22 Nov 14:00</td><td>Succeeded</td><td class="n">0.8s</td><td class="n">22 Nov 14:30</td></tr>
+          <tr><td><code>money_daily_ruleset</code></td><td>Continuous aggregate</td><td>Every hour</td><td class="n">22 Nov 14:00</td><td><i class="dotc" style="background:var(--accent)" aria-hidden="true"></i>Failed</td><td class="n">30.0s</td><td class="n">22 Nov 15:00</td></tr>
+          <tr><td><code>path_points</code></td><td>Compression</td><td>Every day</td><td class="n">22 Nov 03:10</td><td>Succeeded</td><td class="n">3m 42s</td><td class="n">23 Nov 03:10</td></tr>
+          <tr><td><code>creature_sightings</code></td><td>Compression</td><td>Every day</td><td class="n">22 Nov 03:14</td><td>Succeeded</td><td class="n">1m 08s</td><td class="n">23 Nov 03:14</td></tr>
+          <tr><td><code>kills</code></td><td>Compression</td><td>Every day</td><td class="n">22 Nov 03:15</td><td>Succeeded</td><td class="n">41s</td><td class="n">23 Nov 03:15</td></tr>
+        </tbody></table></div>
+      <p class="note">1 of 8 jobs failed its last run.</p>
+    </section>
+
+    <section class="mod w5 first" aria-labelledby="h-scans">
+      <h2 id="h-scans">Scans per index</h2>
+      <ol class="rank"><li><span class="who mono">path_points_character_id_at_index</span><span class="val">48.2M scans</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who mono">parts_pkey</span><span class="val">31.9M</span><span class="track"><i style="width:66.2%"></i></span></li><li><span class="who mono">kills_character_id_at_index</span><span class="val">22.4M</span><span class="track"><i style="width:46.5%"></i></span></li><li><span class="who mono">sessions_character_id_start_index</span><span class="val">18.7M</span><span class="track"><i style="width:38.8%"></i></span></li><li><span class="who mono">characters_name_unique</span><span class="val">9.6M</span><span class="track"><i style="width:19.9%"></i></span></li><li><span class="who mono">creature_sightings_character_id_at_index</span><span class="val">6.1M</span><span class="track"><i style="width:12.7%"></i></span></li><li><span class="who mono">installs_pkey</span><span class="val">4.4M</span><span class="track"><i style="width:9.1%"></i></span></li></ol>
+      <p class="note">Scans are counted since the statistics were last reset.</p>
+    </section>
+    <section class="mod w7 last" aria-labelledby="h-idle">
+      <h2 id="h-idle">Indexes with no scans</h2>
+      <ol class="rank plain"><li><span class="who mono">path_points_character_id_session_start_index</span><span class="val">1.8 GB</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who mono">creature_sightings_character_id_session_start_index</span><span class="val">690 MB</span><span class="track"><i style="width:38.3%"></i></span></li><li><span class="who mono">kills_character_id_session_start_index</span><span class="val">480 MB</span><span class="track"><i style="width:26.7%"></i></span></li><li><span class="who mono">money_changes_character_id_session_start_index</span><span class="val">142 MB</span><span class="track"><i style="width:7.9%"></i></span></li><li><span class="who mono">search_scores_kind_index</span><span class="val">9 MB</span><span class="track"><i style="width:0.5%"></i></span></li></ol>
+      <p class="note">5 indexes with no scans hold 3.1 GB.</p>
+    </section>
+
+    <section class="mod w12 first last" aria-labelledby="h-vacuum">
+      <h2 id="h-vacuum">Dead rows and the last autovacuum</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Table</th><th class="n">Rows, estimated</th><th class="n">Dead rows</th><th class="n">Dead share</th><th class="n">Last autovacuum</th><th class="n">Last autoanalyze</th></tr></thead>
+        <tbody>
+          <tr><td><code>sessions</code></td><td class="n">61K</td><td class="n">4,870</td><td class="n"><i class="bar" style="width:9.0rem"></i>7.4%</td><td class="n">22 Nov 11:42</td><td class="n">22 Nov 11:42</td></tr>
+          <tr><td><code>parts</code></td><td class="n">413K</td><td class="n">21,300</td><td class="n"><i class="bar" style="width:6.0rem"></i>4.9%</td><td class="n">22 Nov 09:15</td><td class="n">22 Nov 13:01</td></tr>
+          <tr><td><code>upload_usage</code></td><td class="n">88K</td><td class="n">3,912</td><td class="n"><i class="bar" style="width:5.2rem"></i>4.3%</td><td class="n">21 Nov 22:08</td><td class="n">22 Nov 06:30</td></tr>
+          <tr><td><code>installs</code></td><td class="n">4,062</td><td class="n">141</td><td class="n"><i class="bar" style="width:4.1rem"></i>3.4%</td><td class="n">20 Nov 04:11</td><td class="n">21 Nov 16:20</td></tr>
+          <tr><td><code>characters</code></td><td class="n">3,406</td><td class="n">96</td><td class="n"><i class="bar" style="width:3.3rem"></i>2.7%</td><td class="n">19 Nov 13:37</td><td class="n">21 Nov 16:20</td></tr>
+          <tr><td><code>search_scores</code></td><td class="n">212K</td><td class="n">4,410</td><td class="n"><i class="bar" style="width:2.4rem"></i>2.0%</td><td class="n">22 Nov 02:00</td><td class="n">22 Nov 02:00</td></tr>
+          <tr><td><code>accounts</code></td><td class="n">2,918</td><td class="n">12</td><td class="n"><i class="bar" style="width:0.5rem"></i>0.4%</td><td class="n"><span class="mut">Never</span></td><td class="n">14 Nov 08:02</td></tr>
+        </tbody></table></div>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script></script>
+</body>
+</html>

@@ -20,4 +20,5 @@ if (app()->environment('local')) {
 
 Route::middleware('scarlet.art')->group(__DIR__.'/maps.php');
 require __DIR__.'/accounts.php';
+require __DIR__.'/admin.php';
 Route::middleware(['scarlet.rate:'.RateLimitRequests::PAGE, 'scarlet.timeout', 'scarlet.edge'])->group(__DIR__.'/pages.php');

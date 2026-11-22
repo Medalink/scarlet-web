@@ -45,6 +45,7 @@ final class DevelopersPage
             'maxAge' => PublicApi::MAX_AGE,
             'namedMaxAge' => PublicApi::NAMED_MAX_AGE,
             'badTokens' => PublicApi::BAD_TOKENS_PER_MINUTE,
+            'keepDays' => (int) config('scarlet.api_calls_days'),
         ];
     }
 

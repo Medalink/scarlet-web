@@ -10,6 +10,6 @@ class ShowSignInMethods
     /** @return list<Identity> the sign-in methods the account holds */
     public function handle(Account $account): array
     {
-        return array_values($account->identities()->select(['id', 'provider', 'created_at'])->get()->all());
+        return array_values($account->identities()->select(['id', 'provider', 'subject', 'created_at'])->get()->all());
     }
 }

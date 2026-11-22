@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet admin: ingest</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="world.html">Map</a><a href="loot.html">Loot</a><a href="camps.html">Camps</a><a href="fishing.html">Professions</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="account.html">Account</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Ingest</h1><p class="sub">From an uploaded part to a decoded session. Days and hours are UTC and the charts end at the last full day, 21 Nov. Counted 22 Nov 2026 at 14:06 UTC.</p></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Admin pages"><a href="admin.html">Overview</a><a href="admin-api.html">API</a><a href="admin-database.html">Database</a><a href="admin-ingest.html" aria-current="true">Ingest</a></div></div>
+  </section>
+  <section class="week n6" aria-label="Totals"><dl><dt>Parts uploaded today</dt><dd>9,412</dd></dl><dl><dt>Parts waiting to decode</dt><dd>37</dd></dl><dl><dt>Sessions decoded today</dt><dd>1,104</dd></dl><dl><dt>Median time to decode</dt><dd>4.2s</dd></dl><dl><dt>Jobs waiting</dt><dd>58</dd></dl><dl><dt>Failed jobs</dt><dd>3</dd></dl></section>
+
+  <div class="sheet">
+    <section class="mod w8 first" aria-labelledby="h-groups">
+      <h2 id="h-groups">Parts uploaded per day, by sharing group</h2>
+      <div class="plot"><svg id="groups" role="img" aria-label="Parts uploaded on each of the last 30 days, stacked by sharing group"></svg></div>
+      <ul class="key"><li><i class="c-s1"></i><code>core</code></li><li><i class="c-s2"></i><code>movement</code></li><li><i class="c-s3"></i><code>combat</code></li><li><i class="c-s4"></i><code>loot</code></li><li><i class="c-s5"></i><code>social</code></li><li><i class="c-o"></i>Other groups</li></ul>
+      <p class="readout"><b>21 Nov</b>: 13,576 parts. core 4,527, movement 3,392, combat 2,554, loot 1,376, social 665, other groups 1,062.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-queues">
+      <h2 id="h-queues">Jobs waiting in each queue</h2>
+      <ol class="rank"><li><span class="who mono">ingest</span><span class="val">41 waiting, 2 failed</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who mono">backfill</span><span class="val">12 waiting</span><span class="track"><i style="width:29.3%"></i></span></li><li><span class="who mono">rollups</span><span class="val">5 waiting, 1 failed</span><span class="track"><i style="width:12.2%"></i></span></li><li><span class="who mono">armory</span><span class="val">Empty</span></li></ol>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-wait">
+      <h2 id="h-wait">Seconds from upload to decode, per day</h2>
+      <div class="plot"><svg id="wait" role="img" aria-label="Median and 90th percentile seconds from a part's upload to its decode, on each of the last 30 days"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--accent)"></i>Median</li><li><i class="k-line" style="background:var(--fg)"></i>Nine parts in ten</li></ul>
+      <p class="readout"><b>21 Nov</b>: median 4.8s, nine parts in ten within 17.6s.</p>
+      <p class="note">Slowest day: 9 Nov, when one part in ten waited longer than 49.2s.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-decoded">
+      <h2 id="h-decoded">Sessions decoded per day</h2>
+      <div class="plot"><svg id="decoded" role="img" aria-label="Sessions decoded on each of the last 30 days"></svg></div>
+      <p class="note">Most in one day: 1,264 sessions on 21 Nov.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-when">
+      <h2 id="h-when">Uploads by weekday and hour</h2>
+      <div class="hours" id="when" role="img" aria-label="Parts uploaded by weekday and hour of day, in UTC"></div>
+      <p class="readout"><b>Busiest hour</b>: Sun 20:00 UTC</p>
+      <p class="heat-key"><span>Quiet</span><i style="background:rgba(255,255,255,.055)"></i><i style="background:#4b1626"></i><i style="background:#861a34"></i><i style="background:#cf1f45"></i><i style="background:#ff5d7e"></i><span>Busiest</span><span style="margin-left:1rem">Hours are UTC</span></p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-today">
+      <h2 id="h-today">Installs that uploaded the most today</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Install</th><th>Account</th><th class="n">Requests</th><th class="n">Uploaded</th></tr></thead>
+        <tbody>
+          <tr><td><code>a41f09c2</code></td><td>#1042</td><td class="n">214</td><td class="n"><i class="bar" style="width:5.6rem"></i>212 MB</td></tr>
+          <tr><td><code>7be2d410</code></td><td>#318</td><td class="n">188</td><td class="n"><i class="bar" style="width:5.0rem"></i>188 MB</td></tr>
+          <tr><td><code>0c93f7aa</code></td><td><span class="mut">Not linked</span></td><td class="n">150</td><td class="n"><i class="bar" style="width:3.7rem"></i>141 MB</td></tr>
+          <tr><td><code>e5d18b36</code></td><td>#2231</td><td class="n">97</td><td class="n"><i class="bar" style="width:2.5rem"></i>96 MB</td></tr>
+          <tr><td><code>31aa60fe</code></td><td>#1907</td><td class="n">80</td><td class="n"><i class="bar" style="width:2.0rem"></i>77 MB</td></tr>
+          <tr><td><code>9d04c2b1</code></td><td><span class="mut">Not linked</span></td><td class="n">51</td><td class="n"><i class="bar" style="width:1.4rem"></i>52 MB</td></tr>
+        </tbody></table></div>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-addon">
+      <h2 id="h-addon">Sessions by addon version</h2>
+      <ol class="rank"><li><span class="who">1.4.2</span><span class="val">28,410 sessions · 46%</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who">1.4.1</span><span class="val">16,902 · 28%</span><span class="track"><i style="width:59.5%"></i></span></li><li><span class="who">1.4.0</span><span class="val">9,118 · 15%</span><span class="track"><i style="width:32.1%"></i></span></li><li><span class="who">1.3.5</span><span class="val">4,470 · 7%</span><span class="track"><i style="width:15.7%"></i></span></li><li><span class="who">1.3.4</span><span class="val">1,612 · 3%</span><span class="track"><i style="width:5.7%"></i></span></li><li><span class="who">Older</span><span class="val">728 · 1%</span><span class="track"><i style="width:2.6%"></i></span></li></ol>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-decoder">
+      <h2 id="h-decoder">Sessions by decoder version</h2>
+      <ol class="rank plain"><li><span class="who">0.9.2</span><span class="val">41,870 sessions · 68%</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who">0.9.1</span><span class="val">14,204 · 23%</span><span class="track"><i style="width:33.9%"></i></span></li><li><span class="who">0.9.0</span><span class="val">5,166 · 8%</span><span class="track"><i style="width:12.3%"></i></span></li></ol>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+Comp.stack("groups", { ...{"x0":-1,"x1":30,"xt":[0,7,14,21,29],"y1":15000,"yt":[0,5000,10000,15000],"cls":["s1","s2","s3","s4","s5","o"],"data":[[0,[2093,1728,1149,661,302,459]],[1,[2537,1880,1462,741,388,474]],[2,[2253,1835,1325,753,354,721]],[3,[2478,1956,1424,681,338,231]],[4,[2065,1791,1255,678,332,522]],[5,[2568,1921,1502,778,396,440]],[6,[2328,1872,1329,688,328,405]],[7,[2551,1890,1504,759,364,474]],[8,[3045,2237,1756,874,428,555]],[9,[3109,2463,1854,1000,502,648]],[10,[2596,2102,1612,864,397,654]],[11,[2818,2035,1458,769,405,583]],[12,[2752,2132,1621,845,419,669]],[13,[2731,2031,1467,778,413,539]],[14,[2649,2180,1482,792,417,716]],[15,[3576,2535,2004,1031,525,600]],[16,[3094,2367,1938,922,482,858]],[17,[3258,2536,1870,970,519,642]],[18,[3110,2447,1723,912,474,541]],[19,[3201,2379,1749,989,450,728]],[20,[3069,2390,1749,976,469,912]],[21,[3610,2875,1999,1082,541,425]],[22,[3618,3008,2177,1131,613,1038]],[23,[4057,3220,2389,1137,585,585]],[24,[3068,2554,1980,980,485,784]],[25,[3264,2656,1875,1023,538,966]],[26,[3720,2957,2091,1133,555,423]],[27,[3507,2877,2222,1095,574,915]],[28,[3848,2788,2087,1150,527,744]],[29,[4527,3392,2554,1376,665,1062]]]}, xf: (v) => ["23 Oct","30 Oct","6 Nov","13 Nov","21 Nov"][[0,7,14,21,29].indexOf(v)], yf: (v) => ["0","5k","10k","15k"][[0,5000,10000,15000].indexOf(v)] });
+Comp.lines("wait", { ...{"w":660,"h":250,"x0":0,"x1":29.6,"xt":[0,7,14,21,29],"y1":50,"yt":[0,10,20,30,40,50],"series":[{"cls":"b thin","pts":[[0,22.4],[1,15.5],[2,15.8],[3,17.2],[4,21.8],[5,21.5],[6,22.1],[7,18.8],[8,15.4],[9,19.1],[10,21.3],[11,20.7],[12,19.6],[13,22.2],[14,21.5],[15,21.3],[16,17],[17,49.2],[18,17.9],[19,23.6],[20,20.3],[21,18.2],[22,15.9],[23,18],[24,21.2],[25,15.1],[26,18],[27,17],[28,18.9],[29,17.6]]},{"cls":"a","pts":[[0,4.1],[1,4.6],[2,4.8],[3,4.4],[4,4.4],[5,4.6],[6,5.1],[7,4.9],[8,4.6],[9,3.8],[10,4.2],[11,4.6],[12,3.7],[13,4.8],[14,4.6],[15,3.7],[16,5],[17,7.2],[18,5.1],[19,3.9],[20,4.6],[21,4.5],[22,4.3],[23,4],[24,3.7],[25,5.1],[26,4.9],[27,5],[28,4.9],[29,4.8]],"mark":29}]}, xf: (v) => ["23 Oct","30 Oct","6 Nov","13 Nov","21 Nov"][[0,7,14,21,29].indexOf(v)], yf: (v) => ["0s","10s","20s","30s","40s","50s"][[0,10,20,30,40,50].indexOf(v)] });
+Comp.bars("decoded", { ...{"w":480,"h":250,"x0":-1,"x1":30,"xt":[0,14,29],"y1":1500,"yt":[0,500,1000,1500],"data":[[0,671],[1,815],[2,808],[3,738],[4,761],[5,777],[6,791],[7,784],[8,947],[9,941],[10,830],[11,819],[12,877],[13,867],[14,929],[15,1031],[16,1075],[17,919],[18,983],[19,909],[20,994],[21,943],[22,1141],[23,1146],[24,1072],[25,1005],[26,1069],[27,1030],[28,1036],[29,1264]]}, xf: (v) => ["23 Oct","6 Nov","21 Nov"][[0,14,29].indexOf(v)], yf: (v) => ["0","500","1,000","1,500"][[0,500,1000,1500].indexOf(v)] });
+Comp.hours("when", (d, h) => [[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,3,3,3,2,1],[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,3,3,3,2,1],[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,3,3,3,2,1],[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,3,3,3,2,1],[0,0,0,0,0,0,0,0,0,0,1,1,1,2,2,1,2,2,3,3,3,3,3,1],[0,0,0,0,0,0,0,0,0,1,1,1,2,2,2,2,2,3,4,4,4,4,3,2],[0,0,0,0,0,0,0,0,0,0,1,1,2,2,2,2,2,3,3,4,4,4,3,2]][d][h]);
+</script>
+</body>
+</html>

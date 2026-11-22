@@ -3,7 +3,7 @@
   <x-rows>
 @foreach ($providers as $provider)
 @if (isset($linked[$provider->value]))
-    <x-row :title="$provider->label()" :body="'Linked '.$linked[$provider->value]->created_at->format('j M Y')" wire:key="m-{{ $provider->value }}">
+    <x-row :title="$provider->label()" :body="'Linked '.$linked[$provider->value]->created_at->format('j M Y').' · '.$linked[$provider->value]->signInKey()" wire:key="m-{{ $provider->value }}">
       <x-state :on="true">Linked</x-state>
 @if (count($linked) > 1)
       <x-btn kind="quiet" wire:click="unlink('{{ $provider->value }}')" wire:confirm="Unlink {{ $provider->label() }}? You can still sign in with the other method.">Unlink</x-btn>

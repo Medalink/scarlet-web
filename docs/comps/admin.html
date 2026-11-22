@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet admin: totals and growth</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="world.html">Map</a><a href="loot.html">Loot</a><a href="camps.html">Camps</a><a href="fishing.html">Professions</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="account.html">Account</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Admin</h1><p class="sub">Only your account can open these four pages. Days are UTC and the charts end at the last full day, 21 Nov. Counted 22 Nov 2026 at 14:06 UTC.</p></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Admin pages"><a href="admin.html" aria-current="true">Overview</a><a href="admin-api.html">API</a><a href="admin-database.html">Database</a><a href="admin-ingest.html">Ingest</a></div></div>
+  </section>
+  <section class="week n7" aria-label="Totals"><dl><dt>Accounts</dt><dd>2,918</dd></dl><dl><dt>Installs</dt><dd>4,062</dd></dl><dl><dt>Characters</dt><dd>3,406</dd></dl><dl><dt>Sessions</dt><dd>61,240</dd></dl><dl><dt>Parts</dt><dd>412,906</dd></dl><dl><dt>Hours played</dt><dd>96,318</dd></dl><dl><dt>Database size</dt><dd>38.4<small>GB</small></dd></dl></section>
+
+  <div class="sheet">
+    <section class="mod first" aria-labelledby="h-keys">
+      <h2 id="h-keys">Accounts with an API key</h2>
+      <div class="stack" role="img" aria-label="312 of 2,918 accounts have an API key"><i class="c-s1" style="flex-grow:312"></i><i class="c-o" style="flex-grow:2606"></i></div>
+      <dl class="pair parts" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><dt><i class="c-s1"></i>With a key</dt><dd>312<small>10.7%</small></dd></div><div><dt><i class="c-o"></i>No key</dt><dd>2,606<small>89.3%</small></dd></div></dl>
+    </section>
+    <section class="mod" aria-labelledby="h-links">
+      <h2 id="h-links">Installs linked to an account</h2>
+      <div class="stack" role="img" aria-label="2,870 installs are linked to an account, 1,004 are not and 188 are revoked"><i class="c-s1" style="flex-grow:2870"></i><i class="c-s5" style="flex-grow:1004"></i><i class="c-o" style="flex-grow:188"></i></div>
+      <dl class="pair parts" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><dt><i class="c-s1"></i>Linked</dt><dd>2,870<small>70.7%</small></dd></div><div><dt><i class="c-s5"></i>Not linked</dt><dd>1,004<small>24.7%</small></dd></div><div><dt><i class="c-o"></i>Revoked</dt><dd>188<small>4.6%</small></dd></div></dl>
+    </section>
+    <section class="mod last" aria-labelledby="h-vis">
+      <h2 id="h-vis">Public and private characters</h2>
+      <div class="stack" role="img" aria-label="1,284 characters are public and 2,122 are private"><i class="c-s1" style="flex-grow:1284"></i><i class="c-o" style="flex-grow:2122"></i></div>
+      <dl class="pair parts" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><dt><i class="c-s1"></i>Public</dt><dd>1,284<small>37.7%</small></dd></div><div><dt><i class="c-o"></i>Private</dt><dd>2,122<small>62.3%</small></dd></div></dl>
+    </section>
+
+    <section class="mod w8 first" aria-labelledby="h-new">
+      <h2 id="h-new">New accounts, installs and characters per day</h2>
+      <div class="plot"><svg id="new" role="img" aria-label="New accounts, new installs and new characters on each of the last 90 days"></svg></div>
+      <ul class="key"><li><i class="k-line" style="background:var(--accent)"></i>Accounts</li><li><i class="k-line" style="background:var(--fg)"></i>Installs</li><li><i class="k-line" style="background:var(--s-dungeon)"></i>Characters</li></ul>
+      <p class="readout"><b>21 Nov</b>: 35 accounts, 68 installs and 52 characters.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-active">
+      <h2 id="h-active">Installs uploading per day</h2>
+      <div class="plot"><svg id="active" role="img" aria-label="Installs with at least one upload on each of the last 90 days"></svg></div>
+      <dl class="pair"><div><dt>Today</dt><dd>1,318</dd></div><div><dt>Last 7 days</dt><dd>2,204</dd></div><div><dt>Last 30 days</dt><dd>2,951</dd></div></dl>
+    </section>
+
+    <section class="mod first" aria-labelledby="h-parts">
+      <h2 id="h-parts">Parts uploaded per day</h2>
+      <div class="plot"><svg id="parts" role="img" aria-label="Parts uploaded on each of the last 90 days"></svg></div>
+      <p class="note">Most in one day: 13,576 parts on 21 Nov.</p>
+    </section>
+    <section class="mod" aria-labelledby="h-bytes">
+      <h2 id="h-bytes">Megabytes uploaded per day</h2>
+      <div class="plot"><svg id="bytes" role="img" aria-label="Megabytes of compressed parts uploaded on each of the last 90 days"></svg></div>
+      <p class="note">Most in one day: 918 MB, compressed, on 21 Nov.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-decoded">
+      <h2 id="h-decoded">Sessions decoded per day</h2>
+      <div class="plot"><svg id="decoded" role="img" aria-label="Sessions decoded on each of the last 90 days"></svg></div>
+      <p class="note">Most in one day: 1,264 sessions on 21 Nov.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-class">
+      <h2 id="h-class">Characters by class</h2>
+      <ol class="rank"><li><span class="who">Warrior</span><span class="val">562 characters · 17%</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who">Hunter</span><span class="val">498 · 15%</span><span class="track"><i style="width:88.6%"></i></span></li><li><span class="who">Mage</span><span class="val">451 · 13%</span><span class="track"><i style="width:80.2%"></i></span></li><li><span class="who">Rogue</span><span class="val">402 · 12%</span><span class="track"><i style="width:71.5%"></i></span></li><li><span class="who">Priest</span><span class="val">371 · 11%</span><span class="track"><i style="width:66%"></i></span></li><li><span class="who">Warlock</span><span class="val">356 · 10%</span><span class="track"><i style="width:63.3%"></i></span></li><li><span class="who">Druid</span><span class="val">298 · 9%</span><span class="track"><i style="width:53%"></i></span></li><li><span class="who">Paladin</span><span class="val">251 · 7%</span><span class="track"><i style="width:44.7%"></i></span></li><li><span class="who">Shaman</span><span class="val">217 · 6%</span><span class="track"><i style="width:38.6%"></i></span></li></ol>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-levels">
+      <h2 id="h-levels">Characters by level</h2>
+      <div class="plot"><svg id="levels" role="img" aria-label="Characters in each band of ten levels"></svg></div>
+      <p class="note">Half of all characters are below level 20.</p>
+    </section>
+
+    <section class="mod w5 first" aria-labelledby="h-faction">
+      <h2 id="h-faction">Characters by faction</h2>
+      <div class="stack" role="img" aria-label="1,871 Horde characters and 1,535 Alliance characters"><i class="c-s1" style="flex-grow:1871"></i><i class="c-s4" style="flex-grow:1535"></i></div>
+      <dl class="pair parts" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><dt><i class="c-s1"></i>Horde</dt><dd>1,871<small>54.9%</small></dd></div><div><dt><i class="c-s4"></i>Alliance</dt><dd>1,535<small>45.1%</small></dd></div></dl>
+    </section>
+    <section class="mod w7 last" aria-labelledby="h-rulesets">
+      <h2 id="h-rulesets">Characters by ruleset</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Ruleset</th><th>Kind</th><th class="n">Characters</th><th class="n">Of all characters</th></tr></thead>
+        <tbody>
+          <tr><td><a href="stats.html">Standard, PvE</a></td><td>Standard</td><td class="n"><i class="bar" style="width:5.6rem"></i>1,612</td><td class="n">47.3%</td></tr>
+          <tr><td><a href="stats.html">Standard, PvP</a></td><td>Standard</td><td class="n"><i class="bar" style="width:2.6rem"></i>742</td><td class="n">21.8%</td></tr>
+          <tr><td><a href="stats.html">Hardcore, PvE</a></td><td>Hardcore</td><td class="n"><i class="bar" style="width:1.9rem"></i>538</td><td class="n">15.8%</td></tr>
+          <tr><td><a href="stats.html">Slow, PvE</a></td><td>Slow</td><td class="n"><i class="bar" style="width:1.2rem"></i>351</td><td class="n">10.3%</td></tr>
+          <tr><td><a href="stats.html">Hardcore, PvP</a></td><td>Hardcore</td><td class="n"><i class="bar" style="width:0.6rem"></i>163</td><td class="n">4.8%</td></tr>
+        </tbody></table></div>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+Comp.lines("new", { ...{"x0":0,"x1":91,"xt":[0,30,60,89],"y1":75,"yt":[0,25,50,75],"series":[{"cls":"c thin","pts":[[0,15],[1,13],[2,15],[3,15],[4,16],[5,16],[6,18],[7,14],[8,15],[9,14],[10,15],[11,17],[12,19],[13,18],[14,17],[15,17],[16,19],[17,17],[18,18],[19,20],[20,20],[21,19],[22,19],[23,18],[24,19],[25,20],[26,22],[27,22],[28,22],[29,21],[30,20],[31,21],[32,24],[33,25],[34,27],[35,23],[36,24],[37,24],[38,26],[39,23],[40,28],[41,29],[42,26],[43,25],[44,29],[45,29],[46,31],[47,31],[48,31],[49,27],[50,29],[51,31],[52,33],[53,29],[54,38],[55,37],[56,35],[57,31],[58,31],[59,37],[60,37],[61,40],[62,43],[63,33],[64,39],[65,37],[66,38],[67,35],[68,41],[69,41],[70,38],[71,37],[72,42],[73,40],[74,39],[75,46],[76,47],[77,40],[78,45],[79,47],[80,41],[81,47],[82,53],[83,54],[84,44],[85,47],[86,44],[87,51],[88,53],[89,52]]},{"cls":"b thin","pts":[[0,20],[1,21],[2,20],[3,19],[4,22],[5,22],[6,24],[7,21],[8,21],[9,22],[10,22],[11,23],[12,25],[13,26],[14,23],[15,26],[16,23],[17,23],[18,24],[19,29],[20,29],[21,26],[22,28],[23,27],[24,26],[25,30],[26,30],[27,34],[28,31],[29,29],[30,30],[31,31],[32,31],[33,35],[34,34],[35,30],[36,34],[37,33],[38,33],[39,34],[40,42],[41,43],[42,34],[43,38],[44,38],[45,38],[46,36],[47,45],[48,48],[49,41],[50,42],[51,39],[52,44],[53,40],[54,49],[55,51],[56,41],[57,41],[58,42],[59,46],[60,44],[61,52],[62,54],[63,50],[64,46],[65,50],[66,54],[67,54],[68,59],[69,58],[70,55],[71,54],[72,57],[73,59],[74,57],[75,62],[76,61],[77,58],[78,56],[79,61],[80,56],[81,63],[82,71],[83,64],[84,67],[85,64],[86,67],[87,61],[88,70],[89,68]]},{"cls":"a","pts":[[0,9],[1,9],[2,8],[3,9],[4,8],[5,10],[6,9],[7,8],[8,9],[9,9],[10,9],[11,9],[12,10],[13,11],[14,11],[15,10],[16,10],[17,11],[18,11],[19,13],[20,11],[21,12],[22,11],[23,12],[24,12],[25,13],[26,13],[27,13],[28,13],[29,14],[30,15],[31,14],[32,15],[33,15],[34,16],[35,15],[36,16],[37,16],[38,15],[39,17],[40,19],[41,18],[42,18],[43,17],[44,17],[45,16],[46,17],[47,22],[48,23],[49,19],[50,18],[51,20],[52,18],[53,22],[54,24],[55,22],[56,21],[57,22],[58,23],[59,23],[60,23],[61,24],[62,25],[63,22],[64,24],[65,26],[66,26],[67,24],[68,28],[69,29],[70,26],[71,29],[72,27],[73,26],[74,26],[75,31],[76,33],[77,31],[78,29],[79,30],[80,32],[81,34],[82,36],[83,35],[84,29],[85,35],[86,34],[87,35],[88,32],[89,35]],"mark":89}]}, xf: (v) => ["24 Aug","23 Sep","23 Oct","21 Nov"][[0,30,60,89].indexOf(v)], yf: (v) => ["0","25","50","75"][[0,25,50,75].indexOf(v)] });
+Comp.lines("active", { ...{"w":380,"h":250,"x0":0,"x1":92,"xt":[0,45,89],"y1":1500,"yt":[0,500,1000,1500],"series":[{"cls":"a","pts":[[0,377],[1,395],[2,386],[3,403],[4,401],[5,444],[6,447],[7,428],[8,412],[9,424],[10,439],[11,456],[12,492],[13,499],[14,486],[15,464],[16,492],[17,499],[18,497],[19,550],[20,584],[21,520],[22,525],[23,531],[24,547],[25,566],[26,606],[27,644],[28,578],[29,616],[30,612],[31,604],[32,642],[33,696],[34,677],[35,663],[36,680],[37,679],[38,670],[39,696],[40,744],[41,759],[42,714],[43,705],[44,750],[45,756],[46,744],[47,811],[48,870],[49,795],[50,810],[51,793],[52,791],[53,826],[54,922],[55,918],[56,871],[57,862],[58,855],[59,902],[60,918],[61,970],[62,1019],[63,948],[64,964],[65,953],[66,943],[67,982],[68,1033],[69,1070],[70,978],[71,1029],[72,1018],[73,1012],[74,1024],[75,1136],[76,1200],[77,1056],[78,1109],[79,1115],[80,1091],[81,1138],[82,1241],[83,1252],[84,1189],[85,1194],[86,1191],[87,1218],[88,1222],[89,1295]]}]}, xf: (v) => ["24 Aug","8 Oct","21 Nov"][[0,45,89].indexOf(v)], yf: (v) => ["0","500","1,000","1,500"][[0,500,1000,1500].indexOf(v)] });
+Comp.lines("parts", { ...{"w":380,"h":250,"x0":0,"x1":92,"xt":[0,45,89],"y1":15000,"yt":[0,5000,10000,15000],"series":[{"cls":"a","pts":[[0,636],[1,601],[2,601],[3,653],[4,701],[5,843],[6,807],[7,755],[8,827],[9,883],[10,917],[11,930],[12,1206],[13,1263],[14,1210],[15,1210],[16,1377],[17,1275],[18,1346],[19,1854],[20,1810],[21,1725],[22,1702],[23,1857],[24,1831],[25,2097],[26,2531],[27,2573],[28,2380],[29,2436],[30,2636],[31,2749],[32,2594],[33,3008],[34,3510],[35,2820],[36,2929],[37,3403],[38,3368],[39,3423],[40,3893],[41,4252],[42,3604],[43,3712],[44,3863],[45,4060],[46,4387],[47,5064],[48,5683],[49,4779],[50,4863],[51,4767],[52,5401],[53,5265],[54,6191],[55,6490],[56,5409],[57,6237],[58,5720],[59,6465],[60,6392],[61,7482],[62,7241],[63,7108],[64,6643],[65,7605],[66,6950],[67,7542],[68,8895],[69,9576],[70,8225],[71,8068],[72,8438],[73,7959],[74,8236],[75,10271],[76,9661],[77,9795],[78,9207],[79,9496],[80,9565],[81,10532],[82,11585],[83,11973],[84,9851],[85,10322],[86,10879],[87,11190],[88,11144],[89,13576]],"mark":89}]}, xf: (v) => ["24 Aug","8 Oct","21 Nov"][[0,45,89].indexOf(v)], yf: (v) => ["0","5k","10k","15k"][[0,5000,10000,15000].indexOf(v)] });
+Comp.lines("bytes", { ...{"w":380,"h":250,"x0":0,"x1":92,"xt":[0,45,89],"y1":1000,"yt":[0,250,500,750,1000],"series":[{"cls":"a","pts":[[0,50],[1,48],[2,50],[3,55],[4,61],[5,74],[6,72],[7,68],[8,74],[9,79],[10,82],[11,82],[12,104],[13,106],[14,99],[15,96],[16,106],[17,96],[18,98],[19,131],[20,125],[21,117],[22,113],[23,123],[24,121],[25,139],[26,171],[27,177],[28,168],[29,176],[30,197],[31,212],[32,206],[33,246],[34,295],[35,242],[36,256],[37,302],[38,302],[39,308],[40,350],[41,380],[42,318],[43,322],[44,328],[45,337],[46,354],[47,396],[48,431],[49,352],[50,348],[51,332],[52,368],[53,352],[54,410],[55,428],[56,358],[57,418],[58,390],[59,450],[60,457],[61,551],[62,550],[63,557],[64,537],[65,632],[66,591],[67,655],[68,786],[69,855],[70,739],[71,726],[72,756],[73,706],[74,720],[75,881],[76,810],[77,800],[78,730],[79,730],[80,713],[81,762],[82,815],[83,822],[84,663],[85,686],[86,718],[87,740],[88,742],[89,918]],"mark":89}]}, xf: (v) => ["24 Aug","8 Oct","21 Nov"][[0,45,89].indexOf(v)], yf: (v) => ["0","250","500","750","1,000"][[0,250,500,750,1000].indexOf(v)] });
+Comp.lines("decoded", { ...{"w":380,"h":250,"x0":0,"x1":92,"xt":[0,45,89],"y1":1500,"yt":[0,500,1000,1500],"series":[{"cls":"a","pts":[[0,149],[1,160],[2,152],[3,168],[4,158],[5,204],[6,202],[7,173],[8,188],[9,194],[10,206],[11,200],[12,264],[13,254],[14,231],[15,233],[16,238],[17,243],[18,257],[19,306],[20,339],[21,298],[22,304],[23,308],[24,301],[25,324],[26,370],[27,393],[28,339],[29,377],[30,380],[31,396],[32,415],[33,486],[34,458],[35,439],[36,444],[37,469],[38,444],[39,479],[40,569],[41,556],[42,525],[43,508],[44,550],[45,546],[46,546],[47,672],[48,628],[49,607],[50,574],[51,590],[52,576],[53,592],[54,717],[55,750],[56,624],[57,646],[58,665],[59,725],[60,671],[61,815],[62,808],[63,738],[64,761],[65,777],[66,791],[67,784],[68,947],[69,941],[70,830],[71,819],[72,877],[73,867],[74,929],[75,1031],[76,1075],[77,919],[78,983],[79,909],[80,994],[81,943],[82,1141],[83,1146],[84,1072],[85,1005],[86,1069],[87,1030],[88,1036],[89,1264]],"mark":89}]}, xf: (v) => ["24 Aug","8 Oct","21 Nov"][[0,45,89].indexOf(v)], yf: (v) => ["0","500","1,000","1,500"][[0,500,1000,1500].indexOf(v)] });
+Comp.bars("levels", { ...{"w":480,"h":250,"x0":-0.5,"x1":6.5,"xt":[0,1,2,3,4,5,6],"y1":1000,"yt":[0,250,500,750,1000],"cls":"t","data":[[0,902],[1,811],[2,598],[3,441],[4,304],[5,222],[6,128]]}, xf: (v) => ["1–9","10–19","20–29","30–39","40–49","50–59","60"][[0,1,2,3,4,5,6].indexOf(v)], yf: (v) => ["0","250","500","750","1,000"][[0,250,500,750,1000].indexOf(v)] });
+</script>
+</body>
+</html>

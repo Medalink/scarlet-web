@@ -28,6 +28,12 @@ class Identity extends Model
         return ['provider' => IdentityProvider::class];
     }
 
+    /** The `provider:subject` text `scarlet.admins` lists. */
+    public function signInKey(): string
+    {
+        return $this->provider->value.':'.$this->subject;
+    }
+
     /** @return BelongsTo<Account, $this> */
     public function account(): BelongsTo
     {

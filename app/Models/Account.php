@@ -40,6 +40,19 @@ class Account extends Authenticatable
         return $this->hasMany(Identity::class);
     }
 
+    /** True when one of the account's sign-ins is listed in `scarlet.admins` (docs/DESIGN.md, Admin). */
+    public function isAdmin(): bool
+    {
+        /** @var list<string> $admins */
+        $admins = config('scarlet.admins');
+        if ($admins === []) {
+            return false;
+        }
+
+        return $this->identities()->get(['provider', 'subject'])
+            ->contains(fn (Identity $identity): bool => in_array($identity->signInKey(), $admins, true));
+    }
+
     /** Sessions are not remembered across browsers: the account has no remember token. */
     public function getRememberTokenName(): string
     {

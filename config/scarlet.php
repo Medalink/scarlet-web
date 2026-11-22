@@ -10,6 +10,10 @@ return [
 
     'addon_counts_pages' => (bool) env('ADDON_COUNTS_PAGES', true),
 
+    'admins' => array_values(array_filter(array_map(trim(...), explode(',', (string) env('SCARLET_ADMINS', ''))))),
+
+    'api_calls_days' => 30,
+
     // A third sign-in button for local development. It exists only in the `local` environment, whatever this says.
     'dev_login' => (bool) env('SCARLET_DEV_LOGIN', false),
 

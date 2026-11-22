@@ -49,6 +49,19 @@
     }
   }
 
+  function stack(id, o) {
+    const svg = document.getElementById(id); if (!svg) return;
+    const f = frame(svg, o), bw = ((f.W - f.L - 6) / (o.x1 - o.x0)) * 0.72;
+    for (const [a, parts] of o.data) {
+      let base = 0;
+      parts.forEach((v, k) => {
+        if (v <= 0) return;
+        svg.append(el("rect", { class: "stk " + o.cls[k], x: f.x(a) - bw / 2, width: bw, y: f.y(base + v), height: Math.max(0, f.y(base) - f.y(base + v)) }));
+        base += v;
+      });
+    }
+  }
+
   // Stacked share bars in the page's own .xp-bars markup. rows: [[kill, dungeon, quest, explore, other]] as shares.
   function shares(id, rows) {
     const box = document.getElementById(id); if (!box) return;
@@ -94,5 +107,5 @@
     for (const [x, y] of o.deaths || []) M.mark(ctx, "death", M.px(view, x), M.py(view, y));
   }
 
-  window.Comp = { lines, bars, shares, hours, heatmap, rng };
+  window.Comp = { lines, bars, stack, shares, hours, heatmap, rng };
 })();

@@ -20,4 +20,15 @@ final class ClientAddress
 
         return bin2hex(substr($packed, 0, 8));
     }
+
+    /** A bucket as a person reads it: an IPv4 address as it is, an IPv6 /64 in its usual notation (`2001:db8:1:2::/64`). */
+    public static function shown(string $bucket): string
+    {
+        if (preg_match('/^[0-9a-f]{16}$/', $bucket) !== 1) {
+            return $bucket;
+        }
+        $address = inet_ntop((string) hex2bin($bucket.str_repeat('0', 16)));
+
+        return ($address === false ? $bucket : $address).'/64';
+    }
 }

@@ -27,6 +27,10 @@ A page is built from its comp and reviewed against it: same markup classes, same
 | `account.html` | `/account` |
 | `login.html`, `link.html` | `/login`, `/link` |
 | `developers.html` | `/developers` |
+| `admin.html` | `/admin`, the operator's overview: totals, 90 days of growth and what the characters are. The four admin pages share the segmented nav in the page head, and no other account can open them |
+| `admin-api.html` | `/admin/api`: requests that reached the origin over 30 days, and the addresses, accounts, installs and characters behind them |
+| `admin-database.html` | `/admin/database`: sizes, hypertables, jobs, index use and vacuum, read from the PostgreSQL and TimescaleDB catalogs. The bar in Size by table is the stack bar inside a table cell |
+| `admin-ingest.html` | `/admin/ingest`: parts from upload to decoded session. The chart by sharing group is the chart module's stacked bars, with five groups and Other |
 
 Rules that hold on every page: one `h1` naming the thing; a line of facts under it; the figure strip; then modules on
 the 12-column sheet divided by hairlines. Headings say what the chart shows. No helper text that restates a heading.

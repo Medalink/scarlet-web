@@ -5,18 +5,20 @@ use App\Http\Controllers\Api\V1\Upload\InstallFeatController;
 use App\Http\Controllers\Api\V1\Upload\UploadController;
 use App\Http\Middleware\PublicApi;
 use App\Http\Middleware\RateLimitRequests;
+use App\Http\Middleware\RecordApiCall;
+use App\Models\ApiSurface;
 use App\Support\PublicApiCatalog;
 use Illuminate\Support\Facades\Route;
 
 // The public read API under /api/v1/public: open data, no sign-in, listed once in PublicApiCatalog.
-Route::prefix('v1/public')->middleware(PublicApi::class)->group(function (): void {
+Route::prefix('v1/public')->middleware([RecordApiCall::class.':'.ApiSurface::Public->value, PublicApi::class])->group(function (): void {
     foreach (PublicApiCatalog::endpoints() as $endpoint) {
         Route::get($endpoint['path'], $endpoint['action'])->where($endpoint['where'])->name(PublicApiCatalog::ROUTE_PREFIX.$endpoint['name']);
     }
 });
 
 // The upload API, versioned by path (docs/API.md). Everything but registration is signed by an install.
-Route::prefix('v1')->group(function (): void {
+Route::prefix('v1')->middleware(RecordApiCall::class.':'.ApiSurface::Upload->value)->group(function (): void {
     Route::post('installs', [InstallController::class, 'store'])
         ->middleware('scarlet.rate:'.RateLimitRequests::REGISTRATION);
 

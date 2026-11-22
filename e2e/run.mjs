@@ -26,6 +26,7 @@ import * as owner from "./checks/owner.mjs";
 import * as own from "./checks/own.mjs";
 import * as installs from "./checks/installs.mjs";
 import * as removal from "./checks/removal.mjs";
+import * as admin from "./checks/admin.mjs";
 
 const LANES = ["upload", "api", "pages", "browser", "owner"];
 const SERVER_CONNECTIONS = 3;
@@ -64,6 +65,7 @@ const REGISTRY = [
   { lane: "pages", name: "an object id past what the database stores is a 404 page", independent: true, run: pages.missingPageIs404("/objects/3000000000") },
   { lane: "pages", name: "the public profession and camps pages stay public: canonical, indexed, edge cacheable, no cookie, no own-page words", run: pages.publicPagesStayPublic },
   { lane: "pages", name: "the account pages are closed to visitors", independent: true, run: pages.accountIsClosedToVisitors },
+  { lane: "pages", name: "the admin pages are a 404 to visitors", independent: true, run: admin.adminIsHiddenFromVisitors },
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },
   { lane: "pages", name: "the twelve profession pages show what the upload recorded", run: professions.pagesShowTheUpload },
   { lane: "browser", name: "the browser has no window", independent: true, run: browser.hasNoWindow },
@@ -72,6 +74,7 @@ const REGISTRY = [
   { lane: "browser", name: "the narrow pages fit at 390", run: browser.narrowPagesFit },
   { lane: "browser", name: "search suggests while typing", run: browser.searchSuggestsWhileTyping },
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
+  { lane: "owner", name: "the admin opens the four admin pages privately, and /admin/api counts the upload and a character asked for by name", run: admin.adminSeesTheApiCalls },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },
