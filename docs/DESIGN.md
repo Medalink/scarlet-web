@@ -463,8 +463,8 @@ after that.
 - Rates, medians, hour of day, heat, trips, waits, lures, poles and skill-ups per cast read Scarlet's rows only, and a
   page that shows them beside a total that includes addon data says which is which.
 - Leaderboards read Scarlet's rows only, until the owner decides otherwise.
-- A public figure split by origin is shown only when each side passes the character threshold; a player's own pages
-  always show the split.
+- A public figure split by origin is shown only when each side passes the character threshold, or when Scarlet's side
+  has no character at all, which gives nothing away; a player's own pages always show the split.
 - The flag. `ADDON_COUNTS_PAGES` (`scarlet.addon_counts_pages`, false until the environment sets it) switches these
   reads on for the fishing page, public at `/professions/fishing` and the player's own at
   `/account/professions/fishing`, and for the Fish caught tile of a character page. Only the web controllers read it:
@@ -482,11 +482,18 @@ after that.
 - The threshold. The addon term is read only when at least the scope's threshold of characters have a counted claim in
   it (the larger of the dated and undated counts, never their sum). Under it the page adds nothing, and does not show
   the split alone either: the public API gives Scarlet's figure, and the total would give away the difference. A
-  player's own pages have a threshold of 1. A scope with no Scarlet fishing rows adds nothing either: the page shows
-  its empty state, so a character whose history is only in an addon shows no addon total until Scarlet records a cast.
+  player's own pages have a threshold of 1. Scarlet's side is under the threshold in two ways. With some characters
+  under it (1 to threshold − 1), the page adds nothing, as above. With none (no Scarlet fishing row in the scope), there
+  is no figure of Scarlet's to give away, so the addon term is shown under the addon side's own threshold.
+- A scope whose fishing is only in addon claims. The fishing page shows its table with Scarlet at 0, From addons and
+  Total equal, and its head counts the total casts and the characters the claims belong to. Every Scarlet-only figure
+  (rates, medians, hours, trips, waits, lures, poles, heat, standings, the board) shows its normal empty state: the
+  figures show a dash and the modules that have no rows are not drawn. The note that Scarlet has recorded too little
+  does not show beside a table of numbers. A new player's history in an addon is part of the totals from the first
+  upload, public pages (under the `scarlet.min_characters` rule above), the account's own page and the character page.
 - The character page. The Fish caught tile adds the claims' `landed` and says "From addons" with their count, to the
-  character's owner, and to a visitor only where `scarlet.min_characters` is 1. Most caught, the feats and the
-  standings stay Scarlet's.
+  character's owner, and to a visitor only where `scarlet.min_characters` is 1. A character whose only records are
+  those catches shows the Records strip with that tile alone. Most caught, the feats and the standings stay Scarlet's.
 
 ### Checks
 

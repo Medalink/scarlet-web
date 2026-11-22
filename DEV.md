@@ -78,8 +78,10 @@ page, the account's own fishing page and the Fish caught tile of a character pag
 (docs/DESIGN.md, Addon counts, Reading). The lane reads those three pages once the claims are reconciled: unset, it checks that
 they count Scarlet's own 343 casts and 295 catches and show nothing from addons; with `ADDON_COUNTS_PAGES=true` in its
 environment, that the table reads Scarlet 343, 295 and 316, from addons 0, 39 and 40, total 343, 334 and 356.
-`ADDON_PAGES_DIR=<folder>` writes the pages it read there, so two runs can be compared with `diff` after the per-run
-tokens and the port are replaced.
+An invented character that uploads only a `counts` part, and so has no Scarlet row, is then read the same way: with the
+flag on its pages show Scarlet 0 and from addons 65, 56 and 65, with it off they show no addon figure.
+`ADDON_PAGES_DIR=<folder>` writes the pages it read there (`only-` before the name for that character), so two runs can
+be compared with `diff` after the per-run tokens and the port are replaced.
 
 Public API answers are cached for 30 seconds at the origin, so every read adds a random `limit` to its address and a rerun never reads the last run's answer.
 

@@ -14,6 +14,7 @@ use App\Actions\Rollups\GatherLures;
 use App\Actions\Rollups\GatherPerPoint;
 use App\Actions\Rollups\GatherPoles;
 use App\Actions\Rollups\GatherQuantity;
+use App\Actions\Rollups\GatherRecorded;
 use App\Actions\Rollups\GatherSchools;
 use App\Actions\Rollups\GatherSkill;
 use App\Actions\Rollups\GatherTotals;
@@ -54,6 +55,7 @@ class GatheringDashboard
         private readonly GatherHeat $heat,
         private readonly AddonFishingTerms $addonTerms,
         private readonly GatherQuantity $quantity,
+        private readonly GatherRecorded $recorded,
     ) {}
 
     /**
@@ -65,7 +67,8 @@ class GatheringDashboard
      *
      * With `$addons` a fishing answer also has `addons`: the casts, catches and items of Scarlet, of the claims other
      * addons counted (dated and undated) and their total, or null when there is nothing to add or too few characters
-     * counted it. Every other number stays Scarlet's own.
+     * counted it. Where no Scarlet character has fished in the scope, the answer is still there, with Scarlet's terms
+     * at 0 and `addon_only` true. Every other number stays Scarlet's own.
      *
      * @param  list<int>|null  $characters
      * @return array<string, mixed>|null null when the ruleset is not known
@@ -104,17 +107,25 @@ class GatheringDashboard
     /**
      * @param  int|list<int>|CharacterScope|null  $ids
      * @param  array<string, mixed>  $totals
-     * @return array{scarlet: array{casts: int, landed: int, items: int}, dated: array{casts: int, landed: int, items: int}, undated: array{casts: int, landed: int, items: int}, total: array{casts: int, landed: int, items: int}}|null
+     * @return array{addon_only: bool, addon_characters: int, scarlet: array{casts: int, landed: int, items: int}, dated: array{casts: int, landed: int, items: int}, undated: array{casts: int, landed: int, items: int}, total: array{casts: int, landed: int, items: int}}|null
      */
     private function addonsOf(int|array|CharacterScope|null $ids, array $totals): ?array
     {
-        $terms = $totals['characters'] === null ? null : $this->addonTerms->handle($ids);
+        $addonOnly = $totals['characters'] === null;
+        if ($addonOnly && $this->recorded->handle(GatherKind::Fish, $ids)) {
+            return null;
+        }
+        $terms = $this->addonTerms->handle($ids);
         if ($terms === null) {
             return null;
         }
-        $scarlet = ['casts' => (int) $totals['attempts'], 'landed' => (int) $totals['looted'], 'items' => $this->quantity->handle(GatherKind::Fish, $ids)];
+        $scarlet = $addonOnly
+            ? ['casts' => 0, 'landed' => 0, 'items' => 0]
+            : ['casts' => (int) $totals['attempts'], 'landed' => (int) $totals['looted'], 'items' => $this->quantity->handle(GatherKind::Fish, $ids)];
 
         return [
+            'addon_only' => $addonOnly,
+            'addon_characters' => $terms['characters'],
             'scarlet' => $scarlet,
             'dated' => $terms['dated'],
             'undated' => $terms['undated'],

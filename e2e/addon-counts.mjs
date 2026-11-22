@@ -28,6 +28,7 @@
 import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import { linkToAccount, signIn } from "./checks/pages.mjs";
 import { InstallClient } from "./client.mjs";
@@ -39,6 +40,7 @@ if (!base) throw new Error("E2E_URL is not set: run this through e2e/boot.mjs");
 
 const NAME = "Quill-Fisher";
 const TWIN = "Quill-Twin";
+const ONLY = "Quill-Dockhand";
 const LABEL = "scarlet-web e2e addon counts install";
 const LABEL_TWO = "scarlet-web e2e addon counts second install";
 const FISHING_CAST = 18248;
@@ -306,33 +308,51 @@ async function upload(held, name = NAME, app = client) {
 }
 
 const audit = (name = NAME) => artisan("addons:audit", name);
-const PAGES = [
+const pagesOf = (name) => [
   ["public", "/professions/fishing", false],
   ["own", "/account/professions/fishing", true],
-  ["character", `/c/${NAME}`, false],
-  ["character-owner", `/c/${NAME}`, true],
+  ["character", `/c/${name}`, false],
+  ["character-owner", `/c/${name}`, true],
 ];
+
+function forgetReads() {
+  const script = "local n = 0 for _, k in ipairs(redis.call('keys', ARGV[1])) do redis.call('del', k) n = n + 1 end return n";
+  const bulk = (words) => `*${words.length}\r\n` + words.map((w) => `$${Buffer.byteLength(w)}\r\n${w}\r\n`).join("");
+  return new Promise((resolve, reject) => {
+    const socket = net.connect(Number(process.env.REDIS_PORT), process.env.REDIS_HOST);
+    let replies = "";
+    socket.on("data", (chunk) => {
+      replies += chunk;
+      if (/:\d+\r\n/.test(replies)) socket.end();
+    });
+    socket.once("error", reject);
+    socket.once("close", resolve);
+    socket.once("connect", () => socket.write(bulk(["SELECT", process.env.REDIS_CACHE_DB]) + bulk(["EVAL", script, "0", `*${process.env.CACHE_PREFIX}rollup-read:*`])));
+  });
+}
 const PAGES_DIR = process.env.ADDON_PAGES_DIR ?? "";
 const PAGES_ON = process.env.ADDON_COUNTS_PAGES === "true";
 
 const plain = (html) => html.replace(/<(script|style)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
-async function pagesRead() {
+async function pagesRead(character = NAME, prefix = "") {
   await rollupsRefreshed({ http });
+  await forgetReads();
   const jar = new Jar();
   await signIn(http, jar);
   const read = {};
-  for (const [name, route, signed] of PAGES) {
+  for (const [name, route, signed] of pagesOf(character)) {
     const answer = expectStatus(await http.page(route, signed ? { jar } : {}), 200, `GET ${route}${signed ? " signed in" : ""}`);
     read[name] = plain(answer.text);
-    if (PAGES_DIR) fs.writeFileSync(path.join(PAGES_DIR, `${name}.html`), answer.text);
+    if (PAGES_DIR) fs.writeFileSync(path.join(PAGES_DIR, `${prefix}${name}.html`), answer.text);
   }
   return read;
 }
 
+const count = (n) => n.toLocaleString("en-US");
+
 async function pages(state) {
   const shown = await pagesRead();
-  const count = (n) => n.toLocaleString("en-US");
   const terms = ["Casts", "Catches", "Fish"].map((label, k) => `${label} ${count(state.scarlet[k])} ${count(state.counted[k])} ${count(state.total[k])}`).join(" ");
   const addonPages = ["public", "own"];
   if (PAGES_ON) {
@@ -343,6 +363,34 @@ async function pages(state) {
   }
   check("with the flag off no page shows what addons counted", Object.values(shown).every((text) => !text.includes("From addons")));
   check(`the fishing pages count Scarlet's own ${count(state.scarlet[0])} casts and the character page its ${count(state.scarlet[1])} catches`, addonPages.every((name) => shown[name].includes(`Fishing ${count(state.scarlet[0])} casts`)) && shown.character.includes(`${count(state.scarlet[1])} Fish caught since`));
+}
+
+async function addonOnly() {
+  await fresh(client, second);
+  const rows = Number(db("select count(*) from gathers where kind = 'fish'"));
+  check("no character holds a Scarlet fishing row", rows === 0, `${rows} rows`);
+  const linkedNow = expectJson(expectStatus(await client.me(), 200, "GET /installs/me"), "installs/me").linked === true;
+  if (!linkedNow) {
+    const jar = new Jar();
+    await signIn(http, jar);
+    await linkToAccount(http, jar, client);
+  }
+  const claims = [claimIn(0, 600, "casts=40;landed=36;items=38"), claimIn(3600, 4200, "casts=25;landed=20;items=27")];
+  await upload(known(countsPartsOf(claims, ONLY)), ONLY);
+  const state = await settleOne(ONLY, (s) => s.claims === claims.length, "the addon-only character");
+  check("the addon-only character: Scarlet holds 0 rows of it and its two claims count whole, 65/56/65", sum(state.scarlet) === "0/0/0" && sum(state.counted) === "65/56/65", `${sum(state.scarlet)} + ${sum(state.counted)}`);
+  check("the audit passes for the addon-only character", audit(ONLY).status === 0);
+  const shown = await pagesRead(ONLY, "only-");
+  const addonPages = ["public", "own"];
+  if (PAGES_ON) {
+    const terms = ["Casts", "Catches", "Fish"].map((label, k) => `${label} ${count(state.scarlet[k])} ${count(state.counted[k])} ${count(state.total[k])}`).join(" ");
+    check(`addon only, the public and the account's own fishing page show the three terms, ${terms}`, addonPages.every((name) => shown[name].includes(terms)), addonPages.map((name) => shown[name].slice(0, 500)).join(" | "));
+    check(`addon only, their heads count the total casts, ${count(state.total[0])}`, addonPages.every((name) => shown[name].includes(`Fishing ${count(state.total[0])} casts`)));
+    check("addon only, the pages show Scarlet's own figures empty, with no note that says no one has recorded", addonPages.every((name) => !shown[name].includes("What comes up") && !shown[name].includes("Numbers appear once") && !shown[name].includes("Scarlet records this once")));
+    check(`addon only, the character page counts ${count(state.total[1])} fish caught from addons, to the owner and to a visitor`, ["character", "character-owner"].every((name) => shown[name].includes(`${count(state.total[1])} Fish caught From addons ${count(state.counted[1])}`)), shown.character.slice(0, 600));
+    return;
+  }
+  check("addon only, with the flag off no page shows what addons counted", Object.values(shown).every((text) => !text.includes("From addons") && !text.includes(`${count(state.total[1])} Fish caught`)), Object.values(shown).map((text) => text.slice(0, 300)).join(" | "));
 }
 
 const sum = (rows) => rows.join("/");
@@ -635,6 +683,7 @@ async function main() {
   await twinFirst();
   await twinWithMoreRows();
   await linked();
+  await addonOnly();
 
   await fresh(client, second);
 }

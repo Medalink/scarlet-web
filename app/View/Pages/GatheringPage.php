@@ -39,8 +39,8 @@ final class GatheringPage
         $heat = is_array($r['heat'] ?? null) ? $r['heat'] : null;
         $levels = ProfessionCharts::byLevel(StatsPage::rows($r['by_level']));
         $addons = is_array($r['addons'] ?? null) ? $r['addons'] : null;
-        $arranged = ProfessionPage::arrange(self::ROWS, $few ? [] : [
-            'totals' => self::totals($addons, $w),
+        $only = $addons !== null && $addons['addon_only'] === true;
+        $arranged = ProfessionPage::arrange(self::ROWS, ['totals' => self::totals($addons, $w)] + ($few ? [] : [
             'items' => self::items(StatsPage::rows($r['items']), $t, $w),
             'ends' => self::ends($kind, $t, StatsPage::rows($r['lures']), (int) ($r['lured'] ?? 0), $w),
             'waits' => GatheringCharts::waits(StatsPage::rows($r['waits']), $w),
@@ -54,13 +54,13 @@ final class GatheringPage
             'poles' => self::poles(StatsPage::rows($r['poles']), (int) $t['attempts']),
             'creatures' => self::creatures(StatsPage::rows($r['creatures']), (int) $t['attempts']),
             'board' => ProfessionPage::board(Board::ofGathering($kind), StatsPage::rows($r['board']), $w['results']),
-        ]);
+        ]));
 
         return [
             'title' => ($own ? 'Your ' : '').$w['title'].': '.$w['results'].', times and places in WoW Forever',
             'own' => $own,
             'words' => $w,
-            'facts' => self::facts($t, $few, $w, $own, $addons === null ? null : (int) $addons['total']['casts']),
+            'facts' => self::facts($t, $few, $w, $own, $addons),
             'callouts' => GatheringCallouts::for($kind, $r),
             'figures' => self::figures($t, $few, $w, $own),
             'modules' => $arranged['modules'],
@@ -68,7 +68,7 @@ final class GatheringPage
             'layout' => $arranged['layout'],
             'dots' => CampsPage::dots($heat, $rect),
             'hoursSummary' => ProfessionPage::hoursSummary($hours, 'gathers'),
-            'note' => $few ? ProfessionPage::few($w['attempts'], $own) : null,
+            'note' => $few && ! $only ? ProfessionPage::few($w['attempts'], $own) : null,
         ];
     }
 
@@ -99,14 +99,23 @@ final class GatheringPage
     /**
      * @param  array<string, int|float|null>  $t
      * @param  array<string, string>  $w
+     * @param  array<mixed, mixed>|null  $addons
      * @return list<string>
      */
-    private static function facts(array $t, bool $few, array $w, bool $own, ?int $casts): array
+    private static function facts(array $t, bool $few, array $w, bool $own, ?array $addons): array
     {
+        if ($addons !== null && $addons['addon_only'] === true) {
+            $took = (int) $addons['addon_characters'];
+
+            return [
+                Format::count((int) $addons['total']['casts'], $w['attempt']),
+                $own ? ProfessionPage::whose($took, max($took, (int) $t['scope_characters'])) : Format::count($took, 'character'),
+            ];
+        }
         if ($few) {
             return [ProfessionPage::withoutNumbers($t, $own)];
         }
-        $facts = [Format::count($casts ?? (int) $t['attempts'], $w['attempt']), ProfessionPage::by($t, $own)];
+        $facts = [Format::count($addons === null ? (int) $t['attempts'] : (int) $addons['total']['casts'], $w['attempt']), ProfessionPage::by($t, $own)];
         if ($w['at'] !== '' && (int) $t['seconds'] > 0) {
             $hours = (int) round((int) $t['seconds'] / 3600);
             $facts[] = ($hours > 0 ? Format::count($hours, 'hour') : Format::duration((int) $t['seconds'])).' '.$w['at'];

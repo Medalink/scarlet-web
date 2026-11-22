@@ -58,7 +58,7 @@ final class CharacterRecords
         if ($records['topEmote'] !== null) {
             $tiles[] = self::tile('emote', '/'.strtolower($records['topEmote']['token']), 'Favourite emote', 'Used '.Format::count($records['topEmote']['uses'], 'time'));
         }
-        if (count($tiles) < self::LEAST) {
+        if ($tiles === [] || (count($tiles) < self::LEAST && $addonFish === 0)) {
             return null;
         }
         $lead = array_shift($tiles);
