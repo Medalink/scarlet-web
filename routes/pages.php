@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\CharacterBattlegroundsController;
 use App\Http\Controllers\Web\CharacterController;
 use App\Http\Controllers\Web\CharacterHeatController;
 use App\Http\Controllers\Web\DevelopersController;
@@ -27,6 +28,7 @@ Route::get('/developers', DevelopersController::class);
 Route::get('/release-notes', ReleaseNotesController::class);
 Route::get('/download', DownloadController::class);
 Route::get('/c/{name}', CharacterController::class)->where('name', '[^/]+');
+Route::get('/c/{name}/battlegrounds', CharacterBattlegroundsController::class)->where('name', '[^/]+');
 Route::get('/c/{name}/heat', CharacterHeatController::class)->where('name', '[^/]+');
 Route::get('/creatures/{id}', [RecordController::class, 'creature'])->whereNumber('id');
 Route::get('/items/{id}', [RecordController::class, 'item'])->whereNumber('id');

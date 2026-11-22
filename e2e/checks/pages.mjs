@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { InstallClient } from "../client.mjs";
-import { NAME, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool } from "../support.mjs";
+import { NAME, PROBE, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool } from "../support.mjs";
 
 const CONCURRENCY = 6;
 const ERROR_PAGE = /Server Error|Whoops|Stack Trace|Illuminate\\|laravel-exceptions|Undefined (variable|array key)|Call to (undefined|a member)/i;
@@ -59,6 +59,21 @@ export async function deathIsCountedOnce(ctx) {
   if (!/Level 23[^<]*1 death/.test(answer.text.replaceAll("&quot;", '"'))) {
     throw new Error("/hardcore-deaths should chart that one death at level 23");
   }
+}
+
+export async function scoreboardIsShownWithoutNames(ctx) {
+  const character = expectStatus(await ctx.http.page(`/c/${PROBE}`), 200, `/c/${PROBE}`);
+  if (!character.text.includes(`/c/${PROBE}/battlegrounds`) || !character.text.includes("Battleground scoreboards, 1 match")) {
+    throw new Error(`/c/${PROBE} should link its 1 match with a scoreboard, saw ${character.text.slice(0, 600)}`);
+  }
+  const answer = expectStatus(await ctx.http.page(`/c/${PROBE}/battlegrounds`), 200, `/c/${PROBE}/battlegrounds`);
+  const problems = [];
+  if (!/<h1[^>]*>\s*Battlegrounds of Probe Lane/.test(answer.text)) problems.push("the heading");
+  if (!answer.text.includes("Warsong Gulch, won")) problems.push("the match, Warsong Gulch, won");
+  if ((answer.text.match(/>a player</g) ?? []).length !== 3) problems.push("three rows of a player");
+  if (!/<td class="n ?">4<\/td><td class="n ?">9<\/td>/.test(answer.text)) problems.push("4 killing blows and 9 honorable kills in the Alliance row");
+  for (const name of ["Pella", "Dorn", "Kesta"]) if (answer.text.includes(name)) problems.push(`no name, but ${name} is shown`);
+  if (problems.length > 0) throw new Error(`/c/${PROBE}/battlegrounds: expected ${problems.join(", ")}: ${answer.text.slice(answer.text.indexOf("<table"), answer.text.indexOf("<table") + 900)}`);
 }
 
 export function missingPageIs404(route) {

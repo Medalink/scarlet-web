@@ -19,6 +19,7 @@
 <div class="wrap">
   @if ($d['owner'])<livewire:owner-bar :character-id="$d['id']" />@endif
   @if ($d['ownerSeesVisitorView'])<div class="own"><span>Visitor view</span><span class="sp"><a href="{{ $d['path'] }}">Back to your view</a></span></div>@endif
+  @if ($d['matches'] > 0)<p class="note"><a href="{{ $d['path'] }}/battlegrounds">Battleground scoreboards, {{ \App\View\Format::count($d['matches'], 'match', 'matches') }}</a></p>@endif
   @if ($d['records'])
   <section class="recs" aria-labelledby="h-records">
     <h2 id="h-records">Records</h2>

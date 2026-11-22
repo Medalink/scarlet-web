@@ -2,9 +2,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { Browser, browserCommand } from "../cdp.mjs";
-import { NAME, SHOWN, Skip, failOn, pool } from "../support.mjs";
+import { NAME, PROBE, SHOWN, Skip, failOn, pool } from "../support.mjs";
 
-const WIDE = ["/", "/stats", "/map", "/hardcore-deaths", "/leaderboards", "/search?q=Testa", `/c/${NAME}`];
+const WIDE = ["/", "/stats", "/map", "/hardcore-deaths", "/leaderboards", "/search?q=Testa", `/c/${NAME}`, `/c/${PROBE}/battlegrounds`];
 const NARROW = ["/", "/stats", "/hardcore-deaths"];
 const TABS = 4;
 const SUGGEST_MS = 5000;
