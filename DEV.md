@@ -212,7 +212,7 @@ node dungeons.mjs "<WoW folder>/_forever_/Interface/AddOns/OpenMap" ../../storag
 
 It takes a few seconds and writes 78 floors of 33 instances, about 6 MiB, with `dungeons.json`. The site reads that
 list at most once in five minutes and serves the pictures at `/dungeon-maps/<instance id>/<floor>.webp`. Without
-the folder a dungeon's page has no map section. `bin/deploy maps` carries it to the server (docs/HOSTING.md, Map art).
+the folder a dungeon's page has no map section. `bin/deploy maps storage/app/maps` carries it to the server (docs/HOSTING.md, Map art).
 
 ## Troubleshooting
 

@@ -203,15 +203,16 @@ e2e, docs or other tooling is skipped (the `paths` list on the ring in roster's 
 
 | Stage | What it does | When it fails |
 |---|---|---|
-| `deploy` | Builds the image, pushes its new layers to the droplet's registry, brings the files a rollout reads to the commit's copies (see below) and runs `deploy/rollout.sh`, as `bin/deploy` does | The old release keeps serving |
+| `deploy` | Sends the droplet the map art it lacks of medaware's art store (Map art), builds the image, pushes its new layers to the droplet's registry, brings the files a rollout reads to the commit's copies (see below) and runs `deploy/rollout.sh`, as `bin/deploy` does | The old release keeps serving |
 | `pages` | Reads the release that serves and requests `/up`, `/stats`, `/leaderboards`, `/rulesets`, `/talents`, `/map`, `/search` and the public API with a `v=<release>` parameter no cache has seen, so each answer is rendered by the new release | The ring rolls back |
 | `rollback` | `rollout.sh --rollback`, only when the failed commit is the release that serves | The failure is posted with the log |
 
 The ring uses a key of its own, `~/.config/scarlet-web/ring_ed25519` on medaware. Its line in
 `~ops/.ssh/authorized_keys2` on the droplet forces `/usr/local/sbin/scarlet-deploy-entry` (`scripts/deploy/ring-entry.sh`)
-and allows one port forward, to the loopback registry. The entry takes ten verbs (lock, unlock, registry, pull,
-install, rollout, rollback, release, sums, status) and a release must be 12 hex digits. The key gets no shell and is not
-on the database host. `install` replaces the five paths a rollout reads and nothing else, and a rollout runs
+and allows one port forward, to the loopback registry. The entry takes twelve verbs (lock, unlock, registry, pull,
+install, rollout, rollback, release, sums, mapsums, maps, status) and a release must be 12 hex digits. The key gets no shell and is not
+on the database host. `maps` adds art files to `/srv/scarlet-web/maps` and deletes none.
+`install` replaces the five paths a rollout reads and nothing else, and a rollout runs
 `deploy/rollout.sh` as `ops`, so the ring's key is as strong as `ops` on the app droplet (owner, 2026-11-22: "I want
 code to keep shipping when it's valid and deploys heal", and "Yes" to this). `ssh -i ~/.config/scarlet-web/ring_ed25519
 ops@scarlet-web verbs` on medaware prints the verbs the droplet's entry takes. The ops key stays on medaviper.
@@ -246,8 +247,8 @@ ships in two steps: the pin in `deploy/compose.yaml` first, then the configurati
 A change to any other file under `deploy/` (provisioning, backups, the database host, load tools) never reaches the
 droplet through the ring, because a rollout never runs them.
 
-What the ring cannot do, and `bin/deploy` with the ops key still does: the server setup, TLS, DNS, cache rules, backups,
-maps and the database host.
+What the ring cannot do, and `bin/deploy` with the ops key still does: the server setup, TLS, DNS, cache rules, backups
+and the database host.
 
 Set up or rotate the key:
 
@@ -257,7 +258,7 @@ bin/deploy ring-key ring.pub      # with the ops key: installs the entry and rep
 ```
 
 `bin/deploy ring-key` also installs this checkout's `scripts/deploy/ring-entry.sh` as the entry, so it is the command
-that gives the droplet a newer entry, `install` included.
+that gives the droplet a newer entry, `install` and `maps` included.
 
 To stop the ring: `flow freeze scarlet-web --ring live`, or empty `~ops/.ssh/authorized_keys2` on the droplet.
 
@@ -626,12 +627,38 @@ Sizes, ratios and the re-decode check are in [MEASUREMENTS.md](MEASUREMENTS.md#s
 
 ## Map art
 
-The map tiles are not in git or in the image. They live on the droplet at `/srv/scarlet-web/maps` (mounted read-only
-at `/maps`, `MAPS_ROOT=/maps`), so a deploy never touches them. Build them as DEV.md says (`tools/map-tiles`), then:
+The art (map tiles, dungeon maps, scene art, item icons) is not in git or in the image. It is built on a dev PC from
+the game's files, and the droplet reads it from `/srv/scarlet-web/maps` (mounted read-only at `/maps`,
+`MAPS_ROOT=/maps`). Between the two is the art store, `/data/medalink/scarlet-web/maps` on medaware: the one copy every
+deploy reads.
 
 ```sh
-bin/deploy maps <folder with manifest.json>     # normally storage/app/maps of a dev checkout
+bin/deploy maps storage/app/maps     # after building art in a dev checkout (DEV.md, tools/scene-art/README.md)
+bin/deploy maps                      # send the droplet what it lacks of the store, nothing new
 ```
+
+The command adds the folder to the store and then sends the droplet every store file it lacks or holds with other
+bytes. It needs no ops key: `scripts/deploy/art.sh` runs on medaware and the ring's key carries the files (the entry's
+`mapsums` and `maps` verbs). The owner asked for this on 2026-11-22: "I do not want assets to fall behind again."
+Three things keep the art from falling behind:
+
+- The ship gate `art` (`node scripts/art-published.mjs`, in the flow file) refuses a commit while the store lacks art
+  the commit draws: a scene of `tools/scene-art/scenes.mjs` without its `<scene>.json`, a model of the table that file
+  was not built from, a texture that file lists, an icon, or one of `manifest.json`, `dungeons/dungeons.json` and `items/items.json`. Publish the
+  art first, then ship.
+- Every ring deploy runs the same sync before it builds, so a rebuilt droplet or a sync that failed heals on the next
+  deploy, and `bin/deploy maps` heals it at once. A deploy whose art does not arrive fails before it touches the
+  release.
+- Nothing is ever deleted, in the store or on the droplet: the release that serves and the one a rollback returns to
+  may read older art. Files are `.json`, `.png` and `.webp` under plain folder names, with a path of 99 characters and
+  256 MiB at most each; the store refuses anything else, and the droplet refuses any other name.
+
+What the gate cannot see: art that was built again from an unchanged table (a fix in `tools/scene-art/m2.mjs`, new map
+tiles) and not published. The store then still holds the older build, and so does the site.
+
+A host other than the ring's (another web host of `deploy/hosts.tsv`, or one named by `DEPLOY_HOST` or
+`DEPLOY_INVENTORY`, such as the load environment) has no art store: `bin/deploy maps <folder>` copies the folder
+straight to it with the ops key, and without a folder it gets nothing and the command says so.
 
 nginx serves `/map-tiles/` straight from that folder (mounted into `web` at `/var/www/map-tiles`): no PHP and no
 cookie, so Cloudflare caches the tiles. The site reads `manifest.json` for the current version, so a new build is live
@@ -644,7 +671,7 @@ shows its art only while `camp/camp.json` exists there.
 The dungeon floor maps (`dungeons/`, from `tools/map-tiles/dungeons.mjs`) ride there too. PHP serves them at
 `/dungeon-maps/` from the `maps` disk, and a dungeon's page shows its map only while `dungeons/dungeons.json` lists it.
 The command takes a folder that holds any of the three, so `bin/deploy maps` on a folder with only `dungeons/` in it
-copies the dungeon maps and leaves the tiles and the camp art on the droplet as they are.
+adds the dungeon maps and leaves the tiles and the camp art in the store and on the droplet as they are.
 
 A scene's art (`fishing/` and the other professions, and `camp/`, from `tools/scene-art`: `node tools/scene-art/build.mjs fishing storage/app/maps/fishing`)
 rides in the same folder too, one folder per scene. PHP serves it at `/scene-art/<scene>/` from the `maps` disk, and a

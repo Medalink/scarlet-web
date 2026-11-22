@@ -12,8 +12,11 @@
 #   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env on the app droplet and
 #                               the database host (run before `server` and `db-server`)
 #   bin/deploy cache-rules      write Cloudflare's Cache Rules for the public API, the public pages and the map manifest
-#   bin/deploy maps <folder>    copy map art (a folder with manifest.json, camp/camp.json or dungeons/dungeons.json) to the
-#                               droplet's disk, outside the image
+#   bin/deploy maps [folder]    add map art (a folder with manifest.json, camp/camp.json or dungeons/dungeons.json) to the
+#                               art store on the build host, then send the droplet what it lacks of the store; without
+#                               a folder only the second. No ops key: the ring's key carries it (scripts/deploy/art.sh),
+#                               and every ring deploy does the second step again. Another web host, or a host named by
+#                               DEPLOY_HOST or DEPLOY_INVENTORY, gets the folder straight from here with the ops key
 #   bin/deploy bootstrap [ref]  first install: server, DNS, certificate, release, strict TLS, origin pulls
 #   bin/deploy server | tls | dns | strict | aop     the steps of bootstrap, each safe to run again
 #   bin/deploy ring-key <file>  let the flow ring deploy: install scripts/deploy/ring-entry.sh on the droplet and allow the public
@@ -518,13 +521,27 @@ case "${1:-release}" in
     esac
     ;;
   maps)
-    [ -f "${2:?folder with map art}/manifest.json" ] || [ -f "$2/camp/camp.json" ] || [ -f "$2/dungeons/dungeons.json" ] || {
-      echo "deploy: no manifest.json, camp/camp.json or dungeons/dungeons.json in $2" >&2
+    folder=${2:-}
+    [ -z "$folder" ] || [ -f "$folder/manifest.json" ] || [ -f "$folder/camp/camp.json" ] || [ -f "$folder/dungeons/dungeons.json" ] || {
+      echo "deploy: no manifest.json, camp/camp.json or dungeons/dungeons.json in $folder" >&2
       exit 1
     }
-    for target in $(printf '%s\n' "$host" $(other_app_hosts) | sort -u); do
+    by_hand=$(other_app_hosts)
+    if [ -n "${DEPLOY_INVENTORY:-}" ] || [ -n "${DEPLOY_HOST:-}" ]; then
+      by_hand="$host $by_hand"
+    else
+      on_build '[ -d "$(echo /data/$(id -un))/scratch" ]' || { echo "deploy: the art store is on medaware, and the build host $build_host is not it" >&2; exit 1; }
+      if [ -n "$folder" ]; then
+        packed=$(on_build 'mktemp -p "$(echo /data/$(id -un))/scratch" scarlet-web-art.XXXXXX')
+        tar -C "$folder" -cf - . | on_build "cat > $packed"
+        on_build "sh -s publish $packed" < "$here/scripts/deploy/art.sh"
+      fi
+      on_build 'sh -s sync' < "$here/scripts/deploy/art.sh"
+    fi
+    for target in $(printf '%s\n' $by_hand | sort -u); do
       has_role "$target" web || continue
-      tar -C "$2" -cf - . | at "$target" 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf - && chmod -R a+rX /srv/scarlet-web/maps'
+      [ -n "$folder" ] || { echo "deploy: $target has no art store and got nothing: bin/deploy maps <folder> copies a folder to it" >&2; continue; }
+      tar -C "$folder" -cf - . | at "$target" 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf - && chmod -R a+rX /srv/scarlet-web/maps'
       echo "deploy: maps copied to /srv/scarlet-web/maps on $target"
     done
     ;;
@@ -550,6 +567,6 @@ case "${1:-release}" in
     ;;
   ring-key) step_ring_key "${2:?the file with the public key of the ring}" ;;
   ssh) shift; srv "$@" ;;
-  help | -h | --help) sed -n '2,26p' "$0" ;;
+  help | -h | --help) sed -n '2,30p' "$0" ;;
   *) release "$1" ;;
 esac

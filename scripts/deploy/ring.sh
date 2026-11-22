@@ -2,8 +2,9 @@
 # The `live` ring of scarlet-web's flow (roster, flows/scarlet-web.toml). The flow engine runs it on medaware, in a
 # checkout at $FLOW_SHA, after every ship to main:
 #
-#   ring.sh deploy     build the image of $FLOW_SHA, send its new layers to the droplet and roll it out; medaware
-#                      then keeps that image and the $kept_images - 1 newest others, and drops older ones
+#   ring.sh deploy     send the droplet the map art it lacks (scripts/deploy/art.sh sync), build the image of $FLOW_SHA,
+#                      send its new layers to the droplet and roll it out; medaware then keeps that image and the
+#                      $kept_images - 1 newest others, and drops older ones
 #   ring.sh check      the release that serves is $FLOW_SHA and the public pages answer 200 from the origin, uncached
 #   ring.sh rollback   move visitors back to the release before, only when $FLOW_SHA is the one that serves
 #
@@ -11,7 +12,9 @@
 # (docs/HOSTING.md, "Deploy ring"). Every ship rolls out. When a file a rollout reads on the droplet ($rollout_files)
 # differs between $FLOW_SHA and the droplet, the ring sends this commit's copies to the entry's `install` verb before
 # the rollout, and fails when the entry refuses them. The rest of deploy/ runs from a PC or on another host and is not
-# compared.
+# compared. The art goes before the build, so a release never rolls out ahead of the art in medaware's store, and a
+# deploy whose art does not arrive fails before it touches the release. A commit that already serves gets no sync: a
+# failed step makes the engine run `ring.sh rollback`, which would then take a good release down over its art.
 #
 # A deploy lock someone else holds is waited for, $lock_wait seconds at most: the droplet clears a lock older than 40
 # minutes, so the wait ends with the lock. Any other answer to the lock request fails the ring at once.
@@ -101,6 +104,7 @@ carry_rollout_files() {
 deploy() {
   [ -f "$key" ] || { echo "ring: medaware has no ring key at $key (docs/HOSTING.md, Deploy ring)" >&2; exit 1; }
   [ "$(entry release)" != "$release" ] || { echo "ring: $release already serves"; return 0; }
+  sh scripts/deploy/art.sh sync
 
   take_lock
   built=$(mktemp)

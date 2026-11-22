@@ -11,7 +11,7 @@ Camp Tent and Camp Chair and the nine Camp Benefits icons, named by spell id (`S
 - A local file server for an installed WoW Forever client (build 1.60.1) that answers `/casc/fdid?fileDataID=<id>&filename=<id>`
   (the raw file) and `/casc/blp2png?fileDataID=<id>` (a texture as PNG), and for `items.mjs` also
   `/dbc/export/csv?name=Item&build=1.60.1.71037` (the client's `Item` table). The default address is `http://127.0.0.1:5123`.
-- The ids are in the `SCENES` table of `build.mjs`: each scene lists its model file ids by key (the keys the scene file
+- The ids are in the `SCENES` table of `scenes.mjs`: each scene lists its model file ids by key (the keys the scene file
   in `resources/js/scene/scenes` places) and its icon file ids by the id the page asks for (only `camp` has icons, named by
   spell id). `m2.mjs` reads the M2 layout of client version 272.
 
@@ -57,7 +57,9 @@ item up in `items.json` through `App\Support\ItemIcons`; the item tables show an
 
 ## To the server
 
-`bin/deploy maps storage/app/maps` copies the whole maps folder, every scene's folder and `items/` included, to
-`/srv/scarlet-web/maps` on the droplet, where the app reads it as its `maps` disk. A new build changes `<scene>.json`;
+`bin/deploy maps storage/app/maps` adds the whole maps folder, every scene's folder and `items/` included, to the art
+store on medaware and sends it on to `/srv/scarlet-web/maps` on the droplet, where the app reads it as its `maps` disk
+(docs/HOSTING.md, Map art). Run it before you ship a change to `scenes.mjs`: `ship` refuses the commit while the store
+lacks a model or an icon of the table. A new build changes `<scene>.json`;
 the page puts that file's modified time on every art address, so a changed build is live within five minutes and the
 old files stay cached under their old addresses.

@@ -83,12 +83,14 @@ commit that lands on main and touches what the image or the rollout reads out to
 pages; a commit that touches only e2e, docs or other tooling is skipped (the paths list on the ring in roster's
 `flows/scarlet-web.toml`). `flow status scarlet-web` shows the ring
 `passed` or `failed` at your SHA; wait for it before you report the change live. Run `bin/deploy` only for what the ring
-cannot do (server setup, maps, the database host) or for a manual rollback; it takes the same deploy lock the ring uses.
+cannot do (server setup, the database host) or for a manual rollback; it takes the same deploy lock the ring uses.
 A change to a file a rollout reads (`deploy/rollout.sh`, `deploy/dc`, the compose files, `deploy/nginx/`) ships like any
 other and never stops the ring, but it can reach the droplet after its release has rolled out, so that release must
 also run on the copy before it. [docs/HOSTING.md](docs/HOSTING.md) has the layout, the ring, rollback,
 logs, backups and restore. Secrets live on the server and in the owner's secrets folder, never in the repo. Map art is
-copied to the droplet with `bin/deploy maps`, never committed.
+never committed: after you build art, run `bin/deploy maps storage/app/maps`, which adds it to the art store on
+medaware and sends it to the droplet without the ops key. `ship` refuses a commit while the store lacks art the commit
+draws, and every ring deploy sends the droplet what it lacks of the store (docs/HOSTING.md, Map art).
 
 ## Local development
 
