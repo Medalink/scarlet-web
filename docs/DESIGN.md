@@ -475,6 +475,8 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `kills` | `K`, `LM`, `GP` | combat | npc, by, and the loot rule and group size in force (decoder version 10; null without a `loot` part), and `group_at`, the span of `group_spans` in force (decoder version 11; null while solo and without a `social` part), and `corpse_key` (decoder version 12; null on a line from before the key and for a player) |
 | `deaths` | `D`, `DL`, `DR` | combat | map position, killer kind, killer creature and its id, killer level, spell, the killing blow's event and environmental type |
 | `death_hits` | `D`, `DR` | combat | one hit of a death's recap, joined to its death on character, session and time: position, spell, amount, source, event, environmental type, school, health, seconds before, absorbed, resisted, blocked, flags. Came with decoder version 8 |
+| `spell_casts` | `C` | combat | one row per spell the session cast: casts and total cast time, at the first cast. Came with decoder version 13 |
+| `meter_totals` | `DM` | combat | one row per damage meter: its fights' totals summed, the best single fight, the fights and their seconds. Came with decoder version 13 |
 | `dungeon_runs` | `Z`, `E`, `B`, `D` | combat | instance, seconds, bosses, deaths, group size (the run rule of OVERVIEW.md) |
 | `quest_events` | `Q` | quests | quest, accepted, turned in or abandoned, xp, copper |
 | `money_changes` | `M`, `S` | economy | earned, spent, balance (transfers between own characters count as neither) |

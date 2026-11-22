@@ -5,6 +5,7 @@
 pub mod baselines;
 pub mod build;
 pub mod camp;
+pub mod combat;
 pub mod compare;
 pub mod counts;
 pub mod death;

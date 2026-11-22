@@ -45,9 +45,9 @@
     },
     {
       "group": "combat",
-      "id": "c5f117a2aa5194c587bddb9baf4ece232a06a826e8841cf81fcc1a23cae72c1f",
-      "lines": 27,
-      "raw_bytes": 481,
+      "id": "f4b11f79f4c524553bb411a5f37bdc21c1759aecd826f10536baf33109e42da4",
+      "lines": 34,
+      "raw_bytes": 611,
       "session": 1795270000
     },
     {
@@ -72,5 +72,5 @@
       "session": 1795270000
     }
   ],
-  "set_digest": "1e1f2ecd0985192c9bfd4317982676b899df552d6b89af84805eb5c17bd226e4"
+  "set_digest": "2f5f26165711a9bc27f48929c41364ba72ac67e75b2b4279a9285cd3b8d1275f"
 }

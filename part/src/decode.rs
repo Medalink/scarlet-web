@@ -8,6 +8,7 @@
 use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::build::parse_header;
 use crate::camp::{Camp, Known};
+use crate::combat::Combat;
 use crate::death::Hit;
 use crate::group::{GroupBook, Rule};
 use crate::peer::Peers;
@@ -24,7 +25,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 12;
+pub const DECODER_VERSION: u32 = 13;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -234,6 +235,7 @@ struct Dec<'o> {
     pn: BTreeMap<String, String>,
     talents: Talents,
     camp: Camp,
+    combat: Combat,
     prof: Professions,
     social: Social,
     group: GroupBook,
@@ -604,7 +606,11 @@ impl Dec<'_> {
                 let (level, zone_id) = (self.lvl(), self.zone_id);
                 self.camp.on_aura(t, &f, level, zone_id);
             }
-            "C" => self.camp.on_cast(t, &f),
+            "C" => {
+                self.camp.on_cast(t, &f);
+                self.combat.on_cast(t, self.lvl(), self.zone_id, &f);
+            }
+            "DM" => self.combat.on_meter(t, self.lvl(), self.zone_id, &f),
             "QB" => {
                 let ctx = self.baseline_ctx(t);
                 self.baselines.on_qb(ctx, &mut self.w, &f);
@@ -1106,6 +1112,7 @@ impl Dec<'_> {
         self.talents.finish(s, &mut self.w);
         self.group
             .finish(s, self.end_ms, &self.pn, &self.peers, &mut self.w);
+        self.combat.finish(s, &mut self.w);
         let known = Known {
             afk: self.has.xp,
             crafts: self.has.professions,
@@ -1482,6 +1489,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         pn: BTreeMap::new(),
         talents: Talents::default(),
         camp: Camp::default(),
+        combat: Combat::default(),
         prof: Professions::default(),
         social: Social::default(),
         group: GroupBook::new(character, has_group("professions")),

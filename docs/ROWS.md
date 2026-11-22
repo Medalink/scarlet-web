@@ -132,6 +132,31 @@ docs/player-fields.tsv, on every pos.
 | `absorbed`, `resisted`, `blocked` | int or null | fields 19 to 21 |
 | `flags` | string or null | field 22: `a` avoidable, `d` deadly, `h` caster hidden |
 
+### `spell_casts` (combat: `C`)
+
+One row per spell the session cast, at its first cast. A `C` line is a cast that succeeded; a channel end (`CH`)
+and an interrupted cast (`CI`) write no row. `cast_ms` is 0 when every cast of the spell was instant.
+
+| Key | Type | |
+| --- | --- | --- |
+| `spell_id` | int | |
+| `casts` | int | the session's `C` lines of the spell |
+| `cast_ms` | int | those lines' cast seconds, in milliseconds |
+
+### `meter_totals` (combat: `DM`)
+
+One row per meter the session reported, at its first `DM` line: what the client's damage meter wrote after each
+fight, summed over the session's fights. A `DM` line with an unknown meter letter or a total that is not a number
+writes nothing.
+
+| Key | Type | |
+| --- | --- | --- |
+| `meter` | string | `d` damage, `h` healing, `t` damage taken, `a` absorbs, `i` interrupts, `x` dispels |
+| `total` | int | the fights' totals summed |
+| `best` | int | the largest single fight total |
+| `fights` | int | the meter's `DM` lines |
+| `fight_ms` | int | the fights' seconds, in milliseconds |
+
 ### `dungeon_runs` (combat: `Z`, `B`, `D`, using core's `Z`)
 
 The runs of this session by the rule of OVERVIEW.md: a `Z` whose instanceType is `party` or `raid` starts a run of its
@@ -765,6 +790,8 @@ and `loot_drops` from the loot part, so a removed group deletes it with its rows
 one; a removed `social` deletes the spans and nulls `group_at`, and nulls `class_file` of `group_loot` and
 `loot_rolls`, which are written with a `loot` part and deleted with it. `group_spans.skinners` is null without a
 `professions` part and a removed `professions` nulls it.
+`spell_casts` and `meter_totals` are written only with a `combat` part: without one the session has no `C` or `DM`
+lines, and a removed `combat` deletes the rows it holds.
 
 ## Counting rules
 
