@@ -1,0 +1,43 @@
+scarlet-part	1	Shard-Keeper	1795540000	names
+100	SN	11687	Life Tap
+1	SN	11688	Life Tap
+1	SN	1120	Drain Soul
+1	SN	11661	Shadow Bolt
+1	SN	11672	Corruption
+1	SN	11668	Immolate
+1	SN	11711	Curse of Agony
+1	SN	11712	Curse of Agony
+1	SN	11708	Curse of Weakness
+1	SN	1490	Curse of the Elements
+1	SN	1714	Curse of Tongues
+1	SN	18265	Siphon Life
+1	SN	18871	Shadowburn
+1	SN	17877	Shadowburn
+1	SN	17924	Soul Fire
+1	SN	11729	Create Healthstone (Greater)
+1	SN	5699	Create Healthstone
+1	SN	20756	Create Soulstone (Greater)
+1	SN	698	Ritual of Summoning
+1	SN	688	Summon Imp
+1	SN	697	Summon Voidwalker
+1	SN	712	Summon Succubus
+1	SN	691	Summon Felhunter
+1	SN	11695	Health Funnel
+1	SN	6215	Fear
+1	SN	17926	Death Coil
+1	SN	5484	Howl of Terror
+1	SN	18647	Banish
+1	SN	430	Drink
+1	SN	17941	Shadow Trance
+1	SN	18094	Nightfall
+1	SN	18265	Siphon Life
+1	SN	20707	Soulstone Resurrection
+68	IN	6265	Soul Shard
+1	IN	5510	Greater Healthstone
+1	IN	5509	Healthstone
+1	IN	16895	Greater Soulstone
+97	SD	11688	Converts 310 health into 310 mana.
+1	SD	11687	Converts 220 health into 220 mana.
+199	TY	201	Affliction
+10	TY	202	Demonology
+10	TY	203	Destruction

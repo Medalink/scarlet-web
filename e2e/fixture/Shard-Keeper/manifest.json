@@ -1,0 +1,41 @@
+{
+  "character": "Shard-Keeper",
+  "parts": [
+    {
+      "group": "core",
+      "id": "ed277b6b325f31e9878cc9452869187ee0d9bfb795b1d8f62430a5efd60b2cd6",
+      "lines": 5,
+      "raw_bytes": 211,
+      "session": 1795540000
+    },
+    {
+      "group": "build",
+      "id": "813598993c57fbd9f2294b1c9810219ac8d2ba0e2d67db96e2d1e08e38010c5b",
+      "lines": 14,
+      "raw_bytes": 548,
+      "session": 1795540000
+    },
+    {
+      "group": "combat",
+      "id": "c25ea93f540d62d59f12f0c4dbbfacb4b039494b3dd88bdd5d26f4280b2f7083",
+      "lines": 374,
+      "raw_bytes": 5705,
+      "session": 1795540000
+    },
+    {
+      "group": "loot",
+      "id": "b7f993bd724869681f49d23d5144b33b55dceceae928a2c80c51859c089ea4fe",
+      "lines": 88,
+      "raw_bytes": 1437,
+      "session": 1795540000
+    },
+    {
+      "group": "names",
+      "id": "21e0cddac0d11958ec8f39de149a43b4af54d3402ba83f203f771155dee6359c",
+      "lines": 42,
+      "raw_bytes": 1119,
+      "session": 1795540000
+    }
+  ],
+  "set_digest": "385514aae89cd8d51971997e2e1865df62ba7358478e1555a8e12580335dc16c"
+}

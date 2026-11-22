@@ -1,11 +1,11 @@
-import { ECHO, LEDGER, NAME, PROBE, STRANGER, expectJson, expectStatus, loadFixture } from "../support.mjs";
+import { ECHO, LEDGER, NAME, PROBE, STRANGER, WARLOCK, expectJson, expectStatus, loadFixture } from "../support.mjs";
 
 export async function removalAnswersAndEmptiesStatus(ctx) {
   const answer = expectStatus(await ctx.client.remove(), 200, "DELETE /api/v1/upload");
   const removed = expectJson(answer, "DELETE /api/v1/upload");
-  const parts = loadFixture(NAME).ids.length + loadFixture(PROBE).ids.length + loadFixture(ECHO).ids.length;
-  if (removed.characters_removed !== 3 || removed.parts_removed !== parts || typeof removed.rows_removed !== "number") {
-    throw new Error(`the removal should report 3 characters and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
+  const parts = loadFixture(NAME).ids.length + loadFixture(PROBE).ids.length + loadFixture(ECHO).ids.length + loadFixture(WARLOCK).ids.length;
+  if (removed.characters_removed !== 4 || removed.parts_removed !== parts || typeof removed.rows_removed !== "number") {
+    throw new Error(`the removal should report 4 characters and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
   }
   const status = expectStatus(await ctx.client.status(), 200, "GET /api/v1/upload/status after the removal");
   const left = expectJson(status, "the status after the removal").characters ?? [];

@@ -42,7 +42,7 @@ export async function ownProfessionPagesShowTheAccount(ctx) {
 
   const fishing = await ownPage(ctx, jar, OWN_FISHING);
   const text = textOf(fishing.text);
-  const wanted = [...FISHING.shows, "1 of your 3 characters", "Everyone's Fishing"];
+  const wanted = [...FISHING.shows, "1 of your 4 characters", "Everyone's Fishing"];
   const missing = missingFrom(text, wanted);
   if (!heading(FISHING.title).test(fishing.text) || missing.length > 0) {
     throw new Error(`${OWN_FISHING}: expected ${missing.map((phrase) => JSON.stringify(phrase)).join(", ")}, saw ${text.slice(text.indexOf("Fishing"), text.indexOf("Fishing") + 900)}`);
@@ -61,7 +61,7 @@ export async function ownProfessionPagesShowTheAccount(ctx) {
   if (!fishing.text.includes('href="/professions/fishing"')) throw new Error(`${OWN_FISHING} should link everyone's Fishing page`);
 
   const cooking = await ownPage(ctx, jar, "/account/professions/cooking");
-  const cookingMissing = missingFrom(textOf(cooking.text), [...COOKING.shows, "1 of your 3 characters"]);
+  const cookingMissing = missingFrom(textOf(cooking.text), [...COOKING.shows, "1 of your 4 characters"]);
   if (cookingMissing.length > 0) throw new Error(`/account/professions/cooking: expected ${cookingMissing.map((phrase) => JSON.stringify(phrase)).join(", ")}`);
 
   const hub = expectStatus(await ctx.http.page("/account/professions", { jar, redirect: "manual" }), 302, "GET /account/professions");
@@ -99,7 +99,7 @@ export async function ownPagesLeaveOutOtherInstalls(ctx) {
   }
 
   const own = textOf((await ownPage(ctx, jar, "/account/professions/tailoring")).text);
-  const wanted = ["0 of your 3 characters", "Scarlet records this once a character of yours has recorded crafts."];
+  const wanted = ["0 of your 4 characters", "Scarlet records this once a character of yours has recorded crafts."];
   const missing = missingFrom(own, wanted);
   const leaked = [STRANGER_SHOWN, "Bolt of Linen Cloth", "2 crafts", "Too few characters"].filter((phrase) => own.includes(phrase));
   if (missing.length > 0 || leaked.length > 0) {
@@ -126,7 +126,7 @@ export async function accountWithNoCharacterSeesThePlainState(ctx) {
 const OWN_CAMPS = "/account/camps";
 const CAMP_SHOWS = [
   "Visits 1", "Characters 1", "Median visit 1m 30s", "Earn Camp Benefits 100%", "Camp Benefits you leave with",
-  "Basic Campfire 100% of visits", "Elwynn Forest 1 visit", "1 of your 3 characters", "Your characters by time by the fire", ECHO.replace("-", " "), "Everyone's camps", "When you camp",
+  "Basic Campfire 100% of visits", "Elwynn Forest 1 visit", "1 of your 4 characters", "Your characters by time by the fire", ECHO.replace("-", " "), "Everyone's camps", "When you camp",
 ];
 const CAMP_STRANGER = ["Visits 2", "Characters 2"];
 

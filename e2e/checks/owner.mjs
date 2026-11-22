@@ -7,7 +7,7 @@ const HEARD_MS = 5000;
 const OPEN_TOAST = `document.querySelector(".feat-toast:popover-open")`;
 const SERVER_HEARD = `performance.getEntriesByType("resource").some((entry) => entry.initiatorType === "fetch" && entry.name.includes("livewire") && entry.responseEnd > 0)`;
 
-async function browserFor(ctx) {
+export async function browserFor(ctx) {
   if (!ctx.browser) {
     await hasNoWindow(ctx).catch((error) => {
       if (!(error instanceof Skip)) throw error;

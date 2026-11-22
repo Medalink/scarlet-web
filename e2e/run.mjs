@@ -1,6 +1,6 @@
 /**
  * Checks before a ship: the Scarlet website and API driven over HTTP, and a headless browser for the pages, in under
- * 30 seconds. It uploads five invented characters (e2e/fixture), reads them back through the API, the pages and the
+ * 30 seconds. It uploads six invented characters (e2e/fixture), reads them back through the API, the pages and the
  * browser, and removes them again.
  *
  *   node e2e/run.mjs [--url http://127.0.0.1:8557] [--only upload|api|pages|browser|owner] [--keep <dir>] [--browser <path>]
@@ -15,10 +15,11 @@ import os from "node:os";
 import path from "node:path";
 import { InstallClient } from "./client.mjs";
 import { Gate } from "./gate.mjs";
-import { ECHO, Http, Jar, LEDGER, LOCAL_HOSTS, NAME, PROBE, STRANGER, Skip } from "./support.mjs";
+import { ECHO, Http, Jar, LEDGER, LOCAL_HOSTS, NAME, PROBE, STRANGER, WARLOCK, Skip } from "./support.mjs";
 import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
+import * as classPage from "./checks/class-page.mjs";
 import * as professions from "./checks/professions.mjs";
 import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
@@ -40,7 +41,7 @@ const REGISTRY = [
   { lane: "upload", name: "installs/me refuses an unsigned request", run: upload.meUnsigned },
   { lane: "upload", name: "installs/me refuses a wrong signature", run: upload.meWrongSignature },
   { lane: "upload", name: "what an earlier run left is removed", run: upload.leftoversRemoved },
-  { lane: "upload", name: `${NAME}, ${PROBE} and ${ECHO} upload side by side, and ${STRANGER} and ${LEDGER} from another install: sync, manifest, parts, sync`, run: upload.bothUpload },
+  { lane: "upload", name: `${NAME}, ${PROBE}, ${ECHO} and ${WARLOCK} upload side by side, and ${STRANGER} and ${LEDGER} from another install: sync, manifest, parts, sync`, run: upload.bothUpload },
   { lane: "upload", name: "the same manifest needs nothing", run: upload.sameManifestNeedsNothing },
   { lane: "upload", name: "the upload is decoded", run: upload.decoded },
   { lane: "api", name: "every public endpoint answers data and meta", run: api.everyEndpointAnswers },
@@ -68,6 +69,9 @@ const REGISTRY = [
   { lane: "pages", name: "the admin pages are a 404 to visitors", independent: true, run: admin.adminIsHiddenFromVisitors },
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },
   { lane: "pages", name: "the twelve profession pages show what the upload recorded", run: professions.pagesShowTheUpload },
+  { lane: "pages", name: `${WARLOCK}'s class page shows the figures worked out from its lines and no comparison under twenty warlocks`, run: classPage.warlockPageShowsItsFigures },
+  { lane: "pages", name: "a character's page links its class page and shows its band, and a class with no page has neither", run: classPage.characterPageLinksItsClassPage },
+  { lane: "pages", name: "another class's slug, an unknown slug and an unknown character are 404 pages", run: classPage.otherAddressesAre404 },
   { lane: "browser", name: "the browser has no window", independent: true, run: browser.hasNoWindow },
   { lane: "browser", name: "the map art is installed", independent: true, run: browser.mapArtIsServed },
   { lane: "browser", name: "the key pages run clean at 1280", run: browser.pagesRunClean },
@@ -75,6 +79,7 @@ const REGISTRY = [
   { lane: "browser", name: "search suggests while typing", run: browser.searchSuggestsWhileTyping },
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
   { lane: "owner", name: "the admin opens the admin pages privately, /admin/api counts the upload and a character asked for by name, /admin/clients shows the install clients, and /admin/characters finds the characters", run: admin.adminSeesTheApiCalls },
+  { lane: "owner", name: "a character the owner made private has no class page for a visitor, and has it again once public", run: classPage.hiddenCharacterHidesItsClassPage },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },
