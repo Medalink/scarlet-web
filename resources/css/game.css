@@ -130,6 +130,28 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
 .feat-to { display: block; height: 3px; margin-top: 0.55rem; background: var(--line2); border-radius: 2px; }
 .feat-to i { display: block; height: 100%; width: var(--at); min-width: 3px; background: var(--metal); border-radius: 2px; transform-origin: left center; }
 .feat.t4 .feat-to i { background: var(--accent); }
+.ch-figs dt, .week dt { display: flex; align-items: center; gap: 0.4rem; }
+.ch-figs dt .ico, .week dt .ico { color: var(--soft); }
+.ch-id .rules { grid-template-columns: minmax(0, 34rem); margin-top: 1.7rem; }
+.stands { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 1.1rem; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.stands li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.2rem 0.9rem; align-content: start; min-width: 0; padding: 1rem 1.1rem 1.15rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.stands .place { grid-row: 1 / span 3; min-width: 2.1rem; font: 800 3.4rem/0.82 var(--display); color: var(--fg); }
+.stands .p1 .place { color: var(--gold); } .stands .p2 .place { color: var(--silver); } .stands .p3 .place { color: var(--copper); }
+.stands .board { font: 750 1.3rem/1.05 var(--display); color: var(--fg); text-decoration: none; }
+.stands .board:hover { color: var(--soft); }
+.stands .val { font-size: 0.95rem; color: var(--text); }
+.stands .of { font-size: 0.86rem; color: var(--muted); }
+h2 > .ico, h3 > .ico { width: 0.9em; height: 0.9em; margin-right: 0.45rem; vertical-align: -0.1em; color: var(--soft); }
+.threat { grid-template-columns: 4.4rem minmax(0, 19rem) minmax(0, 1fr); column-gap: 1.2rem; margin-top: 1.2rem; }
+.threat.t0 { --metal: var(--soft); }
+.gauge { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-left: 1.2rem; border-top: 1px solid var(--line2); }
+.gauge::before { content: ""; position: absolute; left: 0; top: -3px; width: var(--at); height: 5px; background: var(--metal); }
+.gauge::after { content: ""; position: absolute; left: var(--at); top: -0.95rem; width: 2px; height: 1.15rem; background: var(--fg); }
+.gauge li { display: grid; gap: 0.2rem; min-width: 0; padding: 0.6rem 0.6rem 0; border-left: 1px solid var(--line2); font-size: 0.82rem; color: var(--muted); }
+.gauge li b { font: 750 1.1rem/1 var(--display); color: var(--text); }
+.gauge li.on b { color: var(--metal); }
+.kind { justify-content: flex-start; }
+.kind > span { margin-left: auto; }
 .feats-sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 1.4rem; margin-top: 0.5rem; color: var(--text); }
 .feats-sum b { font: 750 1.9rem/1 var(--display); color: var(--fg); margin-right: 0.35rem; }
 
@@ -142,6 +164,14 @@ html:has(body.art) { scrollbar-color: #4a2330 var(--bg); }
   .hall li:nth-child(even) { padding: 1.4rem 0 1.5rem; border-left: 0; }
 }
 @media (max-width: 820px) {
+  .threat { grid-template-columns: 4.4rem minmax(0, 1fr); row-gap: 1.6rem; }
+  .gauge { grid-column: 1 / -1; margin-left: 0; }
+  .gauge li { padding: 0.5rem 0.3rem 0; font-size: 0.72rem; }
+  .gauge li b { font-size: 0.92rem; }
+  .ch-id .rules { grid-template-columns: minmax(0, 1fr); }
+  .stands { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stands li { padding: 0.9rem 0.8rem 1rem; }
+  .stands .place { font-size: 2.6rem; min-width: 1.6rem; }
   .pg-hero .stage { inset: 0; }
   .pg-hero .stage::after { background: linear-gradient(0deg, var(--bg) 0, rgba(20, 20, 22, 0.86) 34%, rgba(20, 20, 22, 0.45) 100%); }
   .tally { grid-template-columns: repeat(2, minmax(0, 1fr)); }
