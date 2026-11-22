@@ -36,25 +36,6 @@ final class MapSpec
     }
 
     /**
-     * A map of cells the page already has, on the finest grid, as one flat list: cell_i, cell_j and the counter of each.
-     *
-     * @param  list<array{0: int, 1: int, 2: int}>  $cells
-     * @param  array{0: float, 1: float, 2: float, 3: float}|null  $fit
-     * @param  array<string, mixed>  $extra
-     * @param  list<array{kind: string, u: float, v: float}>  $marks  crosses and dots on the map, in world coordinates
-     * @return array<string, mixed>
-     */
-    public static function cells(array $cells, ?array $fit = null, array $extra = [], array $marks = []): array
-    {
-        return [
-            ...$extra,
-            'fit' => $fit,
-            'zones' => [],
-            'layers' => ['heat' => ['grid' => [WorldLayer::Paths->columns()], 'cells' => $cells === [] ? [] : array_merge(...$cells)], 'marks' => $marks],
-        ];
-    }
-
-    /**
      * A map whose cells on the finest grid the viewer reads from `$url` after the first paint, in the order the page's replay needs.
      *
      * @param  array{0: float, 1: float, 2: float, 3: float}|null  $fit
