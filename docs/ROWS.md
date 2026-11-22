@@ -227,9 +227,76 @@ a row for the same drop, so a page counts a drop once (DESIGN.md).
 | `max` | int or null | `SL` |
 | `baseline` | bool or null | `SL` baseline `s`; null for `SK` |
 
-### `crafts` (professions: `CR`)
+### `crafts` (professions: `CR`; with `CB`, `RD`, `TS`, `SL`, `CS`)
 
-`item_id`, `quantity`, `crit`, `multicraft`, `recipe_id` (recipeSpellID), `quality`: int or null each.
+One row per crafted item. `item_id`, `quantity`, `crit`, `multicraft`, `recipe_id` (recipeSpellID), `quality`: int or
+null each. A lure is not a craft: an item's spell cast is followed at once by a `CR` for the fishing pole, with `enchant`
+`1`, an empty recipe and no `CB` before it. A `CR` with `enchant` `1`, no `CB` since the last `CR` or `CS`, and an item
+that is the main hand item (the last `G` of slot 16) is such an application and writes no row. So is one with an empty
+recipe in a session that has no `G` of slot 16 yet: the addon logs `G` only when the slot changes, so the main hand is
+not known, and the item of that `CR` is taken as the main hand from then on (the pole the lure is on). A weapon
+enchant such as a spellstone reads the same way and writes no row either. Not every real craft has a `CB` before it
+(2 of 54 in the first recording), so a craft with `enchant` `1` is decided by the main hand and the recipe, not by `CB` alone.
+
+| Key | Type | |
+| --- | --- | --- |
+| `profession_id` | int or null | the professionID of the last `TS 1` of the session, or its parentProfessionID when it has one (`0` is none). Null when no window opened before the craft |
+| `difficulty` | int or null | the recipe's last `RD` difficulty: `0` optimal, `1` medium, `2` easy, `3` trivial. Null when no `RD` named the recipe |
+| `skill` | int or null | the rank in the profession's skill line before the craft, from the last `SL` of the line (a child line counts as its parent). Null when no `SL` of it came before |
+| `skill_up` | bool or null | an `SL` of the line raised the rank within 2 s after the craft. A rise belongs to the last craft before it |
+| `enchant` | bool or null | the `CR` enchant field. Null on older lines |
+| `sitting_gap` | number or null | seconds since the previous craft of the same profession, when that is 120 s or less. Null starts a new sitting |
+
+`camp_stays.crafts` counts these rows only.
+
+### `gathers` (professions: `SL`; combat: `C`, `CH`, `F`; loot: `LO`; build: `G`; movement: `P`)
+
+One row per gathering attempt: fishing, herbalism, mining and skinning. `at` is when the cast began: the `C` line for
+fishing, and for the others the `C` line minus its cast seconds, since the client logs those casts when they succeed. A
+cast that fails or is cancelled is not logged, so herb, ore and skin rows are successes. Fishing logs the cast at its
+start and a `CH` when the channel ends; a `CH` with its cast is one row. A fishing channel under 2 s with no loot window
+is a cast the player cancelled and writes no row; without a `loot` part it cannot be told from a bite, so it is kept.
+A loot window belongs to the last attempt that ended before it, within 2 s, and to no other. The spell ids are one table in
+`part/src/professions.rs` (`App\Support\GatherKind` on the PHP side). Skinning has no line in any recorded session: it is
+built from FORMAT.md (a cast, then an `LO c` of the creature) and no recording has confirmed it yet.
+
+| Key | Type | |
+| --- | --- | --- |
+| `kind` | string | `fish`, `herb`, `ore` or `skin` |
+| `spell_id` | int | the gathering spell cast |
+| `seconds` | number or null | fishing: the `CH` seconds, the wait for the bite. Others: the `C` cast seconds |
+| `looted` | bool or null | a loot window of the right source (`g` for fishing, herbs and veins; `c` for skinning) within 2 s after the end of the cast (the `CH`, or the `C` of the others). Null without a `loot` part |
+| `source_id` | int or null | the `LO` id: the bobber (35591) or a school's object, the herb or vein object, the skinned creature. Null without a window |
+| `again` | bool or null | the `LO` again flag: the same vein or creature was read in the last 5 minutes, which is how a second strike on one vein reads. Null on older lines |
+| `skill` | int or null | the rank in the kind's skill line (Fishing 356, Herbalism 182, Mining 186, Skinning 393; a child line counts as its parent) before the attempt, from the last `SL` of the line. Null when the session has not said |
+| `skill_up` | bool | the rank rose within 2 s after the loot window (after the end of the cast without one). Read from the `SL` rank, not from `SK`, which is named by locale |
+| `gap` | number or null | seconds from the end of the previous attempt of the same kind (its loot window when it had one) to `at`, when that is 120 s or less and not negative. Null starts a new trip |
+| `lure_spell` | int or null | fishing: the spell cast for the last lure applied to the pole in the main hand, in this session |
+| `lure_age` | number or null | fishing: seconds from that application to `at`. A page decides how long a lure lasts |
+| `pole_item` | int or null | fishing: the main hand item (`G` slot 16) at the cast, or the item a lure was applied to (see `crafts`) when no `G` of the slot came before. Null when the session has said neither; a removed `build` group nulls it |
+| `in_combat` | bool or null | an `F 1` is open at the cast |
+| `map`, `x`, `y` | int or null | the last `P` at or before the cast, as `path_points` reads it. Null without a `movement` part or before a first `P` |
+
+A lure is keyed by the item it was applied to, so a weapon enchant on another item is never a fishing row's lure. The
+ingest adds `u` and `v` from `map` and `x`, `y` the way it does for `path_points`.
+
+### `gather_items` (professions: `SL`; combat: `C`, `CH`; loot: `LO`, `O`; movement: `P`)
+
+One row per item a gather gave. `at` is the loot window's. The items come from the `LO` item list; coin (`m`) and
+currency (`c`) entries are not rows. Lines before 2026-11-20 have no list: the `O` lines within 2 s after the window are
+the items. One row also for each item that came out of a caught container opened later (`LO i <itemID>`, where that item
+was caught in this session): `kind` is `fish`, `source_id` is null and `container_item_id` is the container. A window of
+`LO i` that names no item (most of them) cannot be tied to a catch and writes no rows.
+
+| Key | Type | |
+| --- | --- | --- |
+| `kind` | string | `fish`, `herb`, `ore` or `skin` |
+| `source_id` | int or null | the `LO` id of the window, as on `gathers`. Null on a container's items |
+| `item_id` | int | |
+| `quantity` | int | |
+| `skill` | int or null | the rank in the kind's skill line when the attempt began; for a container's items, when it was opened |
+| `map` | int or null | the last `P` map at the attempt, or at the opening. Null without a `movement` part |
+| `container_item_id` | int or null | the caught container the item came from |
 
 ### `path_points` (movement: `P`)
 
@@ -330,7 +397,7 @@ it overstates the time at a camp (Medalink/scarlet#2).
 | `tent_seconds` | int | time inside the stay that the tent rest aura (1229487) was held |
 | `campfire_spell_id` | int or null | the campfire the character placed (1307227 Basic, 1307252 Journeyman, 1307237 Expert): the last `C` of one from 60 s before the stay to its end, and not before the end of the stay before it, so one cast counts for one stay. Null when the fire was someone else's or already there |
 | `placed_tent`, `placed_chair` | bool | the same for the Camp Tent (1307230) and Camp Chair (1307229) casts |
-| `crafts` | int or null | `CR` lines inside the stay. Null without a `professions` part |
+| `crafts` | int or null | `crafts` rows inside the stay: a lure or weapon enchant is not one. Null without a `professions` part |
 | `died_after` | bool | a `D` from 2 s before the stay's end (the `D` line can come before the `A 0`) to 300 s after it. False for a stay the session ended |
 | `map`, `x`, `y` | int or null | the last `P` at or before the start of the stay, as `path_points` reads it. Null without a `movement` part or before a first `P` |
 
@@ -577,6 +644,10 @@ Removing a group from the server nulls the same counters (`SessionRows::GROUP_CO
 included) and `play_spans.afk_ms` for `xp` (`FactTable::groupColumns`), so a removed group reads as one never sent.
 The same holds for `camp_stays`: `afk_seconds` is null without `xp`, `crafts` without `professions`, and `map`, `x`, `y`,
 `u`, `v` without `movement`. `camp_benefits.xp` is null without `xp`.
+`gathers` and `gather_items` are written only with a `professions` part. `gathers.looted`, `source_id` and `again` are
+null without `loot` and `in_combat` without `combat`, and `map`, `x`, `y`, `u`, `v` without `movement`
+(`gather_items.map` too); a removed group nulls the same columns, and a removed `build` nulls `pole_item`.
+Every `gather_items` row is read from loot lines, so a removed `loot` deletes those rows (`FactTable::alsoNeeds`).
 
 ## Counting rules
 

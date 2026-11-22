@@ -226,7 +226,9 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `loot_drops` | `LO`, `O` | loot | source, item, quantity, loot rule, group size |
 | `boss_loot` | `EL` | loot | an item someone in the uploader's group received from a boss encounter: encounter id, item, quantity, receiver (a pseudonym outside the social group) and class. The notice reaches every member of the group, so each uploader has a row and a page counts a drop once: by encounter, item and a 10 minute bucket, taking the largest count any one uploader has |
 | `skill_ups` | `SK`, `SL` | professions | skill, rank |
-| `crafts` | `CR` | professions | item, quantity, recipe |
+| `crafts` | `CR`, `CB`, `RD`, `TS`, `SL`, `CS`, `G` | professions | item, quantity, recipe, profession, the recipe's difficulty, the skill before and whether it went up, the gap since the last craft of the profession. A lure or weapon enchant (a `CR` with no `CB` for the main hand item) is not a craft (decoder version 9) |
+| `gathers` | `C`, `CH`, `LO`, `SL`, `F`, `G`, `P` | professions | one gathering attempt (fishing, herbalism, mining, skinning): seconds, whether the loot window came and its source, the skill before and whether it went up, the gap since the last attempt of the kind, the lure and pole of a fishing cast, whether the character was in combat, the map position (decoder version 9). A fishing cast cancelled under 2 s writes no row |
+| `gather_items` | `LO`, `O`, `C`, `CH`, `SL`, `P` | professions | one item a gather gave, and the items of a caught container opened later (decoder version 9) |
 | `path_points` | `P` | movement | map, x, y |
 | `movement_stretches` | `W` | movement | mode (`f` running, `w` walking, `m` mounted, `s` swimming, `a` flying), yards, seconds, jumps; `jumpAt` is not kept |
 | `creature_sightings` | `NS` | world | npc, level, classification, type, map, cell |
@@ -260,7 +262,10 @@ The talent tables are the build group's. Removing the group deletes their rows a
 `talent_points` and `build_hash`, which copy the character's latest snapshot. `php artisan talents:backfill` queues a
 fresh decode of every session that has a build part; it fills the talent tables from parts uploaded before the decoder
 knew them, and is safe to run twice. The camp tables need no command: they came with decoder version 3, and version 7 added `duration`, `xp` and `deaths` to
-`camp_benefits`, so the scheduled re-decode fills them from the stored parts.
+`camp_benefits`, so the scheduled re-decode fills them from the stored parts. `gathers` and `gather_items`, and the
+profession columns of `crafts`, came with version 9 the same way, with no command to run. Their group is `professions`,
+but a gather is read from combat and loot lines too: removing `combat` or `loot` nulls the columns it fills (`in_combat`;
+`looted`, `source_id`, `again`) and leaves the rows.
 
 How the tables are built (decisions the first implementation made):
 

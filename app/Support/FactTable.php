@@ -33,6 +33,8 @@ enum FactTable: string
     case TalentGroupSpans = 'talent_group_spans';
     case CampStays = 'camp_stays';
     case CampBenefits = 'camp_benefits';
+    case Gathers = 'gathers';
+    case GatherItems = 'gather_items';
     case HardcoreDeaths = 'hardcore_deaths';
     case WhoResults = 'who_results';
     case InspectedGear = 'inspected_gear';
@@ -64,7 +66,7 @@ enum FactTable: string
             self::ExploredBaselines => SharingGroup::WORLD,
             self::MoneyChanges, self::AuctionPrices => SharingGroup::ECONOMY,
             self::LootOpens, self::LootDrops, self::BossLoot => SharingGroup::LOOT,
-            self::SkillUps, self::Crafts => SharingGroup::PROFESSIONS,
+            self::SkillUps, self::Crafts, self::Gathers, self::GatherItems => SharingGroup::PROFESSIONS,
             self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,
             self::Emotes, self::HardcoreDeaths, self::WhoResults, self::InspectedGear, self::BattlegroundScores => SharingGroup::SOCIAL,
@@ -95,14 +97,38 @@ enum FactTable: string
                 SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
             ],
             self::CampBenefits => [SharingGroup::XP => ['xp']],
+            self::Gathers => [
+                SharingGroup::COMBAT => ['in_combat'],
+                SharingGroup::LOOT => ['looted', 'source_id', 'again'],
+                SharingGroup::BUILD => ['pole_item'],
+                SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
+            ],
+            self::GatherItems => [SharingGroup::MOVEMENT => ['map']],
             default => [],
         };
     }
 
-    /** @return list<self> */
+    /**
+     * Groups besides its own that every row of the table is read from: removing one deletes the rows.
+     *
+     * @return list<string>
+     */
+    public function alsoNeeds(): array
+    {
+        return $this === self::GatherItems ? [SharingGroup::LOOT] : [];
+    }
+
+    /**
+     * The tables whose rows go when the group is removed.
+     *
+     * @return list<self>
+     */
     public static function inGroup(string $group): array
     {
-        return array_values(array_filter(self::cases(), fn (self $table): bool => $table->group() === $group));
+        return array_values(array_filter(
+            self::cases(),
+            fn (self $table): bool => $table->group() === $group || in_array($group, $table->alsoNeeds(), true),
+        ));
     }
 
     /**

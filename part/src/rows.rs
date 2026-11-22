@@ -68,6 +68,17 @@ impl<'a> Rows<'a> {
         self
     }
 
+    /// A number with two decimals, or null when none or not finite.
+    pub fn opt_f64(&mut self, key: &str, v: Option<f64>) -> &mut Self {
+        match v.filter(|v| v.is_finite()) {
+            Some(v) => {
+                let _ = write!(self.out, ",\"{key}\":{v:.2}");
+                self
+            }
+            None => self.null(key),
+        }
+    }
+
     pub fn str(&mut self, key: &str, v: &str) -> &mut Self {
         let _ = write!(self.out, ",\"{key}\":");
         self.quoted(v);

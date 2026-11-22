@@ -9,6 +9,7 @@ use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::build::parse_header;
 use crate::camp::{Camp, Known};
 use crate::death::Hit;
+use crate::professions::{Here, Present, Professions};
 use crate::reference::Reference;
 use crate::rows::Rows;
 use crate::social::Social;
@@ -21,7 +22,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 8;
+pub const DECODER_VERSION: u32 = 9;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -146,6 +147,7 @@ struct Has {
     combat: bool,
     economy: bool,
     professions: bool,
+    loot: bool,
 }
 
 struct Dec<'o> {
@@ -214,6 +216,7 @@ struct Dec<'o> {
     pn: BTreeMap<String, String>,
     talents: Talents,
     camp: Camp,
+    prof: Professions,
     social: Social,
     baselines: Baselines,
     reference: Reference,
@@ -367,6 +370,11 @@ impl Dec<'_> {
         {
             return;
         }
+        let here = Here {
+            level: self.lvl(),
+            zone_id: self.zone_id,
+        };
+        let crafted = self.prof.on_line(t, code, &f, here);
         match code {
             "S" => self.on_s(t, &f),
             "ES" => {
@@ -546,18 +554,7 @@ impl Dec<'_> {
                 let ctx = self.baseline_ctx(t);
                 self.baselines.on_is(ctx, &mut self.w, &f);
             }
-            "CR" => {
-                self.camp.on_craft(t);
-                self.fact("crafts", t);
-                self.w
-                    .opt("item_id", num(&f, 0))
-                    .opt("quantity", num(&f, 1))
-                    .opt("crit", num(&f, 2))
-                    .opt("multicraft", num(&f, 3))
-                    .opt("recipe_id", num(&f, 4))
-                    .opt("quality", num(&f, 5));
-                self.w.end();
-            }
+            "CR" if crafted => self.camp.on_craft(t),
             "P" => {
                 self.camp.on_pos(&f);
                 self.fact("path_points", t);
@@ -995,6 +992,11 @@ impl Dec<'_> {
         };
         std::mem::take(&mut self.camp).finish(s, self.end_ms, known, &mut self.w);
         self.baselines.finish(&mut self.w);
+        let present = Present {
+            professions: self.has.professions,
+            loot: self.has.loot,
+        };
+        std::mem::take(&mut self.prof).finish(s, present, &mut self.w);
         for d in std::mem::take(&mut self.death_list) {
             prefix(&mut self.w, "deaths", s, d.t, d.level, d.zone_id);
             let (m, x, y) = d
@@ -1298,6 +1300,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
             combat: has_group("combat"),
             economy: has_group("economy"),
             professions: has_group("professions"),
+            loot: has_group("loot"),
         },
         session,
         hour_cuts: 0,
@@ -1356,6 +1359,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         pn: BTreeMap::new(),
         talents: Talents::default(),
         camp: Camp::default(),
+        prof: Professions::default(),
         social: Social::default(),
         baselines: Baselines::default(),
         reference: Reference::default(),
