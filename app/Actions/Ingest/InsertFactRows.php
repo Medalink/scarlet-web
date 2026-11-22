@@ -19,6 +19,8 @@ class InsertFactRows
 
     /**
      * Insert the fact rows of one decoded session, with the columns every fact row carries.
+     * The tables go in FactTable declaration order, the order DeleteFactRows walks, so concurrent
+     * decodes of different sessions take every table's lock in the same order and cannot deadlock.
      *
      * @return int rows inserted
      */
@@ -26,8 +28,11 @@ class InsertFactRows
     {
         $inserted = 0;
 
-        foreach ($decoded->facts as $name => $rows) {
-            $table = FactTable::from($name);
+        foreach (FactTable::cases() as $table) {
+            $rows = $decoded->facts[$table->value] ?? null;
+            if ($rows === null) {
+                continue;
+            }
             $renames = $table->renames();
             $skip = array_flip([...self::COMMON, ...$table->dropped()]);
             $instants = array_flip($table->instants());
