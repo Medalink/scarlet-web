@@ -619,6 +619,14 @@ Needs the secrets folder (`SCARLET_SECRETS`, default `E:/Dev/secrets/scarlet-web
 
 The database host adds $17 a month. Prices are from DigitalOcean's size list, read on 2026-11-21.
 
+## Load environment
+
+`bin/load up` builds `scarlet-load-app`, `scarlet-load-db` (with its own volume) and `scarlet-load-gen` at production sizes
+from this checkout, with the rate limits lifted and its own R2 prefixes, and `bin/load down` removes them, their volume,
+firewalls and tailnet nodes. Run it only for a test and destroy it after (about $0.13 an hour). Every command pins
+`DEPLOY_HOST` and `DEPLOY_DB_HOST` to `scarlet-load-*`, so none of them reaches production. `tools/loadgen` is the traffic
+source; what it measured and how to rerun it is in `docs/MEASUREMENTS.md`, "Load tests".
+
 ## What the owner registers
 
 Sign-in needs two OAuth clients, one per provider. Their ids and secrets go in `/srv/scarlet-web/.env` on the server

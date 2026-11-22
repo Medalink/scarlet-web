@@ -275,3 +275,136 @@ The orderby and segmentby choices were compared on the restored copy, `path_poin
 `character_id` by `session_start, at` 5,406,720; `character_id` by `at` 5,373,952; `character_id, session_start` by
 `at` 5,480,448; no segmentby, ordered by `character_id, session_start, at` 5,988,352. The first is the one whose batch
 metadata lets a delete by character and session skip the other sessions' batches (a delete of one session scanned the metadata of 285 batches and decompressed none).
+
+## Load tests
+
+Measured on 2026-11-22 on throwaway droplets at production sizes in nyc3: `scarlet-load-app` (s-2vcpu-4gb), `scarlet-load-db`
+(s-1vcpu-2gb, 50 GB volume) and `scarlet-load-gen` (s-4vcpu-8gb, runs `tools/loadgen` and `oha` over the VPC). The stack is
+the production compose files with the database on its own host, pgBackRest archiving to R2 under `pgbackrest-load`, and the
+rate limits lifted through `SCARLET_RATE_*`. They ran about 2.8 hours and were destroyed afterwards (`bin/load down`); the
+three droplets and the volume cost about $0.37. `bin/load` pins every command to `scarlet-load-*`, and the generator refuses
+any host that is not a `scarlet-load-*` name on a private or tailnet address.
+
+**What the generator sends.** `loadgen prepare` builds the parts of three real recordings (characters A, B and C: 145, 1,660
+and 90 parts), cuts out each character's name and every other player's name, and stores them as one batch. B is used: 159
+sessions, 130.9 h played over 17 days. `loadgen run` makes a virtual character from consecutive sessions of B until the
+asked history length, gives it a new name, moves every part by whole days (the hour of day stays) so every part id is new,
+and runs the real protocol: register, sync, manifest, parts, then a second sync to verify. It starts installs at the
+requested rate whether or not the last ones finished (open loop), so a slow server shows as late starts and long install
+times, not as a lower rate. `loadgen check` decodes the same sessions under another name and 5 days later and compares row,
+line and play-time counts: 40 of 40 sessions matched. After R1, R2 and the storage run the part counts in the database
+equalled the generator's (R3 was not compared).
+
+The ramps and the burst finished with 0 failed installs and 0 failed verifications; the burst had 2 gateway timeouts on
+`parts` that the generator retried.
+
+| Run | Offered | History per install | Result |
+| --- | --- | --- | --- |
+| R1, before items 3 and 5 | 600 to 9,000 installs/h in 20 min: 1,599 installs, 111,897 parts, 88 MB | 3 h, 70 parts | 0 failed, 0 late. Install p50 2.8 s, p95 5.1 s. Decoding fell behind from the first minutes: 8,358 jobs queued and the oldest undecoded part 904 s old when the ramp ended, 7,666 queued 8 min later |
+| R2, items 3 and 5 deployed | the same, 108,575 parts | 3 h | 0 failed, 0 late. Install p50 3.1 s, p95 7.9 s. 8,265 jobs queued and the oldest part 898 s old at the end of the ramp, 8,116 queued 14 min later |
+| R3, burst | 10,000 installs/h for 5 min: 834 installs, 256,902 parts, 212 MB | 20 h, 308 parts | 0 failed, but it took 728 s, not 300: 1.15 installs/s (4,100 installs/h, 353 parts/s, 0.29 MB/s of bodies). 651 of 834 installs started more than 1 s late (largest 351 s); install p50 107 s, p95 128 s. 11,827 jobs queued after 6 min |
+
+R1 and R2 differ by items 3 (sweeper, Redis split) and 5 (storage policies). Neither changes decoding speed, and the queue
+growth and the ingest rate match, so neither made the ramp better or worse by more than the difference between two runs.
+R2's request latencies were 20 to 60 percent higher at p95; the cause was not found.
+
+### What saturated, against the Stages table
+
+| Trigger (Stages 1 and 2 of the scaling plan) | R1 and R2 | R3 (burst) |
+| --- | --- | --- |
+| Oldest undecoded part older than 10 min | Crossed in minute 14 of the ramp, at about 6,400 installs/h. The queue grew from the first minutes: ingest finishes about 1.8 sessions/s (below), which is 720 installs/h of 3 h | 383 s after 6 min and still rising |
+| CPU above 70% | App droplet 70% at about 5,000/h, 83 to 87% at 7,600 to 8,200/h (it also runs Horizon). Database droplet 95 to 100% from the third minute, because ingest alone uses all of its one vCPU | App 100% from the first minute; database 85 to 99% |
+| Memory above 85% | App at most 34%, database at most 60% | Same |
+| php-fpm max children (10) | Established connections to php-fpm: 11 (R1) and 21 (R2) at 7,400 to 8,200/h, so every child busy and requests waiting | 129 with 128 workers: every child busy, the rest queued |
+| Volume above 70% | 4% used, at most 15.5 MB/s written, iowait at most 3%: the volume did not limit either run | 3% |
+| Redis above 60% (154 MB) | 48 MB at 8,358 queued jobs: about 4 to 5 kB per queued session, so 60% is about 30,000 to 38,000 queued sessions | 48 MB at 11,827 jobs |
+| Connections above 70% of 80 | At most 15 | At most 15 |
+
+The first resource to run out is the database's one vCPU, and it runs out to ingest, not to uploads. The upload path took
+9,000 installs/h of 3 h without a failure or a late start, but only by building a queue it cannot empty. With 20 h of
+history per install the app droplet's two vCPUs and php-fpm's 10 children are the limit (R3). The 50 GB volume was never
+the limit at these rates; it was not driven to its own limit.
+
+### Ingest speed
+
+Sessions finished per second with a backlog and no uploads, counted from `sessions` in windows of about 150 s:
+
+| Condition | Sessions/s | Hours of play per hour | Parts/s |
+| --- | ---: | ---: | ---: |
+| Backlog (R2), 2 Horizon ingest processes, refresh policies on | 1.80 | 4,430 | 20.3 |
+| The same with the 28 refresh policies switched off (one window each) | 2.16 | 5,271 | 24.8 |
+| Storage run, 16 characters, nothing else running: 1,003 sessions | 1.76 | 5,600 | 17.9 |
+| Re-decode of those sessions with every chunk compressed (150 s) | 1.05 | not counted | not counted |
+
+Jobs took 1 to 4 s each and the Horizon container used about 18% CPU, so the decoders wait on the database, whose one vCPU
+sat at 100% (70% user, 26% system, with `pgbackrest archive-push` running about 10 times a minute during ingest). Decoding
+into compressed chunks is about 40% slower than into uncompressed ones. One 1-vCPU database decodes about 4,400 hours of
+play per hour, whether they arrive as new installs or as live uploads; that is the number to hold against the Stages table.
+
+### Storage and recovery (16 character-weeks)
+
+16 characters of 54 h each (888 h, 1,003 sessions, 10,198 parts, 1,268,809 `path_points`), dated 15 to 20 days back so the
+7-day compression policy covers every chunk. The plan asked for 1,000 character-weeks; decoding them takes about 12 hours at
+4,400 h/h, so 16 were run and the sizes below scale by 62.5 (not measured at that size). The 18 compression jobs ran with
+`call run_job` and took 33 s.
+
+| Measure | Value |
+| --- | --- |
+| Database, nothing compressed | 318 MB (19.9 MB per character-week). Fact hypertables 212 MB, of which `path_points` 165 MB (1,428 rows per played hour) |
+| After compression | 140.5 MB (8.8 MB per character-week). Fact hypertables 19 MB. Compressed chunks 202 MB to 16 MB (12.6 times) |
+| Ratio per table | `path_points` 15.8, `money_changes` 10.6, `kills` 10.7, `xp_gains` 9.4, `skill_ups` 7.3, `creature_sightings` 3.8 |
+| Everything else | Continuous aggregates 78 MB (`heat_daily_character` 42 MB, `heat_daily_ruleset` 25 MB), uncompressed and four times the compressed facts; `parts` 15 MB |
+| Forced refresh of all 28 aggregates over 21 days of chunks | 22.9 s, including one ssh and psql start. `RefreshAggregates` with nothing invalidated: 1.7 s |
+| `pgbackrest backup --type=full` | 126 s (14 s of it expiring the previous full): 180 MB of database, 33.7 MB in R2 |
+| `pgbackrest --delta restore` into a scratch container, then start and `select count(*)` | 64 s to restore 172 MB, 3 s to start; 10,198 parts and 1,003 sessions, equal to the live database |
+
+Scaled to 1,000 character-weeks that is about 8.8 GB compressed (19.9 GB without), 12 hours of decoding on this database
+size, and a full backup and a restore of a few minutes each for the first 10 GB (the backup and restore of a larger database
+were not timed). The aggregates grow with the characters (rows per character, cell and day), so they, not the fact tables,
+are the number to watch. One recording was re-timed for every character, so all virtual characters walk the same places;
+real characters may make the heat aggregates larger or smaller.
+
+### Reads at origin
+
+`oha 1.17` from the generator, 15 s per row, against the load app with the storage run's 16 characters decoded, the database
+otherwise idle, and no Cloudflare in front (items 4 and 7 had not landed):
+
+| Path | 10 connections | 40 connections |
+| --- | --- | --- |
+| `/api/v1/public/stats` | 25 req/s, p95 760 ms | 27 req/s, p95 1,907 ms |
+| `/leaderboards` | 6 req/s, p95 3,649 ms | 9 req/s, p95 6,306 ms |
+| `/stats` | 10 req/s, p95 4,506 ms | 17 req/s, p95 3,207 ms |
+| `/c/<name>` | 3 req/s, p95 7,426 ms | 5 req/s, p95 14,953 ms |
+
+No request failed. During these runs the app droplet used 35 to 69% CPU and the database 87 to 98%, so the pages are limited
+by the database, not by php-fpm. That is what an edge cache has to absorb: without one the origin answers about 25
+requests a second on the cheapest endpoint and 3 to 17 on the pages.
+### Not measured
+
+- 1,000 character-weeks, and the refresh, backup and restore times at that size (16 were run).
+- Each flip under load (resize, second ingest droplet, replica, PgBouncer): those items had not landed, and the environment
+  has one app and one database droplet.
+- Item 5's effect on refresh cost: the load data is dated within three weeks of now, so almost no chunk was old enough for
+  the 3-day refresh window to matter.
+- The volume's own limit. It never wrote more than 15.5 MB/s.
+- A steady mix of live uploads: every virtual install sends its whole history at once, which is the hardest case.
+- Every ingest condition above was one window; differences under 10 percent are noise.
+
+### Rerun
+
+```
+loadgen prepare --root <companion out dir> --folders <A>,<B>,<C> --out template.bin   # tools/loadgen, cargo build --release
+bin/load up && bin/load gen-install template.bin
+bin/load sample 1750 > /dev/null &                 # CPU, fpm connections, Redis, queue, Postgres, volume every 15 s
+bin/load sh gen 'loadgen run --connect scarlet-load-app --template /tmp/template.bin --ca /tmp/load-ca.pem --rate 600 --ramp-to 9000 --duration 1200 --concurrency 64 --history-hours 3 --salt r1 --log /tmp/r1.jsonl --drain-seconds 600'
+bin/load reset
+bin/load sh gen 'loadgen run ... --rate 10000 --duration 300 --concurrency 128 --history-hours 20 --salt r3 --drain-seconds 30 --poll-rate 5'
+bin/load reset
+bin/load sh gen 'loadgen run ... --rate 3600 --duration 16 --concurrency 16 --history-hours 54 --min-age-days 15 --spread-days 5 --salt r4 --drain-seconds 1500'
+bin/load sh gen 'ip=$(getent hosts scarlet-load-app | cut -d" " -f1); oha -z 15s -c 40 --no-tui --insecure --connect-to scarletweb.io:443:$ip:443 https://scarletweb.io/stats'
+bin/load down
+```
+
+`loadgen info` and `loadgen check` read a template without a server, and `loadgen run --dry-run` builds the plans and sends
+nothing. The summary line at the end of a run holds the counts and latencies used above; `bin/load sample` prints one TSV per
+droplet.

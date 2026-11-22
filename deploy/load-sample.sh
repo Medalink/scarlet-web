@@ -66,6 +66,6 @@ while [ "$SECONDS" -lt "$end" ]; do
     wr=$(awk -v a="$wr0" -v b="$wr1" -v i="$interval" 'BEGIN { printf "%.1f", (b - a) * 512 / 1048576 / i }')
     rd=$(awk -v a="$rd0" -v b="$rd1" -v i="$interval" 'BEGIN { printf "%.1f", (b - a) * 512 / 1048576 / i }')
     rd0=$rd1 wr0=$wr1
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$ts" "$cpu" "$iow" "$mem" "$swap" "$load1" "${stats:-?}" "${old:-?}" "${rows:-?}" "${vol:-?}" "$wr" "$rd" "${wal:-?}"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$ts" "$cpu" "$iow" "$mem" "$swap" "$load1" "${stats:-?}" "${old:-?}" "${rows:-?}" "${vol:-?}" "$wr" "$rd" "${wal:-?}"
   fi
 done

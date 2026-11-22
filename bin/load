@@ -9,6 +9,8 @@
 #   bin/load sh <app|db|gen> [command]        a shell on a droplet
 #   bin/load gen-install <template>   build tools/loadgen on the generator droplet, install oha 1.17.0 (checked by sha256), copy the
 #                              template made by `loadgen prepare` and the load app's certificate
+#   bin/load reset             empty the load database and both Redis instances, then apply the storage policies: a clean start
+#                              for the next run
 #   bin/load sample <seconds>  run deploy/load-sample.sh on the app and database droplets, print both TSVs when it ends
 #   bin/load down              purge the load prefixes in R2, then delete the droplets, volume, firewalls and tags
 #   bin/load status            what DigitalOcean and the tailnet hold under the name scarlet-load
@@ -83,6 +85,9 @@ case "${1:-help}" in
     on gen 'sudo apt-get install -y -qq build-essential pkg-config >/dev/null && mkdir -p ~/src && tar -C ~/src -xzf /tmp/loadgen-src.tgz && { command -v cargo >/dev/null || curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal >/dev/null; } && . ~/.cargo/env && cargo build --release --locked --manifest-path ~/src/tools/loadgen/Cargo.toml 2>&1 | tail -2 && sudo install -m 755 ~/src/tools/loadgen/target/release/loadgen /usr/local/bin/loadgen'
     on gen 'curl -fsSL -o /tmp/oha https://github.com/hatoo/oha/releases/download/v1.17.0/oha-linux-amd64 && echo "85c6eb98066b8c8bd513b2dd96fafd8f9863249ea653606bae1ca2e3a75c43d2  /tmp/oha" | sha256sum -c - && sudo install -m 755 /tmp/oha /usr/local/bin/oha'
     ;;
+  reset)
+    on app 'set -e; running=$(docker ps --format "{{.Names}}" | grep -E "horizon|schedule" || true); [ -z "$running" ] || docker stop $running >/dev/null; docker exec scarlet-web-redis-1 redis-cli flushall; docker exec scarlet-web-redis-cache-1 redis-cli flushall; app=$(docker ps --format "{{.Names}}" | grep -E "app-(blue|green)" | head -n 1); docker exec "$app" php artisan migrate:fresh --force | tail -n 1; docker exec "$app" php artisan scarlet:storage-policies | tail -n 1; [ -z "$running" ] || docker start $running >/dev/null'
+    ;;
   sample)
     seconds=${2:-60}
     for role in app db; do on "$role" "cd /srv/scarlet-$([ $role = app ] && echo web || echo db) && timeout $((seconds + 5)) bash deploy/load-sample.sh $role $seconds" > "${TMPDIR:-/tmp}/sample-$role.tsv" & done
@@ -100,6 +105,6 @@ case "${1:-help}" in
           console.log(k+':',(r[k]||[]).map(x=>x.name).filter(n=>n.startsWith('scarlet-load')).join(', ')||'none');}})()" "$secrets/do-token"
     tailscale status | grep scarlet-load || echo "tailnet: no scarlet-load node"
     ;;
-  help | -h | --help) sed -n '2,20p' "$0" ;;
+  help | -h | --help) sed -n '2,22p' "$0" ;;
   *) echo "load: unknown command $1" >&2; exit 2 ;;
 esac
