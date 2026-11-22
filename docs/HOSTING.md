@@ -48,7 +48,8 @@ see the visitor, not Cloudflare. `www` redirects to the apex in nginx.
 
 ## Deploy
 
-A ship to `main` deploys through the `live` ring (see "Deploy ring"); `flow status scarlet-web` shows the result. Run
+A ship to `main` deploys through the `live` ring (see "Deploy ring"), unless it touches none of the ring's paths; `flow
+status scarlet-web` shows the result. Run
 `bin/deploy` by hand for what the ring cannot do, or for a manual rollout or rollback. It takes the same deploy lock as
 the ring, so each waits for the other.
 
@@ -194,7 +195,9 @@ goes forward again.
 
 ## Deploy ring
 
-Every ship to `main` deploys by itself. The flow's `live` ring (roster, `flows/scarlet-web.toml`) runs
+Every ship to `main` that touches what the image or the rollout reads deploys by itself; a commit that touches only
+e2e, docs or other tooling is skipped (the `paths` list on the ring in roster's `flows/scarlet-web.toml`). The flow's
+`live` ring runs
 `scripts/deploy/ring.sh` on medaware at the shipped commit. `flow status scarlet-web` shows the ring `running`,
 `passed` or `failed` at each SHA:
 

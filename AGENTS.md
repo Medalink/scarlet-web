@@ -79,7 +79,9 @@ for the user and what stays the same, then `What changes` (concrete identifiers,
 ## Production
 
 scarletweb.io runs on one DigitalOcean droplet behind Cloudflare. A ship deploys: the flow's `live` ring rolls every
-commit that lands on main out to the droplet and checks the public pages. `flow status scarlet-web` shows the ring
+commit that lands on main and touches what the image or the rollout reads out to the droplet and checks the public
+pages; a commit that touches only e2e, docs or other tooling is skipped (the paths list on the ring in roster's
+`flows/scarlet-web.toml`). `flow status scarlet-web` shows the ring
 `passed` or `failed` at your SHA; wait for it before you report the change live. Run `bin/deploy` only for what the ring
 cannot do (server setup, maps, the database host) or for a manual rollback; it takes the same deploy lock the ring uses.
 A change to a file a rollout reads (`deploy/rollout.sh`, `deploy/dc`, the compose files, `deploy/nginx/`) ships like any
