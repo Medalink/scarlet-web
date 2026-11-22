@@ -14,7 +14,9 @@ use App\View\Format;
  *
  * @phpstan-type Tile array{icon: string, label: string, value: string, count: int|null, unit: string|null}
  * @phpstan-type Record array{icon: string, value: string, href: string|null, label: string, detail: string, class: string|null}
- * @phpstan-type Rule array{icon: string, label: string, value: string, at: string, left: string, target: string}
+ *
+ * @phpstan-import-type Rule from RoundNumbers
+ *
  * @phpstan-type Flag array{summit: bool, title: string, x: string, y: string, top: string, pennant: string, tx: string, ty: string, count: string}
  * @phpstan-type Ascent array{viewBox: string, label: string, grid: list<array{y: string, text: string, ty: string}>, left: string, right: string, base: string, ticks: list<array{x: string, y2: string, ty: string, anchor: string, dx: string|null, text: string}>, land: string, ridge: string, beyond: array{path: string, cx: string, cy: string, tx: string, ty: string, text: string}|null, flags: list<Flag>}
  * @phpstan-type ClassRow array{class: string, name: string, value: string, share: string}
@@ -270,41 +272,15 @@ final class StatsGame
         $played = $totals['played_seconds'] ?? null;
         $copper = $totals['copper_earned'] ?? null;
         $runs = array_sum(array_map(fn (array $row): int => (int) $row['runs'], StatsPage::rows($r['dungeons'])));
-        $rows = [
-            ['kills', 'Kills', $totals['kills'] ?? null, ''],
-            ['hours', 'Hours recorded', $played === null ? null : round($played / 3600), ''],
-            ['quests', 'Quests turned in', $totals['quests'] ?? null, ''],
-            ['deaths', 'Deaths', $totals['deaths'] ?? null, ''],
-            ['dungeons', 'Dungeon runs', $runs, ''],
-            ['gold', 'Gold earned', $copper === null ? null : floor($copper / self::COPPER_PER_GOLD), 'g'],
-        ];
-        $rules = [];
-        foreach ($rows as [$icon, $label, $value, $suffix]) {
-            $count = $value === null ? 0 : (int) round($value);
-            if ($count < 1) {
-                continue;
-            }
-            $target = self::nextRound($count);
-            $rules[] = [
-                'icon' => $icon, 'label' => $label, 'value' => Format::number($count).$suffix,
-                'at' => number_format($count / $target * 100, 1, '.', ''),
-                'left' => Format::number($target - $count).$suffix.' to go', 'target' => Format::number($target).$suffix,
-            ];
-        }
 
-        return $rules;
-    }
-
-    /** The smallest of 10, 25, 50, 100, 250, 500, 1,000, 2,500 and so on that is greater than the value. */
-    private static function nextRound(int $value): int
-    {
-        for ($scale = 10; ; $scale *= 10) {
-            foreach ([$scale, intdiv($scale * 5, 2), $scale * 5] as $target) {
-                if ($target > $value) {
-                    return $target;
-                }
-            }
-        }
+        return array_values(array_filter([
+            RoundNumbers::rule('kills', 'Kills', $totals['kills'] ?? null),
+            RoundNumbers::rule('hours', 'Hours recorded', $played === null ? null : round($played / 3600)),
+            RoundNumbers::rule('quests', 'Quests turned in', $totals['quests'] ?? null),
+            RoundNumbers::rule('deaths', 'Deaths', $totals['deaths'] ?? null),
+            RoundNumbers::rule('dungeons', 'Dungeon runs', $runs),
+            RoundNumbers::rule('gold', 'Gold earned', $copper === null ? null : floor($copper / self::COPPER_PER_GOLD), 'g'),
+        ]));
     }
 
     /**

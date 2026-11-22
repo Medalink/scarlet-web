@@ -37,29 +37,13 @@ final class AccountCharactersPage
 
         return [
             'empty' => $characters === [],
-            'figures' => self::figures($characters),
+            'game' => AccountCharactersGame::data($characters),
             'table' => self::table($characters, $classes, $rulesets),
             'days' => self::days($characters, $classes, $days),
             'gold' => self::gold($characters, $gold),
             'together' => self::together($names, $together),
             'levels' => self::levels($characters, $levelTimes),
             'professions' => self::professions($characters, $professions),
-        ];
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $characters
-     * @return list<array{label: string, value: string}>
-     */
-    private static function figures(array $characters): array
-    {
-        return [
-            ['label' => 'Characters', 'value' => Format::number(count($characters))],
-            ['label' => 'Time recorded', 'value' => Format::duration(array_sum(array_column($characters, 'recorded_seconds')))],
-            ['label' => 'Sessions', 'value' => Format::number(array_sum(array_column($characters, 'sessions')))],
-            ['label' => 'Kills recorded', 'value' => Format::number(array_sum(array_column($characters, 'kills')))],
-            ['label' => 'Deaths recorded', 'value' => Format::number(array_sum(array_column($characters, 'deaths')))],
-            ['label' => 'Gold', 'value' => Format::moneyText(array_sum(array_column($characters, 'balance')))],
         ];
     }
 

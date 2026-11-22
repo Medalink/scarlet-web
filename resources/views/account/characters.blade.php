@@ -6,11 +6,21 @@
 @if ($d['empty'])
   <x-note>No characters uploaded yet.</x-note>
 @else
-  <x-figures :items="$d['figures']" />
+  <x-tally :items="$d['game']['tally']" />
   <x-sheet>
     <x-module span="w12" :first="true" :last="true" id="h-characters" heading="Characters">
       <x-table style="margin-top:1.1rem" :columns="$d['table']['columns']" :rows="$d['table']['rows']" />
     </x-module>
+@if ($d['game']['records'])
+    <x-module span="w12" :first="true" :last="true" id="h-records" heading="Your records">
+      <x-rec-grid :items="$d['game']['records']" />
+    </x-module>
+@endif
+@if ($d['game']['rules'])
+    <x-module span="w12" :first="true" :last="true" id="h-rules" heading="The next round numbers">
+      <x-rules :rows="$d['game']['rules']" />
+    </x-module>
+@endif
     <x-module span="w12" :first="true" :last="true" id="h-days" heading="Play time by day">
 @if ($d['days'])
       <x-plot id="days" label="Hours played each day, stacked by character" :spec="$d['days']['spec']" />
