@@ -38,6 +38,30 @@ by a hash of its folder name; `bin/dev start -Port 8480` picks one). `/up` is th
 | `bin/dev infra up`, `infra down` | the shared PostgreSQL and Redis; `down` keeps their data |
 | `bin/run <command>` | any other command in the tools container |
 
+## Checks before a ship
+
+```sh
+node e2e/run.mjs --url http://127.0.0.1:<port>      # E2E_URL works too; --only upload|api|pages|browser
+```
+
+It runs on Windows with Node 24 and no packages, takes 9 to 13 seconds and exits 1 when a check fails. It refuses
+any host that is not 127.0.0.1, localhost or [::1], because it deletes what it uploads.
+
+- upload: registers an install, signs requests, uploads the two invented characters of `e2e/fixture` and waits for
+  Horizon to decode them.
+- api: every endpoint the `/developers` page lists, the uploaded character's facts, search, 404 and 422 answers.
+- pages: every public page shows its own heading, missing pages are 404, `/account` is closed, and an app links to the
+  development account.
+- browser: one headless Edge (chromium on Linux), never a window. Its first check reads the window handle of its
+  process and stops it unless it is 0. It loads the key pages at 1280 and 390 wide and types into the search box.
+- Last, it removes the upload.
+
+The server needs Horizon running, `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than
+the default rate limits for repeated runs: `SCARLET_RATE_REGISTRATION_PER_IP=100` and
+`SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 2 registrations, about 22 public API requests, 38 page requests
+and 9 requests on the `throttle:60,1` routes, which no setting lifts. Rollup numbers are not checked, because they
+arrive seconds after the upload. A server without map art skips the map-art check.
+
 ## What runs where
 
 | Container | Image | Role |

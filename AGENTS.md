@@ -17,8 +17,8 @@ the app. Pint, PHPStan and Vite skip it. Never push to `gh-pages`.
   and respond. Actions live under `app/Actions`, one public `handle()`, domain inputs and results, the transaction
   inside. Eloquent first. Jobs are bounded and safe to run twice. Transactions are short and database-only. UTC.
   No `else`. Domain identity strings are constants or enums on their owner.
-- No tests: no PHPUnit, no Pest, no `tests/` folder, no test scripts. Verify with `composer lint:check`,
-  `composer analyse` and the real app.
+- No unit or feature tests: no PHPUnit, no Pest, no `tests/` folder. The only tests are the end-to-end checks in
+  `e2e/`, which drive the real app over HTTP. Verify with `composer lint:check`, `composer analyse` and those.
 - The look is the Scarlet site's. Pages are built from the comps in `docs/comps/` and reviewed against them.
 - Dependencies: the newest release that has been public for at least 7 days, never a younger one. pnpm enforces it
   (`minimumReleaseAge` in `pnpm-workspace.yaml`); for composer, cargo and Docker images check the release date and
@@ -62,7 +62,7 @@ made unused.
 ## Verification
 
 1. `bin/composer lint` formats; `bin/composer check` runs `lint:check`, `analyse` and `deps:age` and must pass.
-2. Run the real app: `bin/dev start`, then request the page.
+2. Run the real app: `bin/dev start`, then `node e2e/run.mjs --url http://127.0.0.1:<port>`.
 3. Every command runs in a wslc container through `bin/composer`, `bin/artisan`, `bin/pnpm`, `bin/php`, `bin/psql`.
    Nothing runs on Windows PHP. From PowerShell, `bin\psql` runs `bin/psql.cmd`; every script in `bin/` has one.
 
