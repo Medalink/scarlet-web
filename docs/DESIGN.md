@@ -229,7 +229,9 @@ How the tables are built (decisions the first implementation made):
   signals joined as text (`-` for a missing one). Fact tables have no foreign keys: their rows are deleted by character
   and session, and a check per inserted row would cost more than it protects.
 - **`counted`.** Every fact row carries `counted`, false when its session has a plausibility flag. The ruleset rollups
-  read `counted` rows only; the character rollups read all rows, so an owner sees their own flagged data. This replaces
+  read `counted` rows only; the character rollups read all rows, so an owner sees their own flagged data, except
+  `kills_daily_character`, which reads `counted` rows only so a character page's most-killed list agrees with the page's
+  other figures. This replaces
   "a character that fails stays out of the rollups": the unit is the session, and a replaced session that no longer
   fails counts again on its next decode. The character keeps `plausibility` (`ok` or `flagged`, flagged while any of its
   sessions is) for the leaderboards.
@@ -292,7 +294,8 @@ ruleset for the public dashboards. Global numbers are the ruleset rows summed. R
 hyperloglog of characters, so a page can refuse to show a bucket that fewer than `SCARLET_MIN_CHARACTERS` characters
 contributed to (5 on a public deploy, 1 in development). A ruleset view reads `counted` rows only;
 `money_daily_ruleset` additionally reads `level_complete` rows only, so a character's partial level never enters the
-public gold-by-level means, while `money_daily_character` reads every row.
+public gold-by-level means, while `money_daily_character` reads every row. `kills_daily_character` also reads
+`counted` rows only, like its ruleset twin, because the character page leaves flagged sessions out everywhere else.
 
 | Aggregate | Bucket | Keys | Values |
 | --- | --- | --- | --- |
