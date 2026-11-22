@@ -461,13 +461,13 @@ const wilson = (k, n) => {
   return { p, low: Math.max(0, centre - spread), high: Math.min(1, centre + spread) };
 };
 const pct = (share) => (share * 100).toFixed(share > 0 && share < 0.01 ? 2 : 1);
-const dropRow = (name, href, k, n, per, cls = "") => {
+const dropRow = (name, href, k, n, per, cls = "", how = null) => {
   const { p, low, high } = wilson(k, n), tag = cls === "quest" ? `<span class="tag hc">quest item</span>` : "";
   const link = `<a href="${href}"${cls && cls !== "quest" ? ` class="${cls}"` : ""}>${name}</a>${tag}`;
   const rate = n < 10
     ? `<td class="n"><span class="mut">–</span></td><td class="n">–</td>`
     : `<td class="n"><span class="rb${n < 30 ? " hollow" : ""}" role="img" aria-label="${pct(p)}, range ${pct(low)} to ${pct(high)} percent"><i class="rng" style="left:${(low * 100).toFixed(1)}%;width:${((high - low) * 100).toFixed(1)}%"></i><i class="pt" style="left:${(p * 100).toFixed(1)}%"></i></span>${pct(p)}%</td><td class="n">${pct(low)} to ${pct(high)}</td>`;
-  return { low: n < 10 ? -1 : low, k, html: `<tr><td>${link}</td>${rate}<td class="n">${k} of ${n}</td><td class="n">${per}</td></tr>` };
+  return { low: n < 10 ? -1 : low, k, html: `<tr><td>${link}</td>${how === null ? "" : `<td>${how}</td>`}${rate}<td class="n">${k} of ${n}</td><td class="n">${per}</td></tr>` };
 };
 const ranked = (rows) => rows.sort((a, b) => b.low - a.low || b.k - a.k).map((row) => row.html).join("\n          ");
 
@@ -527,13 +527,13 @@ page("item.html", "Marshwalker Greaves: where it drops", "search", `
       <div class="mod-head"><h2 id="h-s">Where it drops</h2>
         <div class="seg" role="group" aria-label="Loot rule"><a href="#" aria-current="true">All rules</a><a href="#">Solo</a><a href="#">Group loot</a><a href="#">Free for all</a></div></div>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th>Source</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Corpses</th><th class="n">Per drop</th></tr></thead>
+        <thead><tr><th>Source</th><th>How</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Corpses</th><th class="n">Per drop</th></tr></thead>
         <tbody>
-          ${ranked([dropRow("Hollow Warden", "creature.html", 13, 62, "1.0"), dropRow("Marsh Stalker", "creature.html", 6, 126, "1.0"), dropRow("Saltmarsh Raider", "creature.html", 2, 24, "1.0")])}
-          <tr class="hair"><td colspan="5"></td></tr>
-          ${ranked([dropRow("Reed Snapper", "creature.html", 1, 7, "1.0"), dropRow("Marshlight Wisp", "creature.html", 1, 3, "1.0")])}
+          ${ranked([dropRow("Hollow Warden", "creature.html", 13, 62, "1.0", "", "Loot"), dropRow("Marsh Stalker", "creature.html", 6, 126, "1.0", "", "Loot"), dropRow("Saltmarsh Raider", "creature.html", 2, 24, "1.0", "", "Loot")])}
+          <tr class="hair"><td colspan="6"></td></tr>
+          ${ranked([dropRow("Reed Snapper", "creature.html", 1, 7, "1.0", "", "Loot"), dropRow("Silt-Crusted Chest", "item.html", 1, 3, "1.0", "", "Container")])}
         </tbody></table></div>
-      <p class="note">A drop rate is corpses of the source that held the item over corpses of the source looted for the first time, one row for each source. Sources looted 10 times or more rank by the low end of the 95% range; below the line, sources looted fewer times show their counts only. Drop rates cover every ruleset.</p>
+      <p class="note">A drop rate is corpses of the source that held the item over corpses of the source read the same way for the first time, one row for each source and way it was read. Sources read 10 times or more rank by the low end of the 95% range; below the line, sources read fewer times show their counts only. Drop rates cover every ruleset.</p>
     </section>
     <section class="mod last" aria-labelledby="h-r"><h2 id="h-r">Rolls in groups</h2>
       <ol class="rank"><li><span class="who">Need</span><span class="val">61% of wins</span><span class="track"><i style="width:61%"></i></span></li><li><span class="who">Greed</span><span class="val">33%</span><span class="track"><i style="width:33%"></i></span></li><li><span class="who">Everyone passed</span><span class="val">6%</span><span class="track"><i style="width:6%"></i></span></li></ol>

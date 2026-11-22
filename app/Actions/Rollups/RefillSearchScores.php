@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\LootRead;
 use App\Support\Rollup;
 use App\Support\RollupRead;
 use App\Support\SearchKind;
@@ -46,7 +47,7 @@ class RefillSearchScores
 
     private function items(): Builder
     {
-        return DB::table(Rollup::DropsDaily->value)
+        return LootRead::known(DB::table(Rollup::LootItemsDaily->value))
             ->selectRaw('?, item_id, count(distinct (source_kind, source_id))', [SearchKind::Items->value])
             ->groupBy('item_id')
             ->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')]);

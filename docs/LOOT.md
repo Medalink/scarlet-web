@@ -109,10 +109,13 @@ Answers: where this item comes from, which source is best, and who ends up with 
 
 - Strip: Dropped, Sources, Best drop rate (the top-ranked source's rate, shown only when that source has 30
   windows, else a dash), Median looter level, First recorded. Won by need joins in phase 5.
-- **Where it drops** (w8): one row per source, not per source and rule: Source, Zone, How (Loot, Skinning,
-  Container, Fishing), Drop rate, Range, Corpses (`k of n`), Per drop. Sources with 10 or more windows rank by the
-  low end of the range, so a 2 of 2 cannot lead. Below a hairline, sources under 10 windows show `k of n` and no
-  rate. `?rule=` filters the table.
+- **Where it drops** (w8): one row per source and how it was read, not per source and rule: Source, Zone, How
+  (Loot, Skinning, Herbalism, Mining, Fishing, Container, from `read`), Drop rate, Range, Corpses (`k of n`), Per
+  drop. A creature that drops an item both looted and skinned has two rows, each over the windows read that way.
+  Sources with 10 or more windows rank by the low end of the range, so a 2 of 2 cannot lead. Below a hairline,
+  sources under 10 windows show `k of n` and no rate. `?rule=` filters the table. Dropped and Sources count windows
+  with a known `read`, and a source once however it was read; a container links to its item page. Zone joins in
+  phase 3.
 - **By zone** (w4): Zone, Dropped, Per 100 corpses looted in the zone.
 - **Where it was looted** (phase 2): map cells of the windows that held it.
 - **Rolls in groups** (phase 5, already in the comp) and **Who received it** by class (phase 6).

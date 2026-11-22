@@ -4,7 +4,9 @@ namespace App\View\Pages;
 
 use App\Support\CreatureClass;
 use App\Support\KillerKind;
+use App\Support\LootRead;
 use App\Support\LootRule;
+use App\Support\LootSourceKind;
 use App\Support\PageScope;
 use App\Support\RateEstimate;
 use App\Support\RateFlag;
@@ -89,7 +91,7 @@ final class RecordPages
     {
         /** @var array<string, mixed>|null $item */
         $item = $r['item'];
-        /** @var array{rule: string|null, rules: list<string>, rows: list<array{source_kind: string, source_id: int, source: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $bySource */
+        /** @var array{rule: string|null, rules: list<string>, rows: list<array{source_kind: string, source_id: int, source: string|null, read: string, quantity: int, per_drop: float, estimate: RateEstimate}>} $bySource */
         $bySource = $r['by_source'];
         $stated = array_values(array_filter($bySource['rows'], fn (array $row): bool => $row['estimate']->stated()));
         $counted = array_values(array_filter($bySource['rows'], fn (array $row): bool => ! $row['estimate']->stated()));
@@ -137,19 +139,16 @@ final class RecordPages
     }
 
     /**
-     * @param  array{source_kind: string, source_id: int, source: string|null, quantity: int, per_drop: float, estimate: RateEstimate}  $row
+     * @param  array{source_kind: string, source_id: int, source: string|null, read: string, quantity: int, per_drop: float, estimate: RateEstimate}  $row
      * @return array{cells: list<array<string, mixed>|string>}
      */
     private static function sourceRow(array $row): array
     {
         $estimate = $row['estimate'];
-        $skins = in_array(RateFlag::SkinsCounted, $estimate->flags, true) ? RateFlag::SkinsCounted->label() : null;
-        $source = $row['source_kind'] === 'c' && $row['source'] !== null
-            ? ['text' => $row['source'], 'href' => '/creatures/'.$row['source_id']]
-            : self::otherSource($row);
 
         return ['cells' => [
-            [...$source, 'tag' => $skins],
+            self::source($row),
+            LootRead::words($row['read']),
             ['rate' => $estimate],
             $estimate->stated() ? $estimate->range() : '–',
             $estimate->counts(),
@@ -330,15 +329,21 @@ final class RecordPages
     }
 
     /**
+     * A creature and a container link to their pages; an object has none yet and shows as its name or its id.
+     *
      * @param  array<string, mixed>  $row
      * @return array<string, string>
      */
-    private static function otherSource(array $row): array
+    private static function source(array $row): array
     {
-        return ['text' => match ($row['source_kind']) {
-            'g' => 'Object '.$row['source_id'],
-            'i' => 'Item '.$row['source_id'],
-            default => 'Source '.$row['source_id'],
-        }];
+        $name = is_string($row['source']) ? $row['source'] : null;
+        $id = (int) $row['source_id'];
+
+        return match (LootSourceKind::tryFrom((string) $row['source_kind'])) {
+            LootSourceKind::Creature => ['text' => $name ?? 'Creature '.$id, 'href' => '/creatures/'.$id],
+            LootSourceKind::Object => ['text' => $name ?? 'Object '.$id],
+            LootSourceKind::Bag => ['text' => $name ?? 'Item '.$id, 'href' => '/items/'.$id],
+            default => ['text' => 'Source '.$id],
+        };
     }
 }
