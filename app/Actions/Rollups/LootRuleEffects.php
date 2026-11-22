@@ -157,10 +157,12 @@ class LootRuleEffects
         }
         $counted = array_filter($unkeyed, fn (int $character): bool => $arm->countsUnkeyedOf($character), ARRAY_FILTER_USE_KEY);
 
+        $whole = $arm->keyedCounted ? $keyed : [];
+
         return [
             'n' => $arm->windows,
-            'sum' => array_sum(array_column($counted, 'items')) + array_sum(array_column($keyed, 'items')),
-            'squares' => array_sum(array_column($counted, 'squares')) + array_sum(array_column($keyed, 'squares')),
+            'sum' => array_sum(array_column($counted, 'items')) + array_sum(array_column($whole, 'items')),
+            'squares' => array_sum(array_column($counted, 'squares')) + array_sum(array_column($whole, 'squares')),
         ];
     }
 }

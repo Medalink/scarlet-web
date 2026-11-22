@@ -188,13 +188,18 @@ Rules the design follows:
 5. The server cannot rebuild corpse identity from time and contents. A duo kills the same creature type every few
    seconds, so "same source within 5 minutes" merges different corpses, and it drops small windows first, which
    pushes every rate up. The design does not do it.
-6. So: sum first reads across characters, except for the windows with no corpse key (rule 7) of a free-for-all arm
-   that two or more characters contributed to. Those use **one reader**: rate and range come from the character with
-   the most of them in the arm, as `BossDrops` takes the uploader who saw most, and the arm carries the tag `one
-   reader`. It loses up to half the sample and cannot double count. 37% of free-for-all windows have another
-   uploader's window on the same source inside 300 s, past the 5% that triggers it. The windows with a key count
-   whole in the same arm, each corpse once, and an arm whose windows all have a key has neither one reader nor the
-   tag.
+6. So: sum first reads across characters, except for a free-for-all arm that holds windows with no corpse key (rule
+   7) and that a second character contributed to: it has windows with no key from two characters, or windows with a
+   key from another character than the one with the most windows with no key. Those use **one reader**: rate and
+   range come from the character with the most windows with no key in the arm, as `BossDrops` takes the uploader who
+   saw most, and the arm carries the tag `one reader`. When the windows with a key are all that character's, they
+   count whole beside its windows with no key (one character never reads a corpse twice). When another character made
+   some of them, one character on an addon without keys and one with keys may have opened the same corpses and
+   nothing tells which, so the arm counts the larger of that character's windows with no key and all the windows
+   with a key, and `characters` are those of the set it counted. It loses up to half the sample and cannot double
+   count. 37% of free-for-all windows have another uploader's window on the same source inside 300 s, past the 5%
+   that triggers it. An arm whose windows all have a key, or whose windows with no key are one character's own, has
+   neither one reader nor the tag.
 7. **The corpse key (phase 7, decoder version 12).** `K`, `LO` and `LW` carry a key that is the same on every client
    for one corpse, stored as `corpse_key` on `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops`. A
    window with a key counts once per corpse, however many characters read it or were sent it. A window without one (a
@@ -336,9 +341,9 @@ API), because the likeliest cause is counting. Ivory Boar Tusk is the proof: +24
 caused by skin windows.
 
 **Which arms are compared.** A chart compares the two arms with the most windows that are drawn (10 or more).
-`personal` is drawn and never compared. The windows with no corpse key of a free-for-all arm of two or more characters
-are counted by its one reader before any ladder step or comparison, so its `n` is that character's windows with no
-key plus the corpses with a key. The items compared are the rows of
+`personal` is drawn and never compared. A free-for-all arm with windows with no corpse key that a second character
+contributed to is counted by its one reader (rule 6) before any ladder step or comparison, so its `n` is the set the
+reader rule counted. The rows of `/public/creatures/{id}` `drops` follow the same rule. The items compared are the rows of
 the chart; a mark needs 0.05 divided by that number to keep the range off zero, with the Newcombe range rebuilt
 from Wilson ranges at the matching quantile. `different characters` is set on a mark whose two arms share no
 character.
@@ -357,7 +362,7 @@ tag of the estimate. The enum holds the tags of the phases built so far.
 | --- | --- | --- | --- |
 | `1 character` | `one_character` | every window of the row or arm is from one character | phase 1 |
 | `quest item` | `quest_item` | the item binds as a quest item | phase 1 |
-| `one reader` | `one_reader` | a free-for-all arm that holds windows with no corpse key from two or more characters | phase 4, narrowed in phase 7 |
+| `one reader` | `one_reader` | a free-for-all arm that holds windows with no corpse key and that a second character contributed to (windows with no key from two characters, or windows with a key from another one) | phase 4, narrowed and widened in phase 7 |
 | `different characters` | `different_characters` | the two arms of a comparison share no character | phase 4 |
 | `rule unknown` | `rule_unknown` | windows from before the first `LM` line of the session | phase 4 |
 | `other creatures` | `other_creatures` | a group-size arm exists only on sources no other size has, so no comparison is drawn | phase 4 |
@@ -554,7 +559,7 @@ Each phase is a few small ships and leaves the site working. Phases 1 to 4 need 
 | 4. Rule and size inside a source | the two comparison charts, the mark and its developer list, `/loot/groups` with What a corpse held, What the looter kept and Kills an hour by size | phase 2 |
 | 5. Who received and rolls | decode `LT`, `LD`, `RW`, `RL` into `group_loot` and `loot_rolls`; Share of group loot, Rolls, Rolls in groups on the item page | decoder bump only; the lines are already uploaded |
 | 6. Composition | `group_spans`, `group_at`, `class_file` on rolls and receipts; the composition module; Who received it by class | decoder bump; `social` parts |
-| 7. Exact corpses | **write side done** (decoder version 12): corpse key on `K`, `LO`, `LW`; `LW` uploaded; `peer_opens`, `peer_drops`; `group_loot` source; object names. **read side done:** every page counts a corpse with a key once (the counted views), `corpses looted of kills` and `Of kills` cover grouped play, and `one reader` and its tag apply only to the windows with no key of a free-for-all arm; no arm carries the tag once none of its windows lacks a key | addon release and the sharing-group change, both shipped |
+| 7. Exact corpses | **write side done** (decoder version 12): corpse key on `K`, `LO`, `LW`; `LW` uploaded; `peer_opens`, `peer_drops`; `group_loot` source; object names. **read side done:** every page counts a corpse with a key once (the counted views), `corpses looted of kills` and `Of kills` cover grouped play, and the one reader rule and its tag apply to a free-for-all arm with windows with no key that a second character contributed to; no arm carries the tag once none of its windows lacks a key | addon release and the sharing-group change, both shipped |
 
 Phase 1 is one support class, two Actions, two Blade modules and two comps. It changes what a visitor reads: a row
 that said `0.8%` from one drop says `1 of 125, 0.1 to 4.4%`, a source with three windows stops showing rates, and

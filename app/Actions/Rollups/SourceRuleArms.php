@@ -25,7 +25,7 @@ class SourceRuleArms
     /**
      * One source's drop table split into arms, by loot rule or by group size inside one rule (docs/LOOT.md, Creature
      * drops): a row for each item with 10 drops or more, and the rate in each arm that has 10 windows or more, over
-     * windows read for loot, each corpse with a key once (docs/LOOT.md, Units of counting, rule 7). The windows with no key of a free-for-all arm of two or more characters count their one reader (`LootArm`). The two
+     * windows read for loot, each corpse with a key once (docs/LOOT.md, Units of counting, rule 7). A free-for-all arm with windows with no key that a second character contributed to counts one set (`LootArm`). The two
      * drawn arms with the most windows, never personal loot, are compared, and each row carries their difference over
      * the items of the chart. `rules` and `sizes` list what was recorded, for the empty states; `rule` is the rule a
      * size split reads (`$rule` when the source has windows under it, else the rule with the most windows).
@@ -247,31 +247,37 @@ class SourceRuleArms
     }
 
     /**
-     * Windows of the arm that listed the item: the corpses with a key, and of the windows with no key its reader's or
-     * every character's.
+     * Windows of the arm that listed the item (`LootArm::drops`): the corpses with a key, and of the windows with no key
+     * its reader's or every character's, whichever the arm counts.
      *
      * @param  list<array<string, mixed>>  $items
      * @param  array<int, array<int, array<int, int>>>  $readers
      */
     private function listing(int $itemId, LootArm $arm, array $items, array $readers, ArmSplit $split, ?string $chosen): int
     {
-        $count = 0;
+        $reader = 0;
         if ($arm->reader !== null) {
             foreach ($readers[$itemId] ?? [] as $size => $byCharacter) {
                 if ($split === ArmSplit::Rule || (string) $size === $arm->key) {
-                    $count += $byCharacter[$arm->reader] ?? 0;
+                    $reader += $byCharacter[$arm->reader] ?? 0;
                 }
             }
         }
+        $keyed = $unkeyed = 0;
         foreach ($items as $row) {
-            if ((int) $row['item_id'] !== $itemId || ($arm->reader !== null && (int) $row['keyed'] !== 1)) {
+            if ((int) $row['item_id'] !== $itemId) {
                 continue;
             }
             $size = $row['group_size'] === null ? null : max(1, (int) $row['group_size']);
             $matches = $split === ArmSplit::Rule ? $row['loot_rule'] === $arm->key : $row['loot_rule'] === $chosen && (string) $size === $arm->key;
-            $count += $matches ? (int) $row['drops'] : 0;
+            if (! $matches) {
+                continue;
+            }
+            $isKeyed = (int) $row['keyed'] === 1;
+            $keyed += $isKeyed ? (int) $row['drops'] : 0;
+            $unkeyed += $isKeyed ? 0 : (int) $row['drops'];
         }
 
-        return $count;
+        return $arm->drops($keyed, $unkeyed, $reader);
     }
 }
