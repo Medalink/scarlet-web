@@ -44,6 +44,9 @@ enum FactTable: string
     case TitleBaselines = 'title_baselines';
     case ExploredBaselines = 'explored_baselines';
     case InstanceLocks = 'instance_locks';
+    case GroupSpans = 'group_spans';
+    case GroupLoot = 'group_loot';
+    case LootRolls = 'loot_rolls';
 
     /** `money_changes.src` of a balance carried over from the `S` line (core), against `M` money lines (economy). */
     public const string MONEY_LINE = 'M';
@@ -65,11 +68,11 @@ enum FactTable: string
             self::TitleBaselines => SharingGroup::COLLECTIONS,
             self::ExploredBaselines => SharingGroup::WORLD,
             self::MoneyChanges, self::AuctionPrices => SharingGroup::ECONOMY,
-            self::LootOpens, self::LootDrops, self::BossLoot => SharingGroup::LOOT,
+            self::LootOpens, self::LootDrops, self::BossLoot, self::GroupLoot, self::LootRolls => SharingGroup::LOOT,
             self::SkillUps, self::Crafts, self::Gathers, self::GatherItems => SharingGroup::PROFESSIONS,
             self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,
-            self::Emotes, self::HardcoreDeaths, self::WhoResults, self::InspectedGear, self::BattlegroundScores => SharingGroup::SOCIAL,
+            self::Emotes, self::HardcoreDeaths, self::WhoResults, self::InspectedGear, self::BattlegroundScores, self::GroupSpans => SharingGroup::SOCIAL,
             self::BattlegroundMatches => SharingGroup::PVP,
             self::TalentChanges, self::TalentSnapshots, self::TalentRespecs, self::TalentGroupSpans => SharingGroup::BUILD,
         };
@@ -97,12 +100,18 @@ enum FactTable: string
                 SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
             ],
             self::CampBenefits => [SharingGroup::XP => ['xp']],
-            self::Kills => [SharingGroup::LOOT => ['loot_rule', 'group_size']],
+            self::Kills => [
+                SharingGroup::LOOT => ['loot_rule', 'group_size'],
+                SharingGroup::SOCIAL => ['group_at'],
+            ],
             self::LootOpens => [
                 SharingGroup::COMBAT => ['read'],
                 SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
+                SharingGroup::SOCIAL => ['group_at'],
             ],
             self::LootDrops => [SharingGroup::COMBAT => ['read']],
+            self::GroupSpans => [SharingGroup::PROFESSIONS => ['skinners']],
+            self::GroupLoot, self::LootRolls => [SharingGroup::SOCIAL => ['class_file']],
             self::Gathers => [
                 SharingGroup::COMBAT => ['in_combat'],
                 SharingGroup::LOOT => ['looted', 'source_id', 'again'],
@@ -146,6 +155,7 @@ enum FactTable: string
     {
         return match ($this) {
             self::PlaySpans => ['zone' => 'zone_name'],
+            self::GroupSpans => ['end' => 'ended_at'],
             self::Kills => ['by' => 'credit'],
             self::DungeonRuns => ['index' => 'run_index'],
             self::SkillUps => ['rank' => 'skill_rank', 'max' => 'max_rank'],
@@ -176,6 +186,8 @@ enum FactTable: string
         return match ($this) {
             self::DungeonRuns => ['left_at'],
             self::BattlegroundScores => ['match_at'],
+            self::GroupSpans => ['ended_at'],
+            self::Kills, self::LootOpens => ['group_at'],
             default => [],
         };
     }

@@ -401,14 +401,17 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `play_spans` | `S`, `ES`, `L`, `Z`, `AFK` | core | a stretch at one level in one zone: seconds, AFK seconds, instance type |
 | `level_ups` | `L` | core | level reached, played seconds spent in the level before it |
 | `xp_gains` | `X` | xp | amount, source (`k` kill, `d` dungeon kill, `q` quest, `e` exploring, `o` other), source id |
-| `kills` | `K`, `LM`, `GP` | combat | npc, by, and the loot rule and group size in force (decoder version 10; null without a `loot` part) |
+| `kills` | `K`, `LM`, `GP` | combat | npc, by, and the loot rule and group size in force (decoder version 10; null without a `loot` part), and `group_at`, the span of `group_spans` in force (decoder version 11; null while solo and without a `social` part) |
 | `deaths` | `D`, `DL`, `DR` | combat | map position, killer kind, killer creature and its id, killer level, spell, the killing blow's event and environmental type |
 | `death_hits` | `D`, `DR` | combat | one hit of a death's recap, joined to its death on character, session and time: position, spell, amount, source, event, environmental type, school, health, seconds before, absorbed, resisted, blocked, flags. Came with decoder version 8 |
 | `dungeon_runs` | `Z`, `E`, `B`, `D` | combat | instance, seconds, bosses, deaths, group size (the run rule of OVERVIEW.md) |
 | `quest_events` | `Q` | quests | quest, accepted, turned in or abandoned, xp, copper |
 | `money_changes` | `M`, `S` | economy | earned, spent, balance (transfers between own characters count as neither) |
-| `loot_opens` | `LO`, `LM`, `C`, `CH`, `P` | loot | source kind and id, first read or not, loot rule, threshold, group size, what the window was read for (loot, skin, herb, ore, fish, bag or other), the item entries, the map position (decoder version 10) |
+| `loot_opens` | `LO`, `LM`, `C`, `CH`, `P` | loot | source kind and id, first read or not, loot rule, threshold, group size, what the window was read for (loot, skin, herb, ore, fish, bag or other), the item entries, the map position (decoder version 10), the span of `group_spans` in force as `group_at` (decoder version 11) |
 | `loot_drops` | `LO`, `O`, `C`, `CH` | loot | source, item, quantity, loot rule, group size, what the window was read for. A window has one row per item, its stacks added (decoder version 10) |
+| `group_loot` | `LT` | loot | what another member of the group received: kind (looted or pushed), who (a pseudonym), their class, item, quantity, loot rule, threshold, group size (decoder version 11) |
+| `loot_rolls` | `LD`, `RW`, `RL` | loot | one row per player per roll: the roll's number in the session, item, who (own name or a pseudonym), class, roll type, number, outcome, the uploader's time to decide, loot rule (decoder version 11) |
+| `group_spans` | `GP`, `GM`, `GL`, `SL` | social | a stretch in which the group did not change, with no names: size, raid, members known, their classes, roles, levels, guild mates and friends, and whether the uploader has Skinning. `kills` and `loot_opens` carry the `at` of the span in force as `group_at` (decoder version 11) |
 | `boss_loot` | `EL` | loot | an item someone in the uploader's group received from a boss encounter: encounter id, item, quantity, receiver (a pseudonym outside the social group) and class. The notice reaches every member of the group, so each uploader has a row and a page counts a drop once: by encounter, item and a 10 minute bucket, taking the largest count any one uploader has |
 | `skill_ups` | `SK`, `SL` | professions | skill, rank |
 | `crafts` | `CR`, `CB`, `RD`, `TS`, `SL`, `CS`, `G` | professions | item, quantity, recipe, profession, the recipe's difficulty, the skill before and whether it went up, the gap since the last craft of the profession. A lure or weapon enchant (a `CR` with no `CB` for the main hand item) is not a craft (decoder version 9) |

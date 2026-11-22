@@ -9,6 +9,7 @@ use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::build::parse_header;
 use crate::camp::{Camp, Known};
 use crate::death::Hit;
+use crate::group::{GroupBook, Rule};
 use crate::professions::{Here, Present, Professions, item_of};
 use crate::reference::Reference;
 use crate::rows::Rows;
@@ -22,7 +23,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 10;
+pub const DECODER_VERSION: u32 = 11;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -227,6 +228,7 @@ struct Dec<'o> {
     camp: Camp,
     prof: Professions,
     social: Social,
+    group: GroupBook,
     baselines: Baselines,
     reference: Reference,
 }
@@ -269,6 +271,32 @@ impl Dec<'_> {
             .str("loot_rule", &m)
             .opt("threshold", t)
             .opt("group_size", g);
+    }
+
+    fn ctx(&self, at: i64) -> Ctx {
+        Ctx {
+            session: self.session,
+            at,
+            level: self.lvl(),
+            zone_id: self.zone_id,
+        }
+    }
+
+    fn on_group_line(&mut self, code: &str, t: i64, f: &[&str]) {
+        let ctx = self.ctx(t);
+        match code {
+            "GP" => self.group.on_gp(&ctx, &mut self.w, f),
+            "GM" => self.group.on_gm(&ctx, &mut self.w, f),
+            "GL" => self.group.on_gl(&ctx, &mut self.w, f),
+            _ => {
+                let rule = Rule {
+                    method: self.method.clone(),
+                    threshold: self.threshold,
+                    size: self.group_size,
+                };
+                self.group.on_loot(code, &ctx, &rule, f);
+            }
+        }
     }
 
     fn span_key(&self) -> SpanKey {
@@ -375,7 +403,10 @@ impl Dec<'_> {
         // set the ruleset and the group context are read from them; nothing is counted.
         if !self.started
             && code != "S"
-            && !matches!(code, "GR" | "PB" | "XD" | "GA" | "RU" | "CD" | "GP" | "LM")
+            && !matches!(
+                code,
+                "GR" | "PB" | "XD" | "GA" | "RU" | "CD" | "GP" | "GM" | "GL" | "LM"
+            )
         {
             return;
         }
@@ -413,7 +444,8 @@ impl Dec<'_> {
                     .bool("player", field(&f, 0) == "p")
                     .opt("by", num(&f, 1))
                     .text("loot_rule", if ruled { &self.method } else { "" })
-                    .opt("group_size", self.group_size.filter(|_| ruled));
+                    .opt("group_size", self.group_size.filter(|_| ruled))
+                    .opt("group_at", self.group.at());
                 self.w.end();
             }
             "D" => {
@@ -489,7 +521,9 @@ impl Dec<'_> {
                 } else {
                     num(&f, 1).or(Some(1))
                 };
+                self.on_group_line(code, t, &f);
             }
+            "GM" | "GL" | "LT" | "LD" | "RW" | "RL" => self.on_group_line(code, t, &f),
             "LM" => {
                 self.method = field(&f, 0).to_string();
                 self.threshold = num(&f, 1);
@@ -546,6 +580,9 @@ impl Dec<'_> {
                     .opt("max", num(&f, 2))
                     .bool("baseline", field(&f, 4) == "s");
                 self.w.end();
+                let (ctx, skinning) = (self.ctx(t), self.prof.has_skinning());
+                self.group
+                    .on_skill(&ctx, &mut self.w, skinning, field(&f, 4) == "s");
             }
             "A" => {
                 let (level, zone_id) = (self.lvl(), self.zone_id);
@@ -757,6 +794,7 @@ impl Dec<'_> {
         }
         self.started = true;
         self.talents.set_build(field(f, 0));
+        self.group.on_started(t);
         self.start_ms = t;
         self.end_ms = self.end_ms.max(t);
         for (slot, i) in self.s_fields.iter_mut().zip([0, 1, 2, 4, 5]) {
@@ -981,7 +1019,8 @@ impl Dec<'_> {
             )
             .opt("map", map)
             .opt("x", x)
-            .opt("y", y);
+            .opt("y", y)
+            .opt("group_at", self.group.at());
         self.w.end();
         for (item, qty) in items {
             self.fact("loot_drops", t);
@@ -1033,6 +1072,7 @@ impl Dec<'_> {
         }
         let s = self.session;
         self.talents.finish(s, &mut self.w);
+        self.group.finish(s, self.end_ms, &self.pn, &mut self.w);
         let known = Known {
             afk: self.has.xp,
             crafts: self.has.professions,
@@ -1334,7 +1374,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
             seq += 1;
         }
     }
-    let Some((_, session)) = ident else {
+    let Some((character, session)) = ident else {
         return Err("no parts".into());
     };
     lines.sort_unstable_by_key(|l| (l.t, l.rank, l.seq));
@@ -1409,6 +1449,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         camp: Camp::default(),
         prof: Professions::default(),
         social: Social::default(),
+        group: GroupBook::new(character, has_group("professions")),
         baselines: Baselines::default(),
         reference: Reference::default(),
     };

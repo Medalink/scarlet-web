@@ -229,6 +229,13 @@ impl Professions {
         self.pos
     }
 
+    /// Whether the last scan of the skill lines gave Skinning a rank.
+    pub fn has_skinning(&self) -> bool {
+        self.ranks
+            .get(&Kind::Skin.skill_line())
+            .is_some_and(|rank| *rank > 0)
+    }
+
     /// Reads one line; true when it was a craft that wrote a `crafts` row (not a lure).
     pub fn on_line(&mut self, at: i64, code: &str, f: &[&str], here: Here) -> bool {
         match code {

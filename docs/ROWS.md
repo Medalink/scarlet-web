@@ -89,6 +89,7 @@ written. `at` is the span start.
 | `player` | bool | `K` npcID is `p` |
 | `by` | int or null | `1` you or your pet, `0` a party member, `2` unattributed |
 | `loot_rule`, `group_size` | string or null, int or null | the rule in force at the kill, as on `loot_opens`: the `LM` method (`unknown` until a line says) and the group size from `GP`/`LM`. No threshold. Both null without a `loot` part, and a removed `loot` nulls them (`FactTable::groupColumns`) (decoder version 10) |
+| `group_at` | int or null | the `at` of the `group_spans` row in force (a timestamp column). Null while solo, and without a `social` part; a removed `social` nulls it (decoder version 11) |
 
 ### `deaths` (combat: `D`, `DL`, `DR`)
 
@@ -180,7 +181,7 @@ The run count of OVERVIEW.md (`r`) is the number of rows left after this.
 OVERVIEW.md counts `earned` and `spent` of the `M` rows. The balance before the first anchor is not walked back;
 the job may do so from the following sessions.
 
-### `loot_opens` (loot: `LO`, `LM`; combat: `C`, `CH`; movement: `P`)
+### `loot_opens` (loot: `LO`, `LM`; combat: `C`, `CH`; movement: `P`; social: `GP`, `GM`, `GL`)
 
 | Key | Type | |
 | --- | --- | --- |
@@ -193,6 +194,7 @@ the job may do so from the following sessions.
 | `read` | string or null | what the window was read for. `herb`, `ore`, `fish` or `skin` when a cast of that kind ended within 2 s before the window and the window is of the kind's source (`g`, or `c` for skinning): the rule `gathers.looted` uses, taken from the same match, so a `skin` window is one a skinning `gathers` row counts as looted. Otherwise `loot` for a creature or object, `bag` for kind `i`, `other` for kind `o`. Casts are `combat` lines: null without a `combat` part, and a removed `combat` nulls it (decoder version 10) |
 | `item_rows` | int or null | the item entries of the window, a stack listed twice counted once, so the `window` rows of `loot_drops` that the window writes number the same; 0 is coin or currency only. Null when the line lists nothing (`has_items` false) (decoder version 10) |
 | `map`, `x`, `y` | int or null | the last `P` at or before the window, as `gathers` reads it. Null without a `movement` part or before a first `P`. The ingest adds `u` and `v` from `map` and `x`, `y` the way it does for `path_points` (decoder version 10) |
+| `group_at` | int or null | as on `kills`: the `at` of the `group_spans` row in force, null while solo and without a `social` part (decoder version 11) |
 
 ### `loot_drops` (loot: `LO`, `O`; combat: `C`, `CH`)
 
@@ -209,6 +211,61 @@ Drop rates count `window` rows only (coin and currency entries of a window are n
 item: stacks of one item listed in one window are added into one row, in the order the items first appear (decoder
 version 10; a window that listed an item twice wrote two rows before). `receipt` rows give the attribution for logs that
 have no item list.
+
+### `group_spans` (social: `GP`, `GM`, `GL m`, `GL s`; professions: `SL`)
+
+One row per stretch of a session in which the uploader was in a group and nothing below changed. A change closes the
+row and opens the next; lines of one millisecond make one change. `at` is the start of the stretch, the session's
+start when the group was there at login, and `end` its end (the column is `ended_at`). No name is stored. `kills.group_at`
+and `loot_opens.group_at` hold the `at` of the row in force, so a kill joins its group on character, session and that
+time. A session that ends in a group closes its last row at the session's end.
+
+| Key | Type | |
+| --- | --- | --- |
+| `end` | int | ms |
+| `size` | int or null | head count: the uploader and the members `GM` and `GL m` name; the `GP` size until one is named (`GP` is written when the character joins or leaves a group, not when its size changes) |
+| `raid` | bool or null | the last `GL s`; null before one |
+| `members_known` | int | members with a `GL m` line, the uploader included |
+| `classes` | string or null | the class files of those members, one each, sorted, comma-joined: `PRIEST,ROGUE,WARRIOR` |
+| `tanks`, `healers`, `damage`, `no_role` | int | those members by `GL m` role (`t`, `h`, `d`; anything else is no role) |
+| `level_min`, `level_max` | int or null | their levels |
+| `guild_mates`, `friends` | int | their `GL m` flags |
+| `skinners` | int or null | uploader only: 1 when the uploader has a rank in Skinning (`SL`), else 0; other members' professions are not recorded. Null without a `professions` part. The skill scan at the session's start (`SL` baseline `s`) does not split a row |
+
+### `group_loot` (loot: `LT`; social: `GL m`, `pn`)
+
+What another member of the uploader's group received (the uploader's own receipts are `loot_drops`). One row per `LT`
+line.
+
+| Key | Type | |
+| --- | --- | --- |
+| `kind` | string | `l` looted (by the rule, a roll win or a master looter's pick), `p` the client pushed the item to them |
+| `who` | string | the receiver as uploaded: a pseudonym |
+| `class_file` | string or null | the class file of the member `who` names, found through the session's `pn` lines and the `GL m` line of that name. Null without a `social` part; a removed `social` nulls it |
+| `item_id`, `quantity` | int | |
+| `loot_rule`, `threshold`, `group_size` | | as `loot_opens` |
+| `source_kind`, `source_id` | null | null until `LW` is decoded |
+
+### `loot_rolls` (loot: `LD`, `RW`, `RL`; social: `GL m`, `pn`)
+
+One row per player per roll. A roll is one item the group rolled for; `roll_no` counts the rolls of the session from 1
+and every player's row of one roll shares it. A player's lines for one item within 60 s are one row, and a roll that
+came from the chat and from the roll history (`LD` src `c` and `h`) is one row. A line more than 2 s after a roll's
+outcome starts a new roll, so the history's repeat of a win belongs to the roll the chat gave and a second copy of the
+item is a roll of its own.
+
+| Key | Type | |
+| --- | --- | --- |
+| `roll_no` | int | |
+| `item_id` | int | |
+| `who` | string | the character's own name for the uploader's row (`mine`), else a pseudonym |
+| `mine` | bool | the uploader's own row (`RL`, `RW`) |
+| `class_file` | string or null | as on `group_loot` |
+| `roll_type` | string or null | `pass`, `need`, `greed`, `disenchant` or `transmog`; null when no line said |
+| `roll` | int or null | the number rolled |
+| `outcome` | string or null | `all_passed` when everyone passed (`LD a`); else `won`, `lost` (rolled, and someone else won) or `passed`. Null when the session has no winner for the roll |
+| `decide_ms` | int or null | the uploader's own rows: the `RW o` extra, the time the client gave to decide |
+| `loot_rule`, `threshold`, `group_size` | | as `loot_opens`, when the row's first line was read |
 
 ### `boss_loot` (loot: `EL`)
 
@@ -659,6 +716,10 @@ Every `gather_items` row is read from loot lines, so a removed `loot` deletes th
 `loot_opens.read` and `loot_drops.read` are null without a `combat` part, since the casts that name a gathering window
 are `combat` lines; `loot_opens.map`, `x`, `y`, `u`, `v` are null without `movement`; `kills.loot_rule` and
 `kills.group_size` are null without `loot`. A removed group nulls the same columns.
+`group_spans` is written only with a `social` part, and `kills.group_at` and `loot_opens.group_at` are null without
+one; a removed `social` deletes the spans and nulls `group_at`, and nulls `class_file` of `group_loot` and
+`loot_rolls`, which are written with a `loot` part and deleted with it. `group_spans.skinners` is null without a
+`professions` part and a removed `professions` nulls it.
 
 ## Counting rules
 

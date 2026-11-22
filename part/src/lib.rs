@@ -9,6 +9,7 @@ pub mod compare;
 pub mod death;
 pub mod decode;
 pub mod fishing;
+pub mod group;
 pub mod groups;
 pub mod imports;
 pub mod load;
