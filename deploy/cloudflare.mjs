@@ -7,7 +7,7 @@
 //   node deploy/cloudflare.mjs settings                     always use https, minimum TLS 1.2, TLS 1.3, HSTS untouched
 //   node deploy/cloudflare.mjs ssl off|flexible|full|strict the zone's SSL mode
 //   node deploy/cloudflare.mjs aop on|off                   Authenticated Origin Pulls for the zone
-//   node deploy/cloudflare.mjs cache-rules                  the Cache Rules: the public API and the public pages, for visitors without a session
+//   node deploy/cloudflare.mjs cache-rules                  the Cache Rules: the public API, the public art and the public pages, for visitors without a session
 //   node deploy/cloudflare.mjs origin-cert <csr> <out.pem>  an Origin CA certificate for the apex and *.scarletweb.io
 //   node deploy/cloudflare.mjs status                       the settings above, as the zone has them
 //
@@ -72,6 +72,10 @@ const CACHE_RULES = [
   {
     description: 'Map tile manifest',
     expression: `${HOST} and http.request.uri.path eq "/map-tiles/manifest.json"`,
+  },
+  {
+    description: 'Public art PHP answers for visitors without a session',
+    expression: `${HOST} and (http.request.uri.path starts_with "/scene-art/" and http.request.uri.path ends_with "/models.json" or starts_with(http.request.uri.path, "/dungeon-maps/")) and ${NO_CREDENTIALS}`,
   },
   {
     description: 'Public pages for visitors without a session',

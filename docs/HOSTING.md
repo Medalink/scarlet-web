@@ -669,7 +669,7 @@ and the origin use the same test.
 | `/api/v1/public/*` | `App\Http\Middleware\PublicApi`: `public, max-age=300, s-maxage=300`, 30 for the answers that name characters (`private` with an `Authorization` header) | cached 5 minutes, or 30 seconds |
 | The public pages (`routes/pages.php`, `/`, `/demo`) | `App\Http\Middleware\EdgeCacheable`: no session, no cookie, `s-maxage=60` | cached 1 minute |
 
-`node deploy/cloudflare.mjs cache-rules` writes the two Cache Rules (Free plan: `http.cookie` and header names work in
+`node deploy/cloudflare.mjs cache-rules` writes the three Cache Rules (Free plan: `http.cookie` and header names work in
 them) and `status` lists them. Their edge TTL is `bypass_by_default`: the origin's `Cache-Control` decides, so an
 answer with no `public` marker, an error or a `Set-Cookie` is not stored. A character who switches their page to private
 stays visible in the edge for up to a minute, and in the API for up to a minute (30 seconds in the origin's answer
