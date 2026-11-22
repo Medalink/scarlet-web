@@ -37,7 +37,7 @@ class SitemapUrls
      */
     private function pages(): array
     {
-        $paths = ['/', '/demo', '/stats', '/map', '/loot', '/camps'];
+        $paths = ['/', '/demo', '/stats', '/map', '/loot', '/loot/groups', '/camps'];
         foreach (Profession::withPages() as $profession) {
             $paths[] = '/professions/'.$profession->slug();
         }
