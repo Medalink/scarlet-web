@@ -416,11 +416,13 @@ then an object is labelled by what it gives.
   holds.
 - **API**: `/public/loot/sources`, `/public/loot/items`, `/public/loot/groups`, `/public/objects/{id}`, and a
   `loot` object added to `/public/creatures/{id}` and `/public/items/{id}`. Fields are only added. Every rate is
-  the same object, so an agent never parses a percentage or guesses a denominator:
+  the same object under the key `estimate`, so an agent never parses a percentage or guesses a denominator. Phase 1
+  adds it to the `drops` rows of `/public/creatures/{id}` and the `sources` rows of `/public/items/{id}`, and adds
+  `by_source` to the item (one row for each source, ranked):
 
 ```json
 {"item_id": 265358, "name": "Stolen Ore",
- "rate": {"k": 28, "n": 39, "rate": 0.718, "low": 0.562, "high": 0.835,
+ "estimate": {"k": 28, "n": 39, "rate": 0.718, "low": 0.562, "high": 0.835,
           "unit": "window", "sample": "solid", "flags": ["quest_item"]},
  "quantity": 28, "per_drop": 1.0}
 ```

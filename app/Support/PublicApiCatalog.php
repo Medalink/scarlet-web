@@ -120,14 +120,14 @@ final class PublicApiCatalog
                 'name' => 'creature', 'group' => 'Records', 'path' => '/creatures/{id}', 'action' => [RecordController::class, 'creature'],
                 'summary' => 'One creature: its level range and kind, kills, deaths to it, drops under each loot rule and the world cells where it was met.',
                 'params' => [['id', 'path', 'integer', 'The creature id, as in the address of its page.'], 'ruleset', 'server'],
-                'returns' => '`data`: `facts`, `kills`, `deaths`, `deaths_by_level`, `drops` (item, loot rule, drops, opens, rate) and `cells`. Drop rates cover every ruleset.',
+                'returns' => '`data`: `facts`, `kills`, `deaths`, `deaths_by_level`, `drops` (item, loot rule, drops, opens, rate, `estimate` (`k` drops of `n` corpses looted for the first time, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 corpses, `hollow` from 10 and `solid` from 30, and `flags` from `one_character`, `skins_counted` and `quest_item`; `rate`, `low` and `high` are `null` under 10 corpses)) and `cells`. Drop rates cover every ruleset.',
                 'example' => '/creatures/257926', 'where' => ['id' => '[0-9]+'],
             ],
             [
                 'name' => 'item', 'group' => 'Records', 'path' => '/items/{id}', 'action' => [RecordController::class, 'item'],
                 'summary' => 'One item: what it is, where it drops by source and loot rule, the boss encounters that dropped it, the recipes that make or use it, and its auction prices.',
                 'params' => [['id', 'path', 'integer', 'The item id, as in the address of its page.']],
-                'returns' => '`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`, `encounters` (encounter, item, dropped, characters), `made_by` and `used_in` (recipes: spell, output, reagents).',
+                'returns' => '`data`: `item`, `sources` (source, loot rule, drops, opens, rate, `estimate` as for the drops of a creature), `by_source` (one row for each source over every loot rule but personal loot: source, `quantity`, `per_drop` and `estimate`, ranked by the low end of the range with sources under 10 corpses last; `rule` and the `rules` the item dropped under), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`, `encounters` (encounter, item, dropped, characters), `made_by` and `used_in` (recipes: spell, output, reagents).',
                 'example' => '/items/1465', 'where' => ['id' => '[0-9]+'],
             ],
             [

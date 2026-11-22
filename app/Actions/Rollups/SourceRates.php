@@ -47,11 +47,7 @@ class SourceRates
             'source_kind' => (string) $row['source_kind'], 'source_id' => (int) $row['source_id'], 'source' => $row['source'],
             'quantity' => (int) $row['quantity'],
             'per_drop' => (int) $row['drops'] === 0 ? 0.0 : (int) $row['quantity'] / (int) $row['drops'],
-            'estimate' => RateEstimate::of((int) $row['drops'], (int) $row['opens'], array_values(array_filter([
-                (int) round((float) $row['window_characters']) === 1 ? RateFlag::OneCharacter : null,
-                $row['skins'] ? RateFlag::SkinsCounted : null,
-                $quest ? RateFlag::QuestItem : null,
-            ]))),
+            'estimate' => RateEstimate::of((int) $row['drops'], (int) $row['opens'], RateFlag::of((float) $row['window_characters'], (bool) $row['skins'], $quest)),
         ], $rows);
         usort($rows, fn (array $a, array $b): int => RateEstimate::compare($a['estimate'], $b['estimate']) ?: [$a['source_kind'], $a['source_id']] <=> [$b['source_kind'], $b['source_id']]);
 

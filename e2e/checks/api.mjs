@@ -22,7 +22,7 @@ const SHAPES = [
   ["/characters/{name}", ["name", "race", "class", "faction", "level", "recorded_seconds", "ruleset", "week", "feats", "standings"]],
   ["/characters/{name}/series/{series}", ["pace"]],
   ["/creatures/{id}", ["id", "name", "facts", "kills", "drops", "cells"]],
-  ["/items/{id}", ["id", "name", "sources", "dropped", "source_count", "best_rate"]],
+  ["/items/{id}", ["id", "name", "sources", "by_source", "dropped", "source_count", "best_rate"]],
   ["/zones/{id}", ["id", "name", "rect", "played", "deaths", "killers", "creatures"]],
   ["/quests/{id}", ["id", "name", "totals", "levels", "zones"]],
   ["/spells/{id}", ["id", "name", "facts", "recipe"]],
@@ -111,6 +111,8 @@ export async function recordsAreServed(ctx) {
   const wanted = [
     ["/creatures/113", (data) => data.name === "Stonetusk Boar", "the name Stonetusk Boar"],
     ["/items/769", (data) => data.name === "Chunk of Boar Meat", "the name Chunk of Boar Meat"],
+    ["/creatures/113", (data) => data.drops.every((row) => row.estimate.k === Number(row.drops) && row.estimate.n === Number(row.opens)), "every drop rate with its k of n"],
+    ["/items/769", (data) => [...data.sources, ...data.by_source.rows].every((row) => Number.isInteger(row.estimate.k) && row.estimate.n >= row.estimate.k), "every source rate with its k of n"],
     ["/quests/783", (data) => data.name === "A Threat Within", "the name A Threat Within"],
     ["/spells/2660", (data) => data.name === "Rough Sharpening Stone" && data.recipe?.reagents?.[0]?.name === "Rough Stone", "the recipe Rough Sharpening Stone with the reagent Rough Stone"],
     ["/encounters/1065", (data) => data.drops?.length === 1 && data.drops[0].dropped === 1 && data.drops[0].characters === 2, "one drop of Chunk of Boar Meat counted once from 2 characters"],

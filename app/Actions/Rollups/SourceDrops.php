@@ -35,11 +35,7 @@ class SourceDrops
         $rows = array_map(fn (array $row): array => [
             'item_id' => (int) $row['item_id'], 'item' => $row['item'], 'quantity' => (int) $row['quantity'],
             'per_drop' => (int) $row['drops'] === 0 ? 0.0 : (int) $row['quantity'] / (int) $row['drops'],
-            'estimate' => RateEstimate::of((int) $row['drops'], $view['windows'], array_values(array_filter([
-                $view['characters'] === 1 ? RateFlag::OneCharacter : null,
-                $skins ? RateFlag::SkinsCounted : null,
-                (int) $row['bind_type'] === ItemBind::Quest->value ? RateFlag::QuestItem : null,
-            ]))),
+            'estimate' => RateEstimate::of((int) $row['drops'], $view['windows'], RateFlag::of($view['characters'], $skins, (int) $row['bind_type'] === ItemBind::Quest->value)),
         ], $items);
         usort($rows, fn (array $a, array $b): int => RateEstimate::compare($a['estimate'], $b['estimate']) ?: $a['item_id'] <=> $b['item_id']);
 
