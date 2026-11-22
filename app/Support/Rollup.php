@@ -21,6 +21,9 @@ enum Rollup: string
     case MoneyDailyRuleset = 'money_daily_ruleset';
     case LootWindowsDaily = 'loot_windows_daily';
     case LootItemsDaily = 'loot_items_daily';
+    case LootWindowsCharacterDaily = 'loot_windows_character_daily';
+    case LootFreeForAllItemsDaily = 'loot_freeforall_items_daily';
+    case LootReceiptsDaily = 'loot_receipts_daily';
     case SkillsDailyRuleset = 'skills_daily_ruleset';
     case MovementDailyCharacter = 'movement_daily_character';
     case MovementDailyRuleset = 'movement_daily_ruleset';
