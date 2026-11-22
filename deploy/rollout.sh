@@ -214,6 +214,9 @@ if [ "${1:-}" = --prepare ]; then
 fi
 if [ "${1:-}" = --switch ]; then
   [ -s state/prepared ] || { echo "rollout: no slot is prepared"; exit 1; }
+  slots
+  [ "$(cat state/prepared)" = "$nxt" ] || { echo "rollout: the prepared slot is $(cat state/prepared) but the idle slot is $nxt; not switching"; exit 1; }
+  $dc ps --services --status running "app-$nxt" | grep -qx "app-$nxt" || { echo "rollout: app-$nxt is not running; not switching"; exit 1; }
   sync_assets "$(get SCARLET_RELEASE)" &
   assets_job=$!
   switch_slot "$(get SCARLET_RELEASE)" || exit 1

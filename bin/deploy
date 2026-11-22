@@ -271,7 +271,7 @@ backups_report() {
 
 case "${1:-release}" in
   release) release "${2:-main}" ;;
-  rollback) srv '/srv/scarlet-web/deploy/rollout.sh --rollback' ;;
+  rollback) take_lock; srv '/srv/scarlet-web/deploy/rollout.sh --rollback' ;;
   status)
     srv '/srv/scarlet-web/deploy/dc ps; cat /srv/scarlet-web/release.env'
     $cf status
@@ -289,21 +289,21 @@ case "${1:-release}" in
     step_r2 srv
     ! db_moved || step_r2 dsrv
     ;;
-  db-server) db_server ;;
+  db-server) db_lock; db_server ;;
   db-move)
     case "${2:-move}" in
       move) db_move ;;
       rollback) db_rollback ;;
-      abort) take_lock; db_abort ;;
-      retire) db_retire ;;
-      finish) take_lock; db_finish "$(db_private_address)" ;;
+      abort) db_lock; db_abort_manual ;;
+      retire) db_lock; db_retire ;;
+      finish) db_lock; db_finish "$(db_private_address)" ;;
       *) echo "deploy: db-move [rollback|abort|retire|finish]" >&2; exit 2 ;;
     esac
     ;;
   db)
     case "${2:-status}" in
       status) db_status ;;
-      upgrade) db_upgrade ;;
+      upgrade) db_lock; db_upgrade ;;
       *) echo "deploy: db [status|upgrade]" >&2; exit 2 ;;
     esac
     ;;

@@ -87,7 +87,7 @@ human_age() {
 }
 
 status() {
-  local rc=0 recovery row age failed archived last_failed_newer
+  local rc=0 pgbr_rc recovery row age failed archived last_failed_newer
   $dc ps --format '{{.Service}} {{.Status}}' postgres
   recovery=$(pg -c 'select pg_is_in_recovery()')
   if [ "$recovery" = t ]; then
@@ -105,21 +105,25 @@ status() {
     fi
     pg -c "select 'standby   ' || coalesce(application_name, '') || ' ' || state || ' ' || coalesce(client_addr::text, '') || ' replay lag ' || coalesce(pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn)::text, '?') || ' bytes' from pg_stat_replication" || true
   fi
+  pgbr_rc=0
   $dc exec -T postgres pgbackrest info --output=json 2>/dev/null | python3 -c '
 import json, sys, time
 try:
     stanzas = json.load(sys.stdin)
 except Exception:
-    print("pgbackrest no info"); sys.exit(0)
+    print("pgbackrest no info"); sys.exit(3)
+if not stanzas:
+    print("pgbackrest no stanza"); sys.exit(3)
 for s in stanzas:
     backups = s.get("backup", [])
     if not backups:
-        print("pgbackrest stanza %s has no backup yet" % s["name"]); continue
+        print("pgbackrest stanza %s has no backup yet" % s["name"]); sys.exit(3)
     b = backups[-1]
     age = int(time.time()) - b["timestamp"]["stop"]
     print("pgbackrest last backup %s %s, %d h %d min ago, %d backups, WAL %s to %s" % (b["type"], b["label"], age // 3600, age % 3600 // 60, len(backups), s["archive"][0]["min"] if s.get("archive") else "?", s["archive"][0]["max"] if s.get("archive") else "?"))
-' || true
-  echo "volume    $(df -h --output=used,size,pcent /mnt/scarlet-db-data | tail -n 1 | awk '{print $1 " of " $2 " (" $3 ")"}'); database $(pg -c "select pg_size_pretty(pg_database_size('scarlet'))")"
+' || pgbr_rc=$?
+  if [ "$pgbr_rc" = 3 ] && [ "$recovery" = f ]; then echo "pgbackrest nothing to restore from: STALE"; rc=1; fi
+  echo "volume   $(df -h --output=used,size,pcent /mnt/scarlet-db-data | tail -n 1 | awk '{print $1 " of " $2 " (" $3 ")"}'); database $(pg -c "select pg_size_pretty(pg_database_size('scarlet'))")"
   return "$rc"
 }
 

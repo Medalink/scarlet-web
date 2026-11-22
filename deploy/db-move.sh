@@ -30,7 +30,34 @@ cutover() { srv "cd /srv/scarlet-web && deploy/db-cutover.sh $*"; }
 db_private_address() { dsrv 'curl -fsS http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address'; }
 app_private_address() { srv 'curl -fsS http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address'; }
 
-db_moved() { ! srv "grep -qx 'DB_HOST=postgres' /srv/scarlet-web/.env"; }
+db_moved() {
+  local rc=0
+  srv "grep -qx 'DB_HOST=postgres' /srv/scarlet-web/.env" || rc=$?
+  case $rc in
+    0) return 1 ;;
+    1) return 0 ;;
+    *) echo "deploy: cannot read .env on $host (ssh exit $rc); not guessing where the database is" >&2; exit 2 ;;
+  esac
+}
+
+keeper=
+keep_lock=
+finish_pending=
+cut_code=
+
+db_exit() {
+  [ -z "$keeper" ] || kill "$keeper" 2>/dev/null || true
+  [ -z "$finish_pending" ] || echo "db-move: $db_host is the writer, but the last step did not finish. Run: bin/deploy db-move finish" >&2
+  report
+  [ -n "$keep_lock" ] || srv "rm -rf $lock" || true
+}
+
+db_lock() {
+  take_lock
+  db_keep_lock_alive &
+  keeper=$!
+  trap db_exit EXIT
+}
 
 db_server() {
   local pass_file clients
@@ -72,13 +99,90 @@ db_wait_streaming() {
   return 1
 }
 
+db_abort_manual() {
+  local rec
+  rec=$(dsrv 'if /srv/scarlet-db/deploy/dc-db ps --status running --services | grep -qx postgres; then /srv/scarlet-db/deploy/dc-db exec -T postgres psql -X -U postgres -d scarlet -Atq -c "select pg_is_in_recovery()"; else echo stopped; fi' 2>/dev/null) || rec=unknown
+  case $rec in
+    t | stopped) ;;
+    *) echo "db-move: $db_host answered '$rec', not 'standby' or 'stopped'; refusing to make the old Postgres writable. If $db_host is the writer, run bin/deploy db-move finish" >&2; exit 1 ;;
+  esac
+  cutover writable
+  db_abort
+}
+
+db_pg_state() {
+  local out
+  out=$("$@" 2>/dev/null) || out=unknown
+  case $out in t) echo standby ;; f) echo writer ;; stopped) echo stopped ;; *) echo unknown ;; esac
+}
+
+db_cutover_run() {
+  local direction=$1 ip=$2 out misses=0
+  cut_code=
+  srv 'cd /srv/scarlet-web && rm -f state/cutover.code state/cutover.pid' || { echo "db-move: cannot reach $host; nothing started" >&2; cut_code=10; return 0; }
+  srv "cd /srv/scarlet-web && deploy/db-cutover.sh cutover-start $direction $ip" >/dev/null || true
+  while :; do
+    if out=$(srv 'cd /srv/scarlet-web && deploy/db-cutover.sh cutover-state' 2>/dev/null); then
+      misses=0
+      case $out in
+        'DONE '*) cut_code=${out#DONE }; break ;;
+        RUNNING) ;;
+        *) cut_code=99; break ;;
+      esac
+    else
+      misses=$((misses + 1))
+      if [ "$misses" -ge 90 ]; then cut_code=98; break; fi
+    fi
+    sleep 2
+  done
+  srv 'cd /srv/scarlet-web && deploy/db-cutover.sh cutover-log' 2>/dev/null || true
+}
+
+db_cutover_diagnose() {
+  local direction=$1 app dbh prepared active after
+  app=$(db_pg_state srv 'cd /srv/scarlet-web && if deploy/dc ps --status running --services | grep -qx postgres; then deploy/dc exec -T postgres psql -X -U postgres -d scarlet -Atq -c "select pg_is_in_recovery()"; else echo stopped; fi')
+  dbh=$(db_pg_state dsrv 'if /srv/scarlet-db/deploy/dc-db ps --status running --services | grep -qx postgres; then /srv/scarlet-db/deploy/dc-db exec -T postgres psql -X -U postgres -d scarlet -Atq -c "select pg_is_in_recovery()"; else echo stopped; fi')
+  prepared=$(srv 'cat /srv/scarlet-web/state/prepared 2>/dev/null; true' 2>/dev/null || echo unknown)
+  active=$(srv 'cat /srv/scarlet-web/state/active 2>/dev/null; true' 2>/dev/null || echo unknown)
+  echo "db-move: the cutover ended with code $cut_code. Now: app droplet Postgres $app, $db_host Postgres $dbh, prepared slot '$prepared', active slot '$active'" >&2
+  if [ "$app" = unknown ] || [ "$dbh" = unknown ]; then
+    keep_lock=1
+    echo "db-move: could not read one side, so the deploy lock stays (40 minutes at most). Read both with bin/deploy db status before anything else." >&2
+    return 0
+  fi
+  if [ "$app" = writer ] && [ "$dbh" = writer ]; then
+    keep_lock=1
+    echo "db-move: BOTH Postgres servers accept writes. Stop the one that should not: on $db_host run /srv/scarlet-db/deploy/dc-db stop postgres, or on the app droplet deploy/dc stop postgres. The lock stays." >&2
+  elif [ "$app" != writer ] && [ "$dbh" != writer ]; then
+    keep_lock=1
+    echo "db-move: neither Postgres accepts writes. Promote the one that should write (select pg_promote()) or run bin/deploy db-move abort. The lock stays." >&2
+  elif { [ "$direction" = new ] && [ "$dbh" = writer ]; } || { [ "$direction" = old ] && [ "$app" = writer ]; }; then
+    after='see docs/HOSTING.md, Move back'
+    [ "$direction" != new ] || after='bin/deploy db-move finish'
+    echo "db-move: the target is the writer and visitors may still be on the old slot. If the prepared slot is not the active one, run on the app droplet: cd /srv/scarlet-web && deploy/rollout.sh --switch. Then: $after." >&2
+  else
+    echo "db-move: nothing moved. Run bin/deploy db-move abort (it makes the old Postgres writable and removes the idle slot), then bin/deploy to restart Horizon and the scheduler." >&2
+  fi
+}
+
+db_cutover() {
+  db_cutover_run "$1" "$2"
+  case $cut_code in
+    0) return 0 ;;
+    10) return 10 ;;
+    20)
+      echo "db-move: the target is the writer but visitors did not move; switching them now" >&2
+      if srv 'cd /srv/scarlet-web && deploy/rollout.sh --switch'; then return 0; fi
+      ;;
+  esac
+  db_cutover_diagnose "$1"
+  exit 1
+}
+
 db_move() {
-  local db_ip tailscale_ip code=0
+  local db_ip tailscale_ip
   [ "${DB_MOVE_ALLOWED:-1}" = 1 ] || exit 1
-  take_lock
-  db_keep_lock_alive &
-  keeper=$!
-  trap 'kill "$keeper" 2>/dev/null || true; report; srv "rm -rf '"$lock"'"' EXIT
+  db_lock
   db_moved && { echo "db-move: the database is already on $db_host (DB_HOST is not postgres)" >&2; exit 1; }
   srv 'test -x /srv/scarlet-web/deploy/db-cutover.sh' || { echo "db-move: deploy/db-cutover.sh is not on the app droplet; run bin/deploy first" >&2; exit 1; }
   dsrv 'mountpoint -q /mnt/scarlet-db-data && test -d /mnt/scarlet-db-data/pgdata' || { echo "db-move: the data volume is not mounted on $db_host" >&2; exit 1; }
@@ -103,35 +207,29 @@ db_move() {
   srv 'cd /srv/scarlet-web && deploy/rollout.sh --prepare' || { db_abort; exit 1; }
 
   echo "db-move: 4/6 the cutover"
-  cutover cutover new "$db_ip" || code=$?
-  case $code in
-    0) ;;
-    10) db_abort; echo "db-move: nothing moved; the old Postgres is the writer again" >&2; exit 1 ;;
-    *) echo "db-move: promoted, but the switch failed (code $code). The new Postgres is the writer. Fix the app side, then run bin/deploy with the same release; roll back with: bin/deploy db-move rollback" >&2; exit 1 ;;
-  esac
+  db_cutover new "$db_ip" || { db_abort; echo "db-move: nothing moved; the old Postgres is the writer again" >&2; exit 1; }
 
   db_finish "$db_ip"
-  trap - EXIT
-  kill "$keeper" 2>/dev/null || true
-  report
-  srv "rm -rf $lock"
   db_status || true
   echo "db-move: done. The way back for 48 hours: bin/deploy db-move rollback"
 }
 
 db_finish() {
   local db_ip=$1 moved_at
+  finish_pending=1
+  srv 'sudo systemctl disable --now scarlet-backup.timer >/dev/null 2>&1; true'
   echo "db-move: 5/6 pgBackRest and the nightly dump on $db_host"
   dsrv '/srv/scarlet-db/deploy/db-host.sh primary-ready'
   dsrv 'sudo systemctl start scarlet-backup.service'
   echo "db-move: the nightly dump ran on $db_host"
-  srv 'sudo systemctl disable --now scarlet-backup.timer >/dev/null 2>&1; cd /srv/scarlet-web && deploy/db-cutover.sh unexpose'
+  srv 'cd /srv/scarlet-web && deploy/db-cutover.sh unexpose'
 
   echo "db-move: 6/6 the old Postgres follows $db_host for 48 hours"
   cutover reseed "$db_ip"
   moved_at=$(date -u +%s)
   srv "printf 'DB_IP=%s\nMOVED_AT=%s\nRETIRE_AFTER=%s\n' $db_ip $moved_at $((moved_at + 172800)) > /srv/scarlet-web/state/db-move.env"
   db_schedule_retire "$((moved_at + 172800))"
+  finish_pending=
 }
 
 db_schedule_retire() {
@@ -146,7 +244,9 @@ Type=oneshot
 User=ops
 WorkingDirectory=/srv/scarlet-web
 ExecStart=/srv/scarlet-web/deploy/db-cutover.sh retire
-ExecStartPost=/bin/systemctl disable scarlet-db-retire.timer
+ExecStartPost=+/bin/systemctl disable scarlet-db-retire.timer
+Restart=on-failure
+RestartSec=1h
 EOF
 cat > /etc/systemd/system/scarlet-db-retire.timer <<EOF
 [Unit]
@@ -164,11 +264,8 @@ systemctl daemon-reload && systemctl enable --now scarlet-db-retire.timer >/dev/
 }
 
 db_rollback() {
-  local db_ip code=0
-  take_lock
-  db_keep_lock_alive &
-  keeper=$!
-  trap 'kill "$keeper" 2>/dev/null || true; report; srv "rm -rf '"$lock"'"' EXIT
+  local db_ip
+  db_lock
   db_moved || { echo "db-move: the app already uses the local Postgres" >&2; exit 1; }
   db_ip=$(srv "sed -n 's/^DB_HOST=//p' /srv/scarlet-web/.env")
   srv 'cd /srv/scarlet-web && deploy/dc ps --status running --services | grep -qx postgres' || { echo "db-move: the old Postgres is not running; the way back is gone (retired?)" >&2; exit 1; }
@@ -177,13 +274,8 @@ db_rollback() {
   echo "db-move: moving the database back from $db_ip to the local Postgres"
   cutover set-env local
   srv 'cd /srv/scarlet-web && deploy/rollout.sh --prepare' || { cutover set-env "$db_ip"; srv 'cd /srv/scarlet-web && deploy/rollout.sh --unprepare'; exit 1; }
-  cutover cutover old "$db_ip" || code=$?
-  case $code in
-    0) ;;
-    10) cutover set-env "$db_ip"; srv 'cd /srv/scarlet-web && deploy/rollout.sh --unprepare'; echo "db-move: nothing moved; $db_host is the writer again" >&2; exit 1 ;;
-    *) echo "db-move: promoted the local Postgres but the switch failed (code $code)" >&2; exit 1 ;;
-  esac
-  srv 'sudo systemctl enable --now scarlet-backup.timer >/dev/null; sudo systemctl disable --now scarlet-db-retire.timer >/dev/null 2>&1; rm -f /srv/scarlet-web/state/db-move.env'
+  db_cutover old "$db_ip" || { cutover set-env "$db_ip"; srv 'cd /srv/scarlet-web && deploy/rollout.sh --unprepare'; echo "db-move: nothing moved; $db_host is the writer again" >&2; exit 1; }
+  srv 'sudo systemctl enable --now scarlet-backup.timer >/dev/null; sudo systemctl disable --now scarlet-db-retire.timer >/dev/null 2>&1; sudo systemctl stop scarlet-db-retire.service >/dev/null 2>&1; rm -f /srv/scarlet-web/state/db-move.env'
   dsrv 'sudo systemctl disable --now scarlet-pgbackrest-full.timer scarlet-pgbackrest-diff.timer scarlet-db-heartbeat.timer scarlet-backup.timer >/dev/null 2>&1; /srv/scarlet-db/deploy/dc-db stop postgres' || true
   echo "db-move: the local Postgres is the writer again; $db_host is stopped (its data stays on the volume; re-seed it with DEPLOY_DB_FORCE_SEED=1 bin/deploy db-move)"
 }

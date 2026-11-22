@@ -16,8 +16,12 @@
 #   db-cutover.sh retire                  remove the reverse replica once the database host has proven itself
 #   db-cutover.sh status
 #
+#   db-cutover.sh cutover-start new|old <ip>   run `cutover` detached from the ssh session; it writes state/cutover.log and, when it
+#                                         ends, its exit code to state/cutover.code
+#   db-cutover.sh cutover-state           print RUNNING, DONE <code> or LOST; cutover-log prints the log
+#
 # Exit codes of `cutover`: 0 moved, 10 nothing moved (the writer is where it was and writable again), 20 promoted but the
-# switch of visitors failed.
+# switch of visitors failed or did not happen, 21 promotion requested and not confirmed (the old writer stays read-only).
 set -euo pipefail
 cd /srv/scarlet-web
 dc=deploy/dc
@@ -100,10 +104,37 @@ set_env() {
   echo "db-cutover: .env now has DB_HOST=$(env_value DB_HOST) DB_SSLMODE=$(env_value DB_SSLMODE)"
 }
 
+quiesce() {
+  local cut n stale
+  for _ in $(seq 1 50); do
+    [ "$($src -c 'show default_transaction_read_only')" = on ] && break
+    sleep 0.1
+  done
+  [ "$($src -c 'show default_transaction_read_only')" = on ] || { echo "cutover: new sessions are not read-only" >&2; return 1; }
+  sleep 0.3
+  cut=$($src -c "select clock_timestamp()")
+  stale="from pg_stat_activity where xact_start < '$cut'::timestamptz and pid <> pg_backend_pid() and backend_type <> 'walsender'"
+  for _ in $(seq 1 30); do
+    n=$($src -c "select count(*) $stale")
+    [ "$n" = 0 ] && return 0
+    sleep 0.1
+  done
+  echo "cutover: $n transactions that began before read-only are still open after 3 s; ending them"
+  $src -c "select pg_terminate_backend(pid) $stale" >/dev/null
+  for _ in $(seq 1 30); do
+    n=$($src -c "select count(*) $stale")
+    [ "$n" = 0 ] && return 0
+    sleep 0.1
+  done
+  echo "cutover: $n backends would not end" >&2
+  return 1
+}
+
 cutover() {
-  local direction=$1 ip=$2 t0 n target
+  local direction=$1 ip=$2 t0 target
   promoted=
-  stopped=
+  promote_sent=
+  sched=
   paused=
   case $direction in
     new) src=local_pg; dst="remote_pg $ip" ;;
@@ -116,31 +147,29 @@ cutover() {
 
   abort() {
     [ -z "$promoted" ] || return 0
+    if [ -n "$promote_sent" ]; then
+      if [ "$($dst -c 'select pg_is_in_recovery()' 2>/dev/null || echo unknown)" = f ]; then
+        echo "db-cutover: the target became a primary after the promotion call; the source stays read-only and nothing restarts" >&2
+        exit 20
+      fi
+      echo "db-cutover: promotion was requested and is not confirmed; the source stays read-only and Horizon and the scheduler stay paused" >&2
+      exit 21
+    fi
     echo "db-cutover: failed before promotion; the writer stays where it was" >&2
     $src -c "alter system reset default_transaction_read_only" -c "select pg_reload_conf()" >/dev/null 2>&1 || true
-    [ -z "$paused" ] || docker start $paused >/dev/null 2>&1 || true
-    [ -z "$stopped" ] || $dc up -d --no-deps schedule >/dev/null 2>&1 || true
+    [ -z "$paused$sched" ] || docker start $paused $sched >/dev/null 2>&1 || true
     exit 10
   }
   trap abort EXIT
 
   paused=$(running_horizons)
+  sched=$(docker ps -q --filter label=com.docker.compose.project=scarlet-web --filter label=com.docker.compose.service=schedule)
   [ -z "$paused" ] || docker stop -t 150 $paused >/dev/null
-  $dc stop schedule >/dev/null
-  stopped=1
+  [ -z "$sched" ] || docker stop $sched >/dev/null
   echo "cutover: horizon and schedule paused (jobs wait in Redis)"
   t0=$(now)
   $src -c "alter system set default_transaction_read_only = on" -c "select pg_reload_conf()" >/dev/null
-  for _ in $(seq 1 50); do
-    n=$($src -c "select count(*) from pg_stat_activity where backend_xid is not null and backend_type = 'client backend' and pid <> pg_backend_pid()")
-    [ "$n" = 0 ] && break
-    sleep 0.1
-  done
-  if [ "$n" != 0 ]; then
-    echo "cutover: $n transactions still writing after 5 s; ending them"
-    $src -c "select pg_terminate_backend(pid) from pg_stat_activity where backend_xid is not null and backend_type = 'client backend' and pid <> pg_backend_pid()" >/dev/null
-    sleep 0.3
-  fi
+  quiesce || exit 10
   target=$($src -c "select pg_current_wal_insert_lsn()")
   for i in $(seq 1 300); do
     [ "$($dst -c "select pg_last_wal_replay_lsn() >= '$target'::pg_lsn")" = t ] && break
@@ -148,7 +177,8 @@ cutover() {
     sleep 0.1
   done
   echo "cutover: standby replayed to $target after $(elapsed "$t0") s of read-only"
-  $dst -c "select pg_promote(true, 30)" >/dev/null
+  promote_sent=1
+  $dst -c "select pg_promote(true, 60)" >/dev/null || true
   [ "$($dst -c 'select pg_is_in_recovery()')" = f ] || { echo "cutover: promotion did not finish" >&2; exit 10; }
   promoted=1
   echo "cutover: promoted after $(elapsed "$t0") s"
@@ -158,6 +188,32 @@ cutover() {
     exit 20
   fi
   echo "cutover: visitors moved; writes were refused for about $(elapsed "$t0") s"
+}
+
+writable() {
+  $dc ps --status running --services | grep -qx postgres || return 0
+  [ "$(local_pg -c 'select pg_is_in_recovery()')" = f ] || return 0
+  local_pg -c "alter system reset default_transaction_read_only" -c "select pg_reload_conf()" >/dev/null
+  echo "db-cutover: the local Postgres accepts writes"
+}
+
+cutover_start() {
+  rm -f state/cutover.code state/cutover.pid
+  setsid nohup bash -c 'echo $$ > state/cutover.pid; deploy/db-cutover.sh cutover "$1" "$2" > state/cutover.log 2>&1; echo $? > state/cutover.code.tmp; mv state/cutover.code.tmp state/cutover.code' _ "$1" "$2" > /dev/null 2>&1 < /dev/null &
+  for _ in $(seq 1 50); do
+    [ -s state/cutover.pid ] && break
+    sleep 0.1
+  done
+  [ -s state/cutover.pid ] || { echo "db-cutover: the cutover did not start" >&2; exit 1; }
+  echo started
+}
+
+cutover_state() {
+  if [ -f state/cutover.code ]; then echo "DONE $(cat state/cutover.code)"
+  elif kill -0 "$(cat state/cutover.pid 2>/dev/null)" 2>/dev/null; then echo RUNNING
+  elif [ -f state/cutover.code ]; then echo "DONE $(cat state/cutover.code)"
+  else echo LOST
+  fi
 }
 
 reseed() {
@@ -223,8 +279,12 @@ case "${1:-}" in
   check) check "${2:?address of the database host}" ;;
   set-env) set_env "${2:?ip or local}" ;;
   cutover) cutover "${2:?new or old}" "${3:?address of the other Postgres}" ;;
+  cutover-start) cutover_start "${2:?new or old}" "${3:?address of the other Postgres}" ;;
+  cutover-state) cutover_state ;;
+  writable) writable ;;
+  cutover-log) cat state/cutover.log ;;
   reseed) reseed "${2:?address of the primary}" ;;
   retire) retire ;;
   status) status ;;
-  *) sed -n '2,25p' "$0"; exit 2 ;;
+  *) sed -n '2,27p' "$0"; exit 2 ;;
 esac
