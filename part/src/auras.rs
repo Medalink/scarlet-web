@@ -9,12 +9,35 @@ const RECENT_KEPT_MS: i64 = 10_000;
 const KEEP_MAX: usize = TRACKED_MAX;
 const A0_AFTER_A1_REPLACES_MS: i64 = 2_000;
 
+/// Who cast an aura, as the `A 1` line's `by` says: `1` the character or its pet, `0` someone else, empty unknown.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum By {
+    Mine,
+    Others,
+    Unknown,
+}
+
+impl By {
+    pub fn read(field: &str) -> By {
+        match field {
+            "1" => By::Mine,
+            "0" => By::Others,
+            _ => By::Unknown,
+        }
+    }
+
+    /// An aura that another player is not known to have cast: what `shift_*` and `seal_fate` follow.
+    pub fn is_own(self) -> bool {
+        self != By::Others
+    }
+}
+
 pub struct Inst {
     pub id: u64,
     pub spell: i64,
     pub gain_at: i64,
     pub helpful: Option<bool>,
-    pub mine: bool,
+    pub by: By,
     pub dur_ms: i64,
     pub initial: bool,
     pub span: Option<SpanId>,
@@ -28,6 +51,7 @@ pub struct End {
     pub spell: i64,
     pub at: i64,
     pub helpful: Option<bool>,
+    pub by: By,
     pub gain_at: i64,
     pub opened: bool,
 }
@@ -40,7 +64,7 @@ pub enum Loss {
     },
     Unseen {
         helpful: Option<bool>,
-        mine: bool,
+        by: By,
         ms: i64,
     },
 }
@@ -49,7 +73,7 @@ pub enum Loss {
 pub struct Auras {
     pub on: Vec<Inst>,
     ended: VecDeque<End>,
-    kinds: BTreeMap<i64, (Option<bool>, bool)>,
+    kinds: BTreeMap<i64, (Option<bool>, By)>,
     next: u64,
 }
 
@@ -60,11 +84,11 @@ impl Auras {
         &mut self,
         now: &Now,
         spell: i64,
-        (helpful, mine): (Option<bool>, bool),
+        (helpful, by): (Option<bool>, By),
         dur_ms: i64,
         initial: bool,
     ) -> Option<u64> {
-        self.kinds.insert(spell, (helpful, mine));
+        self.kinds.insert(spell, (helpful, by));
         if let Some(open) = self.on.iter_mut().find(|i| i.spell == spell) {
             open.refreshed_at = Some(now.at);
             return None;
@@ -78,7 +102,7 @@ impl Auras {
             spell,
             gain_at: if initial { now.start } else { now.at },
             helpful,
-            mine,
+            by,
             dur_ms,
             initial,
             span: None,
@@ -100,16 +124,21 @@ impl Auras {
     /// An aura ended after `ms` milliseconds held, by the line's own seconds.
     pub fn lose(&mut self, now: &Now, spell: i64, ms: i64) -> Loss {
         let Some(at) = self.on.iter().position(|i| i.spell == spell) else {
-            let (helpful, mine) = self.kinds.get(&spell).copied().unwrap_or((None, false));
+            let (helpful, by) = self
+                .kinds
+                .get(&spell)
+                .copied()
+                .unwrap_or((None, By::Unknown));
             self.keep(End {
                 id: 0,
                 spell,
                 at: now.at,
                 helpful,
+                by,
                 gain_at: now.at - ms,
                 opened: false,
             });
-            return Loss::Unseen { helpful, mine, ms };
+            return Loss::Unseen { helpful, by, ms };
         };
         let open = &mut self.on[at];
         if open
@@ -126,6 +155,7 @@ impl Auras {
             spell,
             at: now.at,
             helpful: inst.helpful,
+            by: inst.by,
             gain_at: inst.gain_at,
             opened: inst.opened,
         });
@@ -146,7 +176,8 @@ impl Auras {
     }
 
     pub fn ended_of(&self, set: Set, from: i64) -> Option<&End> {
-        self.ended_since(from).find(|e| set.has(e.spell))
+        self.ended_since(from)
+            .find(|e| set.has(e.spell) && e.by.is_own())
     }
 
     pub fn mark_ended_opened(&mut self, id: u64) {

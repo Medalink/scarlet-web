@@ -318,6 +318,11 @@ next `TW` line, so one that ran out in the fight counts. A `D` within 3 s of the
 for `deaths`. A `SR` pair repeated for one death counts once. An `A 1` with initial `s` is not a gain for `shift_*`,
 `seal_fate`, and for `stealth_open` its gain time is the session start.
 
+`shift_*` and `seal_fate` follow only auras that the character cast. The addon writes `by` `1` when the aura's source
+is the player or the pet, `0` for any other source, and leaves it empty when the client names no source or hides it.
+An aura with `by` `0` is not a gain, is not the aura left, and is not a seal; an aura with an empty `by` counts as the
+character's own for these two machines and no others (`state_times` still reads it as another's, kind `b`).
+
 Rows with `n` 0 are not written.
 
 ### `dungeon_runs` (combat: `Z`, `B`, `D`, using core's `Z`)

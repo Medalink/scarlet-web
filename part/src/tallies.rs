@@ -295,7 +295,7 @@ impl Tallies {
 
     /// A seal or shape-shift aura was gained; `id` is its instance.
     pub fn on_gain(&mut self, now: &Now, auras: &Auras, id: u64) {
-        let Some(inst) = auras.get(id).filter(|i| !i.initial) else {
+        let Some(inst) = auras.get(id).filter(|i| !i.initial && i.by.is_own()) else {
             return;
         };
         for (set, key) in SHIFTS {
@@ -305,7 +305,7 @@ impl Tallies {
             let left = auras
                 .on
                 .iter()
-                .filter(|i| i.id != id && set.has(i.spell))
+                .filter(|i| i.id != id && set.has(i.spell) && i.by.is_own())
                 .max_by_key(|i| i.gain_at)
                 .map(|i| i.spell)
                 .or_else(|| auras.ended_of(set, now.at - SHIFT_MS).map(|e| e.spell))

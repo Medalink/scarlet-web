@@ -1,7 +1,7 @@
 //! The class tables (docs/ROWS.md): `spell_casts`, `meter_totals`, `meter_spells`, `state_times`, `item_flows` and
 //! `class_tallies`. The decoder feeds every line of the session here once, and the machines pick the lines they read.
 
-use crate::auras::{Auras, Loss, Recent};
+use crate::auras::{Auras, By, Loss, Recent};
 use crate::combat::Combat;
 use crate::decode::{field, num};
 use crate::flows::Flows;
@@ -92,10 +92,10 @@ pub struct Class {
     tallies: Tallies,
 }
 
-fn aura_kind(helpful: Option<bool>, mine: bool) -> Option<char> {
-    match (helpful, mine) {
-        (Some(true), true) => Some('a'),
-        (Some(true), false) => Some('b'),
+fn aura_kind(helpful: Option<bool>, by: By) -> Option<char> {
+    match (helpful, by) {
+        (Some(true), By::Mine) => Some('a'),
+        (Some(true), _) => Some('b'),
         (Some(false), _) => Some('x'),
         (None, _) => None,
     }
@@ -162,16 +162,16 @@ impl Class {
             HARMFUL => Some(false),
             _ => None,
         };
-        let mine = field(f, 4) == MINE;
+        let by = By::read(field(f, 4));
         let initial = field(f, 5) == INITIAL;
         let Some(id) = self
             .auras
-            .gain(now, spell, (helpful, mine), seconds_ms(now, f, 3), initial)
+            .gain(now, spell, (helpful, by), seconds_ms(now, f, 3), initial)
         else {
             return;
         };
         if let Some(inst) = self.auras.get_mut(id) {
-            self.states.on_gain(now, inst, aura_kind(helpful, mine));
+            self.states.on_gain(now, inst, aura_kind(helpful, by));
         }
         self.tallies.on_gain(now, &self.auras, id);
     }
@@ -183,9 +183,8 @@ impl Class {
                 self.states.on_end(&inst, ms);
                 self.tallies.on_loss(now, &inst, ms, &self.recent);
             }
-            Loss::Unseen { helpful, mine, ms } => {
-                self.states
-                    .on_unseen_end(aura_kind(helpful, mine), spell, ms);
+            Loss::Unseen { helpful, by, ms } => {
+                self.states.on_unseen_end(aura_kind(helpful, by), spell, ms);
             }
         }
     }
