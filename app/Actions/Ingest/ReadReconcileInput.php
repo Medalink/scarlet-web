@@ -12,11 +12,15 @@ class ReadReconcileInput
     /** How far past a claim's window Scarlet's rows are read, in seconds; rule 1 looks 24 hours around a window. */
     private const int REACH = 86_400;
 
+    /** How far past a claim's window another character's rows count for rule 4, in seconds. */
+    private const int TWIN_REACH = 60;
+
     private const string SCOPE_CHARACTER = 'c';
 
     /**
      * The JSON `scarlet-part reconcile` reads for one character and kind: the character's claims of the kind, the
-     * claims of the characters in `$siblingIds` (rule 4), and Scarlet's rows of the kind around the claims' windows.
+     * claims of the characters in `$siblingIds` (rule 4) with the times of the rows each holds beside its claims, and
+     * Scarlet's rows of the kind around the claims' windows.
      * The same database state always gives the same text, so it also fingerprints what a reconcile saw.
      *
      * @param  list<int>  $siblingIds  every character that is reconciled together, the character among them
@@ -28,7 +32,12 @@ class ReadReconcileInput
         $others = [];
         foreach ($siblingIds as $id) {
             if ($id !== $characterId) {
-                $others[] = ['id' => $id, 'name' => (string) $names[$id], 'claims' => array_values(array_filter($claims[$id] ?? [], fn (array $claim): bool => $claim['scope'] === self::SCOPE_CHARACTER))];
+                $others[] = [
+                    'id' => $id,
+                    'name' => (string) $names[$id],
+                    'claims' => array_values(array_filter($claims[$id] ?? [], fn (array $claim): bool => $claim['scope'] === self::SCOPE_CHARACTER)),
+                    'rows' => $kind->hasRows() ? $this->rowsBeside($id, $kind) : [],
+                ];
             }
         }
         $own = $claims[$characterId] ?? [];
@@ -68,6 +77,29 @@ class ReadReconcileInput
         }
 
         return $claims;
+    }
+
+    /**
+     * The times, in epoch milliseconds, of the character's fish `gathers` rows within a minute of the window of one
+     * of its dated claims of the kind: what rule 4 compares between the characters that hold one record.
+     *
+     * @return list<int>
+     */
+    private function rowsBeside(int $characterId, AddonKind $kind): array
+    {
+        $rows = DB::select(
+            <<<'SQL'
+            select distinct round(extract(epoch from g.at) * 1000)::bigint as at_ms
+            from addon_claims c
+            join gathers g on g.character_id = c.character_id and g.kind = ?
+                and g.at between to_timestamp(coalesce(c.from_at, c.to_at) - ?::bigint) and to_timestamp(c.to_at + ?::bigint)
+            where c.character_id = ? and c.kind = ? and c.scope = ? and c.window <> 'life'
+            order by at_ms
+            SQL,
+            [GatherKind::Fish->value, self::TWIN_REACH, self::TWIN_REACH, $characterId, $kind->value, self::SCOPE_CHARACTER],
+        );
+
+        return array_values(array_map(fn (stdClass $row): int => (int) $row->at_ms, $rows));
     }
 
     /**

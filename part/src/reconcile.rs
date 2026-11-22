@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 
 /// The version of the rules below. The scheduled pass reconciles a character again when its claims carry an
 /// older one.
-pub const RECONCILE_VERSION: u32 = 1;
+pub const RECONCILE_VERSION: u32 = 2;
 
 const EPOCH_FLOOR: i64 = 1_566_777_600;
 const FUTURE_SLACK: i64 = 86_400;
@@ -139,12 +139,14 @@ pub struct Row {
     pub item_ids: Vec<i64>,
 }
 
-/// A character and its claims of the kind.
+/// A character, its claims of the kind and, for a character other than the one reconciled, the `at` (epoch
+/// milliseconds) of its Scarlet rows of the kind that lie within a minute of its claims' windows.
 #[derive(Clone, Debug)]
 pub struct Sibling {
     pub id: i64,
     pub name: String,
     pub claims: Vec<Claim>,
+    pub rows: Vec<i64>,
 }
 
 /// Everything one reconcile reads. Times of claims are epoch seconds, `at` of a row epoch milliseconds.
@@ -250,19 +252,27 @@ fn early(input: &Input, c: &Claim) -> Option<Decision> {
 }
 
 fn twin(input: &Input, c: &Claim) -> Option<Decision> {
-    let mut lower: Vec<&Sibling> = input
+    let from = c.start() * 1000 - rules::ASSIGN_SLACK_MS;
+    let until = c.to * 1000 + rules::ASSIGN_SLACK_MS;
+    let own = (
+        !rules::holds_rows(input.rows.iter().map(|r| r.at), from, until),
+        input.character.id,
+    );
+    let (key, holder, same) = input
         .others
         .iter()
-        .filter(|o| o.id < input.character.id)
-        .collect();
-    lower.sort_by_key(|o| o.id);
-    lower.iter().find_map(|o| {
-        let same = o.claims.iter().find(|x| rules::same_record(c, x))?;
-        Some(nothing(
+        .filter_map(|o| {
+            let same = o.claims.iter().find(|x| rules::same_record(c, x))?;
+            let rows = rules::holds_rows(o.rows.iter().copied(), from, until);
+            Some(((!rows, o.id), o, same))
+        })
+        .min_by_key(|(key, _, _)| *key)?;
+    (key < own).then(|| {
+        nothing(
             c,
             Status::Superseded,
-            json!({"rule": 4, "with": {"character": o.name, "claim": same.natural()}}),
-        ))
+            json!({"rule": 4, "with": {"character": holder.name, "claim": same.natural()}}),
+        )
     })
 }
 
@@ -440,8 +450,9 @@ fn dated_origin(
 }
 
 /// Decide every claim of one character and kind: bounds, then the account's total as a reference, kinds,
-/// origins and metrics no rule maps, a lifetime of one character, the same record on a lower character (rule
-/// 4), the same origin's overlapping claims (rule 5), then per origin from the highest rank the rows
+/// origins and metrics no rule maps, a lifetime of one character, the same record on another character that
+/// holds Scarlet rows beside it or has the lower id (rule 4), the same origin's overlapping claims (rule 5), then
+/// per origin from the highest rank the rows
 /// assigned to each claim (rules 1 and 3) and the claims of higher ranks (rule 5), and events (rule 2).
 /// Outcomes come back in the order of `input.character.claims`.
 pub fn reconcile(input: &Input) -> Vec<Outcome> {
@@ -605,11 +616,17 @@ fn sibling_of(v: &Value) -> Result<Sibling, String> {
             .iter()
             .map(claim_of)
             .collect::<Result<_, _>>()?,
+        rows: v
+            .get("rows")
+            .and_then(Value::as_array)
+            .map(|a| a.iter().filter_map(Value::as_i64).collect())
+            .unwrap_or_default(),
     })
 }
 
 /// Read the JSON the server and the command line send: `kind`, `now`, `character` (`id`, `name`, `claims`),
-/// `rows` and `others` (characters like `character`).
+/// `rows` and `others` (characters like `character`, each with the `at` of its own rows in `rows`, which may be
+/// left out).
 pub fn parse(v: &Value) -> Result<Input, String> {
     Ok(Input {
         kind: text(v, "kind")?,

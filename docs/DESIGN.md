@@ -290,8 +290,9 @@ group, or the character, deletes the character's claims.
 
 `reconcile(character, kind)` is one function in `scarlet-part`, run by the server and later by the app
 (`scarlet-part reconcile` reads JSON on stdin and writes JSON; `--explain` prints the table of statuses). It reads rows,
-not parts: the character's claims of the kind, the character-scope claims of the characters linked to it (rule 4) and
-its Scarlet rows of the kind, counted or not. For fishing a row is a `gathers` row of kind fish with its `looted` and
+not parts: the character's claims of the kind, the character-scope claims of the characters linked to it with the
+times of the Scarlet rows each holds within 60 s of those claims (rule 4) and its own Scarlet rows of the kind, counted
+or not. For fishing a row is a `gathers` row of kind fish with its `looted` and
 the quantity of the loot window that followed it (the `gather_items` from its cast to the next cast of its session,
 without the ones that came from opening a container). It gives every claim exactly one status with its counted amounts
 and its evidence. It reads no database and no clock; `now` is an input. Every counted amount is floored at 0 and
@@ -303,7 +304,8 @@ The order of the work is fixed, and each step sees only the claims the steps bef
    fishing has one), an origin outside the kind's rank list and a metric the kind does not know are `held` with the
    rule `unmapped`.
 2. A character-scope `life` claim is `held` (rule 6).
-3. A claim equal to one of a linked character with a lower id is `superseded` (rule 4).
+3. A claim equal to one of another linked character is `superseded` (rule 4) unless its character is the one that
+   counts it: the one with Scarlet rows beside the claim, else the lowest id.
 4. Dated claims of one origin that overlap collapse into one (rule 5, second sentence): the claims are taken by end,
    start, store and dims, latest first, and each one overlapping a winner already taken loses to it.
 5. Per origin, highest rank first, Scarlet's rows are assigned to the claims left (rule 3). Then each claim in turn: a
@@ -371,11 +373,14 @@ Rules, in order:
    Another kind maps its own anchor metric here in the same way before it ships.
 4. **Between characters.** A character-scope claim that equals a claim of another character of the same account in
    origin, kind, window, `from`, `to`, dims and amounts (the store is ignored, events are included) is one record read
-   from two folders (a restored backup, a copied folder). It counts on the character with the lowest id and is
-   `superseded` on the others, with that claim and its character as evidence. Characters are of one account when they
-   share a game account, or an install that uploaded both, and so on transitively among the characters that hold
-   claims. A decode or removal that adds or removes such a claim reconciles the other characters too, locked lowest id
-   first.
+   from two folders (a restored backup, a copied folder). It counts on the character that has Scarlet rows of the kind
+   within 60 s of the claim's window, and on the lowest id when none or more than one has (among those that have rows;
+   among all when none does). It is `superseded` on the others, with that claim and its character as evidence. The
+   lowest id alone would count a copied folder's history twice whenever the copy was uploaded first: its claim counts
+   on the copy and the original's rows count beside it. Characters are of one account when they share a game account,
+   or an install that uploaded both, and so on transitively among the characters that hold claims. A decode or
+   removal that adds or removes such a claim or the rows beside it reconciles the other characters too, locked lowest
+   id first.
 5. **Between origins.** A fixed rank per kind (fishing: `fl` above `ff`). A claim whose window overlaps a counted or
    residual claim of a higher rank by more than 60 s is `superseded` whole. Two claims of one origin and one
    character whose windows overlap, or whose ends are equal, are one, whatever their stores: the later end wins, then
@@ -444,7 +449,8 @@ character (check 9).
 9. No text field of a claim holds a `First-Last` name other than the character's own.
 10. No public bucket shows a per-origin figure from fewer characters than the threshold.
 11. No dated claim is counted or residual on two characters of one account with the same origin, kind, `from`, `to`
-    and amounts.
+    and amounts, and no such claim is superseded by rule 4 on a character that has a Scarlet row within 60 s of it
+    in favour of one that has none.
 
 The rest is proven on a copy of the owner's data under an invented name, through the real companion and the real
 upload, before any page reads a claim: importing twice changes no row, addon parts first or sessions first give the

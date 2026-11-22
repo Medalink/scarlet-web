@@ -24,7 +24,8 @@ class AuditClaimStatuses
      * plus its stored difference, 2 counted stays between 0 and claimed and is 0 where the status says so, 3 a
      * superseded or residual claim names its evidence, 4 no Scarlet row is assigned to two claims of one origin, 5 no
      * two counted or residual dated claims of a character overlap, and 11 no dated claim counts on two characters of
-     * one account. With no character, every character is checked.
+     * one account, nor on the one without Scarlet rows beside it while the other has them (rule 4). With no
+     * character, every character is checked.
      *
      * @return list<string> one line per violation
      */
@@ -38,6 +39,7 @@ class AuditClaimStatuses
             ...$this->sharedRows($characterId),
             ...$this->overlaps($characterId),
             ...$this->twins($characterId),
+            ...$this->twinsWithoutRows($characterId),
         ];
     }
 
@@ -194,6 +196,40 @@ class AuditClaimStatuses
             [...$adding, ...$adding, self::SCOPE_CHARACTER, self::SCOPE_CHARACTER, self::LIFETIME, $characterId, $characterId, $characterId],
         ) as $row) {
             $lines[] = "claims {$row->first_id} of {$row->first_name} and {$row->second_id} of {$row->second_name} are one record ({$row->origin} {$row->kind} to {$row->to_at}) and both count";
+        }
+
+        return $lines;
+    }
+
+    /** @return list<string> */
+    private function twinsWithoutRows(?int $characterId): array
+    {
+        $slack = self::WINDOW_SLACK;
+        $lines = [];
+        foreach ($this->rows(
+            <<<'SQL'
+            select s.id as loser_id, w.id as winner_id, cs.name as loser_name, cw.name as winner_name, s.origin, s.kind, s.to_at
+            from addon_claims s
+            join characters cs on cs.id = s.character_id
+            join characters cw on cw.name = s.evidence #>> '{with,character}'
+            join addon_claims w on w.character_id = cw.id and w.origin = s.origin and w.kind = s.kind and w.window = s.window and w.scope = s.scope
+                and w.from_at is not distinct from s.from_at and w.to_at = s.to_at and w.amounts = s.amounts and w.dims = s.dims
+            where s.status = ? and s.evidence ->> 'rule' = '4' and s.kind = ?
+                and (?::bigint is null or s.character_id = ? or cw.id = ?)
+                and exists (
+                    select 1 from gathers g where g.character_id = s.character_id and g.kind = ?
+                        and g.at between to_timestamp(coalesce(s.from_at, s.to_at) - ?::bigint) and to_timestamp(s.to_at + ?::bigint)
+                )
+                and not exists (
+                    select 1 from gathers g where g.character_id = w.character_id and g.kind = ?
+                        and g.at between to_timestamp(coalesce(w.from_at, w.to_at) - ?::bigint) and to_timestamp(w.to_at + ?::bigint)
+                )
+            order by s.id
+            limit 20
+            SQL,
+            [ClaimStatus::Superseded->value, AddonKind::Fishing->value, $characterId, $characterId, $characterId, GatherKind::Fish->value, self::WINDOW_SLACK, self::WINDOW_SLACK, GatherKind::Fish->value, self::WINDOW_SLACK, self::WINDOW_SLACK],
+        ) as $row) {
+            $lines[] = "claim {$row->loser_id} of {$row->loser_name} is superseded by claim {$row->winner_id} of {$row->winner_name}, which has no Scarlet row within {$slack} s of the record ({$row->origin} {$row->kind} to {$row->to_at}) while {$row->loser_name} has";
         }
 
         return $lines;

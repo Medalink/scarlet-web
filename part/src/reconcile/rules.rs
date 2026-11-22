@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
 pub(super) const OVERLAP_SLACK: i64 = 60;
-const ASSIGN_SLACK_MS: i64 = 60_000;
+pub(super) const ASSIGN_SLACK_MS: i64 = 60_000;
 const SERVER_CLOCK_MS: i64 = 86_400_000;
 const EVENT_TOLERANCE_MS: i64 = 2_000;
 const EVENT_SEARCH_MS: i64 = 60_000;
@@ -89,6 +89,10 @@ pub(super) fn same_record(a: &Claim, b: &Claim) -> bool {
         && a.to == b.to
         && a.dims == b.dims
         && a.amounts == b.amounts
+}
+
+pub(super) fn holds_rows(mut rows: impl Iterator<Item = i64>, from: i64, until: i64) -> bool {
+    rows.any(|at| at >= from && at <= until)
 }
 
 fn overlaps(a: &Claim, b: &Claim) -> bool {
