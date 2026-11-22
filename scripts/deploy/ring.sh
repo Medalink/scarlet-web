@@ -46,7 +46,11 @@ deploy() {
   [ "$mine" = "$(entry sums)" ] || skip "deploy/ at $release differs from the droplet's; run bin/deploy once with the ops key"
 
   take_lock
-  bash deploy/build.sh "$repo" "$sha" | tee /dev/stderr | grep -qx "built $sha" || { echo "ring: the build gave no image" >&2; exit 1; }
+  built=$(mktemp)
+  bash deploy/build.sh "$repo" "$sha" > "$built" 2>&1 || true
+  cat "$built"
+  grep -qx "built $sha" "$built" || { rm -f "$built"; echo "ring: the build gave no image" >&2; exit 1; }
+  rm -f "$built"
   entry registry
   ssh $ssh_opts -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$port:127.0.0.1:5077" "ops@$host" > /dev/null 2>&1 &
   tunnel=$!
