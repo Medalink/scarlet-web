@@ -7,6 +7,7 @@ use App\Jobs\RefreshRollups;
 use App\Models\Character;
 use App\Models\Install;
 use App\Models\Part;
+use App\Support\DecompressionLimit;
 use App\Support\GroupRefusals;
 use App\Support\RefreshWindow;
 use App\Support\SharingGroups;
@@ -36,6 +37,7 @@ class RemoveGroup
         $window = RefreshWindow::ofCharacters($characterIds);
 
         [$parts, $rows] = DB::transaction(function () use ($install, $group, $characterIds): array {
+            DecompressionLimit::lift();
             // Wait for a running decode of these characters first; both take the row lock before the fact rows.
             Character::query()->whereIn('id', $characterIds)->lockedInOrder()->pluck('id');
             $parts = Part::query()->whereIn('character_id', $characterIds)->where('group_key', $group)->delete();

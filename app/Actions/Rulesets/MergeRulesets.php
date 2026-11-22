@@ -6,6 +6,7 @@ use App\Actions\Ingest\RebuildCharacterLevels;
 use App\Actions\Rollups\RefreshAggregates;
 use App\Models\Ruleset;
 use App\Models\RulesetKind;
+use App\Support\DecompressionLimit;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
@@ -66,9 +67,13 @@ class MergeRulesets
         }
         $this->mergedInto($rows);
         foreach ($tables as $table => $linked) {
-            $unfiled += DB::table($table.' as f')
-                ->whereExists(fn ($old) => $old->selectRaw('1')->from('rulesets as r')->whereColumn('r.id', 'f.ruleset_id')->whereNotNull('r.merged_into'))
-                ->update(['ruleset_id' => DB::raw('(select r2.merged_into from rulesets r2 where r2.id = f.ruleset_id)')]);
+            $unfiled += DB::transaction(function () use ($table): int {
+                DecompressionLimit::lift();
+
+                return DB::table($table.' as f')
+                    ->whereExists(fn ($old) => $old->selectRaw('1')->from('rulesets as r')->whereColumn('r.id', 'f.ruleset_id')->whereNotNull('r.merged_into'))
+                    ->update(['ruleset_id' => DB::raw('(select r2.merged_into from rulesets r2 where r2.id = f.ruleset_id)')]);
+            });
         }
         $notes[] = $unfiled.' fact rows without a session were filed through their old ruleset row.';
 
@@ -89,6 +94,7 @@ class MergeRulesets
     {
         foreach (DB::table('sessions')->whereNotNull('original_ruleset_id')->distinct()->orderBy('character_id')->pluck('character_id') as $characterId) {
             DB::transaction(function () use ($characterId, $tables): void {
+                DecompressionLimit::lift();
                 $this->lock((int) $characterId);
                 DB::table('sessions')->where('character_id', $characterId)->whereNotNull('original_ruleset_id')
                     ->update(['ruleset_id' => DB::raw('original_ruleset_id'), 'original_ruleset_id' => null]);
@@ -109,6 +115,7 @@ class MergeRulesets
      */
     private function file(int $characterId, array $rows, array $tables): array
     {
+        DecompressionLimit::lift();
         $this->lock($characterId);
         $sessions = DB::table('sessions as s')
             ->join('rulesets as o', 'o.id', '=', DB::raw('coalesce(s.original_ruleset_id, s.ruleset_id)'))

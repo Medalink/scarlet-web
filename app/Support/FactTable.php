@@ -47,6 +47,12 @@ enum FactTable: string
         };
     }
 
+    /** Whether the table holds a row for every step or sighting, so its chunks cover a day and not a week. */
+    public function dense(): bool
+    {
+        return $this === self::PathPoints || $this === self::CreatureSightings;
+    }
+
     /** @return list<self> */
     public static function inGroup(string $group): array
     {

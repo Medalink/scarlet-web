@@ -7,6 +7,7 @@ use App\Jobs\RefreshRollups;
 use App\Models\Character;
 use App\Models\Install;
 use App\Models\Part;
+use App\Support\DecompressionLimit;
 use App\Support\RefreshWindow;
 use Illuminate\Support\Facades\DB;
 
@@ -27,6 +28,7 @@ class RemoveEverything
         $window = RefreshWindow::ofCharacters($characterIds);
 
         [$characters, $parts, $rows] = DB::transaction(function () use ($characterIds): array {
+            DecompressionLimit::lift();
             // Wait for a running decode of these characters first; both take the row lock before the fact rows.
             Character::query()->whereIn('id', $characterIds)->lockedInOrder()->pluck('id');
             $parts = Part::query()->whereIn('character_id', $characterIds)->count();
