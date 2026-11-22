@@ -18,6 +18,9 @@ final class TalentTree
     /** The px the text renders at, at least: below it the tree scrolls inside its box instead of shrinking. */
     private const float MIN_TEXT_PX = 11.0;
 
+    /** An untaken node with no other node within this many spacings is off the frame the client draws, so the tree leaves it out. */
+    private const float STRAY = 6.0;
+
     /**
      * @param  array{nodes: array<int, array{id: int, x: int, y: int, tab: int|null, edges: list<array{to: int, type: string}>}>}  $layout
      * @param  array<int, array{title: string, text?: string, class: string, on?: bool}>  $marks  by node id: its tooltip, the text in it, its state class and whether it counts for the edges it ends
@@ -33,7 +36,11 @@ final class TalentTree
         if ($points === []) {
             return ['box' => '0 0 1 1', 'r' => 1.0, 'minw' => 0, 'nodes' => [], 'edges' => [], 'headings' => []];
         }
-        $r = round(self::spacing($points) * self::FILL, 2);
+        $spacing = self::spacing($points);
+        $strays = array_flip(self::strays($points, $marks, $spacing * self::STRAY));
+        $points = array_diff_key($points, $strays);
+        $layout['nodes'] = array_diff_key($layout['nodes'], $strays);
+        $r = round($spacing * self::FILL, 2);
 
         $nodes = [];
         foreach ($layout['nodes'] as $id => $node) {
@@ -100,6 +107,29 @@ final class TalentTree
         [, , $w, $h] = array_map('floatval', explode(' ', $tree['box']));
 
         return ['kind' => 'tree', 'w' => $w, 'h' => $h, 'out' => $id.'-out', 'summary' => [$label, ''], 'say' => $say];
+    }
+
+    /**
+     * @param  array<int, array{0: float, 1: float}>  $points
+     * @param  array<int, array{on?: bool}>  $marks
+     * @return list<int>
+     */
+    private static function strays(array $points, array $marks, float $far): array
+    {
+        $strays = [];
+        foreach ($points as $id => [$x, $y]) {
+            if ($marks[$id]['on'] ?? false) {
+                continue;
+            }
+            foreach ($points as $other => [$ox, $oy]) {
+                if ($other !== $id && hypot($x - $ox, $y - $oy) <= $far) {
+                    continue 2;
+                }
+            }
+            $strays[] = $id;
+        }
+
+        return $strays;
     }
 
     /**

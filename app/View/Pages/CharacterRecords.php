@@ -45,16 +45,16 @@ final class CharacterRecords
             $tiles[] = self::tile('quests', Format::number($totals['questiest']['quests']), 'Most quests in one session', self::day($totals['questiest']['at']));
         }
         if ($records['nodes'] > 0) {
-            $tiles[] = self::tile('gather', Format::number($records['nodes']), 'Nodes gathered', $since, self::taken('Most gathered', $records['topNode']));
+            $tiles[] = self::tile('gather', Format::number($records['nodes']), 'Objects looted', $since, self::taken('Most looted', $records['topNode']));
         }
         if ($records['fish'] > 0) {
             $tiles[] = self::tile('fish', Format::number($records['fish']), 'Fish caught', $since, self::taken('Most caught', $records['topFish']));
         }
         if ($records['jumps'] > 0) {
-            $tiles[] = self::tile(Format::number($records['jumps']), 'Jumps', $since);
+            $tiles[] = self::tile('jumps', Format::number($records['jumps']), 'Jumps', $since);
         }
         if ($records['topEmote'] !== null) {
-            $tiles[] = self::tile($records['topEmote']['token'], 'Favourite emote', Format::count($records['topEmote']['uses'], 'emote'));
+            $tiles[] = self::tile('emote', '/'.strtolower($records['topEmote']['token']), 'Favourite emote', 'Used '.Format::count($records['topEmote']['uses'], 'time'));
         }
         if (count($tiles) < self::LEAST) {
             return null;
