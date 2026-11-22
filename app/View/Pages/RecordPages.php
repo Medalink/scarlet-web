@@ -43,11 +43,15 @@ final class RecordPages
         $table = $r['drop_table'];
         /** @var array{rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $skin */
         $skin = $r['skin_table'];
+        /** @var array{kills: int, windows: int, estimate: RateEstimate|null, rows: list<array{item_id: int, item: string|null, estimate: RateEstimate}>} $solo */
+        $solo = $r['solo'];
         /** @var list<array{id: int, name: string}> $zones */
         $zones = $facts['zones'];
 
         $chosen = $table['rule'];
         $opens = $table['windows'] === 0 ? null : $table['windows'];
+        $ofKills = $solo['estimate'] !== null && ($chosen === null || $chosen === LootRule::Solo->value);
+        $soloItems = array_column($solo['rows'], 'estimate', 'item_id');
         $base = '/creatures/'.$r['id'];
         $query = fn (?string $value): string => $base.'?'.http_build_query(array_filter(['ruleset' => $scope->ruleset?->slug(), 'rule' => $value]));
 
@@ -60,6 +64,7 @@ final class RecordPages
                 ['label' => 'Characters killed', 'value' => $deaths['characters'] === null ? '0' : Format::number($deaths['characters'])],
                 ['label' => 'Deaths per 1,000 kills', 'value' => $kills['kills'] && $deaths['deaths'] !== null ? Format::number($deaths['deaths'] / $kills['kills'] * 1000, 1) : '–'],
                 ['label' => 'Corpses looted', 'value' => $opens === null ? '–' : Format::number($opens), 'unit' => $chosen === null ? null : LootRule::words($chosen)],
+                ...self::lootedOfKills($solo['estimate']),
             ],
             'threat' => RecordThreat::creature($kills['kills'], $deaths['deaths']),
             'rules' => $table['rules'] === [] ? [] : [
@@ -77,7 +82,9 @@ final class RecordPages
                 $row['estimate']->stated() ? $row['estimate']->range() : '–',
                 $row['estimate']->counts(),
                 Format::number($row['per_drop'], 1),
+                ...($ofKills ? [($soloItems[$row['item_id']] ?? RateEstimate::of(0, $solo['kills'], unit: RateEstimate::UNIT_KILL))->counts()] : []),
             ]], $table['rows']),
+            'ofKills' => $ofKills,
             'skinning' => array_map(fn (array $row): array => ['cells' => [
                 ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id']],
                 ['rate' => $row['estimate']],
@@ -89,6 +96,16 @@ final class RecordPages
             'dots' => $r['points'] !== null,
             'byLevel' => self::deathsByLevel($r['deaths_by_level']),
         ];
+    }
+
+    /**
+     * The figure of solo corpses looted over solo kills: a share from 10 kills, else only the counts.
+     *
+     * @return list<array{label: string, value: string, unit: string}>
+     */
+    private static function lootedOfKills(?RateEstimate $estimate): array
+    {
+        return $estimate === null ? [] : [['label' => 'Corpses looted of solo kills', 'value' => $estimate->stated() ? $estimate->percent() : '–', 'unit' => $estimate->counts()]];
     }
 
     /**

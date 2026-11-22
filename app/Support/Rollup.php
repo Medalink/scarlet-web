@@ -12,6 +12,7 @@ enum Rollup: string
     case LevelTimeRuleset = 'level_time_ruleset';
     case KillsDailyCharacter = 'kills_daily_character';
     case KillsDailyRuleset = 'kills_daily_ruleset';
+    case KillsSoloDaily = 'kills_solo_daily';
     case DeathsDailyCharacter = 'deaths_daily_character';
     case DeathsDailyRuleset = 'deaths_daily_ruleset';
     case DungeonsDailyRuleset = 'dungeons_daily_ruleset';

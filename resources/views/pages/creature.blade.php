@@ -4,7 +4,7 @@
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
     <x-slot:filters><x-scope-filters :filters="$d['filters']" /></x-slot:filters>
   </x-page-head>
-  <x-figures :items="$d['figures']" />
+  <x-figures :items="$d['figures']" :five="true" />
   <x-sheet>
     @if ($d['threat'])
     <x-threat :threat="$d['threat']" />
@@ -14,8 +14,8 @@
       <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
       @endif
       @if ($d['drops'])
-      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true]]" style="margin-top:1.1rem" />
-      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.@if ($d['unread']) {{ $d['unread'] }}@endif</p>
+      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true], ...($d['ofKills'] ? [['label' => 'Of kills', 'numeric' => true]] : [])]" style="margin-top:1.1rem" />
+      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.@if ($d['ofKills']) Of kills is windows that listed the item over the kills the character got credit for while playing alone; a kill nobody looted counts against it.@endif @if ($d['unread']) {{ $d['unread'] }}@endif</p>
       @else
       <x-note>No drops recorded for this creature yet.@if ($d['unread']) {{ $d['unread'] }}@endif</x-note>
       @endif

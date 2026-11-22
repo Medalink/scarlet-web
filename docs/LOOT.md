@@ -89,7 +89,10 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
   explain it. Empty state: `Only group loot recorded.`
 - **Drop rate by group size** (w12, phase 4): the same chart, split by size inside one rule. Empty state names the
   sizes seen: `Group loot recorded at size 2 only.`
-- **Corpses looted of kills** (phase 2): a figure, solo play only.
+- **Corpses looted of kills** (phase 2): a figure in the strip, solo play only, labelled `Corpses looted of solo
+  kills`: `76.9%` with `40 of 52` beside it, a dash in place of the share under 10 kills, and no figure when the creature has no solo kills. Drops
+  gains an **Of kills** column (`24 of 52`), the windows that listed the item over the same solo kills, shown under
+  All rules and Solo. A kill nobody looted counts against it, so the page says `of kills`, never `drop rate`.
 - The note under Drops is one line: `A drop rate is corpses that held the item over corpses looted for the first
   time. The range is 95%.` Drops counts windows read for loot only (`read = 'loot'`); windows read for skinning are
   in Skinning. When windows were left out because their session has no `read`, the note adds `Left out: N corpses
@@ -190,6 +193,7 @@ window       loot_opens where counted and has_items and first_read is not false 
 window item  loot_drops where counted and via = 'window' and first_read is not false and source_id is not null
 receipt      loot_drops where counted and via = 'receipt'
 member kill  kills where counted and not player
+solo kill    member kill where credit = 1 and group_size in (0, 1) and at >= 2026-11-20 21:00 UTC
 ```
 
 A window also carries `read`. A drop table reads `read = 'loot'`, a skinning table `read = 'skin'`, and fishing,
@@ -233,7 +237,14 @@ Notes on the definitions:
   so a rate can pass 100%. Phase 2 has the decoder merge them into one row with the summed quantity.
 - **Solo** means `group_size` is 0 or 1. Solo figures count only sessions whose `groups` hold both `combat` and
   `loot` and that fall after item lists began (2026-11-20 15:00), so kills from before are not in the denominator.
-  Opens-to-kills ratios over all time mix periods and no page shows one.
+  Opens-to-kills ratios over all time mix periods and no page shows one. The two conditions are met by the rows
+  themselves: `kills.group_size` is null without a `loot` part and `read` is null without a `combat` part, so a
+  solo kill and a window with a `read` both come from a session that holds both. `kills_solo_daily` holds the solo
+  kills and the page reads the windows from `loot_windows_daily` and `loot_items_daily` at a group size of 0 or 1.
+  Two picks, both the narrower reading: a solo kill is one the character got credit for (`credit = 1`; an
+  unattributed kill cannot be looted), and the cutoff is 15:00 in the addon author's time, UTC-6, so 21:00 UTC; the
+  lines name no time zone, and the later instant drops a few hours of kills rather than count kills that had no
+  window.
 - **A kill with no window** is either an empty corpse or one nobody looted. The two are not told apart until the
   corpse key exists, so Drop rate a kill is a lower bound and the page says `of kills`, never `drop rate`, for it.
 - **Kept by the looter** needs no dedupe: both sides are one uploader's own rows.

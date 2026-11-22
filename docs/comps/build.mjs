@@ -461,13 +461,13 @@ const wilson = (k, n) => {
   return { p, low: Math.max(0, centre - spread), high: Math.min(1, centre + spread) };
 };
 const pct = (share) => (share * 100).toFixed(share > 0 && share < 0.01 ? 2 : 1);
-const dropRow = (name, href, k, n, per, cls = "", how = null) => {
+const dropRow = (name, href, k, n, per, cls = "", how = null, ofKills = null) => {
   const { p, low, high } = wilson(k, n), tag = cls === "quest" ? `<span class="tag hc">quest item</span>` : "";
   const link = `<a href="${href}"${cls && cls !== "quest" ? ` class="${cls}"` : ""}>${name}</a>${tag}`;
   const rate = n < 10
     ? `<td class="n"><span class="mut">–</span></td><td class="n">–</td>`
     : `<td class="n"><span class="rb${n < 30 ? " hollow" : ""}" role="img" aria-label="${pct(p)}, range ${pct(low)} to ${pct(high)} percent"><i class="rng" style="left:${(low * 100).toFixed(1)}%;width:${((high - low) * 100).toFixed(1)}%"></i><i class="pt" style="left:${(p * 100).toFixed(1)}%"></i></span>${pct(p)}%</td><td class="n">${pct(low)} to ${pct(high)}</td>`;
-  return { low: n < 10 ? -1 : low, k, html: `<tr><td>${link}</td>${how === null ? "" : `<td>${how}</td>`}${rate}<td class="n">${k} of ${n}</td>${per === null ? "" : `<td class="n">${per}</td>`}</tr>` };
+  return { low: n < 10 ? -1 : low, k, html: `<tr><td>${link}</td>${how === null ? "" : `<td>${how}</td>`}${rate}<td class="n">${k} of ${n}</td>${per === null ? "" : `<td class="n">${per}</td>`}${ofKills === null ? "" : `<td class="n">${ofKills}</td>`}</tr>` };
 };
 const ranked = (rows) => rows.sort((a, b) => b.low - a.low || b.k - a.k).map((row) => row.html).join("\n          ");
 
@@ -477,20 +477,21 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
     <div><h1 id="h1">Marsh Stalker</h1><p class="sub">Level 22 to 24 beast (crocolisk), normal. Seen in <a href="zone.html">Saltmarsh Reach</a>.</p></div>
     <div class="filters">${rulesetSeg}</div>
   </section>
-  <section class="week n6" aria-label="Totals">
+  <section class="week n7" aria-label="Totals">
     <div><dt>Kills</dt><dd>412</dd></div><div><dt>Characters killed</dt><dd>9</dd></div><div><dt>Deaths per 1,000 kills</dt><dd>21.8</dd></div>
     <div><dt>Median killer level</dt><dd>23</dd></div><div><dt>XP a kill at level 23</dt><dd>214</dd></div><div><dt>Corpses looted</dt><dd>126</dd></div>
+    <div><dt>Corpses looted of solo kills</dt><dd>77%<small>49 of 64</small></dd></div>
   </section>
   <div class="sheet">
     <section class="mod w7 first" aria-labelledby="h-d">
       <div class="mod-head"><h2 id="h-d">Drops</h2>
         <div class="seg" role="group" aria-label="Loot rule"><a href="#" aria-current="true">All rules</a><a href="#">Group loot</a><a href="#">Free for all</a><span class="off" aria-disabled="true">Solo</span></div></div>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Corpses</th><th class="n">Per drop</th></tr></thead>
+        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Corpses</th><th class="n">Per drop</th><th class="n">Of kills</th></tr></thead>
         <tbody>
-          ${ranked([dropRow("Stalker Hide", "item.html", 52, 126, "1.0"), dropRow("Cracked Tooth", "item.html", 36, 126, "1.0"), dropRow("Saltmarsh Cleaver", "item.html", 2, 126, "1.0", "q2"), dropRow("Marshwalker Greaves", "item.html", 1, 126, "1.0", "q3")])}
+          ${ranked([dropRow("Stalker Hide", "item.html", 52, 126, "1.0", "", null, "26 of 64"), dropRow("Cracked Tooth", "item.html", 36, 126, "1.0", "", null, "18 of 64"), dropRow("Saltmarsh Cleaver", "item.html", 2, 126, "1.0", "q2", null, "1 of 64"), dropRow("Marshwalker Greaves", "item.html", 1, 126, "1.0", "q3", null, "0 of 64")])}
         </tbody></table></div>
-      <p class="note">A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.</p>
+      <p class="note">A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset. Of kills is corpses that held the item over the kills the character got credit for while playing alone; a kill nobody looted counts against it.</p>
     </section>
     <section class="mod w5 last" aria-labelledby="h-w">
       <h2 id="h-w">Where it was met</h2>

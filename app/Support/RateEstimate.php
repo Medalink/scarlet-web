@@ -16,6 +16,8 @@ final readonly class RateEstimate implements JsonSerializable
 
     public const string UNIT_WINDOW = 'window';
 
+    public const string UNIT_KILL = 'kill';
+
     /**
      * @param  list<RateFlag>  $flags
      */

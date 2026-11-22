@@ -3,6 +3,7 @@
 namespace App\Actions\Public;
 
 use App\Actions\Rollups\DropRates;
+use App\Actions\Rollups\SoloLoot;
 use App\Actions\Rollups\SourceDrops;
 use App\Actions\Rollups\WorldHeat;
 use App\Support\KillerKind;
@@ -24,6 +25,7 @@ class CreatureRecord
         private readonly ResolveScope $resolveScope,
         private readonly DropRates $drops,
         private readonly SourceDrops $dropTable,
+        private readonly SoloLoot $solo,
         private readonly WorldHeat $heat,
         private readonly MapZones $zones,
         private readonly CreaturePoints $points,
@@ -32,8 +34,8 @@ class CreatureRecord
 
     /**
      * Everything the creature page and `/public/creatures/{id}` show: what it is, kills and deaths to it, its drops
-     * under each loot rule, its drop table over every rule or over `$rule` alone, its skinning table, and the cells
-     * where it was met.
+     * under each loot rule, its drop table over every rule or over `$rule` alone, its skinning table, its solo
+     * loot against its solo kills, and the cells where it was met.
      * Null when nothing is known by this id or the ruleset is not known. Numbers under the character threshold are
      * null or missing.
      *
@@ -60,6 +62,7 @@ class CreatureRecord
             'drops' => $this->drops->handle(self::SOURCE, $id),
             'drop_table' => $this->dropTable->handle(self::SOURCE, $id, $rule),
             'skin_table' => $this->dropTable->handle(self::SOURCE, $id, null, LootRead::Skin),
+            'solo' => $this->solo->handle($id),
             'heat' => $this->heat->handle(WorldLayer::Creatures, $ids, $id),
             'points' => $this->points->handle($id, $ids),
             'map_zones' => $this->zones->handle($ids),
