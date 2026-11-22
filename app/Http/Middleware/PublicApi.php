@@ -36,7 +36,10 @@ class PublicApi
 
     public const int ANSWER_SECONDS = 30;
 
-    private const int ANSWER_MAX_BYTES = 262144;
+    /** Gzipped, so the whole densest map level (150,000 cells, about 540 KB packed) is kept too. */
+    private const int ANSWER_MAX_BYTES = 1048576;
+
+    private const string GZIP_MAGIC = "\x1f\x8b";
 
     private const int STATEMENT_TIMEOUT_MS = 10000;
 
@@ -102,16 +105,21 @@ class PublicApi
     {
         $key = $endpoint === null ? null : self::answerKey($request, $endpoint);
         $kept = $key === null ? null : Cache::get($key);
-        if (is_string($kept)) {
-            return response($kept, Response::HTTP_OK, ['Content-Type' => 'application/json']);
+        $body = is_string($kept) && str_starts_with($kept, self::GZIP_MAGIC) ? gzdecode($kept) : false;
+        if (is_string($body)) {
+            return response($body, Response::HTTP_OK, ['Content-Type' => 'application/json']);
         }
 
         DB::select('select set_config(?, ?, false)', ['statement_timeout', (string) self::STATEMENT_TIMEOUT_MS]);
         /** @var Response $response */
         $response = $next($request);
         $content = $response->getContent();
-        if ($key !== null && $response->getStatusCode() === Response::HTTP_OK && is_string($content) && strlen($content) <= self::ANSWER_MAX_BYTES) {
-            Cache::put($key, $content, self::ANSWER_SECONDS);
+        if ($key === null || $response->getStatusCode() !== Response::HTTP_OK || ! is_string($content)) {
+            return $response;
+        }
+        $packed = gzencode($content, 1);
+        if (is_string($packed) && strlen($packed) <= self::ANSWER_MAX_BYTES) {
+            Cache::put($key, $packed, self::ANSWER_SECONDS);
         }
 
         return $response;
