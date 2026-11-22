@@ -5,6 +5,9 @@ namespace App\Http\Requests\Api;
 use App\Support\Cursor;
 use App\Support\Exceptions\ApiException;
 use App\Support\HeatGrid;
+use App\Support\LootFilter;
+use App\Support\LootSort;
+use App\Support\LootView;
 use App\Support\Server;
 use App\Support\WorldLayer;
 use Illuminate\Contracts\Validation\Validator;
@@ -36,6 +39,13 @@ class PublicRequest extends FormRequest
             'limit' => ['nullable', 'integer', 'min:1', 'max:'.Cursor::MAX_LIMIT],
             'q' => ['nullable', 'string', 'min:2', 'max:80', 'regex:/^\P{Cc}*\z/u'],
             'kind' => ['nullable', 'string', 'max:16'],
+            'view' => ['nullable', Rule::enum(LootView::class)->except(LootView::Items)],
+            'zone' => ['nullable', 'integer', 'between:-100000,1000000'],
+            'min' => ['nullable', 'integer', 'between:-1,80'],
+            'max' => ['nullable', 'integer', 'between:-1,80'],
+            'quality' => ['nullable', 'integer', 'between:0,5'],
+            'sort' => ['nullable', Rule::enum(LootSort::class)],
+            'rule' => ['nullable', 'string', 'max:24', 'regex:/^[a-z]+$/'],
         ];
     }
 
@@ -106,6 +116,46 @@ class PublicRequest extends FormRequest
         $term = $this->validated('q');
 
         return is_string($term) ? trim($term) : null;
+    }
+
+    /** The table `/public/loot/sources` lists: creatures unless `view` says objects or containers. */
+    public function lootView(): LootView
+    {
+        $view = $this->validated('view');
+
+        return is_string($view) ? LootView::from($view) : LootView::Creatures;
+    }
+
+    /** What the loot lists are narrowed to and how they are ordered, for the table of `$view`. */
+    public function lootFilter(LootView $view): LootFilter
+    {
+        $sort = $this->validated('sort');
+        $text = $this->term();
+
+        return new LootFilter(
+            $view,
+            $this->whole('zone'),
+            $this->whole('min'),
+            $this->whole('max'),
+            $this->whole('quality'),
+            $text ?? '',
+            is_string($sort) ? LootSort::from($sort) : LootSort::Windows,
+        );
+    }
+
+    /** The loot rule an object's drop table is narrowed to, such as `group`. */
+    public function lootRule(): ?string
+    {
+        $rule = $this->validated('rule');
+
+        return is_string($rule) ? $rule : null;
+    }
+
+    private function whole(string $key): ?int
+    {
+        $value = $this->validated($key);
+
+        return is_numeric($value) ? (int) $value : null;
     }
 
     public function kind(): ?string

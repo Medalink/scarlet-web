@@ -10,7 +10,7 @@ use App\Support\Exceptions\ApiException;
 use App\Support\SearchKind;
 use Illuminate\Http\JsonResponse;
 
-/** Search over public characters, creatures, items, zones, quests and the site's own pages. */
+/** Search over public characters, creatures, items, objects, zones, quests and the site's own pages. */
 class SearchController extends PublicController
 {
     public function __invoke(PublicRequest $request, Search $search, SearchPages $pages): JsonResponse
@@ -21,7 +21,7 @@ class SearchController extends PublicController
         }
         $kind = $request->kind() === null ? null : SearchKind::tryFrom($request->kind());
         if ($request->kind() !== null && $kind === null) {
-            throw ApiException::invalidRequest('The kind parameter is not valid.', ['kind' => ['Use characters, creatures, items, zones or quests.']]);
+            throw ApiException::invalidRequest('The kind parameter is not valid.', ['kind' => ['Use characters, creatures, items, objects, zones or quests.']]);
         }
 
         $offset = $request->offset();

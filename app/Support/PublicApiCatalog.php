@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Http\Controllers\Api\V1\Public\CampsController;
 use App\Http\Controllers\Api\V1\Public\CharacterController;
 use App\Http\Controllers\Api\V1\Public\LeaderboardController;
+use App\Http\Controllers\Api\V1\Public\LootController;
 use App\Http\Controllers\Api\V1\Public\MapController;
 use App\Http\Controllers\Api\V1\Public\ProfessionController;
 use App\Http\Controllers\Api\V1\Public\RecordController;
@@ -131,6 +132,13 @@ final class PublicApiCatalog
                 'example' => '/items/1465', 'where' => ['id' => '[0-9]+'],
             ],
             [
+                'name' => 'object', 'group' => 'Records', 'path' => '/objects/{id}', 'action' => [LootController::class, 'object'],
+                'summary' => 'One object, such as a chest, an ore vein or an herb: how often it was opened, by how many characters, where and at which levels, what it gives and the places it was opened.',
+                'params' => [['id', 'path', 'integer', 'The object id, as in the address of its page.'], ['rule', 'query', 'string', 'A loot rule the drop table is read under, such as `group`. Leave out for every loot rule but personal loot.']],
+                'returns' => '`data`: `id`, `name` (`null` until the addon has named it), `read` (`loot`, `herb` or `ore`: the read the drop table covers, the one the object has most windows of), `windows`, `characters`, `items`, `zones` (`id`, `name`, `windows`), `level_min` and `level_max` (the levels of the characters that opened it), `drop_table` (`rule`, `windows`, `characters`, `unread`, `rules` and `rows` of `item_id`, `item`, `quantity`, `per_drop` and `estimate` (`k` windows that held the item of `n` windows read for the first time, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 windows, `hollow` from 10 and `solid` from 30, and `flags`; `rate`, `low` and `high` are `null` under 10 windows)) and `points` (the `[u, v]` world positions the characters stood at for the newest 600 openings, or `null`). The fishing bobber answers 404: its catches are on `/professions/fishing`.',
+                'example' => '/objects/1731', 'where' => ['id' => '[0-9]+'],
+            ],
+            [
                 'name' => 'spell', 'group' => 'Records', 'path' => '/spells/{id}', 'action' => [RecordController::class, 'spell'],
                 'summary' => 'One spell: what the client says about it (icon, cast time, range, cost, description) and, for a recipe, what it makes and needs.',
                 'params' => [['id', 'path', 'integer', 'The spell id, as in the address of its page.']],
@@ -157,6 +165,20 @@ final class PublicApiCatalog
                 'params' => [['id', 'path', 'integer', 'The quest id, as in the address of its page.'], 'ruleset', 'server'],
                 'returns' => '`data`: `totals`, `levels` (level, turn-ins) and `zones`.',
                 'example' => '/quests/6521', 'where' => ['id' => '[0-9]+'],
+            ],
+            [
+                'name' => 'loot-sources', 'group' => 'Loot', 'path' => '/loot/sources', 'action' => [LootController::class, 'sources'],
+                'summary' => 'The creatures, objects or containers that were looted, one row for each: how many times, how many different items, the levels, the zone with most of them and the item that was in most of them. Fishing is not here.',
+                'params' => [['view', 'query', 'string', '`creatures`, `objects` or `containers`. Default `creatures`.'], ['zone', 'query', 'integer', 'A zone id from `/zones/{id}`. Leave out for every zone.'], ['min', 'query', 'integer', 'The lowest level: the creature level for `creatures`, the level of the looter for the others.'], ['max', 'query', 'integer', 'The highest level, read the same way.'], ['quality', 'query', 'integer', 'The lowest item quality the source gave, 0 poor to 5 legendary.'], ['q', 'query', 'string', 'Text that is in the name of the source or of an item it gave, or the id of the source. 2 to 80 characters.'], ['sort', 'query', 'string', '`windows` (default), `items` or `level`.'], 'cursor', 'limit'],
+                'returns' => '`data`: a list of `source_kind` (`c` creature, `g` object, `i` container item), `source_id`, `name`, `path`, `windows` (the corpses or openings read for the first time, every loot rule but personal loot), `items`, `characters`, `level_min`, `level_max`, `zone` (`id`, `name`) and `top` (`item_id`, `item` and the `estimate` (`k` windows that held the item of `n` windows read for the first time, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 windows, `hollow` from 10 and `solid` from 30, and `flags`; `rate`, `low` and `high` are `null` under 10 windows) of the item that was in most of them). `meta.view` and `meta.next_cursor`.',
+                'example' => '/loot/sources', 'where' => [],
+            ],
+            [
+                'name' => 'loot-items', 'group' => 'Loot', 'path' => '/loot/items', 'action' => [LootController::class, 'items'],
+                'summary' => 'The items that dropped from creatures, objects and containers, one row for each: how many times, from how many sources, the source with the best rate and the zone the item dropped most in. Fishing is not here.',
+                'params' => [['zone', 'query', 'integer', 'A zone id from `/zones/{id}`. Leave out for every zone.'], ['quality', 'query', 'integer', 'The lowest item quality, 0 poor to 5 legendary.'], ['q', 'query', 'string', 'Text that is in the name of the item, or its id. 2 to 80 characters.'], ['sort', 'query', 'string', '`windows` (default) or `items`: items by how often they dropped or from how many sources.'], 'cursor', 'limit'],
+                'returns' => '`data`: a list of `item_id`, `name`, `quality`, `path`, `dropped` (the corpses and openings that held the item, once each), `sources`, `best` (`source_kind`, `source_id`, `source`, `path` and the `estimate` (`k` windows that held the item of `n` windows read for the first time, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 windows, `hollow` from 10 and `solid` from 30, and `flags`; `rate`, `low` and `high` are `null` under 10 windows) at the source where the low end of the range is highest) and `zone`. `meta.next_cursor`.',
+                'example' => '/loot/items', 'where' => [],
             ],
             [
                 'name' => 'map-heat', 'group' => 'Map', 'path' => '/map/heat', 'action' => [MapController::class, 'heat'],

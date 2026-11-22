@@ -7,7 +7,7 @@ const READ_AFTER_REFRESH = "/professions/";
 const RULESET = "unidentified";
 const FACTS_WAIT_MS = 10_000;
 const FACTS_POLL_MS = 250;
-const RECORDS = { characters: NAME, creatures: "113", items: "769", quests: "783", zones: "1436", spells: "2660", encounters: "1065" };
+const RECORDS = { characters: NAME, creatures: "113", items: "769", objects: "1731", quests: "783", zones: "1436", spells: "2660", encounters: "1065" };
 
 const SHAPES = [
   ["/stats", ["totals", "coverage", "rulesets"]],
@@ -18,11 +18,14 @@ const SHAPES = [
   ["/rulesets/{slug}/series/{series}", ["levels", "reached", "time_per_level"]],
   ["/leaderboards", ["board", "title", "description", "value"]],
   ["/leaderboards/{board}", ["rank", "name", "race", "class", "value", "ruleset", "hardcore", "deaths", "since", "at"]],
-  ["/search", ["characters", "creatures", "items", "zones", "quests", "pages"]],
+  ["/search", ["characters", "creatures", "items", "objects", "zones", "quests", "pages"]],
   ["/characters/{name}", ["name", "race", "class", "faction", "level", "recorded_seconds", "ruleset", "week", "feats", "standings"]],
   ["/characters/{name}/series/{series}", ["pace"]],
   ["/creatures/{id}", ["id", "name", "facts", "kills", "drops", "cells"]],
   ["/items/{id}", ["id", "name", "sources", "by_source", "gathered", "gathered_count", "dropped", "source_count", "best_rate"]],
+  ["/objects/{id}", ["id", "name", "windows", "characters", "zones", "drop_table"]],
+  ["/loot/sources", ["source_kind", "source_id", "name", "windows", "items", "top"]],
+  ["/loot/items", ["item_id", "name", "dropped", "sources", "best"]],
   ["/zones/{id}", ["id", "name", "rect", "played", "deaths", "killers", "creatures"]],
   ["/quests/{id}", ["id", "name", "totals", "levels", "zones"]],
   ["/spells/{id}", ["id", "name", "facts", "recipe"]],
