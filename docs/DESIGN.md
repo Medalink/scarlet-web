@@ -738,11 +738,18 @@ walked. The page does not carry those cells: its map spec names `/c/{name}/heat`
 (a flat list of cell_i, cell_j and points, in the order first walked) to exactly the viewers who may open the page, and the
 viewer reads it after the first paint; a replay waits for it like it waits for tiles.
 
-**Deep zoom.** The blur is 0.6 of a cell, which is 9 px or more once a cell is 15 px wide, and joins neighbouring paths into
-blobs. From 6 CSS px a cell on the finest level, the viewer stops scaling that texture and draws the cells again, 64 by 64
-cells at a time, at 3 to 9 texels to a cell with a blur of 0.5 down to 0.12 cell (3 to 5 px on screen at every zoom, with the
-same brightness for a line). Chunks are built when they come into view and the last 48 are kept. A replay that is still
-revealing cells draws the plain texture.
+**Lines.** Paths are drawn as lines once a cell of the finest grid is 2 CSS px wide (fully from 3.2 px; the texture
+stays under them at 0.3 of its strength, as the glow). The viewer builds them from the cells, once per level
+(`resources/js/map/trails.js`, about 40 ms for 20,000 cells): gaps of up to 3 cells that walked cells enclose are
+closed, the walked cells are thinned to their one-cell-wide middle (Zhang-Suen), and a cell that thinning removed
+with every neighbour comes back as a dot. Each cell left is a point at the middle of the counters of its 3 by 3
+neighbourhood, weighted by them, which puts a road that runs between two rows of cells between them. Points that touch
+are joined, three passes move each point to the mean of itself and the points it is joined to, and each point is
+stroked as a curve from halfway to one neighbour to halfway to the other. Width and colour follow the counters round
+the point against the median point: five steps from a 1 px wine line at a quarter of the median to a 2.7 px rose line
+at four times it, so a map of one character is a plain scarlet line and a shared road stands out. Lines are vectors,
+drawn 32 by 32 cells at a time from the chunks in view, so they stay sharp at every zoom. Deaths and creatures are
+places, not routes, and stay the texture. A replay draws the points walked so far.
 
 **Creatures.** A creature page marks where it was met with dots. Neither a sighting nor a kill records the creature's
 position, so a dot is the nearest position the same character's path recorded within ten seconds of the sighting, else
@@ -750,8 +757,7 @@ the middle of the sighting's cell. A dot carries no time and no character. A cre
 as the same density surface instead (768 grid). The map opens on the dots' bounding box, never wider than a zone.
 
 **The viewer** is the site's own canvas module, with no map library: tiles by zoom, drag and wheel and pinch to move,
-plus and minus keys, a heat layer drawn as a density surface, death crosses, a character's paths as scarlet
-lines, zone names from the dictionary at the zooms where they fit, and a link from a zone's name to its page. It
+plus and minus keys, a heat layer drawn as a density surface, paths as scarlet lines, death crosses, zone names from the dictionary at the zooms where they fit, and a link from a zone's name to its page. It
 loads only the tiles in view. The wheel zooms a map, except one that lies behind a page head (a character page,
 a zone page): there the wheel and a one-finger vertical swipe scroll the page, so a visitor is never stopped on the way
 down. Clicking or dragging that map hands it the wheel until the pointer leaves it, and Ctrl or Command with the wheel
