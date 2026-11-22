@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Actions\Feats\QueueClassStandings;
 use App\Actions\Feats\StoreCharacterFeats;
 use App\Contracts\BoundedJob;
 use Illuminate\Bus\Queueable;
@@ -39,8 +40,9 @@ class RefreshCharacterFeats implements BoundedJob, ShouldBeUniqueUntilProcessing
         return 'feats:'.$this->characterId;
     }
 
-    public function handle(StoreCharacterFeats $store): void
+    public function handle(StoreCharacterFeats $store, QueueClassStandings $standings): void
     {
         $store->handle($this->characterId);
+        $standings->handle($this->characterId);
     }
 }

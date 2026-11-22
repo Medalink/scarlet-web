@@ -14,6 +14,7 @@ class CharacterClassPage
 {
     public function __construct(
         private readonly ReadClassParts $read,
+        private readonly ReadClassComparison $comparison,
         private readonly ClassFeatCards $feats,
         private readonly CountBattlegroundMatches $matches,
     ) {}
@@ -47,7 +48,7 @@ class CharacterClassPage
             $parts->sheet,
             $parts->talents,
             $parts->party,
-            null,
+            $this->comparison->handle($read),
             $this->feats->handle($read),
         );
 

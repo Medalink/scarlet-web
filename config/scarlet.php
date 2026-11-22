@@ -118,5 +118,10 @@ return [
         'memory_mb' => 256,
         'holders_seconds' => 900,
     ],
+    'standings' => [
+        'timeout' => 120,
+        'tries' => 2,
+        'memory_mb' => 256,
+    ],
 
 ];
