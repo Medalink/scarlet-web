@@ -28,7 +28,7 @@ export function browserCommand(explicit) {
 
 function killTree(pid) {
   if (process.platform === "win32") {
-    spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { stdio: "ignore" });
+    spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
     return;
   }
   try {
@@ -89,7 +89,7 @@ export class Browser {
 
   /** The window handle Windows reports for the browser process; 0 means it has no window. */
   windowHandle() {
-    const asked = spawnSync("pwsh", ["-NoProfile", "-Command", `(Get-Process -Id ${this.pid}).MainWindowHandle`], { encoding: "utf8" });
+    const asked = spawnSync("pwsh", ["-NoProfile", "-Command", `(Get-Process -Id ${this.pid}).MainWindowHandle`], { encoding: "utf8", windowsHide: true });
     if (asked.status !== 0) throw new Error(`the window check failed: ${asked.stderr || asked.error}`);
     return asked.stdout.trim();
   }
@@ -100,7 +100,7 @@ export class Browser {
     const tab = new Tab(target, this.#onRequest);
     await tab.connect();
     await Promise.all(["Runtime", "Page", "Log", "Network"].map((domain) => tab.send(`${domain}.enable`)));
-    await tab.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width < 600 });
+    await tab.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
     await tab.send("Network.setCookie", { ...ORIGIN_COOKIE, url: new URL(url).origin });
     await tab.navigate(url);
     return tab;
@@ -219,8 +219,8 @@ class Tab {
     }
   }
 
-  overflow() {
-    return this.evaluate("Math.max(0, document.documentElement.scrollWidth - window.innerWidth)");
+  overflow(width) {
+    return this.evaluate(`Math.max(0, document.documentElement.scrollWidth - ${width})`);
   }
 
   async screenshot() {

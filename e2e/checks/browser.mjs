@@ -59,7 +59,7 @@ function cleanPages(routes, width, strict) {
       try {
         tab = await browser.open(ctx.base + route, { width, height: width > 600 ? 800 : 844 });
         const found = strict ? tab.problems.filter((problem) => mapArt || !MAP_ART_ABSENT.test(problem)) : [];
-        const overflow = await tab.overflow();
+        const overflow = await tab.overflow(width);
         if (overflow > 0) found.push(`the page is ${overflow}px wider than the window`);
         if (found.length === 0) return null;
         return `${route} at ${width}: ${await withScreenshot(ctx, tab, `${route === "/" ? "home" : route}-${width}`, new Error(found.join(" | ")))}`;
