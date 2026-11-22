@@ -33,10 +33,14 @@ skip() {
 }
 
 another_ring_runs() {
-  for pid in $(pgrep -f 'ring[.]sh deploy' || true); do
-    [ "$pid" = "$$" ] || [ "$pid" = "$PPID" ] || return 0
-  done
-  return 1
+  pids=$(mktemp)
+  pgrep -f 'ring[.]sh deploy' > "$pids" || true
+  found=1
+  while read -r pid; do
+    [ "$pid" = "$$" ] || [ "$pid" = "$PPID" ] || found=0
+  done < "$pids"
+  rm -f "$pids"
+  return "$found"
 }
 
 take_lock() {
