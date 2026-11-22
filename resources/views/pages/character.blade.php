@@ -35,7 +35,7 @@
     <h2 id="h-feats">Feats</h2>
     <p class="feats-sum"><span><b>{{ $d['feats']['held'] }}</b>of {{ $d['feats']['total'] }} feats</span>@foreach ($d['feats']['tiers'] as $tier)<span><b>{{ $tier['count'] }}</b>{{ $tier['name'] }}</span>@endforeach</p>
     @if ($d['feats']['since'])<p class="note">Counted since {{ $d['feats']['since'] }}.</p>@endif
-    <ul class="feats">@foreach ($d['feats']['items'] as $feat)<li class="feat t{{ $feat['tier'] }}"><span class="seal"><x-icon :name="$feat['icon']" /></span><div><p class="feat-n">{{ $feat['name'] }}@if ($feat['tier_name'])<small>{{ $feat['tier_name'] }}</small>@endif</p><p class="feat-d">{{ $feat['detail'] }}</p>@if ($feat['at'] !== null)<span class="feat-to" style="--at:{{ $feat['at'] }}%"><i></i></span>@endif</div></li>@endforeach</ul>
+    <ul class="feats">@foreach ($d['feats']['items'] as $feat)<li class="feat t{{ $feat['tier'] }}"><span class="seal"><x-icon :name="$feat['icon']" /></span><div><p class="feat-n">{{ $feat['name'] }}@if ($feat['tier_name'])<small>{{ $feat['tier_name'] }}</small>@endif</p><p class="feat-d">{{ $feat['detail'] }}</p><span class="feat-to" aria-hidden="true">@foreach ($feat['track'] as $share)<i style="--at:{{ $share }}%"></i>@endforeach</span></div></li>@endforeach</ul>
   </section>
   @endif
   @if ($d['standings'])

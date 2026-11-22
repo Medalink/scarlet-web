@@ -528,7 +528,8 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   hidden from assistive technology. The interactive map stays in "Where characters go".
 - **Icons.** `<x-icon name>` is one authored set on a 24-unit grid with one round stroke, coloured by its text.
   No emoji and no icon font.
-- **Metals and class colours.** Rank and tier use copper, silver, gold and, above gold, scarlet. A character's
+- **Metals and class colours.** Rank and tier use copper, silver, gold, scarlet and, above scarlet, legend: a scarlet
+  seal ringed in gold. A character's
   name carries its class in the game's class colour (`data-class` sets `--class`). Horde and Alliance have one
   colour each. Colour never carries a fact alone: a tier is also named, a class also written.
 - **Motion.** The tally counts up once when a page opens. Bars on a rule, rank tracks, plinths and flags grow in as
@@ -542,29 +543,45 @@ What the layer adds to each page:
 | `/stats`, `/rulesets/{slug}` | The hero and a tally of seven figures with glyphs (characters, highest level, hours, kills, deaths, quests, dungeon runs). **Records across every character**: the deadliest creature, where most characters die, the most dangerous level, the slowest level, the busiest hour, the most run dungeon, the most trained profession (professions only, not weapon skills), the most used emote across characters and the share of experience from quests at the highest level, each from a figure the page already reads, each left out when its figure is missing. One death is not a record: the creature and the place need two. **The next round numbers**: kills, hours, quests, deaths, dungeon runs, jumps and gold earned read off a rule whose right end is the next of 10, 25, 50, 100, 250, 500 and so on. **The climb**: the median played time to each level as a ridge from level 1 to the cap, with a flag at each level where characters stand now (the published reach counts, level by level: reached L less reached L + 1) and a dotted line from the end of the ridge to the cap. The dotted line is not data and says so; a flag at a level past the ridge stands on it. A flag is one level's own count, so one under the character threshold is not drawn. The climb is left out until the curve has two levels. **Classes played** and **Horde and Alliance**: characters by class and by faction (`Rollups\Roster`), a class under the character threshold left out. The modules sit in chapters: Levelling, Danger, Dungeons and skills, Who plays, Gold and time, The world. The tally replaces the old figures row; the count at the level cap stays in the level cap table |
 | `/leaderboards` | The hall: every board with the character that leads it now and how many characters are on it, for the chosen ruleset and server. It replaces the redirect to one board, and the board picker's first choice, "All boards", leads back to it |
 | `/leaderboards/{board}` | The first three rows of the first page stand on a podium of gold, silver and copper plinths; the table lists the rest, and later pages are the table alone. New boards: `most-kills`, creatures killed, and `most-jumps`, jumps, both counted from the first recorded session |
-| `/c/{name}` | The head carries the class colour on its dot, a glyph on each figure and a rule from level 1 to the cap with the character's level marked. Record tiles carry glyphs. **Standings**: the character's place on every board it is on, among public characters of every ruleset, with gold, silver and copper for the first three places, each linking to its board; shown for a public character only, since a board lists no other. `GET /public/characters/{name}` carries the same list as `standings`. Records tiles for **Jumps** and the **Favourite emote**, and a bar of **distance by mode** (running, walking, mounted, swimming, flying, in yards): each shown only when the character has rows for it, so an owner who stopped sharing `movement` or `social` loses nothing. **Feats**, thirteen feats in four tiers (below). A feat not yet earned shows what it takes; an earned one shows what the next tier takes. `GET /public/characters/{name}` carries the same list as `feats` |
+| `/c/{name}` | The head carries the class colour on its dot, a glyph on each figure and a rule from level 1 to the cap with the character's level marked. Record tiles carry glyphs. **Standings**: the character's place on every board it is on, among public characters of every ruleset, with gold, silver and copper for the first three places, each linking to its board; shown for a public character only, since a board lists no other. `GET /public/characters/{name}` carries the same list as `standings`. Records tiles for **Jumps** and the **Favourite emote**, and a bar of **distance by mode** (running, walking, mounted, swimming, flying, in yards): each shown only when the character has rows for it, so an owner who stopped sharing `movement` or `social` loses nothing. **Feats**, sixteen ladders of five tiers (below), one feat per tier of a ladder: a character not recorded from level 1 sees 15 ladders and 75 feats, one recorded from level 1 sees 16 and 80. A ladder with no tier yet shows what copper takes; one with a tier shows what the next takes, and a track of five segments shows how far up the ladder it is. `GET /public/characters/{name}` carries the same list as `feats` |
 
-Feats read numbers the character page already shows, so a feat never reveals more than its page. An observed count
+Feats count what the character page already shows, so a feat never reveals more than its page. Devoted counts the
+days of the play calendar, Tracker adds up the rare and rare elite counts of "Creatures met", and Crafter totals the
+crafts the page lists the most frequent of. An observed count
 (DESIGN "Mid-life characters") starts when Scarlet first saw the character, and the module says "since" that date
 for a character not recorded from level 1. A value is rounded down before its tier is read (whole hours, one
-decimal of a world width), so a feat never shows a tier its number has not reached. Unbroken is also left out when
-the first death has no level.
+decimal of a world width), so a feat never shows a tier its number has not reached. A share on the track is rounded
+down too, so a segment is full only when its tier is held. Unbroken is also left out when the first death has no
+level.
 
-| Feat | Counts | Copper | Silver | Gold | Scarlet |
-| --- | --- | --- | --- | --- | --- |
-| Summit | level reached | 15 | 30 | 45 | 60 |
-| Slayer | kills | 250 | 2,500 | 10,000 | 50,000 |
-| Questing | quests turned in | 50 | 250 | 750 | 1,500 |
-| Delver | dungeon runs | 5 | 25 | 75 | 200 |
-| Explorer | zones entered | 10 | 20 | 35 | 50 |
-| Veteran | hours played: the game's /played when known, else recorded time | 10 | 50 | 150 | 500 |
-| Wayfarer | distance in world widths | 10 | 50 | 150 | 500 |
-| Unbroken | level reached before the first death, for a character recorded from level 1 only; left out for any other | 10 | 20 | 40 | 60 |
-| Artisan | highest profession rank | 75 | 150 | 225 | 300 |
-| Angler | fish caught | 50 | 250 | 1,000 | 5,000 |
-| Gatherer | nodes gathered | 50 | 250 | 1,000 | 5,000 |
-| Jumper | jumps | 100 | 1,000 | 10,000 | 50,000 |
-| Swimmer | yards swum | 1,000 | 10,000 | 50,000 | 250,000 |
+A feat is one tier of one ladder. Copper comes in the first session or two. Each later tier takes several times the
+play of the one before: silver about 50 hours, gold about 200, scarlet about 500 and legend, the top tier, about
+2,500 (owner, 2026-11-21: "much much much harder", "bronze can be easy to get people interested but then things get
+slow", "make legends larger, go 150k" for kills with scarlet at 30,000). The thresholds were sized from the rates of
+one character that plays a lot (53 kills, 2.7 quests and 0.29 world widths an hour), so they are a first setting.
+Summit, Unbroken, Artisan, Explorer, Questing and Tracker stop where the game does: legend is the level cap, five
+professions at 300, or most of the zones, quests and rares of the world. Delver, Crafter, Angler and Gatherer are
+sized for play given to them, such as 130 hours of fishing. The summary counts a feat for every tier a ladder has
+reached, so its counts by tier add up to the feats held.
+
+| Feat | Counts | Copper | Silver | Gold | Scarlet | Legend |
+| --- | --- | --- | --- | --- | --- | --- |
+| Summit | level reached | 10 | 25 | 45 | 55 | 60 |
+| Slayer | kills | 100 | 2,500 | 10,000 | 30,000 | 150,000 |
+| Questing | quests turned in | 10 | 150 | 500 | 1,000 | 1,500 |
+| Delver | dungeon runs | 1 | 20 | 75 | 200 | 500 |
+| Explorer | zones entered | 5 | 20 | 40 | 55 | 65 |
+| Veteran | hours played: the game's /played when known, else recorded time | 2 | 50 | 200 | 500 | 2,500 |
+| Devoted | days with play, from the play calendar | 3 | 14 | 60 | 150 | 365 |
+| Wayfarer | distance in world widths | 1 | 15 | 60 | 150 | 750 |
+| Jumper | jumps | 100 | 5,000 | 20,000 | 50,000 | 250,000 |
+| Swimmer | yards swum | 500 | 10,000 | 50,000 | 125,000 | 600,000 |
+| Unbroken | level reached before the first death, for a character recorded from level 1 only; left out for any other | 10 | 20 | 35 | 50 | 60 |
+| Artisan | profession ranks, all professions added up | 75 | 300 | 750 | 1,350 | 1,500 |
+| Crafter | items crafted | 5 | 500 | 2,500 | 10,000 | 25,000 |
+| Angler | fish caught | 10 | 250 | 1,500 | 5,000 | 15,000 |
+| Gatherer | nodes gathered | 10 | 250 | 1,500 | 5,000 | 15,000 |
+| Tracker | rare and rare elite creatures seen, the two counts of "Creatures met" added up | 1 | 10 | 30 | 60 | 100 |
 
 The feats and their thresholds are one table in code (`App\Support\Feat`). Nothing is stored: a feat is computed
 from the character's totals on each read, so a re-decode or a removal changes it with no migration.

@@ -3,16 +3,18 @@
 namespace App\Actions\Public\Character;
 
 use App\Models\Character;
+use App\Support\CreatureClass;
 use App\Support\Feat;
 use App\Support\Profession;
+use App\Support\Rollup;
 use Illuminate\Support\Facades\DB;
 
 class Feats
 {
     /**
-     * The feats of a character, computed from its totals: highest tier first, then in the order of `Feat`. Unbroken is only
-     * for a character recorded from level 1, and is left out when its first death has no level. `value` of Veteran is whole
-     * hours and of Wayfarer one decimal, both rounded down, so a value never shows a tier it has not reached.
+     * The feats of a character, computed from its totals: highest tier first, then in the order of `Feat`. Unbroken is
+     * only for a character recorded from level 1, and is left out when its first death has no level. `value` of Veteran
+     * is whole hours and of Wayfarer one decimal, both rounded down, so a value never shows a tier it has not reached.
      *
      * @param  array{kills: int, quests: int, distance: float}  $totals  the answer of SessionTotals, which has more keys
      * @param  array{nodes: int, fish: int, jumps: int, swam: int}  $records  the answer of Records, which has more keys
@@ -30,13 +32,16 @@ class Feats
             Feat::Delver->value => (int) array_sum(array_map(fn (array $dungeon): int => (int) $dungeon['runs'], $dungeons)),
             Feat::Explorer->value => $this->zones($character->id),
             Feat::Veteran->value => (int) floor((int) $seconds / 3600),
+            Feat::Devoted->value => $this->daysPlayed($character->id),
             Feat::Wayfarer->value => floor($totals['distance'] * 10) / 10,
-            Feat::Unbroken->value => $character->whole_life ? $this->unbroken($character) : null,
-            Feat::Artisan->value => $this->artisan($skills),
-            Feat::Angler->value => $records['fish'],
-            Feat::Gatherer->value => $records['nodes'],
             Feat::Jumper->value => $records['jumps'],
             Feat::Swimmer->value => $records['swam'],
+            Feat::Unbroken->value => $character->whole_life ? $this->unbroken($character) : null,
+            Feat::Artisan->value => $this->professionRanks($skills),
+            Feat::Crafter->value => $this->itemsCrafted($character->id),
+            Feat::Angler->value => $records['fish'],
+            Feat::Gatherer->value => $records['nodes'],
+            Feat::Tracker->value => $this->raresFound($character->id),
         ];
         $rows = [];
         foreach (Feat::cases() as $feat) {
@@ -83,10 +88,31 @@ class Feats
     /**
      * @param  list<array{skill: string, rank: int, cap: int}>  $skills
      */
-    private function artisan(array $skills): int
+    private function professionRanks(array $skills): int
     {
         $ranks = array_map(fn (array $skill): int => $skill['rank'], array_filter($skills, fn (array $skill): bool => Profession::tryFrom($skill['skill']) !== null));
 
-        return $ranks === [] ? 0 : max($ranks);
+        return array_sum($ranks);
+    }
+
+    private function daysPlayed(int $characterId): int
+    {
+        return (int) DB::table(Rollup::PlayHourlyCharacter->value)->where('character_id', $characterId)
+            ->where('ms', '>', 0)
+            ->selectRaw("count(distinct (bucket at time zone 'UTC')::date) as days")
+            ->value('days');
+    }
+
+    private function itemsCrafted(int $characterId): int
+    {
+        return (int) DB::table('crafts')->where('character_id', $characterId)->where('counted', true)->whereNotNull('item_id')
+            ->selectRaw('coalesce(sum(coalesce(quantity, 1)), 0) as made')->value('made');
+    }
+
+    private function raresFound(int $characterId): int
+    {
+        return DB::table('creature_sightings')->where('character_id', $characterId)->where('counted', true)
+            ->whereIn('classification', [CreatureClass::Rare->value, CreatureClass::RareElite->value])
+            ->whereNotNull('npc_id')->distinct()->count('npc_id');
     }
 }
