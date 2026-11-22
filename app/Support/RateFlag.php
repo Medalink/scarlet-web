@@ -24,6 +24,17 @@ enum RateFlag: string
         ]));
     }
 
+    /**
+     * The tags of a row once skinning is read apart from looting: its windows came from one character, its item is a
+     * quest item.
+     *
+     * @return list<self>
+     */
+    public static function tags(int|float $windowCharacters, bool $quest): array
+    {
+        return self::of($windowCharacters, false, $quest);
+    }
+
     /** The words a page draws beside the count the tag qualifies. */
     public function label(): string
     {

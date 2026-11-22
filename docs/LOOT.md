@@ -190,6 +190,14 @@ From phase 2 a window also carries `read`. A drop table reads `read = 'loot'`, a
 and fishing, herbs and ore are `fish`, `herb`, `ore`. Until then every creature window is counted as loot and a
 source with leather or hide rows carries the tag `skins counted`.
 
+**A window with no `read`** is from a session not decoded at version 10 yet, or from one with no `combat` part: the
+casts that name a gathering window are `combat` lines, so such a session never gets a `read`. Such a window may be
+a loot window or a skin window, so it counts in no table. `loot_windows_daily` and `loot_items_daily` keep it in
+their null `read` bucket and the readers leave it out through `App\Support\LootRead`; nothing counts it as loot
+while the re-decode runs, so a page shows only decoded windows until the re-decode has finished, and there is no
+switch on `sessions.decoder_version`. The rows that hold the null bucket stay in the aggregates, so the readers can
+say how many windows were left out.
+
 | Metric | Numerator | Denominator | Unit | From |
 | --- | --- | --- | --- | --- |
 | Drop rate | windows of the source that list the item | windows of the source | window | phase 1 |
