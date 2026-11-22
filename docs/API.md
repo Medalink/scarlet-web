@@ -681,6 +681,21 @@ The items that dropped from creatures, objects and containers, one row for each:
 
 Example: `curl https://<host>/api/v1/public/loot/items`
 
+#### `GET /public/loot/groups`
+
+What loot rules and group size change in loot: the items a corpse held under two loot rules, what the looter kept, the share of group loot each member received, rolls, kills an hour by group size and group composition. Every ruleset; personal loot is in no comparison.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `source` | query | string | A creature or object as its kind and id, `c255851` or `g649094`. Narrows what a corpse held and what the looter kept to it; the other parts cover every creature. |
+| `a` | query | string | The first loot rule to compare: `group`, `freeforall`, `roundrobin`, `needbeforegreed`, `masterlooter` or `solo`. Leave out with `b` for the two with the most corpses on creatures seen under both. |
+| `b` | query | string | The second loot rule to compare, as `a`. |
+| `marks` | query | boolean | `true` adds `marks`. |
+
+`data`: `source` (`null`, or `source_kind`, `source_id`, `name`, `path`), `figures` (`corpses`, `rules`, `largest`, `characters`, `first_at`, `last_at`, `several`, the creatures seen under two rules, `rolls` and `groups`), `effects` (`seen`, the rules with `windows` and `sources`, `pair`, the two compared, `rows` of `rule`, `items` per corpse and `corpses`, `sources` and `windows` the difference rests on, `difference` of `difference`, `low` and `high` in items per corpse or `null`, and `more`), `kept` (rows of `rule`, `size`, `corpses`, `items`, `received` and `other`, true for a size seen only on creatures no other size has), `share` (rows of `rule`, `size`, `yours`, `others`, `equal_share` and the `estimate` of yours over both, unit `receipt`), `rolls` (`choices` of `rule`, `quality`, `rolls` and `need`, `greed` and `pass` as an `estimate` with unit `roll`, and `thresholds` of `rule`, `threshold`, `corpses`, `items` and `per_100_corpses`), `kills_by_size` (`size`, `kills`, `hours` and `per_hour`), `composition` (`need` of `class`, `armor`, `rolls` and the need `estimate`, `skins` of `uploader_skins`, `looted`, `skinned` and `per_corpse`, and `roles` of `tank`, `healer`, `kills`, `hours` and `per_hour`) and `marks`. An `estimate` has `k`, `n`, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10, `hollow` from 10 and `solid` from 30, and `flags`; `rate`, `low` and `high` are `null` under 10. `per_hour`, `per_corpse` and `per_100_corpses` are `null` under 10 kills or corpses. `marks` is `null` unless asked for, else every marked difference between two loot rules or two group sizes of one rule: `source_kind`, `source_id`, `name`, `path`, `split` (`rule` or `size`), `rule` (the rule a size split reads), `item_id`, `item`, `arms` (the two compared, each with `key`, `label`, `windows`, `corpses`, `characters`, `flags`, `drawn` and the item's `estimate`) and `difference` (`difference`, `low` and `high` as shares of the arms, `marked` and `flags`); a mark is a counting fault until shown otherwise, since the game's drop table depends on neither.
+
+Example: `curl https://<host>/api/v1/public/loot/groups`
+
 ### Map
 
 #### `GET /public/map/heat`

@@ -6,7 +6,9 @@ use App\Support\Cursor;
 use App\Support\Exceptions\ApiException;
 use App\Support\HeatGrid;
 use App\Support\LootFilter;
+use App\Support\LootRule;
 use App\Support\LootSort;
+use App\Support\LootSourceRef;
 use App\Support\LootView;
 use App\Support\Server;
 use App\Support\WorldLayer;
@@ -46,6 +48,10 @@ class PublicRequest extends FormRequest
             'quality' => ['nullable', 'integer', 'between:0,5'],
             'sort' => ['nullable', Rule::enum(LootSort::class)],
             'rule' => ['nullable', 'string', 'max:24', 'regex:/^[a-z]+$/'],
+            'source' => ['nullable', 'string', 'regex:/^[cg][0-9]{1,10}$/'],
+            'a' => ['nullable', Rule::enum(LootRule::class)->except([LootRule::Personal, LootRule::Unknown])],
+            'b' => ['nullable', Rule::enum(LootRule::class)->except([LootRule::Personal, LootRule::Unknown])],
+            'marks' => ['nullable', 'boolean'],
         ];
     }
 
@@ -149,6 +155,36 @@ class PublicRequest extends FormRequest
         $rule = $this->validated('rule');
 
         return is_string($rule) ? $rule : null;
+    }
+
+    /** The creature or object `/public/loot/groups` is narrowed to, as `c255851`. */
+    public function lootSource(): ?LootSourceRef
+    {
+        $source = $this->validated('source');
+
+        return is_string($source) ? LootSourceRef::parse($source) : null;
+    }
+
+    /** The first of the two loot rules `/public/loot/groups` compares. */
+    public function ruleA(): ?LootRule
+    {
+        $rule = $this->validated('a');
+
+        return is_string($rule) ? LootRule::tryFrom($rule) : null;
+    }
+
+    /** The second of the two loot rules `/public/loot/groups` compares. */
+    public function ruleB(): ?LootRule
+    {
+        $rule = $this->validated('b');
+
+        return is_string($rule) ? LootRule::tryFrom($rule) : null;
+    }
+
+    /** Whether `/public/loot/groups` lists every marked difference between loot rules or group sizes. */
+    public function marks(): bool
+    {
+        return $this->boolean('marks');
     }
 
     private function whole(string $key): ?int

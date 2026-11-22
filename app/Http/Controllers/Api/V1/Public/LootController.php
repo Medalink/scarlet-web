@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1\Public;
 
+use App\Actions\Public\LootGroups;
 use App\Actions\Public\ObjectRecord;
 use App\Actions\Rollups\LootItems;
 use App\Actions\Rollups\LootSources;
 use App\Http\Requests\Api\PublicRequest;
 use App\Support\Cursor;
 use App\Support\GameObjects;
+use App\Support\LootGroupsJson;
 use App\Support\LootSourceKind;
 use App\Support\LootView;
 use Illuminate\Http\JsonResponse;
@@ -60,6 +62,11 @@ class LootController extends PublicController
         }, $page['rows']);
 
         return $this->respondPage($rows, $page['more'] ? Cursor::encode($offset + $limit) : null, ['view' => LootView::Items->value]);
+    }
+
+    public function groups(PublicRequest $request, LootGroups $groups): JsonResponse
+    {
+        return $this->respond(LootGroupsJson::from($groups->handle($request->lootSource(), $request->ruleA(), $request->ruleB(), $request->marks())));
     }
 
     public function object(PublicRequest $request, ObjectRecord $record, int $id): JsonResponse

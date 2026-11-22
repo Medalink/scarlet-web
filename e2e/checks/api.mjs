@@ -26,6 +26,7 @@ const SHAPES = [
   ["/objects/{id}", ["id", "name", "windows", "characters", "zones", "drop_table"]],
   ["/loot/sources", ["source_kind", "source_id", "name", "windows", "items", "top"]],
   ["/loot/items", ["item_id", "name", "dropped", "sources", "best"]],
+  ["/loot/groups", ["source", "figures", "effects", "kept", "share", "rolls", "kills_by_size", "composition", "marks"]],
   ["/zones/{id}", ["id", "name", "rect", "played", "deaths", "killers", "creatures"]],
   ["/quests/{id}", ["id", "name", "totals", "levels", "zones"]],
   ["/spells/{id}", ["id", "name", "facts", "recipe"]],
