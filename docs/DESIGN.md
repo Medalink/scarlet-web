@@ -308,7 +308,8 @@ The order of the work is fixed, and each step sees only the claims the steps bef
    counts it: the one with Scarlet rows beside the claim, else the lowest id.
 4. Dated claims of one origin that overlap collapse into one (rule 5, second sentence): the claims are taken by end,
    start, store and dims, latest first, and each one overlapping a winner already taken loses to it.
-5. Per origin, highest rank first, Scarlet's rows are assigned to the claims left (rule 3). Then each claim in turn: a
+5. Per origin, highest rank first, Scarlet's rows are assigned to the claims left and settled across the seams between
+   neighbouring claims (rule 3). Then each claim in turn: a
    claim that overlaps a counted or residual claim of a higher rank by more than 60 s is `superseded` (rule 5); an
    origin that stamps with the server's clock goes through rule 1; every other claim goes through the arithmetic of
    rule 3.
@@ -355,7 +356,12 @@ Rules, in order:
    span of a Scarlet session that recorded rows of the kind; any other counts.
 3. **Dated claims against Scarlet.** Each Scarlet row is assigned, per origin, by its `at` (the cast start) to the
    claim whose window contains it. A row in no window goes to the claim whose nearer edge is closest, within 60 s; at
-   equal distance, to the claim that starts later. With no row assigned, the claim is `counted`. Otherwise, for
+   equal distance, to the claim that starts later. Seams: a window's edges are whole seconds and Scarlet's clock runs up
+   to 1 s behind, so a cast within 2 s of a stop can be assigned to the neighbouring claim. For two consecutive claims
+   of an origin that both name `landed`: while one holds more looted rows than its `landed`, the other fewer, and the
+   first one's row nearest the other lies within 3 s of the other's window, that row moves to the other (with the rows
+   behind it, so the ranges stay disjoint). Without it a stop and a cast 1.2 s later, as a stop-and-cast macro makes,
+   counts one landed, its items and a cast twice. With no row assigned, the claim is `counted`. Otherwise, for
    fishing:
    - casts: the claim's `casts - unknown` is at most the rows Scarlet keeps when it saw the whole window, because
      `unknown` holds the cancelled channels Scarlet drops. Counted casts = `casts` x the share of `casts - unknown`
@@ -405,9 +411,10 @@ and 356 again, to the hash, once it arrives; with no Scarlet rows (Professions r
 366, 334 and 360. The scheduled outdated pass (`ingest:redecode --outdated`) decides every claim again from emptied
 columns to the same hash and stamps every addon day. A second character of the same install that uploads the same
 counts has its 12 character-scope claims `superseded` by rule 4 with the first character named, its 2 account claims are
-`reference`, and the first character's hash does not move, with the twin there and after its parts are gone. Rule 3 assigns a row by its cast start, so on the owner's data the second row of session 8, which
-starts 9.4 s after that session's window ends and 0.6 s before the next one begins, belongs to the next session's claim.
-The figures above are the arithmetic over R0's assignment; the proof puts that row inside session 8.
+`reference`, and the first character's hash does not move, with the twin there and after its parts are gone. On the
+owner's data the second cast of session 8 starts at 00:13:14.50, inside the session's window; its loot arrives 9.4 s
+after the stop. The Fishing Log booked its landed to session 8 and its 3 items to session 9, rule 3 assigns the row to
+session 8, and both claims count 0 (*measured*: the binary on the real rows).
 
 ### Reading
 
@@ -445,7 +452,8 @@ character (check 9).
 6. Every page total equals Scarlet + addon dated + addon undated, and every breakdown sums to it with the unknown
    bucket.
 7. Scarlet's row counts and rollup sums are the same before and after each ship of this work.
-8. The account notes of rule 7 are listed (a note, not a violation).
+8. The account notes of rule 7 are listed (a note, not a violation), and so is each claim assigned more looted rows
+   than its `landed` (rule 3, seams).
 9. No text field of a claim holds a `First-Last` name other than the character's own.
 10. No public bucket shows a per-origin figure from fewer characters than the threshold.
 11. No dated claim is counted or residual on two characters of one account with the same origin, kind, `from`, `to`

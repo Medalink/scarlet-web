@@ -426,7 +426,8 @@ fn dated_origin(
         .iter()
         .map(|&i| (claims[i].start(), claims[i].to))
         .collect();
-    let assigned = rules::assign(rows, &windows);
+    let mut assigned = rules::assign(rows, &windows);
+    rules::settle_seams(rows, claims, &members, &mut assigned);
     let verdicts: Vec<Decision> = {
         let ctx = Dated {
             input,

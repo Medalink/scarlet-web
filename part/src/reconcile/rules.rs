@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 pub(super) const OVERLAP_SLACK: i64 = 60;
 pub(super) const ASSIGN_SLACK_MS: i64 = 60_000;
+const SEAM_MS: i64 = 3_000;
 const SERVER_CLOCK_MS: i64 = 86_400_000;
 const EVENT_TOLERANCE_MS: i64 = 2_000;
 const EVENT_SEARCH_MS: i64 = 60_000;
@@ -178,6 +179,51 @@ pub(super) fn assign(rows: &[Row], windows: &[(i64, i64)]) -> Vec<Vec<usize>> {
         }
     }
     out
+}
+
+fn excess(rows: &[Row], claim: &Claim, assigned: &[usize]) -> Option<i64> {
+    let landed = *claim.amounts.get("landed")? as i64;
+    let looted = assigned.iter().filter(|&&r| rows[r].looted).count() as i64;
+    Some(looted - landed)
+}
+
+pub(super) fn settle_seams(
+    rows: &[Row],
+    claims: &[Claim],
+    members: &[usize],
+    assigned: &mut [Vec<usize>],
+) {
+    for b in 1..members.len() {
+        let a = b - 1;
+        let (earlier, later) = (&claims[members[a]], &claims[members[b]]);
+        let (before, after) = assigned.split_at_mut(b);
+        let (a_rows, b_rows) = (&mut before[a], &mut after[0]);
+        let opens = start(later) * 1000 - SEAM_MS;
+        let closes = earlier.to * 1000 + SEAM_MS;
+        while let (Some(x), Some(y)) = (excess(rows, earlier, a_rows), excess(rows, later, b_rows))
+        {
+            if x > 0 && y < 0 {
+                let near = a_rows
+                    .iter()
+                    .rev()
+                    .take_while(|&&r| rows[r].at >= opens)
+                    .count();
+                let Some(at) = a_rows.iter().rev().take(near).position(|&r| rows[r].looted) else {
+                    break;
+                };
+                let moved = a_rows.split_off(a_rows.len() - at - 1);
+                b_rows.splice(0..0, moved);
+            } else if y > 0 && x < 0 {
+                let near = b_rows.iter().take_while(|&&r| rows[r].at <= closes).count();
+                let Some(at) = b_rows.iter().take(near).position(|&r| rows[r].looted) else {
+                    break;
+                };
+                a_rows.extend(b_rows.drain(..=at));
+            } else {
+                break;
+            }
+        }
+    }
 }
 
 pub(super) fn near(rows: &[Row], c: &Claim) -> bool {

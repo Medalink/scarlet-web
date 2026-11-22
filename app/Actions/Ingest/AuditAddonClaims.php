@@ -11,6 +11,7 @@ class AuditAddonClaims
 {
     public function __construct(
         private readonly AuditClaimStatuses $statuses,
+        private readonly AuditClaimNotes $notes,
         private readonly AuditAccountCeilings $ceilings,
         private readonly ExplainAddonClaims $explain,
     ) {}
@@ -19,8 +20,9 @@ class AuditAddonClaims
      * Check the stored addon claims (docs/DESIGN.md, Addon counts, Checks): every claim has a carrying part and takes the
      * amounts of the one whose id sorts highest, no character holds one key twice, no text field holds a `First-Last`
      * name but the character's own, and the status checks 1 to 5 and 11 hold over what reconcile stored. Parts that
-     * disagree on a claim's amounts and the account ceilings of check 8 are notes. The report also carries the table
-     * that explains each total. With no character, every character is checked.
+     * disagree on a claim's amounts, a claim assigned more looted rows than it claims landed and the account ceilings of
+     * check 8 are notes. The report also carries the table that explains each total. With no character, every
+     * character is checked.
      */
     public function handle(?Character $character = null): AddonAuditReport
     {
@@ -37,6 +39,7 @@ class AuditAddonClaims
             ],
             [
                 ...$this->listed($this->claimsWithDisagreeingParts($id), 'has parts that disagree on its amounts; the highest part id wins'),
+                ...$this->notes->handle($id),
                 ...$this->ceilings->handle($id),
             ],
             $this->explain->handle($id),
