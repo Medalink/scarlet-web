@@ -265,7 +265,7 @@ impl States {
         let mut begin = Begin::new('t', spell).extra(&(slot + 1).to_string());
         let duration = seconds_ms(now, f, 2);
         if duration > 0 {
-            begin = begin.until(now.at + duration);
+            begin = begin.until(now.at.saturating_add(duration));
         }
         self.totems[slot] = Some(self.ledger.begin(begin));
     }

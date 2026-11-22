@@ -55,7 +55,7 @@ fn settle(book: &mut Book, track: &Track, fate: i64, at: i64) {
 
 fn settle_ended(book: &mut Book, ended: &Ended) {
     let ran_out = ended.track.duration_ms > 0
-        && (ended.held_ms - ended.track.duration_ms).abs() <= RAN_OUT_MS;
+        && ended.held_ms.abs_diff(ended.track.duration_ms) <= RAN_OUT_MS.unsigned_abs();
     let fate = match (ended.replaced, ran_out) {
         (true, _) => REPLACED,
         (false, true) => RAN_OUT,
