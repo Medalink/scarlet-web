@@ -46,7 +46,7 @@ class FeatWall extends Component
     }
 
     /**
-     * The toasts have played: record the tier shown of each feat (feat key => tier, 1 to 5, at most 75 feats).
+     * The toasts have played: record the tier shown of each feat (feat key => tier, 1 to 5, at most one per feat).
      *
      * @param  array<array-key, mixed>  $shown
      */

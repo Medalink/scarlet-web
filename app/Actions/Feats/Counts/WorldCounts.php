@@ -27,8 +27,7 @@ class WorldCounts
             ->selectRaw('coalesce(sum(yards) filter (where mode = ?), 0) as swam', [MovementMode::Swim->value])
             ->selectRaw('coalesce(sum(yards) filter (where mode = ?), 0) as run', [MovementMode::Run->value])
             ->selectRaw('coalesce(sum(yards) filter (where mode = ?), 0) as ride', [MovementMode::Mount->value])
-            ->selectRaw('coalesce(sum(yards) filter (where mode = ?), 0) as stroll', [MovementMode::Walk->value])
-            ->selectRaw('coalesce(sum(yards) filter (where mode = ?), 0) as fly', [MovementMode::Fly->value])->first();
+            ->selectRaw('coalesce(sum(yards) filter (where mode = ?), 0) as stroll', [MovementMode::Walk->value])->first();
         $distance = DB::table('sessions')->where('character_id', $id)->where('counted', true)
             ->selectRaw('coalesce(sum(distance), 0) as distance')->value('distance');
 
@@ -42,7 +41,6 @@ class WorldCounts
             Feat::Runner->value => (int) ($moved->run ?? 0),
             Feat::Rider->value => (int) ($moved->ride ?? 0),
             Feat::Stroller->value => (int) ($moved->stroll ?? 0),
-            Feat::Flyer->value => (int) ($moved->fly ?? 0),
         ];
     }
 }

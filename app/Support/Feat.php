@@ -51,7 +51,6 @@ enum Feat: string
     case Runner = 'runner';
     case Rider = 'rider';
     case Stroller = 'stroller';
-    case Flyer = 'flyer';
     case Tracker = 'tracker';
     case Scout = 'scout';
     case Witness = 'witness';
@@ -205,7 +204,6 @@ enum Feat: string
             self::Runner => ['distance', 'yard run', 'yards run', [1000, 400000, 1500000, 4000000, 15000000]],
             self::Rider => ['distance', 'yard ridden', 'yards ridden', [1000, 100000, 1000000, 4000000, 20000000]],
             self::Stroller => ['distance', 'yard walked', 'yards walked', [100, 2000, 10000, 50000, 250000]],
-            self::Flyer => ['distance', 'yard flown', 'yards flown', [1000, 150000, 600000, 1500000, 7500000]],
             self::Tracker => ['pin', 'rare creature seen', 'rare creatures seen', [1, 10, 30, 60, 100]],
             self::Scout => ['creature', 'elite creature seen', 'elite creatures seen', [5, 75, 250, 500, 900]],
             self::Witness => ['crown', 'boss seen', 'bosses seen', [1, 5, 15, 30, 50]],
