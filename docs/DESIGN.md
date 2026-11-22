@@ -196,7 +196,8 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `level_ups` | `L` | core | level reached, played seconds spent in the level before it |
 | `xp_gains` | `X` | xp | amount, source (`k` kill, `d` dungeon kill, `q` quest, `e` exploring, `o` other), source id |
 | `kills` | `K` | combat | npc, by |
-| `deaths` | `D`, `DL`, `DR` | combat | map position, killer kind, killer creature, killer level, spell |
+| `deaths` | `D`, `DL`, `DR` | combat | map position, killer kind, killer creature and its id, killer level, spell, the killing blow's event and environmental type |
+| `death_hits` | `D`, `DR` | combat | one hit of a death's recap, joined to its death on character, session and time: position, spell, amount, source, event, environmental type, school, health, seconds before, absorbed, resisted, blocked, flags. Came with decoder version 8 |
 | `dungeon_runs` | `Z`, `E`, `B`, `D` | combat | instance, seconds, bosses, deaths, group size (the run rule of OVERVIEW.md) |
 | `quest_events` | `Q` | quests | quest, accepted, turned in or abandoned, xp, copper |
 | `money_changes` | `M`, `S` | economy | earned, spent, balance (transfers between own characters count as neither) |

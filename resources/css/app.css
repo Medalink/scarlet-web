@@ -350,6 +350,9 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .all { margin-top: 1.3rem; }
 .all summary { cursor: pointer; width: fit-content; font: 500 0.95rem/1.4 var(--body); color: var(--fg); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 0.24em; }
 .all .scroll-x { margin-top: 0.9rem; max-height: 28rem; overflow-y: auto; }
+.data tr.sub td { padding-top: 0; white-space: normal; }
+.data tr.sub summary { cursor: pointer; width: fit-content; font-size: 0.85rem; color: var(--muted); }
+.all .data tr.sub .scroll-x { max-height: none; overflow-y: visible; }
 .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.4rem; }
 .met { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 1.2rem; margin-top: 1.2rem; }
 .met div { display: flex; flex-direction: column-reverse; gap: 0.3rem; }

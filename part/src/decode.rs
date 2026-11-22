@@ -8,6 +8,7 @@
 use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::build::parse_header;
 use crate::camp::{Camp, Known};
+use crate::death::Hit;
 use crate::reference::Reference;
 use crate::rows::Rows;
 use crate::social::Social;
@@ -20,7 +21,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 7;
+pub const DECODER_VERSION: u32 = 8;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -100,6 +101,10 @@ struct Death {
     damage: Option<i64>,
     overkill: Option<i64>,
     hits: Option<i64>,
+    event: String,
+    environmental_type: String,
+    npc_id: Option<i64>,
+    recap: BTreeMap<i64, Hit>,
 }
 
 struct Run {
@@ -392,6 +397,9 @@ impl Dec<'_> {
                 self.w.end();
             }
             "D" => {
+                if self.death_list.last().is_some_and(|d| t - d.t <= 3_000) {
+                    return;
+                }
                 self.deaths += 1;
                 self.camp.on_death(t);
                 let d = Death {
@@ -415,17 +423,22 @@ impl Dec<'_> {
                 }
             }
             "DR" => {
-                if field(&f, 4) == "1"
-                    && let Some(d) = self.death_list.last_mut()
-                    && d.killer.is_none()
+                if let Some(d) = self.death_list.last_mut()
                     && t - d.t <= 60_000
+                    && let Some(hit) = Hit::parse(&f)
                 {
-                    let g = |i: usize| field(&f, i).to_string();
-                    d.killer = Some([g(2), g(10), g(11), g(12), g(13), g(14)]);
-                    d.spell = num(&f, 0);
-                    d.damage = num(&f, 1);
-                    d.overkill = num(&f, 5);
-                    d.hits = num(&f, 15);
+                    if hit.pos == 1 && d.killer.is_none() {
+                        let g = |i: usize| field(&f, i).to_string();
+                        d.killer = Some([g(2), g(10), g(11), g(12), g(13), g(14)]);
+                        d.spell = num(&f, 0);
+                        d.damage = num(&f, 1);
+                        d.overkill = num(&f, 5);
+                        d.hits = num(&f, 15);
+                        d.event = hit.event.clone();
+                        d.environmental_type = hit.environmental_type.clone();
+                        d.npc_id = num(&f, 22);
+                    }
+                    d.recap.entry(hit.pos).or_insert(hit);
                 }
             }
             "Q" => {
@@ -1012,8 +1025,14 @@ impl Dec<'_> {
                 .opt("spell_id", d.spell)
                 .opt("damage", d.damage)
                 .opt("overkill", d.overkill)
-                .opt("hits", d.hits);
+                .opt("hits", d.hits)
+                .text("event", &d.event)
+                .text("environmental_type", &d.environmental_type)
+                .opt("killer_npc_id", d.npc_id);
             self.w.end();
+            for hit in d.recap.values() {
+                hit.write(&mut self.w, s, d.t, d.level, d.zone_id);
+            }
         }
         let runs = std::mem::take(&mut self.runs);
         // Without combat parts the bosses and deaths of a run are unknown: no rows.

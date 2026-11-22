@@ -13,6 +13,7 @@ enum FactTable: string
     case XpGains = 'xp_gains';
     case Kills = 'kills';
     case Deaths = 'deaths';
+    case DeathHits = 'death_hits';
     case DungeonRuns = 'dungeon_runs';
     case QuestEvents = 'quest_events';
     case MoneyChanges = 'money_changes';
@@ -57,7 +58,7 @@ enum FactTable: string
         return match ($this) {
             self::PlaySpans, self::LevelUps => SharingGroup::CORE,
             self::XpGains => SharingGroup::XP,
-            self::Kills, self::Deaths, self::DungeonRuns, self::CampStays, self::CampBenefits, self::InstanceLocks => SharingGroup::COMBAT,
+            self::Kills, self::Deaths, self::DeathHits, self::DungeonRuns, self::CampStays, self::CampBenefits, self::InstanceLocks => SharingGroup::COMBAT,
             self::QuestEvents, self::QuestBaselines => SharingGroup::QUESTS,
             self::TitleBaselines => SharingGroup::COLLECTIONS,
             self::ExploredBaselines => SharingGroup::WORLD,

@@ -91,8 +91,10 @@ written. `at` is the span start.
 
 ### `deaths` (combat: `D`, `DL`, `DR`)
 
-One row per `D`, at its time. `DL` is joined when it follows within 60 s and the death has none yet; the `DR` line
-with pos `1` the same way. Older logs have no killer fields, a death without a recap has them null.
+One row per `D`, at its time. A `D` within 3 s of the one before is the same death (lines before 2026-11-22 could
+write one twice) and adds no row, count or run death. `DL` is joined when it follows within 60 s and the death has
+none yet; the `DR` line with pos `1` the same way. Older logs have no killer fields, a death without a recap has them
+null.
 
 | Key | Type | |
 | --- | --- | --- |
@@ -103,6 +105,29 @@ with pos `1` the same way. Older logs have no killer fields, a death without a r
 | `killer_class` | string or null | class file of a player, classification of a creature |
 | `killer_race`, `killer_guild` | string or null | player only; the guild is a pseudonym outside `social` |
 | `spell_id`, `damage`, `overkill`, `hits` | int or null | `DR` fields 1, 2, 6, 16 |
+| `event` | string or null | the killing blow's combat event (`DR` field 17): `SWING_DAMAGE`, `RANGE_DAMAGE`, `SPELL_DAMAGE`, `SPELL_PERIODIC_DAMAGE` or `ENVIRONMENTAL_DAMAGE` |
+| `environmental_type` | string or null | what the world did when the killing blow was environmental (`DR` field 18): `Falling`, `Drowning`, `Fatigue`, `Fire`, `Lava` or `Slime` |
+| `killer_npc_id` | int or null | the creature id of the killing blow's source (`DR` field 23), when it was in sight |
+
+### `death_hits` (combat: `D`, `DR`)
+
+One row per hit of a death's recap, with the `at`, `level` and `zone_id` of its death, so a hit joins its death on
+`character_id`, `session_start` and `at`. One row per `pos` of a death: a recap written twice adds nothing. Hits
+come in `pos` order, 1 to 20 at most; a `DR` line with no pos (lines before the position existed) is not a hit row.
+A `DR` line joins the last death when it follows within 60 s. Fields a line did not have are null, and `?` (the
+client kept it secret) is null too. A source that names a player is a pseudonym by the rule of
+docs/player-fields.tsv, on every pos.
+
+| Key | Type | |
+| --- | --- | --- |
+| `pos` | int | `1` the killing blow, `2` the hit before it |
+| `spell_id`, `amount`, `overkill`, `hp`, `max_hp`, `school` | int or null | `DR` fields 1, 2, 6, 7, 8, 10 |
+| `source` | string or null | `DR` field 3: a creature name, a pseudonym for a player, or empty for the environment |
+| `environmental` | bool | field 4 is `1` |
+| `environmental_type`, `event` | string or null | fields 18 and 17 |
+| `before_ms` | int or null | field 9, seconds before the killing blow, in milliseconds |
+| `absorbed`, `resisted`, `blocked` | int or null | fields 19 to 21 |
+| `flags` | string or null | field 22: `a` avoidable, `d` deadly, `h` caster hidden |
 
 ### `dungeon_runs` (combat: `Z`, `B`, `D`, using core's `Z`)
 

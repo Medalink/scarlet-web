@@ -3,6 +3,8 @@
 namespace App\View\Pages;
 
 use App\Actions\Public\Character\SkillRanks;
+use App\Support\EnvironmentalDamage;
+use App\Support\HitEvent;
 use App\Support\ItemOrigin;
 use App\Support\ItemQuality;
 use App\Support\MovementMode;
@@ -46,9 +48,9 @@ final class CharacterSections
         $rows = array_map(fn (array $row): array => ['cells' => [
             $row['level'] === null ? '' : (string) $row['level'],
             $row['zone_id'] !== null && $row['zone'] !== null ? ['text' => (string) $row['zone'], 'href' => '/zones/'.$row['zone_id']] : (string) ($row['zone'] ?? ''),
-            $row['killer'] === null ? 'Killer not recorded' : Format::killerName($row['killer']),
+            self::killer($row),
             $row['damage'] === null ? '' : Format::number($row['damage']),
-        ]], $log['rows']);
+        ], 'detail' => self::recap($row)], $log['rows']);
         $zones = array_map(fn (array $row): string => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']).' '.$row['deaths'], array_slice($deaths['zones'], 0, self::DEATH_ZONES));
         $shown = count($log['rows']);
 
@@ -60,6 +62,69 @@ final class CharacterSections
             'total' => ($deaths['total'] === 0 ? 'No deaths recorded.' : Format::count($deaths['total'], 'death').' recorded.')
                 .($zones === [] ? '' : ' Most in '.implode(', ', $zones).'.'),
         ];
+    }
+
+    /** @param  array<string, mixed>  $row */
+    private static function killerText(array $row): string
+    {
+        if ($row['killer'] !== null) {
+            return Format::killerName($row['killer']);
+        }
+        $cause = EnvironmentalDamage::tryFrom((string) $row['environmental_type']);
+
+        return $cause === null ? 'Killer not recorded' : $cause->label();
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return string|array<string, mixed>
+     */
+    private static function killer(array $row): string|array
+    {
+        $text = self::killerText($row);
+
+        return $row['killer'] !== null && $row['npc_id'] !== null ? ['text' => $text, 'href' => '/creatures/'.$row['npc_id']] : $text;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array{summary: string, columns: list<array<string, mixed>>, rows: list<array<string, mixed>>}|null
+     */
+    private static function recap(array $row): ?array
+    {
+        $hits = $row['hits'];
+        if ($hits === []) {
+            return null;
+        }
+        $span = $hits[0]['seconds_before'];
+        $held = $row['recorded'] !== null && $row['recorded'] > count($hits) ? ' of '.Format::number($row['recorded']) : '';
+
+        return [
+            'summary' => Format::count(count($hits), 'hit').$held.($span === null || count($hits) === 1 ? '' : ' over '.Format::number($span, 1).' s'),
+            'columns' => [['label' => 'Before death', 'numeric' => true], ['label' => 'Hit by'], ['label' => 'With'], ['label' => 'Damage', 'numeric' => true], ['label' => 'Not landed']],
+            'rows' => array_values(array_map(fn (array $hit): array => ['cells' => [
+                $hit['seconds_before'] === null ? '' : Format::number($hit['seconds_before'], 1).' s',
+                $hit['source'] === null ? '' : Format::killerName($hit['source']),
+                self::hitWith($hit),
+                $hit['amount'] === null ? '' : Format::number($hit['amount']),
+                implode(', ', array_filter([
+                    $hit['absorbed'] > 0 ? Format::number($hit['absorbed']).' absorbed' : null,
+                    $hit['resisted'] > 0 ? Format::number($hit['resisted']).' resisted' : null,
+                    $hit['blocked'] > 0 ? Format::number($hit['blocked']).' blocked' : null,
+                ])),
+            ]], $hits)),
+        ];
+    }
+
+    /** @param  array<string, mixed>  $hit */
+    private static function hitWith(array $hit): string
+    {
+        $cause = EnvironmentalDamage::tryFrom((string) $hit['environmental_type']);
+        if ($cause !== null) {
+            return $cause->label();
+        }
+
+        return $hit['spell'] ?? HitEvent::tryFrom((string) $hit['event'])?->label() ?? '';
     }
 
     /**
@@ -86,7 +151,7 @@ final class CharacterSections
             $biggest = $damage > (int) $dated[$biggest]['damage'] ? $i : $biggest;
             $say[] = Format::line(
                 'Level '.$row['level'].($row['zone'] === null ? '' : ', '.$row['zone']),
-                ': '.($row['killer'] === null ? 'Killer not recorded' : Format::killerName($row['killer'])).($damage > 0 ? ', '.Format::number($damage).' damage' : ''),
+                ': '.self::killerText($row).($damage > 0 ? ', '.Format::number($damage).' damage' : ''),
             );
         }
         $top = max($level, ...array_map(fn (array $row): int => (int) $row['level'], $dated));
