@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Actions\Public\CreatureRecord;
 use App\Actions\Public\EncounterRecord;
+use App\Actions\Public\ItemLoot;
 use App\Actions\Public\ItemRecord;
 use App\Actions\Public\ObjectRecord;
 use App\Actions\Public\QuestRecord;
@@ -15,6 +16,7 @@ use App\Http\Requests\Web\RecordRequest;
 use App\Support\GameObjects;
 use App\Support\Profession;
 use App\View\Pages\EncounterPage;
+use App\View\Pages\ItemLootModules;
 use App\View\Pages\ObjectPage;
 use App\View\Pages\RecordPages;
 use App\View\Pages\SpellPage;
@@ -44,12 +46,12 @@ class RecordController extends Controller
         return view('pages.object', ['d' => ObjectPage::from($answer)]);
     }
 
-    public function item(RecordRequest $request, ItemRecord $record, int $id): View
+    public function item(RecordRequest $request, ItemRecord $record, ItemLoot $loot, int $id): View
     {
         $answer = $record->handle($id, $request->lootRule());
         abort_if($answer === null, 404);
 
-        return view('pages.item', ['d' => RecordPages::item($answer)]);
+        return view('pages.item', ['d' => RecordPages::item($answer), 'loot' => ItemLootModules::from($loot->handle($id))]);
     }
 
     public function spell(RecordRequest $request, SpellRecord $record, int $id): View

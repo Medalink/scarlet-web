@@ -6,6 +6,7 @@ use App\Support\ItemIcons;
 use App\Support\LootSourceKind;
 use App\Support\LootView;
 use App\Support\RateEstimate;
+use App\Support\RateFlag;
 use App\View\Format;
 use App\View\ItemTypes;
 
@@ -68,6 +69,24 @@ final class LootRows
 
             return ['cells' => [$item, Format::number($row['dropped']), Format::number($row['sources']), $source, $zone === null ? '–' : self::zone($zone)]];
         }, $rows);
+    }
+
+    /**
+     * One row for each item a source gave, as the drop tables of the object page and of a container item list them: the item,
+     * its rate, the range, the counts and the quantity per drop.
+     *
+     * @param  list<array<string, mixed>>  $rows  the rows of AppActionsRollupsSourceDrops
+     * @return list<array{cells: list<array<string, mixed>|string>}>
+     */
+    public static function gives(array $rows): array
+    {
+        return array_map(fn (array $row): array => ['cells' => [
+            ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id'], 'tag' => in_array(RateFlag::QuestItem, $row['estimate']->flags, true) ? RateFlag::QuestItem->label() : null],
+            ['rate' => $row['estimate']],
+            $row['estimate']->stated() ? $row['estimate']->range() : '–',
+            $row['estimate']->counts(),
+            Format::number($row['per_drop'], 1),
+        ]], $rows);
     }
 
     /**

@@ -21,7 +21,7 @@ A page is built from its comp and reviewed against it: same markup classes, same
 | `search.html` | `/search` |
 | `character.html` | `/c/{name}`: the head, the owner's bar and the two modules the web app adds. The rest is the site's `character.html` as it is |
 | `creature.html`, `item.html`, `zone.html`, `quest.html` | the result pages |
-| `loot.html`, `object.html` | `/loot`, the loot index, and `/objects/{id}` |
+| `loot.html`, `object.html`, `container.html` | `/loot`, the loot index, `/objects/{id}`, and the What it holds module of a container item |
 | `world.html` | `/map`, the world map. The comp draws the invented sheet; the built page draws the tile pyramid of DESIGN.md "Maps" |
 | `account.html` | `/account` |
 | `login.html`, `link.html` | `/login`, `/link` |

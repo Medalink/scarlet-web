@@ -44,13 +44,7 @@ final class ObjectPage
             ],
             'tags' => $table['rows'] === [] ? [] : array_map(fn (RateFlag $flag): string => $flag->label(), array_values(array_filter($table['rows'][0]['estimate']->flags, fn (RateFlag $flag): bool => $flag !== RateFlag::QuestItem))),
             'unread' => $table['unread'] === 0 ? null : 'Left out: '.Format::count($table['unread'], 'opening').' from sessions that do not record what an object was read for.',
-            'drops' => array_map(fn (array $row): array => ['cells' => [
-                ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id'], 'tag' => in_array(RateFlag::QuestItem, $row['estimate']->flags, true) ? RateFlag::QuestItem->label() : null],
-                ['rate' => $row['estimate']],
-                $row['estimate']->stated() ? $row['estimate']->range() : '–',
-                $row['estimate']->counts(),
-                Format::number($row['per_drop'], 1),
-            ]], $table['rows']),
+            'drops' => LootRows::gives($table['rows']),
             'map' => MapSpec::density(WorldLayer::Creatures, null, $r['map_zones'], null, dots: $r['points']),
             'hasMap' => $r['points'] !== null,
         ];

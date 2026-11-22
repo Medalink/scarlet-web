@@ -562,6 +562,20 @@ Comp.bars("dl", { x0: 14, x1: 34, y1: 400, yt: [0, 200, 400], xt: [15, 20, 25, 3
 `);
 
 // ----------------------------------------------------------------------------------- item
+const zoneRate = (zone, k, n) => {
+  const { p, low, high } = wilson(k, n);
+  return `<tr><td><a href="zone.html">${zone}</a></td><td class="n">${k}</td><td class="n">${n < 10 ? `<span class="mut">${k} of ${n}</span>` : `${(p * 100).toFixed(1)} <span class="mut">${pct(low)} to ${pct(high)}</span>`}</td></tr>`;
+};
+const itemZones = `
+    <section class="mod first" aria-labelledby="h-z"><h2 id="h-z">By zone</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem"><thead><tr><th>Zone</th><th class="n">Dropped</th><th class="n">Per 100 corpses</th></tr></thead>
+        <tbody>${zoneRate("Saltmarsh Reach", 19, 251)}${zoneRate("Hollowmere", 2, 18)}${zoneRate("Thornwall", 1, 7)}</tbody></table></div>
+      <p class="note">Creatures looted in the zone, whatever they were. Per 100 corpses is how many of every 100 corpses looted there held the item.</p>
+    </section>
+    <section class="mod w8 last" aria-labelledby="h-m2"><h2 id="h-m2">Where it was looted</h2>
+      <div class="mapbox" style="aspect-ratio:16 / 9"><canvas id="map" role="img" aria-label="Map cells where players stood when they looted this item"></canvas></div>
+      <p class="note">Cells mark where the player stood, not where the creature was.</p>
+    </section>`;
 page("item.html", "Marshwalker Greaves: where it drops", "search", `
 <div class="wrap">
   <section class="pg-head" aria-labelledby="h1">
@@ -601,6 +615,28 @@ page("item.html", "Marshwalker Greaves: where it drops", "search", `
           <tr><td data-class="HUNTER"><i class="dotc" aria-hidden="true"></i>Hunter</td><td class="n">3</td><td class="n">13.0%</td><td class="n">0 of 2</td></tr>
         </tbody></table></div>
       <p class="note">What other members of a group received (their class, never their name) and what the uploader received. A member whose class is not recorded is left out.</p>
+    </section>${itemZones}
+  </div>
+</div>`, `
+Comp.heatmap("map", { seed: 11, hot: [[3600, 4800, 700, 300], [5300, 4300, 450, 160], [4100, 2900, 380, 90]] });
+`);
+
+page("container.html", "Silt-Crusted Chest: what it holds", "search", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1" style="grid-template-columns:minmax(0,1fr)">
+    <div><h1 id="h1" class="q1">Silt-Crusted Chest</h1><p class="sub">Container. Opened 14 times in <a href="zone.html">Saltmarsh Reach</a>. Holds Reed Twine, Salt-Cured Pelt or Brackwater Pearl.</p></div>
+  </section>
+  <section class="week" aria-label="Totals">
+    <div><dt>Opened</dt><dd>14</dd></div><div><dt>Items</dt><dd>3</dd></div><div><dt>Characters</dt><dd>2</dd></div><div><dt>Dropped</dt><dd>3</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w12 first last" aria-labelledby="h-h"><h2 id="h-h">What it holds</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Opened</th><th class="n">Per drop</th></tr></thead>
+        <tbody>
+          ${ranked([dropRow("Reed Twine", "item.html", 11, 14, "2.1"), dropRow("Salt-Cured Pelt", "item.html", 6, 14, "1.0"), dropRow("Brackwater Pearl", "item.html", 1, 14, "1.0", "q2")])}
+        </tbody></table></div>
+      <p class="note">A drop rate is times opened that held the item over times opened for the first time. The band is the 95% range; from 10 to 29 openings it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.</p>
     </section>
   </div>
 </div>`);

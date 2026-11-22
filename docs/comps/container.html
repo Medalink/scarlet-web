@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silt-Crusted Chest: what it holds</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="world.html">Map</a><a href="loot.html">Loot</a><a href="camps.html">Camps</a><a href="fishing.html">Professions</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html" aria-current="page">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1" style="grid-template-columns:minmax(0,1fr)">
+    <div><h1 id="h1" class="q1">Silt-Crusted Chest</h1><p class="sub">Container. Opened 14 times in <a href="zone.html">Saltmarsh Reach</a>. Holds Reed Twine, Salt-Cured Pelt or Brackwater Pearl.</p></div>
+  </section>
+  <section class="week" aria-label="Totals">
+    <div><dt>Opened</dt><dd>14</dd></div><div><dt>Items</dt><dd>3</dd></div><div><dt>Characters</dt><dd>2</dd></div><div><dt>Dropped</dt><dd>3</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w12 first last" aria-labelledby="h-h"><h2 id="h-h">What it holds</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Opened</th><th class="n">Per drop</th></tr></thead>
+        <tbody>
+          <tr><td><a href="item.html">Reed Twine</a></td><td class="n"><span class="rb hollow" role="img" aria-label="78.6, range 52.4 to 92.4 percent"><i class="rng" style="left:52.4%;width:40.0%"></i><i class="pt" style="left:78.6%"></i></span>78.6%</td><td class="n">52.4 to 92.4</td><td class="n">11 of 14</td><td class="n">2.1</td></tr>
+          <tr><td><a href="item.html">Salt-Cured Pelt</a></td><td class="n"><span class="rb hollow" role="img" aria-label="42.9, range 21.4 to 67.4 percent"><i class="rng" style="left:21.4%;width:46.0%"></i><i class="pt" style="left:42.9%"></i></span>42.9%</td><td class="n">21.4 to 67.4</td><td class="n">6 of 14</td><td class="n">1.0</td></tr>
+          <tr><td><a href="item.html" class="q2">Brackwater Pearl</a></td><td class="n"><span class="rb hollow" role="img" aria-label="7.1, range 1.3 to 31.5 percent"><i class="rng" style="left:1.3%;width:30.2%"></i><i class="pt" style="left:7.1%"></i></span>7.1%</td><td class="n">1.3 to 31.5</td><td class="n">1 of 14</td><td class="n">1.0</td></tr>
+        </tbody></table></div>
+      <p class="note">A drop rate is times opened that held the item over times opened for the first time. The band is the 95% range; from 10 to 29 openings it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.</p>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script></script>
+</body>
+</html>

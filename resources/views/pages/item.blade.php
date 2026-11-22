@@ -25,6 +25,7 @@
       <p class="note">@if ($d['gathered_shared'])Share is the skins of that creature that gave this item. @endif Gathering covers every ruleset.</p>
     </x-module>
     @endif
+    @include('pages.item.loot', ['loot' => $loot])
     @if ($d['bosses'])
     <x-module span="w12" :last="end($tail) === 'bosses'" id="h-b" heading="Boss encounters that dropped it">
       <x-table :rows="$d['bosses']" :columns="[['label' => 'Encounter'], ['label' => 'Dropped', 'numeric' => true]]" style="margin-top:1.1rem" />
