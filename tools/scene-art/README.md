@@ -1,9 +1,9 @@
 # Scene art
 
-The art of the profession pages' heads: each scene's own models from the game (geometry, textures, particle emitters)
-and the icons its page shows. It is Blizzard's art, so it is never committed: it lives on the `maps` disk under the
-scene's name and reaches the server with the map tiles. The `camp` entry writes the same files as `tools/camp-art`
-(`camp/camp.json`, `camp/tex`, `camp/icons` named by spell id), so the camp art already on a disk keeps working.
+The art of the camps page's and the profession pages' heads: each scene's own models from the game (geometry, textures,
+particle emitters, lights) and the icons its page shows. It is Blizzard's art, so it is never committed: it lives on the
+`maps` disk under the scene's name and reaches the server with the map tiles. The `camp` scene is the Basic Campfire,
+Camp Tent and Camp Chair and the nine Camp Benefits icons, named by spell id (`SpellMisc.SpellIconFileDataID`).
 
 ## Needs
 
@@ -12,7 +12,7 @@ scene's name and reaches the server with the map tiles. The `camp` entry writes 
   (the raw file) and `/casc/blp2png?fileDataID=<id>` (a texture as PNG). The default address is `http://127.0.0.1:5123`.
 - The ids are in the `SCENES` table of `build.mjs`: each scene lists its model file ids by key (the keys the scene file
   in `resources/js/scene/scenes` places) and its icon file ids by the id the page asks for. Fishing's icon ids are item
-  ids. `../camp-art/m2.mjs` reads the M2 layout of client version 272.
+  ids. `m2.mjs` reads the M2 layout of client version 272.
 
 ## Command
 

@@ -610,15 +610,16 @@ nginx serves `/map-tiles/` straight from that folder (mounted into `web` at `/va
 cookie, so Cloudflare caches the tiles. The site reads `manifest.json` for the current version, so a new build is live
 once it is copied. Never commit the tiles.
 
-The camp page's art (`camp/`, from `tools/camp-art`) rides in the same folder, so the same command carries it. PHP serves it
-at `/camp-art/` from the `maps` disk; the page shows its art only while `camp/camp.json` exists there.
+The camp page's art (`camp/`, from `tools/scene-art`: `node tools/scene-art/build.mjs camp storage/app/maps/camp`) rides in
+the same folder, so the same command carries it. PHP serves it at `/scene-art/camp/` from the `maps` disk; the page
+shows its art only while `camp/camp.json` exists there.
 
 The dungeon floor maps (`dungeons/`, from `tools/map-tiles/dungeons.mjs`) ride there too. PHP serves them at
 `/dungeon-maps/` from the `maps` disk, and a dungeon's page shows its map only while `dungeons/dungeons.json` lists it.
 The command takes a folder that holds any of the three, so `bin/deploy maps` on a folder with only `dungeons/` in it
 copies the dungeon maps and leaves the tiles and the camp art on the droplet as they are.
 
-A profession scene's art (`fishing/`, from `tools/scene-art`: `node tools/scene-art/build.mjs fishing storage/app/maps/fishing`)
+A scene's art (`fishing/` and the other professions, and `camp/`, from `tools/scene-art`: `node tools/scene-art/build.mjs fishing storage/app/maps/fishing`)
 rides in the same folder too, one folder per scene. PHP serves it at `/scene-art/<scene>/` from the `maps` disk, and a
 scene shows only while `<scene>/<scene>.json` exists there. A new build is live within five minutes, as with the camp. The command
 copies it with a folder that also holds one of the three above, such as `storage/app/maps`.

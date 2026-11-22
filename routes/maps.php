@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Web\CampArtController;
 use App\Http\Controllers\Web\DungeonMapController;
 use App\Http\Controllers\Web\MapTileController;
 use App\Http\Controllers\Web\SceneArtController;
@@ -15,10 +14,6 @@ Route::get('/map-tiles/{version}/{look}/{z}/{x}/{y}.webp', [MapTileController::c
 Route::get('/dungeon-maps/{instance}/{floor}.webp', [DungeonMapController::class, 'floor'])
     ->where(['instance' => '[0-9]{1,6}', 'floor' => '[0-9]{1,2}'])
     ->name('dungeon-maps.floor');
-
-Route::get('/camp-art/camp.json', [CampArtController::class, 'models'])->name('camp-art.models');
-Route::get('/camp-art/tex/{id}.png', [CampArtController::class, 'texture'])->where('id', '[0-9]{1,10}')->name('camp-art.texture');
-Route::get('/camp-art/icons/{spell}.png', [CampArtController::class, 'icon'])->where('spell', '[0-9]{1,10}')->name('camp-art.icon');
 
 Route::get('/scene-art/{scene}/models.json', [SceneArtController::class, 'models'])->name('scene-art.models');
 Route::get('/scene-art/{scene}/tex/{id}.png', [SceneArtController::class, 'texture'])->where('id', '[0-9]{1,10}')->name('scene-art.texture');

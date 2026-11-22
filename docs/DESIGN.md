@@ -676,29 +676,35 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   motion get the finished page.
 
 - **The camp scene.** `/camps` opens on the game's own Basic Campfire, Camp Tent and Camp Chair drawn in three.js
-  (`resources/js/camps.js`, which loads `resources/js/camps/scene.js` and three as a chunk of their own): the models'
-  geometry and textures, their flame and spark emitters and their two lights. The smoke and the ground are drawn by
-  the page, and the line under the head says so. Three callouts on the models carry the share of visits that sit down
+  through the scene module of the profession pages (below; `scene/scenes/camp.js` and the `camp` setting): the models'
+  geometry and textures, their flame emitter and their two lights. The campfire model's spark emitter runs but is drawn
+  with front faces only, which hides it, as the head has always looked (`cull` in the scene file). The smoke and the
+  ground are drawn by the page, and the line under the head says so. Three callouts on the models carry the share of visits that sit down
   and that use a tent, and the share of Camp Benefits that came with the Camp Chair buff. The scene loads only when
   the head is on screen and the browser has WebGL, stops drawing while the head is off screen or the tab is hidden,
   and draws one still frame under reduced motion (a drag still turns it). When the art is not on the disk the head is a
   plain page head with no stage; when WebGL or the art fails after the page is drawn, the stage keeps its height and
-  lists the three callouts. The art is Blizzard's: `tools/camp-art` writes it to the `maps` disk under `camp/`
-  (`camp.json`, `tex/<file id>.png`, `icons/<spell id>.png`), `/camp-art/*` serves it with the cache headers of the
+  lists the three callouts. The art is Blizzard's: `tools/scene-art` (`camp`) writes it to the `maps` disk under `camp/`
+  (`camp.json`, `tex/<file id>.png`, `icons/<spell id>.png`), `/scene-art/camp/*` serves it with the cache headers of the
   map tiles, `bin/deploy maps` carries it to the server, and no model, texture or icon is committed. The benefit icons in
   the table come from the same folder and are empty squares without it.
 - **Profession scenes** (owner, 2026-11-22: "create a page like this for every profession and gathering"). Each
   profession page opens on a head built like the camp's, drawn from the game's own models. The code is general:
   `resources/js/scene.js` is the page script (WebGL check, load when the head is on screen, callout placing, the
   `data-state="off"` list) and loads one scene's spec and `resources/js/scene/mount.js` as chunks of their own. A scene is
-  a data file in `resources/js/scene/scenes/` (`fishing.js` is the first): the props with where each stands, how each
+  a data file in `resources/js/scene/scenes/` (`fishing.js` is the first; `camp.js` is the camps page's): the props with where each stands, how each
   model's emitters are tuned, the point each callout stands on, the camera, fog and bloom, and a `setting`, which is
-  what the page draws itself. There are two settings. `water` is still water with the moon's glitter and a low bank
+  what the page draws itself. There are three settings. `water` is still water with the moon's glitter and a low bank
   under moonlight (Fishing). `ground` is open ground under one low light, with any number of small warm lights that
   flicker, such as a forge or a lantern (Herbalism, a meadow at first light; Mining, a mine floor lit by a forge;
   Skinning, tanning racks at dusk; and the eight crafting scenes, each a workshop with its station, where the props a
-  callout stands on are keyed `station`, `work` and `stock` in every one). Both draw their earth with `settings/land.js`. A scene that needs another adds a
-  module to `scene/settings/` and names it in the spec. A prop's `emit` may name `all` in place of an index. A
+  callout stands on are keyed `station`, `work` and `stock` in every one). Both draw their earth with `settings/land.js`.
+  `camp` is the camps page: flat packed earth under a moon, the smoke column (`settings/smoke.js`), and a fire the model
+  lights itself: the campfire model's own two point lights and their flicker track, the glow of its camera-facing flame
+  batches (`model.js` tags a batch on a bone that faces the camera `userData.billboard` and the setting turns it), its
+  blend 7 core and the bloom all follow that one track. A scene that needs another adds a
+  module to `scene/settings/` and names it in the spec; a setting may also define `attach(placed)`, called once with the
+  placed props, and `warm(dt)`, called with each warm-up step, and its `step` gets the camera and the frame's `dt`. A prop's `emit` may name `all` in place of an index. A
   prop's `emit` lists the model's emitters to draw by index, each with its own rate, size and brightness (an emitter the
   spec leaves out is not drawn). The core draws one facing the camera, stretched along its velocity (`streak`, or by
   the model's tail) or flat on the model's ground plane for water rings (flag `0x1000`), additive and alpha-blended
@@ -710,9 +716,7 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   (`fishing/fishing.json`, `tex/<file id>.png`, `icons/<id>.png`), is written by `tools/scene-art` and is served by
   `/scene-art/{scene}/models.json`, `/tex/{id}.png` and `/icons/{id}.png` with the camp art's cache headers and `?v=`
   rule; `App\Support\Scene` names the scenes and `App\Support\SceneArt` owns the folder. `/design/scenes/{scene}`
-  (local environment only) shows a scene's head over invented facts. The camp scene still has its own module; it
-  moves onto this one in later ships, and its smoke, ground, fire flicker and point lights become settings then. The
-  scene builds with three 0.187, which has dropped the soft shadow filter the approved prototype was tuned on: shadows
+  (local environment only) shows a scene's head over invented facts. The scene builds with three 0.187, which has dropped the soft shadow filter the approved prototype was tuned on: shadows
   use the plain filter.
 
 What the layer adds to each page:

@@ -5,7 +5,7 @@
 // Usage: node tools/scene-art/build.mjs <scene> <out dir> [server]
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { readModel } from '../camp-art/m2.mjs';
+import { readModel } from './m2.mjs';
 
 const SCENES = {
     fishing: {
