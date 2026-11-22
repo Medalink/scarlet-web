@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Jobs\ReconcileCharacterClaims;
 use App\Jobs\RefreshCharacterFeats;
 use App\Jobs\RefreshRollups;
 use App\Models\AddonDay;
@@ -19,6 +20,7 @@ class DecodeSession
         private readonly StoreImportedRecords $imports,
         private readonly StoreFishingLines $fishing,
         private readonly StoreAddonClaims $claims,
+        private readonly AddonClaimSiblings $siblings,
     ) {}
 
     /**
@@ -27,9 +29,18 @@ class DecodeSession
      * The parts of groups `imports`, `fishing` and `counts` are keyed by the start of a UTC day and go to their own
      * tables, and the catches in a session's `addons` parts go to the fishing lines too. Every decode replaces the
      * key's fishing lines, so a removed part takes its lines with it. A key that held `counts` parts decodes them again
-     * even when none is left, which drops the claims only they carried.
+     * even when none is left, which drops the claims only they carried. Whatever the decode did, the claims of the
+     * character and of the characters linked to it are reconciled afterwards (docs/DESIGN.md, Reconcile).
      */
     public function handle(int $characterId, int $sessionStart): void
+    {
+        $this->decode($characterId, $sessionStart);
+        if ($this->siblings->handle($characterId) !== []) {
+            ReconcileCharacterClaims::dispatch($characterId);
+        }
+    }
+
+    private function decode(int $characterId, int $sessionStart): void
     {
         $bodies = [];
         $imported = [];

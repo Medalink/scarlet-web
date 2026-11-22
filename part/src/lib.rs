@@ -18,6 +18,7 @@ pub mod payload;
 pub mod peer;
 pub mod professions;
 pub mod pseudo;
+pub mod reconcile;
 pub mod reference;
 pub mod rows;
 pub mod social;

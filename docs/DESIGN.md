@@ -288,19 +288,54 @@ group, or the character, deletes the character's claims.
 
 ### Reconcile
 
-`reconcile(character, kind)` is one function in `scarlet-part`, run by the server and by the app. It reads rows, not
-parts: the character's claims of the kind and its Scarlet rows of the kind (for fishing, `gathers` and
-`gather_items`), counted or not, and gives every claim exactly one status with its counted amounts and its evidence.
-Every counted amount is floored at 0 and rounded half up; a ratio whose denominator is 0 is 0. The server runs it under the character lock after any decode of
-the character, any removal, a ruleset re-file and a plausibility change.
+`reconcile(character, kind)` is one function in `scarlet-part`, run by the server and later by the app
+(`scarlet-part reconcile` reads JSON on stdin and writes JSON; `--explain` prints the table of statuses). It reads rows,
+not parts: the character's claims of the kind, the character-scope claims of the characters linked to it (rule 4) and
+its Scarlet rows of the kind, counted or not. For fishing a row is a `gathers` row of kind fish with its `looted` and
+the quantity of the loot window that followed it (the `gather_items` from its cast to the next cast of its session,
+without the ones that came from opening a container). It gives every claim exactly one status with its counted amounts
+and its evidence. It reads no database and no clock; `now` is an input. Every counted amount is floored at 0 and
+rounded half up in integer arithmetic; a ratio whose denominator is 0 is 0.
+
+The order of the work is fixed, and each step sees only the claims the steps before it left:
+
+1. Claims that fail their bounds are `rejected`; account-scope claims are `reference`; a kind with no row source (only
+   fishing has one), an origin outside the kind's rank list and a metric the kind does not know are `held` with the
+   rule `unmapped`.
+2. A character-scope `life` claim is `held` (rule 6).
+3. A claim equal to one of a linked character with a lower id is `superseded` (rule 4).
+4. Dated claims of one origin that overlap collapse into one (rule 5, second sentence): the claims are taken by end,
+   start, store and dims, latest first, and each one overlapping a winner already taken loses to it.
+5. Per origin, highest rank first, Scarlet's rows are assigned to the claims left (rule 3). Then each claim in turn: a
+   claim that overlaps a counted or residual claim of a higher rank by more than 60 s is `superseded` (rule 5); an
+   origin that stamps with the server's clock goes through rule 1; every other claim goes through the arithmetic of
+   rule 3.
+6. Events are matched last (rule 2).
+
+The server runs it kind by kind in the queued job `ReconcileCharacterClaims`, or by hand with `php artisan
+addons:reconcile {character?}`, after any decode of the character (its sessions and its `counts` parts), any removal of
+a group or of everything, a ruleset merge and a plausibility change. A plausibility change happens only inside a
+decode, which writes `sessions.counted`. The job reads its inputs, runs `scarlet-part` outside any transaction, then
+takes the locks of the characters it read, lowest id first, reads the inputs again and writes only when they are the
+ones it decided on; otherwise it decides again, three times at most. A claim row is written only where a column
+differs, so a second run changes no row. The scheduled outdated pass queues a reconcile on its own, without a decode,
+for a character whose `addon_days.reconcile_version` is older than the rules.
+
+Each claim stores `status`, `counted` and `evidence`, the `ruleset_id` and `counted_ok` of the session that holds the
+window's end (else the nearest session in time), and the `level` and `zone_id` of the last Scarlet row assigned to it
+(null when none is). The evidence is a JSON object that always holds `rule` (1 to 7, `bounds` or `unmapped`) and
+`diff`, the claimed minus the counted amount per metric, so that claimed = counted + diff for every metric. It adds
+what the rule used: `rows` (`n`, `first` and `last` in epoch milliseconds, `looted`, `items`), `with` (the key of the
+claim it lost to, and for rule 4 the name of its character), `same_origin`, `origin`, `catch_started`, `row`,
+`overlap`, `offset_ms` and `why`.
 
 | Status | Counted | When |
 | --- | --- | --- |
 | `counted` | whole | no Scarlet row and no higher-ranked claim falls in its window |
 | `residual` | part | Scarlet's rows cover part of its window |
 | `superseded` | 0 | Scarlet's rows, a higher-ranked origin, the same claim on another character, or another claim of its origin cover it; the evidence names which |
-| `held` | 0 | an event with no matching Scarlet row inside a Scarlet session that recorded rows of its kind |
-| `rejected` | 0 | it fails its bounds: landed above casts, `casts - unknown` above the window's seconds / 2 + 1, a window in the future or before the addon existed |
+| `held` | 0 | an event with no matching Scarlet row inside a Scarlet session that recorded rows of its kind; a claim no rule maps (a kind with no row source, an origin outside the rank list, an unknown metric); a lifetime of one character (rule 6); an `ff` claim with Scarlet rows near it and none assigned (rule 1) |
+| `rejected` | 0 | it fails its bounds: an amount that is not a whole number from 0 to 9e15, a window that ends before it starts or starts before 2019-08-26 (before the addons existed), a window that ends more than a day after the clock, landed above casts, `casts - unknown` above the window's seconds / 2 + 1 |
 | `reference` | 0 | an account-scope claim: shown on the account page and checked as a ceiling, never added to a character |
 
 Rules, in order:
@@ -312,7 +347,10 @@ Rules, in order:
    are assigned to it and `held` when none are, never `residual`. An event origin takes its offset per character from
    the pairs that match, never a constant per origin.
 2. **Events** match one to one with an unused Scarlet row of the same key (npc, item) within the origin's tolerance.
-   Matched is `superseded` with the row it matched.
+   Matched is `superseded` with the row it matched. No mapped origin writes events yet, so this is built and not
+   measured: the tolerance is a provisional 2 s around an offset searched within 60 s (per origin, the median offset
+   of the pairs that matched). An event that names no item is `held`, as is an unmatched one that falls inside the
+   span of a Scarlet session that recorded rows of the kind; any other counts.
 3. **Dated claims against Scarlet.** Each Scarlet row is assigned, per origin, by its `at` (the cast start) to the
    claim whose window contains it. A row in no window goes to the claim whose nearer edge is closest, within 60 s; at
    equal distance, to the claim that starts later. With no row assigned, the claim is `counted`. Otherwise, for
@@ -331,11 +369,13 @@ Rules, in order:
    - `superseded` when every counted amount is 0, else `residual`. The evidence holds the assigned rows (count, first
      and last time, looted, items) and the difference between claimed and counted per metric.
    Another kind maps its own anchor metric here in the same way before it ships.
-4. **Between characters.** A character-scope dated claim that equals a claim of another character of the same
-   account in origin, kind, window, `from`, `to` and amounts is one record read from two folders (a restored backup,
-   a copied folder). It counts on the character with the lowest id and is `superseded` on the others, with that claim
-   as evidence. A decode or removal that adds or removes such a claim reconciles the other characters too, locked
-   lowest id first.
+4. **Between characters.** A character-scope claim that equals a claim of another character of the same account in
+   origin, kind, window, `from`, `to`, dims and amounts (the store is ignored, events are included) is one record read
+   from two folders (a restored backup, a copied folder). It counts on the character with the lowest id and is
+   `superseded` on the others, with that claim and its character as evidence. Characters are of one account when they
+   share a game account, or an install that uploaded both, and so on transitively among the characters that hold
+   claims. A decode or removal that adds or removes such a claim reconciles the other characters too, locked lowest id
+   first.
 5. **Between origins.** A fixed rank per kind (fishing: `fl` above `ff`). A claim whose window overlaps a counted or
    residual claim of a higher rank by more than 60 s is `superseded` whole. Two claims of one origin and one
    character whose windows overlap, or whose ends are equal, are one, whatever their stores: the later end wins, then
@@ -353,6 +393,17 @@ withheld, its claim counts whole; releasing the session moves every total by exa
 (*measured*: the arithmetic of rule 3 run over R0's assignment of rows to the 12 sessions). Where only an addon saw a
 trip, its casts include the short cancelled channels Scarlet drops: 23 of 366 (6%) on the owner's data.
 
+Proven through the real upload (2026-11-22, `node e2e/boot.mjs -- node e2e/addon-counts.mjs`: an invented character
+whose 12 sessions carry R0's rows per session, one `counts` part per day with the 12 Fishing Log sessions and two
+Mastercraft reads): the totals are 343, 334 and 356; with the 224-cast session withheld, 347, 334 and 359, and 343, 334
+and 356 again, to the hash, once it arrives; with no Scarlet rows (Professions removed) every claim counts whole,
+366, 334 and 360. The scheduled outdated pass (`ingest:redecode --outdated`) decides every claim again from emptied
+columns to the same hash and stamps every addon day. A second character of the same install that uploads the same
+counts has its 12 character-scope claims `superseded` by rule 4 with the first character named, its 2 account claims are
+`reference`, and the first character's hash does not move, with the twin there and after its parts are gone. Rule 3 assigns a row by its cast start, so on the owner's data the second row of session 8, which
+starts 9.4 s after that session's window ends and 0.6 s before the next one begins, belongs to the next session's claim.
+The figures above are the arithmetic over R0's assignment; the proof puts that row inside session 8.
+
 ### Reading
 
 - Scarlet's fact tables and rollups do not change. A total that includes addon data is three terms, each one query:
@@ -366,19 +417,24 @@ trip, its casts include the short cancelled channels Scarlet drops: 23 of 366 (6
 
 ### Checks
 
-`php artisan addons:audit {character?}` runs these as SQL against the real database, prints per character and kind
-the table that explains the total (one line per status, with claims, amounts and the top evidence), and fails on any
-violation. It also runs on a schedule and logs breaches.
+`php artisan addons:audit {character?}` runs these as SQL over the stored columns, never by running reconcile again,
+prints per character and kind the table that explains the total (one line per status, with its claims, what they
+claimed, what counts and the rule most of them name, then Scarlet's own term and the total), and fails on any
+violation. It runs on demand; a schedule that logs breaches comes with the first page that reads statuses. Checks 1
+to 5, 8, 9 and 11 run now; 6, 7 and 10 need a page and come with it.
 
-Until reconcile exists it holds the checks that need no status and prints the claims and summed amounts per character,
-scope and kind: every claim has a carrying part and takes the amounts of the one whose id sorts highest (a note lists
-claims whose parts disagree), no character holds one key twice, and no text field names a player but the character
-(check 9).
+Besides the numbered checks it prints the claims and summed amounts per character, scope and kind, and holds the
+checks that need no status: every claim has a carrying part and takes the amounts of the one whose id sorts highest (a
+note lists claims whose parts disagree), no character holds one key twice, and no text field names a player but the
+character (check 9).
 
 1. Every claim has exactly one status; claimed = counted + superseded + held + rejected + the stored differences.
-2. 0 <= counted <= claimed; `superseded`, `held`, `rejected` and `reference` count 0.
+2. 0 <= counted <= claimed; `superseded`, `held`, `rejected` and `reference` count 0. A `rejected` claim may claim a
+   negative amount, so it only has to count 0.
 3. Every `superseded` and `residual` claim names its evidence.
-4. No Scarlet row is assigned to two claims of one origin.
+4. No Scarlet row is assigned to two claims of one origin: the assigned ranges of a character and origin are disjoint,
+   they name no more rows than Scarlet holds, each range holds at least the rows it names, and a range lies within 60 s
+   of its window.
 5. No two counted or residual dated claims of one character overlap by more than 60 s across origins, or at all
    within one origin.
 6. Every page total equals Scarlet + addon dated + addon undated, and every breakdown sums to it with the unknown

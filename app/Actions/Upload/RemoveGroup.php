@@ -2,7 +2,9 @@
 
 namespace App\Actions\Upload;
 
+use App\Actions\Ingest\AddonClaimSiblings;
 use App\Actions\Ingest\DeleteFactRows;
+use App\Jobs\ReconcileCharacterClaims;
 use App\Jobs\RefreshRollups;
 use App\Models\Character;
 use App\Models\Install;
@@ -21,13 +23,15 @@ class RemoveGroup
         private readonly SharingGroups $groups,
         private readonly GroupRefusals $refusals,
         private readonly DeleteFactRows $deleteRows,
+        private readonly AddonClaimSiblings $siblings,
     ) {}
 
     /**
      * Remove one sharing group from the server for every character of the install's owner: its parts and
      * decoded rows go, the sessions forget the group and null its counters (and the columns other tables keep for it,
      * FactTable::groupColumns), the rollups are refreshed over the time
-     * the characters played, and the group is refused until the app puts it back (PUT /upload/groups/{key}).
+     * the characters played, and the group is refused until the app puts it back (PUT /upload/groups/{key}). The addon
+     * claims of the characters are reconciled again, since the rows they were checked against may be gone.
      *
      * @return array{group: string, refused: bool, parts_removed: int, rows_removed: int}
      */
@@ -53,6 +57,11 @@ class RemoveGroup
 
         if ($window !== null) {
             RefreshRollups::dispatch($window['from'], $window['until']);
+        }
+        foreach ($characterIds as $characterId) {
+            if ($this->siblings->handle($characterId) !== []) {
+                ReconcileCharacterClaims::dispatch($characterId);
+            }
         }
 
         return ['group' => $group, 'refused' => true, 'parts_removed' => $parts, 'rows_removed' => $rows];

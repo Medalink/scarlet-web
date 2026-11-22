@@ -8,14 +8,14 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('ingest:redecode {--outdated : Queue only the next batch of sessions and addon days an older decoder wrote}')]
+#[Signature('ingest:redecode {--outdated : Queue only the next batch of sessions and addon days an older decoder wrote and characters whose claims an older reconcile decided}')]
 #[Description('Decodes again every stored session, so rows written by an older decoder follow the current one')]
 class RedecodeSessionsCommand extends Command
 {
     public function handle(QueueRedecode $redecode, QueueOutdatedSessions $outdated): int
     {
         if ($this->option('outdated')) {
-            $this->info($outdated->handle().' outdated sessions and addon days queued.');
+            $this->info($outdated->handle().' outdated sessions, addon days and characters queued.');
 
             return self::SUCCESS;
         }

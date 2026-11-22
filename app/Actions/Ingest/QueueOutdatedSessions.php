@@ -3,6 +3,7 @@
 namespace App\Actions\Ingest;
 
 use App\Jobs\IngestSession;
+use App\Jobs\ReconcileCharacterClaims;
 use App\Models\AddonDay;
 use App\Models\PlaySession;
 use App\Support\PartTool;
@@ -18,17 +19,20 @@ class QueueOutdatedSessions
 
     private const string DAY_CURSOR = 'redecode:outdated-days-after';
 
+    private const string RECONCILE_CURSOR = 'redecode:outdated-reconciles-after';
+
     public function __construct(private readonly PartTool $partTool) {}
 
     /**
      * Queue a fresh decode of the next sessions, then of the next addon days, whose rows an older decoder wrote, or no
-     * decoder version at all (docs/DESIGN.md, Re-decode). Nothing is queued while the backfill queue still holds jobs,
+     * decoder version at all (docs/DESIGN.md, Re-decode), then a reconcile of the next characters whose addon days an
+     * older reconcile decided. Nothing is queued while the backfill queue still holds jobs,
      * so a run never queues a session twice. A cursor in the durable cache walks each kind in key order, so a session
      * that keeps failing is tried once a pass and cannot hold the others back; a pass that finds nothing of a kind
      * starts the next one from the beginning, which picks up a session a worker of the previous release decoded during
      * a deploy. Sessions come first and the days share the rest of the batch.
      *
-     * @return int sessions and addon days queued
+     * @return int sessions, addon days and characters queued
      */
     public function handle(): int
     {
@@ -38,7 +42,33 @@ class QueueOutdatedSessions
         $version = $this->partTool->decoderVersion();
         $sessions = $this->queueNext(PlaySession::class, 'session_start', self::CURSOR, $version, self::BATCH);
 
-        return $sessions + ($sessions < self::BATCH ? $this->queueNext(AddonDay::class, 'day_key', self::DAY_CURSOR, $version, self::BATCH - $sessions) : 0);
+        $queued = $sessions + ($sessions < self::BATCH ? $this->queueNext(AddonDay::class, 'day_key', self::DAY_CURSOR, $version, self::BATCH - $sessions) : 0);
+
+        return $queued + ($queued < self::BATCH ? $this->queueReconciles($this->partTool->reconcileVersion(), self::BATCH - $queued) : 0);
+    }
+
+    private function queueReconciles(int $version, int $limit): int
+    {
+        $after = Cache::store('durable')->get(self::RECONCILE_CURSOR);
+        $characters = AddonDay::query()
+            ->where(fn (Builder $query) => $query->whereNull('reconcile_version')->orWhere('reconcile_version', '<', $version))
+            ->when(is_int($after), fn (Builder $query) => $query->where('character_id', '>', $after))
+            ->distinct()
+            ->orderBy('character_id')
+            ->limit($limit)
+            ->pluck('character_id');
+
+        if ($characters->isEmpty()) {
+            Cache::store('durable')->forget(self::RECONCILE_CURSOR);
+
+            return 0;
+        }
+        foreach ($characters as $characterId) {
+            ReconcileCharacterClaims::dispatch((int) $characterId, true);
+        }
+        Cache::store('durable')->forever(self::RECONCILE_CURSOR, (int) $characters->last());
+
+        return $characters->count();
     }
 
     /** @param  class-string<PlaySession|AddonDay>  $model */

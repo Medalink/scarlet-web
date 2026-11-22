@@ -135,6 +135,37 @@ class PartTool
     }
 
     /**
+     * Decide what the claims of one character and kind count (docs/DESIGN.md, Reconcile): one verdict per claim, in
+     * the order of the claims sent.
+     *
+     * @param  string  $input  the JSON `ReadReconcileInput` made
+     * @return list<array{id: int, status: string, counted: array<string, int>, evidence: array<string, mixed>, level: int|null, zone: int|null}>
+     */
+    public function reconcile(string $input): array
+    {
+        $run = Process::timeout(120)->input($input)->run([$this->binary(), 'reconcile']);
+        if (! $run->successful()) {
+            throw new RuntimeException('scarlet-part reconcile failed: '.$this->message($run->errorOutput()));
+        }
+
+        /** @var array{claims: list<array{id: int, status: string, counted: array<string, int>, evidence: array<string, mixed>, level: int|null, zone: int|null}>} $answer */
+        $answer = json_decode($run->output(), associative: true, flags: JSON_THROW_ON_ERROR);
+
+        return $answer['claims'];
+    }
+
+    /** The rule version of the reconcile verdicts (`RECONCILE_VERSION` in part/src/reconcile.rs). */
+    public function reconcileVersion(): int
+    {
+        $run = Process::timeout(30)->run([$this->binary(), 'reconcile-version']);
+        if (! $run->successful()) {
+            throw new RuntimeException('scarlet-part reconcile-version failed: '.$this->message($run->errorOutput()));
+        }
+
+        return (int) trim($run->output());
+    }
+
+    /**
      * The sharing groups in the order of docs/groups.tsv.
      *
      * @return list<array{key: string, label: string, switchable: bool, codes: list<string>}>

@@ -4,7 +4,8 @@
 //
 // Each run gets a database of its own, its own Redis prefix and a free port, so runs in two checkouts never share
 // state. Runs in one checkout take turns, because they share vendor/, node_modules/ and public/build. The command
-// sees the app's address in E2E_URL and E2E_STRICT=1, and this exits with the command's exit code. When the command
+// sees the app's own settings (its DB_, REDIS_ and APP_ values), its address in E2E_URL and E2E_STRICT=1, and this
+// exits with the command's exit code. When the command
 // fails, the tail of the app's own logs is printed.
 //
 // A run that is interrupted stops the app and drops its database before it exits. A run that was killed outright
@@ -327,7 +328,7 @@ async function main() {
       console.error(`boot: ${lane.join(" ")} was still running after ${LANE_MS / 1000} s and is stopped`);
       current?.kill("SIGKILL");
     }, LANE_MS);
-    const done = await finished(lane[0], lane.slice(1), { env: { ...process.env, E2E_URL: url, E2E_STRICT: "1", E2E_MAP_ART: fs.existsSync(mapArt) ? "1" : "0" }, shown: true });
+    const done = await finished(lane[0], lane.slice(1), { env: { ...env, E2E_URL: url, E2E_STRICT: "1", E2E_MAP_ART: fs.existsSync(mapArt) ? "1" : "0" }, shown: true });
     clearTimeout(late);
     code = done.status ?? 1;
     console.log(`boot ${String(Math.round(performance.now() - from)).padStart(6)}ms  ${lane.join(" ")} exited ${done.status ?? done.signal}`);

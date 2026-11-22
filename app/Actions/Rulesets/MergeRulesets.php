@@ -4,6 +4,7 @@ namespace App\Actions\Rulesets;
 
 use App\Actions\Ingest\RebuildCharacterLevels;
 use App\Actions\Rollups\RefreshAggregates;
+use App\Jobs\ReconcileCharacterClaims;
 use App\Models\Ruleset;
 use App\Models\RulesetKind;
 use App\Support\DecompressionLimit;
@@ -42,6 +43,7 @@ class MergeRulesets
 
         $notes = $undo ? $this->undo($tables) : $this->merge($tables);
         $this->refresh->handle(0, self::REFRESH_UNTIL);
+        $this->reconcileClaims();
 
         $after = $this->snapshot($tables);
 
@@ -51,6 +53,14 @@ class MergeRulesets
             'checks' => $this->checks($before, $after, $tables),
             'notes' => $notes,
         ];
+    }
+
+    /** The rulesets of the sessions moved, so every claim takes the ruleset of its session again. */
+    private function reconcileClaims(): void
+    {
+        foreach (DB::table('addon_claims')->distinct()->orderBy('character_id')->pluck('character_id') as $characterId) {
+            ReconcileCharacterClaims::dispatch((int) $characterId, true);
+        }
     }
 
     /**

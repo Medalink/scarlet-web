@@ -63,6 +63,12 @@ any host that is not 127.0.0.1, localhost or [::1], because it deletes what it u
   process and stops it unless it is 0. It loads the key pages at 1280 and 390 wide and types into the search box.
 - Last, it removes the upload.
 
+`node e2e/boot.mjs -- node e2e/addon-counts.mjs` is a second lane, not part of the default one (about a minute). It uploads an
+invented character with 12 fishing sessions and the counts another addon made of them, then checks the totals
+(343, 334 and 356), the same state after a group is removed and restored or the parts arrive in another order, a second
+reconcile that changes nothing, and `php artisan addons:audit`. It needs the app's database settings, which `boot.mjs`
+gives its command, and `psql`.
+
 Public API answers are cached for 30 seconds at the origin, so every read adds a random `limit` to its address and a rerun never reads the last run's answer.
 
 The server needs Horizon running, `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than

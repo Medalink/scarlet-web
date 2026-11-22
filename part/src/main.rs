@@ -22,6 +22,8 @@ const USAGE: &str = "usage:
   scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin [--imports | --fishing | --counts]
   scarlet-part check-overview --parts-dir <dir> --overview <overview.json>
   scarlet-part decoder-version
+  scarlet-part reconcile [--explain] < <json: kind, now, character, rows, others>
+  scarlet-part reconcile-version
   scarlet-part measure --root <out dir> --folders a,b,c [--runs 5] [--dump-text <dir>]
   scarlet-part parse-bench <text file> [--runs 7]";
 
@@ -104,6 +106,12 @@ fn run(mut args: Vec<OsString>) -> Result<(), String> {
             println!("{}", scarlet_part::decode::DECODER_VERSION);
             Ok(())
         }
+        "reconcile" => reconcile(args),
+        "reconcile-version" => {
+            flags(args, &[], &[])?;
+            println!("{}", scarlet_part::reconcile::RECONCILE_VERSION);
+            Ok(())
+        }
         "check-overview" => check_overview(args),
         "measure" => {
             let (f, _) = flags(args, &["root", "folders", "runs", "dump-text"], &[])?;
@@ -132,6 +140,28 @@ fn run(mut args: Vec<OsString>) -> Result<(), String> {
         }
         _ => Err(USAGE.into()),
     }
+}
+
+fn reconcile(args: Vec<OsString>) -> Result<(), String> {
+    use std::io::Read;
+    let (f, _) = flags(args, &[], &["explain"])?;
+    let mut raw = String::new();
+    std::io::stdin()
+        .read_to_string(&mut raw)
+        .map_err(|e| e.to_string())?;
+    let value: serde_json::Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
+    let input = scarlet_part::reconcile::parse(&value)?;
+    let outcomes = scarlet_part::reconcile::reconcile(&input);
+    if f.contains_key("explain") {
+        print!("{}", scarlet_part::reconcile::explain(&input, &outcomes));
+        return Ok(());
+    }
+    println!(
+        "{}",
+        serde_json::to_string(&scarlet_part::reconcile::to_json(&outcomes))
+            .map_err(|e| e.to_string())?
+    );
+    Ok(())
 }
 
 fn parse_name_key(f: &Flags) -> Result<[u8; 32], String> {
