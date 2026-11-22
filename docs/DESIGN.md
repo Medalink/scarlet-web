@@ -373,8 +373,9 @@ Rules, in order:
    - items: counted = `items` x counted landed / `landed`. Items follow landed so that a catch booked across a session
      seam is not added on both sides.
    - A claim without `casts` (a session a catch started) holds items of the last cast of the claim before it. It
-     counts them when no Scarlet row is assigned to it or to the claim of its origin that ends within 60 s before it
-     starts; otherwise it is `superseded` with that row as evidence.
+     counts them unless a Scarlet row whose `looted` is true is assigned to it or is the last row of the claim of its
+     origin that ends within 60 s before it starts; then it is `superseded` with that row as evidence. A row that was
+     not looted shows only that Scarlet saw the cast, not the items, so those stay with the claim.
    - `superseded` when every counted amount is 0, else `residual`. The evidence holds the assigned rows (count, first
      and last time, looted, items) and the difference between claimed and counted per metric.
    Another kind maps its own anchor metric here in the same way before it ships.

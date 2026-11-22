@@ -420,7 +420,7 @@ impl Dated<'_> {
         before: Option<&[usize]>,
         prev: Option<&Claim>,
     ) -> Decision {
-        if !rows.is_empty() {
+        if rows.iter().any(|r| r.looted) {
             return with_rows(
                 nothing(
                     c,
@@ -430,18 +430,24 @@ impl Dated<'_> {
                 rows,
             );
         }
-        let last = before.and_then(|b| b.last()).map(|&i| &self.rows[i]);
+        let last = before
+            .and_then(|b| b.last())
+            .map(|&i| &self.rows[i])
+            .filter(|row| row.looted);
         match (last, prev) {
             (Some(row), Some(p)) => nothing(
                 c,
                 Status::Superseded,
                 json!({"rule": 3, "catch_started": true, "with": p.natural(), "row": {"at": row.at, "looted": row.looted}}),
             ),
-            _ => decide(
-                c,
-                Status::Counted,
-                rules::counted_whole(whole),
-                json!({"rule": 3, "catch_started": true, "rows": {"n": 0}}),
+            _ => with_rows(
+                decide(
+                    c,
+                    Status::Counted,
+                    rules::counted_whole(whole),
+                    json!({"rule": 3, "catch_started": true, "rows": rules::rows_json(rows)}),
+                ),
+                rows,
             ),
         }
     }
