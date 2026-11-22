@@ -10,7 +10,7 @@
 @else
   <x-rows>
 @foreach ($keys as $key)
-    <x-row :title="$key->name" :body="'Made '.$key->created_at->format('j M Y').' · '.($key->last_used_at ? 'last used '.$key->last_used_at->diffForHumans() : 'never used').' · 600 requests a minute'" wire:key="k-{{ $key->id }}">
+    <x-row :title="$key->name" :body="'Made '.$key->created_at->format('j M Y').' · '.($key->last_used_at ? 'last used '.$key->last_used_at->diffForHumans() : 'never used')" wire:key="k-{{ $key->id }}">
       <x-btn kind="danger" wire:click="delete({{ $key->id }})" wire:confirm="Delete the key {{ $key->name }}? Anything using it stops working.">Delete</x-btn>
     </x-row>
 @endforeach

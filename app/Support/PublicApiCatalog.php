@@ -15,6 +15,12 @@ use App\Http\Controllers\Api\V1\Public\StatsController;
  */
 final class PublicApiCatalog
 {
+    /** The prefix of every public route's name; the rest is the endpoint's `name`. */
+    public const string ROUTE_PREFIX = 'public.';
+
+    /** The endpoints whose answers name characters. */
+    public const array NAMES_CHARACTERS = ['leaderboard', 'search', 'character', 'character-series'];
+
     /** The shared parameters, named once and referred to by the endpoints. */
     public const array PARAMS = [
         'ruleset' => ['ruleset', 'query', 'string', 'A ruleset slug from `/rulesets`. Leave out for all rulesets.'],

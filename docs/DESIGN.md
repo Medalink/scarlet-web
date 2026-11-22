@@ -428,10 +428,12 @@ design says so plainly instead of pretending:
   until the data stops failing.
 - A report link on public pages; a held name can be released by the account that holds it or by the operator.
 
-**Limits.** Registration: 5 installs per IP per hour. Upload: 4 MiB per request, 64 MiB decompressed, 200 MiB per
+**Limits.** Registration: 5 installs per address per hour. Upload: 4 MiB per request, 64 MiB decompressed, 200 MiB per
 install per day, 50 characters per install, and the zstd window is capped so a small body cannot expand without
-bound. Requests are rate limited per install and per IP with Laravel's limiter. Revoking an install on the account
-page stops its key at once.
+bound. Requests are rate limited per install and per address with Laravel's limiter; an IPv6 address counts by its
+/64. The public read API allows 60 requests a minute per address, or 600 per account with a key, caps bad keys at 10 a
+minute per address, keeps each answer 30 seconds at the origin and cancels a query after 10 seconds (docs/API.md).
+Revoking an install on the account page stops its key at once.
 
 **Public pages.** The pages run the same reads as the public API, so a client looping over them would reach the
 database through php-fpm's few workers. They carry their own protection: 240 requests a minute per address bucket

@@ -43,6 +43,8 @@ final class DevelopersPage
             'token' => (int) config('scarlet.rate.public.token'),
             'ability' => Account::API_ABILITY,
             'maxAge' => PublicApi::MAX_AGE,
+            'namedMaxAge' => PublicApi::NAMED_MAX_AGE,
+            'badTokens' => PublicApi::BAD_TOKENS_PER_MINUTE,
         ];
     }
 

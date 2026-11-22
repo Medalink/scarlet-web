@@ -12,8 +12,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Laravel's rate limiter with the budgets of config('scarlet.rate'): `registration` and `ip` count per
- * client address, `install` per signed install (so it runs after VerifyInstallSignature), and `page` per
- * address bucket (App\Support\ClientAddress) — the pages answer with a plain refusal instead of an API error.
+ * address bucket (App\Support\ClientAddress), `install` per signed install (so it runs after VerifyInstallSignature),
+ * and `page` per address bucket too — the pages answer with a plain refusal instead of an API error.
  */
 class RateLimitRequests
 {
@@ -48,7 +48,7 @@ class RateLimitRequests
     private function budget(Request $request, string $bucket): array
     {
         if ($bucket === self::REGISTRATION) {
-            return ['api-registration:'.$request->ip(), (int) config('scarlet.rate.registration.per_ip'), (int) config('scarlet.rate.registration.seconds')];
+            return ['api-registration:'.ClientAddress::bucket($request), (int) config('scarlet.rate.registration.per_ip'), (int) config('scarlet.rate.registration.seconds')];
         }
 
         if ($bucket === self::PAGE) {
@@ -63,6 +63,6 @@ class RateLimitRequests
             return ['api-upload-install:'.$install->id, (int) config('scarlet.rate.upload.per_install'), $seconds];
         }
 
-        return ['api-upload-ip:'.$request->ip(), (int) config('scarlet.rate.upload.per_ip'), $seconds];
+        return ['api-upload-ip:'.ClientAddress::bucket($request), (int) config('scarlet.rate.upload.per_ip'), $seconds];
     }
 }

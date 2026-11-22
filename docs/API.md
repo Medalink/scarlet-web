@@ -261,13 +261,16 @@ Take the slugs from `GET /public/rulesets`.
 
 ## Limits, keys and caching
 
-- Without a key: 60 requests a minute per IP address. With a key: 600 a minute. A key is a personal access token with the
-  `public:read` ability, made on the account page (see "API keys" above) and sent as `Authorization: Bearer <key>`.
-- A key that is unknown, expired or lacks the ability is `401 invalid_token`; it is not treated as no key.
+- Without a key: 60 requests a minute per address; an IPv6 address counts by its /64. With a key: 600 a minute for the
+  account, shared by all its keys. A key is a personal access token with the `public:read` ability, made on the account
+  page (see "API keys" above) and sent as `Authorization: Bearer <key>`.
+- A key that is unknown, expired or lacks the ability is `401 invalid_token`; it is not treated as no key. After 10 of
+  those from one address in a minute, the answer is `429 rate_limited` until the minute is over.
 - Over the limit the answer is `429 rate_limited` with `Retry-After` in seconds and `retry_after` in the body.
   `X-RateLimit-Limit` and `X-RateLimit-Remaining` are on every answer.
-- `Cache-Control: public, max-age=300` and an `ETag` on every successful answer. Send the tag back as `If-None-Match`:
-  an unchanged answer is `304` with no body. `Vary: Authorization`.
+- `Cache-Control: public, max-age=300` and an `ETag` on every successful answer; `max-age=30` on the answers that name
+  characters (leaderboards, search and characters). Send the tag back as `If-None-Match`: an unchanged answer is `304`
+  with no body. `Vary: Authorization`.
 - CORS is open: `Access-Control-Allow-Origin: *` for `GET` and `OPTIONS`, with `ETag`, `Retry-After` and the rate-limit
   headers exposed to scripts.
 

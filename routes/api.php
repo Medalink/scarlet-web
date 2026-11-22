@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 // The public read API under /api/v1/public: open data, no sign-in, listed once in PublicApiCatalog.
 Route::prefix('v1/public')->middleware(PublicApi::class)->group(function (): void {
     foreach (PublicApiCatalog::endpoints() as $endpoint) {
-        Route::get($endpoint['path'], $endpoint['action'])->where($endpoint['where'])->name('public.'.$endpoint['name']);
+        Route::get($endpoint['path'], $endpoint['action'])->where($endpoint['where'])->name(PublicApiCatalog::ROUTE_PREFIX.$endpoint['name']);
     }
 });
 
