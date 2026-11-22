@@ -64,7 +64,7 @@ made unused.
 1. `bin/composer lint` formats; `bin/composer check` runs `lint:check`, `analyse` and `deps:age` and must pass.
 2. Run the real app: `bin/dev start`, then request the page.
 3. Every command runs in a wslc container through `bin/composer`, `bin/artisan`, `bin/pnpm`, `bin/php`, `bin/psql`.
-   Nothing runs on Windows PHP.
+   Nothing runs on Windows PHP. From PowerShell, `bin\psql` runs `bin/psql.cmd`; every script in `bin/` has one.
 
 ## Landing changes
 

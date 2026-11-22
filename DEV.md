@@ -2,8 +2,8 @@
 
 Everything runs in wslc containers: the app, Horizon, the scheduler, PostgreSQL 18 with TimescaleDB, and Redis.
 Windows has no PHP, no Composer and no Node for this repo, and there is no Herd or Sail. Commands go through the
-`bin/` wrappers, which run them in the checkout's tools container (Git Bash or any shell that runs `sh`; from
-PowerShell write `sh bin/composer ...`).
+`bin/` wrappers, which run them in the checkout's tools container. Git Bash runs them as they are. PowerShell and cmd
+run the `.cmd` beside each one, which starts the same script in Git for Windows' bash, so `bin\psql` works there too.
 
 ## Needs
 
