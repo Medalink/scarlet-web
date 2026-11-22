@@ -618,6 +618,11 @@ The dungeon floor maps (`dungeons/`, from `tools/map-tiles/dungeons.mjs`) ride t
 The command takes a folder that holds any of the three, so `bin/deploy maps` on a folder with only `dungeons/` in it
 copies the dungeon maps and leaves the tiles and the camp art on the droplet as they are.
 
+A profession scene's art (`fishing/`, from `tools/scene-art`: `node tools/scene-art/build.mjs fishing storage/app/maps/fishing`)
+rides in the same folder too, one folder per scene. PHP serves it at `/scene-art/<scene>/` from the `maps` disk, and a
+scene shows only while `<scene>/<scene>.json` exists there. A new build is live within five minutes, as with the camp. The command
+copies it with a folder that also holds one of the three above, such as `storage/app/maps`.
+
 ## Edge cache
 
 Cloudflare caches three kinds of answer, each only for a visitor with no credentials. A request with an `Authorization`

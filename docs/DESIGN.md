@@ -646,6 +646,28 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   (`camp.json`, `tex/<file id>.png`, `icons/<spell id>.png`), `/camp-art/*` serves it with the cache headers of the
   map tiles, `bin/deploy maps` carries it to the server, and no model, texture or icon is committed. The benefit icons in
   the table come from the same folder and are empty squares without it.
+- **Profession scenes** (owner, 2026-11-22: "create a page like this for every profession and gathering"). Each
+  profession page opens on a head built like the camp's, drawn from the game's own models. The code is general:
+  `resources/js/scene.js` is the page script (WebGL check, load when the head is on screen, callout placing, the
+  `data-state="off"` list) and loads one scene's spec and `resources/js/scene/mount.js` as chunks of their own. A scene is
+  a data file in `resources/js/scene/scenes/` (`fishing.js` is the first): the props with where each stands, how each
+  model's emitters are tuned, the point each callout stands on, the camera, fog and bloom, and a `setting`, which is
+  what the page draws itself. The one setting so far is `water`: still water with the moon's glitter and a low bank
+  under moonlight. A scene that needs another adds a module to `scene/settings/` and names it in the spec. A
+  prop's `emit` lists the model's emitters to draw by index, each with its own rate, size and brightness (an emitter the
+  spec leaves out is not drawn). The core draws one facing the camera, stretched along its velocity (`streak`, or by
+  the model's tail) or flat on the model's ground plane for water rings (flag `0x1000`), additive and alpha-blended
+  alike, and `bite()` ducks a floating prop and fires its
+  model's splash emitters; the Fishing scene does that on its own every 7 to 12 seconds. The head markup is the camp's
+  under `.scene-head` and the shared `.callouts`, `.callout` and `.credit` rules, and the stage element carries
+  `data-scene`, `data-models` and `data-texture`. The art lives on the `maps` disk under the scene's name
+  (`fishing/fishing.json`, `tex/<file id>.png`, `icons/<id>.png`), is written by `tools/scene-art` and is served by
+  `/scene-art/{scene}/models.json`, `/tex/{id}.png` and `/icons/{id}.png` with the camp art's cache headers and `?v=`
+  rule; `App\Support\Scene` names the scenes and `App\Support\SceneArt` owns the folder. `/design/scenes/fishing`
+  (local environment only) shows the Fishing head over invented facts. The camp scene still has its own module; it
+  moves onto this one in later ships, and its smoke, ground, fire flicker and point lights become settings then. The
+  scene builds with three 0.187, which has dropped the soft shadow filter the approved prototype was tuned on: shadows
+  use the plain filter.
 
 What the layer adds to each page:
 

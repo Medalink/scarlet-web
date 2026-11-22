@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\MapViewerDesignController;
+use App\Http\Controllers\Web\SceneDesignController;
 use App\Http\Middleware\RateLimitRequests;
 use App\View\Design\Gallery;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,7 @@ Route::view('/demo', 'demo')->middleware('scarlet.edge');
 if (app()->environment('local')) {
     Route::get('/design', [DesignController::class, 'index']);
     Route::get('/design/map-viewer', MapViewerDesignController::class);
+    Route::get('/design/scenes/{scene}', SceneDesignController::class);
     Route::get('/design/{page}', [DesignController::class, 'show'])->where('page', implode('|', array_keys(Gallery::PAGES)));
 }
 
