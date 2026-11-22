@@ -129,6 +129,17 @@ final class PublicApiCatalog
                 'returns' => '`data.cells`: `i`, `j`, `level`, `value`, `characters`. `meta.grid` gives the grid size.',
                 'example' => '/map/heat?layer=deaths', 'where' => [],
             ],
+            [
+                'name' => 'map-density', 'group' => 'Map', 'path' => '/map/density', 'action' => [MapController::class, 'density'],
+                'summary' => 'One whole level of the heat grid, for drawing a density surface. Level 0 is 192 by 128 cells; each level doubles both.',
+                'params' => [
+                    'ruleset', ['layer', 'query', 'string', '`paths`, `deaths` or `creatures`. Default `paths`.'],
+                    ['level', 'query', 'integer', '0 to 3 for `paths`, 0 to 2 for the other layers. Default 0.'],
+                    ['creature', 'query', 'integer', 'A creature id: narrows `creatures` to one creature.'],
+                ],
+                'returns' => '`data`: `level`, `columns`, `rows` and `cells`, a flat list of pairs: the cell index (`j * columns + i`) minus the previous cell\'s, then the cell\'s counter.',
+                'example' => '/map/density?layer=paths&level=2', 'where' => [],
+            ],
         ];
     }
 

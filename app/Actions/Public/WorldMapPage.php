@@ -33,7 +33,7 @@ class WorldMapPage
             'scope' => $scope,
             'layer' => $layer,
             'rulesets' => $this->rulesets->handle(),
-            'heat' => $this->heat->handle($layer, $scope->ids),
+            'heat' => $this->heat->handle($layer, $scope->ids, level: 0),
             'zones' => $this->zones->handle($scope->ids),
             'busiest' => $this->busiest->handle($scope->ids, 8),
         ];

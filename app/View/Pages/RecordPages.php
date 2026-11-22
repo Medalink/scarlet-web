@@ -4,6 +4,7 @@ namespace App\View\Pages;
 
 use App\Support\KillerKind;
 use App\Support\PageScope;
+use App\Support\WorldLayer;
 use App\View\Charts;
 use App\View\Format;
 use App\View\ItemTypes;
@@ -62,8 +63,9 @@ final class RecordPages
                 ['text' => Format::percent((float) $row['rate'], (float) $row['rate'] < 0.01 ? 2 : 1), 'bar' => max(0.15, (float) $row['rate'] / $top * 5.2).'rem'],
                 Format::number($row['opens']), Format::number($row['drops']),
             ]], $shown),
-            'map' => MapSpec::build($r['heat'], $r['map_zones'], $zones[0]['id'] ?? null, ['ruleset' => $scope->ruleset?->slug()]),
-            'hasMap' => $r['heat'] !== [],
+            'map' => MapSpec::density(WorldLayer::Creatures, $scope->ruleset?->slug(), $r['map_zones'], $r['points'] === null ? ($zones[0]['id'] ?? null) : null, creature: (int) $r['id'], dots: $r['points']),
+            'hasMap' => $r['points'] !== null || $r['heat'] !== [],
+            'dots' => $r['points'] !== null,
             'byLevel' => self::deathsByLevel($r['deaths_by_level']),
         ];
     }
@@ -148,7 +150,7 @@ final class RecordPages
                 ['label' => 'Deaths', 'value' => $deaths === null ? '0' : Format::number($deathCount)],
                 ['label' => 'Deaths an hour', 'value' => $hours === null || $hours < 1 ? '–' : Format::number($deathCount / $hours, 2)],
             ],
-            'map' => MapSpec::build($r['heat'], $r['map_zones'], $r['rect'] === null ? null : (int) $r['id'], ['ruleset' => $scope->ruleset?->slug()]),
+            'map' => MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $r['map_zones'], $r['rect'] === null ? null : (int) $r['id']),
             'killers' => array_map(fn (array $row): array => [
                 'label' => (string) $row['killer'], 'value' => Format::number($row['deaths']), 'share' => (int) $row['deaths'] / $topKills * 100,
                 'href' => $row['kind'] === KillerKind::Creature->value && $row['npc_id'] !== null ? '/creatures/'.$row['npc_id'] : null,

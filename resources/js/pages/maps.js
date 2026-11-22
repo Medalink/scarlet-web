@@ -6,7 +6,6 @@ import { mountMap } from '../map/index.js';
 import { bindReplay, replayPlan } from '../replay.js';
 
 const MANIFEST = '/map-tiles/manifest.json';
-const HEAT_URL = '/api/v1/public/map/heat';
 
 const maps = new Map();
 
@@ -43,21 +42,12 @@ function mount(canvas) {
     }
 }
 
-async function showLayer(canvasId, layer, button) {
+function showLayer(canvasId, layer, button) {
     const entry = maps.get(canvasId);
     if (!entry) {
         return;
     }
-    const query = new URLSearchParams({ layer });
-    if (entry.config.ruleset) {
-        query.set('ruleset', entry.config.ruleset);
-    }
-    const response = await fetch(`${HEAT_URL}?${query}`, { headers: { Accept: 'application/json' } });
-    if (!response.ok) {
-        return;
-    }
-    const body = await response.json();
-    entry.map.setLayers({ heat: { cells: body.data.cells.map((cell) => [cell.i, cell.j, cell.level]) } });
+    entry.map.setLayers({ heat: { source: { layer, levels: entry.config.layerLevels[layer], ruleset: entry.config.ruleset } } });
     button.parentElement.querySelectorAll('button').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
 }
 

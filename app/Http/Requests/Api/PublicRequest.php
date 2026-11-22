@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api;
 
 use App\Support\Cursor;
 use App\Support\Exceptions\ApiException;
+use App\Support\HeatGrid;
 use App\Support\Server;
 use App\Support\WorldLayer;
 use Illuminate\Contracts\Validation\Validator;
@@ -30,6 +31,7 @@ class PublicRequest extends FormRequest
             'layer' => ['nullable', Rule::enum(WorldLayer::class)],
             'class' => ['nullable', 'string', 'max:32', 'regex:/^[A-Za-z]+$/'],
             'creature' => ['nullable', 'integer', 'min:1'],
+            'level' => ['nullable', 'integer', 'min:0', 'max:'.(HeatGrid::LEVELS - 1)],
             'cursor' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:'.Cursor::MAX_LIMIT],
             'q' => ['nullable', 'string', 'min:2', 'max:80'],
@@ -69,6 +71,13 @@ class PublicRequest extends FormRequest
         $layer = $this->validated('layer');
 
         return is_string($layer) ? WorldLayer::from($layer) : WorldLayer::Paths;
+    }
+
+    public function level(): int
+    {
+        $level = $this->validated('level');
+
+        return is_numeric($level) ? (int) $level : 0;
     }
 
     public function creatureId(): ?int

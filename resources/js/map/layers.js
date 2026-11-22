@@ -1,9 +1,4 @@
-// What is drawn over the art: heat cells on the 768 by 512 world grid (square cells on the 3:2 world), paths, marks and zone names. All of it is data given
-// to the viewer, in world u, v.
-
-export const HEAT = ['#4b1626', '#861a34', '#cf1f45', '#ff5d7e'];
-export const GRID_COLUMNS = 768;
-export const GRID_ROWS = 512;
+// What is drawn over the art besides heat: creature dots, paths, marks and zone names. All of it is data given to the viewer, in world u, v.
 
 const ACCENT = '#ff2d55';
 const SOFT = '#ff6b8e';
@@ -19,56 +14,11 @@ const PATH = {
     ghost: { width: 1.5, color: 'rgba(240,241,243,0.6)', dash: [1.5, 5] },
 };
 
-// cells: [[i, j, level], ...] or a flat [i, j, level, i, j, level, ...]; level 1 to 4. Returns a flat Uint16Array.
-export function flatCells(cells) {
-    if (!cells || cells.length === 0) {
-        return new Uint16Array(0);
-    }
-    if (typeof cells[0] === 'number') {
-        return Uint16Array.from(cells);
-    }
-    const flat = new Uint16Array(cells.length * 3);
-    cells.forEach((cell, n) => flat.set(cell, n * 3));
-    return flat;
-}
-
-export function drawHeat(ctx, view, flat, alpha = 0.9, cells = flat.length / 3) {
-    const end = Math.min(flat.length, cells * 3);
-    if (end === 0) {
+export function drawHead(ctx, view, at) {
+    if (!at) {
         return;
     }
-    const cw = (view.W / GRID_COLUMNS) * view.s;
-    const ch = (view.H / GRID_ROWS) * view.s;
-    const [x0, y0] = view.toScreen(0, 0);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    for (let level = 1; level <= HEAT.length; level++) {
-        ctx.fillStyle = HEAT[level - 1];
-        ctx.beginPath();
-        for (let n = 0; n < end; n += 3) {
-            if (flat[n + 2] !== level) {
-                continue;
-            }
-            const x = x0 + flat[n] * cw;
-            const y = y0 + flat[n + 1] * ch;
-            if (x + cw < 0 || y + ch < 0 || x > view.width || y > view.height) {
-                continue;
-            }
-            ctx.rect(x, y, Math.max(cw, 0.9), Math.max(ch, 0.9));
-        }
-        ctx.fill();
-    }
-    ctx.restore();
-}
-
-export function drawHead(ctx, view, flat, cells) {
-    if (cells < 1 || cells * 3 > flat.length) {
-        return;
-    }
-    const n = (cells - 1) * 3;
-    const [x0, y0] = view.toScreen(0, 0);
-    const x = x0 + (flat[n] + 0.5) * (view.W / GRID_COLUMNS) * view.s;
-    const y = y0 + (flat[n + 1] + 0.5) * (view.H / GRID_ROWS) * view.s;
+    const [x, y] = view.toScreen(at[0], at[1]);
     ctx.save();
     ctx.fillStyle = 'rgba(255,45,85,0.28)';
     ctx.beginPath();
@@ -78,6 +28,29 @@ export function drawHead(ctx, view, flat, cells) {
     ctx.beginPath();
     ctx.arc(x, y, 3, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+}
+
+export function drawDots(ctx, view, dots) {
+    ctx.save();
+    for (const [u, v] of dots) {
+        const [x, y] = view.toScreen(u, v);
+        if (x < -8 || y < -8 || x > view.width + 8 || y > view.height + 8) {
+            continue;
+        }
+        ctx.beginPath();
+        ctx.arc(x, y, 5.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(20,20,22,0.9)';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, y, 3.6, 0, Math.PI * 2);
+        ctx.fillStyle = ACCENT;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, y, 1.3, 0, Math.PI * 2);
+        ctx.fillStyle = FG;
+        ctx.fill();
+    }
     ctx.restore();
 }
 

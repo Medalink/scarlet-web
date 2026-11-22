@@ -452,3 +452,4 @@ figure figcaption { margin-top: 0.8rem; font-size: 0.9rem; color: var(--muted); 
 /* The running version in the footer: mono, quiet, a link to the release notes. */
 .foot .ver { font: 400 0.8rem/1 var(--mono); font-stretch: 85%; color: var(--muted); text-decoration: none; white-space: nowrap; }
 .foot .ver:hover { color: var(--soft); }
+.density-key i { width: 7rem; height: 0.55rem; border-radius: 3px; background: linear-gradient(90deg, rgba(90, 20, 40, 0.4), rgba(168, 28, 60, 0.75) 40%, rgba(255, 45, 85, 0.92) 72%, #ff8fa6); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }

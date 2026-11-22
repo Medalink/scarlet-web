@@ -1,8 +1,10 @@
 // The map viewer on its own, for /design/map-viewer (local environment only), with invented layer data.
 // Nothing here is recorded data: the heat, the marks and the path are made up to check how the layers read.
 
-import { GRID_COLUMNS, GRID_ROWS } from './layers.js';
 import { mountMap } from './index.js';
+
+const GRID_COLUMNS = 768;
+const GRID_ROWS = 512;
 
 const page = document.getElementById('map-viewer');
 const zones = JSON.parse(page.dataset.zones);
@@ -21,7 +23,7 @@ function blob(u, v, radius, seed) {
         for (let dj = -radius; dj <= radius; dj++) {
             const d = Math.hypot(di, dj) / radius;
             if (d < 1 && random() < 1 - d * 0.6) {
-                cells.push([ci + di, cj + dj, Math.max(1, 4 - Math.floor(d * 4 + random() * 0.8))]);
+                cells.push([ci + di, cj + dj, Math.max(1, Math.round(60 * (1 - d) * (0.6 + random() * 0.8)))]);
             }
         }
     }
@@ -29,7 +31,7 @@ function blob(u, v, radius, seed) {
 }
 
 const layers = {
-    heat: { cells: [...blob(0.3, 0.49, 13, 1), ...blob(0.285, 0.435, 7, 2), ...blob(0.73, 0.62, 10, 3), ...blob(0.75, 0.52, 8, 4)] },
+    heat: { grid: [GRID_COLUMNS], cells: [...blob(0.3, 0.49, 13, 1), ...blob(0.285, 0.435, 7, 2), ...blob(0.73, 0.62, 10, 3), ...blob(0.75, 0.52, 8, 4)] },
     paths: [
         {
             points: [[0.292, 0.436], [0.298, 0.452], [0.305, 0.47], [0.29, 0.5], [0.27, 0.525], [0.255, 0.56], [0.25, 0.6]],

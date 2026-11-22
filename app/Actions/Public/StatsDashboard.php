@@ -74,7 +74,7 @@ class StatsDashboard
             'weekdays' => $this->weekdays->handle($ids),
             'zones' => $this->zones->handle($ids, 12),
             'coverage' => $this->coverage->handle(),
-            'heat' => $this->heat->handle(WorldLayer::Paths, $ids),
+            'heat' => $this->heat->handle(WorldLayer::Paths, $ids, level: 0),
             'map_zones' => $this->mapZones->handle($ids),
         ];
     }

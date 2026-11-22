@@ -45,6 +45,36 @@ final class WorldGrid
     /** The smallest side of the rectangle `around()` pads, in world widths: a character that never left one spot. */
     private const float MIN_SIDE = 0.02;
 
+    /** The share of a rectangle's size `aroundPoints()` adds on each side. */
+    private const float POINT_PADDING = 0.3;
+
+    /**
+     * The world rectangle to open a map on so that its points fill it: u0, v0, u1, v1, `MIN_SIDE` at least on each side, with
+     * the outer 2 percent of a crowd of 50 points or more left out.
+     *
+     * @param  list<array{0: float, 1: float}>  $points
+     * @return array{0: float, 1: float, 2: float, 3: float}|null
+     */
+    public static function aroundPoints(array $points): ?array
+    {
+        if ($points === []) {
+            return null;
+        }
+        $us = array_column($points, 0);
+        $vs = array_column($points, 1);
+        sort($us);
+        sort($vs);
+        $last = count($points) - 1;
+        $low = count($points) >= 50 ? (int) floor(self::TRIM * $last) : 0;
+        $high = count($points) >= 50 ? (int) ceil((1 - self::TRIM) * $last) : $last;
+        $centreU = ($us[$low] + $us[$high]) / 2;
+        $centreV = ($vs[$low] + $vs[$high]) / 2;
+        $halfU = max(self::MIN_SIDE, ($us[$high] - $us[$low]) * (1 + 2 * self::POINT_PADDING)) / 2;
+        $halfV = max(self::MIN_SIDE * 2 / 3, ($vs[$high] - $vs[$low]) * (1 + 2 * self::POINT_PADDING)) / 2;
+
+        return [max(0.0, $centreU - $halfU), max(0.0, $centreV - $halfV), min(1.0, $centreU + $halfU), min(1.0, $centreV + $halfV)];
+    }
+
     /**
      * The world rectangle to open a map on so that its cells fill it: u0, v0, u1, v1 from the 2nd to the 98th percentile of
      * the cells' columns and rows, which leaves out the odd cell far from the rest, then `PADDING` of its size on each side.

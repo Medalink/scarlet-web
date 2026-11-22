@@ -5,11 +5,14 @@
 //
 // options
 //   manifestUrl   the tile manifest (required); tiles are read from the same folder, under the manifest's version
-//   layers        { heat: { cells }, paths, marks }: heat cells [i, j, level] on the 768 by 512 world grid, level 1 to 4;
-//                 paths [{ points: [[u, v], ...], mode }]; marks [{ kind: kill|death|quest|level, u, v }]
+//   layers        { heat, dots, paths, marks }: heat is { source: { layer, levels, ruleset, creature } } read from
+//                 `densityUrl` a level at a time, or { grid: [columns], cells: [[i, j, counter], ...] } on a grid of
+//                 columns by two thirds as many rows; dots [[u, v], ...]; paths [{ points: [[u, v], ...], mode }];
+//                 marks [{ kind: kill|death|quest|level, u, v }]
+//   densityUrl    where a heat source is read (default /api/v1/public/map/density)
 //   zones         [{ id, name, u0, v0, u1, v1, href? }]: the zone rectangles, for the pointer readout, `fit(id)` and
 //                 the zone names drawn on the map; a zone with an href is a link
-//   reveal        { cells, marks }: draw only that many heat cells and marks, from the first, as a replay does; default all
+//   reveal        { cells, marks }: draw only the heat of that many cells and that many marks, from the first, as a replay does; default all
 //   look          'survey' or 'game'; default is the last one chosen on this device, else survey
 //   fit           a rectangle or zone id to open on; default is the whole world
 //   onPointer     ({ u, v, zone } | null) => void, as the pointer moves over the map
@@ -24,7 +27,8 @@
 
 import { addLookSwitch, addZoomAndCredit, LOOKS } from './chrome.js';
 import { attachInput, ZOOM_STEP } from './input.js';
-import { drawHead, drawHeat, drawMarks, drawPaths, drawZoneNames, flatCells } from './layers.js';
+import { Heat } from './density.js';
+import { drawDots, drawHead, drawMarks, drawPaths, drawZoneNames } from './layers.js';
 import { loadManifest, TileSource } from './tiles.js';
 import { TILE, View } from './view.js';
 
@@ -50,13 +54,7 @@ function saveLook(look) {
     }
 }
 
-function normalise(layers = {}) {
-    return {
-        heat: flatCells(layers.heat?.cells),
-        paths: layers.paths ?? [],
-        marks: layers.marks ?? [],
-    };
-}
+const DENSITY_URL = '/api/v1/public/map/density';
 
 const area = (z) => (z.u1 - z.u0) * (z.v1 - z.v0);
 
@@ -67,7 +65,8 @@ export function mountMap(canvas, options) {
     const tileBase = options.tileBase ?? options.manifestUrl.replace(/\/[^/]*$/, '');
     const unbind = [];
 
-    let layers = normalise(options.layers);
+    let layers = null;
+    let heat = null;
     let reveal = options.reveal ?? null;
     let look = options.look ?? savedLook() ?? DEFAULT_LOOK;
     if (!LOOKS.some((l) => l.look === look)) {
@@ -94,6 +93,15 @@ export function mountMap(canvas, options) {
             frame = requestAnimationFrame(draw);
         }
     };
+
+    const setLayers = (next = {}) => {
+        heat?.destroy();
+        layers = { dots: next.dots ?? [], paths: next.paths ?? [], marks: next.marks ?? [] };
+        heat = new Heat(next.heat, options.densityUrl ?? DENSITY_URL, schedule);
+        schedule();
+    };
+
+    setLayers(options.layers);
 
     const zoneAt = (u, v) => zones.filter((z) => u >= z.u0 && u <= z.u1 && v >= z.v0 && v <= z.v1).sort((a, b) => area(a) - area(b))[0] ?? null;
 
@@ -239,11 +247,12 @@ export function mountMap(canvas, options) {
             drawTiles();
         }
         ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
-        drawHeat(ctx, view, layers.heat, 0.9, reveal?.cells);
+        heat.draw(ctx, view, reveal?.cells);
+        drawDots(ctx, view, layers.dots);
         drawPaths(ctx, view, layers.paths);
         drawMarks(ctx, view, reveal ? layers.marks.slice(0, reveal.marks) : layers.marks);
         if (reveal) {
-            drawHead(ctx, view, layers.heat, reveal.cells);
+            drawHead(ctx, view, heat.head(reveal.cells));
         }
         boxes = drawZoneNames(ctx, view, zones);
         options.onView?.({ u: view.cx / view.W, v: view.cy / view.H, scale: view.s, bounds: view.bounds() });
@@ -335,10 +344,7 @@ export function mountMap(canvas, options) {
         fit,
         fitWorld,
         zoomBy,
-        setLayers: (next) => {
-            layers = normalise(next);
-            schedule();
-        },
+        setLayers,
         setReveal: (next) => {
             reveal = next;
             schedule();
@@ -352,6 +358,7 @@ export function mountMap(canvas, options) {
         pending: () => (tiles ? tiles.pending() : 1),
         destroy: () => {
             stop();
+            heat.destroy();
             cancelAnimationFrame(frame);
             unbind.forEach((fn) => fn());
             tiles?.destroy();

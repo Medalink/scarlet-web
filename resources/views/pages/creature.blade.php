@@ -19,9 +19,8 @@
     </x-module>
     <x-module span="w5" :last="true" id="h-w" heading="Where it was met">
       @if ($d['hasMap'])
-      <div class="mapbox" style="aspect-ratio:1 / 1"><x-world-canvas id="map" label="Map cells where players stood when they met this creature. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
-      <x-heat-key low="Few" high="Many characters" />
-      <p class="note">Cells mark where the player stood, not where the creature was.</p>
+      <div class="mapbox" style="aspect-ratio:1 / 1"><x-world-canvas id="map" label="Where players met this creature. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
+      @unless ($d['dots'])<x-density-key low="Few" high="Many characters" />@endunless
       @else
       <x-note>No sightings are placed on the world map yet.</x-note>
       @endif

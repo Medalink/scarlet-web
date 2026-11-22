@@ -13,7 +13,7 @@
       <div class="seg" id="map-look"></div>
       @if ($d['rulesetPick'])<x-pick label="Ruleset" :options="$d['rulesetPick']" :selected="$d['rulesetSelected']" />@else<x-seg label="Ruleset" :items="$d['rulesets']" />@endif
     </div>
-    <x-heat-key low="Few" high="Many characters" />
+    <x-density-key low="Few" high="Many characters" />
     <x-readout id="map-out" :line="$d['line']" />
     @if ($d['empty'])<x-note>No {{ $d['layerWord'] }} are recorded on the world map yet.</x-note>@endif
     <h2>Busiest zones</h2>

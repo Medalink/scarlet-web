@@ -40,7 +40,7 @@ final class MapPage
         $top = (float) max([0, ...array_column($busiest, 'seconds')]);
 
         return [
-            'map' => MapSpec::build($heat, $zones, extra: ['ruleset' => $slug, 'readout' => self::READOUT, 'lookSwitch' => self::LOOK]),
+            'map' => MapSpec::density($layer, $slug, $zones, extra: ['ruleset' => $slug, 'readout' => self::READOUT, 'lookSwitch' => self::LOOK, 'layerLevels' => array_column(array_map(fn (WorldLayer $item): array => [$item->value, $item->levels()], WorldLayer::cases()), 1, 0)]),
             'layers' => array_map(fn (WorldLayer $item): array => ['label' => $item->label(), 'on' => $item === $layer, 'data' => ['map-layer' => $item->value, 'map-for' => self::CANVAS]], WorldLayer::cases()),
             'rulesets' => count($ruleset) > 4 ? null : $ruleset,
             'rulesetPick' => count($ruleset) > 4 ? array_map(fn (array $item): array => empty($item['disabled']) ? [$item['label'], $item['href']] : [$item['label'], null, true], $ruleset) : null,

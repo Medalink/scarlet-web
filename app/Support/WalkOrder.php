@@ -13,7 +13,7 @@ final class WalkOrder
     private const int CHAIN = 1500;
 
     /**
-     * @param  list<array{0: int, 1: int, 2: int}>  $cells  cell_i, cell_j and heat level
+     * @param  list<array{0: int, 1: int, 2: int}>  $cells  cell_i, cell_j and the points counted
      * @param  list<string>  $firstDays  the UTC day each cell was first walked, in the order of $cells
      * @return array{cells: list<array{0: int, 1: int, 2: int}>, days: list<array{0: string, 1: int}>} the cells oldest first and the cells first walked on each day
      */

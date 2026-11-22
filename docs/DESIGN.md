@@ -298,6 +298,7 @@ public gold-by-level means, while `money_daily_character` reads every row.
 | `skills_daily_ruleset` | 1 day | skill | skill-ups, highest rank |
 | `heat_daily_ruleset`, `heat_daily_character` | 1 day | map, 100 x 100 cell | points |
 | `world_heat_daily_ruleset`, `world_heat_daily_character` | 1 day | world cell (768 x 512) | points |
+| `world_heat_fine_daily_ruleset`, `world_heat_fine_daily_character` | 1 day | world cell (1536 x 1024), paths only | points |
 | `world_death_heat_daily_ruleset`, `world_death_heat_daily_character` | 1 day | world cell | deaths |
 | `world_sighting_heat_daily_ruleset` | 1 day | npc, world cell | sightings |
 
@@ -546,8 +547,31 @@ the nulls of rows whose map has a rectangle, in windows of seven days, then refr
 to do on a second run, so it can run whenever rectangles arrive, and nothing is uploaded again. Kills carry no
 position, so the map's third layer is the creatures met (`creature_sightings`), not kills.
 
+**Heat levels.** Heat is kept at four cell sizes so that zooming in shows detail, not bigger squares. Level `n` is a grid
+of `192 * 2^n` columns by `128 * 2^n` rows: 192, 384, 768 and 1536 columns for paths (the fine rollups), 192, 384 and 768
+for deaths and creatures. A coarser level is read from the finest rollup by integer division of `cell_i` and `cell_j`, so
+the levels nest exactly, and the minimum-characters rule applies to each cell of each level. Paths are recorded about
+once a second, 0.16 world units apart at the median, so the 1536 grid (0.65 units a cell) joins them into lines.
+`GET /api/v1/public/map/density?layer&level&ruleset&creature` answers one whole level: `columns`, `rows` and `cells`, a
+flat list of pairs (cell index minus the previous cell's index, counter), cells in index order with `index = j * columns
++ i`. It is cached at the edge for `scarlet.edge.api_seconds`. Pages carry no heat cells: the viewer asks for the level
+that suits its zoom (the finest one whose cells are at least 3.5 CSS px wide; it keeps the coarser one on screen while
+the finer one loads, and switches back only when a cell falls under 2.8 px).
+
+**Drawing heat.** The counters of a level go into a grid, are blurred with a Gaussian of 0.6 cell, put through a log
+scale that tops out at the 98th percentile of the nonzero cells (so one hotspot does not saturate the rest), and coloured
+by a ramp that is transparent at low density and scarlet to rose at high. The result is one texture per level, drawn
+scaled with bilinear filtering; a frame is a single `drawImage` of the visible part. A character's page draws its own
+cells (1536 grid, no threshold) the same way, and the replay shows a texel once the first cell that touches it has been
+walked.
+
+**Creatures.** A creature page marks where it was met with dots. Neither a sighting nor a kill records the creature's
+position, so a dot is the nearest position the same character's path recorded within ten seconds of the sighting, else
+the middle of the sighting's cell. A dot carries no time and no character. A creature met more than 600 times is drawn
+as the same density surface instead (768 grid). The map opens on the dots' bounding box, never wider than a zone.
+
 **The viewer** is the site's own canvas module, with no map library: tiles by zoom, drag and wheel and pinch to move,
-plus and minus keys, a heat layer of world cells in the heat palette, death crosses, a character's paths as scarlet
+plus and minus keys, a heat layer drawn as a density surface, death crosses, a character's paths as scarlet
 lines, zone names from the dictionary at the zooms where they fit, and a link from a zone's name to its page. It
 loads only the tiles in view. Dungeons and other maps that are not on the world keep the plain sheet with their own
 x, y.

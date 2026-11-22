@@ -23,6 +23,7 @@ class CreatureRecord
         private readonly DropRates $drops,
         private readonly WorldHeat $heat,
         private readonly MapZones $zones,
+        private readonly CreaturePoints $points,
         private readonly ListRulesets $rulesets,
     ) {}
 
@@ -53,6 +54,7 @@ class CreatureRecord
             'deaths_by_level' => $this->deathsByLevel($name, $ids),
             'drops' => $this->drops->handle(self::SOURCE, $id),
             'heat' => $this->heat->handle(WorldLayer::Creatures, $ids, $id),
+            'points' => $this->points->handle($id, $ids),
             'map_zones' => $this->zones->handle($ids),
         ];
     }

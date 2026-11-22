@@ -101,7 +101,7 @@
       <x-slot:controls><x-pick label="Zone" fit="map" :options="array_merge([['All zones', '']], array_map(fn ($zone) => [$zone['name'], $zone['id']], $d['zones']))" /></x-slot:controls>
       @endif
       <div class="mapbox" style="aspect-ratio:21/9"><x-world-canvas id="map" label="Heat from every recorded path in the world. Drag to move, scroll to zoom." :spec="$map" /></div>
-      <x-heat-key low="Few paths" high="Many" />
+      <x-density-key low="Few paths" high="Many" />
       <p class="note"><a href="/map">Open the world map</a></p>
     </x-module>
   </x-sheet>

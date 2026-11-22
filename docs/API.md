@@ -479,3 +479,19 @@ Heat on the world grid: the cells where characters walked, died or met creatures
 
 Example: `curl https://<host>/api/v1/public/map/heat?layer=deaths`
 
+#### `GET /public/map/density`
+
+One whole level of the heat grid, for drawing a density surface. Level 0 is 192 by 128 cells; each level doubles both.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `layer` | query | string | `paths`, `deaths` or `creatures`. Default `paths`. |
+| `level` | query | integer | 0 to 3 for `paths`, 0 to 2 for the other layers. Default 0. |
+| `creature` | query | integer | A creature id: narrows `creatures` to one creature. |
+
+`data`: `level`, `columns`, `rows` and `cells`, a flat list of pairs: the cell index (`j * columns + i`) minus the previous
+cell's, then the cell's counter. Cells are in index order; a cell that too few characters contributed to is left out.
+
+Example: `curl https://<host>/api/v1/public/map/density?layer=paths&level=2`
+

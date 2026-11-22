@@ -53,7 +53,7 @@ class ZoneRecord
             ))[0] ?? null,
             'killers' => $this->killers($id, $ids),
             'creatures' => $this->creatures($id, $ids),
-            'heat' => $this->heat->handle(WorldLayer::Paths, $ids),
+            'heat' => $this->heat->handle(WorldLayer::Paths, $ids, level: 0),
             'death_heat' => $this->heat->handle(WorldLayer::Deaths, $ids),
             'map_zones' => $this->zones->handle($ids),
         ];

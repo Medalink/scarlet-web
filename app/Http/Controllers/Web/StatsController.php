@@ -8,6 +8,7 @@ use App\Actions\Rollups\RulesetSummaries;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\ScopeRequest;
 use App\Support\PageScope;
+use App\Support\WorldLayer;
 use App\View\Pages\Filters;
 use App\View\Pages\MapSpec;
 use App\View\Pages\StatsPage;
@@ -27,8 +28,6 @@ class StatsController extends Controller
         /** @var list<array{id: int, slug: string, label: string, kind: string|null}> $rulesets */
         $rulesets = $answer['rulesets'];
         $page = StatsPage::data($answer, $scope, RulesetSummaries::TARGET_LEVEL);
-        /** @var list<array<string, mixed>> $heat */
-        $heat = $answer['heat'];
         /** @var list<array<string, mixed>> $zones */
         $zones = $answer['map_zones'];
 
@@ -36,7 +35,7 @@ class StatsController extends Controller
             'd' => $page,
             'filters' => Filters::for($scope, $rulesets),
             'talents' => TalentSpecPage::block($talents->handle($scope)),
-            'map' => MapSpec::build($heat, $zones, extra: ['ruleset' => $scope->ruleset?->slug()]),
+            'map' => MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $zones),
         ]);
     }
 }
