@@ -3,20 +3,24 @@
 namespace App\Http\Controllers\Web;
 
 use App\Actions\Public\Leaderboard;
+use App\Actions\Public\LeaderboardHall;
 use App\Actions\Public\ListRulesets;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\LeaderboardRequest;
 use App\Support\Board;
+use App\View\Pages\LeaderboardHallPage;
 use App\View\Pages\LeaderboardPage;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\RedirectResponse;
 
 /** The leaderboards of public characters. Public; a signed-in viewer's own characters are highlighted. */
 class LeaderboardController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(LeaderboardRequest $request, LeaderboardHall $hall, ListRulesets $rulesets): View
     {
-        return redirect(LeaderboardPage::link(Board::FastestTo60));
+        $answer = $hall->handle($request->rulesetSlug(), $request->serverFilter());
+        abort_if($answer === null, 404);
+
+        return view('pages.leaderboards', ['d' => LeaderboardHallPage::data($answer, $rulesets->handle())]);
     }
 
     public function show(LeaderboardRequest $request, Leaderboard $leaderboard, ListRulesets $rulesets, string $board): View

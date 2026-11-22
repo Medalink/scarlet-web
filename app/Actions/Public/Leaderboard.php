@@ -91,6 +91,7 @@ class Leaderboard
             Board::HighestWithoutDying => $query->where('c.whole_life', true)->where('s.deaths', 0)->whereNotNull('s.level')
                 ->addSelect('s.level as value')->orderByDesc('s.level')->orderBy('c.played_seconds')->orderBy('c.id'),
             Board::MostQuests => $query->where('s.quests', '>', 0)->addSelect('s.quests as value')->orderByDesc('s.quests')->orderBy('c.id'),
+            Board::MostKills => $query->where('s.kills', '>', 0)->addSelect('s.kills as value')->orderByDesc('s.kills')->orderBy('c.id'),
             Board::MostDungeonRuns => $query->where('s.runs', '>', 0)->addSelect('s.runs as value')->orderByDesc('s.runs')->orderBy('c.id'),
             default => $query->where('s.distance', '>', 0)->addSelect('s.distance as value')->orderByDesc('s.distance')->orderBy('c.id'),
         };
@@ -116,7 +117,7 @@ class Leaderboard
             ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('ruleset_id', $scope->ids))
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('ruleset_id', $scope->ids))
             ->groupBy('character_id')
-            ->selectRaw('character_id, coalesce(sum(deaths), 0) as deaths, coalesce(sum(quests_done), 0) as quests')
+            ->selectRaw('character_id, coalesce(sum(deaths), 0) as deaths, coalesce(sum(quests_done), 0) as quests, coalesce(sum(kills), 0) as kills')
             ->selectSub($this->runs($scope), 'runs')
             ->selectRaw('coalesce(sum(distance), 0) as distance, max(level_end) as level, max(end_at) as last_at')
             ->selectRaw('(array_agg(ruleset_id order by end_at desc))[1] as ruleset_id');

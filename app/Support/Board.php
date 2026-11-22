@@ -12,6 +12,7 @@ enum Board: string
     case FastestTo20 = 'fastest-to-20';
     case HighestWithoutDying = 'highest-level-without-dying';
     case MostQuests = 'most-quests';
+    case MostKills = 'most-kills';
     case MostDungeonRuns = 'most-dungeon-runs';
     case MostDistance = 'most-distance';
 
@@ -21,8 +22,22 @@ enum Board: string
             self::FastestTo60, self::FastestTo40, self::FastestTo20 => 'Fastest to level '.$this->level(),
             self::HighestWithoutDying => 'Highest level without dying',
             self::MostQuests => 'Most quests turned in',
+            self::MostKills => 'Most kills',
             self::MostDungeonRuns => 'Most dungeon runs',
             self::MostDistance => 'Most distance travelled',
+        };
+    }
+
+    /** The glyph of the board, a name of `<x-icon>`. */
+    public function icon(): string
+    {
+        return match ($this) {
+            self::FastestTo60, self::FastestTo40, self::FastestTo20 => 'level',
+            self::HighestWithoutDying => 'shield',
+            self::MostQuests => 'quests',
+            self::MostKills => 'kills',
+            self::MostDungeonRuns => 'dungeons',
+            self::MostDistance => 'distance',
         };
     }
 
@@ -32,6 +47,7 @@ enum Board: string
             self::FastestTo60, self::FastestTo40, self::FastestTo20 => 'The client\'s played time when the character reached level '.$this->level().'. Only public characters whose level-up to '.$this->level().' Scarlet recorded are listed.',
             self::HighestWithoutDying => 'The highest level reached by public characters that Scarlet recorded from their first level, with no death and no play missing.',
             self::MostQuests => 'Quests turned in by public characters, counted from each one\'s first recorded session.',
+            self::MostKills => 'Creatures killed by public characters, counted from each one\'s first recorded session.',
             self::MostDungeonRuns => 'Dungeon runs by public characters, counted from each one\'s first recorded session.',
             self::MostDistance => 'The length of the recorded path on the world map, in world widths: 1.0 is the width of the map. Teleports and loading screens are left out.',
         };
@@ -55,6 +71,7 @@ enum Board: string
             self::FastestTo60, self::FastestTo40, self::FastestTo20 => 'Played to '.$this->level(),
             self::HighestWithoutDying => 'Level',
             self::MostQuests => 'Quests',
+            self::MostKills => 'Kills',
             self::MostDungeonRuns => 'Runs',
             self::MostDistance => 'World widths',
         };
