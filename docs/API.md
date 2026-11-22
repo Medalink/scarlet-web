@@ -476,7 +476,7 @@ One item: what it is, where it drops by source and loot rule, and its auction pr
 | --- | --- | --- | --- |
 | `id` | path | integer | The item id, as in the address of its page. |
 
-`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`.
+`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`. `item` holds the item's facts (class, equip slot, levels, sell price, bind type, stack, quality) and is `null` while no upload has carried them (an `II` line): an item known only by name and drops, such as one seen in a loot line, still answers with `name` and `sources`.
 
 Example: `curl https://<host>/api/v1/public/items/1465`
 
