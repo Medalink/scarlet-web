@@ -44,16 +44,18 @@ export const localWeek = (utcCells) => Array.from({ length: WEEK }, (_, n) => ut
 /**
  * What draw.hours needs for a week of played seconds already in the viewer's hours, Monday 00:00 first: four levels
  * from the busiest cell, the reader's lines and the summary, in App\View\Pages\StatsPage's wording. `chosen` is the
- * busiest cell when the page already picked one, so a tie names the same hour as the page's tile.
+ * busiest cell when the page already picked one, so a tie names the same hour as the page's tile. `count` names what the
+ * cells count when it is not played seconds ("visits").
  */
-export function weekGrid(cells, chosen = null) {
+export function weekGrid(cells, chosen = null, count = null) {
     const top = Math.max(...cells);
     const busiest = chosen ?? (top > 0 ? cells.indexOf(top) : null);
     const levels = WEEKDAYS.map(() => []);
     const say = cells.map((value, n) => {
         const level = value <= 0 ? 0 : Math.max(1, Math.ceil((value / top) * 4));
         levels[Math.floor(n / 24)].push(level);
-        return [weekHourLabel(n), `, ${WORDS[level]}${value > 0 ? ', ' + duration(value) + ' played' : ''}`];
+        const amount = count === null ? duration(value) + ' played' : `${value.toLocaleString('en-US')} ${count}${value === 1 ? '' : 's'}`;
+        return [weekHourLabel(n), `, ${WORDS[level]}${value > 0 ? ', ' + amount : ''}`];
     });
 
     return {

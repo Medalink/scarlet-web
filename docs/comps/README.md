@@ -13,6 +13,7 @@ A page is built from its comp and reviewed against it: same markup classes, same
 | Comp | Page |
 | --- | --- |
 | `stats.html` | `/stats` and, with a ruleset chosen in the filters, `/rulesets/{slug}` |
+| `camps.html` | `/camps`. The head is a still: the page draws the game's campfire, tent and chair there, and the comp holds no game art |
 | `rulesets.html` | `/rulesets` |
 | `leaderboards.html` | `/leaderboards` |
 | `search.html` | `/search` |

@@ -11,6 +11,7 @@ const PAGES = [
   { path: "/demo", shows: heading("Maren Ashlow") },
   { path: "/stats", shows: heading("All characters") },
   { path: "/map", shows: heading("World map") },
+  { path: "/camps", shows: heading("Camps") },
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
   { path: "/developers", shows: heading("Public API") },
   { path: "/release-notes", shows: heading("Release notes") },

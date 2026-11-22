@@ -561,6 +561,7 @@ comps and is specified here, not in them.
 | `/` | The landing page, carried over as it is |
 | `/demo` | The demo character, carried over |
 | `/stats` | Global dashboard: characters and hours, levelling curve, time per level, XP sources by level, deaths by level and top killers, dungeons, professions, gold by level, play-time heatmap by hour and weekday |
+| `/camps` | Public. How players use the campsite (the campfire, tent and chair that WoW Forever players place and sit by): visits, characters, hours by the fire, the median visit and visits a played hour; the Camp Benefits players leave with and how many a death took; what gets set up; how long a visit lasts in six ranges around the 60 seconds Camp Benefits need; visits and tent rests a played hour by level; when players camp (weekday by hour, in the viewer's time zone); play with Camp Benefits (experience and deaths an hour against the same levels across all play); where players camp (the busiest zone map); zones with the most camps; what players do by the fire; how a visit ends; and the characters with the most time by the fire. `ruleset` and `server` as on `/stats`. The head draws the game's campfire, tent and chair (below) |
 | `/rulesets`, `/rulesets/{slug}` | The same dashboard per ruleset, and rulesets side by side |
 | `/hardcore-deaths` | Public. Hardcore deaths by the level the character died at and by day (the last 90 days). Rows are the server's death notices (`hardcore_deaths`); a death counts once however many uploaders saw it, by name (the notice text when it names none), level and minute. Rows of flagged sessions are left out. A notice names the dead character, never a page's owner, so the page shows counts only and no names |
 | `/leaderboards` | Fastest to a level, fewest deaths, most quests, most quests completed, hardcore survivors, per ruleset |
@@ -627,6 +628,19 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
 - **Motion.** The tally counts up once when a page opens. Bars on a rule, rank tracks, plinths and flags grow in as
   they scroll into view, with CSS view timelines only, so a browser without them and a viewer who prefers reduced
   motion get the finished page.
+
+- **The camp scene.** `/camps` opens on the game's own Basic Campfire, Camp Tent and Camp Chair drawn in three.js
+  (`resources/js/camps.js`, which loads `resources/js/camps/scene.js` and three as a chunk of their own): the models'
+  geometry and textures, their flame and spark emitters and their two lights. The smoke and the ground are drawn by
+  the page, and the line under the head says so. Three callouts on the models carry the share of visits that sit down
+  and that use a tent, and the share of Camp Benefits that came with the Camp Chair buff. The scene loads only when
+  the head is on screen and the browser has WebGL, stops drawing while the head is off screen or the tab is hidden,
+  and draws one still frame under reduced motion (a drag still turns it). When the art is not on the disk the head is a
+  plain page head with no stage; when WebGL or the art fails after the page is drawn, the stage keeps its height and
+  lists the three callouts. The art is Blizzard's: `tools/camp-art` writes it to the `maps` disk under `camp/`
+  (`camp.json`, `tex/<file id>.png`, `icons/<spell id>.png`), `/camp-art/*` serves it with the cache headers of the
+  map tiles, `bin/deploy maps` carries it to the server, and no model, texture or icon is committed. The benefit icons in
+  the table come from the same folder and are empty squares without it.
 
 What the layer adds to each page:
 
@@ -823,6 +837,16 @@ least 7 days old) turns git history into a version and release notes.
 - **Art and game layer**: the contour sheet, the map hero, the tally, records, rules, the climb, the roster, the hall,
   the podium and feats are not in the comps or in the gallery that rebuilds them (`/design/*`). "Art and game
   layer" above is their design.
+- **Camps** (`docs/comps/camps.html`): the comp's head is a still with no game art; the built head is the three.js scene
+  above. The approved prototype differed from the page in five places. Tent rests by level stands where it had rested
+  experience by level, because the recording does not say whether experience was rested. "Lost to a death" stands where it
+  had "Median kept". "Play with Camp Benefits" stands where it had "The half hour after a camp". Visit lengths use six
+  ranges around the 60 second mark (under 30 s, 30 to 59 s, 1 to 2 min, 2 to 5 min, 5 to 10 min, 10 min and over)
+  instead of minutes. The figure strip is the contract's six (visits, characters, hours by the fire, median visit, visits a
+  played hour, Camp Benefits earned) and the head has no line of facts under the title. "Kits and blueprints" is not
+  built: kits are crafted or mailed, not looted, and no table records that. Play with Camp Benefits has no kills
+  figure: no aggregate gives a kill rate by level. A note under the benefits table gives the share of Camp Benefits
+  given for two hours instead of one. Under 820 px the stage shows the three names and the shares are a list below it.
 - **Class filter**: leaderboards filter by class (`characters.class`). The dashboards and result pages do not: no
   aggregate carries the class.
 - **Reach**: "Characters that reached each level" in place of the comp's wording; the chart counts characters.

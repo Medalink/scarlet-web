@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scarlet camps: how players use the campsite</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="world.html">Map</a><a href="camps.html" aria-current="page">Camps</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<section class="ch-head camp-head" aria-labelledby="h1">
+  <div class="stage" data-state="off">
+    <div class="callouts">
+      <p class="callout" data-key="fire"><b>Campfire</b><span>Sit 60 seconds for Camp Benefits</span><em>88% of visits sit down</em></p>
+      <p class="callout left" data-key="tent"><b>Camp Tent</b><span>Rest 30 seconds for rested experience, once an hour</span><em>61% of visits use a tent</em></p>
+      <p class="callout left" data-key="chair"><b>Camp Chair</b><span>Adds 2% critical strike to the benefits</span><em>44% of Camp Benefits come with a chair</em></p>
+    </div>
+  </div>
+  <div class="ch-id wrap">
+    <div><h1 class="ch-name" id="h1">Camps</h1></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Ruleset"><a href="#" aria-current="true">All</a><a href="#">Standard</a><a href="#">Hardcore</a><a href="#">Slow</a></div></div>
+  </div>
+</section>
+<div class="wrap">
+  <ul class="camp-shares"><li><b>Campfire</b> 88% of visits sit down</li><li><b>Camp Tent</b> 61% of visits use a tent</li><li><b>Camp Chair</b> 44% of Camp Benefits come with a chair</li></ul>
+  <p class="credit">Campfire, tent and chair models, textures, flames, sparks and light &copy; Blizzard Entertainment, read from the WoW Forever client. The smoke and the ground are drawn by this page.</p>
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Visits</dt><dd>41,280</dd></div><div><dt>Characters</dt><dd>3,104</dd></div><div><dt>Hours by the fire</dt><dd>9,870h</dd></div>
+    <div><dt>Median visit</dt><dd>4m 10s</dd></div><div><dt>Visits a played hour</dt><dd>0.31</dd></div><div><dt>Earn Camp Benefits</dt><dd>71%</dd></div>
+  </section>
+
+  <div class="sheet">
+    <section class="mod w7 first camp-mod" aria-labelledby="h-ben">
+      <h2 id="h-ben">Camp Benefits players leave with</h2>
+      <div class="scroll-x"><table class="data benefits" style="margin-top:1.1rem">
+        <thead><tr><th>Placed at the camp</th><th>Benefit</th><th class="n">Of Camp Benefits</th><th class="n">Lost to a death</th></tr></thead>
+        <tbody>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>Camp Chair</span></td><td>+2% critical strike chance</td><td class="n"><i class="bar" style="width:5.6rem"></i>62%</td><td class="n">4%</td></tr>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>First Aid Kit</span></td><td>+56 Stamina</td><td class="n"><i class="bar" style="width:4.9rem"></i>54%</td><td class="n">5%</td></tr>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>Sharpening Wheel</span></td><td>+34 Strength</td><td class="n"><i class="bar" style="width:3.7rem"></i>41%</td><td class="n">5%</td></tr>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>Lodestone</span></td><td>+90 melee attack power</td><td class="n"><i class="bar" style="width:3.3rem"></i>37%</td><td class="n">6%</td></tr>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>Mana Well</span></td><td>29 mana every 5 seconds</td><td class="n"><i class="bar" style="width:3rem"></i>33%</td><td class="n">4%</td></tr>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>Incense Candle</span></td><td>+25 Intellect</td><td class="n"><i class="bar" style="width:2.6rem"></i>29%</td><td class="n">5%</td></tr>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>Faction Banner</span></td><td>+32 Spirit</td><td class="n"><i class="bar" style="width:1.9rem"></i>21%</td><td class="n">7%</td></tr>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>Fish Bowl</span></td><td>+8% to all stats</td><td class="n"><i class="bar" style="width:1.1rem"></i>12%</td><td class="n">3%</td></tr>
+          <tr><td><span class="buff"><i class="buff-none" aria-hidden="true"></i>Enchanted Lute</span></td><td>+308 armor, +13 to all attributes, +22 to all resistances</td><td class="n">Too few characters</td><td class="n">&ndash;</td></tr>
+        </tbody></table></div>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-set">
+      <h2 id="h-set">What gets set up</h2>
+      <ol class="rank">
+        <li><span class="who">Basic Campfire</span><span class="val">52% of visits</span><span class="track"><i style="width:100%"></i></span></li>
+        <li><span class="who">Journeyman Campfire</span><span class="val">27%</span><span class="track"><i style="width:52%"></i></span></li>
+        <li><span class="who">Expert Campfire</span><span class="val">9%</span><span class="track"><i style="width:17%"></i></span></li>
+        <li><span class="who">A fire already there</span><span class="val">12%</span><span class="track"><i style="width:23%"></i></span></li>
+      </ol>
+      <ol class="rank plain">
+        <li><span class="who">Camp Tent</span><span class="val">61%</span><span class="track"><i style="width:61%"></i></span></li>
+        <li><span class="who">Camp Chair</span><span class="val">44%</span><span class="track"><i style="width:44%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod first" aria-labelledby="h-len">
+      <h2 id="h-len">How long a visit lasts</h2>
+      <div class="plot"><svg id="len" role="img" aria-label="Visits by length, as a share of all visits"></svg></div>
+      <p class="note">29% of visits end before the 60 seconds Camp Benefits need.</p>
+    </section>
+    <section class="mod" aria-labelledby="h-lvl">
+      <h2 id="h-lvl">Visits a played hour, by level</h2>
+      <div class="plot"><svg id="lvl" role="img" aria-label="Camp visits a played hour at each level"></svg></div>
+      <p class="note">Most: level 27, at 0.42 visits a played hour.</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-rest">
+      <h2 id="h-rest">Tent rests a played hour, by level</h2>
+      <div class="plot"><svg id="rest" role="img" aria-label="Tent rests a played hour at each level"></svg></div>
+      <p class="note">Most: level 30, at 0.24 tent rests a played hour.</p>
+    </section>
+
+    <section class="mod w8 first" aria-labelledby="h-when">
+      <h2 id="h-when">When players camp</h2>
+      <div class="hours" id="when" role="img" aria-label="Camp visits by weekday and hour of day, in UTC"></div>
+      <p class="readout"><b>Busiest hour</b>: Sun 21:00 UTC</p>
+      <p class="heat-key"><span>Quiet</span><i style="background:rgba(255,255,255,.055)"></i><i style="background:#4b1626"></i><i style="background:#861a34"></i><i style="background:#cf1f45"></i><i style="background:#ff5d7e"></i><span>Busiest</span><span style="margin-left:1rem">Hours are UTC</span></p>
+    </section>
+    <section class="mod last" aria-labelledby="h-buffed">
+      <h2 id="h-buffed">Play with Camp Benefits</h2>
+      <dl class="pair" style="grid-template-columns:minmax(0,1fr)">
+        <div><dt>Experience an hour</dt><dd class="up">+14%<small>against the same levels across all play</small></dd></div>
+      </dl>
+      <dl class="pair" style="grid-template-columns:minmax(0,1fr);margin-top:0.9rem">
+        <div><dt>Deaths an hour</dt><dd>&minus;22%</dd></div>
+      </dl>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-where">
+      <h2 id="h-where">Where players camp</h2>
+      <div class="mapbox" style="aspect-ratio:3/2"><canvas id="where" role="img" aria-label="Camps on the world map, in Saltmarsh Reach"></canvas></div>
+      <p class="note"><a href="world.html">Open the world map</a></p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-zones">
+      <h2 id="h-zones">Zones with the most camps</h2>
+      <ol class="rank">
+        <li><a class="who" href="zone.html">Saltmarsh Reach</a><span class="val">5,210 visits</span><span class="track"><i style="width:100%"></i></span></li>
+        <li><a class="who" href="zone.html">Hollowmere</a><span class="val">4,402</span><span class="track"><i style="width:84%"></i></span></li>
+        <li><a class="who" href="zone.html">The Cinder Flats</a><span class="val">3,618</span><span class="track"><i style="width:69%"></i></span></li>
+        <li><a class="who" href="zone.html">Thornwall</a><span class="val">2,950</span><span class="track"><i style="width:57%"></i></span></li>
+        <li><a class="who" href="zone.html">Pale Rest</a><span class="val">1,877</span><span class="track"><i style="width:36%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-do">
+      <h2 id="h-do">What players do by the fire</h2>
+      <ol class="rank plain">
+        <li><span class="who">Away from the keyboard</span><span class="val">34% of camp time</span><span class="track"><i style="width:34%"></i></span></li>
+        <li><span class="who">Crafting</span><span class="val">19%</span><span class="track"><i style="width:19%"></i></span></li>
+      </ol>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-end">
+      <h2 id="h-end">How a visit ends</h2>
+      <ol class="rank">
+        <li><span class="who">Walks away</span><span class="val">71%</span><span class="track"><i style="width:71%"></i></span></li>
+        <li><span class="who">Logs out by the fire</span><span class="val">27%</span><span class="track"><i style="width:27%"></i></span></li>
+        <li><span class="who">Dies within five minutes</span><span class="val">2%</span><span class="track"><i style="width:2%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod w12 first last camp-mod" aria-labelledby="h-top">
+      <h2 id="h-top">Most time by the fire</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th class="rk">#</th><th>Character</th><th>Class</th><th class="n">Time by the fire</th><th>Ruleset</th></tr></thead>
+        <tbody>
+          <tr><td class="rk">1</td><td><a href="character.html">Maren-Ashlow</a></td><td>Orc Warrior</td><td class="n">1d 02h 40m</td><td>Hardcore</td></tr>
+          <tr><td class="rk">2</td><td><a href="character.html">Tolvir-Greane</a></td><td>Human Mage</td><td class="n">21h 12m</td><td>Standard</td></tr>
+          <tr><td class="rk">3</td><td><a href="character.html">Hesk-Brannoch</a></td><td>Tauren Druid</td><td class="n">19h 55m</td><td>Slow</td></tr>
+          <tr><td class="rk">4</td><td><a href="character.html">Ysolde-Varr</a></td><td>Night Elf Hunter</td><td class="n">17h 03m</td><td>Standard</td></tr>
+          <tr><td class="rk">5</td><td><a href="character.html">Dunmar-Keel</a></td><td>Dwarf Paladin</td><td class="n">15h 48m</td><td>Hardcore</td></tr>
+        </tbody></table></div>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script>
+const rand = Comp.rng(21);
+Comp.bars("len", { w: 400, h: 250, x0: -0.5, x1: 5.5, y1: 30, yt: [0, 10, 20, 30], yf: (v) => v + "%", xt: [0, 1, 2, 3, 4, 5], xf: (v) => ["<30s", "30s", "1m", "2m", "5m", "10m+"][v],
+  data: [[0, 17], [1, 12], [2, 26], [3, 24], [4, 13], [5, 8]] });
+const lvl = [], rest = [];
+for (let l = 1; l <= 60; l++) {
+  lvl.push([l, 0.08 + 0.34 * Math.exp(-((l - 27) ** 2) / 260) + 0.1 * Math.exp(-((l - 52) ** 2) / 60) + (rand() - 0.5) * 0.03]);
+  rest.push([l, 0.04 + 0.2 * Math.exp(-((l - 30) ** 2) / 300) + (rand() - 0.5) * 0.02]);
+}
+Comp.lines("lvl", { w: 380, h: 250, x0: 1, x1: 60, y1: 0.6, yt: [0, 0.2, 0.4, 0.6], xt: [1, 20, 40, 60], series: [{ cls: "a", pts: lvl, mark: 26 }] });
+Comp.lines("rest", { w: 380, h: 250, x0: 1, x1: 60, y1: 0.3, yt: [0, 0.1, 0.2, 0.3], xt: [1, 20, 40, 60], series: [{ cls: "a", pts: rest, mark: 29 }] });
+Comp.hours("when", (d, h) => {
+  const night = Math.exp(-((h - 21) ** 2) / 14) + 0.5 * Math.exp(-((h - 13) ** 2) / 10), week = d >= 5 ? 1.25 : d === 4 ? 1.05 : 0.85;
+  return Math.max(0, Math.min(4, Math.round(night * week * 3.6 + (rand() - 0.5) * 0.9)));
+});
+Comp.heatmap("where", { seed: 9, hot: [[2700, 6500, 520, 260], [3300, 4900, 600, 300], [4700, 2500, 480, 220], [6400, 2700, 420, 170], [7700, 4000, 520, 240], [5600, 4300, 380, 120]] });
+</script>
+</body>
+</html>

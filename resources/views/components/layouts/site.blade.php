@@ -3,7 +3,7 @@
 @php
     $jump = $demo ? '/' : '';
     // Stats and Map stay in the header on a phone; the other pages drop out first (site.css, landing.css).
-    $items = ['stats' => ['Stats', '/stats', ''], 'world' => ['Map', '/map', ''], 'rulesets' => ['Rulesets', '/rulesets', 'jump app'], 'leaderboards' => ['Leaderboards', '/leaderboards', 'jump app'], 'search' => ['Search', '/search', 'jump app'], 'developers' => ['API', '/developers', 'jump app']];
+    $items = ['stats' => ['Stats', '/stats', ''], 'world' => ['Map', '/map', ''], 'camps' => ['Camps', '/camps', 'jump app'], 'rulesets' => ['Rulesets', '/rulesets', 'jump app'], 'leaderboards' => ['Leaderboards', '/leaderboards', 'jump app'], 'search' => ['Search', '/search', 'jump app'], 'developers' => ['API', '/developers', 'jump app']];
 @endphp
 <!doctype html>
 <html lang="en">

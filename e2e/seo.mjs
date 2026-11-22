@@ -84,6 +84,8 @@ for (const file of files) {
 expect((await get('/sitemaps/creatures-9999.xml')).status === 404, '/sitemaps/creatures-9999.xml: not 404');
 if (firstRecord) await indexed(`${firstRecord}?server=pvp&x=1`, firstRecord);
 await indexed('/stats/', '/stats');
+await indexed('/camps/', '/camps');
+await indexed('/camps?server=pvp&x=1', '/camps');
 await hidden('/search?q=wolf');
 await hidden('/login');
 await image('/share.png', 1200, 630);

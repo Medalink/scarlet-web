@@ -29,6 +29,7 @@ final class SitePages
         $pages = [
             self::page('Stats', '/stats', 'Dashboard of the recorded play of every ruleset', ['statistics', 'overview', 'numbers']),
             self::page('World map', '/map', 'Where characters walked, died and met creatures', ['map', 'heat', 'heatmap', 'deaths', 'paths']),
+            self::page('Camps', '/camps', 'How players use the campsite: visits, Camp Benefits and what gets set up', ['camp', 'campfire', 'tent', 'chair', 'rested', 'benefits']),
             self::page('Rulesets', '/rulesets', 'The rulesets side by side', ['compare', 'comparison']),
             self::page('Hardcore deaths', '/hardcore-deaths', 'Hardcore deaths by level and by day', ['hardcore', 'deaths', 'died', 'death']),
         ];

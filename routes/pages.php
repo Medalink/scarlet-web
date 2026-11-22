@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\CampsController;
 use App\Http\Controllers\Web\CharacterBattlegroundsController;
 use App\Http\Controllers\Web\CharacterController;
 use App\Http\Controllers\Web\CharacterHeatController;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 // The public pages: dashboards, the map, boards, search, result pages and characters. Every one reads App\Actions\Public.
 Route::get('/stats', StatsController::class);
 Route::get('/map', MapController::class);
+Route::get('/camps', CampsController::class);
 Route::get('/search', SearchController::class);
 Route::get('/search/suggest', SearchSuggestController::class);
 Route::get('/developers', DevelopersController::class);

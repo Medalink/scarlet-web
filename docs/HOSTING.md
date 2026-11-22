@@ -610,6 +610,9 @@ nginx serves `/map-tiles/` straight from that folder (mounted into `web` at `/va
 cookie, so Cloudflare caches the tiles. The site reads `manifest.json` for the current version, so a new build is live
 once it is copied. Never commit the tiles.
 
+The camp page's art (`camp/`, from `tools/camp-art`) rides in the same folder, so the same command carries it. PHP serves it
+at `/camp-art/` from the `maps` disk; the page shows its art only while `camp/camp.json` exists there.
+
 ## Edge cache
 
 Cloudflare caches three kinds of answer, each only for a visitor with no credentials. A request with an `Authorization`
