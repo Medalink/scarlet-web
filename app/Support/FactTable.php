@@ -56,6 +56,20 @@ enum FactTable: string
         return $this === self::PathPoints || $this === self::CreatureSightings;
     }
 
+    /**
+     * Columns of this table that another sharing group fills, by that group: its removal nulls them while the rows
+     * stay (docs/ROWS.md "Missing groups").
+     *
+     * @return array<string, list<string>>
+     */
+    public function groupColumns(): array
+    {
+        return match ($this) {
+            self::PlaySpans => [SharingGroup::XP => ['afk_ms']],
+            default => [],
+        };
+    }
+
     /** @return list<self> */
     public static function inGroup(string $group): array
     {

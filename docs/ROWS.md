@@ -365,7 +365,7 @@ nothing it cannot know: the `sessions` counters of a missing group are null, not
 without an `xp` part; no `dungeon_runs` row and no `money_changes` row of `src` `S` is written without a `combat`
 or an `economy` part. A job that sums counters treats null as "not sent", never as 0.
 Removing a group from the server nulls the same counters (`SessionRows::GROUP_COUNTERS`, `distance` for `movement`
-included), so a removed group reads as one never sent.
+included) and `play_spans.afk_ms` for `xp` (`FactTable::groupColumns`), so a removed group reads as one never sent.
 
 ## Counting rules
 

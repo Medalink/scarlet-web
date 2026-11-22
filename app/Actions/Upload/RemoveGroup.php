@@ -8,6 +8,7 @@ use App\Models\Character;
 use App\Models\Install;
 use App\Models\Part;
 use App\Support\DecompressionLimit;
+use App\Support\FactTable;
 use App\Support\GroupRefusals;
 use App\Support\RefreshWindow;
 use App\Support\SessionRows;
@@ -24,7 +25,8 @@ class RemoveGroup
 
     /**
      * Remove one sharing group from the server for every character of the install's owner: its parts and
-     * decoded rows go, the sessions forget the group and null its counters, the rollups are refreshed over the time
+     * decoded rows go, the sessions forget the group and null its counters (and the columns other tables keep for it,
+     * FactTable::groupColumns), the rollups are refreshed over the time
      * the characters played, and the group is refused until the app puts it back (PUT /upload/groups/{key}).
      *
      * @return array{group: string, refused: bool, parts_removed: int, rows_removed: int}
@@ -66,6 +68,12 @@ class RemoveGroup
         $counters = SessionRows::GROUP_COUNTERS[$group] ?? [];
         if ($counters !== []) {
             DB::table('sessions')->whereIn('character_id', $characterIds)->update(array_fill_keys($counters, null));
+        }
+        foreach (FactTable::cases() as $table) {
+            $columns = $table->groupColumns()[$group] ?? [];
+            if ($columns !== []) {
+                DB::table($table->value)->whereIn('character_id', $characterIds)->update(array_fill_keys($columns, null));
+            }
         }
     }
 }
