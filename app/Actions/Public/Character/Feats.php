@@ -24,7 +24,7 @@ class Feats
     {
         $seconds = $character->played_known ? $character->played_seconds : $character->recorded_seconds;
         $counts = [
-            Feat::Summit->value => (int) $character->level,
+            Feat::Summit->value => $character->level === null ? null : (int) $character->level,
             Feat::Slayer->value => $totals['kills'],
             Feat::Questing->value => $totals['quests'],
             Feat::Delver->value => (int) array_sum(array_map(fn (array $dungeon): int => (int) $dungeon['runs'], $dungeons)),

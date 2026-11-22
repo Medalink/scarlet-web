@@ -4,6 +4,7 @@ namespace App\View\Pages;
 
 use App\Actions\Rollups\Roster;
 use App\Support\KillerKind;
+use App\Support\Profession;
 use App\Support\XpSource;
 use App\View\Format;
 
@@ -41,6 +42,8 @@ final class StatsGame
 
     private const int RECORD_DEATHS = 2;
 
+    private const int GRID_LINES = 6;
+
     /**
      * @param  array<string, mixed>  $r  the answer of StatsDashboard
      * @param  list<array<string, mixed>>  $levels  the levelling curve rows
@@ -56,7 +59,7 @@ final class StatsGame
             'tally' => self::tally($r, $reached),
             'records' => self::records($r),
             'rules' => self::rules($r),
-            'ascent' => self::ascent($levels, $reached, $cap),
+            'ascent' => self::ascent($levels, $reached, $cap, (int) config('scarlet.min_characters')),
             'classes' => self::classes(StatsPage::rows($roster['classes'] ?? [])),
             'split' => self::split(StatsPage::rows($roster['factions'] ?? [])),
         ];
@@ -72,6 +75,7 @@ final class StatsGame
         $totals = StatsPage::totals($r['totals']);
         $played = $totals['played_seconds'] ?? null;
         $runs = array_sum(array_map(fn (array $row): int => (int) $row['runs'], StatsPage::rows($r['dungeons'])));
+        $dungeons = $runs > 0 ? self::tile('dungeons', 'Dungeon runs', $runs) : ['icon' => 'dungeons', 'label' => 'Dungeon runs', 'value' => '–', 'count' => null, 'unit' => null];
         $top = $reached === [] ? null : $reached[count($reached) - 1];
         $highest = $top === null
             ? ['icon' => 'level', 'label' => 'Highest level', 'value' => '–', 'count' => null, 'unit' => 'none yet']
@@ -84,7 +88,7 @@ final class StatsGame
             self::tile('kills', 'Kills', $totals['kills'] ?? null),
             self::tile('deaths', 'Deaths', $totals['deaths'] ?? null),
             self::tile('quests', 'Quests turned in', $totals['quests'] ?? null),
-            self::tile('dungeons', 'Dungeon runs', $runs),
+            $dungeons,
         ];
     }
 
@@ -217,7 +221,7 @@ final class StatsGame
      */
     private static function profession(array $rows, int|float|null $characters): ?array
     {
-        $row = StatsPage::trainedSkills($rows)[0] ?? null;
+        $row = array_values(array_filter(StatsPage::trainedSkills($rows), fn (array $skill): bool => Profession::tryFrom((string) $skill['skill']) !== null))[0] ?? null;
         if ($row === null || $characters === null || $characters < 1) {
             return null;
         }
@@ -308,14 +312,16 @@ final class StatsGame
      * @param  list<array<string, mixed>>  $reached  characters that reached each level, lowest first
      * @return Ascent|null
      */
-    private static function ascent(array $levels, array $reached, int $cap): ?array
+    private static function ascent(array $levels, array $reached, int $cap, int $min): ?array
     {
         $curve = [];
         foreach ($levels as $row) {
-            $curve[(int) $row['level']] = (float) $row['median'] / 3600;
+            if ((int) $row['level'] <= $cap) {
+                $curve[(int) $row['level']] = (float) $row['median'] / 3600;
+            }
         }
         ksort($curve);
-        if (count($curve) < 2) {
+        if ($cap < 2 || count($curve) < 2) {
             return null;
         }
         $topLevel = array_key_last($curve);
@@ -333,7 +339,10 @@ final class StatsGame
         $ridge = implode('L', $points);
 
         $grid = [];
-        $step = $yMax > 160 ? 50 : 25;
+        $step = 25;
+        while ($yMax / $step > self::GRID_LINES) {
+            $step *= 2;
+        }
         for ($h = $step; $h < $yMax; $h += $step) {
             $grid[] = ['y' => $f($y($h)), 'text' => $h.'h', 'ty' => $f($y($h) + 3.5)];
         }
@@ -351,33 +360,34 @@ final class StatsGame
         $tall = false;
         foreach ($reached as $row) {
             $level = (int) $row['level'];
+            $exact = isset($byLevel[$level + 1]) || $min <= 1;
             $count = (int) $row['characters'] - (int) ($byLevel[$level + 1] ?? 0);
-            if ($count < 1 || $level > $cap) {
+            if ($count < max(1, $min) || $level > $cap) {
                 continue;
             }
             $tall = $level - $last < 4 ? ! $tall : false;
             $last = $level;
             $hours = 0.0;
-            for ($below = $level; $below >= 1; $below--) {
+            for ($below = min($level, $topLevel); $below >= 1; $below--) {
                 if (isset($curve[$below])) {
                     $hours = $curve[$below];
                     break;
                 }
             }
             $fx = $x($level);
-            $fy = $y($hours);
+            $fy = $level > $topLevel ? $y($topHours) + ($level - $topLevel) / ($cap - $topLevel) * (self::TOP - $y($topHours)) : $y($hours);
             $staff = $tall ? 62 : 34;
             $flags[] = [
-                'summit' => $level === $cap, 'title' => Format::number($count).' at level '.$level, 'x' => $f($fx), 'y' => $f($fy), 'top' => $f($fy - $staff),
+                'summit' => $level === $cap, 'title' => Format::number($count).' at level '.$level.($exact ? '' : ' or above'), 'x' => $f($fx), 'y' => $f($fy), 'top' => $f($fy - $staff),
                 'pennant' => 'M'.$f($fx).' '.$f($fy - $staff).'h15l-4.5 5 4.5 5h-15z', 'tx' => $f($fx + 20), 'ty' => $f($fy - $staff + 10), 'count' => Format::number($count),
             ];
         }
 
         $held = max($topLevel, $highest);
-        $beyond = $held < $cap ? [
+        $beyond = $topLevel < $cap ? [
             'path' => 'M'.$f($x($topLevel)).' '.$f($y($topHours)).'L'.$f($x($cap)).' '.self::TOP,
             'cx' => $f($x($cap)), 'cy' => (string) self::TOP, 'tx' => $f($x($cap) - 10), 'ty' => (string) (self::TOP - 9),
-            'text' => 'Level '.$cap.': no character past level '.$held.' yet',
+            'text' => $held < $cap ? 'Level '.$cap.': no character past level '.$held.' yet' : 'No median time past level '.$topLevel.' yet',
         ] : null;
 
         return [
