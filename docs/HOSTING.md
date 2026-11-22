@@ -205,8 +205,11 @@ file, cannot install a deploy folder and is not on the database host. The ops ke
 
 What the ring cannot do, and `bin/deploy` with the ops key still does:
 
-- **A change under `deploy/`.** The ring compares `deploy/` at the commit with the droplet's (`sums`). When they
-  differ it prints `skip:` and deploys nothing, for that commit and every later one, until `bin/deploy` runs once.
+- **A change to a file a rollout reads on the droplet**: `deploy/rollout.sh`, `deploy/dc`, `deploy/compose.yaml`,
+  `deploy/compose.redis-vpc.yaml` and `deploy/nginx/`. The ring compares those at the commit with the droplet's
+  (`sums`). When they differ it prints `skip:` and deploys nothing, for that commit and every later one, until
+  `bin/deploy` runs once. A change to any other file under `deploy/` (provisioning, backups, the database host, load
+  tools) does not stop it, because a rollout never runs them.
 - Everything else `bin/deploy` lists: the server setup, TLS, DNS, cache rules, backups, maps and the database host.
 
 Set up or rotate the key:

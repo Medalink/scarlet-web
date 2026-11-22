@@ -7,8 +7,9 @@
 #   ring.sh rollback   move visitors back to the release before, only when $FLOW_SHA is the one that serves
 #
 # It reaches the droplet with the ring's own key, which may run scripts/deploy/ring-entry.sh there and nothing else
-# (docs/HOSTING.md, "Deploy ring"). That key cannot install a deploy folder, so when deploy/ at $FLOW_SHA differs
-# from the one on the droplet the ring prints `skip:` and deploys nothing until `bin/deploy` runs once with the ops key.
+# (docs/HOSTING.md, "Deploy ring"). That key cannot install a deploy folder, so when a file a rollout reads there
+# ($rollout_reads) differs between $FLOW_SHA and the droplet the ring prints `skip:` and deploys nothing until
+# `bin/deploy` runs once with the ops key. The rest of deploy/ runs from a PC or on another host and is not compared.
 set -eu
 
 key=${SCARLET_RING_KEY:-$HOME/.config/scarlet-web/ring_ed25519}
@@ -19,6 +20,7 @@ port=${SCARLET_RING_PORT:-15078}
 sha=${FLOW_SHA:?the flow engine sets FLOW_SHA}
 release=$(printf '%s' "$sha" | cut -c1-12)
 skipped=${TMPDIR:-/tmp}/scarlet-ring-skipped-$release
+rollout_reads='[ *][.]/(rollout[.]sh|dc|compose[.]yaml|compose[.]redis-vpc[.]yaml|nginx/.*)$'
 
 ssh_opts="-i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30"
 entry() { ssh $ssh_opts "ops@$host" "$@"; }
@@ -42,8 +44,10 @@ deploy() {
   rm -f "$skipped"
   [ -f "$key" ] || skip "medaware has no ring key at $key (docs/HOSTING.md, Deploy ring)"
   [ "$(entry release)" != "$release" ] || { echo "ring: $release already serves"; return 0; }
-  mine=$(cd deploy && find . -type f | LC_ALL=C sort | xargs sha256sum)
-  [ "$mine" = "$(entry sums)" ] || skip "deploy/ at $release differs from the droplet's; run bin/deploy once with the ops key"
+  mine=$(cd deploy && find . -type f | LC_ALL=C sort | xargs sha256sum | grep -E "$rollout_reads")
+  theirs=$(entry sums)
+  theirs=$(printf '%s\n' "$theirs" | grep -E "$rollout_reads" || true)
+  [ "$mine" = "$theirs" ] || skip "the files a rollout reads under deploy/ at $release differ from the droplet's; run bin/deploy once with the ops key"
 
   take_lock
   built=$(mktemp)
