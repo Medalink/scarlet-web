@@ -501,7 +501,8 @@ object is labelled by what it gives.
   a rate itself.
 - **One Action per question**, as the house rules say: `LootSources`, `LootItems`, `SourceDrops`,
   `SourceRuleArms`, `LootRuleEffects`, `ObjectRecord`. `DropRates` and `ItemSources` stay until their callers
-  move, then go (three ships).
+  move, then go (three ships). `SourceArmRows` reads the rows behind the arms of any number of sources in one
+  query for each table, so `LootMarks` checks its candidates in 6 queries and not 5 or more for each.
 - **Two aggregates**: `loot_windows_daily` (source, `read`, rule, size, zone; windows, item
   rows, characters) and `loot_items_daily` (the same keys and item; windows with the item, quantity). The old
   `opens_daily` and `drops_daily` are dropped, and so is `loot_windows_daily`, which the counted views of phase 7 replaced. Phase 4 adds three beside them: `loot_windows_character_daily` (windows

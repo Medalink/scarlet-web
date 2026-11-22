@@ -22,22 +22,25 @@ class LootMarks
     /** The most sources and splits checked: each is a read of one source's drop table. */
     public const int CHECKED = 150;
 
-    public function __construct(private readonly RollupRead $read, private readonly SourceRuleArms $arms) {}
+    public function __construct(private readonly RollupRead $read, private readonly SourceArmRows $rows, private readonly SourceRuleArms $arms) {}
 
     /**
      * Every marked difference (docs/LOOT.md, Statistical treatment, What a mark means): an item whose rate under one loot
      * rule, or at one group size inside a rule, differs from the other arm's by a range that stays off zero. The game's
      * drop table depends on neither, so each is a counting fault until shown otherwise and is listed for a developer. A
      * source is checked when it has 30 corpses or more under two rules that are not personal loot, or under two group
-     * sizes inside one rule; the `CHECKED` splits with the most corpses are read. The largest difference comes first.
+     * sizes inside one rule; the `CHECKED` splits with the most corpses are read, the rows of all their sources at once
+     * (`SourceArmRows`). The largest difference comes first.
      *
      * @return list<array{source: LootSourceRef, name: string|null, split: ArmSplit, rule: string|null, item_id: int, item: string|null, pair: list<LootArm>, cells: list<array{arm: LootArm, estimate: RateEstimate}>, difference: RateDifference}>
      */
     public function handle(): array
     {
         $marks = [];
-        foreach ($this->candidates() as $candidate) {
-            $answer = $this->arms->handle($candidate['source']->kind->value, $candidate['source']->id, $candidate['split'], $candidate['rule']);
+        $candidates = $this->candidates();
+        $data = $this->rows->handle(array_map(fn (array $candidate): LootSourceRef => $candidate['source'], $candidates));
+        foreach ($candidates as $candidate) {
+            $answer = $this->arms->handle($candidate['source']->kind->value, $candidate['source']->id, $candidate['split'], $candidate['rule'], $data[$candidate['source']->key()]);
             foreach ($answer['rows'] as $row) {
                 if ($row['difference'] !== null && $row['difference']->marked) {
                     $marks[] = ['source' => $candidate['source'], 'name' => null, 'split' => $candidate['split'], 'rule' => $answer['rule'], 'item_id' => $row['item_id'], 'item' => $row['item'], 'pair' => $answer['pair'], 'cells' => $row['cells'], 'difference' => $row['difference']];
