@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\AuthDevelopmentController;
 use App\Http\Controllers\Web\AuthLoginController;
 use App\Http\Controllers\Web\AuthLogoutController;
 use App\Http\Controllers\Web\AuthRedirectController;
+use App\Http\Controllers\Web\CampsController;
 use App\Http\Controllers\Web\LinkConfirmController;
 use App\Http\Controllers\Web\LinkShowController;
 use App\Http\Controllers\Web\ProfessionController;
@@ -30,6 +31,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account', AccountController::class);
     Route::get('/account/characters', AccountCharactersController::class);
     Route::get('/account/professions', AccountProfessionsController::class);
+    Route::get('/account/camps', CampsController::class)->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
     Route::get('/account/professions/{slug}', ProfessionController::class)->where('slug', '[a-z-]+')->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
     Route::get('/link', LinkShowController::class);
     Route::post('/link', LinkConfirmController::class);

@@ -55,6 +55,10 @@ any host that is not 127.0.0.1, localhost or [::1], because it deletes what it u
   the numbers of the six professions the fixture has lines for.
 - pages: every public page shows its own heading, missing pages are 404, `/account` is closed, an app links to the
   development account, and the twelve profession pages show what the upload recorded.
+- owner: signs in with the development sign-in, links the install, and reads the account's own Fishing, Cooking and camps
+  pages, which show the fixture's numbers under "1 of your 3 characters" and leave out the second install's Tailoring
+  crafts and campfire visit that the public pages count; after the removal the same account owns no character and its
+  pages are the plain state.
 - browser: one headless Edge (chromium on Linux), never a window. Its first check reads the window handle of its
   process and stops it unless it is 0. It loads the key pages at 1280 and 390 wide and types into the search box.
 - Last, it removes the upload.
@@ -64,8 +68,8 @@ Public API answers are cached for 30 seconds at the origin, so every read adds a
 The server needs Horizon running, `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than
 the default rate limits for repeated runs: `SCARLET_RATE_REGISTRATION_PER_IP=100` and
 `SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 3 registrations (the third is the install of a character no account is
-linked to), about 30 public API requests, about 160 page requests and 23 requests on the `throttle:60,1` routes, which
-no setting lifts: wait a minute between runs.
+linked to), about 30 public API requests, about 160 page requests and about 40 requests on the `throttle:60,1` routes,
+which no setting lifts: wait a minute between two runs.
 
 The profession checks read rollup numbers, which arrive seconds after the upload, and the server keeps a rollup read for
 60 seconds, an empty one too. So the lane waits until Horizon's `/horizon/api/jobs/pending` lists no job on three

@@ -24,7 +24,7 @@
     },
     {
       "group": "core",
-      "id": "5612594681b7192165e22059965539abb7a7ea2ef386641eb83fbaeaa0a64587",
+      "id": "530ae231133ccb3798743912462fba198bcf52920aade5ac5b068a9fb2df147a",
       "lines": 3,
       "raw_bytes": 181,
       "session": 1795270000
@@ -45,9 +45,9 @@
     },
     {
       "group": "combat",
-      "id": "e9ed7bc9eeb04ead81b69815332d119b5bd05ced78fe1748d5de7bdfa61b189a",
-      "lines": 21,
-      "raw_bytes": 352,
+      "id": "c5f117a2aa5194c587bddb9baf4ece232a06a826e8841cf81fcc1a23cae72c1f",
+      "lines": 27,
+      "raw_bytes": 481,
       "session": 1795270000
     },
     {
@@ -72,5 +72,5 @@
       "session": 1795270000
     }
   ],
-  "set_digest": "371bf9d1dfef1152606019d2d43f2ab2d461195a02d82586a975e4480557439c"
+  "set_digest": "1e1f2ecd0985192c9bfd4317982676b899df552d6b89af84805eb5c17bd226e4"
 }

@@ -122,3 +122,65 @@ export async function accountWithNoCharacterSeesThePlainState(ctx) {
     throw new Error(`/account/professions of an account with no character should go to ${OWN_FISHING}, saw ${hub.headers.get("location")}`);
   }
 }
+
+const OWN_CAMPS = "/account/camps";
+const CAMP_SHOWS = [
+  "Visits 1", "Characters 1", "Median visit 1m 30s", "Earn Camp Benefits 100%", "Camp Benefits you leave with",
+  "Basic Campfire 100% of visits", "Elwynn Forest 1 visit", "1 of your 3 characters", "Your characters by time by the fire", ECHO.replace("-", " "), "Everyone's camps", "When you camp",
+];
+const CAMP_STRANGER = ["Visits 2", "Characters 2"];
+
+/** Echo-Witness sits by a campfire for 90 seconds: the account's own camps page shows that visit, among the thirteen own pages. */
+export async function ownCampsPageShowsTheAccount(ctx) {
+  await rollupsRefreshed(ctx);
+  const jar = await signedInJar(ctx, { linked: false });
+  const me = expectJson(expectStatus(await ctx.client.me(), 200, "GET /api/v1/installs/me"), "installs/me");
+  if (me.linked !== true) await linkToAccount(ctx.http, jar, ctx.client);
+
+  const camps = await ownPage(ctx, jar, OWN_CAMPS);
+  const missing = missingFrom(textOf(camps.text), CAMP_SHOWS);
+  if (!heading("Camps").test(camps.text) || missing.length > 0) {
+    throw new Error(`${OWN_CAMPS}: expected ${missing.map((phrase) => JSON.stringify(phrase)).join(", ")}, saw ${textOf(camps.text).slice(0, 900)}`);
+  }
+  if (!camps.text.includes('<meta name="robots" content="noindex">') || camps.text.includes('rel="canonical"')) {
+    throw new Error(`${OWN_CAMPS} should say noindex and carry no canonical link`);
+  }
+  if (camps.headers.get("cache-control") !== PRIVATE_CACHE) {
+    throw new Error(`${OWN_CAMPS} should be sent with Cache-Control ${PRIVATE_CACHE}, saw ${JSON.stringify(camps.headers.get("cache-control"))}`);
+  }
+  if (camps.text.includes('<meta name="description"') || !/<title>Your camps/.test(camps.text)) {
+    throw new Error(`${OWN_CAMPS} should be titled "Your camps" and carry no public description`);
+  }
+  const everyones = textOf(expectStatus(await ctx.http.page("/camps"), 200, "GET /camps").text);
+  const hidden = missingFrom(everyones, CAMP_STRANGER);
+  if (hidden.length > 0) {
+    throw new Error(`/camps should count the stranger's campfire visit too: expected ${hidden.map((phrase) => JSON.stringify(phrase)).join(", ")}, saw ${everyones.slice(0, 900)}`);
+  }
+  if (!everyones.includes(STRANGER_SHOWN)) throw new Error(`/camps should list the stranger on its board, saw ${everyones.slice(-900)}`);
+  const mixed = [...CAMP_STRANGER, STRANGER_SHOWN].filter((phrase) => textOf(camps.text).includes(phrase));
+  if (mixed.length > 0) throw new Error(`${OWN_CAMPS} holds the stranger: ${JSON.stringify(mixed)}`);
+  const nav = camps.text.match(/<nav class="trades"[\s\S]*?<\/nav>/)?.[0] ?? "";
+  const links = [...nav.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
+  if (links.length !== 13 || links.some((link) => !link.startsWith("/account/")) || !nav.includes('href="/account/camps" aria-current="page"')) {
+    throw new Error(`${OWN_CAMPS}: the nav should hold the twelve professions and Camps, all under /account, Camps current, saw ${JSON.stringify(links)}`);
+  }
+  if (!camps.text.includes('href="/camps"')) throw new Error(`${OWN_CAMPS} should link everyone's camps page`);
+
+  const fishing = await ownPage(ctx, jar, OWN_FISHING);
+  if (!fishing.text.includes('href="/account/camps"')) throw new Error(`${OWN_FISHING} should link Camps in the nav`);
+  for (const route of ["/account", "/account/characters"]) {
+    const linked = await ownPage(ctx, jar, route);
+    if (!linked.text.includes('href="/account/camps"')) throw new Error(`${route} should link Your camps`);
+  }
+}
+
+/** Once the upload is removed the account's camps page is the plain state. */
+export async function accountWithNoCharacterSeesTheCampsPlainState(ctx) {
+  const jar = await signedInJar(ctx, { linked: false });
+  const text = textOf((await ownPage(ctx, jar, OWN_CAMPS)).text);
+  const wanted = ["No play recorded for your characters yet", "Scarlet records this once a character of yours has camped."];
+  const missing = wanted.filter((phrase) => !text.includes(phrase));
+  if (missing.length > 0 || text.includes("Too few characters") || text.includes(ECHO.replace("-", " "))) {
+    throw new Error(`${OWN_CAMPS} of an account with no character should say ${wanted.map((phrase) => JSON.stringify(phrase)).join(" and ")} and nothing else, saw ${text.slice(0, 600)}`);
+  }
+}

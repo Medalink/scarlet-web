@@ -1,8 +1,9 @@
 /**
- * Writes the gathering and crafting session of the fixture character Echo-Witness (e2e/fixture/Echo-Witness): one
- * session of fishing, mining, herbalism, skinning, cooking and blacksmithing, as the recorder would write it, and the
- * session of Tailor-Stranger (e2e/fixture/Tailor-Stranger), a character of another install that no account of the lane
- * is linked to, with two tailoring crafts. Each line is `[milliseconds since the session began, code, ...fields]`; the builder splits the lines into the parts of
+ * Writes the gathering, crafting and camp session of the fixture character Echo-Witness (e2e/fixture/Echo-Witness): one
+ * session of fishing, mining, herbalism, skinning, cooking and blacksmithing and a 90 second visit to a campfire, as the
+ * recorder would write it, and the session of Tailor-Stranger (e2e/fixture/Tailor-Stranger), a character of another install
+ * that no account of the lane is linked to, with two tailoring crafts and a 90 second visit to a campfire. Each line is
+ * `[milliseconds since the session began, code, ...fields]`; the builder splits the lines into the parts of
  * their sharing groups (docs/groups.tsv), writes each part under the SHA-256 of its text and rewrites the manifest.
  * Parts of the character's other sessions are kept as they are, so running it twice changes nothing.
  *
@@ -38,6 +39,11 @@ const PEACEBLOOM_NODE = 1617;
 const SILVERLEAF_NODE = 1618;
 const STONETUSK_BOAR = 113;
 
+const CAMPFIRE_SPELL = 1307227;
+const NEAR_CAMPFIRE = 1283391;
+const SITTING = 1229739;
+const CAMP_BENEFITS = 1229741;
+
 const SMALLFISH = 6291;
 const MACKEREL = 6303;
 const CLAM = 7973;
@@ -57,7 +63,7 @@ const LINEN_BOLT_RECIPE = 2963;
 
 const GROUP_OF = {
   S: "core", Z: "core", ES: "core",
-  P: "movement", G: "build", C: "combat", CH: "combat", LO: "loot",
+  P: "movement", G: "build", C: "combat", CH: "combat", A: "combat", LO: "loot",
   SL: "professions", TS: "professions", CB: "professions", RD: "professions", CR: "professions", CS: "professions",
   IN: "names", SN: "names",
 };
@@ -167,7 +173,14 @@ const ECHO_LINES = [
   [286000, "CS", 0],
   [287000, "TS", 0],
 
-  [290000, "ES"],
+  [292000, "C", CAMPFIRE_SPELL, ""],
+  [300000, "A", 1, NEAR_CAMPFIRE, "", 0, "", ""],
+  [305000, "A", 1, SITTING, "", 0, "", ""],
+  [320000, "A", 1, CAMP_BENEFITS, "", 3600, "", ""],
+  [380000, "A", 0, SITTING, 75],
+  [390000, "A", 0, NEAR_CAMPFIRE, 90],
+
+  [400000, "ES"],
 ];
 
 const STRANGER_LINES = [
@@ -186,7 +199,14 @@ const STRANGER_LINES = [
   [16000, "CS", 0],
   [17000, "TS", 0],
 
-  [20000, "ES"],
+  [22000, "C", CAMPFIRE_SPELL, ""],
+  [30000, "A", 1, NEAR_CAMPFIRE, "", 0, "", ""],
+  [35000, "A", 1, SITTING, "", 0, "", ""],
+  [50000, "A", 1, CAMP_BENEFITS, "", 3600, "", ""],
+  [110000, "A", 0, SITTING, 75],
+  [120000, "A", 0, NEAR_CAMPFIRE, 90],
+
+  [130000, "ES"],
 ];
 
 const BUILDS = [

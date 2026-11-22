@@ -3,9 +3,16 @@
   "parts": [
     {
       "group": "core",
-      "id": "b34fd13963329d2ba4e04261f2b30fa58b40cdcc06d4660c135fae09ee567f3b",
+      "id": "b2656463da591bbd6cac12ccc87cad11227adba4cd9788a55cf7dfa79772915e",
       "lines": 3,
-      "raw_bytes": 182,
+      "raw_bytes": 183,
+      "session": 1795360000
+    },
+    {
+      "group": "combat",
+      "id": "00ff42c27d183c4756cb6e1e8a5dc5691380e5945c48eb6018cf7f66c3d39d24",
+      "lines": 6,
+      "raw_bytes": 178,
       "session": 1795360000
     },
     {
@@ -23,5 +30,5 @@
       "session": 1795360000
     }
   ],
-  "set_digest": "f8a4c617f681b2a1b130097c0fa3f873d3bccc26d0405ffedf4e4b25f5015478"
+  "set_digest": "f971318f32f208702fb737cfbf319fae69063fda474b5a37882945ed4ff62739"
 }

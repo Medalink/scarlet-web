@@ -53,8 +53,13 @@ final class CampsPage
         $camp = is_array($r['camp_benefits'] ?? null) ? $r['camp_benefits'] : [];
         $benefits = StatsPage::rows($r['benefits']);
         $byLevel = StatsPage::rows($r['by_level']);
+        $own = ProfessionPage::own($r);
 
         return [
+            'own' => $own,
+            'who' => $own ? 'you' : 'players',
+            'whose' => $own ? ProfessionPage::by($t, true) : null,
+            'note' => $own && $few ? 'Scarlet records this once a character of yours has camped.' : null,
             'callouts' => self::callouts($benefits, $t, (int) ($camp['gains'] ?? 0), $few),
             'figures' => self::figures($t, $visits, $few),
             'benefits' => self::benefits($benefits, (int) ($camp['gains'] ?? 0)),

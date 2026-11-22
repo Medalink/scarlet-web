@@ -99,7 +99,7 @@ export async function decoded(ctx) {
       return seen && seen.parts === fixture.ids.length && seen.sessions === fixture.sessions && seen.sessions_waiting === 0;
     });
     if (done) {
-      rollupsRefreshed(ctx).catch(() => {});
+      await rollupsRefreshed(ctx);
       return;
     }
     if (Date.now() > deadline) {

@@ -17,7 +17,7 @@
   </div>
 </section>
 <div class="wrap">
-  <nav class="trades" aria-label="Professions">@foreach ($trades as $trade)<a href="{{ $trade['href'] }}"@if ($trade['current']) aria-current="page"@endif>{{ $trade['label'] }}</a>@endforeach</nav>
+  <x-trades :items="$trades" />
   @if ($art)
   @if (array_filter(array_column($d['callouts'], 'share')))
   <ul class="camp-shares">@foreach ($d['callouts'] as $callout)@if ($callout['share'])<li><b>{{ $callout['title'] }}</b> {{ $callout['share'] }}</li>@endif @endforeach</ul>

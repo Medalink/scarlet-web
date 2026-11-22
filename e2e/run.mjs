@@ -70,10 +70,12 @@ const REGISTRY = [
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
+  { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },
   { lane: "removal", name: "removal answers and empties the status", run: removal.removalAnswersAndEmptiesStatus },
   { lane: "removal", name: "the stranger install's upload is removed too", run: removal.strangerIsRemoved },
   { lane: "removal", name: "the character is no longer served", run: removal.characterIsNoLongerServed },
   { lane: "removal", name: "an account with no character sees its profession page in the plain state", run: own.accountWithNoCharacterSeesThePlainState },
+  { lane: "removal", name: "an account with no character sees its camps page in the plain state", run: own.accountWithNoCharacterSeesTheCampsPlainState },
 ];
 
 function usage(message) {

@@ -144,7 +144,7 @@ export async function publicPagesStayPublic(ctx) {
 }
 
 export async function accountIsClosedToVisitors(ctx) {
-  for (const route of ["/account", "/link", "/account/professions", "/account/professions/fishing"]) {
+  for (const route of ["/account", "/link", "/account/professions", "/account/professions/fishing", "/account/camps"]) {
     const answer = await ctx.http.page(route, { redirect: "manual" });
     const location = answer.headers.get("location") ?? "";
     if (answer.status !== 302 || new URL(location, ctx.base).pathname !== "/login") {

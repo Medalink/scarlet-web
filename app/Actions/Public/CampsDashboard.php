@@ -83,7 +83,8 @@ class CampsDashboard
      */
     private function totalsOf(?array $totals, int|array|CharacterScope|null $ids): array
     {
-        $played = $totals === null ? 0 : $this->scopePlay->handle($ids)['seconds'] ?? 0;
+        $own = $ids instanceof CharacterScope;
+        $play = $totals === null && ! $own ? null : $this->scopePlay->handle($ids);
         $totals ??= array_fill_keys(['visits', 'seconds', 'earned', 'sat', 'tented', 'tent_rests', 'logged_out', 'died_after', 'afk_seconds', 'afk_known_seconds', 'crafted', 'crafts_known', 'placed_tent', 'placed_chair'], 0) + ['characters' => null, 'median_seconds' => null];
 
         return [
@@ -91,7 +92,8 @@ class CampsDashboard
             'characters' => $totals['characters'],
             'seconds' => $totals['seconds'],
             'median_seconds' => $totals['median_seconds'],
-            'played_seconds' => (int) round($played),
+            'played_seconds' => $play['seconds'] ?? 0,
+            ...($own ? ['scope_characters' => $play['characters'] ?? null] : []),
             ...array_diff_key($totals, array_flip(['visits', 'characters', 'seconds', 'median_seconds'])),
         ];
     }
