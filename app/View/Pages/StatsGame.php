@@ -212,7 +212,7 @@ final class StatsGame
         $runs = (int) $row['runs'];
 
         return self::record(
-            'dungeons', (string) ($row['name'] ?? 'Instance '.$row['instance_id']), '/zones/-'.$row['instance_id'], 'Most run dungeon',
+            'dungeons', (string) ($row['name'] ?? 'Instance '.$row['instance_id']), '/zones/'.$row['zone_id'], 'Most run dungeon',
             Format::count($runs, 'run').', '.Format::duration((float) $row['median']).' median, '.Format::number((int) $row['bosses'] / $runs, 1).' bosses a run',
             'c2',
         );

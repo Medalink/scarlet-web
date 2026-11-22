@@ -372,7 +372,7 @@ final class StatsPage
             $runs = max(1, (int) $row['runs']);
 
             return ['cells' => [
-                ['text' => (string) ($row['name'] ?? 'Instance '.$row['instance_id']), 'href' => '/zones/-'.$row['instance_id']],
+                ['text' => (string) ($row['name'] ?? 'Instance '.$row['instance_id']), 'href' => '/zones/'.$row['zone_id']],
                 Format::number((int) $row['runs']), Format::duration((float) $row['median']),
                 Format::number((int) $row['deaths'] / $runs, 1), Format::number((int) $row['bosses'] / $runs, 1),
             ]];
