@@ -19,6 +19,7 @@ const PAGES = [
   { path: "/leaderboards/most-quests", shows: heading("Most quests turned in") },
   { path: "/talents", shows: heading("Talents") },
   { path: "/rulesets", shows: heading("Rulesets compared") },
+  { path: "/hardcore-deaths", shows: heading("Hardcore deaths") },
   { path: "/rulesets/unidentified", shows: heading("Not identified") },
   { path: `/c/${NAME}`, shows: heading(SHOWN) },
   { path: `/c/${NAME}/heat`, shows: /^\{"data":/ },
@@ -48,6 +49,16 @@ export async function everyPageShowsItself(ctx) {
     return null;
   });
   failOn(problems, PAGES.length, "pages");
+}
+
+export async function deathIsCountedOnce(ctx) {
+  const answer = expectStatus(await ctx.http.page("/hardcore-deaths"), 200, "/hardcore-deaths");
+  if (!answer.text.includes("1 death recorded")) {
+    throw new Error(`/hardcore-deaths should say 1 death recorded for the notice two uploaders sent, saw ${answer.text.slice(0, 600)}`);
+  }
+  if (!/Level 23[^<]*1 death/.test(answer.text.replaceAll("&quot;", '"'))) {
+    throw new Error("/hardcore-deaths should chart that one death at level 23");
+  }
 }
 
 export function missingPageIs404(route) {

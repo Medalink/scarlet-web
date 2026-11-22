@@ -1,6 +1,6 @@
 /**
  * Checks before a ship: the Scarlet website and API driven over HTTP, and a headless browser for the pages, in under
- * 30 seconds. It uploads two invented characters (e2e/fixture), reads them back through the API, the pages and the
+ * 30 seconds. It uploads three invented characters (e2e/fixture), reads them back through the API, the pages and the
  * browser, and removes them again.
  *
  *   node e2e/run.mjs [--url http://127.0.0.1:8557] [--only upload|api|pages|browser] [--keep <dir>] [--browser <path>]
@@ -14,7 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { InstallClient } from "./client.mjs";
 import { Gate } from "./gate.mjs";
-import { Http, Jar, LOCAL_HOSTS, NAME, PROBE, Skip } from "./support.mjs";
+import { ECHO, Http, Jar, LOCAL_HOSTS, NAME, PROBE, Skip } from "./support.mjs";
 import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
@@ -32,7 +32,7 @@ const REGISTRY = [
   { lane: "upload", name: "installs/me refuses an unsigned request", run: upload.meUnsigned },
   { lane: "upload", name: "installs/me refuses a wrong signature", run: upload.meWrongSignature },
   { lane: "upload", name: "what an earlier run left is removed", run: upload.leftoversRemoved },
-  { lane: "upload", name: `${NAME} and ${PROBE} upload side by side: sync, manifest, parts, sync`, run: upload.bothUpload },
+  { lane: "upload", name: `${NAME}, ${PROBE} and ${ECHO} upload side by side: sync, manifest, parts, sync`, run: upload.bothUpload },
   { lane: "upload", name: "the same manifest needs nothing", run: upload.sameManifestNeedsNothing },
   { lane: "upload", name: "the upload is decoded", run: upload.decoded },
   { lane: "api", name: "every public endpoint answers data and meta", run: api.everyEndpointAnswers },
@@ -42,6 +42,7 @@ const REGISTRY = [
   { lane: "api", name: "an unknown character is 404 not_found", run: api.unknownCharacterIs404 },
   { lane: "api", name: "a bad parameter is 422 invalid_request", run: api.badParameterIs422 },
   { lane: "pages", name: "every public page answers and shows its own content", run: pages.everyPageShowsItself },
+  { lane: "pages", name: "one death heard by two uploaders is counted once", run: pages.deathIsCountedOnce },
   { lane: "pages", name: "a missing character is a 404 page", independent: true, run: pages.missingPageIs404("/c/Nobody-Here") },
   { lane: "pages", name: "a missing creature is a 404 page", independent: true, run: pages.missingPageIs404("/creatures/999999999") },
   { lane: "pages", name: "the account pages are closed to visitors", independent: true, run: pages.accountIsClosedToVisitors },

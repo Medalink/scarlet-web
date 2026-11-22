@@ -23,6 +23,13 @@
       "session": 1795180000
     },
     {
+      "group": "pvp",
+      "id": "38c3b40952898098225fee044dba312770b601410252b87125978d91077a56a2",
+      "lines": 2,
+      "raw_bytes": 113,
+      "session": 1795180000
+    },
+    {
       "group": "movement",
       "id": "6913f7c1f820ae24656795532657c7d4e12f9cc4b28f755dcdc84915666e8d8e",
       "lines": 5,
@@ -51,6 +58,13 @@
       "session": 1795180000
     },
     {
+      "group": "social",
+      "id": "a85dd12071effd4b52f1ad273bfea1f279edb96084e57fc9eeaae6c29cd0fef6",
+      "lines": 4,
+      "raw_bytes": 249,
+      "session": 1795180000
+    },
+    {
       "group": "names",
       "id": "1adec8f32f97f0e72d1a149360eaa8877c2e34bac760089b81d39e5bacef2423",
       "lines": 2,
@@ -58,5 +72,5 @@
       "session": 1795180000
     }
   ],
-  "set_digest": "0efe9ec4794a4031e5b036cd8043612f8bb17b34b2f9a3b44069386ced114877"
+  "set_digest": "9e60fbed5a2c3de2951e75eef607f1fa82eac315344e640c8b54533f76bbe023"
 }

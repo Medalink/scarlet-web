@@ -1,0 +1,20 @@
+{
+  "character": "Echo-Witness",
+  "parts": [
+    {
+      "group": "core",
+      "id": "59af32f18240903afc457d75cd4d763f6c5b4d3947aca47f8e7f2f721808dac9",
+      "lines": 2,
+      "raw_bytes": 127,
+      "session": 1795180000
+    },
+    {
+      "group": "social",
+      "id": "3e670d152a17c69558e6c6bb77022369433e99e8ab818503584b93128542baf7",
+      "lines": 1,
+      "raw_bytes": 101,
+      "session": 1795180000
+    }
+  ],
+  "set_digest": "67c83fe4a85756afa4a3bbceba4f55562f65d4d1ec2d217cd634bc609d4a603e"
+}

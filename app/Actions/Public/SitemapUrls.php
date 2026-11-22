@@ -36,7 +36,7 @@ class SitemapUrls
      */
     private function pages(): array
     {
-        $paths = ['/', '/demo', '/stats', '/map', '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/talents', '/rulesets'];
+        $paths = ['/', '/demo', '/stats', '/map', '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/talents', '/rulesets', '/hardcore-deaths'];
         foreach ($this->rulesets->handle() as $ruleset) {
             $paths[] = '/rulesets/'.$ruleset['slug'];
         }

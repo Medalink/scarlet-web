@@ -4,8 +4,8 @@ import path from "node:path";
 import { Browser, browserCommand } from "../cdp.mjs";
 import { NAME, SHOWN, Skip, failOn, pool } from "../support.mjs";
 
-const WIDE = ["/", "/stats", "/map", "/leaderboards", "/search?q=Testa", `/c/${NAME}`];
-const NARROW = ["/", "/stats"];
+const WIDE = ["/", "/stats", "/map", "/hardcore-deaths", "/leaderboards", "/search?q=Testa", `/c/${NAME}`];
+const NARROW = ["/", "/stats", "/hardcore-deaths"];
 const TABS = 4;
 const SUGGEST_MS = 5000;
 const MAP_ART_ABSENT = /map-tiles\/manifest\.json|The map manifest answered 404/;

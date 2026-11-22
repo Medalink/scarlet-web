@@ -1,5 +1,5 @@
 import { xorDigest } from "../client.mjs";
-import { NAME, PROBE, expectError, expectJson, expectStatus, loadFixture, sleep } from "../support.mjs";
+import { ECHO, NAME, PROBE, expectError, expectJson, expectStatus, loadFixture, sleep } from "../support.mjs";
 
 const DECODE_WAIT_MS = 20_000;
 const DECODE_POLL_MS = 250;
@@ -69,7 +69,7 @@ export function uploads(name) {
 }
 
 export async function bothUpload(ctx) {
-  await Promise.all([uploads(NAME)(ctx), uploads(PROBE)(ctx)]);
+  await Promise.all([uploads(NAME)(ctx), uploads(PROBE)(ctx), uploads(ECHO)(ctx)]);
 }
 
 export async function sameManifestNeedsNothing(ctx) {
@@ -83,7 +83,7 @@ export async function sameManifestNeedsNothing(ctx) {
 }
 
 export async function decoded(ctx) {
-  const wanted = [loadFixture(NAME), loadFixture(PROBE)];
+  const wanted = [loadFixture(NAME), loadFixture(PROBE), loadFixture(ECHO)];
   const deadline = Date.now() + DECODE_WAIT_MS;
   for (;;) {
     const answer = expectStatus(await ctx.client.status(), 200, "GET /api/v1/upload/status");
