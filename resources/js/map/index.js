@@ -7,7 +7,8 @@
 //   manifestUrl   the tile manifest (required); tiles are read from the same folder, under the manifest's version
 //   layers        { heat, dots, paths, marks }: heat is { source: { layer, levels, ruleset, creature } } read from
 //                 `densityUrl` a level at a time, or { grid: [columns], cells: [i, j, counter, ...] } on a grid of
-//                 columns by two thirds as many rows; dots [[u, v], ...]; paths [{ points: [[u, v], ...], mode }];
+//                 columns by two thirds as many rows, or { grid: [columns], remote: url } for those cells read from url
+//                 after the first paint; dots [[u, v], ...]; paths [{ points: [[u, v], ...], mode }];
 //                 marks [{ kind: kill|death|quest|level, u, v }]
 //   densityUrl    where a heat source is read (default /api/v1/public/map/density)
 //   zones         [{ id, name, u0, v0, u1, v1, href? }]: the zone rectangles, for the pointer readout, `fit(id)` and
@@ -354,8 +355,8 @@ export function mountMap(canvas, options) {
             return look;
         },
         view: () => ({ u: view.cx / view.W, v: view.cy / view.H, scale: view.s, bounds: view.bounds() }),
-        // how many tiles are still on their way: 0 once the picture is complete
-        pending: () => (tiles ? tiles.pending() : 1),
+        // how many tiles and heat cells are still on their way: 0 once the picture is complete
+        pending: () => (tiles ? tiles.pending() : 1) + heat.loading,
         destroy: () => {
             stop();
             heat.destroy();

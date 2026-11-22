@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\CharacterController;
+use App\Http\Controllers\Web\CharacterHeatController;
 use App\Http\Controllers\Web\DevelopersController;
 use App\Http\Controllers\Web\DownloadController;
 use App\Http\Controllers\Web\LeaderboardController;
@@ -21,6 +22,7 @@ Route::get('/developers', DevelopersController::class);
 Route::get('/release-notes', ReleaseNotesController::class);
 Route::get('/download', DownloadController::class);
 Route::get('/c/{name}', CharacterController::class)->where('name', '[^/]+');
+Route::get('/c/{name}/heat', CharacterHeatController::class)->where('name', '[^/]+');
 Route::get('/creatures/{id}', [RecordController::class, 'creature'])->whereNumber('id');
 Route::get('/items/{id}', [RecordController::class, 'item'])->whereNumber('id');
 Route::get('/zones/{id}', [RecordController::class, 'zone'])->where('id', '-?[0-9]+');
