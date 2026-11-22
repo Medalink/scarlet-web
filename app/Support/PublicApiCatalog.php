@@ -61,7 +61,7 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'leaderboards', 'group' => 'Leaderboards', 'path' => '/leaderboards', 'action' => [LeaderboardController::class, 'index'],
-                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests, most dungeon runs and most distance.',
+                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests, most kills, most dungeon runs and most distance.',
                 'params' => [],
                 'returns' => '`data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).',
                 'example' => '/leaderboards', 'where' => [],
@@ -82,9 +82,9 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'character', 'group' => 'Characters', 'path' => '/characters/{name}', 'action' => [CharacterController::class, 'show'],
-                'summary' => 'A public character: race, class, level, ruleset, time played, this week and distance walked. A character that is not public answers 404.',
+                'summary' => 'A public character: race, class, level, ruleset, time played, this week, distance walked and feats. A character that is not public answers 404.',
                 'params' => [['name', 'path', 'string', 'The character name, `Name-Surname`.']],
-                'returns' => '`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`. `meta.economy` says whether the owner shows money.',
+                'returns' => '`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (a list, highest tier first: `key`, `name`, `value`, `tier` from 0 for none to 4 for scarlet, `tier_name`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top). `meta.economy` says whether the owner shows money.',
                 'example' => '/characters/Tolvir-Greane', 'where' => ['name' => '[^/]+'],
             ],
             [
