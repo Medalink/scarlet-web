@@ -509,17 +509,16 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
       <div class="mod-head"><h2 id="h-d">Drops</h2>
         <div class="seg" role="group" aria-label="Loot rule"><a href="#" aria-current="true">All rules</a><a href="#">Group loot</a><a href="#">Free for all</a><span class="off" aria-disabled="true">Solo</span></div></div>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Corpses</th><th class="n">Per drop</th><th class="n">Of kills</th></tr></thead>
+        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Corpses</th><th class="n">Per drop</th><th class="n">Of all kills</th></tr></thead>
         <tbody>
           ${ranked([dropRow("Stalker Hide", "item.html", 52, 126, "1.0", "", null, "26 of 64"), dropRow("Cracked Tooth", "item.html", 36, 126, "1.0", "", null, "18 of 64"), dropRow("Saltmarsh Cleaver", "item.html", 2, 126, "1.0", "q2", null, "1 of 64"), dropRow("Marshwalker Greaves", "item.html", 1, 126, "1.0", "q3", null, "0 of 64")])}
         </tbody></table></div>
-      <p class="note">A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset. Of kills is corpses that held the item over the kills the character got credit for while playing alone; a kill nobody looted counts against it.</p>
+      <p class="note">A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.</p>
       <p class="note"><a href="loot.html">All loot</a></p>
     </section>
     <section class="mod w5 last" aria-labelledby="h-w">
       <h2 id="h-w">Where it was met</h2>
       <div class="mapbox"><canvas id="map" role="img" aria-label="Map cells where players stood when they met this creature"></canvas></div>
-      <p class="note">Cells mark where the player stood, not where the creature was.</p>
     </section>
     <section class="mod w7 first" aria-labelledby="h-l">
       <h2 id="h-l">Deaths to it, by the character's level</h2>
@@ -541,7 +540,7 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
         ${armRow("Stalker Hide", "item.html", [["Group loot", 41, 71], ["Free for all", 8, 42, ["one reader"]]], 2.2414)}
         ${armRow("Cracked Tooth", "item.html", [["Group loot", 22, 71], ["Free for all", 8, 42, ["one reader"]]], 2.2414)}
       </div>
-      <p class="note">Items with 10 drops or more. A mark is 10 to 29 corpses hollow and 30 or more solid; a rule under 10 corpses is not drawn: solo 8 and round robin 5. A difference is marked only when both rules have 30 corpses and the 95% range of the difference stays off zero after the number of items shown is taken into account. Free for all counts the one character who read most of its corpses, since two players of a group open the same corpse. <a href="groups.html">Loot rules and group size</a> for this creature.</p>
+      <p class="note">Not drawn, under 10 corpses: solo with 8 and round robin with 5. <a href="groups.html">Loot rules and group size</a> for this creature.</p>
     </section>
     <section class="mod w12 first last" aria-labelledby="h-z">
       <h2 id="h-z">Drop rate by group size under group loot</h2>
@@ -550,7 +549,7 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
         ${armRow("Stalker Hide", "item.html", [["Size 2", 31, 52], ["Size 3", 8, 14]], 2.2414)}
         ${armRow("Cracked Tooth", "item.html", [["Size 2", 16, 52], ["Size 3", 5, 14]], 2.2414)}
       </div>
-      <p class="note">Size 5 has 5 corpses and is not drawn.</p>
+      <p class="note">Not drawn, under 10 corpses: size 5 with 5.</p>
     </section>
     <section class="mod w7 first last" aria-labelledby="h-h">
       <h2 id="h-h">How it kills</h2>
@@ -569,13 +568,11 @@ const zoneRate = (zone, k, n) => {
 };
 const itemZones = `
     <section class="mod first" aria-labelledby="h-z"><h2 id="h-z">By zone</h2>
-      <div class="scroll-x"><table class="data" style="margin-top:1.1rem"><thead><tr><th>Zone</th><th class="n">Dropped</th><th class="n">Per 100 corpses</th></tr></thead>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem"><thead><tr><th>Zone</th><th class="n">Dropped</th><th class="n">Per 100 corpses in the zone</th></tr></thead>
         <tbody>${zoneRate("Saltmarsh Reach", 19, 251)}${zoneRate("Hollowmere", 2, 18)}${zoneRate("Thornwall", 1, 7)}</tbody></table></div>
-      <p class="note">Creatures looted in the zone, whatever they were. Per 100 corpses is how many of every 100 corpses looted there held the item.</p>
     </section>
     <section class="mod w8 last" aria-labelledby="h-m2"><h2 id="h-m2">Where it was looted</h2>
       <div class="mapbox" style="aspect-ratio:16 / 9"><canvas id="map" role="img" aria-label="Map cells where players stood when they looted this item"></canvas></div>
-      <p class="note">Cells mark where the player stood, not where the creature was.</p>
     </section>`;
 page("item.html", "Marshwalker Greaves: where it drops", "search", `
 <div class="wrap">
@@ -665,7 +662,6 @@ page("object.html", "Weathered Reed Chest: what it gives", "search", `
     <section class="mod w5 last" aria-labelledby="h-w">
       <h2 id="h-w">Where it was opened</h2>
       <div class="mapbox" style="aspect-ratio:1 / 1"><canvas id="map" role="img" aria-label="Map cells where players stood when they opened this object"></canvas></div>
-      <p class="note">Cells mark where the player stood, not where the object was.</p>
     </section>
   </div>
 </div>`, `
@@ -748,7 +744,7 @@ page("groups.html", "Loot rules and group size", "search", `
     <section class="mod w7 last" aria-labelledby="h-k">
       <h2 id="h-k">What the looter kept</h2>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th>Rule</th><th class="n">Size</th><th class="n">Corpses</th><th class="n">Received</th><th class="n">Items</th></tr></thead>
+        <thead><tr><th>Rule</th><th class="n">Size</th><th class="n">Corpses</th><th class="n">Kept</th><th class="n">Items</th></tr></thead>
         <tbody>
           <tr><td>Group loot</td><td class="n">2</td><td class="n">493</td><td class="n">97%</td><td class="n">421 of 434</td></tr>
           <tr><td>Free for all</td><td class="n">2</td><td class="n">360</td><td class="n">102%</td><td class="n">386 of 378</td></tr>
@@ -757,7 +753,6 @@ page("groups.html", "Loot rules and group size", "search", `
           <tr><td>Group loot<span class="tag">other creatures</span></td><td class="n">5</td><td class="n">78</td><td class="n">74%</td><td class="n">43 of 58</td></tr>
           <tr><td>Solo</td><td class="n">1</td><td class="n">21</td><td class="n">100%</td><td class="n">17 of 17</td></tr>
         </tbody></table></div>
-      <p class="note">Items the uploader received from a corpse over the items the corpse held, by the rule and size in force when it was looted. Under 100% means other members took items.</p>
     </section>
     <section class="mod w7 first" aria-labelledby="h-s">
       <h2 id="h-s">Your share of group loot</h2>
@@ -773,23 +768,21 @@ page("groups.html", "Loot rules and group size", "search", `
     <section class="mod w5 last" aria-labelledby="h-z">
       <h2 id="h-z">Kills an hour by group size</h2>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th class="n">Size</th><th class="n">Kills</th><th class="n">Hours</th><th class="n">Kills an hour</th></tr></thead>
+        <thead><tr><th class="n">Size</th><th class="n">Kills</th><th class="n">Hours in a group</th><th class="n">Kills an hour</th></tr></thead>
         <tbody>
           <tr><td class="n">2</td><td class="n">1,204</td><td class="n">31.4</td><td class="n">38.3</td></tr>
           <tr><td class="n">3</td><td class="n">212</td><td class="n">5.9</td><td class="n">35.9</td></tr>
           <tr><td class="n">5</td><td class="n">96</td><td class="n">3.1</td><td class="n">31.0</td></tr>
         </tbody></table></div>
-      <p class="note">Kills a member of a group got credit for, over the hours that member spent in a group of that size. Time alone is not counted.</p>
     </section>
     <section class="mod w12 first last" aria-labelledby="h-r">
       <h2 id="h-r">Rolls</h2>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th>Rule</th><th>Item quality</th><th class="n">Rolls</th><th class="n">Need</th><th class="n">Greed</th><th class="n">Pass</th></tr></thead>
+        <thead><tr><th>Rule</th><th>Item quality</th><th class="n">Uploader rolls</th><th class="n">Need</th><th class="n">Greed</th><th class="n">Pass</th></tr></thead>
         <tbody>${rollRow("Group loot", "Uncommon", 14, 7, 2)}${rollRow("Group loot", "Rare", 5, 3, 1)}${rollRow("Need before greed", "Uncommon", 6, 9, 3)}</tbody></table></div>
       <div class="scroll-x"><table class="data" style="margin-top:1.4rem">
         <thead><tr><th>Rule</th><th class="n">Threshold</th><th class="n">Corpses in groups</th><th class="n">Items rolled for per 100 corpses</th></tr></thead>
         <tbody><tr><td>Group loot</td><td class="n">Uncommon</td><td class="n">604</td><td class="n">5.1</td></tr><tr><td>Need before greed</td><td class="n">Uncommon</td><td class="n">88</td><td class="n">6.8</td></tr></tbody></table></div>
-      <p class="note">Rolls of the characters that uploaded. A roll another member made reaches every uploader in the group, so it is counted by none of them.</p>
     </section>
     <section class="mod w12 first last" aria-labelledby="h-g">
       <h2 id="h-g">Group composition</h2>
@@ -804,7 +797,7 @@ page("groups.html", "Loot rules and group size", "search", `
         <thead><tr><th>Skinner in the group</th><th class="n">Corpses looted</th><th class="n">Corpses skinned</th><th class="n">Skins per corpse</th></tr></thead>
         <tbody><tr><td>Yes</td><td class="n">96</td><td class="n">71</td><td class="n">0.74</td></tr><tr><td>No</td><td class="n">311</td><td class="n">0</td><td class="n">0.00</td></tr></tbody></table></div>
       <div class="scroll-x"><table class="data" style="margin-top:1.4rem">
-        <thead><tr><th>Tank</th><th>Healer</th><th class="n">Kills</th><th class="n">Hours</th><th class="n">Kills an hour</th></tr></thead>
+        <thead><tr><th>Tank</th><th>Healer</th><th class="n">Kills</th><th class="n">Hours in a group</th><th class="n">Kills an hour</th></tr></thead>
         <tbody>
           <tr><td>Yes</td><td>Yes</td><td class="n">96</td><td class="n">3.1</td><td class="n">31.0</td></tr>
           <tr><td>No</td><td>No</td><td class="n">1,416</td><td class="n">37.3</td><td class="n">38.0</td></tr>
@@ -816,7 +809,6 @@ page("groups.html", "Loot rules and group size", "search", `
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
         <thead><tr><th>Source</th><th>Item</th><th>Compared</th><th class="n">Difference</th><th>Tags</th></tr></thead>
         <tbody><tr><td><a href="creature.html">Marsh Stalker</a></td><td><a href="item.html">Stalker Hide</a></td><td>Group loot 41 of 71, Free for all 8 of 42</td><td class="n">-38.7 points, -52.8 to -20.3</td><td><span class="tag">one reader</span><span class="tag">different characters</span></td></tr></tbody></table></div>
-      <p class="note">A difference between loot rules or group sizes is a counting fault until shown otherwise: the game's drop table does not depend on either.</p>
     </section>
   </div>
 </div>`);

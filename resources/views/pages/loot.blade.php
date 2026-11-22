@@ -20,7 +20,7 @@
       @if ($d['rows'])
       <x-table :rows="$d['rows']" :columns="$d['columns']" style="margin-top:1.1rem" />
       @if ($d['prev'] || $d['next'])<p class="pager">@if ($d['prev'])<a href="{{ $d['prev'] }}">Previous {{ $d['step'] }}</a>@endif @if ($d['next'])<a href="{{ $d['next'] }}">Next {{ $d['step'] }}</a>@endif</p>@endif
-      <p class="note">{{ $d['note'] }}@if ($d['fishing']) {{ $d['fishing'] }} are on <a href="/professions/fishing">Fishing</a>.@endif</p>
+      @if ($d['fishing'])<p class="note">{{ $d['fishing'] }} are on <a href="/professions/fishing">Fishing</a>.</p>@endif
       @else
       <x-note>{{ $d['empty'] }}@if ($d['fishing']) {{ $d['fishing'] }} are on <a href="/professions/fishing">Fishing</a>.@endif</x-note>
       @endif

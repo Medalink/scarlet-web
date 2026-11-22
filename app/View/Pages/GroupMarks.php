@@ -33,7 +33,6 @@ final class GroupMarks
                 $mark['difference']->words().', '.$mark['difference']->range(),
                 implode(', ', array_map(fn (RateFlag $flag): string => $flag->label(), $mark['difference']->flags)),
             ]], $marks),
-            'note' => 'A difference between rules or sizes is a counting fault until shown otherwise.',
         ];
     }
 

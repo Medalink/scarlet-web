@@ -15,10 +15,10 @@ final class GroupKillRates
     public static function bySize(array $rows, bool $narrowed): array
     {
         return [
+            'heading' => 'Kills an hour by group size'.($narrowed ? ', all creatures' : ''),
             'empty' => $rows === [] ? 'No kill in a group of two or more is recorded yet.' : null,
-            'columns' => [['label' => 'Size', 'numeric' => true], ['label' => 'Kills', 'numeric' => true], ['label' => 'Hours', 'numeric' => true], ['label' => 'Kills an hour', 'numeric' => true]],
+            'columns' => [['label' => 'Size', 'numeric' => true], ['label' => 'Kills', 'numeric' => true], ['label' => 'Hours in a group', 'numeric' => true], ['label' => 'Kills an hour', 'numeric' => true]],
             'rows' => array_map(fn (array $row): array => ['cells' => [(string) $row['size'], Format::number($row['kills']), Format::number($row['seconds'] / 3600, 1), self::perHour($row['kills'], $row['seconds'])]], $rows),
-            'note' => 'Time alone is not counted.'.($narrowed ? ' Covers every creature, not only this source.' : ''),
         ];
     }
 

@@ -22,7 +22,6 @@
     <x-module span="w5" :last="true" id="h-w" heading="Where it was opened">
       @if ($d['hasMap'])
       <div class="mapbox" style="aspect-ratio:1 / 1"><x-world-canvas id="map" label="Where players stood when they opened this object. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
-      <p class="note">Marks show where the player stood, not where the object was.</p>
       @else
       <x-note>No openings are placed on the world map yet.</x-note>
       @endif

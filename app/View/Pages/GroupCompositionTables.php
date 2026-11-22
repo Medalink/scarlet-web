@@ -19,6 +19,7 @@ final class GroupCompositionTables
         $yes = fn (bool $value): string => $value ? 'Yes' : 'No';
 
         return [
+            'heading' => 'Group composition'.($narrowed ? ', all creatures' : ''),
             'empty' => $answer['need'] === [] && $answer['skins'] === [] && $answer['roles'] === [] ? 'No group has recorded the classes or roles of its members yet.' : null,
             'need' => $answer['need'] === [] ? null : [
                 'columns' => [['label' => 'Class'], ['label' => 'Armour'], ['label' => 'Rolls', 'numeric' => true], ['label' => 'Need', 'numeric' => true]],
@@ -39,12 +40,11 @@ final class GroupCompositionTables
                 ]], $answer['skins']),
             ],
             'roles' => $answer['roles'] === [] ? null : [
-                'columns' => [['label' => 'Tank'], ['label' => 'Healer'], ['label' => 'Kills', 'numeric' => true], ['label' => 'Hours', 'numeric' => true], ['label' => 'Kills an hour', 'numeric' => true]],
+                'columns' => [['label' => 'Tank'], ['label' => 'Healer'], ['label' => 'Kills', 'numeric' => true], ['label' => 'Hours in a group', 'numeric' => true], ['label' => 'Kills an hour', 'numeric' => true]],
                 'rows' => array_map(fn (array $row): array => ['cells' => [
                     $yes($row['tank']), $yes($row['healer']), Format::number($row['kills']), Format::number($row['seconds'] / 3600, 1), GroupKillRates::perHour($row['kills'], $row['seconds']),
                 ]], $answer['roles']),
             ],
-            'note' => 'Only the uploader\'s own Skinning is recorded.'.($narrowed ? ' Covers every creature, not only this source.' : ''),
         ];
     }
 }

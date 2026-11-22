@@ -135,7 +135,7 @@ final class LootGroupsPage
     {
         return [
             'empty' => $kept === [] ? 'No corpse looted under a loot rule is recorded yet.' : null,
-            'columns' => [['label' => 'Rule'], ['label' => 'Size', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Received', 'numeric' => true], ['label' => 'Items', 'numeric' => true]],
+            'columns' => [['label' => 'Rule'], ['label' => 'Size', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Kept', 'numeric' => true], ['label' => 'Items', 'numeric' => true]],
             'rows' => array_map(fn (array $row): array => ['cells' => [
                 ['text' => LootRule::words($row['rule']), 'tag' => $row['other'] ? 'other creatures' : null, 'plainTag' => true],
                 (string) $row['size'],

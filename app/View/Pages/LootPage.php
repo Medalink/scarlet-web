@@ -60,7 +60,6 @@ final class LootPage
             'prev' => $offset > 0 ? self::url([...$filter->params(), 'cursor' => $offset - LootIndex::PAGE > 0 ? Cursor::encode($offset - LootIndex::PAGE) : null]) : null,
             'next' => $table['more'] ? self::url([...$filter->params(), 'cursor' => Cursor::encode($offset + LootIndex::PAGE)]) : null,
             'step' => LootIndex::PAGE,
-            'note' => self::note($filter->view),
             'empty' => $figures['sources'] === 0 && $filter->params() === [] ? 'No loot is recorded yet.' : 'Nothing matches these filters.',
             'fishing' => $figures['fishing'] === 0 ? null : Format::count($figures['fishing'], 'fishing catch', 'fishing catches'),
             'zones' => array_map(fn (array $zone): array => [
@@ -127,15 +126,6 @@ final class LootPage
                 ? [['value' => LootSort::Windows->value, 'label' => 'Dropped'], ['value' => LootSort::Items->value, 'label' => 'Sources']]
                 : [['value' => LootSort::Windows->value, 'label' => $filter->view->opened()], ['value' => LootSort::Items->value, 'label' => 'Items seen'], ['value' => LootSort::Level->value, 'label' => 'Level']],
         ];
-    }
-
-    private static function note(LootView $view): string
-    {
-        return match ($view) {
-            LootView::Creatures => 'Each corpse counts once. Skinning and personal loot are left out.',
-            LootView::Objects, LootView::Containers => 'Each opening counts once. Personal loot is left out.',
-            LootView::Items => 'Each corpse or opening that held the item counts once.',
-        };
     }
 
     /** @param  array<string, int|string|null>  $params */

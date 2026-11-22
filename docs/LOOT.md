@@ -101,15 +101,17 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
 - **Corpses looted of kills** (phase 2, grouped play in phase 7): a figure in the strip labelled `Corpses looted of
   kills`: `76.9%` with `40 of 52` beside it, a dash in place of the share under 10 kills, and no figure when the
   creature has no such kills. It counts a kill with a corpse key at any group size, once however many members got
-  credit, and a solo kill with no key that the character made itself (credit 1 or 2). Drops gains an **Of kills** column (`24 of 52`), the windows that
+  credit, and a solo kill with no key that the character made itself (credit 1 or 2). Drops gains an **Of all kills** column (`24 of 52`), the windows that
   listed the item over the same kills. Both follow the rule control: under one loot rule only the kills with a key
   of that rule are counted, and the kills with no key (solo play) only under All rules and Solo. A kill nobody
-  looted counts against it, so the page says `of kills`, never `drop rate`.
+  looted counts against it, so the page says `of all kills`, never `drop rate`.
 - Drops has no explanation of a drop rate: the columns and the `k of n` say it. Under the table one line carries the
-  tags, `Of kills counts a kill nobody looted against the item.` when the column is shown, and, when windows were
-  left out because their session has no `read`, `Left out: N corpses from sessions that do not record what a corpse
-  was read for.` Drops counts windows read for loot only (`read = 'loot'`); windows read for skinning are in
-  Skinning, which has no note. No module of the loot pages carries more than one short line of explanation.
+  tags and, when windows were left out because their session has no `read`, `Left out: N corpses from sessions that do
+  not record what a corpse was read for.` Drops counts windows read for loot only (`read = 'loot'`); windows read for
+  skinning are in Skinning, which has no note.
+- A module of the loot pages explains itself in its heading and column headings (**Per 100 corpses in the zone**,
+  **Hours in a group**, **Kept**, **Uploader rolls**), not in a line under it. The lines that remain state a count
+  or name what a chart left out (`Not drawn, under 10 corpses: ...`). A map says nothing under it.
 
 ### Object, `/objects/{id}`
 
@@ -153,7 +155,9 @@ Answers the owner's question directly, as three separate questions, because they
 - **Kills and corpses an hour by group size** (phase 2).
 - **Group composition** (phase 6): need share by class and armour type, skins per corpse with a skinner in the
   group, kills an hour with and without a tank and a healer.
-- `?source={kind}{id}` narrows every module to one source and is where a creature page's rule chart links.
+- `?source={kind}{id}` narrows What a corpse held and What the looter kept to one source and is where a creature
+  page's rule chart links. Your share of group loot, Kills an hour by group size, Rolls and Group composition keep
+  covering every creature, and their headings end `, all creatures` then.
 
 ### Looted in a zone, `/zones/{id}`
 

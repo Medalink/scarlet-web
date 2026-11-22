@@ -38,7 +38,7 @@ final class ArmChart
             default => null,
         };
 
-        return ['heading' => 'Drop rate by loot rule', 'groups' => $groups] + self::chart($answer, $empty, self::undrawn($arms, fn (LootArm $arm): string => strtolower($arm->label).' with '.$arm->windows), true);
+        return ['heading' => 'Drop rate by loot rule', 'groups' => $groups] + self::chart($answer, $empty, self::undrawn($arms, fn (LootArm $arm): string => strtolower($arm->label).' with '.$arm->windows));
     }
 
     /**
@@ -60,14 +60,14 @@ final class ArmChart
         $listed = self::sentence(array_map(fn (array $seen, int $position): string => ($position === 0 ? 'size ' : '').$seen['size'].(count($sizes) === 1 ? '' : ' ('.$seen['windows'].')'), $sizes, array_keys($sizes)));
         $empty = count($drawn) < 2 ? LootRule::words($rule).' recorded at '.$listed.(count($sizes) === 1 ? ' only.' : '.') : null;
 
-        return ['heading' => 'Drop rate by group size under '.strtolower(LootRule::words($rule))] + self::chart($answer, $empty, self::undrawn($arms, fn (LootArm $arm): string => 'size '.$arm->key.' with '.$arm->windows), false);
+        return ['heading' => 'Drop rate by group size under '.strtolower(LootRule::words($rule))] + self::chart($answer, $empty, self::undrawn($arms, fn (LootArm $arm): string => 'size '.$arm->key.' with '.$arm->windows));
     }
 
     /**
      * @param  array<string, mixed>  $answer
      * @return array{empty: string|null, rows: list<array<string, mixed>>, note: string|null, groups: string|null}
      */
-    private static function chart(array $answer, ?string $empty, ?string $undrawn, bool $explain): array
+    private static function chart(array $answer, ?string $empty, ?string $undrawn): array
     {
         /** @var list<array<string, mixed>> $source */
         $source = $answer['rows'];
@@ -80,16 +80,7 @@ final class ArmChart
             $empty = 'No item has 10 drops yet.';
         }
 
-        return ['empty' => $empty, 'rows' => array_map(fn (array $row): array => self::row($row, $pair, $drawn), $source), 'note' => $source === [] ? null : self::note($undrawn, $explain), 'groups' => null];
-    }
-
-    private static function note(?string $undrawn, bool $explain): ?string
-    {
-        if (! $explain) {
-            return $undrawn;
-        }
-
-        return 'Items with 10 drops or more. Hollow marks rest on 10 to 29 corpses.'.($undrawn === null ? '' : ' '.$undrawn);
+        return ['empty' => $empty, 'rows' => array_map(fn (array $row): array => self::row($row, $pair, $drawn), $source), 'note' => $source === [] ? null : $undrawn, 'groups' => null];
     }
 
     /**
