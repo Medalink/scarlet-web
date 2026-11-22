@@ -74,6 +74,7 @@ pub struct Auras {
     pub on: Vec<Inst>,
     ended: VecDeque<End>,
     kinds: BTreeMap<i64, (Option<bool>, By)>,
+    last_end: BTreeMap<i64, i64>,
     next: u64,
 }
 
@@ -129,6 +130,11 @@ impl Auras {
                 .get(&spell)
                 .copied()
                 .unwrap_or((None, By::Unknown));
+            let ms = self
+                .last_end
+                .get(&spell)
+                .map_or(ms, |ended| ms.min((now.at - ended).max(0)));
+            self.last_end.insert(spell, now.at);
             self.keep(End {
                 id: 0,
                 spell,
@@ -150,6 +156,7 @@ impl Auras {
             return Loss::Carried;
         }
         let inst = self.on.remove(at);
+        self.last_end.insert(spell, now.at);
         self.keep(End {
             id: inst.id,
             spell,
@@ -159,7 +166,11 @@ impl Auras {
             gain_at: inst.gain_at,
             opened: inst.opened,
         });
-        let total = inst.carried_ms.saturating_add(ms);
+        let reported = inst.carried_ms.saturating_add(ms);
+        let total = match inst.refreshed_at {
+            Some(_) => reported.max(now.at.saturating_sub(inst.gain_at)),
+            None => reported,
+        };
         Loss::Ended { inst, ms: total }
     }
 

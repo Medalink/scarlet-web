@@ -259,6 +259,18 @@ An aura that the client lists again (an `A 1` of a spell that is on) after a loa
 start and does not move the gain. An `A 0` within 2 s after such a line ends the instance that the line replaced, not
 the aura: its seconds are added to the seconds of the `A 0` that does end it.
 
+A spell's `ms` is the time at least one instance of it was on, so overlapping instances are not added twice (two
+players' buffs with one id, or an old instance that ends more than 2 s after its replacement began). An `A 1` of a spell
+that is on adds no start. The first `A 0` after such an `A 1` ends the aura at its time, and the aura's time is the
+larger of the seconds the line reports and the time since its gain. An `A 0` of a spell that is no longer on adds the
+smaller of its seconds and the time since that spell's last `A 0`. The addon writes `A 0` when it learns of the end: a
+client that hides aura data in a fight leaves the end to the rescan after the fight (`Capture.lua`, `auraStale`), so
+a deferred `A 0` is written at the end of the fight and its seconds run from the gain to that line. Nothing in the line
+tells when the aura really ended, so every tally that reads an aura's end (`seal_fate`, `shift_*`, `death_after_aura`,
+`cast_under`, `stealth_open`, and `fight_ms` of `a`, `b` and `x`) sees the end of the fight for such an aura. That is a
+limit of those tallies. A seal gained in such a fight reads as `5`, the fight ended with it on, because `F 0` comes
+before the rescan's `A 0`; one gained before it reads as `3` or `4`, since no judgement lies near the deferred end.
+
 ### `item_flows` (loot: `I`, `DI`; combat: `C`, `CH`, `AR`)
 
 Key `item_id`, `dir`, `place`, `spell_id`, `level`. What went into and out of the bags, summed.
