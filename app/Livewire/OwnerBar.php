@@ -43,6 +43,8 @@ class OwnerBar extends Component
             ? 'Nothing uploaded yet'
             : 'Last upload '.$character->last_seen_at->diffForHumans().', '.$character->sessions_decoded.' '.Str::plural('session', $character->sessions_decoded);
 
-        return view('livewire.owner-bar', ['public' => $character->is_public, 'facts' => $facts, 'others' => $others->handle($this->account(), $this->characterId)]);
+        $visitor = $character->is_public ? '/c/'.rawurlencode($character->name).'?as=visitor' : null;
+
+        return view('livewire.owner-bar', ['public' => $character->is_public, 'visitor' => $visitor, 'facts' => $facts, 'others' => $others->handle($this->account(), $this->characterId)]);
     }
 }

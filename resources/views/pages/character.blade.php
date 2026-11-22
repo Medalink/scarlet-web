@@ -18,6 +18,7 @@
 </section>
 <div class="wrap">
   @if ($d['owner'])<livewire:owner-bar :character-id="$d['id']" />@endif
+  @if ($d['ownerSeesVisitorView'])<div class="own"><span>Visitor view</span><span class="sp"><a href="/c/{{ rawurlencode($d['name']) }}">Back to your view</a></span></div>@endif
   @if ($d['records'])
   <section class="recs" aria-labelledby="h-records">
     <h2 id="h-records">Records</h2>
