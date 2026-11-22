@@ -73,10 +73,10 @@ class CharacterOverview
     public function handle(string $name, ?int $viewerAccountId, int $history = self::HISTORY): ?array
     {
         $character = Character::query()->where('name_key', Character::keyFor($name))->first();
-        $owner = $character !== null && $viewerAccountId !== null && $character->account_id === $viewerAccountId;
-        if ($character === null || (! $character->is_public && ! $owner)) {
+        if ($character === null || ! $character->visibleTo($viewerAccountId)) {
             return null;
         }
+        $owner = $viewerAccountId !== null && $character->account_id === $viewerAccountId;
         $id = $character->id;
         $economy = $owner || $character->show_economy;
         $last = DB::table('sessions')->where('character_id', $id)->orderByDesc('end_at')->first(['ruleset_id', 'end_at', 'level_end']);
