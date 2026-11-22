@@ -4,8 +4,9 @@ namespace App\View\Pages;
 
 use App\Models\MapRect;
 use App\Support\Board;
-use App\Support\CampArt;
 use App\Support\CampSpell;
+use App\Support\Scene;
+use App\Support\SceneArt;
 use App\View\Charts;
 use App\View\Format;
 
@@ -135,7 +136,7 @@ final class CampsPage
                 $gains = (int) $b['gains'];
 
                 return [
-                    'icon' => CampArt::icon((int) $b['spell_id']),
+                    'icon' => SceneArt::icon(Scene::Camp, (int) $b['spell_id']),
                     'label' => (string) $b['label'],
                     'effect' => (string) $b['effect'],
                     'share' => $few ? '–' : self::share($gains, $total),

@@ -1,10 +1,10 @@
 <x-layouts.app title="Camps: how players use the campsite in WoW Forever" description="How long players stay at a campfire in WoW Forever, which Camp Benefits they leave with, what they set up and where they camp." current="camps" :canonical="$canonical">
 @if ($art)
-@vite('resources/js/camps.js')
+@vite('resources/js/scene.js')
 @endif
 <section @class(['ch-head', 'camp-head', 'ch-bare' => ! $art]) aria-labelledby="h1">
   @if ($art)
-  <div class="stage" data-camp="{{ json_encode($art) }}" data-state="loading" role="img" aria-label="A camp at night, drawn from the game's own models: a Basic Campfire burning between a Camp Tent and a Camp Chair">
+  <div class="stage" data-scene="{{ $art['scene'] }}" data-models="{{ $art['models'] }}" data-texture="{{ $art['texture'] }}" data-state="loading" role="img" aria-label="{{ $scene->label() }}">
     <div class="callouts" aria-hidden="true">@foreach ($d['callouts'] as $callout)
       <p @class(['callout', 'left' => $callout['key'] !== 'fire']) @if ($callout['key'] !== 'fire') data-side="left" @endif data-key="{{ $callout['key'] }}" hidden><b>{{ $callout['title'] }}</b><span>{{ $callout['text'] }}</span>@if ($callout['share'])<em>{{ $callout['share'] }}</em>@endif</p>@endforeach
     </div>
@@ -20,7 +20,7 @@
   @if (array_filter(array_column($d['callouts'], 'share')))
   <ul class="camp-shares">@foreach ($d['callouts'] as $callout)@if ($callout['share'])<li><b>{{ $callout['title'] }}</b> {{ $callout['share'] }}</li>@endif @endforeach</ul>
   @endif
-  <p class="credit">Campfire, tent and chair models, textures, flames, sparks and light © Blizzard Entertainment, read from the WoW Forever client. The smoke and the ground are drawn by this page.</p>
+  <p class="credit">{{ $scene->credit() }}</p>
   @endif
   <x-figures :items="$d['figures']" />
   <x-sheet>

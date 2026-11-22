@@ -7,8 +7,9 @@ use App\Actions\Public\MapZones;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\ScopeRequest;
 use App\Models\MapRect;
-use App\Support\CampArt;
 use App\Support\PageScope;
+use App\Support\Scene;
+use App\Support\SceneArt;
 use App\Support\WorldLayer;
 use App\View\Pages\CampsPage;
 use App\View\Pages\Filters;
@@ -35,13 +36,13 @@ class CampsController extends Controller
         $rect = is_array($answer['heat'] ?? null) ? MapRect::query()->find((int) $answer['heat']['map']) : null;
         $page = CampsPage::data($answer, $rect);
         $map = $page['dots'] === null ? null : MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $mapZones->handle($scope->ids), dots: $page['dots']);
-        $art = CampArt::state();
 
         return view('pages.camps', [
             'd' => $page,
             'filters' => Filters::onPage($scope, $rulesets, '/camps'),
             'map' => $map,
-            'art' => $art === null ? null : ['models' => "/camp-art/camp.json?v={$art['version']}", 'texture' => "/camp-art/tex/{id}.png?v={$art['version']}"],
+            'art' => SceneArt::stage(Scene::Camp),
+            'scene' => Scene::Camp,
             'canonical' => '/camps',
         ]);
     }
