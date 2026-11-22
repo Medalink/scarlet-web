@@ -137,7 +137,7 @@ class PublicApi
         }
         ksort($query);
 
-        return 'api-public-answer:'.sha1(json_encode([$endpoint, $path, $query], JSON_THROW_ON_ERROR));
+        return 'api-public-answer:'.sha1(serialize([$endpoint, $path, $query]));
     }
 
     private static function endpointName(Request $request): ?string

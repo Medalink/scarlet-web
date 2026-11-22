@@ -19,7 +19,7 @@ class SearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'q' => ['nullable', 'string', 'max:80'],
+            'q' => ['nullable', 'string', 'max:80', 'regex:/^\P{Cc}*\z/u'],
             'kind' => ['nullable', Rule::enum(SearchKind::class)],
             'cursor' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
         ];
