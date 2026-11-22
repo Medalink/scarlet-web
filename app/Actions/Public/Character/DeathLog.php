@@ -13,14 +13,17 @@ class DeathLog
     /** Deaths the log lists, newest first. */
     public const int SHOWN = 400;
 
+    /** The newest deaths whose hits the log lists: at 20 hits a death, 2,000 hit rows at most. */
+    public const int WITH_HITS = 100;
+
     public function __construct(private readonly ResolvePlayerName $players) {}
 
     /**
      * `killer` and a hit's `source` are a creature's name,
      * a player's name only when ResolvePlayerName may show it, `ResolvePlayerName::UNKNOWN` for any other player, or
      * null when there is none. A guild is never read. `npc_id` is the killer's creature id when the site has a page
-     * for it. `hits` are the recorded hits of the death, oldest first; `recorded` is how many hits the game's recap
-     * held in all (null when the line did not say).
+     * for it. `hits` are the recorded hits of the death, oldest first, for the newest `WITH_HITS` deaths and empty for
+     * the rest; `recorded` is how many hits the game's recap held in all (null when the line did not say).
      *
      * @return array{rows: list<array{level: int|null, zone_id: int|null, zone: string|null, killer: string|null, damage: int|null, environmental_type: string|null, npc_id: int|null, recorded: int|null, hits: list<array<string, mixed>>}>}
      */
@@ -28,7 +31,7 @@ class DeathLog
     {
         $rows = DB::table('deaths')->where('character_id', $characterId)->orderByDesc('at')->limit(self::SHOWN)
             ->selectRaw('at, session_start, level, zone_id, (select z.name from zones z where z.id = deaths.zone_id) as zone, killer_kind, killer, damage, environmental_type, killer_npc_id, hits')->get();
-        $hits = $this->hits($characterId, $rows->last()?->at);
+        $hits = $this->hits($characterId, ($rows->get(self::WITH_HITS - 1) ?? $rows->last())?->at);
         $pseudonyms = [];
         foreach ($rows as $row) {
             if ($row->killer !== null && ($row->killer_kind === KillerKind::Player->value || PlayerNameShape::isPseudonym((string) $row->killer))) {
