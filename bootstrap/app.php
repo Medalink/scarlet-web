@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(before: StartSession::class, prepend: EdgeCacheable::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontReport(ApiException::class);
         // An unknown path under /api answers in the shape of every other refusal (docs/API.md, "Errors").
         $exceptions->render(fn (NotFoundHttpException $e, Request $request) => $request->is('api/*')
             ? ApiException::notFound('This address')->render()
