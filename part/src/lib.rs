@@ -15,6 +15,7 @@ pub mod groups;
 pub mod imports;
 pub mod load;
 pub mod payload;
+pub mod peer;
 pub mod professions;
 pub mod pseudo;
 pub mod reference;

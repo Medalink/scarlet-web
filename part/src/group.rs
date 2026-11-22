@@ -4,6 +4,7 @@
 //! name. docs/ROWS.md has the rows.
 
 use crate::decode::{field, num};
+use crate::peer::Peers;
 use crate::rows::Rows;
 use crate::talents::Ctx;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -19,14 +20,14 @@ pub struct Rule {
 }
 
 impl Rule {
-    fn write(&self, w: &mut Rows) {
+    pub(crate) fn write(&self, w: &mut Rows) {
         w.str("loot_rule", &self.method)
             .opt("threshold", self.threshold)
             .opt("group_size", self.size);
     }
 }
 
-fn name_key(name: &str) -> String {
+pub(crate) fn name_key(name: &str) -> String {
     name.split_whitespace()
         .collect::<Vec<_>>()
         .join("-")
@@ -545,7 +546,14 @@ impl GroupBook {
     }
 
     /// Close the span in force at the session's end and write the receipts and rolls.
-    pub fn finish(&mut self, session: i64, end: i64, pn: &BTreeMap<String, String>, w: &mut Rows) {
+    pub fn finish(
+        &mut self,
+        session: i64,
+        end: i64,
+        pn: &BTreeMap<String, String>,
+        peers: &Peers,
+        w: &mut Rows,
+    ) {
         if let Some(o) = self.open.take() {
             self.write(&o, end, session, w);
         }
@@ -563,7 +571,10 @@ impl GroupBook {
                 .int("item_id", r.item)
                 .int("quantity", r.quantity);
             r.rule.write(w);
-            w.null("source_kind").null("source_id");
+            match peers.source(&r.who, r.item, r.at) {
+                Some((kind, id)) => w.str("source_kind", kind).int("source_id", id),
+                None => w.null("source_kind").null("source_id"),
+            };
             w.end();
         }
         let mut order: Vec<usize> = (0..self.rolls.len()).collect();

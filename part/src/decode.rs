@@ -10,6 +10,7 @@ use crate::build::parse_header;
 use crate::camp::{Camp, Known};
 use crate::death::Hit;
 use crate::group::{GroupBook, Rule};
+use crate::peer::Peers;
 use crate::professions::{Here, Present, Professions, item_of};
 use crate::reference::Reference;
 use crate::rows::Rows;
@@ -23,7 +24,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 11;
+pub const DECODER_VERSION: u32 = 12;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -70,6 +71,12 @@ pub fn num(f: &[&str], i: usize) -> Option<i64> {
 
 pub(crate) fn field<'a>(f: &[&'a str], i: usize) -> &'a str {
     f.get(i).copied().unwrap_or("")
+}
+
+pub(crate) fn corpse_key<'a>(f: &[&'a str], i: usize) -> &'a str {
+    let key = field(f, i);
+    let hex = key.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'));
+    if key.len() == 10 && hex { key } else { "" }
 }
 
 pub fn round_s(ms: i64) -> i64 {
@@ -146,6 +153,7 @@ struct LootWindow {
     id: Option<i64>,
     first_read: Option<bool>,
     read: Option<&'static str>,
+    key: String,
 }
 
 /// Which groups have a part in this call. Without one the counts it feeds are
@@ -229,6 +237,7 @@ struct Dec<'o> {
     prof: Professions,
     social: Social,
     group: GroupBook,
+    peers: Peers,
     baselines: Baselines,
     reference: Reference,
 }
@@ -445,7 +454,8 @@ impl Dec<'_> {
                     .opt("by", num(&f, 1))
                     .text("loot_rule", if ruled { &self.method } else { "" })
                     .opt("group_size", self.group_size.filter(|_| ruled))
-                    .opt("group_at", self.group.at());
+                    .opt("group_at", self.group.at())
+                    .text("corpse_key", corpse_key(&f, 2));
                 self.w.end();
             }
             "D" => {
@@ -532,6 +542,7 @@ impl Dec<'_> {
                 }
             }
             "LO" => self.on_loot_window(t, &f),
+            "LW" => self.on_peer_window(t, &f),
             "O" => {
                 let src = self.last_lo.clone().filter(|w| t - w.at <= 5_000);
                 self.fact("loot_drops", t);
@@ -555,8 +566,13 @@ impl Dec<'_> {
                     .opt("item_id", num(&f, 0))
                     .int("quantity", num(&f, 1).unwrap_or(1));
                 self.rule();
+                let key = src.as_ref().map_or("", |w| w.key.as_str());
                 self.w
-                    .text("read", src.and_then(|w| w.read).unwrap_or_default());
+                    .text(
+                        "read",
+                        src.as_ref().and_then(|w| w.read).unwrap_or_default(),
+                    )
+                    .text("corpse_key", key);
                 self.w.end();
             }
             "SK" => {
@@ -991,12 +1007,14 @@ impl Dec<'_> {
             _ => None,
         };
         let read = self.loot_read(&kind);
+        let key = corpse_key(f, 5);
         self.last_lo = Some(LootWindow {
             at: t,
             kind: kind.clone(),
             id,
             first_read: first,
             read,
+            key: key.to_string(),
         });
         let list = field(f, 3);
         let items = window_items(list);
@@ -1020,7 +1038,8 @@ impl Dec<'_> {
             .opt("map", map)
             .opt("x", x)
             .opt("y", y)
-            .opt("group_at", self.group.at());
+            .opt("group_at", self.group.at())
+            .text("corpse_key", key);
         self.w.end();
         for (item, qty) in items {
             self.fact("loot_drops", t);
@@ -1034,9 +1053,22 @@ impl Dec<'_> {
             };
             self.w.int("item_id", item).int("quantity", qty);
             self.rule();
-            self.w.text("read", read.unwrap_or_default());
+            self.w
+                .text("read", read.unwrap_or_default())
+                .text("corpse_key", key);
             self.w.end();
         }
+    }
+
+    fn on_peer_window(&mut self, t: i64, f: &[&str]) {
+        let ctx = self.ctx(t);
+        let rule = Rule {
+            method: self.method.clone(),
+            threshold: self.threshold,
+            size: self.group_size,
+        };
+        let group_at = self.group.at();
+        self.peers.on_lw(&ctx, &mut self.w, &rule, group_at, f);
     }
 
     fn loot_read(&self, kind: &str) -> Option<&'static str> {
@@ -1051,7 +1083,7 @@ impl Dec<'_> {
     }
 }
 
-fn window_items(list: &str) -> Vec<(i64, i64)> {
+pub(crate) fn window_items(list: &str) -> Vec<(i64, i64)> {
     let mut items: Vec<(i64, i64)> = Vec::new();
     for (item, qty) in list.split(',').filter_map(item_of) {
         match items.iter_mut().find(|(i, _)| *i == item) {
@@ -1072,7 +1104,8 @@ impl Dec<'_> {
         }
         let s = self.session;
         self.talents.finish(s, &mut self.w);
-        self.group.finish(s, self.end_ms, &self.pn, &mut self.w);
+        self.group
+            .finish(s, self.end_ms, &self.pn, &self.peers, &mut self.w);
         let known = Known {
             afk: self.has.xp,
             crafts: self.has.professions,
@@ -1452,6 +1485,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         prof: Professions::default(),
         social: Social::default(),
         group: GroupBook::new(character, has_group("professions")),
+        peers: Peers::default(),
         baselines: Baselines::default(),
         reference: Reference::default(),
     };

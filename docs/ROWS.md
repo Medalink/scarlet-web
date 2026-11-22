@@ -90,6 +90,7 @@ written. `at` is the span start.
 | `by` | int or null | `1` you or your pet, `0` a party member, `2` unattributed |
 | `loot_rule`, `group_size` | string or null, int or null | the rule in force at the kill, as on `loot_opens`: the `LM` method (`unknown` until a line says) and the group size from `GP`/`LM`. No threshold. Both null without a `loot` part, and a removed `loot` nulls them (`FactTable::groupColumns`) (decoder version 10) |
 | `group_at` | int or null | the `at` of the `group_spans` row in force (a timestamp column). Null while solo, and without a `social` part; a removed `social` nulls it (decoder version 11) |
+| `corpse_key` | string or null | the last field of `K`: 10 lowercase hex digits that name the creature's corpse (see "Corpse key" below). Null for a line from before 2026-11-22, for a player (`K p`) and for any other text (decoder version 12) |
 
 ### `deaths` (combat: `D`, `DL`, `DR`)
 
@@ -195,6 +196,7 @@ the job may do so from the following sessions.
 | `item_rows` | int or null | the item entries of the window, a stack listed twice counted once, so the `window` rows of `loot_drops` that the window writes number the same; 0 is coin or currency only. Null when the line lists nothing (`has_items` false) (decoder version 10) |
 | `map`, `x`, `y` | int or null | the last `P` at or before the window, as `gathers` reads it. Null without a `movement` part or before a first `P`. The ingest adds `u` and `v` from `map` and `x`, `y` the way it does for `path_points` (decoder version 10) |
 | `group_at` | int or null | as on `kills`: the `at` of the `group_spans` row in force, null while solo and without a `social` part (decoder version 11) |
+| `corpse_key` | string or null | the last field of `LO`, written for kinds `c` and `g`: the key of the corpse or object (see "Corpse key" below). Null for a line from before 2026-11-22, for kinds `i` and `o` and for any other text (decoder version 12) |
 
 ### `loot_drops` (loot: `LO`, `O`; combat: `C`, `CH`)
 
@@ -206,11 +208,50 @@ the job may do so from the following sessions.
 | `quantity` | int | |
 | `loot_rule`, `threshold`, `group_size` | | as `loot_opens` |
 | `read` | string or null | as `loot_opens`; for a receipt, that of the source window, null without one (decoder version 10) |
+| `corpse_key` | string or null | as `loot_opens`; a window's items carry their window's key, a receipt that of the source window, null without one (decoder version 12) |
 
 Drop rates count `window` rows only (coin and currency entries of a window are not rows). A window writes one row per
 item: stacks of one item listed in one window are added into one row, in the order the items first appear (decoder
 version 10; a window that listed an item twice wrote two rows before). `receipt` rows give the attribution for logs that
 have no item list.
+
+### `peer_opens`, `peer_drops` (loot: `LW`; social: `GP`, `GM`, `GL`)
+
+The loot windows that group members who run Scarlet read and sent to the uploader's group. One `peer_opens` row per `LW`
+line of kind `c` or `g`, and one `peer_drops` row per item of its list, stacks of one item added, as `loot_opens` and
+`loot_drops` write a window. They are their own tables, so no query of `loot_opens` or `loot_drops` counts them. When the
+member also uploads, the window is also that member's own `LO`; the pseudonyms of two installs differ, so only
+`corpse_key` tells the two lines are one corpse. `at` is the time the `LW` line was written: the member read the window
+`late_s` seconds before it. `level` and `zone_id` are the uploader's at `at`, and no position is kept, since the
+uploader was not where the corpse was.
+
+| Key | Table | Type | |
+| --- | --- | --- | --- |
+| `source_kind`, `source_id` | both | string, int or null | `c` creature (npcID) or `g` object (objectID), read from the GUID in the message. A line of another kind is not a row |
+| `first_read` | both | bool or null | `again` 0 true, 1 false: the sender had read the corpse, or the uploader or another member had in the last 5 minutes. One corpse has one first read across `LO` and `LW` |
+| `slots` | `peer_opens` | int or null | null when outside 0 to 32767 |
+| `has_items` | `peer_opens` | bool | the line lists items |
+| `item_rows` | `peer_opens` | int or null | the item entries kept, as on `loot_opens`. Null when the line lists nothing |
+| `item_id`, `quantity` | `peer_drops` | int | an entry with an item id or quantity past 2147483647 is not a row |
+| `loot_rule`, `threshold`, `group_size` | both | | the rule in force when the line was written, as on `loot_opens` |
+| `read` | both | string or null | `fish` for the fishing bobber (object 35591), else null: the window does not say what the sender read it for, and the uploader's casts are not theirs. A query for `loot` or `skin` reads no peer row |
+| `group_at` | `peer_opens` | int or null | as on `kills`; null while solo and without a `social` part, and a removed `social` nulls it |
+| `who` | both | string | the sender as uploaded: a pseudonym. A line whose sender is longer than 64 characters is not a row |
+| `late_s` | both | int or null | seconds between their read and the send. Null outside 0 to 86400 |
+| `corpse_key` | both | string or null | the last field of `LW`, as on `loot_opens` (decoder version 12) |
+
+### Corpse key
+
+The last field of `K`, `LO` (kinds `c` and `g`) and `LW`: the same 10 hex digits on every client for one creature or
+object, so the member who killed it, each member who opened it and each `LW` they sent carry one key. The decoder keeps
+a key only when it is exactly 10 lowercase hex digits; anything else is null. The key is 40 bits, so a corpse is
+`(source_kind, source_id, corpse_key)`: `kills` has no `source_kind`, and its corpses are creatures. An object that
+respawns can keep its GUID and so its key, so for an object the same key more than 5 minutes apart is a second read of
+a respawned object, not the same read; a creature gets a new GUID. From decoder version 12 a looted corpse counts once
+by `count(distinct (source_kind, source_id, corpse_key))` over the windows of `loot_opens` and `peer_opens` where the
+key is present; a window without a key falls back to the first-read rule (docs/LOOT.md, Units of counting). `kills` is
+not a window: it joins the windows on `npc_id` and `corpse_key`, and a keyed kill with no window is a corpse nobody
+looted or that held nothing.
 
 ### `group_spans` (social: `GP`, `GM`, `GL m`, `GL s`; professions: `SL`)
 
@@ -232,7 +273,7 @@ time. A session that ends in a group closes its last row at the session's end.
 | `guild_mates`, `friends` | int | their `GL m` flags |
 | `skinners` | int or null | uploader only: 1 when the uploader has a rank in Skinning (`SL`), else 0; other members' professions are not recorded. Null without a `professions` part. The skill scan at the session's start (`SL` baseline `s`) does not split a row |
 
-### `group_loot` (loot: `LT`; social: `GL m`, `pn`)
+### `group_loot` (loot: `LT`, `LW`; social: `GL m`, `pn`)
 
 What another member of the uploader's group received (the uploader's own receipts are `loot_drops`). One row per `LT`
 line.
@@ -244,7 +285,7 @@ line.
 | `class_file` | string or null | the class file of the member `who` names, found through the session's `pn` lines and the `GL m` line of that name. Null without a `social` part; a removed `social` nulls it |
 | `item_id`, `quantity` | int | |
 | `loot_rule`, `threshold`, `group_size` | | as `loot_opens` |
-| `source_kind`, `source_id` | null | null until `LW` is decoded |
+| `source_kind`, `source_id` | string or null, int or null | the source of the `peer_opens` window of the same `who` that lists the item and was read nearest the receipt, within 60 s of it (the read is `late_s` before the `LW` line). A window is not used up by a receipt, so two receipts of one item can name one source. Null when no such window was sent, so a member who does not run Scarlet leaves it null (decoder version 12) |
 
 ### `loot_rolls` (loot: `LD`, `RW`, `RL`; social: `GL m`, `pn`)
 
@@ -636,7 +677,8 @@ for the other, and the app keeps the known value. One row per spell of the sessi
 
 `session`, `kind` (`npc`, `spell`, `item`, `quest`, `currency`, `skill`, `statistic`, `achievement`, `faction`,
 `gossip`, `stat`, `flight`, `talenttab`, `object`), `id` (int), `name` (string). One row per distinct (kind, id) of the
-session. A name becomes the shown one for an id when most uploads agree on it (DESIGN.md).
+session. A name becomes the shown one for an id when most uploads agree on it (DESIGN.md). `object` names come from the
+`ON` line and are voted like `npc` names: one vote for each session that names the object, none for a decode again.
 
 ### `items` (names group: `II`, `IT`, `IQ`)
 
@@ -716,6 +758,9 @@ Every `gather_items` row is read from loot lines, so a removed `loot` deletes th
 `loot_opens.read` and `loot_drops.read` are null without a `combat` part, since the casts that name a gathering window
 are `combat` lines; `loot_opens.map`, `x`, `y`, `u`, `v` are null without `movement`; `kills.loot_rule` and
 `kills.group_size` are null without `loot`. A removed group nulls the same columns.
+`peer_opens` and `peer_drops` are written with a `loot` part and deleted with it; `peer_opens.group_at` is null without
+a `social` part and a removed `social` nulls it. `corpse_key` of `kills` is read from the combat part and of `loot_opens`
+and `loot_drops` from the loot part, so a removed group deletes it with its rows and no group nulls it.
 `group_spans` is written only with a `social` part, and `kills.group_at` and `loot_opens.group_at` are null without
 one; a removed `social` deletes the spans and nulls `group_at`, and nulls `class_file` of `group_loot` and
 `loot_rolls`, which are written with a `loot` part and deleted with it. `group_spans.skinners` is null without a

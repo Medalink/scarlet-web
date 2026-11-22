@@ -166,7 +166,8 @@ Three units exist in the data and they are not interchangeable.
 | Member kill | `kills` | one character's record that a creature died to its group | summed across the members of a group: a duo writes two rows for one corpse |
 | Receipt | `loot_drops`, `via = 'receipt'` | an item the uploader received | never, it is the uploader's own |
 
-A **corpse** has no id on the server: the GUID is used by the addon and never stored.
+A **corpse** has no GUID on the server: the addon uses it and never uploads it. Since decoder version 12 it has a
+corpse key, a hash of the GUID (rule 7).
 
 Rules the design follows:
 
@@ -188,8 +189,16 @@ Rules the design follows:
    `BossDrops` takes the uploader who saw most, and the arm carries the tag `one reader`. It loses up to half the
    sample and cannot double count. 37% of free-for-all windows have another uploader's window on the same source
    inside 300 s, past the 5% that triggers it.
-7. The exact fix is a corpse key from the addon (phase 7). Then `count(distinct corpse_key)` replaces rules 3 to 6
-   and the tag goes away.
+7. **The corpse key (phase 7, write side done in decoder version 12).** `K`, `LO` and `LW` carry a key that is the
+   same on every client for one corpse, and `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops` store
+   it as `corpse_key`. From here a corpse counts once by `count(distinct corpse_key)` when the key is present, and
+   falls back to first reads (rules 3 to 6) when it is null: a line from before 2026-11-22, or a session not yet
+   decoded again. The windows counted are `loot_opens` and `peer_opens`. The key is 40 bits and FORMAT.md says it is
+   never read alone, so the distinct is over `(source_kind, source_id, corpse_key)`, and an object that respawns can
+   keep its key, so the same key more than 5 minutes apart is a second read of an object. A kill is not a window:
+   `kills` joins the windows by key, and a keyed kill with no window is a corpse nobody looted or that held nothing,
+   so kills never go into the count of looted corpses. The tag goes away with the read side of phase 7, when the pages
+   count by key.
 8. Kills are never summed across characters as corpses. Kill-based figures are solo only, or per member (member
    kills over member hours), where two uploaders in one group add to both sides of the ratio.
 9. A partial window is not a sample of the table. A second reader sees what is left. Quest items are per player,
@@ -413,7 +422,7 @@ names. Removing `social` deletes the rows and nulls `group_at`.
 | `class_file` | string or null | from `GL m` through the session's `pn` lines; null without `social` |
 | `item_id`, `quantity` | int | |
 | `loot_rule`, `threshold`, `group_size` | | as `loot_opens` |
-| `source_kind`, `source_id` | string, int or null | the `peer_opens` row of the same `who` and item within 60 s; null until `LW` is uploaded |
+| `source_kind`, `source_id` | string, int or null | the `peer_opens` row of the same `who` and item within 60 s (decoder version 12); null when that member sent no window |
 
 **`loot_rolls`** (loot: `LD`, `RW`, `RL`). One row per player per roll; rolls on one item within 60 s are one roll,
 and a roll that arrives from both chat and history is one row.
@@ -431,20 +440,24 @@ and a roll that arrives from both chat and history is one row.
 | `decide_ms` | int or null | own rolls: `RW o` extra |
 | `loot_rule`, `threshold`, `group_size` | | |
 
-**`peer_opens`, `peer_drops`** (`LW`). The same keys as `loot_opens` and `loot_drops`, plus `who` (pseudonym) and
-`late_s`. Kept in their own tables so no existing query can count them. `LW` is in `loot` in `groups.tsv`, with a
-`LW 1 sender` row in `player-fields.tsv`. What they add: the windows of group members who run
-Scarlet and do not upload, the source of a member's receipt, and who opened each corpse (how evenly group loot
-rotates). When the peer also uploads, the row repeats that peer's own `LO`; pseudonyms are per install, so the two
-cannot be joined by name, and only the corpse key removes the repeat.
+**`peer_opens`, `peer_drops`** (`LW`, decoder version 12). The same keys as `loot_opens` and `loot_drops` without a
+position, plus `who` (pseudonym) and `late_s`. Kept in their own tables so no existing query can count them. `LW` is
+in `loot` in `groups.tsv`, with a `LW 1 sender` row in `player-fields.tsv`. `read` is `fish` for the fishing bobber and
+null otherwise, since the window does not say what its sender read it for. What they add: the windows of group
+members who run Scarlet and do not upload, the source of a member's receipt, and who opened each corpse (how evenly
+group loot rotates). When the peer also uploads, the row repeats that peer's own `LO`; pseudonyms are per install, so
+the two cannot be joined by name, and only the corpse key removes the repeat. docs/ROWS.md has the keys.
 
-**Corpse key** (addon). A field appended to `K`, `LO` and `LW`: 10 hex digits of a hash of the creature or object
-GUID, the same on every client. It makes a corpse countable once across uploaders, joins a kill to its window
-(empty corpses become visible), joins the loot window to the skin window of one corpse, and removes `LW` repeats.
-It stores a hash of a creature GUID, which FORMAT.md before this change says is never stored.
+**Corpse key** (addon, decoder version 12). A field appended to `K`, `LO` and `LW`: 10 hex digits of a hash of the
+creature or object GUID, the same on every client. It makes a corpse countable once across uploaders, joins a kill to
+its window (empty corpses become visible), joins the loot window to the skin window of one corpse, and removes `LW`
+repeats. It stores a hash of a creature GUID, which FORMAT.md before this change says is never stored. The decoder
+writes it as `corpse_key` on `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops`; null on a line from
+before the key.
 
-**Object names** (addon). An `ON objectID, name` name line, read from the tooltip when the object is used. Until
-then an object is labelled by what it gives.
+**Object names** (addon, decoder version 12 needs nothing). An `ON objectID, name` name line, read from the tooltip
+when the object is used. It is a `names` row of kind `object`, voted like an npc name. Until a name has votes an
+object is labelled by what it gives.
 
 ## Developer and agent experience
 
@@ -492,7 +505,7 @@ Each phase is a few small ships and leaves the site working. Phases 1 to 4 need 
 | 4. Rule and size inside a source | the two comparison charts, the mark and its developer list, `/loot/groups` with What a corpse held, What the looter kept and Kills an hour by size | phase 2 |
 | 5. Who received and rolls | decode `LT`, `LD`, `RW`, `RL` into `group_loot` and `loot_rolls`; Share of group loot, Rolls, Rolls in groups on the item page | decoder bump only; the lines are already uploaded |
 | 6. Composition | `group_spans`, `group_at`, `class_file` on rolls and receipts; the composition module; Who received it by class | decoder bump; `social` parts |
-| 7. Exact corpses | corpse key on `K`, `LO`, `LW`; `LW` uploaded; `peer_opens`; object names; rates a kill for grouped play; the `one reader` tag removed | addon release and the sharing-group change |
+| 7. Exact corpses | **write side done** (decoder version 12): corpse key on `K`, `LO`, `LW`; `LW` uploaded; `peer_opens`, `peer_drops`; `group_loot` source; object names. **read side, later:** count by key, rates a kill for grouped play, the `one reader` tag removed | addon release and the sharing-group change, both shipped |
 
 Phase 1 is one support class, two Actions, two Blade modules and two comps. It changes what a visitor reads: a row
 that said `0.8%` from one drop says `1 of 125, 0.1 to 4.4%`, a source with three windows stops showing rates, and

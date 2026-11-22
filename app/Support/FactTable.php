@@ -47,6 +47,8 @@ enum FactTable: string
     case GroupSpans = 'group_spans';
     case GroupLoot = 'group_loot';
     case LootRolls = 'loot_rolls';
+    case PeerOpens = 'peer_opens';
+    case PeerDrops = 'peer_drops';
 
     /** `money_changes.src` of a balance carried over from the `S` line (core), against `M` money lines (economy). */
     public const string MONEY_LINE = 'M';
@@ -68,7 +70,7 @@ enum FactTable: string
             self::TitleBaselines => SharingGroup::COLLECTIONS,
             self::ExploredBaselines => SharingGroup::WORLD,
             self::MoneyChanges, self::AuctionPrices => SharingGroup::ECONOMY,
-            self::LootOpens, self::LootDrops, self::BossLoot, self::GroupLoot, self::LootRolls => SharingGroup::LOOT,
+            self::LootOpens, self::LootDrops, self::BossLoot, self::GroupLoot, self::LootRolls, self::PeerOpens, self::PeerDrops => SharingGroup::LOOT,
             self::SkillUps, self::Crafts, self::Gathers, self::GatherItems => SharingGroup::PROFESSIONS,
             self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,
@@ -111,6 +113,7 @@ enum FactTable: string
             ],
             self::LootDrops => [SharingGroup::COMBAT => ['read']],
             self::GroupSpans => [SharingGroup::PROFESSIONS => ['skinners']],
+            self::PeerOpens => [SharingGroup::SOCIAL => ['group_at']],
             self::GroupLoot, self::LootRolls => [SharingGroup::SOCIAL => ['class_file']],
             self::Gathers => [
                 SharingGroup::COMBAT => ['in_combat'],
@@ -187,7 +190,7 @@ enum FactTable: string
             self::DungeonRuns => ['left_at'],
             self::BattlegroundScores => ['match_at'],
             self::GroupSpans => ['ended_at'],
-            self::Kills, self::LootOpens => ['group_at'],
+            self::Kills, self::LootOpens, self::PeerOpens => ['group_at'],
             default => [],
         };
     }
