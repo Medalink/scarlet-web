@@ -3,7 +3,7 @@
   <x-page-head title="Loot rules and group size" :single="true">
     <x-slot:sub>@if ($d['source'])<a href="{{ $d['source']['href'] }}">{{ $d['source']['name'] }}</a> only. @endif{{ $d['sub'] }}@if ($d['source']) <a href="/loot/groups">All creatures</a>@endif</x-slot:sub>
   </x-page-head>
-  <x-figures :items="$d['figures']" />
+  <x-figures :items="$d['figures']" :five="count($d['figures']) === 5" />
   <x-sheet>
     <x-module span="w5" :first="true" id="h-h" heading="What a corpse held, by loot rule">
       @if ($d['effects']['empty'])
@@ -19,6 +19,25 @@
       @else
       <x-table :rows="$d['kept']['rows']" :columns="$d['kept']['columns']" style="margin-top:1.1rem" />
       <p class="note">Items the uploader received from a corpse over the items the corpse held, by the rule and size in force when it was looted. Under 100% means other members took items.</p>
+      @endif
+    </x-module>
+    <x-module span="w12" :first="true" :last="true" id="h-s" heading="Your share of group loot">
+      @if ($d['share']['empty'])
+      <x-note>{{ $d['share']['empty'] }}</x-note>
+      @else
+      <x-table :rows="$d['share']['rows']" :columns="$d['share']['columns']" style="margin-top:1.1rem" />
+      <p class="note">{{ $d['share']['note'] }}</p>
+      @endif
+    </x-module>
+    <x-module span="w12" :first="true" :last="true" id="h-r" heading="Rolls">
+      @if ($d['rolls']['empty'])
+      <x-note>{{ $d['rolls']['empty'] }}</x-note>
+      @else
+      <x-table :rows="$d['rolls']['rows']" :columns="$d['rolls']['columns']" style="margin-top:1.1rem" />
+      @if ($d['rolls']['thresholds'])
+      <x-table :rows="$d['rolls']['thresholds']" :columns="$d['rolls']['thresholdColumns']" style="margin-top:1.4rem" />
+      @endif
+      <p class="note">{{ $d['rolls']['note'] }}</p>
       @endif
     </x-module>
   </x-sheet>

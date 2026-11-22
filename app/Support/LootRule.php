@@ -30,6 +30,27 @@ enum LootRule: string
         };
     }
 
+    /**
+     * The rules under which each member of a group is owed an equal share of what drops: a roll or a turn decides who
+     * takes an item, so 1 over the group size is the share to compare against (docs/LOOT.md, Metrics: Share of group loot).
+     *
+     * @return list<string>
+     */
+    public static function equalShare(): array
+    {
+        return [self::Group->value, self::RoundRobin->value, self::NeedBeforeGreed->value];
+    }
+
+    /**
+     * The rules under which an item at or above the threshold is rolled for.
+     *
+     * @return list<string>
+     */
+    public static function rolled(): array
+    {
+        return [self::Group->value, self::NeedBeforeGreed->value];
+    }
+
     /** The rows of one rule, or of every rule but personal loot, whose windows each read a table of their own. */
     public static function within(Builder $query, string $column, ?string $rule): Builder
     {
