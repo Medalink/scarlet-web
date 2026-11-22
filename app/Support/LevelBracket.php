@@ -13,6 +13,18 @@ enum LevelBracket: string
     case L50 = '50-59';
     case L60 = '60';
 
+    /** The bracket a level falls in, never `All`; null under level 10. */
+    public static function of(int $level): ?self
+    {
+        foreach ([self::L60, self::L50, self::L40, self::L30, self::L20, self::L10] as $bracket) {
+            if ($level >= $bracket->range()[0]) {
+                return $bracket;
+            }
+        }
+
+        return null;
+    }
+
     /** @return array{0: int, 1: int} */
     public function range(): array
     {

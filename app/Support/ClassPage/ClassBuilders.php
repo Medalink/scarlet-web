@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Support\ClassPage;
+
+use App\Actions\Public\ClassPage\WarlockBuilder;
+use App\Contracts\ClassBuilder;
+use App\Support\PlayerClass;
+
+/**
+ * The builder of each class's page. A class with no builder yet has no page: its address answers 404 and no link or
+ * band points to it.
+ */
+final class ClassBuilders
+{
+    /** @return class-string<ClassBuilder>|null */
+    public static function for(PlayerClass $class): ?string
+    {
+        return match ($class) {
+            PlayerClass::Warlock => WarlockBuilder::class,
+            default => null,
+        };
+    }
+
+    public static function has(PlayerClass $class): bool
+    {
+        return self::for($class) !== null;
+    }
+
+    /** @return list<PlayerClass> the classes that have a page */
+    public static function classes(): array
+    {
+        return array_values(array_filter(PlayerClass::cases(), self::has(...)));
+    }
+}
