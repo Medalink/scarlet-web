@@ -6,37 +6,64 @@ use Illuminate\Support\Facades\DB;
 
 class RebuildKeyedLoot
 {
+    private const array TABLES = ['loot_windows_keyed_daily', 'loot_items_keyed_daily', 'loot_windows_character_keyed_daily', 'loot_kills_keyed_daily', 'loot_kill_items_keyed_daily'];
+
     /**
-     * Fill the five keyed loot tables whole from the windows that carry a corpse key (docs/LOOT.md, Units of counting,
-     * rule 7), in one transaction: a reader sees the old tables or the new ones. The windows are the `loot_opens` rows
-     * and the `peer_opens` rows (what a group member who runs Scarlet sent), first reads only. A corpse is
-     * `(source_kind, source_id, corpse_key, read)`, and for an object the same key more than 5 minutes after the last read
-     * is a second opening of a respawned object. Of the windows of one corpse the table keeps one: a character's own
-     * before a window a member sent, then the earliest read (`peer_opens.at` less `late_s`), so the items are those of one
-     * whole window. A window a member sent has no `read`: a creature's counts as `skin` when every item in it is one that
-     * a `gather_items` row of kind `skin` has (the member skinned the corpse and the leather came in its `LW`), else as
-     * `loot`; an object's takes the read its own windows have most (`loot`, `herb` or `ore`) and an object nobody opened
-     * for itself counts nowhere. A kept window a member sent is also kept out of the three window tables, though not out of
-     * the kills, when a window with no key sits within 5 s of its read with the same items: that window is the sender's own
-     * read of the same corpse (a sender on an addon before the key writes none) and the unkeyed aggregates count it. The
-     * `characters` of a row are the characters whose window the table kept. Kills of a corpse are one row each by `(npc_id,
-     * corpse_key)`, from a session with a `loot` part, whoever got the credit, with the corpse's loot window when one was
-     * kept. Raw SQL for the window functions, the temporary tables and the hyperloglog the aggregates use.
+     * Fill the five keyed loot tables from the windows that carry a corpse key (docs/LOOT.md, Units of counting, rule 7),
+     * in one transaction: a reader sees the old tables or the new ones. The windows are the `loot_opens` rows and the
+     * `peer_opens` rows (what a group member who runs Scarlet sent), first reads only. A corpse is `(source_kind,
+     * source_id, corpse_key, read)`, and for an object the same key more than 5 minutes after the last read is a second
+     * opening of a respawned object. Of the windows of one corpse the table keeps one: a character's own before a window a
+     * member sent, then the earliest read (`peer_opens.at` less `late_s`), so the items are those of one whole window. A
+     * window a member sent has no `read`: a creature's counts as `skin` when every item in it is one that a `gather_items`
+     * row of kind `skin` has (the member skinned the corpse and the leather came in its `LW`), else as `loot`; an object's
+     * takes the read its own windows have most (`loot`, `herb` or `ore`) and an object nobody opened for itself counts
+     * nowhere. A kept window a member sent is also kept out of the three window tables, though not out of the kills, when a
+     * window with no key sits within 5 s of its read with the same items: that window is the sender's own read of the same
+     * corpse (a sender on an addon before the key writes none) and the unkeyed aggregates count it. The `characters` of a
+     * row are the characters whose window the table kept. Kills of a corpse are one row each by `(npc_id, corpse_key)`, from
+     * a session with a `loot` part, whoever got the credit, with the corpse's loot window when one was kept.
+     *
+     * `$from` and `$until` (epoch seconds, `$until` excluded) name the days that changed; both null rebuilds everything.
+     * Rows read days a corpse can reach, so the days rebuilt are those of the range and the day before and after it (a
+     * window a member sent can be read up to a day before it was sent), and the rows of those days are the only ones
+     * deleted and inserted. The windows and kills that decide a corpse are read from a day before to a day after those
+     * days; two rows of one corpse more than a day apart are two corpses in a range and one in a full rebuild.
+     * Raw SQL for the window functions, the temporary tables and the hyperloglog the aggregates use.
      */
-    public function handle(): void
+    public function handle(?int $from = null, ?int $until = null): void
     {
-        DB::transaction(function (): void {
-            foreach (['loot_windows_keyed_daily', 'loot_items_keyed_daily', 'loot_windows_character_keyed_daily', 'loot_kills_keyed_daily', 'loot_kill_items_keyed_daily'] as $table) {
-                DB::table($table)->delete();
+        DB::transaction(function () use ($from, $until): void {
+            DB::statement($this->range(), ['from' => $from, 'until' => $until]);
+            foreach (self::TABLES as $table) {
+                DB::table($table)->whereRaw('bucket >= (select b_from from loot_range) and bucket < (select b_until from loot_range)')->delete();
             }
             DB::statement($this->corpses());
             DB::statement('create index on loot_corpses (source_kind, source_id, corpse_key)');
+            DB::statement('analyze loot_corpses');
             DB::statement($this->items());
             DB::statement($this->kills());
             foreach ($this->inserts() as $insert) {
                 DB::statement($insert);
             }
         });
+    }
+
+    /**
+     * `b_*` bound the days rebuilt, `s_*` the days the rows are read from, and `peer_until` the last day a window sent by
+     * a member can have been sent on for a read inside `s_*`.
+     */
+    private function range(): string
+    {
+        return <<<'SQL'
+            create temporary table loot_range on commit drop as
+            select b_from, b_until, b_from - interval '24 hours' as s_from, b_until + interval '24 hours' as s_until, b_until + interval '48 hours' as peer_until
+            from (
+                select case when p.f is null then '-infinity'::timestamptz else time_bucket('1 day', to_timestamp(p.f) - interval '24 hours') end as b_from,
+                       case when p.u is null then 'infinity'::timestamptz else time_bucket('1 day', to_timestamp(p.u) - interval '1 microsecond') + interval '48 hours' end as b_until
+                from (select :from::bigint as f, :until::bigint as u) p
+            ) b
+            SQL;
     }
 
     private function corpses(): string
@@ -47,6 +74,10 @@ class RebuildKeyedLoot
                 select source_id, mode() within group (order by read) as read
                 from loot_opens
                 where counted and source_kind = 'g' and source_id is not null and read in ('loot', 'herb', 'ore')
+                    and source_id in (
+                        select source_id from peer_opens
+                        where source_kind = 'g' and at >= (select s_from from loot_range) and at < (select peer_until from loot_range)
+                    )
                 group by source_id
             ), skin_items as (
                 select distinct item_id from gather_items where kind = 'skin'
@@ -58,7 +89,7 @@ class RebuildKeyedLoot
                     select d.character_id, d.session_start, d.at, d.source_kind, d.source_id, d.corpse_key, d.item_id, sum(d.quantity) as quantity, bool_or(s.item_id is not null) as skin
                     from peer_drops d
                     left join skin_items s on s.item_id = d.item_id
-                    where d.counted and d.corpse_key is not null
+                    where d.counted and d.corpse_key is not null and d.at >= (select s_from from loot_range) and d.at < (select peer_until from loot_range)
                     group by d.character_id, d.session_start, d.at, d.source_kind, d.source_id, d.corpse_key, d.item_id
                 ) merged
                 group by character_id, session_start, at, source_kind, source_id, corpse_key
@@ -71,11 +102,13 @@ class RebuildKeyedLoot
                         select character_id, session_start, at, source_kind, source_id, item_id, sum(quantity) as quantity
                         from loot_drops
                         where counted and via = 'window' and first_read is not false and source_id is not null and corpse_key is null
+                            and at >= (select s_from from loot_range) and at < (select s_until from loot_range)
                         group by character_id, session_start, at, source_kind, source_id, item_id
                     ) merged
                     group by character_id, session_start, at, source_kind, source_id
                 ) g on g.character_id = o.character_id and g.session_start = o.session_start and g.at = o.at and g.source_kind = o.source_kind and g.source_id = o.source_id
                 where o.counted and o.has_items and o.first_read is not false and o.source_id is not null and o.corpse_key is null
+                    and o.at >= (select s_from from loot_range) and o.at < (select s_until from loot_range)
             ), peer_reads as (
                 select p.at - make_interval(secs => coalesce(p.late_s, 0)) as read_at, p.at, p.character_id, p.session_start, p.source_kind, p.source_id,
                        case when p.source_kind = 'c' then case when sig.item_count > 0 and sig.skin_count = sig.item_count then 'skin' else 'loot' end
@@ -86,6 +119,9 @@ class RebuildKeyedLoot
                 left join peer_signatures sig on sig.character_id = p.character_id and sig.session_start = p.session_start and sig.at = p.at
                     and sig.source_kind = p.source_kind and sig.source_id = p.source_id and sig.corpse_key = p.corpse_key
                 where p.counted and p.has_items and p.first_read is not false and p.source_id is not null and p.corpse_key is not null
+                    and p.at >= (select s_from from loot_range) and p.at < (select peer_until from loot_range)
+                    and p.at - make_interval(secs => coalesce(p.late_s, 0)) >= (select s_from from loot_range)
+                    and p.at - make_interval(secs => coalesce(p.late_s, 0)) < (select s_until from loot_range)
             ), matched_peers as (
                 select distinct r.character_id, r.session_start, r.at, r.source_kind, r.source_id, r.corpse_key
                 from peer_reads r
@@ -95,6 +131,7 @@ class RebuildKeyedLoot
                 select 0 as peer, false as matched, o.at as read_at, o.at, o.character_id, o.session_start, o.source_kind, o.source_id, o.read, o.loot_rule, o.group_size, o.zone_id, o.item_rows, o.corpse_key
                 from loot_opens o
                 where o.counted and o.has_items and o.first_read is not false and o.source_id is not null and o.corpse_key is not null
+                    and o.at >= (select s_from from loot_range) and o.at < (select s_until from loot_range)
                 union all
                 select 1, m.corpse_key is not null, r.read_at, r.at, r.character_id, r.session_start, r.source_kind, r.source_id, r.read, r.loot_rule, r.group_size, r.zone_id, r.item_rows, r.corpse_key
                 from peer_reads r
@@ -125,12 +162,14 @@ class RebuildKeyedLoot
             from loot_corpses c
             join loot_drops d on c.peer = 0 and d.via = 'window' and d.counted and d.character_id = c.character_id and d.session_start = c.session_start and d.at = c.at
                 and d.source_kind = c.source_kind and d.source_id = c.source_id and d.corpse_key = c.corpse_key
+                and d.at >= (select s_from from loot_range) and d.at < (select s_until from loot_range)
             group by c.id, d.item_id
             union all
             select c.id, d.item_id, sum(d.quantity)
             from loot_corpses c
             join peer_drops d on c.peer = 1 and d.counted and d.character_id = c.character_id and d.session_start = c.session_start and d.at = c.at
                 and d.source_kind = c.source_kind and d.source_id = c.source_id and d.corpse_key = c.corpse_key
+                and d.at >= (select s_from from loot_range) and d.at < (select peer_until from loot_range)
             group by c.id, d.item_id
             SQL;
     }
@@ -143,9 +182,11 @@ class RebuildKeyedLoot
                 select distinct on (k.npc_id, k.corpse_key) k.at, k.character_id, k.npc_id, k.corpse_key, k.loot_rule, k.group_size
                 from kills k
                 where k.counted and not k.player and k.npc_id is not null and k.corpse_key is not null
+                    and k.at >= (select s_from from loot_range) and k.at < (select s_until from loot_range)
                 order by k.npc_id, k.corpse_key, (k.loot_rule is null), k.at, k.character_id
             ) picked
             where picked.loot_rule is not null
+                and picked.at >= (select b_from from loot_range) and picked.at < (select b_until from loot_range)
             SQL;
     }
 
@@ -156,19 +197,23 @@ class RebuildKeyedLoot
             <<<'SQL'
                 insert into loot_windows_keyed_daily
                 select time_bucket('1 day', read_at), source_kind, source_id, read, loot_rule, group_size, zone_id, count(*), sum(item_rows), hyperloglog(1024, character_id)
-                from loot_corpses where not dup group by 1, 2, 3, 4, 5, 6, 7
+                from loot_corpses
+                where not dup and read_at >= (select b_from from loot_range) and read_at < (select b_until from loot_range)
+                group by 1, 2, 3, 4, 5, 6, 7
                 SQL,
             <<<'SQL'
                 insert into loot_items_keyed_daily
                 select time_bucket('1 day', c.read_at), c.source_kind, c.source_id, c.read, c.loot_rule, c.group_size, c.zone_id, i.item_id, count(*), sum(i.quantity), hyperloglog(1024, c.character_id)
                 from loot_corpses c join loot_corpse_items i on i.corpse = c.id
-                where not c.dup
+                where not c.dup and c.read_at >= (select b_from from loot_range) and c.read_at < (select b_until from loot_range)
                 group by 1, 2, 3, 4, 5, 6, 7, 8
                 SQL,
             <<<'SQL'
                 insert into loot_windows_character_keyed_daily
                 select time_bucket('1 day', read_at), source_kind, source_id, read, loot_rule, group_size, character_id, count(*), sum(item_rows), sum(item_rows::bigint * item_rows)
-                from loot_corpses where not dup group by 1, 2, 3, 4, 5, 6, 7
+                from loot_corpses
+                where not dup and read_at >= (select b_from from loot_range) and read_at < (select b_until from loot_range)
+                group by 1, 2, 3, 4, 5, 6, 7
                 SQL,
             <<<'SQL'
                 insert into loot_kills_keyed_daily

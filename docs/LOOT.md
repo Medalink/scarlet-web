@@ -519,13 +519,20 @@ object is labelled by what it gives.
   `loot_windows_unkeyed_daily`, `loot_items_unkeyed_daily`, `loot_windows_character_unkeyed_daily`,
   `loot_freeforall_items_unkeyed_daily` and `kills_solo_attributed_daily`. Windows with a key cannot be a sum of daily
   buckets, since one corpse is in the days of every character that read it, so `RebuildKeyedLoot` fills five plain
-  tables whole (`loot_windows_keyed_daily`, `loot_items_keyed_daily`, `loot_windows_character_keyed_daily`,
+  tables (`loot_windows_keyed_daily`, `loot_items_keyed_daily`, `loot_windows_character_keyed_daily`,
   `loot_kills_keyed_daily`, `loot_kill_items_keyed_daily`) in one transaction at the end of every aggregate refresh,
-  under the same lock, so every ingest, re-decode and removal reaches them. The views `loot_windows_counted`,
+  under the same lock, so every ingest, re-decode and removal reaches them. It rebuilds the days of the refreshed range
+  and a day on each side (a window a member sent can be read up to a day before it was sent, which can move a corpse to
+  the day before), deleting and inserting only those days, from the windows and kills of a day beyond them on each side.
+  Two rows of one corpse more than a day apart would be two corpses in a range and one in a whole rebuild; rows of one
+  corpse are seconds apart. The days a rebuild covers are the only ones it corrects, so a change to the counting ships a
+  migration that rebuilds every day once (`2026_12_28`). The views `loot_windows_counted`,
   `loot_items_counted` and `loot_windows_character_counted` put a keyed table under its unkeyed twin with a `keyed`
   column, in the shape of the aggregate they replace, so a read changes one table name. The keyed rows are aggregated
   like the others (a day, a source, a read, a rule, a size, a zone), so a page reads rows in proportion to what was
-  recorded, never a row for each window. Rebuilt whole, 260,000 keyed windows, 780,000 window items, 20,000 windows
+  recorded, never a row for each window. On 280,000 kills, 312,000 own windows and 20,000 windows from members over 30
+  days, a refresh of one day takes 0.65 s and the whole range 5.9 s; rebuilt day by day, the five tables hold the same
+  rows as one whole rebuild. Rebuilt whole, 260,000 keyed windows, 780,000 window items, 20,000 windows
   from members and 260,000 kills (about 100 times the production rows of 2026-11-22, spread over 300 sources) take
   4.8 s on the development machine and leave 2,101 window rows and 6,302 item rows. Spread over 2,000 sources and 30
   days, with no grouping at all, the same rows take 10 s and leave 153,637 and 460,911; the index of sources and items

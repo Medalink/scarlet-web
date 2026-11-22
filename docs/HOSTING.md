@@ -612,6 +612,12 @@ What changed in the code around it:
   marks, and reads the compressed chunks of those days. Two refreshes over one aggregate cannot run at once
   (TimescaleDB holds it for the whole window), so the slice loop waits for the refresh running on a lock and retries a
   slice a few times while TimescaleDB's own policy holds it; one that stays locked fails and `RefreshRollups` retries.
+- The five keyed loot tables are plain tables the 15-minute policy never touches. `RebuildKeyedLoot` rebuilds the days
+  of the same range and a day on each side at the end of the refresh, under the same lock (`RollupLock`), reading the
+  windows of five days for a one-day range instead of every chunk. A one-day refresh on 280,000 kills and 330,000
+  windows over 30 days takes 0.65 s where the whole range takes 5.9 s. A change to how the tables count corrects only
+  the days a refresh covers, so a release that changes it ships a migration that rebuilds every day once, as
+  `2026_12_28` does; it waits up to 120 s for a refresh that is running.
 - TimescaleDB stops a transaction that updates more than 100,000 rows of compressed chunks. `rulesets:merge` and
   `maps:place-points` lift that limit for their own transactions (`DecompressionLimit`). A re-decode deletes by
   character and session and inserts new rows; both work on a compressed chunk, which becomes partly compressed and
