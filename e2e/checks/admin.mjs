@@ -4,11 +4,13 @@ import { signIn } from "./pages.mjs";
 const PAGES = ["/admin", "/admin/api", "/admin/database", "/admin/ingest"];
 const ADMIN = "development:development-1";
 
-/** Every admin page answers 404 to a visitor, so nothing says it exists. */
+/** Every admin page answers a visitor like a path that does not exist: 404 and no cookie. */
 export async function adminIsHiddenFromVisitors(ctx) {
   for (const route of PAGES) {
     const answer = await ctx.http.page(route, { redirect: "manual" });
     if (answer.status !== 404) throw new Error(`${route}: expected 404 for a visitor, saw ${answer.status}: ${answer.text.slice(0, 300)}`);
+    const cookies = answer.headers.getSetCookie();
+    if (cookies.length > 0) throw new Error(`${route}: a visitor's 404 sets ${cookies.map((c) => c.split("=")[0]).join(", ")}, which a missing path does not`);
   }
 }
 

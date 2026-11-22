@@ -982,7 +982,9 @@ pipeline. Four pages: `/admin` (overview), `/admin/api`, `/admin/database` and `
 **Who sees it.** An account opens it when one of its sign-ins is listed in `scarlet.admins`, which `SCARLET_ADMINS`
 sets as `provider:subject` pairs separated by commas (`google:1234`). Email cannot be the key: no email is stored
 (Security, Accounts). The check runs on every request against the account's identities, so editing the variable
-grants or revokes at once, with no migration. Everyone else gets `404`. The account page shows each linked sign-in's
+grants or revokes at once, with no migration. Everyone else gets `404` with no cookie, the answer of a path that
+does not exist (`AdminHiddenFromVisitors`): a visitor with no session gets it before the session starts, and any other
+refusal loses the session and XSRF cookies. The account page shows each linked sign-in's
 `provider:subject`, so the operator can copy theirs. The pages are private (`Cache-Control: private, no-store`,
 `noindex`), stay out of the edge cache and cap each statement like every page.
 

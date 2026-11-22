@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AdminHiddenFromVisitors;
 use App\Http\Middleware\EdgeCacheable;
 use App\Http\Middleware\PageStatementTimeout;
 use App\Http\Middleware\PublicArt;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->prependToPriorityList(before: StartSession::class, prepend: EdgeCacheable::class);
         $middleware->prependToPriorityList(before: StartSession::class, prepend: PublicArt::class);
+        $middleware->prependToPriorityList(before: StartSession::class, prepend: AdminHiddenFromVisitors::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (ApiException $e): void {

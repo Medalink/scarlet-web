@@ -92,7 +92,7 @@ class EdgeCacheable
     }
 
     /** A read from a visitor with no session, no remember cookie and no credentials. */
-    private static function anonymous(Request $request): bool
+    public static function anonymous(Request $request): bool
     {
         if (! $request->isMethodSafe() || $request->headers->has('Authorization') || $request->cookies->has((string) config('session.cookie'))) {
             return false;
