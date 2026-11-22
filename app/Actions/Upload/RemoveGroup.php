@@ -10,6 +10,7 @@ use App\Models\Part;
 use App\Support\DecompressionLimit;
 use App\Support\GroupRefusals;
 use App\Support\RefreshWindow;
+use App\Support\SessionRows;
 use App\Support\SharingGroups;
 use Illuminate\Support\Facades\DB;
 
@@ -23,8 +24,8 @@ class RemoveGroup
 
     /**
      * Remove one sharing group from the server for every character of the install's owner: its parts and
-     * decoded rows go, the rollups are refreshed over the time the characters played, and the group is
-     * refused until the app puts it back (PUT /upload/groups/{key}).
+     * decoded rows go, the sessions forget the group and null its counters, the rollups are refreshed over the time
+     * the characters played, and the group is refused until the app puts it back (PUT /upload/groups/{key}).
      *
      * @return array{group: string, refused: bool, parts_removed: int, rows_removed: int}
      */
@@ -62,5 +63,9 @@ class RemoveGroup
             'update sessions set groups = groups - ?::text where character_id = any(?::bigint[])',
             [$group, '{'.implode(',', $characterIds).'}'],
         );
+        $counters = SessionRows::GROUP_COUNTERS[$group] ?? [];
+        if ($counters !== []) {
+            DB::table('sessions')->whereIn('character_id', $characterIds)->update(array_fill_keys($counters, null));
+        }
     }
 }

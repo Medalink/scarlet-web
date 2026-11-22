@@ -364,6 +364,8 @@ a session where the thing did not happen, except by `groups` on the `sessions` r
 nothing it cannot know: the `sessions` counters of a missing group are null, not 0; `play_spans.afk_ms` is null
 without an `xp` part; no `dungeon_runs` row and no `money_changes` row of `src` `S` is written without a `combat`
 or an `economy` part. A job that sums counters treats null as "not sent", never as 0.
+Removing a group from the server nulls the same counters (`SessionRows::GROUP_COUNTERS`, `distance` for `movement`
+included), so a removed group reads as one never sent.
 
 ## Counting rules
 

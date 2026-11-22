@@ -17,6 +17,18 @@ class SessionRows
     private const array NOT_EXTRA = ['t', 'session', 'start', 'end', 'groups', 'flags', 'played_s'];
 
     /**
+     * The counters each sharing group fills. Without the group's part they are null (docs/ROWS.md, "Missing groups"),
+     * so removing the group from the server nulls them too.
+     */
+    public const array GROUP_COUNTERS = [
+        SharingGroup::ECONOMY => ['money_end', 'copper_earned', 'copper_spent'],
+        SharingGroup::COMBAT => ['kills', 'deaths', 'dungeon_runs'],
+        SharingGroup::QUESTS => ['quests_done'],
+        SharingGroup::XP => ['xp_total'],
+        SharingGroup::MOVEMENT => ['distance'],
+    ];
+
+    /**
      * Write the session row from the decoder's summary (docs/ROWS.md, `sessions`).
      *
      * @param  array<string, mixed>  $summary

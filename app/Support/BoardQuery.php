@@ -112,7 +112,7 @@ class BoardQuery
             ->select('c.name', 'c.race', 'c.class', 'c.account_id', 'c.whole_life', 'c.first_seen_at', 's.deaths', 's.ruleset_id', 's.last_at as at');
 
         return match ($board) {
-            Board::HighestWithoutDying => $query->where('c.whole_life', true)->where('s.deaths', 0)->whereNotNull('s.level')->addSelect('s.level as value'),
+            Board::HighestWithoutDying => $query->where('c.whole_life', true)->where('s.deaths', 0)->where('s.deaths_known', true)->whereNotNull('s.level')->addSelect('s.level as value'),
             Board::MostQuests => $query->where('s.quests', '>', 0)->addSelect('s.quests as value'),
             Board::MostKills => $query->where('s.kills', '>', 0)->addSelect('s.kills as value'),
             Board::MostJumps => $query->where('s.jumps', '>', 0)->addSelect('s.jumps as value'),
@@ -153,6 +153,7 @@ class BoardQuery
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('ruleset_id', $scope->ids))
             ->groupBy('character_id')
             ->selectRaw('character_id, coalesce(sum(deaths), 0) as deaths, coalesce(sum(quests_done), 0) as quests, coalesce(sum(kills), 0) as kills')
+            ->selectRaw('bool_and(deaths is not null) as deaths_known')
             ->selectSub($this->runs($scope), 'runs')
             ->selectSub($this->jumps($scope), 'jumps')
             ->selectRaw('coalesce(sum(distance), 0) as distance, max(level_end) as level, max(end_at) as last_at')

@@ -249,10 +249,14 @@ Everything the public pages show, as read-only JSON. No sign-in. Paths are under
 ## Answers
 
 Every answer is UTF-8 JSON: `{"data": ..., "meta": {...}}`. Times are ISO 8601 in UTC, durations are seconds and money
-is copper. A number that fewer than `meta.min_characters` characters contributed to is `null`, or its row is left out,
-so a single player cannot be read from a statistic. A character answers unless its owner made it private; any other
-character is `404 not_found`, the same as one that does not exist. Money of a character is in the answer only when its
-owner shares the economy. The name of another player is shown only when that player's own character is public.
+is copper. A number that fewer than `meta.min_characters` characters contributed to is `null`, or its row is left out.
+A character answers unless its owner made it private; any other character is `404 not_found`, the same as one that does
+not exist. Money of a character is in the answer only when its owner shares the economy. The name of another player is
+shown only when that player's own character is public.
+
+A character made private or removed, or a sharing group its owner removed from the server, leaves every answer that
+names characters within a minute (30 seconds at the origin, 30 at the edge). Statistics catch up after the rollup
+refresh that the removal starts, within twelve minutes of it.
 
 A ruleset is addressed by slug: `normal`, `pvp`, `roleplay`, `roleplay-pvp`, `hardcore`, or `unidentified` for characters
 whose ruleset is not known yet. The name a page shows is `label`, and `kind` is the ruleset of WoW Forever. A slug from
