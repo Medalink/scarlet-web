@@ -185,10 +185,28 @@ pub(super) fn assign(rows: &[Row], windows: &[(i64, i64)]) -> Vec<Vec<usize>> {
     out
 }
 
-fn excess(rows: &[Row], claim: &Claim, assigned: &[usize]) -> Option<i64> {
-    let landed = *claim.amounts.get("landed")? as i64;
-    let looted = assigned.iter().filter(|&&r| rows[r].looted).count() as i64;
-    Some(looted - landed)
+fn caps(claim: &Claim) -> (Option<i64>, Option<i64>) {
+    let get = |key: &str| claim.amounts.get(key).map(|v| *v as i64);
+    let casts = get("casts").map(|casts| casts - get("unknown").unwrap_or(0));
+    (casts, get("landed"))
+}
+
+fn gap(held: i64, cap: Option<i64>) -> (i64, i64) {
+    cap.map_or((0, 0), |cap| ((held - cap).max(0), (cap - held).max(0)))
+}
+
+fn mismatch(first: (i64, Option<i64>), second: (i64, Option<i64>)) -> i64 {
+    let (over_first, under_first) = gap(first.0, first.1);
+    let (over_second, under_second) = gap(second.0, second.1);
+    over_first.min(under_second) + over_second.min(under_first)
+}
+
+fn imbalance(rows: &[Row], earlier: &Claim, later: &Claim, a: &[usize], b: &[usize]) -> i64 {
+    let looted = |held: &[usize]| held.iter().filter(|&&r| rows[r].looted).count() as i64;
+    let (casts_a, landed_a) = caps(earlier);
+    let (casts_b, landed_b) = caps(later);
+    mismatch((a.len() as i64, casts_a), (b.len() as i64, casts_b))
+        + mismatch((looted(a), landed_a), (looted(b), landed_b))
 }
 
 pub(super) fn settle_seams(
@@ -204,28 +222,35 @@ pub(super) fn settle_seams(
         let (a_rows, b_rows) = (&mut before[a], &mut after[0]);
         let opens = start(later) * 1000 - SEAM_MS;
         let closes = earlier.to * 1000 + SEAM_MS;
-        while let (Some(x), Some(y)) = (excess(rows, earlier, a_rows), excess(rows, later, b_rows))
-        {
-            if x > 0 && y < 0 {
-                let near = a_rows
-                    .iter()
-                    .rev()
-                    .take_while(|&&r| rows[r].at >= opens)
-                    .count();
-                let Some(at) = a_rows.iter().rev().take(near).position(|&r| rows[r].looted) else {
-                    break;
-                };
-                let moved = a_rows.split_off(a_rows.len() - at - 1);
-                b_rows.splice(0..0, moved);
-            } else if y > 0 && x < 0 {
-                let near = b_rows.iter().take_while(|&&r| rows[r].at <= closes).count();
-                let Some(at) = b_rows.iter().take(near).position(|&r| rows[r].looted) else {
-                    break;
-                };
-                a_rows.extend(b_rows.drain(..=at));
-            } else {
+        loop {
+            let now = imbalance(rows, earlier, later, a_rows, b_rows);
+            if now == 0 {
                 break;
             }
+            let forward = a_rows
+                .iter()
+                .rev()
+                .take_while(|&&r| rows[r].at >= opens)
+                .count();
+            let backward = b_rows.iter().take_while(|&&r| rows[r].at <= closes).count();
+            let toward_later = (1..=forward).find(|&k| {
+                let cut = a_rows.len() - k;
+                let moved: Vec<usize> =
+                    a_rows[cut..].iter().chain(b_rows.iter()).copied().collect();
+                imbalance(rows, earlier, later, &a_rows[..cut], &moved) < now
+            });
+            if let Some(k) = toward_later {
+                let cut = a_rows.len() - k;
+                let moved = a_rows.split_off(cut);
+                b_rows.splice(0..0, moved);
+                continue;
+            }
+            let toward_earlier = (1..=backward).find(|&k| {
+                let moved: Vec<usize> = a_rows.iter().chain(&b_rows[..k]).copied().collect();
+                imbalance(rows, earlier, later, &moved, &b_rows[k..]) < now
+            });
+            let Some(k) = toward_earlier else { break };
+            a_rows.extend(b_rows.drain(..k));
         }
     }
 }

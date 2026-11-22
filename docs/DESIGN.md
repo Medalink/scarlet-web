@@ -368,10 +368,12 @@ Rules, in order:
    claim whose window contains it. A row in no window goes to the claim whose nearer edge is closest, within 60 s; at
    equal distance, to the claim that starts later. Seams: a window's edges are whole seconds and Scarlet's clock runs up
    to 1 s behind, so a cast within 2 s of a stop can be assigned to the neighbouring claim. For two consecutive claims
-   of an origin that both name `landed`: while one holds more looted rows than its `landed`, the other fewer, and the
-   first one's row nearest the other lies within 3 s of the other's window, that row moves to the other (with the rows
-   behind it, so the ranges stay disjoint). Without it a stop and a cast 1.2 s later, as a stop-and-cast macro makes,
-   counts one landed, its items and a cast twice. With no row assigned, the claim is `counted`, unless every cast of
+   of an origin: a claim is over when it holds more rows than its `casts` minus `unknown`, or more looted rows than its
+   `landed`, and under when it holds fewer. For each metric the smaller of one claim's excess and the other's shortfall
+   is what the pair counts twice. While the fewest rows at the seam, within 3 s of the other's window, can move to the
+   other claim and lower that sum over both metrics, they move (the rows between them go too, so the ranges stay
+   disjoint). Without it a stop and a cast 1.2 s later, as a stop-and-cast macro makes, counts a cast twice, and a
+   looted one also its landed and items. With no row assigned, the claim is `counted`, unless every cast of
    it is `unknown` (and it names no landed or items) and its window lies inside a Scarlet session that recorded rows
    of the kind: Scarlet recorded the window and dropped those casts as cancelled, so the claim is `superseded` with the
    session's first and last row as evidence. Otherwise, for fishing:

@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 
 /// The version of the rules below. The scheduled pass reconciles a character again when its claims carry an
 /// older one.
-pub const RECONCILE_VERSION: u32 = 2;
+pub const RECONCILE_VERSION: u32 = 3;
 
 const EPOCH_FLOOR: i64 = 1_566_777_600;
 const FUTURE_SLACK: i64 = 86_400;

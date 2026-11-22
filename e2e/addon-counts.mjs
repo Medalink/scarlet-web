@@ -7,7 +7,7 @@
  * order or after a group was removed and restored, and `php artisan addons:audit`.
  *
  * Then small invented characters each hold one case a verdict can get wrong: a cast 0.8 s and one 1.0 s after the
- * stop of the claim before it (rule 3, seams), a session uploaded in two halves, a claim a catch started whose
+ * stop of the claim before it, and one that was not looted (rule 3, seams), a session uploaded in two halves, a claim a catch started whose
  * neighbour's rows were not looted, a claim an `ff` count covers in part (rule 5), a claim whose casts were all
  * cancelled inside a Scarlet session, two characters that hold one record (rule 4) with the lower id uploaded first,
  * with the rows on the higher id, and linked by an account afterwards. Each case names the totals the history has.
@@ -367,6 +367,21 @@ async function seam(label, gap, firstOfLater) {
   check(`${label}: the audit passes`, audited.status === 0, audited.stdout);
 }
 
+async function seamKept() {
+  const earlier = sessionOf([...Array.from({ length: 5 }, (_, i) => looted(10 + 28 * i)), ...Array.from({ length: 5 }, (_, i) => kept(150 + 28 * i))]);
+  const later = sessionOf([kept(300.8), ...Array.from({ length: 5 }, (_, j) => looted(330 + 30 * j)), ...Array.from({ length: 4 }, (_, j) => kept(490 + 30 * j))]);
+  const even = "casts=10;landed=5;items=5;unknown=0";
+  const label = "a cast that was not looted 0.8 s after a stop";
+  await fresh(client);
+  await upload(known([...earlier.parts, ...later.parts, ...countsPartsOf([claimIn(0, 300, even), claimIn(302, 600, even)])]));
+  const state = await settleOne(NAME, (s) => s.gathers === 20 && s.claims === 2 && s.sessions === 2, label);
+  const claims = claimsOf(NAME);
+  check(`${label}: Scarlet's 20 rows, 10 of them looted, and the two claims make 20/10/10, no cast twice`, sum(state.total) === "20/10/10", `${sum(state.scarlet)} + ${sum(state.counted)} = ${sum(state.total)}`);
+  check(`${label}: each claim holds 10 of the rows, so both are superseded`, claims.length === 2 && claims.every((c) => c.status === "superseded" && c.rows_n === 10), JSON.stringify(claims));
+  const audited = audit();
+  check(`${label}: the audit passes`, audited.status === 0, audited.stdout);
+}
+
 async function halves() {
   const casts = Array.from({ length: 20 }, (_, i) => looted(10 + 30 * i, [2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1][i]));
   const whole = sessionOf(casts);
@@ -561,6 +576,7 @@ async function main() {
 
   await seam("a stop and a cast 0.8 s later: windows [0,300] and [302,600], the later session's first cast at 300.8", 2, 300.8);
   await seam("a cast at the stop itself: windows [0,300] and [301,600], the later session's first cast at 300.0", 1, 300);
+  await seamKept();
   await halves();
   await catchStarted();
   await covered();
