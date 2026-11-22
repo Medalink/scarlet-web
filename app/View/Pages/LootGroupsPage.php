@@ -20,7 +20,7 @@ final class LootGroupsPage
     {
         /** @var LootSourceRef|null $source */
         $source = $r['source'];
-        /** @var array{corpses: int, rules: int, largest: int, characters: int, first_at: string|null, last_at: string|null, several: int, rolls: int} $figures */
+        /** @var array{corpses: int, rules: int, largest: int, characters: int, first_at: string|null, last_at: string|null, several: int, rolls: int, groups: int} $figures */
         $figures = $r['figures'];
         /** @var array<string, mixed> $effects */
         $effects = $r['effects'];
@@ -30,6 +30,8 @@ final class LootGroupsPage
         $share = $r['share'];
         /** @var array{choices: list<array{rule: string, quality: int|null, need: int, greed: int, pass: int}>, thresholds: list<array{rule: string, threshold: int, corpses: int, items: int}>} $rolls */
         $rolls = $r['rolls'];
+        /** @var list<array{size: int, kills: int, seconds: int}> $kills */
+        $kills = $r['kills'];
 
         return [
             'sub' => self::sub($figures),
@@ -39,20 +41,21 @@ final class LootGroupsPage
                 ['label' => 'Loot rules seen', 'value' => Format::number($figures['rules'])],
                 ['label' => 'Largest group', 'value' => Format::number($figures['largest'])],
                 ...($source === null
-                    ? [['label' => 'Creatures under two rules', 'value' => Format::number($figures['several'])], ['label' => 'Rolls', 'value' => Format::number($figures['rolls'])]]
+                    ? [['label' => 'Creatures under two rules', 'value' => Format::number($figures['several'])], ['label' => 'Rolls', 'value' => Format::number($figures['rolls'])], ['label' => 'Groups recorded', 'value' => Format::number($figures['groups'])]]
                     : [['label' => 'Characters', 'value' => Format::number($figures['characters'])]]),
             ],
             'effects' => self::effects($effects, $source),
             'kept' => self::kept($kept),
             'share' => GroupRolls::share($share, $source !== null),
             'rolls' => GroupRolls::rolls($rolls, $source !== null),
+            'kills' => GroupKillRates::bySize($kills, $source !== null),
         ];
     }
 
     /**
      * `874 corpses looted under 4 loot rules, in groups of up to 5.`
      *
-     * @param  array{corpses: int, rules: int, largest: int, characters: int, first_at: string|null, last_at: string|null, several: int, rolls: int}  $figures
+     * @param  array{corpses: int, rules: int, largest: int, characters: int, first_at: string|null, last_at: string|null, several: int, rolls: int, groups: int}  $figures
      */
     private static function sub(array $figures): string
     {

@@ -3,6 +3,7 @@
 namespace App\Actions\Public;
 
 use App\Actions\Rollups\GroupFigures;
+use App\Actions\Rollups\GroupKillsBySize;
 use App\Actions\Rollups\GroupShare;
 use App\Actions\Rollups\LooterKept;
 use App\Actions\Rollups\LootRolls;
@@ -19,14 +20,15 @@ class LootGroups
         private readonly LooterKept $kept,
         private readonly GroupShare $share,
         private readonly LootRolls $rolls,
+        private readonly GroupKillsBySize $kills,
     ) {}
 
     /**
      * Everything `/loot/groups` and `/public/loot/groups` show (docs/LOOT.md, Loot rules and group size), over every
      * ruleset and every loot rule but personal loot: the strip, what a corpse held under two rules (`$first` and `$second`,
      * else the two with the most corpses) and what the looter kept, narrowed to `$source` when one is given; and your share
-     * of group loot and the rolls, which no source narrows (a group mate who does not upload has no source for what they
-     * received, and a roll has none). `source_name` is the dictionary name of the narrowed source, null for none or for one
+     * of group loot, the rolls and the kills an hour by group size, which no source narrows (a group mate who does not
+     * upload has no source for what they received, and a roll and a stretch of time have none). `source_name` is the dictionary name of the narrowed source, null for none or for one
      * with no name.
      *
      * @return array<string, mixed>
@@ -41,6 +43,7 @@ class LootGroups
             'kept' => $this->kept->handle($source),
             'share' => $this->share->handle(),
             'rolls' => $this->rolls->handle(),
+            'kills' => $this->kills->handle(),
         ];
     }
 
