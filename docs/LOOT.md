@@ -527,8 +527,8 @@ object is labelled by what it gives.
   `loot_freeforall_items_daily` (the same by item, free for all only, for the one reader; dropped in phase 7 for its unkeyed twin)
   and `loot_receipts_daily` (receipts that came from a corpse). These count one character's first reads, which is what the pages that pair a
   character's windows with its own receipts read (What the looter kept). `loot_received_daily` (every receipt in a
-  group of 2 or more, by rule and size, with no source) counted quest rewards and pushed items, so Your share of
-  group loot reads `loot_drops` itself and nothing reads the aggregate.
+  group of 2 or more, by rule and size, with no source) counted quest rewards and pushed items and is dropped
+  (`2026_12_29`); Your share of group loot reads `loot_drops` itself.
 - **Corpses counted once (phase 7).** Windows without a key are the same aggregates over `corpse_key is null`:
   `loot_windows_unkeyed_daily`, `loot_items_unkeyed_daily`, `loot_windows_character_unkeyed_daily`,
   `loot_freeforall_items_unkeyed_daily` and `kills_solo_attributed_daily`. Windows with a key cannot be a sum of daily
