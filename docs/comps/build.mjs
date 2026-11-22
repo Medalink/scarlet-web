@@ -716,7 +716,7 @@ page("loot.html", "Scarlet loot: what creatures and objects give and how often",
     </section>
     <section class="mod w5 last" aria-labelledby="h-r">
       <h2 id="h-r">Loot rule and group size</h2>
-      <ol class="rank plain"><li><a class="who" href="loot.html">Solo</a><span class="val">311</span><span class="track"><i style="width:60%"></i></span></li><li><a class="who" href="loot.html">Group loot, 2 players</a><span class="val">520</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="loot.html">Free for all, 2 players</a><span class="val">210</span><span class="track"><i style="width:40%"></i></span></li><li><a class="who" href="loot.html">Group loot, 5 players</a><span class="val">78</span><span class="track"><i style="width:15%"></i></span></li></ol>
+      <ol class="rank plain"><li><a class="who" href="groups.html">Solo</a><span class="val">311</span><span class="track"><i style="width:60%"></i></span></li><li><a class="who" href="groups.html">Group loot, 2 players</a><span class="val">520</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="groups.html">Free for all, 2 players</a><span class="val">210</span><span class="track"><i style="width:40%"></i></span></li><li><a class="who" href="groups.html">Group loot, 5 players</a><span class="val">78</span><span class="track"><i style="width:15%"></i></span></li></ol>
     </section>
   </div>
 </div>`);

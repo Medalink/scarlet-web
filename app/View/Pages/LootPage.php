@@ -68,7 +68,7 @@ final class LootPage
                 'value' => Format::number($zone['windows']), 'share' => $zone['windows'] / $top * 100,
             ], array_slice($zones, 0, self::ZONES)),
             'rules' => array_map(fn (array $rule): array => [
-                'label' => self::ruleWords($rule['rule'], $rule['size']), 'value' => Format::number($rule['windows']), 'share' => $rule['windows'] / $mostRule * 100,
+                'label' => self::ruleWords($rule['rule'], $rule['size']), 'href' => '/loot/groups', 'value' => Format::number($rule['windows']), 'share' => $rule['windows'] / $mostRule * 100,
             ], $rules),
         ];
     }
