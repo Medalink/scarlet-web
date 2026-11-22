@@ -202,6 +202,7 @@ impl Tallies {
                 }
             }
         }
+        self.seals.on_cast(now, spell, &mut self.book);
         self.cast_under(now, spell, auras);
         if Set::Opener.has(spell) {
             self.stealth_open(now, spell, auras);
@@ -313,8 +314,7 @@ impl Tallies {
             self.book.add(now, key, left, inst.spell, None);
         }
         if Set::Seal.has(inst.spell) {
-            self.seals
-                .on_gain(now, inst, self.fight_id(), &mut self.book);
+            self.seals.on_gain(now, inst, self.fight_id());
         }
     }
 

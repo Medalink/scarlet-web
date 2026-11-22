@@ -320,9 +320,10 @@ on which line settled it.
 | `res_offer` | the `SR` option type | the `SR` id | deaths that offered it |
 | `res_taken` | the `SR` option type | the `SR` id | of those, the deaths followed by a `U` with no `R` and no `SH` between |
 
-Fates of a seal: `1` judged (a `C` of the `judge` set in the 0.5 s before it ended), `2` replaced (another seal gained
-within 0.5 s of its end), `3` ran out (it ended within 1 s of its duration), `5` the fight it was gained in ended with
-it on, `4` anything else. A seal gained outside a fight and still on at the session end has no fate and writes
+Fates of a seal: `1` judged (a `C` of the `judge` set within 0.5 s of its end, before or after it, whichever of the two
+lines comes first), `2` replaced (another seal gained within 0.5 s of its end, before or after it), `3` ran out (it
+ended within 1 s of its duration), `5` the fight it was gained in ended with it on, `4` anything else. A seal that has
+ended waits 0.5 s for a judgement or a replacement, and a judgement wins over a replacement. A seal gained outside a fight and still on at the session end has no fate and writes
 nothing. Fates of a totem drop: `1` stood its full time (the slot's next line came at least the duration, less 1 s,
 after the drop), `2` replaced by another totem in the slot, `3` gone before its time, `5` the fight it was dropped in
 ended with it standing. A drop outside a fight with no later line has no fate. A totem counts as held until its slot's

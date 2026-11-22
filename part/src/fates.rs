@@ -10,6 +10,11 @@ use std::collections::{BTreeMap, VecDeque};
 
 const JUDGED_MS: i64 = 500;
 const REPLACED_MS: i64 = 500;
+const SETTLED_AFTER_MS: i64 = if JUDGED_MS > REPLACED_MS {
+    JUDGED_MS
+} else {
+    REPLACED_MS
+};
 const RAN_OUT_MS: i64 = 1_000;
 const GAINS_KEEP_MS: i64 = 1_000;
 const FULL_TIME_SLACK_MS: i64 = 1_000;
@@ -35,6 +40,7 @@ struct Ended {
     track: Track,
     at: i64,
     held_ms: i64,
+    replaced: bool,
 }
 
 fn settle(book: &mut Book, track: &Track, fate: i64, at: i64) {
@@ -47,10 +53,14 @@ fn settle(book: &mut Book, track: &Track, fate: i64, at: i64) {
     );
 }
 
-fn run_out_or_other(book: &mut Book, ended: &Ended) {
+fn settle_ended(book: &mut Book, ended: &Ended) {
     let ran_out = ended.track.duration_ms > 0
         && (ended.held_ms - ended.track.duration_ms).abs() <= RAN_OUT_MS;
-    let fate = if ran_out { RAN_OUT } else { OTHER };
+    let fate = match (ended.replaced, ran_out) {
+        (true, _) => REPLACED,
+        (false, true) => RAN_OUT,
+        (false, false) => OTHER,
+    };
     settle(book, &ended.track, fate, ended.at);
 }
 
@@ -63,20 +73,18 @@ pub struct Seals {
 }
 
 impl Seals {
-    pub fn on_gain(&mut self, now: &Now, inst: &Inst, fight: Option<i64>, book: &mut Book) {
-        let waiting = std::mem::take(&mut self.ended);
-        for ended in waiting {
+    pub fn on_gain(&mut self, now: &Now, inst: &Inst, fight: Option<i64>) {
+        for ended in &mut self.ended {
             if now.at <= ended.at + REPLACED_MS {
-                settle(book, &ended.track, REPLACED, ended.at);
-            } else {
-                self.ended.push(ended);
+                ended.replaced = true;
             }
         }
         self.gains.push_back((now.at, inst.id));
-        while self
-            .gains
-            .front()
-            .is_some_and(|(at, _)| *at < now.at - GAINS_KEEP_MS)
+        while self.gains.len() > TRACKED_MAX
+            || self
+                .gains
+                .front()
+                .is_some_and(|(at, _)| *at < now.at - GAINS_KEEP_MS)
         {
             self.gains.pop_front();
         }
@@ -110,19 +118,35 @@ impl Seals {
             settle(book, &track, JUDGED, now.at);
             return;
         }
-        if self
+        let replaced = self
             .gains
             .iter()
-            .any(|(at, id)| *id != inst.id && *at >= now.at - REPLACED_MS)
-        {
-            settle(book, &track, REPLACED, now.at);
-            return;
+            .any(|(at, id)| *id != inst.id && *at >= now.at - REPLACED_MS);
+        if self.ended.len() >= TRACKED_MAX {
+            let oldest = self.ended.remove(0);
+            settle_ended(book, &oldest);
         }
         self.ended.push(Ended {
             track,
             at: now.at,
             held_ms,
+            replaced,
         });
+    }
+
+    /// A `judge` cast within 0.5 s after a seal ended judges it, whichever line came first.
+    pub fn on_cast(&mut self, now: &Now, spell: i64, book: &mut Book) {
+        if !Set::Judge.has(spell) {
+            return;
+        }
+        let waiting = std::mem::take(&mut self.ended);
+        for ended in waiting {
+            if now.at <= ended.at + JUDGED_MS {
+                settle(book, &ended.track, JUDGED, ended.at);
+            } else {
+                self.ended.push(ended);
+            }
+        }
     }
 
     pub fn advance(&mut self, t: i64, book: &mut Book) {
@@ -131,8 +155,8 @@ impl Seals {
         }
         let waiting = std::mem::take(&mut self.ended);
         for ended in waiting {
-            if t > ended.at + REPLACED_MS {
-                run_out_or_other(book, &ended);
+            if t > ended.at + SETTLED_AFTER_MS {
+                settle_ended(book, &ended);
             } else {
                 self.ended.push(ended);
             }
@@ -155,7 +179,7 @@ impl Seals {
 
     pub fn finish(&mut self, book: &mut Book) {
         for ended in std::mem::take(&mut self.ended) {
-            run_out_or_other(book, &ended);
+            settle_ended(book, &ended);
         }
     }
 }
