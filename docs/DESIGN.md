@@ -1047,7 +1047,7 @@ What the layer adds to each page:
 | `/stats`, `/rulesets/{slug}` | The hero and a tally of seven figures with glyphs (characters, highest level, hours, kills, deaths, quests, dungeon runs). **Records across every character**: the deadliest creature, where most characters die, the most dangerous level, the slowest level, the busiest hour, the most run dungeon, the most trained profession (professions only, not weapon skills), the most used emote across characters and the share of experience from quests at the highest level, each from a figure the page already reads, each left out when its figure is missing. One death is not a record: the creature and the place need two. **The next round numbers**: kills, hours, quests, deaths, dungeon runs, jumps and gold earned read off a rule whose right end is the next of 10, 25, 50, 100, 250, 500 and so on. **The climb**: the median played time to each level as a ridge from level 1 to the cap, with a flag at each level where characters stand now (the published reach counts, level by level: reached L less reached L + 1) and a dotted line from the end of the ridge to the cap. The dotted line is not data and says so; a flag at a level past the ridge stands on it. A flag is one level's own count, so one under the character threshold is not drawn. The climb is left out until the curve has two levels. **Classes played** and **Horde and Alliance**: characters by class and by faction (`Rollups\Roster`), a class under the character threshold left out. The modules sit in chapters: Levelling, Danger, Dungeons and skills, Who plays, Gold and time, The world. The tally replaces the old figures row; the count at the level cap stays in the level cap table |
 | `/leaderboards` | The hall: every board with the character that leads it now and how many characters are on it, for the chosen ruleset and server. It replaces the redirect to one board, and the board picker's first choice, "All boards", leads back to it |
 | `/leaderboards/{board}` | The first three rows of the first page stand on a podium of gold, silver and copper plinths; the table lists the rest, and later pages are the table alone. New boards: `most-kills`, creatures killed, and `most-jumps`, jumps, both counted from the first recorded session, and `most-time-by-the-fire`, seconds near a campfire (`camp_stays_daily_character`, counted stays), and `most-fish-caught`, `most-herbs-gathered`, `most-ore-mined` and `most-creatures-skinned`, looted gathering attempts (`gathers_daily_character`, counted rows), and one board of crafts for each crafting profession, `most-alchemy-crafts` to `most-first-aid-crafts` (`crafts_daily_character`, counted rows) |
-| `/c/{name}` | The head carries the class colour on its dot, a glyph on each figure and a rule from level 1 to the cap with the character's level marked. Record tiles carry glyphs. **Standings**: the character's place on every board it is on, among public characters of every ruleset, with gold, silver and copper for the first three places, each linking to its board; shown for a public character only, since a board lists no other. `GET /public/characters/{name}` carries the same list as `standings`. Records tiles for **Jumps** and the **Favourite emote**, and a bar of **distance by mode** (running, walking, mounted, swimming, flying, in yards): each shown only when the character has rows for it, so an owner who stopped sharing `movement` or `social` loses nothing. **Feats**, 74 feats of five tiers each (below). The page shows the six rarest the character has earned in two rows of three, and "View all" opens a dialog with every feat: those earned first, then those not yet earned. **Pinned feats**: the owner pins up to three feats (`characters.pinned_feats`, a list of feat keys in pin order, limit `Character::MAX_PINNED_FEATS`) with a toggle on each card in the dialog, whose header shows "2 of 3 pinned". Pinned feats show for every viewer in a row of their own above the six, in pin order, in the same three-column grid. A pinned feat is not also one of the six: the next feat in the order takes its place. In the dialog a pinned feat stays in its group. A fourth pin is refused until one is unpinned. A pinned feat with no row for the viewer (a gold feat while the economy is hidden, or a feat not stored) is skipped. The toggles are a Livewire component for the owner only (`?as=visitor` shows none); visitors get plain HTML with no Livewire. The dialog stays open at its scroll position while a pin saves. A visitor's page is edge-cached for a short time and the API answer for 30 seconds, so a visitor may see the old pins until they expire. The summary counts feats (`{held} of {total} feats`) and, by the tier each holds now, how many are legend, scarlet, gold, silver and copper. A feat not yet earned shows what copper takes; one with a tier shows what the next takes, and a track of five segments shows how far up it is. The order is rarity: the fewest characters holding the tier this character holds, ties by the higher tier, then the order of the table below; the feats not yet earned follow, closest to copper first. Rarity orders the list and is never shown or published. The gold feats (Earner, Spender, Tycoon, Windfall) are listed only when the economy is shown. `GET /public/characters/{name}` carries the same list as `feats`, each with `pinned`; a pinned feat keeps its place in that list |
+| `/c/{name}` | The head carries the class colour on its dot, a glyph on each figure and a rule from level 1 to the cap with the character's level marked. Record tiles carry glyphs. **Standings**: the character's place on every board it is on, among public characters of every ruleset, with gold, silver and copper for the first three places, each linking to its board; shown for a public character only, since a board lists no other. `GET /public/characters/{name}` carries the same list as `standings`. Records tiles for **Jumps** and the **Favourite emote**, and a bar of **distance by mode** (running, walking, mounted, swimming, flying, in yards): each shown only when the character has rows for it, so an owner who stopped sharing `movement` or `social` loses nothing. **Feats**, 258 feats of five tiers each (below): the 74 general feats and, for every class, its class, talent-tree and role feats. The page shows the six rarest the character has earned in two rows of three, and "View all" opens a dialog with every feat the character can hold: those earned first, then those not yet earned. **Pinned feats**: the owner pins up to three feats (`characters.pinned_feats`, a list of feat keys in pin order, limit `Character::MAX_PINNED_FEATS`) with a toggle on each card in the dialog, whose header shows "2 of 3 pinned". Pinned feats show for every viewer in a row of their own above the six, in pin order, in the same three-column grid. A pinned feat is not also one of the six: the next feat in the order takes its place. In the dialog a pinned feat stays in its group. A fourth pin is refused until one is unpinned. A pinned feat with no row for the viewer (a gold feat while the economy is hidden, or a feat not stored) is skipped. The toggles are a Livewire component for the owner only (`?as=visitor` shows none); visitors get plain HTML with no Livewire. The dialog stays open at its scroll position while a pin saves. A visitor's page is edge-cached for a short time and the API answer for 30 seconds, so a visitor may see the old pins until they expire. The summary counts feats (`{held} of {total} feats`) and, by the tier each holds now, how many are legend, scarlet, gold, silver and copper. A feat not yet earned shows what copper takes; one with a tier shows what the next takes, and a track of five segments shows how far up it is. The order is rarity: the fewest characters holding the tier this character holds, ties by the higher tier, then the order of the table below; the feats not yet earned follow, closest to copper first. Rarity orders the list and is never shown or published. The gold feats (Earner, Spender, Tycoon, Windfall) are listed only when the economy is shown. `GET /public/characters/{name}` carries the same list as `feats`, each with `pinned`; a pinned feat keeps its place in that list |
 
 A feat counts what the character shares, and the gold feats follow the economy switch. An observed count
 (DESIGN "Mid-life characters") starts when Scarlet first saw the character, and the module says "since" that date
@@ -1175,7 +1175,205 @@ tier add up to them.
 | Signature | uses of one emote | 5 | 100 | 500 | 2,000 | 10,000 |
 | Indecisive | talent respecs | 1 | 3 | 10 | 25 | 60 |
 
-The feats and their thresholds are one table in code (`App\Support\Feat`). The counts are stored in
+The other 184 feats belong to a class, a talent tree or a role, and a character only ever sees the ones that apply
+to it. Applicability is by class: the feats of the character's class, the feats of its class's talent trees and the
+role feats of the roles its trees play. A Mage never sees a Warrior feat, and a feat that does not apply is not
+stored at all. A session plays the tree of its login spec: the session's first talent read names its spec tab, the
+tab with the most points (Druid Feral is both Tank and Melee). Class and tree casts count in every session of the
+class, whichever spec that session played. The role feats count only the sessions whose tree plays that role, and
+their hours, meters, runs and kills come from those sessions alone. Casts match spells by their English name in the
+`names` table; `feats:spells` lists, per cast rule, the spell names that table does not hold, so a spell the server
+renamed shows up.
+
+| Feat | For | Counts | Copper | Silver | Gold | Scarlet | Legend |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Battle Cry | Warrior | casts of Battle Shout | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Charger | Warrior | casts of Charge, Intercept, Intervene | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Executioner | Warrior | casts of Execute | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Stance Dancer | Warrior | casts of Battle Stance, Defensive Stance, Berserker Stance | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Mortal Striker | Warrior, Arms | casts of Mortal Strike | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Overpowering | Warrior, Arms | casts of Overpower | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Bloodletter | Warrior, Arms | casts of Rend | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Weapon Master | Warrior, Arms | hours played with Arms as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Bloodthirsty | Warrior, Fury | casts of Bloodthirst | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Whirling | Warrior, Fury | casts of Whirlwind | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Seeing Red | Warrior, Fury | casts of Death Wish, Recklessness, Berserker Rage | 5 | 100 | 500 | 1,500 | 6,000 |
+| Berserker | Warrior, Fury | hours played with Fury as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Sunderer | Warrior, Protection | casts of Sunder Armor, Devastate | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Vengeful | Warrior, Protection | casts of Revenge | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Blockade | Warrior, Protection | casts of Shield Block, Shield Wall, Shield Slam | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Shieldbearer | Warrior, Protection | hours played with Protection as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Judicator | Paladin | casts of Judgement*, Judgment* | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Benediction | Paladin | casts of Blessing of *, Greater Blessing of * | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Last Resort | Paladin | casts of Lay on Hands | 1 | 10 | 40 | 120 | 400 |
+| Untouchable | Paladin | casts of Divine Shield, Divine Protection | 1 | 30 | 125 | 400 | 1,500 |
+| Radiant | Paladin, Holy | casts of Holy Light | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Quickening | Paladin, Holy | casts of Flash of Light | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Purifier | Paladin, Holy | casts of Cleanse, Purify | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Lightbringer | Paladin, Holy | hours played with Holy as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Bastion | Paladin, Protection | casts of Holy Shield, Avenger's Shield | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Lawbringer | Paladin, Protection | casts of Hammer of Justice | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Consecrator | Paladin, Protection | casts of Consecration | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Templar | Paladin, Protection | hours played with Protection as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Sealbearer | Paladin, Retribution | casts of Seal of * | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Hammerfall | Paladin, Retribution | casts of Hammer of Wrath | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Zealot | Paladin, Retribution | casts of Crusader Strike | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Crusader | Paladin, Retribution | hours played with Retribution as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Playing Dead | Hunter | casts of Feign Death | 5 | 100 | 500 | 1,500 | 6,000 |
+| Trapper | Hunter | casts of * Trap | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Marked Prey | Hunter | casts of Hunter's Mark | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Beast Tamer | Hunter | casts of Tame Beast | 1 | 10 | 40 | 120 | 400 |
+| Unleashed | Hunter, Beast Mastery | casts of Bestial Wrath | 1 | 30 | 125 | 400 | 1,500 |
+| Intimidating | Hunter, Beast Mastery | casts of Intimidation | 5 | 100 | 500 | 1,500 | 6,000 |
+| Pet Mender | Hunter, Beast Mastery | casts of Mend Pet, Revive Pet, Feed Pet | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Pack Leader | Hunter, Beast Mastery | hours played with Beast Mastery as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Deadeye | Hunter, Marksmanship | casts of Aimed Shot | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Spreadshot | Hunter, Marksmanship | casts of Multi-Shot | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Arcane Archer | Hunter, Marksmanship | casts of Arcane Shot | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Sharpshooter | Hunter, Marksmanship | hours played with Marksmanship as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Close Quarters | Hunter, Survival | casts of Raptor Strike, Mongoose Bite | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Wing Clipper | Hunter, Survival | casts of Wing Clip | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Escapist | Hunter, Survival | casts of Disengage, Deterrence, Wyvern Sting, Counterattack | 5 | 100 | 500 | 1,500 | 6,000 |
+| Survivalist | Hunter, Survival | hours played with Survival as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Unseen | Rogue | casts of Stealth | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Pickpocket | Rogue | casts of Pick Pocket | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Locksmith | Rogue | casts of Pick Lock | 5 | 100 | 500 | 1,500 | 6,000 |
+| Vanishing Act | Rogue | casts of Vanish | 1 | 30 | 125 | 400 | 1,500 |
+| Eviscerator | Rogue, Assassination | casts of Eviscerate | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Bleeder | Rogue, Assassination | casts of Rupture, Garrote | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Cold Blooded | Rogue, Assassination | casts of Cold Blood | 5 | 100 | 500 | 1,500 | 6,000 |
+| Assassin | Rogue, Assassination | hours played with Assassination as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Cutthroat | Rogue, Combat | casts of Sinister Strike | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Gouger | Rogue, Combat | casts of Gouge | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Blade Dancer | Rogue, Combat | casts of Blade Flurry, Adrenaline Rush, Evasion, Sprint | 5 | 100 | 500 | 1,500 | 6,000 |
+| Swashbuckler | Rogue, Combat | hours played with Combat as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| First Strike | Rogue, Subtlety | casts of Ambush, Cheap Shot | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Sandman | Rogue, Subtlety | casts of Sap | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Bloodspiller | Rogue, Subtlety | casts of Backstab, Hemorrhage, Ghostly Strike | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Shadowstalker | Rogue, Subtlety | hours played with Subtlety as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Fortifier | Priest | casts of Power Word: Fortitude, Prayer of Fortitude | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Aegis | Priest | casts of Power Word: Shield | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Puppeteer | Priest | casts of Mind Control | 1 | 30 | 125 | 400 | 1,500 |
+| Shrieker | Priest | casts of Psychic Scream | 5 | 100 | 500 | 1,500 | 6,000 |
+| Inner Flame | Priest, Discipline | casts of Inner Fire | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Dispeller | Priest, Discipline | casts of Dispel Magic | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Infuser | Priest, Discipline | casts of Power Infusion, Inner Focus | 5 | 100 | 500 | 1,500 | 6,000 |
+| Disciplinarian | Priest, Discipline | hours played with Discipline as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Mender | Priest, Holy | casts of Lesser Heal, Heal, Greater Heal, Flash Heal | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Renewer | Priest, Holy | casts of Renew | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Prayer Leader | Priest, Holy | casts of Prayer of Healing, Holy Nova | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| High Priest | Priest, Holy | hours played with Holy as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Mind Flayer | Priest, Shadow | casts of Mind Flay | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Pain Bringer | Priest, Shadow | casts of Shadow Word: Pain | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Mind Blaster | Priest, Shadow | casts of Mind Blast | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Voidspeaker | Priest, Shadow | hours played with Shadow as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Totemic | Shaman | casts of * Totem | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Pack Runner | Shaman | casts of Ghost Wolf | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Shock Therapy | Shaman | casts of Earth Shock, Flame Shock, Frost Shock | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Twice Born | Shaman | casts of Reincarnation | 1 | 10 | 40 | 120 | 400 |
+| Bolt Thrower | Shaman, Elemental | casts of Lightning Bolt | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Chain Reaction | Shaman, Elemental | casts of Chain Lightning | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Purger | Shaman, Elemental | casts of Purge | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Stormcaller | Shaman, Elemental | hours played with Elemental as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Stormstriker | Shaman, Enhancement | casts of Stormstrike | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Weapon Imbuer | Shaman, Enhancement | casts of * Weapon | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Charged | Shaman, Enhancement | casts of Lightning Shield | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Spiritwalker | Shaman, Enhancement | hours played with Enhancement as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Wave Rider | Shaman, Restoration | casts of Healing Wave, Lesser Healing Wave | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Chain Healer | Shaman, Restoration | casts of Chain Heal | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Tide Turner | Shaman, Restoration | casts of Mana Tide Totem, Nature's Swiftness | 5 | 100 | 500 | 1,500 | 6,000 |
+| Tidecaller | Shaman, Restoration | hours played with Restoration as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Sheep Herder | Mage | casts of Polymorph* | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Portal Master | Mage | casts of Portal: * | 1 | 30 | 125 | 400 | 1,500 |
+| Quartermaster | Mage | casts of Conjure * | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Blinker | Mage | casts of Blink | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Missile Barrage | Mage, Arcane | casts of Arcane Missiles | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Detonator | Mage, Arcane | casts of Arcane Explosion | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Channeler | Mage, Arcane | casts of Evocation, Arcane Power, Presence of Mind | 5 | 100 | 500 | 1,500 | 6,000 |
+| Arcanist | Mage, Arcane | hours played with Arcane as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Firestarter | Mage, Fire | casts of Fireball | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Pyromaniac | Mage, Fire | casts of Pyroblast | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Scorcher | Mage, Fire | casts of Scorch, Fire Blast | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Pyromancer | Mage, Fire | hours played with Fire as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Frostbinder | Mage, Frost | casts of Frostbolt | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Shatterer | Mage, Frost | casts of Frost Nova, Cone of Cold | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Iceborn | Mage, Frost | casts of Ice Block, Ice Barrier | 5 | 100 | 500 | 1,500 | 6,000 |
+| Cryomancer | Mage, Frost | hours played with Frost as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Soul Harvester | Warlock | casts of Drain Soul | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Life Tapper | Warlock | casts of Life Tap | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Fearmonger | Warlock | casts of Fear, Howl of Terror, Death Coil | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Summoner | Warlock | casts of Ritual of Summoning | 1 | 30 | 125 | 400 | 1,500 |
+| Corruptor | Warlock, Affliction | casts of Corruption | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Agonizer | Warlock, Affliction | casts of Bane of Agony, Curse of Agony | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Leech | Warlock, Affliction | casts of Drain Life, Siphon Life | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Hexweaver | Warlock, Affliction | hours played with Affliction as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Demon Caller | Warlock, Demonology | casts of Summon Imp, Summon Voidwalker, Summon Succubus, Summon Felhunter, Summon Felguard, Inferno, Ritual of Doom | 5 | 100 | 500 | 1,500 | 6,000 |
+| Funneler | Warlock, Demonology | casts of Health Funnel | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Pactbinder | Warlock, Demonology | casts of Demonic Sacrifice, Fel Domination, Subjugate Demon, Enslave Demon, Soul Link | 5 | 100 | 500 | 1,500 | 6,000 |
+| Demonologist | Warlock, Demonology | hours played with Demonology as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Bolt Slinger | Warlock, Destruction | casts of Shadow Bolt | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Immolator | Warlock, Destruction | casts of Immolate | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Searing | Warlock, Destruction | casts of Searing Pain | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Destroyer | Warlock, Destruction | hours played with Destruction as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Shapeshifter | Druid | casts of Bear Form, Dire Bear Form, Cat Form, Travel Form, Aquatic Form, Moonkin Form, Tree of Life | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Wild Gift | Druid | casts of Mark of the Wild, Gift of the Wild | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Back From The Brink | Druid | casts of Rebirth | 1 | 10 | 40 | 120 | 400 |
+| Entangler | Druid | casts of Entangling Roots, Hibernate | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Wrathbringer | Druid, Balance | casts of Wrath | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Starcaller | Druid, Balance | casts of Starfire | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Moonlit | Druid, Balance | casts of Moonfire | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Stargazer | Druid, Balance | hours played with Balance as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Mauler | Druid, Feral | casts of Maul, Swipe | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Shredder | Druid, Feral | casts of Claw, Shred, Rake, Mangle | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Savage | Druid, Feral | casts of Ferocious Bite, Rip | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Wildheart | Druid, Feral | hours played with Feral as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Greenthumb | Druid, Restoration | casts of Healing Touch, Regrowth | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Rejuvenator | Druid, Restoration | casts of Rejuvenation | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Swiftmender | Druid, Restoration | casts of Swiftmend, Nature's Swiftness, Tranquility, Innervate | 5 | 100 | 500 | 1,500 | 6,000 |
+| Grovekeeper | Druid, Restoration | hours played with Restoration as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
+| Caretaker | Healer | hours played in sessions played as a healer | 2 | 40 | 150 | 400 | 1,500 |
+| Lifegiver | Healer | healing the client's meter counted in sessions played as a healer | 2,500 | 500,000 | 5,000,000 | 25,000,000 | 150,000,000 |
+| Miracle Worker | Healer | the most healing in one fight in sessions played as a healer | 500 | 8,000 | 40,000 | 120,000 | 300,000 |
+| Field Medic | Healer | dungeon runs in sessions played as a healer | 1 | 15 | 50 | 150 | 400 |
+| Chaplain | Healer | dungeon bosses killed in sessions played as a healer | 1 | 40 | 200 | 750 | 2,000 |
+| Raid Medic | Healer | raid bosses killed in sessions played as a healer | 1 | 20 | 80 | 250 | 650 |
+| Guardian Angel | Healer | dungeon runs with a boss kill and no death in sessions played as a healer | 1 | 8 | 30 | 80 | 250 |
+| Resurrector | Healer | casts of Resurrection, Redemption, Ancestral Spirit, Rebirth, Revive in sessions played as a healer | 1 | 30 | 125 | 400 | 1,500 |
+| Cleanser | Healer | casts of Cleanse, Purify, Dispel Magic, Cure Disease, Abolish Disease, Cure Poison, Abolish Poison, Remove Curse, Remove Lesser Curse in sessions played as a healer | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Battle Medic | Healer | kills in sessions played as a healer | 50 | 1,500 | 6,000 | 20,000 | 100,000 |
+| Stalwart | Tank | hours played in sessions played as a tank | 2 | 40 | 150 | 400 | 1,500 |
+| Damage Sponge | Tank | damage taken the client's meter counted in sessions played as a tank | 5,000 | 750,000 | 7,500,000 | 40,000,000 | 200,000,000 |
+| Unbreakable | Tank | the most damage taken in one fight in sessions played as a tank | 1,000 | 10,000 | 50,000 | 150,000 | 400,000 |
+| Vanguard | Tank | dungeon runs in sessions played as a tank | 1 | 15 | 50 | 150 | 400 |
+| Bulwark | Tank | dungeon bosses killed in sessions played as a tank | 1 | 40 | 200 | 750 | 2,000 |
+| Juggernaut | Tank | raid bosses killed in sessions played as a tank | 1 | 20 | 80 | 250 | 650 |
+| Immovable | Tank | dungeon runs with a boss kill and no death in sessions played as a tank | 1 | 8 | 30 | 80 | 250 |
+| Provoker | Tank | casts of Taunt, Mocking Blow, Challenging Shout, Growl, Challenging Roar, Righteous Defense in sessions played as a tank | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Frontliner | Tank | kills in sessions played as a tank | 50 | 1,500 | 6,000 | 20,000 | 100,000 |
+| First To Fall | Tank | deaths in sessions played as a tank | 1 | 8 | 30 | 80 | 300 |
+| Brawler | Melee DPS | hours played in sessions played as melee DPS | 2 | 40 | 150 | 400 | 1,500 |
+| Bruiser | Melee DPS | damage the client's meter counted in sessions played as melee DPS | 5,000 | 1,000,000 | 10,000,000 | 50,000,000 | 300,000,000 |
+| Onslaught | Melee DPS | the most damage in one fight in sessions played as melee DPS | 1,000 | 10,000 | 50,000 | 150,000 | 400,000 |
+| Skirmisher | Melee DPS | dungeon runs in sessions played as melee DPS | 1 | 15 | 50 | 150 | 400 |
+| Headhunter | Melee DPS | dungeon bosses killed in sessions played as melee DPS | 1 | 40 | 200 | 750 | 2,000 |
+| Warbringer | Melee DPS | raid bosses killed in sessions played as melee DPS | 1 | 20 | 80 | 250 | 650 |
+| Untouched | Melee DPS | dungeon runs with a boss kill and no death in sessions played as melee DPS | 1 | 8 | 30 | 80 | 250 |
+| Silencer | Melee DPS | casts of Kick, Pummel, Shield Bash, Earth Shock, Hammer of Justice, Bash, Feral Charge in sessions played as melee DPS | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Cleaver | Melee DPS | kills in sessions played as melee DPS | 50 | 1,500 | 6,000 | 20,000 | 100,000 |
+| Duelist | Melee DPS | players killed in sessions played as melee DPS | 1 | 20 | 80 | 400 | 2,000 |
+| Longshot | Ranged DPS | hours played in sessions played as ranged DPS | 2 | 40 | 150 | 400 | 1,500 |
+| Artillery | Ranged DPS | damage the client's meter counted in sessions played as ranged DPS | 5,000 | 1,000,000 | 10,000,000 | 50,000,000 | 300,000,000 |
+| Barrage | Ranged DPS | the most damage in one fight in sessions played as ranged DPS | 1,000 | 10,000 | 50,000 | 150,000 | 400,000 |
+| Backliner | Ranged DPS | dungeon runs in sessions played as ranged DPS | 1 | 15 | 50 | 150 | 400 |
+| Spellslinger | Ranged DPS | dungeon bosses killed in sessions played as ranged DPS | 1 | 40 | 200 | 750 | 2,000 |
+| Siegebreaker | Ranged DPS | raid bosses killed in sessions played as ranged DPS | 1 | 20 | 80 | 250 | 650 |
+| Out Of Reach | Ranged DPS | dungeon runs with a boss kill and no death in sessions played as ranged DPS | 1 | 8 | 30 | 80 | 250 |
+| Warden | Ranged DPS | casts of Polymorph*, Fear, Freezing Trap, Hibernate, Entangling Roots, Shackle Undead, Banish, Scare Beast, Wyvern Sting in sessions played as ranged DPS | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Sniper | Ranged DPS | kills in sessions played as ranged DPS | 50 | 1,500 | 6,000 | 20,000 | 100,000 |
+| Bombardier | Ranged DPS | players killed in sessions played as ranged DPS | 1 | 20 | 80 | 400 | 2,000 |
+
+The feats and their thresholds are one table in code: `App\Support\Feat` names them, `FeatRows` holds their cards
+and `FeatRules` holds the rule of every class, tree and role feat. The counts are stored in
 `character_feats` (one row per character and feat, the `value` and when it was counted): `RefreshCharacterFeats`
 runs after every decode of the character and `feats:refresh` queues it for one character or for every
 character with a session, as a daily safety net. `CountFeats` and its counters under

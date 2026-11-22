@@ -1,7 +1,6 @@
 {{-- One glyph of the site's icon set: 24 units, drawn with one round stroke, coloured by the text around it.
      name: characters, level, hours, kills, deaths, quests, dungeons, gold, zones, distance, skills, fish, gather,
-     name: characters, level, hours, kills, deaths, quests, dungeons, gold, zones, distance, skills, fish, gather,
-     jumps, swim, emote, crown, shield, clock, pin, talents, creature, item, tack. --}}
+     jumps, swim, emote, crown, shield, clock, pin, creature, item, tack, talents, spell, heal, pet. --}}
 @props(['name'])
 @php
     $glyphs = [
@@ -29,6 +28,9 @@
         'item' => '<path d="M8 8.6h8l2.2 9.1a2 2 0 0 1-2 2.5H7.8a2 2 0 0 1-2-2.5z"/><path d="M9 8.6 7.9 4.8h8.2L15 8.6M9.6 12.4h4.8"/>',
         'tack' => '<path d="M9 3.8h6M10.2 3.8l-.6 5.4-3 3.4h10.8l-3-3.4-.6-5.4M12 12.6v7.8"/>',
         'talents' => '<circle cx="12" cy="5" r="2.2"/><circle cx="6" cy="18.6" r="2.2"/><circle cx="18" cy="18.6" r="2.2"/><path d="M12 7.2v4.4m0 0-4.9 5.2M12 11.6l4.9 5.2"/>',
+        'spell' => '<path d="m12 3.2 2.1 6.7 6.7 2.1-6.7 2.1-2.1 6.7-2.1-6.7L3.2 12l6.7-2.1z"/>',
+        'heal' => '<path d="M9.4 3.6h5.2v5.8h5.8v5.2h-5.8v5.8H9.4v-5.8H3.6V9.4h5.8z"/>',
+        'pet' => '<circle cx="6.6" cy="10" r="1.9"/><circle cx="12" cy="6.6" r="1.9"/><circle cx="17.4" cy="10" r="1.9"/><path d="M12 12c-2.9 0-5.2 2.4-5.2 4.8 0 1.6 1.2 2.6 2.6 2.6 1 0 1.6-.5 2.6-.5s1.6.5 2.6.5c1.4 0 2.6-1 2.6-2.6 0-2.4-2.3-4.8-5.2-4.8z"/>',
     ];
 @endphp
 <svg {{ $attributes->class('ico') }} viewBox="0 0 24 24" aria-hidden="true">{!! $glyphs[$name] ?? '' !!}</svg>

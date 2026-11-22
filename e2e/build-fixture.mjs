@@ -66,9 +66,9 @@ const EVISCERATE = 2098;
 
 const GROUP_OF = {
   S: "core", Z: "core", ES: "core",
-  P: "movement", G: "build", C: "combat", CH: "combat", A: "combat", DM: "combat", LO: "loot",
+  P: "movement", G: "build", TG: "build", C: "combat", CH: "combat", A: "combat", DM: "combat", LO: "loot",
   SL: "professions", TS: "professions", CB: "professions", RD: "professions", CR: "professions", CS: "professions",
-  IN: "names", SN: "names",
+  IN: "names", SN: "names", TY: "names",
 };
 const GROUP_ORDER = ["core", "movement", "build", "combat", "loot", "professions", "names"];
 
@@ -89,6 +89,9 @@ const ECHO_LINES = [
   [100, "IN", BLACK_PEARL, "Black Pearl"],
   [100, "IN", FISHING_POLE, "Fishing Pole"],
   [100, "SN", SHINY_BAUBLE_SPELL, "Shiny Bauble"],
+  [100, "SN", SINISTER_STRIKE, "Sinister Strike"],
+  [100, "SN", EVISCERATE, "Eviscerate"],
+  [2200, "TY", 1, "Combat"],
   [100, "IN", COPPER_ORE, "Copper Ore"],
   [100, "IN", PEACEBLOOM, "Peacebloom"],
   [100, "IN", SILVERLEAF, "Silverleaf"],
@@ -104,6 +107,7 @@ const ECHO_LINES = [
   [600, "SL", BLACKSMITHING, 40, 75, 0, "s"],
 
   [2000, "G", 16, FISHING_POLE, "", "", ""],
+  [2100, "TG", "s", 1, 1, "", "Combat", 1, "1:31:0", 0, 31, 1, ""],
   [2500, "P", ELWYNN, 3800, 5200, 0],
   [3000, "C", SHINY_BAUBLE_SPELL, ""],
   [3200, ...LURE],

@@ -5,6 +5,8 @@ scarlet-part	1	Echo-Witness	1795270000	names
 0	IN	7971	Black Pearl
 0	IN	6256	Fishing Pole
 0	SN	8087	Shiny Bauble
+0	SN	1752	Sinister Strike
+0	SN	2098	Eviscerate
 0	IN	2770	Copper Ore
 0	IN	2447	Peacebloom
 0	IN	765	Silverleaf
@@ -12,3 +14,4 @@ scarlet-part	1	Echo-Witness	1795270000	names
 0	IN	2318	Light Leather
 0	IN	2679	Charred Wolf Meat
 0	SN	2538	Charred Wolf Meat
+2100	TY	1	Combat

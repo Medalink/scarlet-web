@@ -31,8 +31,7 @@ pub struct Combat {
     meters: BTreeMap<char, Meter>,
 }
 
-/// Seconds of a field, in milliseconds; a missing or unreadable one is 0.
-fn seconds_ms(f: &[&str], i: usize) -> i64 {
+fn seconds_ms_or_zero(f: &[&str], i: usize) -> i64 {
     f.get(i)
         .and_then(|v| v.trim().parse::<f64>().ok())
         .filter(|s| s.is_finite())
@@ -56,7 +55,7 @@ impl Combat {
             ..Cast::default()
         });
         cast.casts += 1;
-        cast.cast_ms += seconds_ms(f, 1);
+        cast.cast_ms += seconds_ms_or_zero(f, 1);
     }
 
     /// A line with an unknown meter letter or a total that is not a number writes nothing.
@@ -73,7 +72,7 @@ impl Combat {
         meter.total += total;
         meter.best = meter.best.max(total);
         meter.fights += 1;
-        meter.fight_ms += seconds_ms(f, 3);
+        meter.fight_ms += seconds_ms_or_zero(f, 3);
     }
 
     pub fn finish(&self, session: i64, w: &mut Rows) {

@@ -10,6 +10,7 @@ use App\Actions\Feats\Counts\MoneyCounts;
 use App\Actions\Feats\Counts\QuestCounts;
 use App\Actions\Feats\Counts\SkillCounts;
 use App\Actions\Feats\Counts\SocialCounts;
+use App\Actions\Feats\Counts\SpecCounts;
 use App\Actions\Feats\Counts\TimeCounts;
 use App\Actions\Feats\Counts\WorldCounts;
 use App\Models\Character;
@@ -30,6 +31,7 @@ class CountFeats
         private readonly SkillCounts $skills,
         private readonly MoneyCounts $money,
         private readonly SocialCounts $social,
+        private readonly SpecCounts $spec,
     ) {}
 
     /**
@@ -51,6 +53,7 @@ class CountFeats
             $this->skills->handle($character),
             $this->money->handle($character),
             $this->social->handle($character),
+            $this->spec->handle($character),
         );
         foreach (Feat::cases() as $feat) {
             if (! array_key_exists($feat->value, $counts)) {
