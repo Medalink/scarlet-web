@@ -15,6 +15,6 @@ export async function removalAnswersAndEmptiesStatus(ctx) {
 export async function characterIsNoLongerServed(ctx) {
   const page = await ctx.http.page(`/c/${NAME}`);
   if (page.status !== 404) throw new Error(`/c/${NAME} should be a 404 page once the upload is removed, saw ${page.status}: ${page.text.slice(0, 300)}`);
-  const answer = await ctx.http.api(`/api/v1/public/characters/${NAME}?limit=25`);
+  const answer = await ctx.http.api(`/api/v1/public/characters/${NAME}?limit=1`);
   if (answer.status !== 404) throw new Error(`GET /api/v1/public/characters/${NAME} should be 404 once the upload is removed, saw ${answer.status}: ${answer.text.slice(0, 300)}`);
 }
