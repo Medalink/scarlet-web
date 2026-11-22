@@ -4,8 +4,9 @@
 #   rollout.sh --rollback    move visitors back to the release before the current one (code only)
 #
 # Blue/green with no failed request: the new release starts as app-blue or app-green next to the active slot, answers
-# /up and /release-notes through nginx's own configuration (loopback ports 8091 and 8092), and only then does nginx's
-# upstream move to it with a reload. nginx finishes the requests it has, the old php-fpm gets SIGQUIT and finishes
+# /up (which queries Postgres) five times in a row and renders /release-notes once, through nginx's own configuration
+# (loopback ports 8091 and 8092), and only then does nginx's upstream move to it with a reload. nginx finishes the
+# requests it has, the old php-fpm gets SIGQUIT and finishes
 # its own, then stops. A release that fails its check never gets visitors: the old one keeps serving and this exits 1.
 # Horizon: the new release's Horizon starts beside the old one (horizon-a, -b or -c, whichever has no container), which
 # stops gracefully in the background (running jobs finish), so no deploy waits for a job. The scheduler is stopped and
@@ -63,9 +64,13 @@ healthy() {
   tries=0
   while [ "$tries" -lt 240 ]; do
     up=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/up" || true)
-    notes=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/release-notes" || true)
-    if [ "$up" = 200 ] && [ "$notes" = 200 ]; then good=$((good + 1)); else good=0; fi
-    [ "$good" -ge 5 ] && return 0
+    if [ "$up" = 200 ]; then good=$((good + 1)); else good=0; fi
+    if [ "$good" -ge 5 ]; then
+      page=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/release-notes" || true)
+      [ "$page" = 200 ] && return 0
+      echo "rollout: /release-notes answered $page"
+      return 1
+    fi
     tries=$((tries + 1))
     sleep 0.5
   done

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Foundation\Events\DiagnosingHealth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Battlenet\BattlenetExtendSocialite;
@@ -24,5 +26,6 @@ class AppServiceProvider extends ServiceProvider
     {
         // Sign in with Battle.net: the Socialite provider registers itself only when this listener is attached.
         Event::listen(SocialiteWasCalled::class, BattlenetExtendSocialite::class);
+        Event::listen(DiagnosingHealth::class, fn () => DB::select('select 1'));
     }
 }
