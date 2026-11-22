@@ -878,6 +878,7 @@ impl Dec<'_> {
             "e" => "e",
             _ => "o",
         };
+        self.camp.on_xp(t, amount);
         self.xp_total += amount;
         *self.level_xp.entry(self.level).or_default() += amount;
         self.fact("xp_gains", t);
@@ -977,6 +978,7 @@ impl Dec<'_> {
         let known = Known {
             afk: self.has.xp,
             crafts: self.has.professions,
+            xp: self.has.xp,
         };
         std::mem::take(&mut self.camp).finish(s, self.end_ms, known, &mut self.w);
         self.baselines.finish(&mut self.w);

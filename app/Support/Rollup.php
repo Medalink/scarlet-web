@@ -37,4 +37,8 @@ enum Rollup: string
     case WorldDeathHeatDailyRuleset = 'world_death_heat_daily_ruleset';
     case WorldSightingHeatDailyRuleset = 'world_sighting_heat_daily_ruleset';
     case CreatureFactsDaily = 'creature_facts_daily';
+    case CampStaysHourlyRuleset = 'camp_stays_hourly_ruleset';
+    case CampHeatDailyRuleset = 'camp_heat_daily_ruleset';
+    case CampBenefitsDailyRuleset = 'camp_benefits_daily_ruleset';
+    case CampStaysDailyCharacter = 'camp_stays_daily_character';
 }

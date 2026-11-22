@@ -17,6 +17,7 @@ enum Board: string
     case MostJumps = 'most-jumps';
     case MostDungeonRuns = 'most-dungeon-runs';
     case MostDistance = 'most-distance';
+    case MostTimeByTheFire = 'most-time-by-the-fire';
 
     public function title(): string
     {
@@ -29,6 +30,7 @@ enum Board: string
             self::MostJumps => 'Most jumps',
             self::MostDungeonRuns => 'Most dungeon runs',
             self::MostDistance => 'Most distance travelled',
+            self::MostTimeByTheFire => 'Most time by the fire',
         };
     }
 
@@ -43,6 +45,7 @@ enum Board: string
             self::MostJumps => 'jumps',
             self::MostDungeonRuns => 'dungeons',
             self::MostDistance => 'distance',
+            self::MostTimeByTheFire => 'hours',
         };
     }
 
@@ -57,6 +60,7 @@ enum Board: string
             self::MostJumps => 'Jumps by public characters, counted from each one\'s first recorded session.',
             self::MostDungeonRuns => 'Dungeon runs by public characters, counted from each one\'s first recorded session.',
             self::MostDistance => 'The length of the recorded path on the world map, in world widths: 1.0 is the width of the map. Teleports and loading screens are left out.',
+            self::MostTimeByTheFire => 'Time spent near a campfire by public characters, counted from each one\'s first recorded session.',
         };
     }
 
@@ -83,6 +87,7 @@ enum Board: string
             self::MostJumps => 'Jumps',
             self::MostDungeonRuns => 'Runs',
             self::MostDistance => 'World widths',
+            self::MostTimeByTheFire => 'Time by the fire',
         };
     }
 
@@ -98,6 +103,7 @@ enum Board: string
         return match ($this) {
             self::FastestTo60, self::FastestTo40, self::FastestTo20 => Format::exact($value),
             self::MostDistance => Format::number($value, 1),
+            self::MostTimeByTheFire => Format::hours($value),
             default => Format::number($value),
         };
     }

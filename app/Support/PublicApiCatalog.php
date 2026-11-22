@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Http\Controllers\Api\V1\Public\CampsController;
 use App\Http\Controllers\Api\V1\Public\CharacterController;
 use App\Http\Controllers\Api\V1\Public\LeaderboardController;
 use App\Http\Controllers\Api\V1\Public\MapController;
@@ -19,7 +20,7 @@ final class PublicApiCatalog
     public const string ROUTE_PREFIX = 'public.';
 
     /** The endpoints whose answers name characters. */
-    public const array NAMES_CHARACTERS = ['leaderboard', 'search', 'character', 'character-series'];
+    public const array NAMES_CHARACTERS = ['leaderboard', 'camps', 'search', 'character', 'character-series'];
 
     /** The shared parameters, named once and referred to by the endpoints. */
     public const array PARAMS = [
@@ -45,6 +46,13 @@ final class PublicApiCatalog
                 'example' => '/stats', 'where' => [],
             ],
             [
+                'name' => 'camps', 'group' => 'Statistics', 'path' => '/camps', 'action' => CampsController::class,
+                'summary' => 'How characters use campfires: visits, how long they last, what gets set up, the Camp Benefits players leave with, play while holding them, where and when characters camp, and the characters with the most time by the fire.',
+                'params' => ['ruleset', 'server'],
+                'returns' => '`data.totals` (`visits`, `characters`, `seconds`, `median_seconds`, `played_seconds` and the counts of visits that earned Camp Benefits, sat, used a tent, logged out or died after, with the AFK and crafting figures), `fires` (visits by the campfire the character placed, and `spell_id` `null` for a fire already there), `camp_benefits`, `benefits` (the nine benefit buffs: `spell_id`, `label`, `effect`, `gains`, `two_hour_gains`, `seconds`, `lost_to_death`, `characters`), `lengths` (visits by `step` of 30 seconds, 40 is 20 minutes and over), `by_level`, `hours` (visit starts by UTC `weekday`, 0 is Sunday, and `hour`), `buffed` (play with Camp Benefits against the same levels across all play), `zones`, `heat` (cells of the zone map with the most visits), `board` (the first rows of `most-time-by-the-fire`) and `rulesets`. A figure is `null` or its row is left out while fewer than `meta.min_characters` characters contributed to it.',
+                'example' => '/camps', 'where' => [],
+            ],
+            [
                 'name' => 'rulesets', 'group' => 'Statistics', 'path' => '/rulesets', 'action' => [StatsController::class, 'rulesets'],
                 'summary' => 'Every ruleset with the numbers of the comparison table and its levelling curve.',
                 'params' => [],
@@ -67,7 +75,7 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'leaderboards', 'group' => 'Leaderboards', 'path' => '/leaderboards', 'action' => [LeaderboardController::class, 'index'],
-                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most jumps, most dungeon runs and most distance.',
+                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most jumps, most dungeon runs, most distance and most time by the fire.',
                 'params' => [],
                 'returns' => '`data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).',
                 'example' => '/leaderboards', 'where' => [],

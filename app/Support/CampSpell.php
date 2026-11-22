@@ -28,6 +28,46 @@ enum CampSpell: int
     case CampTent = 1307230;
     case PlacedCampChair = 1307229;
 
+    /** The label of a stay whose campfire the character did not place. */
+    public const string FIRE_ALREADY_THERE = 'A fire already there';
+
+    /**
+     * The nine benefit buffs, in the order of the camp furniture table.
+     *
+     * @return list<self>
+     */
+    public static function benefits(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $spell): bool => $spell->kind() === CampSpellKind::Benefit));
+    }
+
+    /**
+     * The campfire tiers a character can place, Basic first.
+     *
+     * @return list<self>
+     */
+    public static function campfires(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $spell): bool => $spell->kind() === CampSpellKind::Campfire));
+    }
+
+    /** What a benefit buff gives, as the game's tooltip says; null for a spell that is not one of the nine. */
+    public function effect(): ?string
+    {
+        return match ($this) {
+            self::CampChair => '+2% critical strike chance',
+            self::FirstAidKit => '+56 Stamina',
+            self::SharpeningWheel => '+34 Strength',
+            self::Lodestone => '+90 melee attack power',
+            self::ManaWell => '29 mana every 5 seconds',
+            self::IncenseCandle => '+25 Intellect',
+            self::FactionBanner => '+32 Spirit',
+            self::FishBowl => '+8% to all stats',
+            self::EnchantedLute => '+308 armor, +13 to all attributes, +22 to all resistances',
+            default => null,
+        };
+    }
+
     public function kind(): CampSpellKind
     {
         return match ($this) {

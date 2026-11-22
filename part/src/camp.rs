@@ -47,6 +47,8 @@ const STAY_ENDED_WITH_SESSION: &str = "s";
 const PLACEMENT_CAST_LEAD_MS: i64 = 60_000;
 const DEATH_AFTER_STAY_MS: i64 = 300_000;
 const DEATH_AT_AURA_END_MS: i64 = 2_000;
+const REPLACED_INSTANCE_REMOVAL_MS: i64 = 2_000;
+const ALREADY_ON_AT_FIRST_SCAN_MS: i64 = 10_000;
 
 fn kind_of(spell: i64) -> Option<Kind> {
     SPELLS
@@ -60,9 +62,25 @@ type Pos = Option<[Option<i64>; 3]>;
 struct Held {
     start: i64,
     initial: bool,
+    refreshed: bool,
+    duration: Option<i64>,
     level: Option<i64>,
     zone_id: Option<i64>,
     pos: Pos,
+}
+
+impl Held {
+    fn new(start: i64, f: &[&str], level: Option<i64>, zone_id: Option<i64>, pos: Pos) -> Self {
+        Self {
+            start,
+            initial: f.get(5).is_some_and(|s| s.trim() == "s"),
+            refreshed: false,
+            duration: num(f, 3),
+            level,
+            zone_id,
+            pos,
+        }
+    }
 }
 
 struct Aura {
@@ -72,7 +90,6 @@ struct Aura {
     end: i64,
     held_s: Option<i64>,
     by_session: bool,
-    regained: bool,
 }
 
 /// Which groups beside combat had a part: what they would fill is null without one.
@@ -80,6 +97,7 @@ struct Aura {
 pub struct Known {
     pub afk: bool,
     pub crafts: bool,
+    pub xp: bool,
 }
 
 struct StayOverlaps<'a> {
@@ -92,12 +110,15 @@ struct StayOverlaps<'a> {
 #[derive(Default)]
 pub struct Camp {
     open: BTreeMap<i64, (Kind, Held)>,
+    replaced: BTreeMap<i64, Vec<i64>>,
+    benefit_gains: Vec<i64>,
     done: Vec<Aura>,
     afk_since: Option<i64>,
     afk: Vec<(i64, i64)>,
     casts: Vec<(i64, i64, Kind)>,
     deaths: Vec<i64>,
     crafts: Vec<i64>,
+    xp: Vec<(i64, i64)>,
     pos: Pos,
 }
 
@@ -125,29 +146,32 @@ impl Camp {
         let Some(spell) = num(f, 1) else { return };
         let Some(kind) = kind_of(spell) else { return };
         if f.first() == Some(&"1") {
-            if self.open.contains_key(&spell) {
-                if !matches!(kind, Kind::Benefits | Kind::Benefit) {
-                    return;
+            let sitting = self.open.values().any(|(open, _)| *open == Kind::Sit);
+            let Some((_, held)) = self.open.get_mut(&spell) else {
+                if kind == Kind::Benefits {
+                    self.benefit_gains.push(t);
                 }
-                self.close(spell, t, None, true);
-            }
-            let held = Held {
-                start: t,
-                initial: f.get(5).is_some_and(|s| s.trim() == "s"),
-                level,
-                zone_id,
-                pos: self.pos,
+                self.open
+                    .insert(spell, (kind, Held::new(t, f, level, zone_id, self.pos)));
+                return;
             };
-            self.open.insert(spell, (kind, held));
+            if kind == Kind::Benefits && sitting {
+                self.benefit_gains.push(t);
+            }
+            held.refreshed = true;
+            held.duration = held.duration.max(num(f, 3));
+            self.replaced.entry(spell).or_default().push(t);
             return;
         }
-        self.close(spell, t, num(f, 2), false);
-    }
-
-    fn close(&mut self, spell: i64, t: i64, held_s: Option<i64>, regained: bool) {
+        let replaced = self.replaced.entry(spell).or_default();
+        replaced.retain(|at| t - at <= REPLACED_INSTANCE_REMOVAL_MS);
+        if replaced.pop().is_some() {
+            return;
+        }
         let Some((kind, held)) = self.open.remove(&spell) else {
             return;
         };
+        let held_s = num(f, 2).filter(|_| !held.refreshed);
         self.done.push(Aura {
             spell,
             kind,
@@ -155,7 +179,6 @@ impl Camp {
             end: t,
             held_s,
             by_session: false,
-            regained,
         });
     }
 
@@ -169,6 +192,10 @@ impl Camp {
 
     pub fn on_death(&mut self, t: i64) {
         self.deaths.push(t);
+    }
+
+    pub fn on_xp(&mut self, t: i64, amount: i64) {
+        self.xp.push((t, amount));
     }
 
     pub fn on_craft(&mut self, t: i64) {
@@ -198,7 +225,6 @@ impl Camp {
                 end: end_ms,
                 held_s: None,
                 by_session: true,
-                regained: false,
             });
         }
         if let Some(since) = self.afk_since.take() {
@@ -233,7 +259,6 @@ impl Camp {
             .filter(|a| matches!(a.kind, Kind::Benefits | Kind::Benefit))
         {
             let lost = !a.by_session
-                && !a.regained
                 && self
                     .deaths
                     .iter()
@@ -246,12 +271,39 @@ impl Camp {
                 a.held.level,
                 a.held.zone_id,
             );
+            let outcome = (a.kind == Kind::Benefits).then(|| self.outcome(a, known));
+            let [xp, deaths] = outcome.unwrap_or_default();
             w.int("spell_id", a.spell)
                 .int("seconds", seconds(a))
-                .bool("carried", a.held.initial)
-                .bool("lost_to_death", lost);
+                .bool("carried", carried(session, a))
+                .bool("lost_to_death", lost)
+                .opt("duration", a.held.duration)
+                .opt("xp", xp)
+                .opt("deaths", deaths);
             w.end();
         }
+    }
+
+    fn outcome(&self, a: &Aura, known: Known) -> [Option<i64>; 2] {
+        let (from, to) = (a.held.start, a.end);
+        let death_to = if a.by_session {
+            to
+        } else {
+            to + DEATH_AT_AURA_END_MS
+        };
+        let xp = known.xp.then(|| {
+            self.xp
+                .iter()
+                .filter(|(t, _)| (from..=to).contains(t))
+                .map(|(_, amount)| amount)
+                .sum()
+        });
+        let deaths = self
+            .deaths
+            .iter()
+            .filter(|t| (from..=death_to).contains(t))
+            .count() as i64;
+        [xp, Some(deaths)]
     }
 
     fn stay(
@@ -268,9 +320,10 @@ impl Camp {
         w: &mut Rows,
     ) {
         let (from, to) = (a.held.start, a.end);
-        let benefits = self.done.iter().any(|b| {
-            b.kind == Kind::Benefits && !b.held.initial && (from..=to).contains(&b.held.start)
-        });
+        let benefits = self
+            .benefit_gains
+            .iter()
+            .any(|t| (from..=to).contains(t) && t - session * 1000 > ALREADY_ON_AT_FIRST_SCAN_MS);
         let placed = |wanted: Kind| {
             self.casts
                 .iter()
@@ -292,7 +345,7 @@ impl Camp {
         let within = |spans: &[(i64, i64)]| round_s(overlap_ms(spans, from, to)).min(length);
         prefix(w, "camp_stays", session, from, a.held.level, a.held.zone_id);
         w.int("seconds", length)
-            .bool("carried", a.held.initial)
+            .bool("carried", carried(session, a))
             .str(
                 "ended",
                 if a.by_session {
@@ -314,6 +367,10 @@ impl Camp {
         w.opt("map", map).opt("x", x).opt("y", y);
         w.end();
     }
+}
+
+fn carried(session: i64, a: &Aura) -> bool {
+    a.held.initial || a.held.start - session * 1000 <= ALREADY_ON_AT_FIRST_SCAN_MS
 }
 
 fn seconds(a: &Aura) -> i64 {

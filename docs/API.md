@@ -273,7 +273,7 @@ Take the slugs from `GET /public/rulesets`.
 - Over the limit the answer is `429 rate_limited` with `Retry-After` in seconds and `retry_after` in the body.
   `X-RateLimit-Limit` and `X-RateLimit-Remaining` are on every answer.
 - `Cache-Control: public, max-age=300` and an `ETag` on every successful answer; `max-age=30` on the answers that name
-  characters (leaderboards, search and characters). Send the tag back as `If-None-Match`: an unchanged answer is `304`
+  characters (leaderboards, camps, search and characters). Send the tag back as `If-None-Match`: an unchanged answer is `304`
   with no body. `Vary: Authorization`.
 - CORS is open: `Access-Control-Allow-Origin: *` for `GET` and `OPTIONS`, with `ETag`, `Retry-After` and the rate-limit
   headers exposed to scripts.
@@ -310,6 +310,43 @@ Headline numbers: characters, experience, time recorded, kills, deaths, quests a
 `data.totals`, `data.coverage`, `data.rulesets`. A total is `null` while fewer than `meta.min_characters` characters contributed to it.
 
 Example: `curl https://<host>/api/v1/public/stats`
+
+#### `GET /public/camps`
+
+How characters use campfires: visits, how long they last, what gets set up, the Camp Benefits players leave with, play while holding them, where and when characters camp, and the characters with the most time by the fire.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
+| `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
+
+A visit is a stay by a campfire that began in the session; a stay carried over from the session before is not one. `data`:
+
+- `totals`: `visits`, `characters`, `seconds` (every stay, a carried one included), `median_seconds` (of the visits),
+  `played_seconds` (all play in the scope), and the visits that `earned` Camp Benefits, `sat`, used a tent
+  (`tented`, and `tent_rests` for 30 seconds or more), `logged_out` by the fire or `died_after` within five minutes;
+  `afk_seconds` and the seconds of the stays that know their AFK time (`afk_known_seconds`); `crafted` stays and the
+  stays that know their crafts (`crafts_known`); `placed_tent` and `placed_chair`.
+- `fires`: visits by the campfire the character placed (Basic, Journeyman, Expert) and a row with `spell_id` `null`
+  for a fire that was already there. All four rows are always listed.
+- `camp_benefits` and `benefits`: the Camp Benefits aura and the nine benefit buffs of the camp furniture, each with
+  `gains`, `two_hour_gains` (the gains given for two hours instead of one), `seconds`, `lost_to_death` and
+  `characters`; a buff also has `spell_id`, `label` and `effect`. All nine are
+  listed, most gains first.
+- `lengths`: visits by `step`, the length in 30 seconds, 40 meaning 20 minutes and over. `by_level`: `visits`,
+  `tent_rests` and `played_seconds` at each level. `hours`: visits by UTC `weekday` (0 is Sunday) and `hour`.
+- `buffed`: play while holding Camp Benefits: `seconds`, `xp_seconds` and `deaths_seconds` (the held time of the rows that
+  know their experience and their deaths), `xp` and `deaths`, against `expected_xp` and `expected_deaths`, which are what the same seconds at the
+  same levels give across all play of the scope.
+- `zones`: the ten zones with the most visits. `heat`: the zone map with the most visits (`zone_id`, `map`, `name`)
+  and its 100 by 100 `cells`.
+- `board`: the first ten rows of `most-time-by-the-fire`, shaped like `/leaderboards/{board}`, and `rulesets`.
+
+A figure is `null` or its row is left out while fewer than `meta.min_characters` characters contributed to it. Under
+that limit for the whole scope, the totals are 0 and `characters` is `null`. This answer names characters, so it is
+cached for 30 seconds.
+
+Example: `curl https://<host>/api/v1/public/camps`
 
 #### `GET /public/rulesets`
 
@@ -348,7 +385,7 @@ Example: `curl https://<host>/api/v1/public/rulesets/all/series/levels`
 
 #### `GET /public/leaderboards`
 
-The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most dungeon runs and most distance.
+The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most dungeon runs, most distance and most time by the fire.
 
 `data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).
 

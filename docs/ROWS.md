@@ -289,19 +289,19 @@ bidders are never in the line.
 One row per stay by a campfire: the span the character holds the aura Campfire Nearby (1283391), which the client
 gives only while a fire is in range. `at` is the start of the stay, and `level` and `zone_id` are those at that time.
 The spell ids and their kinds are one table in `part/src/camp.rs` (`App\Support\CampSpell` on the PHP side). An `A 0`
-for an aura that is not open is ignored, and so is an `A 1` for a stay, sit or tent aura that is already open. An `A 1`
-for a Camp Benefits aura or benefit buff that is already open is a new gain: it closes the held row at that time and
-opens the next. A stay still open at the session's end closes at the session's end. The `CP` camp-visit line is not read: it also counts the hour-long Camp Benefits buff, so
+for an aura that is not open is ignored. After a loading screen the client lists every aura again: an `A 1` for each,
+then an `A 0` with the held seconds of the instance it replaced. So an `A 1` for a camp aura that is already open carries
+on the same stay or row, and the `A 0` that follows it within 2 s ends nothing. A stay still open at the session's end closes at the session's end. The `CP` camp-visit line is not read: it also counts the hour-long Camp Benefits buff, so
 it overstates the time at a camp (Medalink/scarlet#2).
 
 | Key | Type | |
 | --- | --- | --- |
 | `seconds` | int | length of the stay: the `seconds` of the `A 0` line, rounded; else the time to the session's end |
-| `carried` | bool | the aura was on at the session start (`A 1` initial `s`): the row continues a stay of the session before |
+| `carried` | bool | the aura was on at the session start: its `A 1` has the initial `s`, or came in the first 10 s of the session, when the first scan lists what is already on. The row continues a stay of the session before |
 | `ended` | string | `w` the aura went while the session ran, `s` the session ended near the fire |
 | `afk_seconds` | int or null | time between `AFK 1` and `AFK 0` inside the stay. Null without an `xp` part |
 | `sat_seconds` | int | time inside the stay that a sit timer aura (Welcoming Campfire, 1229739 or 1289723) was held |
-| `benefits` | bool | an `A 1` of Camp Benefits (1229741) fell inside the stay. A gain that was already on at the session start does not count. A sit that finishes while the buff is held logs no `A 1` in the recordings, so such a stay is false |
+| `benefits` | bool | an `A 1` of Camp Benefits (1229741) fell inside the stay. One for a buff still held counts only while a sit aura is on, which is a sit that finished; without it, it is the scan after a loading screen. A loading screen in the middle of a sit reads as a gain too. A buff refreshed this way stays one `camp_benefits` row, so stays with `benefits` can outnumber the rows gained One in the first 10 s of the session does not count: that is the first scan listing a buff already on |
 | `tent_seconds` | int | time inside the stay that the tent rest aura (1229487) was held |
 | `campfire_spell_id` | int or null | the campfire the character placed (1307227 Basic, 1307252 Journeyman, 1307237 Expert): the last `C` of one from 60 s before the stay to its end, and not before the end of the stay before it, so one cast counts for one stay. Null when the fire was someone else's or already there |
 | `placed_tent`, `placed_chair` | bool | the same for the Camp Tent (1307230) and Camp Chair (1307229) casts |
@@ -311,7 +311,7 @@ it overstates the time at a camp (Medalink/scarlet#2).
 
 The ingest adds `u` and `v` from `map` and `x`, `y` the way it does for `path_points`.
 
-### `camp_benefits` (combat: `A`, `D`)
+### `camp_benefits` (combat: `A`, `D`; xp: `X`)
 
 One row per Camp Benefits aura (1229741) or benefit buff held, whether or not a stay of the same session holds it: the
 nine buffs of the objects placed at a camp are 1229519 Camp Chair, 1230124 First Aid Kit, 1230172 Sharpening Wheel,
@@ -321,9 +321,12 @@ Enchanted Lute. `at` is when it was gained.
 | Key | Type | |
 | --- | --- | --- |
 | `spell_id` | int | |
-| `seconds` | int | held: the `seconds` of the `A 0` line, rounded; else the time to the next gain of the same spell or to the session's end |
-| `carried` | bool | already on at the session start (`A 1` initial `s`) |
-| `lost_to_death` | bool | a `D` line within 2 s of the aura ending, before or after. False when the session ended it or a new gain replaced it |
+| `seconds` | int | held: the `seconds` of the `A 0` line, rounded; else the time from the `A 1` to the end of the aura or of the session. An `A 1` while the aura is on (a refresh, or the scan after a loading screen) carries on the same row, and the `A 0` that follows it within 2 s belongs to the instance it replaced and ends nothing |
+| `carried` | bool | already on at the session start: the `A 1` has the initial `s`, or came in the first 10 s of the session. A row that is not carried is a buff gained in the session |
+| `lost_to_death` | bool | a `D` line within 2 s of the aura ending, before or after. False when the session ended it |
+| `duration` | int or null | seconds the buff was given for: the longest duration of its `A 1` lines. Camp Benefits is given for 3600 or 7200 |
+| `xp` | int or null | experience gained while the aura was held: the sum of the `X` lines from the gain to the end. Only on a Camp Benefits row (1229741); null on the nine buff rows, and null without an `xp` part |
+| `deaths` | int or null | `D` lines from the gain to the end, and up to 2 s after it when a death took the aura. Only on a Camp Benefits row; a row with `lost_to_death` has at least one |
 
 ### `quest_baselines` (quests: `QB`)
 
@@ -548,7 +551,7 @@ or an `economy` part. A job that sums counters treats null as "not sent", never 
 Removing a group from the server nulls the same counters (`SessionRows::GROUP_COUNTERS`, `distance` for `movement`
 included) and `play_spans.afk_ms` for `xp` (`FactTable::groupColumns`), so a removed group reads as one never sent.
 The same holds for `camp_stays`: `afk_seconds` is null without `xp`, `crafts` without `professions`, and `map`, `x`, `y`,
-`u`, `v` without `movement`.
+`u`, `v` without `movement`. `camp_benefits.xp` is null without `xp`.
 
 ## Counting rules
 

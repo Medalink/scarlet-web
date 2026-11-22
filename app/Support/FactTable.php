@@ -93,6 +93,7 @@ enum FactTable: string
                 SharingGroup::PROFESSIONS => ['crafts'],
                 SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
             ],
+            self::CampBenefits => [SharingGroup::XP => ['xp']],
             default => [],
         };
     }

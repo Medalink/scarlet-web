@@ -24,6 +24,8 @@ class BoardQuery
 
     private const string BY_DISTANCE = 's.distance desc, c.id';
 
+    private const string BY_CAMP = 'k.seconds desc, c.id';
+
     /** The query of one board, public characters only, best first. A row carries `name`, `race`, `class`, `account_id`, `whole_life`, `first_seen_at`, `deaths`, `ruleset_id`, `value` and `at`. */
     public function ranked(Board $board, PageScope $scope): Builder
     {
@@ -64,6 +66,7 @@ class BoardQuery
             Board::MostJumps => self::BY_JUMPS,
             Board::MostDungeonRuns => self::BY_RUNS,
             Board::MostDistance => self::BY_DISTANCE,
+            Board::MostTimeByTheFire => self::BY_CAMP,
         };
     }
 
@@ -83,6 +86,7 @@ class BoardQuery
             Board::MostJumps => 'row_number() over (order by '.self::BY_JUMPS.') as place, count(*) over () as total',
             Board::MostDungeonRuns => 'row_number() over (order by '.self::BY_RUNS.') as place, count(*) over () as total',
             Board::MostDistance => 'row_number() over (order by '.self::BY_DISTANCE.') as place, count(*) over () as total',
+            Board::MostTimeByTheFire => 'row_number() over (order by '.self::BY_CAMP.') as place, count(*) over () as total',
         };
     }
 
@@ -122,8 +126,19 @@ class BoardQuery
             Board::MostKills => $query->where('s.kills', '>', 0)->addSelect('s.kills as value'),
             Board::MostJumps => $query->where('s.jumps', '>', 0)->addSelect('s.jumps as value'),
             Board::MostDungeonRuns => $query->where('s.runs', '>', 0)->addSelect('s.runs as value'),
+            Board::MostTimeByTheFire => $query->joinSub($this->campTime($scope), 'k', 'k.character_id', '=', 'c.id')->where('k.seconds', '>', 0)->addSelect('k.seconds as value'),
             default => $query->where('s.distance', '>', 0)->addSelect('s.distance as value'),
         };
+    }
+
+    /** Time by a campfire of each character in the rulesets of the scope, from the by-character aggregate. */
+    private function campTime(PageScope $scope): Builder
+    {
+        return DB::table(Rollup::CampStaysDailyCharacter->value)
+            ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('ruleset_id', $scope->ids))
+            ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('ruleset_id', $scope->ids))
+            ->groupBy('character_id')
+            ->selectRaw('character_id, sum(seconds) as seconds');
     }
 
     /** Dungeon runs of the character: a run that carries on the one before it is the same run. */
