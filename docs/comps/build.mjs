@@ -455,6 +455,22 @@ page("search.html", "Search Scarlet", "search", `
 </div>`);
 
 // ------------------------------------------------------------------------------- creature
+const wilson = (k, n) => {
+  const z2 = 1.959964 ** 2, p = k / n, centre = (p + z2 / (2 * n)) / (1 + z2 / n);
+  const spread = 1.959964 * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / (1 + z2 / n);
+  return { p, low: Math.max(0, centre - spread), high: Math.min(1, centre + spread) };
+};
+const pct = (share) => (share * 100).toFixed(share > 0 && share < 0.01 ? 2 : 1);
+const dropRow = (name, href, k, n, per, cls = "") => {
+  const { p, low, high } = wilson(k, n), tag = cls === "quest" ? `<span class="tag hc">quest item</span>` : "";
+  const link = `<a href="${href}"${cls && cls !== "quest" ? ` class="${cls}"` : ""}>${name}</a>${tag}`;
+  const rate = n < 10
+    ? `<td class="n"><span class="mut">–</span></td><td class="n">–</td>`
+    : `<td class="n"><span class="rb${n < 30 ? " hollow" : ""}" role="img" aria-label="${pct(p)}, range ${pct(low)} to ${pct(high)} percent"><i class="rng" style="left:${(low * 100).toFixed(1)}%;width:${((high - low) * 100).toFixed(1)}%"></i><i class="pt" style="left:${(p * 100).toFixed(1)}%"></i></span>${pct(p)}%</td><td class="n">${pct(low)} to ${pct(high)}</td>`;
+  return { low: n < 10 ? -1 : low, k, html: `<tr><td>${link}</td>${rate}<td class="n">${k} of ${n}</td><td class="n">${per}</td></tr>` };
+};
+const ranked = (rows) => rows.sort((a, b) => b.low - a.low || b.k - a.k).map((row) => row.html).join("\n          ");
+
 page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
 <div class="wrap">
   <section class="pg-head" aria-labelledby="h1">
@@ -462,22 +478,19 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
     <div class="filters">${rulesetSeg}</div>
   </section>
   <section class="week n6" aria-label="Totals">
-    <div><dt>Kills</dt><dd>88,412</dd></div><div><dt>Characters killed</dt><dd>2,104</dd></div><div><dt>Deaths per 1,000 kills</dt><dd>23.8</dd></div>
-    <div><dt>Median killer level</dt><dd>23</dd></div><div><dt>XP a kill at level 23</dt><dd>214</dd></div><div><dt>Corpses looted</dt><dd>61,377</dd></div>
+    <div><dt>Kills</dt><dd>412</dd></div><div><dt>Characters killed</dt><dd>9</dd></div><div><dt>Deaths per 1,000 kills</dt><dd>21.8</dd></div>
+    <div><dt>Median killer level</dt><dd>23</dd></div><div><dt>XP a kill at level 23</dt><dd>214</dd></div><div><dt>Corpses looted</dt><dd>126</dd></div>
   </section>
   <div class="sheet">
     <section class="mod w7 first" aria-labelledby="h-d">
       <div class="mod-head"><h2 id="h-d">Drops</h2>
-        <div class="seg" role="group" aria-label="Loot rule"><button type="button" aria-pressed="true">Solo</button><button type="button" aria-pressed="false">Group loot</button><button type="button" aria-pressed="false">Free for all</button></div></div>
+        <div class="seg" role="group" aria-label="Loot rule"><a href="#" aria-current="true">All rules</a><a href="#">Group loot</a><a href="#">Free for all</a><span class="off" aria-disabled="true">Solo</span></div></div>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Corpses</th><th class="n">Dropped</th></tr></thead>
+        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Corpses</th><th class="n">Per drop</th></tr></thead>
         <tbody>
-          <tr><td><a href="item.html">Stalker Hide</a></td><td class="n"><i class="bar" style="width:5.2rem"></i>41.2%</td><td class="n">38,904</td><td class="n">16,028</td></tr>
-          <tr><td><a href="item.html">Cracked Tooth</a></td><td class="n"><i class="bar" style="width:3.6rem"></i>28.5%</td><td class="n">38,904</td><td class="n">11,088</td></tr>
-          <tr><td><a href="item.html" class="q2">Saltmarsh Cleaver</a></td><td class="n"><i class="bar" style="width:.2rem"></i>1.4%</td><td class="n">38,904</td><td class="n">545</td></tr>
-          <tr><td><a href="item.html" class="q3">Marshwalker Greaves</a></td><td class="n"><i class="bar" style="width:2px"></i>0.21%</td><td class="n">38,904</td><td class="n">82</td></tr>
+          ${ranked([dropRow("Stalker Hide", "item.html", 52, 126, "1.0"), dropRow("Cracked Tooth", "item.html", 36, 126, "1.0"), dropRow("Saltmarsh Cleaver", "item.html", 2, 126, "1.0", "q2"), dropRow("Marshwalker Greaves", "item.html", 1, 126, "1.0", "q3")])}
         </tbody></table></div>
-      <p class="note">A drop rate is drops over corpses looted for the first time under that loot rule. Skinning and second looks are not counted.</p>
+      <p class="note"><span class="tag">skins counted</span> A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset. Skinning is counted as looting here, so these rates are off until it is counted apart.</p>
     </section>
     <section class="mod w5 last" aria-labelledby="h-w">
       <h2 id="h-w">Where it was met</h2>
@@ -506,19 +519,21 @@ page("item.html", "Marshwalker Greaves: where it drops", "search", `
     <div class="filters">${rulesetSeg}</div>
   </section>
   <section class="week n6" aria-label="Totals">
-    <div><dt>Dropped</dt><dd>214</dd></div><div><dt>Sources</dt><dd>3</dd></div><div><dt>Best drop rate</dt><dd>0.34%</dd></div>
+    <div><dt>Dropped</dt><dd>23</dd></div><div><dt>Sources</dt><dd>5</dd></div><div><dt>Best drop rate</dt><dd>21.0%</dd></div>
     <div><dt>Won by need</dt><dd>61%</dd></div><div><dt>Median looter level</dt><dd>24</dd></div><div><dt>First recorded</dt><dd>15 Nov</dd></div>
   </section>
   <div class="sheet">
-    <section class="mod w8 first" aria-labelledby="h-s"><h2 id="h-s">Where it drops</h2>
+    <section class="mod w8 first" aria-labelledby="h-s">
+      <div class="mod-head"><h2 id="h-s">Where it drops</h2>
+        <div class="seg" role="group" aria-label="Loot rule"><a href="#" aria-current="true">All rules</a><a href="#">Solo</a><a href="#">Group loot</a><a href="#">Free for all</a></div></div>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th>Source</th><th>Loot rule</th><th class="n">Drop rate</th><th class="n">Looted</th><th class="n">Dropped</th></tr></thead>
+        <thead><tr><th>Source</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Corpses</th><th class="n">Per drop</th></tr></thead>
         <tbody>
-          <tr><td><a href="creature.html">Hollow Warden</a></td><td>Solo</td><td class="n"><i class="bar" style="width:3.4rem"></i>0.34%</td><td class="n">22,110</td><td class="n">75</td></tr>
-          <tr><td><a href="creature.html">Marsh Stalker</a></td><td>Solo</td><td class="n"><i class="bar" style="width:2.1rem"></i>0.21%</td><td class="n">38,904</td><td class="n">82</td></tr>
-          <tr><td><a href="creature.html">Marsh Stalker</a></td><td>Group loot, uncommon and better</td><td class="n"><i class="bar" style="width:2.3rem"></i>0.23%</td><td class="n">19,640</td><td class="n">45</td></tr>
-          <tr><td><a href="creature.html">Saltmarsh Raider</a></td><td>Solo</td><td class="n"><i class="bar" style="width:.5rem"></i>0.05%</td><td class="n">24,018</td><td class="n">12</td></tr>
+          ${ranked([dropRow("Hollow Warden", "creature.html", 13, 62, "1.0"), dropRow("Marsh Stalker", "creature.html", 6, 126, "1.0"), dropRow("Saltmarsh Raider", "creature.html", 2, 24, "1.0")])}
+          <tr class="hair"><td colspan="5"></td></tr>
+          ${ranked([dropRow("Reed Snapper", "creature.html", 1, 7, "1.0"), dropRow("Marshlight Wisp", "creature.html", 1, 3, "1.0")])}
         </tbody></table></div>
+      <p class="note">A drop rate is corpses of the source that held the item over corpses of the source looted for the first time, one row for each source. Sources looted 10 times or more rank by the low end of the 95% range; below the line, sources looted fewer times show their counts only. Drop rates cover every ruleset.</p>
     </section>
     <section class="mod last" aria-labelledby="h-r"><h2 id="h-r">Rolls in groups</h2>
       <ol class="rank"><li><span class="who">Need</span><span class="val">61% of wins</span><span class="track"><i style="width:61%"></i></span></li><li><span class="who">Greed</span><span class="val">33%</span><span class="track"><i style="width:33%"></i></span></li><li><span class="who">Everyone passed</span><span class="val">6%</span><span class="track"><i style="width:6%"></i></span></li></ol>

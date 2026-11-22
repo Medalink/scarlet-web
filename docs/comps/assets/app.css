@@ -19,7 +19,8 @@
 .pg-head .sub { margin-top: 0.8rem; font-size: 1.08rem; color: var(--text); max-width: 60ch; }
 .filters { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: flex-end; }
 .seg a { font: 500 0.9rem/1 var(--body); color: var(--text); padding: 0.5rem 0.8rem; text-decoration: none; }
-.seg a + a { border-left: 1px solid var(--line2); }
+.seg a + a, .seg a + .off, .seg .off + a { border-left: 1px solid var(--line2); }
+.seg .off { font: 500 0.9rem/1 var(--body); color: var(--muted); padding: 0.5rem 0.8rem; cursor: not-allowed; }
 .seg a:hover { color: var(--fg); }
 .seg a[aria-current="true"] { background: var(--fg); color: var(--ink); font-weight: 700; }
 .pick { font: 500 0.9rem/1 var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line2); border-radius: 3px; padding: 0.45rem 0.7rem; }
@@ -59,8 +60,8 @@
 .data a { text-decoration-thickness: 1px; }
 .data .rk { color: var(--muted); width: 2.6rem; font-family: var(--mono); font-stretch: 85%; font-size: 0.82em; }
 .data td .bar { display: inline-block; height: 0.4rem; background: var(--accent); border-radius: 2px; vertical-align: 0.12em; margin-right: 0.5rem; min-width: 2px; }
-.rb { display: inline-block; position: relative; width: 5rem; height: 0.4rem; background: rgba(255, 255, 255, 0.09); border-radius: 2px; vertical-align: 0.12em; margin-right: 0.6rem; }
-.rb .rng { position: absolute; top: 0; bottom: 0; min-width: 2px; background: rgba(255, 45, 85, 0.38); border-radius: 2px; }
+.rb { display: inline-block; position: relative; width: 5rem; height: 0.5rem; background: rgba(255, 255, 255, 0.09); border-radius: 2px; vertical-align: 0.12em; margin-right: 0.6rem; }
+.rb .rng { position: absolute; top: 0; bottom: 0; min-width: 2px; background: rgba(255, 45, 85, 0.55); border-radius: 2px; }
 .rb .pt { position: absolute; top: 50%; width: 0.6rem; height: 0.6rem; margin: -0.3rem 0 0 -0.3rem; border-radius: 50%; background: var(--accent); }
 .rb.hollow .rng { background: transparent; border: 1px dashed var(--accent); }
 .rb.hollow .pt { background: var(--ink); border: 2px solid var(--accent); }
@@ -154,7 +155,7 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
   .top.solid .acct { margin-left: auto; padding: 0.4rem 0.7rem; }
   .top.solid .nav { order: 3; flex: 0 0 100%; overflow-x: auto; scrollbar-width: none; gap: 1.3rem; white-space: nowrap; }
   .filters .seg, .mod > .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-  .seg a, .seg button { white-space: nowrap; }
+  .seg a, .seg .off, .seg button { white-space: nowrap; }
   .row { grid-template-columns: minmax(0, 1fr); }
   .row .act { grid-column: 1; grid-row: auto; flex-wrap: wrap; margin-top: 0.5rem; }
   .own .sp { margin-left: 0; flex-wrap: wrap; }
