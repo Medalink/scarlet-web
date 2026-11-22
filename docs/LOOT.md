@@ -53,12 +53,21 @@ Six views. Four extend pages that exist. Each new page gets a comp in `docs/comp
 
 Answers: what has been recorded, how much of it, and where to go for an item or a zone.
 
-- Head: `h1` Loot. Facts line: loot windows, characters and the recorded date range.
-- Figure strip, six: Loot windows, Corpses looted, Sources, Items, Uncommon or better, Characters.
-- Filters as query parameters, no script needed: a segment Creatures, Objects, Containers; a zone pick; a level
-  range; a quality pick; a field that searches creatures, objects and items only.
-- Module, full width, **Sources**: Source, Zone, Level, Corpses looted, Items seen, Most common item with its rate
-  and range, Characters. Default order is corpses looted. `?sort=` takes `windows`, `items`, `level`.
+- Head: `h1` Loot. Facts line: corpses looted and skinned, characters and the recorded date range.
+- Figure strip, six: Corpses looted, Skinned, Sources, Items, Uncommon or better, Characters. Corpses looted and
+  Skinned are creature windows read for loot and for skinning; Sources are the creatures, objects and containers
+  that have a window; Items and Uncommon or better count distinct items (quality 2 or better) of loot, skinning,
+  herb, ore and container windows. Fishing is in none of them. A zone filter narrows the strip.
+- Filters as query parameters of one form, no script needed: `view` (Creatures, Objects, Containers, Items), a zone
+  pick, a level range (`min`, `max`), a quality pick, a field that searches creatures, objects and items only, and
+  `sort`. Level is the creature's level for a creature (`creature_facts_daily`) and the looter's level for an object
+  or a container (`loot_opens.level`), since the aggregates carry no level; a source matches a range when its own
+  range overlaps it. The quality pick keeps the sources that dropped an item of that quality or better, and the
+  items of that quality or better in the Items view. The field matches a name, an id, or an item the source
+  dropped.
+- Module, full width, **Sources**: Source, Zone (where most of its windows were), Level, Corpses looted (Opened for
+  an object or a container), Items seen, Most common item with its rate and range, Characters. Default order is
+  corpses looted. `?sort=` takes `windows`, `items`, `level`. 25 rows a page, `?cursor=` as the leaderboards do.
 - Module, full width, **Items** (`?view=items`): Item with its icon and quality colour, Dropped, Sources, Best
   source with rate and range, Zone it dropped most in.
 - Module, half, **Zones**: a rank of zones by loot windows, each linking to `/loot?zone={id}`.
@@ -103,9 +112,11 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
 Answers: what a chest, herb, vein or other object gives.
 
 The creature template without kills and deaths. `h1` is the object's name, or `Object 649094` until the addon
-writes object names. Facts line: where it was opened, at which levels, what it gives. Modules: What it gives (the
-Drops table), Drop rate by loot rule, Where it was opened (map cells, phase 2). Search finds an object by id and,
-through its items, by what it gives.
+writes object names. Facts line: where it was opened, at which looter levels, what it gives. Figures: opened, items,
+characters, zones. Modules: What it gives (the Drops table over the read the object has most windows of, with the
+loot rule control for a chest), Drop rate by loot rule (phase 4), Where it was opened (the positions of the newest
+600 windows). The bobber of a fishing line, object 35591, is not an object page: it goes to `/professions/fishing`.
+Search finds an object by id and, through its items, by what it gives.
 
 ### Item sources, `/items/{id}`
 

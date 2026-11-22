@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const out = process.argv[2];
-const NAV = [["stats", "Stats"], ["world", "Map"], ["camps", "Camps"], ["fishing", "Professions"], ["rulesets", "Rulesets"], ["leaderboards", "Leaderboards"], ["search", "Search"], ["developers", "API"]];
+const NAV = [["stats", "Stats"], ["world", "Map"], ["loot", "Loot"], ["camps", "Camps"], ["fishing", "Professions"], ["rulesets", "Rulesets"], ["leaderboards", "Leaderboards"], ["search", "Search"], ["developers", "API"]];
 const TRADES_ALL = ["Fishing", "Herbalism", "Mining", "Skinning", "Alchemy", "Blacksmithing", "Enchanting", "Engineering", "Leatherworking", "Tailoring", "Cooking", "First Aid"];
 const TRADES = (cur) => TRADES_ALL.map((name) => `<a href="#"${name === cur ? ' aria-current="page"' : ""}>${name}</a>`).join("");
 const mark = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>`;
@@ -547,6 +547,83 @@ page("item.html", "Marshwalker Greaves: where it drops", "search", `
     </section>
     <section class="mod last" aria-labelledby="h-r"><h2 id="h-r">Rolls in groups</h2>
       <ol class="rank"><li><span class="who">Need</span><span class="val">61% of wins</span><span class="track"><i style="width:61%"></i></span></li><li><span class="who">Greed</span><span class="val">33%</span><span class="track"><i style="width:33%"></i></span></li><li><span class="who">Everyone passed</span><span class="val">6%</span><span class="track"><i style="width:6%"></i></span></li></ol>
+    </section>
+  </div>
+</div>`);
+
+page("object.html", "Weathered Reed Chest: what it gives", "search", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1" style="grid-template-columns:minmax(0,1fr)">
+    <div><h1 id="h1">Weathered Reed Chest</h1><p class="sub">Opened in <a href="zone.html">Saltmarsh Reach</a> at levels 21 to 24. Gives Reed Twine, Salt-Cured Pelt or Marshwalker Greaves.</p></div>
+  </section>
+  <section class="week" aria-label="Totals">
+    <div><dt>Opened</dt><dd>48</dd></div><div><dt>Items</dt><dd>3</dd></div><div><dt>Characters</dt><dd>2</dd></div><div><dt>Zones</dt><dd>1</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w7 first last" aria-labelledby="h-g">
+      <div class="mod-head"><h2 id="h-g">What it gives</h2>
+        <div class="seg" role="group" aria-label="Loot rule"><a href="#" aria-current="true">All rules</a><a href="#">Group loot</a><a href="#">Round robin</a><span class="off" aria-disabled="true">Free for all</span></div></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Item</th><th class="n">Drop rate</th><th class="n">Range</th><th class="n">Opened</th><th class="n">Per drop</th></tr></thead>
+        <tbody>
+          ${ranked([dropRow("Reed Twine", "item.html", 28, 48, "1.0"), dropRow("Salt-Cured Pelt", "item.html", 19, 48, "1.0"), dropRow("Marshwalker Greaves", "item.html", 1, 48, "1.0", "q3")])}
+        </tbody></table></div>
+      <p class="note">A drop rate is times opened that held the item over times opened for the first time. The band is the 95% range; from 10 to 29 openings it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.</p>
+    </section>
+    <section class="mod w5 first last" aria-labelledby="h-w">
+      <h2 id="h-w">Where it was opened</h2>
+      <div class="mapbox" style="aspect-ratio:1 / 1"><canvas id="map" role="img" aria-label="Map cells where players stood when they opened this object"></canvas></div>
+      <p class="note">Cells mark where the player stood, not where the object was.</p>
+    </section>
+  </div>
+</div>`, `
+Comp.heatmap("map", { seed: 7, hot: [[3600, 4800, 600, 260], [4100, 4500, 400, 120]] });
+`);
+
+const lootSource = (name, href, zone, level, opened, items, top, characters) => {
+  const [item, k] = top, { p, low, high } = wilson(k, opened);
+  const common = opened < 10 ? `<span class="mut">${k} of ${opened}</span>` : `<a href="item.html">${item}</a> <span class="mut">${pct(p)}%, ${pct(low)} to ${pct(high)}</span>`;
+  return `<tr><td><a href="${href}">${name}</a></td><td><a href="zone.html">${zone}</a></td><td class="n">${level}</td><td class="n">${opened}</td><td class="n">${items}</td><td>${opened < 10 ? `<a href="item.html">${item}</a> ` : ""}${common}</td><td class="n">${characters}</td></tr>`;
+};
+page("loot.html", "Scarlet loot: what creatures and objects give and how often", "loot", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1" style="grid-template-columns:minmax(0,1fr)">
+    <div><h1 id="h1">Loot</h1><p class="sub">1,284 corpses looted and 412 skinned by 17 characters, 5 Nov to 22 Nov 2026.</p></div>
+  </section>
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Corpses looted</dt><dd>1,284</dd></div><div><dt>Skinned</dt><dd>412</dd></div><div><dt>Sources</dt><dd>61</dd></div>
+    <div><dt>Items</dt><dd>188</dd></div><div><dt>Uncommon or better</dt><dd>34</dd></div><div><dt>Characters</dt><dd>17</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w12 first last" aria-labelledby="h-s">
+      <div class="mod-head"><h2 id="h-s">Sources</h2>
+        <div class="seg" role="group" aria-label="Show"><a href="#" aria-current="true">Creatures</a><a href="#">Objects</a><a href="#">Containers</a><a href="#">Items</a></div></div>
+      <form class="find" role="search" action="loot.html">
+        <label class="vh" for="f-q">Search</label><input id="f-q" name="q" type="search" placeholder="Creature, object or item">
+        <select class="pick" name="zone" aria-label="Zone"><option value="">Every zone</option><option>Saltmarsh Reach</option><option>Hollowmere</option><option>The Cinder Flats</option></select>
+        <input name="min" type="number" min="1" max="70" placeholder="Level from" aria-label="Level from"><input name="max" type="number" min="1" max="70" placeholder="to" aria-label="Level to">
+        <select class="pick" name="quality" aria-label="Quality"><option value="">Any quality</option><option>Uncommon or better</option><option>Rare or better</option><option>Epic</option></select>
+        <select class="pick" name="sort" aria-label="Sort by"><option>Corpses looted</option><option>Items seen</option><option>Level</option></select>
+        <button class="btn quiet" type="submit">Apply</button>
+      </form>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Source</th><th>Zone</th><th class="n">Level</th><th class="n">Corpses looted</th><th class="n">Items seen</th><th>Most common item</th><th class="n">Characters</th></tr></thead>
+        <tbody>
+          ${lootSource("Marsh Stalker", "creature.html", "Saltmarsh Reach", "22 to 24", 126, 14, ["Stalker Hide", 52], 6)}
+          ${lootSource("Hollow Warden", "creature.html", "Hollowmere", "25 to 27", 62, 9, ["Warden's Cloth", 21], 4)}
+          ${lootSource("Saltmarsh Raider", "creature.html", "Saltmarsh Reach", "23 to 25", 24, 7, ["Raider's Wrap", 9], 3)}
+          ${lootSource("Reed Snapper", "creature.html", "Saltmarsh Reach", "19 to 21", 7, 4, ["Snapper Tooth", 4], 2)}
+        </tbody></table></div>
+      <p class="pager"><a href="#">Next 25</a></p>
+      <p class="note">Corpses looted counts each corpse once, the first time a character read it. Most common item is the item that was in the most of them, with its 95% range; under 10 corpses it shows its counts only. Skinning is counted apart. 295 fishing catches are on <a href="fishing.html">Fishing</a>.</p>
+    </section>
+    <section class="mod w7 first" aria-labelledby="h-z">
+      <h2 id="h-z">Zones</h2>
+      <ol class="rank plain"><li><a class="who" href="loot.html">Saltmarsh Reach</a><span class="val">612</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="loot.html">Hollowmere</a><span class="val">340</span><span class="track"><i style="width:56%"></i></span></li><li><a class="who" href="loot.html">The Cinder Flats</a><span class="val">201</span><span class="track"><i style="width:33%"></i></span></li><li><a class="who" href="loot.html">Greywater Deep</a><span class="val">88</span><span class="track"><i style="width:14%"></i></span></li></ol>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-r">
+      <h2 id="h-r">Loot rule and group size</h2>
+      <ol class="rank plain"><li><a class="who" href="loot.html">Solo</a><span class="val">311</span><span class="track"><i style="width:60%"></i></span></li><li><a class="who" href="loot.html">Group loot, 2 players</a><span class="val">520</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="loot.html">Free for all, 2 players</a><span class="val">210</span><span class="track"><i style="width:40%"></i></span></li><li><a class="who" href="loot.html">Group loot, 5 players</a><span class="val">78</span><span class="track"><i style="width:15%"></i></span></li></ol>
     </section>
   </div>
 </div>`);
