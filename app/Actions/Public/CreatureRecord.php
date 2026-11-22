@@ -3,6 +3,7 @@
 namespace App\Actions\Public;
 
 use App\Actions\Rollups\DropRates;
+use App\Actions\Rollups\KillLoot;
 use App\Actions\Rollups\SoloLoot;
 use App\Actions\Rollups\SourceDrops;
 use App\Actions\Rollups\SourceRuleArms;
@@ -29,6 +30,7 @@ class CreatureRecord
         private readonly SourceDrops $dropTable,
         private readonly SourceRuleArms $arms,
         private readonly SoloLoot $solo,
+        private readonly KillLoot $looted,
         private readonly WorldHeat $heat,
         private readonly MapZones $zones,
         private readonly CreaturePoints $points,
@@ -53,6 +55,7 @@ class CreatureRecord
             return null;
         }
         $ids = $scope->ids;
+        $table = $this->dropTable->handle(self::SOURCE, $id, $rule);
 
         return [
             'scope' => $scope,
@@ -64,11 +67,12 @@ class CreatureRecord
             'deaths' => $this->deaths($name, $ids),
             'deaths_by_level' => $this->deathsByLevel($name, $ids),
             'drops' => $this->drops->handle(self::SOURCE, $id),
-            'drop_table' => $this->dropTable->handle(self::SOURCE, $id, $rule),
+            'drop_table' => $table,
             'skin_table' => $this->dropTable->handle(self::SOURCE, $id, null, LootRead::Skin),
             'rule_arms' => $this->arms->handle(self::SOURCE, $id, ArmSplit::Rule),
             'size_arms' => $this->arms->handle(self::SOURCE, $id, ArmSplit::Size, $rule),
             'solo' => $this->solo->handle($id),
+            'looted' => $this->looted->handle($id, $table['rule']),
             'heat' => $this->heat->handle(WorldLayer::Creatures, $ids, $id),
             'points' => $this->points->handle($id, $ids),
             'map_zones' => $this->zones->handle($ids),

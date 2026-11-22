@@ -30,7 +30,7 @@ class RecordController extends PublicController
             'id' => $answer['id'], 'name' => $answer['name'], 'facts' => $answer['facts'], 'kills' => $answer['kills'],
             'deaths' => $answer['deaths'], 'deaths_by_level' => $answer['deaths_by_level'], 'drops' => $answer['drops'],
             'skinning' => ['windows' => $answer['skin_table']['windows'], 'rows' => $answer['skin_table']['rows']],
-            'solo' => $answer['solo'],
+            'solo' => $answer['solo'], 'looted' => $answer['looted'],
             'by_rule' => SourceArmsJson::from($answer['rule_arms']),
             'by_size' => SourceArmsJson::from($answer['size_arms']),
             'cells' => array_map(fn (array $cell, array $level): array => [...$cell, 'level' => $level[2]], $heat, HeatLevels::assign($answer['heat'])),

@@ -98,10 +98,13 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
   explain it. Empty state: `Only group loot recorded.`
 - **Drop rate by group size** (w12, phase 4): the same chart, split by size inside one rule. Empty state names the
   sizes seen: `Group loot recorded at size 2 only.`
-- **Corpses looted of kills** (phase 2): a figure in the strip, solo play only, labelled `Corpses looted of solo
-  kills`: `76.9%` with `40 of 52` beside it, a dash in place of the share under 10 kills, and no figure when the creature has no solo kills. Drops
-  gains an **Of kills** column (`24 of 52`), the windows that listed the item over the same solo kills, shown under
-  All rules and Solo. A kill nobody looted counts against it, so the page says `of kills`, never `drop rate`.
+- **Corpses looted of kills** (phase 2, grouped play in phase 7): a figure in the strip labelled `Corpses looted of
+  kills`: `76.9%` with `40 of 52` beside it, a dash in place of the share under 10 kills, and no figure when the
+  creature has no such kills. It counts a kill with a corpse key at any group size, once however many members got
+  credit, and a credited solo kill with no key. Drops gains an **Of kills** column (`24 of 52`), the windows that
+  listed the item over the same kills. Both follow the rule control: under one loot rule only the kills with a key
+  of that rule are counted, and the kills with no key (solo play) only under All rules and Solo. A kill nobody
+  looted counts against it, so the page says `of kills`, never `drop rate`.
 - Drops has no explanation of a drop rate: the columns and the `k of n` say it. Under the table one line carries the
   tags, `Of kills counts a kill nobody looted against the item.` when the column is shown, and, when windows were
   left out because their session has no `read`, `Left out: N corpses from sessions that do not record what a corpse
@@ -206,8 +209,9 @@ Rules the design follows:
    window a member sent counts nowhere, since it cannot be told from the uploader's own. A kill is not a window:
    `kills` joins the windows by key, and a keyed kill with no window is a corpse nobody looted or that held nothing,
    so kills never go into the count of looted corpses. Where the counts live is under Developer and agent experience.
-8. Kills are never summed across characters as corpses. Kill-based figures are solo only, or per member (member
-   kills over member hours), where two uploaders in one group add to both sides of the ratio.
+8. Kills with no corpse key are never summed across characters as corpses. Their figures are solo only, or per member
+   (member kills over member hours), where two uploaders in one group add to both sides of the ratio. A kill with a
+   key is one corpse whoever got credit, so corpses looted of kills covers grouped play too (rule 7).
 9. A partial window is not a sample of the table. A second reader sees what is left. Quest items are per player,
    so a window lists them only for a reader on the quest. Both are reasons the unit is the first read.
 
@@ -249,8 +253,8 @@ say how many windows were left out.
 | Drop rate by size | as Drop rate, inside one `loot_rule` and `group_size` | windows of that arm | window | phase 4 |
 | Rule difference | rate under rule A minus rate under rule B, one source | n of each arm | window | phase 4 |
 | Kept by the looter | receipts whose source is the window (last `LO` within 5 s) | window items of the same windows | receipt over window item | phase 4 |
-| Corpses looted of kills | solo loot windows of the creature | solo member kills of the creature | solo kill | phase 2 |
-| Drop rate a kill | solo windows that list the item | solo member kills of the creature | solo kill | phase 2 |
+| Corpses looted of kills | corpses of the creature with a loot window, and solo loot windows with no key | kill corpses with a key, and solo member kills with no key | kill | phase 2, phase 7 |
+| Drop rate a kill | windows that list the item, of those corpses | the same kills | kill | phase 2, phase 7 |
 | Kills an hour by size | member kills while grouped at the size | member seconds grouped at the size / 3600 | member kill | phase 2 |
 | Share of group loot | own receipts while grouped | own receipts + `group_loot` rows, same spans | receipt | phase 5 |
 | Need share | rolls of type need | rolls of type need, greed or pass | roll | phase 5 |
@@ -266,8 +270,11 @@ Notes on the definitions:
   `loot` and that fall after item lists began (2026-11-20 15:00), so kills from before are not in the denominator.
   Opens-to-kills ratios over all time mix periods and no page shows one. The two conditions are met by the rows
   themselves: `kills.group_size` is null without a `loot` part and `read` is null without a `combat` part, so a
-  solo kill and a window with a `read` both come from a session that holds both. `kills_solo_daily` holds the solo
-  kills and the page reads the windows from `loot_windows_daily` and `loot_items_daily` at a group size of 0 or 1.
+  solo kill and a window with a `read` both come from a session that holds both. For kills with no key,
+  `kills_solo_unkeyed_daily` holds the solo kills and the page reads the windows from `loot_windows_unkeyed_daily`
+  and `loot_items_unkeyed_daily` at a group size of 0 or 1. For kills with a key `loot_kills_keyed_daily` and
+  `loot_kill_items_keyed_daily` hold the kill corpses of every group size, each with whether and what its corpse
+  gave.
   Two picks, both the narrower reading: a solo kill is one the character got credit for (`credit = 1`; an
   unattributed kill cannot be looted), and the cutoff is 15:00 in the addon author's time, UTC-6, so 21:00 UTC; the
   lines name no time zone, and the later instant drops a few hours of kills rather than count kills that had no
