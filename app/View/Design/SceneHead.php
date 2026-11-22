@@ -5,7 +5,7 @@ namespace App\View\Design;
 use App\Support\Profession;
 use App\Support\Scene;
 
-/** The head of a profession page with invented facts, to check a scene in the real app before its page exists. */
+/** The head of a profession or class page with invented facts, to check a scene in the real app before its page exists. */
 final class SceneHead
 {
     /**
@@ -13,7 +13,8 @@ final class SceneHead
      */
     public static function data(Scene $scene): array
     {
-        $facts = match ($scene) {
+        $class = $scene->playerClass();
+        $facts = $class !== null ? ClassSceneHead::facts() : match ($scene) {
             Scene::Fishing => ['1,204,880 casts', '4,310 characters', '6,120 hours at the water'],
             Scene::Herbalism => ['2,310,400 picks', '5,120 characters', '3,840 hours picking'],
             Scene::Mining => ['1,870,200 strikes', '4,460 characters', '2,950 hours at the vein'],
@@ -21,7 +22,7 @@ final class SceneHead
             Scene::Camp => ['12,480 visits', '3,120 characters', '4,030 hours by the fire'],
             default => ['840,300 crafts', '3,210 characters', '412 recipes'],
         };
-        $callouts = match ($scene) {
+        $callouts = $class !== null ? ClassSceneHead::callouts($class) : match ($scene) {
             Scene::Fishing => [
                 ['key' => 'bobber', 'title' => 'Bobber', 'text' => 'The wait for a bite is 15 seconds', 'share' => '82% of casts catch'],
                 ['key' => 'rack', 'title' => 'Raw Spotted Yellowtail', 'text' => 'The most caught fish', 'share' => '43% of catches'],
@@ -55,10 +56,11 @@ final class SceneHead
             Scene::Tailoring => self::crafting('Bolt of Linen Cloth', 'Linen Cloth'),
             Scene::Cooking => self::crafting('Spotted Yellowtail', 'Raw Spotted Yellowtail'),
             Scene::FirstAid => self::crafting('Linen Bandage', 'Linen Cloth'),
+            Scene::Warrior, Scene::Paladin, Scene::Hunter, Scene::Rogue, Scene::Priest, Scene::Shaman, Scene::Mage, Scene::Warlock, Scene::Druid => [],
         };
 
         return [
-            'title' => $scene === Scene::Camp ? 'Camps' : Profession::fromSlug($scene->value)->value ?? '',
+            'title' => $class !== null ? ucfirst($scene->value) : ($scene === Scene::Camp ? 'Camps' : Profession::fromSlug($scene->value)->value ?? ''),
             'label' => $scene->label(),
             'facts' => $facts,
             'credit' => $scene->credit(),

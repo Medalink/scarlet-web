@@ -14,4 +14,16 @@ enum PlayerClass: string
     case Mage = 'MAGE';
     case Warlock = 'WARLOCK';
     case Druid = 'DRUID';
+
+    /** The class's slug in a page address: `warlock`. */
+    public function slug(): string
+    {
+        return strtolower($this->value);
+    }
+
+    /** The scene of the class page's head. */
+    public function scene(): Scene
+    {
+        return Scene::from($this->slug());
+    }
 }

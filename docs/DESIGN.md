@@ -1080,6 +1080,13 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   address carries `?v=` with the time `items.json` was written. The image has its width and height, so a row does not move
   when it loads. Without the folder the tables are as they were, with no placeholders. The art is Blizzard's and is never
   committed.
+- **Spell icons** (owner, 2026-11-22). The class pages' rows show the game's spell icons, stored as the item icons are: once per icon
+  file, with a map from spell id to file. `tools/scene-art/spells.mjs` reads the client's `SpellMisc` table (`SpellID`,
+  `SpellIconFileDataID`) and writes `spells/spells.json` and `spells/icons/<file id>.png` to the `maps` disk: 31,836 spells share
+  2,342 icon files. `AppSupportSpellIcons` and `ItemIcons` are two folders of `AppSupportIconFolder`, which holds the caching,
+  and `/spell-icons/<file id>.png` is served as `/item-icons/` is. The folders stay apart, so an icon file that is both an item's
+  and a spell's is stored twice. `<x-item-icon :spell="$id" />` draws a spell's icon from its id and an empty square when the
+  icon is missing; a row the game has no icon for passes no id and shows no square.
 - **Profession scenes** (owner, 2026-11-22: "create a page like this for every profession and gathering"). Each
   profession page opens on a head built like the camp's, drawn from the game's own models. The code is general:
   `resources/js/scene.js` is the page script (WebGL check, load when the head is on screen, callout placing, the
@@ -1108,7 +1115,7 @@ sheet has and the pages lacked. `resources/css/game.css` holds it and loads afte
   (`fishing/fishing.json`, `tex/<file id>.png`), is written by `tools/scene-art` and is served by
   `/scene-art/{scene}/models.json` and `/tex/{id}.png` with the camp art's cache headers and `?v=`
   rule; `App\Support\Scene` names the scenes and `App\Support\SceneArt` owns the folder. `/design/scenes/{scene}`
-  (local environment only) shows a scene's head over invented facts. The scene builds with three 0.187, which has dropped the soft shadow filter the approved prototype was tuned on: shadows
+  (local environment only) shows a scene's head over invented facts, for the professions, the camp and the nine classes. The scene builds with three 0.187, which has dropped the soft shadow filter the approved prototype was tuned on: shadows
   use the plain filter.
 
 What the layer adds to each page:
@@ -1460,8 +1467,10 @@ the characters whose stored value reaches it (one query, cached 15 minutes), and
 A character has a page for its class, `/c/{name}/{class}` (owner, 2026-11-22: "go deeper into class fantasy so we
 have metrics/charts/visuals for specific classes and talents", "fun and exciting and for all classes and talents").
 It shows what only that class does: a warlock's soul shards, Life Tap and demons, a shaman's totems, a druid's forms.
-The design is approved and not built: the comp is `docs/comps/class.html` (the Warlock), the Scarlet app gets the same
-view, and nothing below exists in code yet. The first build is the Warlock; the other eight follow the same skeleton.
+The design is approved: the comp is `docs/comps/class.html` (the Warlock) and the Scarlet app gets the same
+view. What is built so far is the art: the nine heads (`warrior` to `druid` in `resources/js/scene/scenes/` and in the
+`SCENES` table of `tools/scene-art`, with `AppSupportScene` and `PlayerClass::scene()` naming them, and `/design/scenes/{class}`
+showing each over invented numbers) and the spell icons (Spell icons). The pages are not built yet.
 
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when

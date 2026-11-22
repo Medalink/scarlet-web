@@ -629,7 +629,7 @@ Sizes, ratios and the re-decode check are in [MEASUREMENTS.md](MEASUREMENTS.md#s
 
 ## Map art
 
-The art (map tiles, dungeon maps, scene art, item icons) is not in git or in the image. It is built on a dev PC from
+The art (map tiles, dungeon maps, scene art, item icons, spell icons) is not in git or in the image. It is built on a dev PC from
 the game's files, and the droplet reads it from `/srv/scarlet-web/maps` (mounted read-only at `/maps`,
 `MAPS_ROOT=/maps`). Between the two is the art store, `/data/medalink/scarlet-web/maps` on medaware: the one copy every
 deploy reads.
@@ -646,7 +646,7 @@ Three things keep the art from falling behind:
 
 - The ship gate `art` (`node scripts/art-published.mjs`, in the flow file) refuses a commit while the store lacks art
   the commit draws: a scene of `tools/scene-art/scenes.mjs` without its `<scene>.json`, a model of the table that file
-  was not built from, a texture that file lists, an icon, or one of `manifest.json`, `dungeons/dungeons.json` and `items/items.json`. Publish the
+  was not built from, a texture that file lists, an icon, or one of `manifest.json`, `dungeons/dungeons.json`, `items/items.json` and `spells/spells.json`. Publish the
   art first, then ship.
 - Every ring deploy runs the same sync before it builds, so a rebuilt droplet or a sync that failed heals on the next
   deploy, and `bin/deploy maps` heals it at once. A deploy whose art does not arrive fails before it touches the
@@ -672,19 +672,24 @@ shows its art only while `camp/camp.json` exists there.
 
 The dungeon floor maps (`dungeons/`, from `tools/map-tiles/dungeons.mjs`) ride there too. PHP serves them at
 `/dungeon-maps/` from the `maps` disk, and a dungeon's page shows its map only while `dungeons/dungeons.json` lists it.
-The command takes a folder that holds any of the three, so `bin/deploy maps` on a folder with only `dungeons/` in it
+The command takes a folder that holds any of `manifest.json`, `camp/camp.json`, `dungeons/dungeons.json`, `items/items.json` or `spells/spells.json`, so `bin/deploy maps` on a folder with only `dungeons/` in it
 adds the dungeon maps and leaves the tiles and the camp art in the store and on the droplet as they are.
 
-A scene's art (`fishing/` and the other professions, and `camp/`, from `tools/scene-art`: `node tools/scene-art/build.mjs fishing storage/app/maps/fishing`)
+A scene's art (`fishing/` and the other professions, the nine classes (`warrior/` to `druid/`), and `camp/`, from `tools/scene-art`: `node tools/scene-art/build.mjs fishing storage/app/maps/fishing`)
 rides in the same folder too, one folder per scene. PHP serves it at `/scene-art/<scene>/` from the `maps` disk, and a
 scene shows only while `<scene>/<scene>.json` exists there. A new build is live within five minutes, as with the camp. The command
-copies it with a folder that also holds one of the three above, such as `storage/app/maps`.
+copies it with a folder that also holds one of the five above, such as `storage/app/maps`.
 
 The item icons (`items/`, from `node tools/scene-art/items.mjs <Item table as CSV> storage/app/maps/items`: `items.json` and
 `icons/<file id>.png`, about 14 MiB) travel in the same folder, so the same command carries them. The item tables show
 an icon only while `items/items.json` exists there; a new build is live within five minutes.
 
-nginx serves `/item-icons/<file id>.png` and a scene's `/scene-art/<scene>/tex/` and `icons/` files from that folder
+The spell icons (`spells/`, from `node tools/scene-art/spells.mjs <SpellMisc table as CSV> storage/app/maps/spells`: `spells.json` and
+`icons/<file id>.png`, 31,836 spells on 2,342 files, about 10 MiB) travel in the same folder too. A spell row shows an icon only
+while `spells/spells.json` exists there, and an empty square otherwise. A folder with only `spells/` or only some scenes in it
+adds those and leaves the rest of the store as it is.
+
+nginx serves `/item-icons/<file id>.png`, `/spell-icons/<file id>.png` and a scene's `/scene-art/<scene>/tex/` and `icons/` files from that folder
 as it does the tiles, with no PHP and no cookie. PHP answers the same addresses in development, and on the droplet
 until `bin/deploy` has carried `deploy/nginx/nginx.conf` there. A scene's `models.json` stays with PHP.
 
@@ -696,7 +701,7 @@ and the origin use the same test.
 
 | What | Origin sends | Edge result |
 | --- | --- | --- |
-| `/map-tiles/`, `/item-icons/`, a scene's `tex/` and `icons/` | nginx from disk, `public, immutable`, no cookie | cached for a year |
+| `/map-tiles/`, `/item-icons/`, `/spell-icons/`, a scene's `tex/` and `icons/` | nginx from disk, `public, immutable`, no cookie | cached for a year |
 | `/scene-art/<scene>/models.json` and `/dungeon-maps/` | `App\Http\Middleware\PublicArt`: PHP with no session and no cookie; `public, max-age=300` for the models, `public, immutable` for a floor map | cached 5 minutes, or a year |
 | `/api/v1/public/*` | `App\Http\Middleware\PublicApi`: `public, max-age=300, s-maxage=300`, 30 for the answers that name characters (`private` with an `Authorization` header) | cached 5 minutes, or 30 seconds |
 | The public pages (`routes/pages.php`, `/`, `/demo`) | `App\Http\Middleware\EdgeCacheable`: no session, no cookie, `s-maxage=60` | cached 1 minute |

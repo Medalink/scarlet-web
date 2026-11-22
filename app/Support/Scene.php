@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-/** The scene a page's head draws, one per profession page and one for Camps: the art it draws is on the `maps` disk under a folder of this name (tools/scene-art). */
+/** The scene a page's head draws, one per profession page, one per class page and one for Camps: the art it draws is on the `maps` disk under a folder of this name (tools/scene-art). */
 enum Scene: string
 {
     case Fishing = 'fishing';
@@ -18,6 +18,15 @@ enum Scene: string
     case Cooking = 'cooking';
     case FirstAid = 'first-aid';
     case Camp = 'camp';
+    case Warrior = 'warrior';
+    case Paladin = 'paladin';
+    case Hunter = 'hunter';
+    case Rogue = 'rogue';
+    case Priest = 'priest';
+    case Shaman = 'shaman';
+    case Mage = 'mage';
+    case Warlock = 'warlock';
+    case Druid = 'druid';
 
     /** What a screen reader hears of the stage. */
     public function label(): string
@@ -36,6 +45,15 @@ enum Scene: string
             self::Cooking => "A cook's fire, drawn from the game's own models: a cooking pot over a fire, a boar on a spit, a rack of smoked meat, a table of food and a sack",
             self::FirstAid => "A field hospital, drawn from the game's own models: a tent, a bed, first aid crates and a lantern",
             self::Camp => "A camp at night, drawn from the game's own models: a Basic Campfire burning between a Camp Tent and a Camp Chair",
+            self::Warrior => "A training yard at dusk, drawn from the game's own models: a target dummy, a weapon rack and an armor stand beside a brazier",
+            self::Paladin => "A cathedral yard at dawn, drawn from the game's own models: a warhorse beside a lectern, with a shield rack and a banner",
+            self::Hunter => "A clearing at first light, drawn from the game's own models: a campfire with a cat, a wolf, a boar and an owl around it",
+            self::Rogue => "A back alley at night, drawn from the game's own models: a lockbox, crates and a barrel, a rack of poison vials, a coin sack, a pile of gold and a lantern",
+            self::Priest => "A chapel corner by candlelight, drawn from the game's own models: a lectern, an altar, a candelabra, candles and a pew",
+            self::Shaman => "Open ground under a storm sky, drawn from the game's own models: a fire, an earth, a water and an air totem standing in an arc",
+            self::Mage => "A tower floor at night, drawn from the game's own models: a portal, a sheep, a table of bottles and a bookshelf",
+            self::Warlock => "A ritual circle at night, drawn from the game's own models: an Imp, a Voidwalker, a Succubus and a Felhunter standing on it",
+            self::Druid => "A moonlit grove, drawn from the game's own models: a bear, a cat, a travel form and an aquatic form",
         };
     }
 
@@ -56,7 +74,22 @@ enum Scene: string
             self::Cooking => self::onDrawnGround('Cooking pot, spit, smoked meat rack, table, food and sack models, textures and effects'),
             self::FirstAid => self::onDrawnGround('Tent, bed, first aid crate and lantern models, textures and effects'),
             self::Camp => 'Campfire, tent and chair models, textures, flames, sparks and light © Blizzard Entertainment, read from the WoW Forever client. The smoke and the ground are drawn by this page.',
+            self::Warrior => self::onDrawnGround('Target dummy, weapon rack, armor stand and brazier models, textures and flames'),
+            self::Paladin => self::onDrawnGround('Warhorse, lectern, shield rack and banner models and textures'),
+            self::Hunter => self::onDrawnGround('Cat, wolf, boar, owl and campfire models, textures and flames'),
+            self::Rogue => self::onDrawnGround('Lockbox, crate, barrel, poison vial, coin sack, gold and lantern models, textures and effects'),
+            self::Priest => self::onDrawnGround('Lectern, altar, candelabra, candle and pew models, textures and flames'),
+            self::Shaman => self::onDrawnGround('Fire, earth, water and air totem models, textures and effects'),
+            self::Mage => self::onDrawnGround('Portal, sheep, alchemy table and bookshelf models, textures and effects'),
+            self::Warlock => self::onDrawnGround('Ritual circle, Imp, Voidwalker, Succubus and Felhunter models, textures and effects'),
+            self::Druid => self::onDrawnGround('Bear, cat, travel form and aquatic form models and textures'),
         };
+    }
+
+    /** The class whose page draws this scene, null for a profession page or the camps. */
+    public function playerClass(): ?PlayerClass
+    {
+        return PlayerClass::tryFrom(strtoupper($this->value));
     }
 
     private static function onDrawnGround(string $art): string
