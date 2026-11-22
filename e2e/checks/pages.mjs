@@ -3,8 +3,8 @@ import { InstallClient } from "../client.mjs";
 import { NAME, PROBE, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool } from "../support.mjs";
 
 const CONCURRENCY = 6;
-const ERROR_PAGE = /Server Error|Whoops|Stack Trace|Illuminate\\|laravel-exceptions|Undefined (variable|array key)|Call to (undefined|a member)/i;
-const heading = (text) => new RegExp(`<h1[^>]*>\\s*${text}`);
+export const ERROR_PAGE = /Server Error|Whoops|Stack Trace|Illuminate\\|laravel-exceptions|Undefined (variable|array key)|Call to (undefined|a member)/i;
+export const heading = (text) => new RegExp(`<h1[^>]*>\\s*${text}`);
 
 const PAGES = [
   { path: "/", shows: heading("Scarlet records what you do in WoW Forever") },
@@ -12,18 +12,6 @@ const PAGES = [
   { path: "/stats", shows: heading("All characters") },
   { path: "/map", shows: heading("World map") },
   { path: "/camps", shows: heading("Camps") },
-  { path: "/professions/fishing", shows: heading("Fishing") },
-  { path: "/professions/herbalism", shows: heading("Herbalism") },
-  { path: "/professions/mining", shows: heading("Mining") },
-  { path: "/professions/skinning", shows: heading("Skinning") },
-  { path: "/professions/alchemy", shows: heading("Alchemy") },
-  { path: "/professions/blacksmithing", shows: heading("Blacksmithing") },
-  { path: "/professions/enchanting", shows: heading("Enchanting") },
-  { path: "/professions/engineering", shows: heading("Engineering") },
-  { path: "/professions/leatherworking", shows: heading("Leatherworking") },
-  { path: "/professions/tailoring", shows: heading("Tailoring") },
-  { path: "/professions/cooking", shows: heading("Cooking") },
-  { path: "/professions/first-aid", shows: heading("First Aid") },
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
   { path: "/developers", shows: heading("Public API") },
   { path: "/release-notes", shows: heading("Release notes") },

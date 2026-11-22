@@ -19,6 +19,7 @@ import { ECHO, Http, Jar, LOCAL_HOSTS, NAME, PROBE, Skip } from "./support.mjs";
 import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
+import * as professions from "./checks/professions.mjs";
 import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
 import * as owner from "./checks/owner.mjs";
@@ -46,6 +47,7 @@ const REGISTRY = [
   { lane: "api", name: "a bad parameter is 422 invalid_request", run: api.badParameterIs422 },
   { lane: "api", name: "the app reads a character's new feats, and one it showed is not new again", run: feats.shownFeatIsNotNewAgain },
   { lane: "api", name: "the feats requests refuse an unsigned read, another character, an unknown feat and a sixth tier", run: feats.featsRefuseWhatIsNotTheInstalls },
+  { lane: "api", name: "the six professions with recorded lines are served with their numbers", run: professions.apiShowsTheUpload },
   { lane: "pages", name: "every public page answers and shows its own content", run: pages.everyPageShowsItself },
   { lane: "pages", name: "one death heard by two uploaders is counted once", run: pages.deathIsCountedOnce },
   { lane: "pages", name: "a match's scoreboard is shown without the players' names", run: pages.scoreboardIsShownWithoutNames },
@@ -55,6 +57,7 @@ const REGISTRY = [
   { lane: "pages", name: "a missing creature is a 404 page", independent: true, run: pages.missingPageIs404("/creatures/999999999") },
   { lane: "pages", name: "the account pages are closed to visitors", independent: true, run: pages.accountIsClosedToVisitors },
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },
+  { lane: "pages", name: "the twelve profession pages show what the upload recorded", run: professions.pagesShowTheUpload },
   { lane: "browser", name: "the browser has no window", independent: true, run: browser.hasNoWindow },
   { lane: "browser", name: "the map art is installed", independent: true, run: browser.mapArtIsServed },
   { lane: "browser", name: "the key pages run clean at 1280", run: browser.pagesRunClean },

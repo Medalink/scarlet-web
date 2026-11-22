@@ -21,7 +21,56 @@
       "lines": 1,
       "raw_bytes": 84,
       "session": 1795180000
+    },
+    {
+      "group": "core",
+      "id": "5612594681b7192165e22059965539abb7a7ea2ef386641eb83fbaeaa0a64587",
+      "lines": 3,
+      "raw_bytes": 181,
+      "session": 1795270000
+    },
+    {
+      "group": "movement",
+      "id": "e3f0cce0bac1f63f15430a12784d86d8cd00ef695994155a0db7ac866b6a6fc0",
+      "lines": 4,
+      "raw_bytes": 147,
+      "session": 1795270000
+    },
+    {
+      "group": "build",
+      "id": "86d743df6bcf448019181871fa74cd5b729d5ea1ca5ca9786329606d830d50cd",
+      "lines": 1,
+      "raw_bytes": 63,
+      "session": 1795270000
+    },
+    {
+      "group": "combat",
+      "id": "e9ed7bc9eeb04ead81b69815332d119b5bd05ced78fe1748d5de7bdfa61b189a",
+      "lines": 21,
+      "raw_bytes": 352,
+      "session": 1795270000
+    },
+    {
+      "group": "loot",
+      "id": "53bd1f16b147c263d99f141c59f045f38c2c9a8efc92a8697e81657757e73f5b",
+      "lines": 13,
+      "raw_bytes": 401,
+      "session": 1795270000
+    },
+    {
+      "group": "professions",
+      "id": "df3c39506175837d6edf052871a856417ce37963d312df6c7986f60c4dbc8fff",
+      "lines": 28,
+      "raw_bytes": 651,
+      "session": 1795270000
+    },
+    {
+      "group": "names",
+      "id": "adce1a92ddab713a76eb19bd174bf747d92f4c79b38b4b242b047a4578bf148b",
+      "lines": 13,
+      "raw_bytes": 383,
+      "session": 1795270000
     }
   ],
-  "set_digest": "cc8c68b56c7fc44549c4bb74cc6dadf4ae6bb1c58663d6d3860900a8896985a3"
+  "set_digest": "371bf9d1dfef1152606019d2d43f2ab2d461195a02d82586a975e4480557439c"
 }

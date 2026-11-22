@@ -1,7 +1,9 @@
 import crypto from "node:crypto";
-import { NAME, escapeRegExp, expectError, expectJson, expectStatus, failOn, pool, sleep } from "../support.mjs";
+import { NAME, answerOf, escapeRegExp, expectError, expectJson, expectStatus, failOn, pool, sleep, uncached } from "../support.mjs";
+import { GATHER_KEYS } from "./professions.mjs";
 
 const CONCURRENCY = 6;
+const READ_AFTER_REFRESH = "/professions/";
 const RULESET = "unidentified";
 const FACTS_WAIT_MS = 10_000;
 const FACTS_POLL_MS = 250;
@@ -10,7 +12,7 @@ const RECORDS = { characters: NAME, creatures: "113", items: "769", quests: "783
 const SHAPES = [
   ["/stats", ["totals", "coverage", "rulesets"]],
   ["/camps", ["totals", "fires", "camp_benefits", "benefits", "lengths", "by_level", "hours", "buffed", "zones", "heat", "board", "rulesets"]],
-  ["/professions/{slug}", ["kind", "totals", "items", "contents", "waits", "per_point", "by_level", "hours", "lures", "lured", "poles", "creatures", "zones", "heat", "board", "rulesets"]],
+  ["/professions/{slug}", GATHER_KEYS],
   ["/rulesets", ["slug", "label", "kind", "hardcore", "recorded"]],
   ["/rulesets/{slug}", ["totals", "coverage", "rulesets"]],
   ["/rulesets/{slug}/series/{series}", ["levels", "reached", "time_per_level"]],
@@ -27,10 +29,6 @@ const SHAPES = [
   ["/encounters/{id}", ["id", "drops"]],
   ["/map/heat", ["cells"]],
   ["/map/density", ["level", "columns", "rows", "cells"]],
-];
-
-const CRAFT_SHAPES = [
-  ["/professions/cooking", ["profession", "totals", "recipes", "difficulty", "per_point", "by_level", "hours", "reagents", "zones", "board", "rulesets"]],
 ];
 
 function templateExpression(template) {
@@ -59,19 +57,6 @@ function missingKeys(data, keys) {
   return keys.filter((key) => !(key in row));
 }
 
-function uncached(route, limit) {
-  const url = new URL(route, "http://e2e.invalid");
-  url.searchParams.set("limit", String(limit));
-  return url.pathname + url.search;
-}
-
-async function answerOf(ctx, route) {
-  ctx.answers ??= new Map();
-  ctx.limit ??= crypto.randomInt(2, 101);
-  if (!ctx.answers.has(route)) ctx.answers.set(route, ctx.http.api("/api/v1/public" + uncached(route, ctx.limit)));
-  return ctx.answers.get(route);
-}
-
 export async function everyEndpointAnswers(ctx) {
   const { templates, examples } = await listedEndpoints(ctx);
   if (templates.length < SHAPES.length) {
@@ -80,7 +65,7 @@ export async function everyEndpointAnswers(ctx) {
   const uncovered = templates.filter((template) => !examples.some((example) => templateExpression(template).test(example)));
   if (uncovered.length > 0) throw new Error(`/developers lists no example for: ${uncovered.join(", ")}`);
 
-  const paths = [...examples.map(fixtureExample), ...CRAFT_SHAPES.map(([route]) => route)];
+  const paths = examples.map(fixtureExample).filter((route) => !route.startsWith(READ_AFTER_REFRESH));
   const problems = await pool(paths, CONCURRENCY, async (route) => {
     const answer = await answerOf(ctx, route);
     if (answer.status === 429) expectStatus(answer, 200, route);
@@ -89,7 +74,7 @@ export async function everyEndpointAnswers(ctx) {
       return `${route}: expected {data, meta}, saw ${answer.text.slice(0, 300)}`;
     }
     const template = templates.find((entry) => templateExpression(entry).test(route));
-    const shape = CRAFT_SHAPES.find(([entry]) => entry === route) ?? SHAPES.find(([entry]) => entry === template);
+    const shape = SHAPES.find(([entry]) => entry === template);
     if (!shape) return `${route}: /developers lists ${template}, which this lane has no expected fields for; add it to SHAPES`;
     const missing = missingKeys(answer.json.data, shape[1]);
     return missing.length > 0 ? `${route}: data lacks ${missing.join(", ")}: ${answer.text.slice(0, 300)}` : null;

@@ -38,8 +38,52 @@ export function limiterOf(pathname) {
   if (pathname === "/api/v1/installs") return "registration";
   if (pathname.startsWith("/api/v1/")) return "signed api";
   if (/^\/(login|auth|account|link)(\/|$)/.test(pathname)) return "throttle:60,1";
-  if (pathname === "/" || pathname === "/demo" || pathname === "/up" || /\.[a-z0-9]+$/.test(pathname)) return null;
+  if (pathname === "/" || pathname === "/demo" || pathname === "/up" || pathname.startsWith("/horizon/") || /\.[a-z0-9]+$/.test(pathname)) return null;
   return "pages";
+}
+
+const REFRESH_WAIT_MS = 60_000;
+const REFRESH_POLL_MS = 400;
+const IDLE_READS = 3;
+
+/** The path of a public API read with a random `limit`, so a rerun never reads the origin's 30 s cached answer of the last one. */
+export function uncached(route, limit) {
+  const url = new URL(route, "http://e2e.invalid");
+  url.searchParams.set("limit", String(limit));
+  return url.pathname + url.search;
+}
+
+/** The public API answer of `route`, read once per run and shared by every check that asks for it. */
+export function answerOf(ctx, route) {
+  ctx.answers ??= new Map();
+  ctx.limit ??= crypto.randomInt(2, 101);
+  if (!ctx.answers.has(route)) ctx.answers.set(route, ctx.http.api("/api/v1/public" + uncached(route, ctx.limit)));
+  return ctx.answers.get(route);
+}
+
+/**
+ * Settles when the rollups hold the upload. The server keeps an answer read from a rollup for 60 s, an empty one too, so a
+ * read made before the refresh job has run shows nothing for a minute. Horizon lists a refresh that waits for its debounce
+ * as pending, so no pending job on three reads in a row means the refresh has run. The list answers where APP_ENV is local.
+ */
+export function rollupsRefreshed(ctx) {
+  ctx.refreshed ??= waitForRefresh(ctx.http);
+  return ctx.refreshed;
+}
+
+async function waitForRefresh(http) {
+  const deadline = Date.now() + REFRESH_WAIT_MS;
+  let idle = 0;
+  while (Date.now() < deadline) {
+    const answer = await http.api("/horizon/api/jobs/pending");
+    if (answer.status !== 200 || typeof answer.json?.total !== "number") {
+      throw new Error(`GET /horizon/api/jobs/pending: expected the job list (it answers where APP_ENV=local), saw ${answer.status}: ${answer.text.slice(0, 300)}`);
+    }
+    idle = answer.json.total === 0 ? idle + 1 : 0;
+    if (idle === IDLE_READS) return;
+    await sleep(REFRESH_POLL_MS);
+  }
+  throw new Error(`Horizon still had jobs pending ${REFRESH_WAIT_MS / 1000}s after the upload was decoded: is its rollups queue running?`);
 }
 
 export class Http {

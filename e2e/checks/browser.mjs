@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { Browser, browserCommand } from "../cdp.mjs";
-import { NAME, PROBE, SHOWN, Skip, failOn, pool } from "../support.mjs";
+import { NAME, PROBE, SHOWN, Skip, failOn, pool, rollupsRefreshed } from "../support.mjs";
 
 const WIDE = ["/", "/stats", "/map", "/camps", "/professions/fishing", "/professions/mining", "/professions/cooking", "/professions/tailoring", "/hardcore-deaths", "/leaderboards", "/search?q=Testa", `/c/${NAME}`, `/c/${PROBE}/battlegrounds`, "/spells/2660", "/encounters/1065", "/items/2862"];
 const NARROW = ["/", "/stats", "/camps", "/professions/fishing", "/professions/cooking", "/hardcore-deaths", "/spells/2660", "/encounters/1065"];
@@ -53,9 +53,11 @@ export async function mapArtIsServed(ctx) {
 function cleanPages(routes, width, strict) {
   return async (ctx) => {
     const browser = browserOf(ctx);
-    const problems = await pool(routes, TABS, async (route) => {
+    const ordered = [...routes.filter((route) => !route.startsWith("/professions/")), ...routes.filter((route) => route.startsWith("/professions/"))];
+    const problems = await pool(ordered, TABS, async (route) => {
       let tab;
       try {
+        if (route.startsWith("/professions/")) await rollupsRefreshed(ctx);
         tab = await browser.open(ctx.base + route, { width, height: width > 600 ? 800 : 844 });
         const found = strict ? [...tab.problems] : [];
         const overflow = await tab.overflow(width);
@@ -68,7 +70,7 @@ function cleanPages(routes, width, strict) {
         await tab?.close();
       }
     });
-    failOn(problems, routes.length, `pages at ${width} wide`);
+    failOn(problems, ordered.length, `pages at ${width} wide`);
   };
 }
 

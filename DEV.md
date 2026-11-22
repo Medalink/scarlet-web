@@ -51,9 +51,10 @@ any host that is not 127.0.0.1, localhost or [::1], because it deletes what it u
 
 - upload: registers an install, signs requests, uploads the two invented characters of `e2e/fixture` and waits for
   Horizon to decode them.
-- api: every endpoint the `/developers` page lists, the uploaded character's facts, search, 404 and 422 answers.
-- pages: every public page shows its own heading, missing pages are 404, `/account` is closed, and an app links to the
-  development account.
+- api: every endpoint the `/developers` page lists, the uploaded character's facts, search, 404 and 422 answers, and
+  the numbers of the six professions the fixture has lines for.
+- pages: every public page shows its own heading, missing pages are 404, `/account` is closed, an app links to the
+  development account, and the twelve profession pages show what the upload recorded.
 - browser: one headless Edge (chromium on Linux), never a window. Its first check reads the window handle of its
   process and stops it unless it is 0. It loads the key pages at 1280 and 390 wide and types into the search box.
 - Last, it removes the upload.
@@ -62,9 +63,15 @@ Public API answers are cached for 30 seconds at the origin, so every read adds a
 
 The server needs Horizon running, `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than
 the default rate limits for repeated runs: `SCARLET_RATE_REGISTRATION_PER_IP=100` and
-`SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 2 registrations, about 22 public API requests, 38 page requests
-and 9 requests on the `throttle:60,1` routes, which no setting lifts. Rollup numbers are not checked, because they
-arrive seconds after the upload. A server without map art skips the map-art check. Each run leaves one linked install on the development account of
+`SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 2 registrations, about 30 public API requests, about 100 page
+requests and 11 requests on the `throttle:60,1` routes, which no setting lifts.
+
+The profession checks read rollup numbers, which arrive seconds after the upload, and the server keeps a rollup read for
+60 seconds, an empty one too. So the lane waits until Horizon's `/horizon/api/jobs/pending` lists no job on three
+reads before it reads a profession; that list answers only where `APP_ENV=local`. On a server where something else
+keeps uploading, or a job is stuck, the wait ends after 60 seconds with a failure that says so. `e2e/fixture`'s
+gathering and crafting session is written by `node e2e/build-fixture.mjs`; change the lines there, run it, and change
+the numbers in `e2e/checks/professions.mjs` to match. A server without map art skips the map-art check. Each run leaves one linked install on the development account of
 a `bin/dev` server, since the API has no call that removes an install.
 
 ## What runs where

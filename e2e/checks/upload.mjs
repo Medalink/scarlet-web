@@ -1,5 +1,5 @@
 import { xorDigest } from "../client.mjs";
-import { ECHO, NAME, PROBE, expectError, expectJson, expectStatus, loadFixture, sleep } from "../support.mjs";
+import { ECHO, NAME, PROBE, expectError, expectJson, expectStatus, loadFixture, rollupsRefreshed, sleep } from "../support.mjs";
 
 const DECODE_WAIT_MS = 20_000;
 const DECODE_POLL_MS = 250;
@@ -92,7 +92,10 @@ export async function decoded(ctx) {
       const seen = characters.find((character) => character.name === fixture.name);
       return seen && seen.parts === fixture.ids.length && seen.sessions === fixture.sessions && seen.sessions_waiting === 0;
     });
-    if (done) return;
+    if (done) {
+      rollupsRefreshed(ctx).catch(() => {});
+      return;
+    }
     if (Date.now() > deadline) {
       throw new Error(`the upload was not decoded within ${DECODE_WAIT_MS / 1000}s (is Horizon running?), the status says: ${answer.text.slice(0, 300)}`);
     }
