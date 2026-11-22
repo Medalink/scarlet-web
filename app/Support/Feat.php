@@ -16,6 +16,8 @@ enum Feat: string
     case Artisan = 'artisan';
     case Angler = 'angler';
     case Gatherer = 'gatherer';
+    case Jumper = 'jumper';
+    case Swimmer = 'swimmer';
 
     /** The tiers in order, copper first: tier `n` of a feat is `TIERS[n - 1]`, and 0 is no tier. */
     public const array TIERS = ['Copper', 'Silver', 'Gold', 'Scarlet'];
@@ -48,6 +50,8 @@ enum Feat: string
             self::Artisan => [75, 150, 225, 300],
             self::Angler => [50, 250, 1000, 5000],
             self::Gatherer => [50, 250, 1000, 5000],
+            self::Jumper => [100, 1000, 10000, 50000],
+            self::Swimmer => [1000, 10000, 50000, 250000],
         };
     }
 
@@ -66,6 +70,8 @@ enum Feat: string
             self::Artisan => 'skills',
             self::Angler => 'fish',
             self::Gatherer => 'gather',
+            self::Jumper => 'jumps',
+            self::Swimmer => 'swim',
         };
     }
 
@@ -95,6 +101,8 @@ enum Feat: string
             self::Artisan => $one ? 'profession rank' : 'profession ranks',
             self::Angler => 'fish caught',
             self::Gatherer => $one ? 'node gathered' : 'nodes gathered',
+            self::Jumper => $one ? 'jump' : 'jumps',
+            self::Swimmer => $one ? 'yard swum' : 'yards swum',
         };
     }
 }

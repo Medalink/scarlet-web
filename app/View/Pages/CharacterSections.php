@@ -5,6 +5,7 @@ namespace App\View\Pages;
 use App\Actions\Public\Character\SkillRanks;
 use App\Support\ItemOrigin;
 use App\Support\ItemQuality;
+use App\Support\MovementMode;
 use App\Support\Profession;
 use App\View\Charts;
 use App\View\Format;
@@ -133,6 +134,34 @@ final class CharacterSections
                 'level' => $row['item_level'] === null ? '–' : (string) $row['item_level'],
                 'value' => ($row['quantity'] > 1 ? '×'.Format::number($row['quantity']).', ' : '').ItemQuality::from($row['quality'])->label().', '.ItemOrigin::from($row['origin'])->label(),
             ], $items['best']),
+        ];
+    }
+
+    /**
+     * The yards a character's movement stretches report, by mode, most first, as one bar with a key. Distance in world
+     * widths (the Wayfarer feat, the most-distance board) is the path's length, not this.
+     *
+     * @param  list<array{mode: string, yards: int}>  $modes  the answer of Records
+     * @return array{segments: list<array<string, mixed>>, key: list<array<string, mixed>>, say: string}|null
+     */
+    public static function distance(array $modes, string $since = ''): ?array
+    {
+        $segments = $key = [];
+        foreach ($modes as $mode) {
+            $kind = MovementMode::tryFrom((string) $mode['mode']);
+            if ($kind === null || $mode['yards'] < 1) {
+                continue;
+            }
+            $segments[] = ['class' => $kind->fill(), 'count' => $mode['yards'], 'say' => $kind->label().' '.Format::number($mode['yards']).' yd'];
+            $key[] = ['label' => $kind->label().' '.Format::number($mode['yards']).' yd', 'class' => $kind->fill()];
+        }
+        if ($segments === []) {
+            return null;
+        }
+
+        return [
+            'segments' => $segments, 'key' => $key,
+            'say' => 'Distance by how you moved'.($since === '' ? '' : ' '.$since).': '.implode(', ', array_column($segments, 'say')).'.',
         ];
     }
 

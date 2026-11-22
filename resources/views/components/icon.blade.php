@@ -1,6 +1,7 @@
 {{-- One glyph of the site's icon set: 24 units, drawn with one round stroke, coloured by the text around it.
      name: characters, level, hours, kills, deaths, quests, dungeons, gold, zones, distance, skills, fish, gather,
-     crown, shield, clock, pin, talents, creature, item. --}}
+     name: characters, level, hours, kills, deaths, quests, dungeons, gold, zones, distance, skills, fish, gather,
+     jumps, swim, emote, crown, shield, clock, pin, talents, creature, item. --}}
 @props(['name'])
 @php
     $glyphs = [
@@ -17,6 +18,9 @@
         'skills' => '<path d="m14.2 3.8 6 6-2.6 2.6-6-6zM12.7 8.7 4 17.4l2.6 2.6 8.7-8.7"/>',
         'fish' => '<path d="M3 12c3.1-4.6 9.2-5.6 13.2-2.3L20.4 7v10l-4.2-2.7C12.2 17.6 6.1 16.6 3 12z"/><path d="M7.8 11.2h.01"/>',
         'gather' => '<path d="M5 19c0-8.2 5.2-13.2 14.2-14.2C19.2 14 14 19 5 19zm0 0 8.4-8.4"/>',
+        'jumps' => '<path d="M3.5 19c.5-7.2 5-11.6 8.5-11.6s8 4.4 8.5 11.6"/><path d="M12 7.4V3.2m0 0 2.7 2.7M12 3.2 9.3 5.9"/>',
+        'swim' => '<path d="M3.5 12.8c1.7-1.4 3.3-1.4 5 0s3.3 1.4 5 0 3.3-1.4 5 0"/><path d="M3.5 17.8c1.7-1.4 3.3-1.4 5 0s3.3 1.4 5 0 3.3-1.4 5 0"/><circle cx="16.2" cy="6.2" r="2.4"/>',
+        'emote' => '<path d="M4 5h16v10.4h-8.6L7 19.6v-4.2H4z"/><path d="M8.2 10.2h.01M12 10.2h.01M15.8 10.2h.01"/>',
         'crown' => '<path d="M4 18.6h16M4.6 18.6 3.4 8l5 4.2L12 5l3.6 7.2 5-4.2-1.2 10.6"/>',
         'shield' => '<path d="m12 3 7.2 3v5.6c0 4.3-3 7.6-7.2 9.4-4.2-1.8-7.2-5.1-7.2-9.4V6z"/>',
         'clock' => '<circle cx="12" cy="12" r="8.6"/><path d="M12 7v5.2l3.4 2"/>',

@@ -16,7 +16,7 @@ class Totals
      * `config('scarlet.min_characters')` characters contributed to it.
      *
      * @param  int|list<int>|null  $rulesetId
-     * @return array{characters: int|float|null, xp: int|float|null, played_seconds: int|float|null, kills: int|float|null, deaths: int|float|null, quests: int|float|null, copper_earned: int|float|null, copper_spent: int|float|null}
+     * @return array{characters: int|float|null, xp: int|float|null, played_seconds: int|float|null, kills: int|float|null, deaths: int|float|null, quests: int|float|null, jumps: int|float|null, copper_earned: int|float|null, copper_spent: int|float|null}
      */
     public function handle(int|array|null $rulesetId = null): array
     {
@@ -29,6 +29,7 @@ class Totals
             'kills' => $this->kills($rulesetId),
             'deaths' => $this->sum(Rollup::DeathsDailyRuleset, 'deaths', $rulesetId),
             'quests' => $this->sum(Rollup::QuestsDailyRuleset, 'turn_ins', $rulesetId),
+            'jumps' => $this->sum(Rollup::MovementDailyRuleset, 'jumps', $rulesetId),
             'copper_earned' => $this->sum(Rollup::MoneyDailyRuleset, 'earned', $rulesetId),
             'copper_spent' => $this->sum(Rollup::MoneyDailyRuleset, 'spent', $rulesetId),
         ];

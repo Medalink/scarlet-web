@@ -21,6 +21,10 @@ enum Rollup: string
     case DropsDaily = 'drops_daily';
     case OpensDaily = 'opens_daily';
     case SkillsDailyRuleset = 'skills_daily_ruleset';
+    case MovementDailyCharacter = 'movement_daily_character';
+    case MovementDailyRuleset = 'movement_daily_ruleset';
+    case EmotesDailyCharacter = 'emotes_daily_character';
+    case EmotesDailyRuleset = 'emotes_daily_ruleset';
     case HeatDailyCharacter = 'heat_daily_character';
     case HeatDailyRuleset = 'heat_daily_ruleset';
     case DeathHeatDailyCharacter = 'death_heat_daily_character';

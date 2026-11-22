@@ -50,6 +50,12 @@ final class CharacterRecords
         if ($records['fish'] > 0) {
             $tiles[] = self::tile('fish', Format::number($records['fish']), 'Fish caught', $since, self::taken('Most caught', $records['topFish']));
         }
+        if ($records['jumps'] > 0) {
+            $tiles[] = self::tile(Format::number($records['jumps']), 'Jumps', $since);
+        }
+        if ($records['topEmote'] !== null) {
+            $tiles[] = self::tile($records['topEmote']['token'], 'Favourite emote', Format::count($records['topEmote']['uses'], 'emote'));
+        }
         if (count($tiles) < self::LEAST) {
             return null;
         }

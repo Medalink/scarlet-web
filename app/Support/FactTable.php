@@ -21,7 +21,9 @@ enum FactTable: string
     case SkillUps = 'skill_ups';
     case Crafts = 'crafts';
     case PathPoints = 'path_points';
+    case MovementStretches = 'movement_stretches';
     case CreatureSightings = 'creature_sightings';
+    case Emotes = 'emotes';
     case TalentChanges = 'talent_changes';
     case TalentSnapshots = 'talent_snapshots';
     case TalentRespecs = 'talent_respecs';
@@ -41,8 +43,9 @@ enum FactTable: string
             self::MoneyChanges => SharingGroup::ECONOMY,
             self::LootOpens, self::LootDrops => SharingGroup::LOOT,
             self::SkillUps, self::Crafts => SharingGroup::PROFESSIONS,
-            self::PathPoints => SharingGroup::MOVEMENT,
+            self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,
+            self::Emotes => SharingGroup::SOCIAL,
             self::TalentChanges, self::TalentSnapshots, self::TalentRespecs, self::TalentGroupSpans => SharingGroup::BUILD,
         };
     }

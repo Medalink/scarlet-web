@@ -194,6 +194,17 @@ attribution for logs that have no item list.
 
 `map`, `x`, `y`, `facing`: int or null each. By far the most rows (about 80 percent).
 
+### `movement_stretches` (movement: `W`)
+
+A stretch of movement ended: one row per `W` line. `mode` (string or null) is `f` running, `w` walking,
+`m` mounted, `s` swimming or `a` flying; `yards` (int or null) is the length of the stretch in yards,
+`seconds` (int or null) how long it lasted and `jumps` (int or null) how many jumps were in it. The
+`jumpAt` field, the second of each jump, is not kept.
+
+### `emotes` (social: `EM`)
+
+One row per emote use. `token` (string or null) is the emote the way the addon writes it (`LOL`, `WAVE`).
+
 ### `creature_sightings` (world: `NS`)
 
 `npc_id`, `npc_level` (int or null; -1 when the client hides it), `classification` (string or null),

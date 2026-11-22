@@ -16,6 +16,8 @@ class BoardQuery
 
     private const string BY_KILLS = 's.kills desc, c.id';
 
+    private const string BY_JUMPS = 's.jumps desc, c.id';
+
     private const string BY_RUNS = 's.runs desc, c.id';
 
     private const string BY_DISTANCE = 's.distance desc, c.id';
@@ -56,6 +58,7 @@ class BoardQuery
             Board::HighestWithoutDying => self::BY_LEVEL,
             Board::MostQuests => self::BY_QUESTS,
             Board::MostKills => self::BY_KILLS,
+            Board::MostJumps => self::BY_JUMPS,
             Board::MostDungeonRuns => self::BY_RUNS,
             Board::MostDistance => self::BY_DISTANCE,
         };
@@ -73,6 +76,7 @@ class BoardQuery
             Board::HighestWithoutDying => 'row_number() over (order by '.self::BY_LEVEL.') as place, count(*) over () as total',
             Board::MostQuests => 'row_number() over (order by '.self::BY_QUESTS.') as place, count(*) over () as total',
             Board::MostKills => 'row_number() over (order by '.self::BY_KILLS.') as place, count(*) over () as total',
+            Board::MostJumps => 'row_number() over (order by '.self::BY_JUMPS.') as place, count(*) over () as total',
             Board::MostDungeonRuns => 'row_number() over (order by '.self::BY_RUNS.') as place, count(*) over () as total',
             Board::MostDistance => 'row_number() over (order by '.self::BY_DISTANCE.') as place, count(*) over () as total',
         };
@@ -111,6 +115,7 @@ class BoardQuery
             Board::HighestWithoutDying => $query->where('c.whole_life', true)->where('s.deaths', 0)->whereNotNull('s.level')->addSelect('s.level as value'),
             Board::MostQuests => $query->where('s.quests', '>', 0)->addSelect('s.quests as value'),
             Board::MostKills => $query->where('s.kills', '>', 0)->addSelect('s.kills as value'),
+            Board::MostJumps => $query->where('s.jumps', '>', 0)->addSelect('s.jumps as value'),
             Board::MostDungeonRuns => $query->where('s.runs', '>', 0)->addSelect('s.runs as value'),
             default => $query->where('s.distance', '>', 0)->addSelect('s.distance as value'),
         };
@@ -128,6 +133,17 @@ class BoardQuery
             ->selectRaw('count(*)');
     }
 
+    /** Jumps of the character, counted from its first recorded session. */
+    private function jumps(PageScope $scope): Builder
+    {
+        return DB::table('movement_stretches as m')
+            ->whereColumn('m.character_id', 'sessions.character_id')
+            ->where('m.counted', true)
+            ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('m.ruleset_id', $scope->ids))
+            ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('m.ruleset_id', $scope->ids))
+            ->selectRaw('coalesce(sum(jumps), 0)');
+    }
+
     /** What a character's counted sessions add up to, one row per character, for the rulesets of the scope. */
     private function sessionTotals(PageScope $scope): Builder
     {
@@ -138,6 +154,7 @@ class BoardQuery
             ->groupBy('character_id')
             ->selectRaw('character_id, coalesce(sum(deaths), 0) as deaths, coalesce(sum(quests_done), 0) as quests, coalesce(sum(kills), 0) as kills')
             ->selectSub($this->runs($scope), 'runs')
+            ->selectSub($this->jumps($scope), 'jumps')
             ->selectRaw('coalesce(sum(distance), 0) as distance, max(level_end) as level, max(end_at) as last_at')
             ->selectRaw('(array_agg(ruleset_id order by end_at desc))[1] as ruleset_id');
     }

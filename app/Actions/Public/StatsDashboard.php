@@ -17,6 +17,7 @@ use App\Actions\Rollups\ReachedLevels;
 use App\Actions\Rollups\Roster;
 use App\Actions\Rollups\RulesetSummaries;
 use App\Actions\Rollups\TimePerLevel;
+use App\Actions\Rollups\TopEmotes;
 use App\Actions\Rollups\TopKillers;
 use App\Actions\Rollups\Totals;
 use App\Actions\Rollups\WorldHeat;
@@ -36,6 +37,7 @@ class StatsDashboard
         private readonly DeathsByLevel $deathsByLevel,
         private readonly PlayTimeByLevel $playByLevel,
         private readonly TopKillers $killers,
+        private readonly TopEmotes $emotes,
         private readonly DeathZones $deathZones,
         private readonly DungeonRuns $dungeons,
         private readonly Professions $professions,
@@ -76,6 +78,7 @@ class StatsDashboard
             'deaths_by_level' => $this->deathsByLevel->handle($ids),
             'play_by_level' => $this->playByLevel->handle($ids),
             'killers' => $this->killers->handle($ids, 8),
+            'emotes' => $this->emotes->handle($ids),
             'death_zones' => $this->deathZones->handle($ids, limit: 8),
             'dungeons' => $this->dungeons->handle($ids),
             'professions' => $this->professions->handle($ids),

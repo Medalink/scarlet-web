@@ -61,7 +61,7 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'leaderboards', 'group' => 'Leaderboards', 'path' => '/leaderboards', 'action' => [LeaderboardController::class, 'index'],
-                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests, most kills, most dungeon runs and most distance.',
+                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests, most kills, most jumps, most dungeon runs and most distance.',
                 'params' => [],
                 'returns' => '`data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).',
                 'example' => '/leaderboards', 'where' => [],

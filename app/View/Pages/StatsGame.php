@@ -121,6 +121,7 @@ final class StatsGame
             self::busiestHour(StatsPage::rows($r['weekdays'])),
             self::dungeon(StatsPage::rows($r['dungeons'])),
             self::profession(StatsPage::rows($r['professions']), $totals['characters'] ?? null),
+            self::emote(StatsPage::rows($r['emotes'])),
             self::questShare(StatsPage::rows($r['xp_sources'])),
         ]));
         foreach ($records as $i => $record) {
@@ -235,6 +236,17 @@ final class StatsGame
      * @param  list<array<string, mixed>>  $rows
      * @return Record|null
      */
+    private static function emote(array $rows): ?array
+    {
+        $row = $rows[0] ?? null;
+
+        return $row === null ? null : self::record('emote', (string) $row['token'], null, 'Most used emote', Format::count((int) $row['uses'], 'use'));
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return Record|null
+     */
     private static function questShare(array $rows): ?array
     {
         $byLevel = [];
@@ -279,6 +291,7 @@ final class StatsGame
             RoundNumbers::rule('quests', 'Quests turned in', $totals['quests'] ?? null),
             RoundNumbers::rule('deaths', 'Deaths', $totals['deaths'] ?? null),
             RoundNumbers::rule('dungeons', 'Dungeon runs', $runs),
+            RoundNumbers::rule('jumps', 'Jumps', $totals['jumps'] ?? null),
             RoundNumbers::rule('gold', 'Gold earned', $copper === null ? null : floor($copper / self::COPPER_PER_GOLD), 'g'),
         ]));
     }

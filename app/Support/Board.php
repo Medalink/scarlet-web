@@ -13,6 +13,7 @@ enum Board: string
     case HighestWithoutDying = 'highest-level-without-dying';
     case MostQuests = 'most-quests';
     case MostKills = 'most-kills';
+    case MostJumps = 'most-jumps';
     case MostDungeonRuns = 'most-dungeon-runs';
     case MostDistance = 'most-distance';
 
@@ -23,6 +24,7 @@ enum Board: string
             self::HighestWithoutDying => 'Highest level without dying',
             self::MostQuests => 'Most quests turned in',
             self::MostKills => 'Most kills',
+            self::MostJumps => 'Most jumps',
             self::MostDungeonRuns => 'Most dungeon runs',
             self::MostDistance => 'Most distance travelled',
         };
@@ -36,6 +38,7 @@ enum Board: string
             self::HighestWithoutDying => 'shield',
             self::MostQuests => 'quests',
             self::MostKills => 'kills',
+            self::MostJumps => 'jumps',
             self::MostDungeonRuns => 'dungeons',
             self::MostDistance => 'distance',
         };
@@ -48,6 +51,7 @@ enum Board: string
             self::HighestWithoutDying => 'The highest level reached by public characters that Scarlet recorded from their first level, with no death and no play missing.',
             self::MostQuests => 'Quests turned in by public characters, counted from each one\'s first recorded session.',
             self::MostKills => 'Creatures killed by public characters, counted from each one\'s first recorded session.',
+            self::MostJumps => 'Jumps by public characters, counted from each one\'s first recorded session.',
             self::MostDungeonRuns => 'Dungeon runs by public characters, counted from each one\'s first recorded session.',
             self::MostDistance => 'The length of the recorded path on the world map, in world widths: 1.0 is the width of the map. Teleports and loading screens are left out.',
         };
@@ -72,6 +76,7 @@ enum Board: string
             self::HighestWithoutDying => 'Level',
             self::MostQuests => 'Quests',
             self::MostKills => 'Kills',
+            self::MostJumps => 'Jumps',
             self::MostDungeonRuns => 'Runs',
             self::MostDistance => 'World widths',
         };

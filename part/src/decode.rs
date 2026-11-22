@@ -484,6 +484,20 @@ impl Dec<'_> {
                     .opt("facing", num(&f, 3));
                 self.w.end();
             }
+            "W" => {
+                self.fact("movement_stretches", t);
+                self.w
+                    .text("mode", field(&f, 0))
+                    .opt("yards", num(&f, 1))
+                    .opt("seconds", num(&f, 2))
+                    .opt("jumps", num(&f, 3));
+                self.w.end();
+            }
+            "EM" => {
+                self.fact("emotes", t);
+                self.w.text("token", field(&f, 0));
+                self.w.end();
+            }
             "NS" => {
                 self.fact("creature_sightings", t);
                 self.w

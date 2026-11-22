@@ -79,6 +79,7 @@ final class CharacterPage
             'levels' => $levels,
             'records' => CharacterRecords::tiles($r['records'], $totals, $since),
             'feats' => CharacterFeats::section($r['feats'], $character),
+            'modes' => CharacterSections::distance($r['records']['modes'], $since),
             'standings' => CharacterStandings::rows($r['standings']),
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
             'quests' => $quests,

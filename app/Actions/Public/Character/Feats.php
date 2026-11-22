@@ -15,7 +15,7 @@ class Feats
      * hours and of Wayfarer one decimal, both rounded down, so a value never shows a tier it has not reached.
      *
      * @param  array{kills: int, quests: int, distance: float}  $totals  the answer of SessionTotals, which has more keys
-     * @param  array{nodes: int, fish: int}  $records  the answer of Records, which has more keys
+     * @param  array{nodes: int, fish: int, jumps: int, swam: int}  $records  the answer of Records, which has more keys
      * @param  list<array{skill: string, rank: int, cap: int}>  $skills  the answer of SkillRanks
      * @param  list<array<string, mixed>>  $dungeons  the dungeons of the overview, each with its `runs`
      * @return list<array{key: string, name: string, value: int|float, tier: int, tier_name: string|null, threshold: int|null, next: int|null}>
@@ -35,6 +35,8 @@ class Feats
             Feat::Artisan->value => $this->artisan($skills),
             Feat::Angler->value => $records['fish'],
             Feat::Gatherer->value => $records['nodes'],
+            Feat::Jumper->value => $records['jumps'],
+            Feat::Swimmer->value => $records['swam'],
         ];
         $rows = [];
         foreach (Feat::cases() as $feat) {

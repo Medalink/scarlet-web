@@ -27,7 +27,7 @@ final class CharacterLayout
         $combat = self::chapter('Combat', 'combat', 'deaths', [['killed', 4], ['runs', 8], ...($creatures ? [['creatures', 4]] : [])]);
         $loot = self::chapter('Loot and skills', 'loot', 'items', [['skills', $steps ? 8 : 4], ...($gold ? [['gold', 4]] : [])]);
         $build = self::chapter('Talents', 'talents', 'talents', [['respecs', 4], ['talent-order', 12], ['talent-facts', 12]]);
-        $time = self::chapter('Play time', 'time', 'hours', [['zones', 12], ['history', 12]]);
+        $time = self::chapter('Play time', 'time', 'hours', [['distance', 12], ['zones', 12], ['history', 12]]);
 
         $chapters = $capped ? [$combat, $loot, $time, $levelling] : [$levelling, $combat, $loot, $time];
         if ($talents) {

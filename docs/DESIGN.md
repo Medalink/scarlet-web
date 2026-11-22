@@ -204,7 +204,9 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `skill_ups` | `SK`, `SL` | professions | skill, rank |
 | `crafts` | `CR` | professions | item, quantity, recipe |
 | `path_points` | `P` | movement | map, x, y |
+| `movement_stretches` | `W` | movement | mode (`f` running, `w` walking, `m` mounted, `s` swimming, `a` flying), yards, seconds, jumps; `jumpAt` is not kept |
 | `creature_sightings` | `NS` | world | npc, level, classification, type, map, cell |
+| `emotes` | `EM` | social | token, one row per use |
 | `talent_changes` | `TA` | build | a point picked, refunded or swapped: node, ranks, the ordinal of the point in the build, the respec it belongs to |
 | `talent_snapshots` | `TG`, `TA` | build | the build as ranks, tab points, build hash and loadout, one row per change of it |
 | `talent_respecs` | `TA`, `TQ` | build | refunds that came together: points moved, cost, hash before and after |
@@ -304,6 +306,8 @@ public gold-by-level means, while `money_daily_character` reads every row.
 | `money_daily_character`, `money_daily_ruleset` | 1 day | level | earned, spent |
 | `drops_daily`, `opens_daily` | 1 day | source, item, loot rule | drops, quantity, opens (drop rate is drops over first opens) |
 | `skills_daily_ruleset` | 1 day | skill | skill-ups, highest rank |
+| `movement_daily_character`, `movement_daily_ruleset` | 1 day | mode | stretches, yards, seconds, jumps |
+| `emotes_daily_character`, `emotes_daily_ruleset` | 1 day | token | uses |
 | `heat_daily_ruleset`, `heat_daily_character` | 1 day | map, 100 x 100 cell | points |
 | `world_heat_daily_ruleset`, `world_heat_daily_character` | 1 day | world cell (768 x 512) | points |
 | `world_heat_fine_daily_ruleset`, `world_heat_fine_daily_character` | 1 day | world cell (1536 x 1024), paths only | points |
@@ -312,7 +316,7 @@ public gold-by-level means, while `money_daily_character` reads every row.
 
 Reads go through one Action per question in `app/Actions/Rollups/` (`LevellingCurve`, `TimePerLevel`, `XpSourcesByLevel`,
 `DeathsByLevel`, `TopKillers`, `DeathZones`, `DungeonRuns`, `Professions`, `GoldByLevel`, `PlayTimeByWeekday`,
-`PathHeatCells`, `DeathHeatCells`, `CreatureKills`, `DropRates`, `ItemSources`, `QuestTurnIns`, `Totals`). Each takes an
+`PathHeatCells`, `DeathHeatCells`, `CreatureKills`, `DropRates`, `ItemSources`, `QuestTurnIns`, `TopEmotes`, `Totals`). Each takes an
 optional ruleset (none sums every ruleset) and leaves out any group that fewer than `config('scarlet.min_characters')`
 characters contributed to; `Totals` returns null for such a total. Pages and the public API call these and never query a
 fact table. The drop aggregates carry no ruleset, so `DropRates` and `ItemSources` take none. Heat cells are zone-map
@@ -533,16 +537,10 @@ What the layer adds to each page:
 
 | Page | Addition |
 | --- | --- |
-| `/stats`, `/rulesets/{slug}` | The hero and a tally of seven figures with glyphs (characters, highest level, hours, kills, deaths, quests, dungeon runs). **Records across every character**: the deadliest creature, where most characters die, the most dangerous level, the slowest level, the busiest hour, the most run dungeon, the most trained profession (professions only, not weapon skills) and the share of experience from quests at the highest level, each from a figure the page already reads, each left out when its figure is missing. One death is not a record: the creature and the place need two. **The next round numbers**: kills, hours, quests, deaths, dungeon runs and gold earned read off a rule whose right end is the next of 10, 25, 50, 100, 250, 500 and so on. **The climb**: the median played time to each level as a ridge from level 1 to the cap, with a flag at each level where characters stand now (the published reach counts, level by level: reached L less reached L + 1) and a dotted line from the end of the ridge to the cap. The dotted line is not data and says so; a flag at a level past the ridge stands on it. A flag is one level's own count, so one under the character threshold is not drawn. The climb is left out until the curve has two levels. **Classes played** and **Horde and Alliance**: characters by class and by faction (`Rollups\Roster`), a class under the character threshold left out. The modules sit in chapters: Levelling, Danger, Dungeons and skills, Who plays, Gold and time, The world. The tally replaces the old figures row; the count at the level cap stays in the level cap table |
+| `/stats`, `/rulesets/{slug}` | The hero and a tally of seven figures with glyphs (characters, highest level, hours, kills, deaths, quests, dungeon runs). **Records across every character**: the deadliest creature, where most characters die, the most dangerous level, the slowest level, the busiest hour, the most run dungeon, the most trained profession (professions only, not weapon skills), the most used emote across characters and the share of experience from quests at the highest level, each from a figure the page already reads, each left out when its figure is missing. One death is not a record: the creature and the place need two. **The next round numbers**: kills, hours, quests, deaths, dungeon runs, jumps and gold earned read off a rule whose right end is the next of 10, 25, 50, 100, 250, 500 and so on. **The climb**: the median played time to each level as a ridge from level 1 to the cap, with a flag at each level where characters stand now (the published reach counts, level by level: reached L less reached L + 1) and a dotted line from the end of the ridge to the cap. The dotted line is not data and says so; a flag at a level past the ridge stands on it. A flag is one level's own count, so one under the character threshold is not drawn. The climb is left out until the curve has two levels. **Classes played** and **Horde and Alliance**: characters by class and by faction (`Rollups\Roster`), a class under the character threshold left out. The modules sit in chapters: Levelling, Danger, Dungeons and skills, Who plays, Gold and time, The world. The tally replaces the old figures row; the count at the level cap stays in the level cap table |
 | `/leaderboards` | The hall: every board with the character that leads it now and how many characters are on it, for the chosen ruleset and server. It replaces the redirect to one board, and the board picker's first choice, "All boards", leads back to it |
-| `/leaderboards/{board}` | The first three rows of the first page stand on a podium of gold, silver and copper plinths; the table lists the rest, and later pages are the table alone. A new board, `most-kills`: creatures killed, counted from the first recorded session |
-| `/c/{name}` | The head carries the class colour on its dot, a glyph on each figure and a rule from level 1 to the cap with the character's level marked. Record tiles carry glyphs. **Standings**: the character's place on every board it is on, among public characters of every ruleset, with gold, silver and copper for the first three places, each linking to its board; shown for a public character only, since a board lists no other. `GET /public/characters/{name}` carries the same list as `standings`. **Feats**, eleven feats in four tiers (below). A feat not yet earned shows what it takes; an earned one shows what the next tier takes. `GET /public/characters/{name}` carries the same list as `feats` |
-| Every page with a figure strip | `<x-figures>` prints a glyph beside each figure it knows: `App\View\Glyph` is the one table from what a figure counts to its glyph, so a new page gets glyphs with no markup of its own |
-| `/creatures/{id}`, `/zones/{id}` | **Threat**: a seal in four tiers and a gauge of the five steps with the rate marked, from numbers the page already shows. A creature is rated by deaths per 1,000 kills (Risky from 1, Dangerous from 5, Deadly from 15, Lethal from 40) once it has 50 kills; a zone or dungeon by deaths an hour (Risky from 0.1, Dangerous from 0.25, Deadly from 0.5, Lethal from 1) once it has 10 hours. Below the first tier it reads "Harmless so far"; with too little recorded it is left out. The tiers are one table, `App\Support\Threat` |
-| `/rulesets` | The comparison table draws a bar behind the characters and the hours of each ruleset, scaled to the largest |
-| `/talents`, `/talents/{class}/{spec}`, the Talents block of `/stats` | A spec's name carries its class colour |
-| `/search` | Each group of results has its glyph, and a character carries its class colour |
-| `/account/characters` | Private, as before. The figures become a tally with glyphs. **Your records**: the highest level, the most time, kills, deaths and sessions and the richest among the account's characters, each a number with the character that holds it; left out for an account with one character. **The next round numbers** for the account's totals. Everything comes from what the page already reads: no new query and nothing public |
+| `/leaderboards/{board}` | The first three rows of the first page stand on a podium of gold, silver and copper plinths; the table lists the rest, and later pages are the table alone. New boards: `most-kills`, creatures killed, and `most-jumps`, jumps, both counted from the first recorded session |
+| `/c/{name}` | The head carries the class colour on its dot, a glyph on each figure and a rule from level 1 to the cap with the character's level marked. Record tiles carry glyphs. **Standings**: the character's place on every board it is on, among public characters of every ruleset, with gold, silver and copper for the first three places, each linking to its board; shown for a public character only, since a board lists no other. `GET /public/characters/{name}` carries the same list as `standings`. Records tiles for **Jumps** and the **Favourite emote**, and a bar of **distance by mode** (running, walking, mounted, swimming, flying, in yards): each shown only when the character has rows for it, so an owner who stopped sharing `movement` or `social` loses nothing. **Feats**, thirteen feats in four tiers (below). A feat not yet earned shows what it takes; an earned one shows what the next tier takes. `GET /public/characters/{name}` carries the same list as `feats` |
 
 Feats read numbers the character page already shows, so a feat never reveals more than its page. An observed count
 (DESIGN "Mid-life characters") starts when Scarlet first saw the character, and the module says "since" that date
@@ -563,6 +561,8 @@ the first death has no level.
 | Artisan | highest profession rank | 75 | 150 | 225 | 300 |
 | Angler | fish caught | 50 | 250 | 1,000 | 5,000 |
 | Gatherer | nodes gathered | 50 | 250 | 1,000 | 5,000 |
+| Jumper | jumps | 100 | 1,000 | 10,000 | 50,000 |
+| Swimmer | yards swum | 1,000 | 10,000 | 50,000 | 250,000 |
 
 The feats and their thresholds are one table in code (`App\Support\Feat`). Nothing is stored: a feat is computed
 from the character's totals on each read, so a re-decode or a removal changes it with no migration.
@@ -606,9 +606,11 @@ least 7 days old) turns git history into a version and release notes.
   earned and spent per character, not the median carried.
 - **Map layers**: the third layer is creatures met; kills carry no position. The map has no Hours/Days toggle.
 - **Aggregates without a ruleset**: item and drop-rate figures cover every ruleset, as the drop aggregates have none.
-- **Not built**: Played with and the progress bar on the character page (the decoder yields no group membership), Distance
-  by how you moved (no per-mode distance), "How it kills" and "Rolls in groups" on creature and item pages.
-- **Distance** is in world widths; a step longer than 0.05 of the world is a teleport and is not counted.
+- **Not built**: Played with and the progress bar on the character page (the decoder yields no group membership),
+  "How it kills" and "Rolls in groups" on creature and item pages.
+- **Distance** is in world widths; a step longer than 0.05 of the world is a teleport and is not counted. Distance by
+  mode on the character page is different: the yards its `W` movement stretches report. The Wayfarer feat and the
+  most-distance board stay on the path length.
 - **Phone header**: Stats and Map stay in the landing and demo header on a phone; the other pages drop out first.
 - **View transitions**: the `@view-transition` opt-in is also inline in the head, ahead of every stylesheet. Chromium
   re-checks the opt-in as each sheet loads, and with the rule only in site.css a click was cancelled with an unhandled
