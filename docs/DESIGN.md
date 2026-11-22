@@ -582,6 +582,7 @@ public gold-by-level means, while `money_daily_character` reads every row. `kill
 | `gathers_heat_daily_ruleset` | 1 day | kind, map, 100 x 100 cell | attempts |
 | `gathers_daily_character` | 1 day | kind, character, level | attempts, looted, skill-ups, highest rank; read by the four gathering boards and the rank medians |
 | `gather_items_daily_ruleset` | 1 day | kind, item, container item, zone | item rows, quantity, rank as a percentile sketch |
+| `gather_items_daily_source` | 1 day | kind, source (the skinned creature, the herb or vein object, the bobber or school; null for what a container held), container item, item | item rows, quantity, rank as a percentile sketch |
 | `crafts_hourly_ruleset` | 1 hour | profession, level, zone | crafts, quantity made, skill-ups, trivial crafts, sittings (rows with no gap), the gap as a percentile sketch |
 | `crafts_daily_shape_ruleset` | 1 day | profession, difficulty, rank band (25) | crafts, skill-ups |
 | `crafts_daily_recipe_ruleset` | 1 day | profession, recipe, item | crafts, quantity made, skill-ups, rank as a percentile sketch |

@@ -1,11 +1,11 @@
-@php($tail = array_keys(array_filter(['made' => $d['made'], 'uses' => $d['uses'], 'bosses' => $d['bosses'], 'prices' => $d['prices']])))
+@php($tail = array_keys(array_filter(['gathered' => $d['gathered'], 'bosses' => $d['bosses'], 'made' => $d['made'], 'uses' => $d['uses'], 'prices' => $d['prices']])))
 @php($recipeColumns = [['label' => 'Recipe'], ['label' => 'Makes'], ['label' => 'Needs']])
 <x-layouts.app :title="$d['name'].': where it drops and how often'" :description="trim($d['sub'].' Where '.$d['name'].' drops in WoW Forever and how often.')">
 <div class="wrap">
   <x-page-head :title="$d['name']" :class="$d['quality']" :single="true">
     <x-slot:sub>{{ $d['sub'] }}@if ($d['sell']) Sells for {{ $d['sell'] }}.@endif</x-slot:sub>
   </x-page-head>
-  <x-figures :items="$d['figures']" />
+  <x-figures :items="$d['figures']" :five="true" />
   <x-sheet>
     <x-module span="w12" :first="true" :last="$tail === []" id="h-s" heading="Where it drops">
       @if ($d['rules'])
@@ -18,6 +18,12 @@
       <x-note>No drops of this item are recorded yet.</x-note>
       @endif
     </x-module>
+    @if ($d['gathered'])
+    <x-module span="w12" :last="end($tail) === 'gathered'" id="h-g" heading="Where it's gathered">
+      <x-table :rows="$d['gathered']" :columns="[['label' => 'Source'], ['label' => 'Profession'], ['label' => 'Gathered', 'numeric' => true], ['label' => 'Share', 'numeric' => true], ['label' => 'Median skill', 'numeric' => true]]" style="margin-top:1.1rem" />
+      <p class="note">@if ($d['gathered_shared'])Share is the skins of that creature that gave this item. @endif Gathering covers every ruleset.</p>
+    </x-module>
+    @endif
     @if ($d['bosses'])
     <x-module span="w12" :last="end($tail) === 'bosses'" id="h-b" heading="Boss encounters that dropped it">
       <x-table :rows="$d['bosses']" :columns="[['label' => 'Encounter'], ['label' => 'Dropped', 'numeric' => true]]" style="margin-top:1.1rem" />

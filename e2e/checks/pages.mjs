@@ -80,6 +80,7 @@ export async function scoreboardIsShownWithoutNames(ctx) {
 }
 
 export async function recipeSpellAndBossLootAreShown(ctx) {
+  await rollupsRefreshed(ctx);
   const problems = [];
   const spell = expectStatus(await ctx.http.page("/spells/2660"), 200, "/spells/2660").text;
   if (!/<td>Rough Stone<\/a><\/td>|>Rough Stone<\/a>/.test(spell)) problems.push("/spells/2660 lists the reagent Rough Stone");
@@ -92,6 +93,11 @@ export async function recipeSpellAndBossLootAreShown(ctx) {
   if (!used.includes("Recipes that use it")) problems.push("/items/2835 lists the recipe that uses it");
   const dropped = expectStatus(await ctx.http.page("/items/769"), 200, "/items/769").text;
   if (!dropped.includes("Boss encounters that dropped it") || !dropped.includes("/encounters/1065")) problems.push("/items/769 lists the encounter that dropped it");
+  const skinned = expectStatus(await ctx.http.page("/items/2318"), 200, "/items/2318").text;
+  if (!skinned.includes("Where it&#039;s gathered") && !skinned.includes("Where it's gathered")) problems.push("/items/2318 shows where it's gathered");
+  if (!skinned.includes("/creatures/113")) problems.push("/items/2318 names the Stonetusk Boar it is skinned from");
+  const pearl = expectStatus(await ctx.http.page("/items/7971"), 200, "/items/7971").text;
+  if (!pearl.includes("/items/7973")) problems.push("/items/7971 names the Big-mouth Clam it came in");
   const encounter = expectStatus(await ctx.http.page("/encounters/1065"), 200, "/encounters/1065").text;
   if (!/Chunk of Boar Meat<\/a><\/td><td class="n ?">1<\/td><td class="n ?">2<\/td>/.test(encounter)) {
     problems.push("/encounters/1065 counts the drop two uploaders heard once, from 2 characters");

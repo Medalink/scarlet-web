@@ -3,6 +3,7 @@
 namespace App\View\Pages;
 
 use App\Support\CreatureClass;
+use App\Support\GatherKind;
 use App\Support\KillerKind;
 use App\Support\LootRead;
 use App\Support\LootRule;
@@ -122,6 +123,9 @@ final class RecordPages
         $counted = array_values(array_filter($bySource['rows'], fn (array $row): bool => ! $row['estimate']->stated()));
         $best = $stated === [] || $stated[0]['estimate']->sample !== RateSample::Solid ? null : $stated[0]['estimate'];
         $query = fn (?string $rule): string => '/items/'.$r['id'].($rule === null ? '' : '?'.http_build_query(['rule' => $rule]));
+        /** @var list<array<string, mixed>> $gathered */
+        $gathered = $r['gathered'];
+        $topShare = max(0.0001, (float) max([0.0, ...array_filter(array_column($gathered, 'rate'))]));
 
         $facts = [];
         if ($item !== null) {
@@ -144,6 +148,7 @@ final class RecordPages
             'prices' => ItemPriceHistory::markets($r['prices']),
             'figures' => [
                 ['label' => 'Dropped', 'value' => $r['dropped'] === null ? '–' : Format::number($r['dropped']), 'unit' => $r['dropped'] === null ? Format::TOO_FEW : null],
+                ['label' => 'Gathered', 'value' => $r['gathered_count'] === null ? '–' : Format::number($r['gathered_count']), 'icon' => 'gather'],
                 ['label' => 'Sources', 'value' => Format::number($r['source_count'])],
                 ['label' => 'Best drop rate', 'value' => $best === null ? '–' : $best->percent()],
                 ['label' => 'First recorded', 'value' => $first ?? '–'],
@@ -160,6 +165,14 @@ final class RecordPages
                 ...($stated !== [] && $counted !== [] ? [['hair' => true]] : []),
                 ...array_map(self::sourceRow(...), $counted),
             ],
+            'gathered_shared' => array_filter(array_column($gathered, 'rate')) !== [],
+            'gathered' => array_map(fn (array $row): array => ['cells' => [
+                self::gatherSource($row),
+                GatherKind::tryFrom((string) $row['kind'])?->label() ?? (string) $row['kind'],
+                Format::number((int) $row['gathers']),
+                $row['rate'] === null ? '–' : ['text' => Format::percent((float) $row['rate'], (float) $row['rate'] < 0.01 ? 2 : 1), 'bar' => max(0.15, (float) $row['rate'] / $topShare * 5.2).'rem'],
+                $row['median_skill'] === null ? '–' : Format::number((float) round((float) $row['median_skill'])),
+            ]], $gathered),
         ];
     }
 
@@ -351,6 +364,22 @@ final class RecordPages
         $end = $data[count($data) - 1][0];
 
         return Charts::bars(['w' => 480, 'h' => 250, 'x0' => $first - 1, 'x1' => $end + 1, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks']), 'xt' => Charts::ticks(Axis::spread($first, $end, 4))], $data, '', $say);
+    }
+
+    /**
+     * The source cell of a gathered row: the creature skinned or the container the item came in, or the profession
+     * itself when the source has no name of its own.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, string>
+     */
+    private static function gatherSource(array $row): array
+    {
+        if ($row['source_kind'] !== null) {
+            return self::source($row);
+        }
+
+        return ['text' => GatherKind::tryFrom((string) $row['kind'])?->label() ?? (string) $row['kind']];
     }
 
     /**
