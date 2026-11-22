@@ -18,6 +18,7 @@ enum FactTable: string
     case MoneyChanges = 'money_changes';
     case LootOpens = 'loot_opens';
     case LootDrops = 'loot_drops';
+    case BossLoot = 'boss_loot';
     case SkillUps = 'skill_ups';
     case Crafts = 'crafts';
     case PathPoints = 'path_points';
@@ -61,7 +62,7 @@ enum FactTable: string
             self::TitleBaselines => SharingGroup::COLLECTIONS,
             self::ExploredBaselines => SharingGroup::WORLD,
             self::MoneyChanges, self::AuctionPrices => SharingGroup::ECONOMY,
-            self::LootOpens, self::LootDrops => SharingGroup::LOOT,
+            self::LootOpens, self::LootDrops, self::BossLoot => SharingGroup::LOOT,
             self::SkillUps, self::Crafts => SharingGroup::PROFESSIONS,
             self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,

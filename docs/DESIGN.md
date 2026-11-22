@@ -202,6 +202,7 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `money_changes` | `M`, `S` | economy | earned, spent, balance (transfers between own characters count as neither) |
 | `loot_opens` | `LO` | loot | source kind and id, first read or not, loot rule, threshold, group size |
 | `loot_drops` | `LO`, `O` | loot | source, item, quantity, loot rule, group size |
+| `boss_loot` | `EL` | loot | an item someone in the uploader's group received from a boss encounter: encounter id, item, quantity, receiver (a pseudonym outside the social group) and class. The notice reaches every member of the group, so each uploader has a row and a page counts a drop once: by encounter, item, receiver's class and a 10 minute bucket, taking the largest count any one uploader has |
 | `skill_ups` | `SK`, `SL` | professions | skill, rank |
 | `crafts` | `CR` | professions | item, quantity, recipe |
 | `path_points` | `P` | movement | map, x, y |
@@ -224,6 +225,9 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `inspected_gear` | `IG` | social | the gear of a player the uploader inspected: name and the `slot:itemID:enchantID:suffixID` list. Stored for later pages |
 | `battleground_matches` | `BM` | pvp | a match that ended: instance, zone name, rated, arena, the uploader's team, the winning side, duration, result, whether it affects rating |
 | `battleground_scores` | `BO` | social | another player's scoreboard row, read after the match: name, faction, class file, killing blows, honorable kills, deaths, honor, damage, healing, the objective stats. `match_at` is the end of the match (the last `BM 0` before the row), so one uploader's rows of one match share it |
+
+Game reference tables, the same for every uploader, keep the newest row per id: `recipes` and `recipe_reagents`
+(`RQ`: what a recipe makes and needs) and `spells` (`SI`, `SD`: icon id, cast time, ranges, costs, passive, description).
 
 Dictionaries, plain tables: `names(kind, id, name)` from the name lines, `items` from `II`, `zones`, `rulesets`,
 `talent_trees` and `talent_nodes` (the class tree layouts of `TV` and `TD`, one per tree, client build and layout hash;
