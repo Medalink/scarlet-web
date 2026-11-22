@@ -19,6 +19,7 @@
       @endif
       <p class="note"><a href="/loot">All loot</a></p>
     </x-module>
+    @include('pages.item.groups', ['groups' => $groups])
     @if ($d['gathered'])
     <x-module span="w12" :last="end($tail) === 'gathered'" id="h-g" heading="Where it's gathered">
       <x-table :rows="$d['gathered']" :columns="[['label' => 'Source'], ['label' => 'Profession'], ['label' => 'Gathered', 'numeric' => true], ['label' => 'Share', 'numeric' => true], ['label' => 'Median skill', 'numeric' => true]]" style="margin-top:1.1rem" />
