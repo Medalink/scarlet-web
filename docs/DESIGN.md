@@ -675,7 +675,9 @@ character with 100,000 gathers and 1,000,000 play spans over a year, the own Fis
 cleared (1.6 s before the play reads were merged) and 0.12 s with it warm; with 1,000,000 gathers and 2,000,000 spans it
 takes 5.1 s cold and 0.16 s warm. A page reads each answer for a minute, then stale for five.
 
-Aggregates refresh on a policy and once more, for the affected time range, after a decode or a removal. Removing a
+Aggregates refresh on a policy and once more, for the affected time range, after a decode or a removal. Several
+refreshes over one aggregate cannot run at the same time: TimescaleDB holds the aggregate for a whole refresh window,
+so the callers wait for the refresh running instead of failing (`SQLSTATE 55P03`). Removing a
 group or everything deletes the fact rows; TimescaleDB records the change and the refresh takes the contribution out
 of the rollups.
 

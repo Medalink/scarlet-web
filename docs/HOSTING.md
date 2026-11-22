@@ -609,7 +609,9 @@ What changed in the code around it:
   must; a writer added later has to do the same.
 - `RefreshAggregates` cuts a range to the days that have chunks and refreshes it in slices, so `rulesets:merge`'s
   range from 1970 to 2100 costs the days that hold rows. A refresh still recomputes only what the invalidation log
-  marks, and reads the compressed chunks of those days.
+  marks, and reads the compressed chunks of those days. Two refreshes over one aggregate cannot run at once
+  (TimescaleDB holds it for the whole window), so the slice loop waits for the refresh running on a lock and retries a
+  slice a few times while TimescaleDB's own policy holds it; one that stays locked fails and `RefreshRollups` retries.
 - TimescaleDB stops a transaction that updates more than 100,000 rows of compressed chunks. `rulesets:merge` and
   `maps:place-points` lift that limit for their own transactions (`DecompressionLimit`). A re-decode deletes by
   character and session and inserts new rows; both work on a compressed chunk, which becomes partly compressed and
