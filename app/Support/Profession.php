@@ -26,6 +26,17 @@ enum Profession: string
     /** The rank every profession stops at. */
     public const int SKILL_CAP = 300;
 
+    /** The professions a character chooses between, holding at most `PRIMARY_HELD` at once. */
+    public const array PRIMARY = [
+        self::Alchemy, self::Blacksmithing, self::Enchanting, self::Engineering, self::Herbalism,
+        self::Leatherworking, self::Mining, self::Skinning, self::Tailoring,
+    ];
+
+    public const int PRIMARY_HELD = 2;
+
+    /** The professions every character can hold beside its primary ones. */
+    public const array SECONDARY = [self::Cooking, self::FirstAid, self::Fishing];
+
     /**
      * The professions with a page, gathering first, in the order the pages list them.
      *

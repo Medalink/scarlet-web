@@ -22,19 +22,32 @@ class SkillCounts
     public function handle(Character $character): array
     {
         $id = (int) $character->id;
-        $ranks = array_map(fn (array $skill): int => $skill['rank'], array_filter(
-            $this->skillRanks->handle($id),
-            fn (array $skill): bool => Profession::tryFrom($skill['skill']) !== null,
-        ));
+        $held = $this->heldRanks($id);
         $crafts = DB::table('crafts')->where('character_id', $id)->where('counted', true)->whereNotNull('item_id')
             ->selectRaw('coalesce(sum(coalesce(quantity, 1)), 0) as crafted, count(distinct item_id) as repertoire')->first();
 
         return [
-            Feat::Artisan->value => array_sum($ranks),
-            Feat::Master->value => count(array_filter($ranks, fn (int $rank): bool => $rank >= SkillRanks::CAP)),
+            Feat::Artisan->value => array_sum($held),
+            Feat::Master->value => count(array_filter($held, fn (int $rank): bool => $rank >= Profession::SKILL_CAP)),
             Feat::Practised->value => DB::table('skill_ups')->where('character_id', $id)->where('counted', true)->where('kind', SkillKind::Skill->value)->count(),
             Feat::Crafter->value => (int) ($crafts->crafted ?? 0),
             Feat::Repertoire->value => (int) ($crafts->repertoire ?? 0),
+        ];
+    }
+
+    /** @return list<int> */
+    private function heldRanks(int $characterId): array
+    {
+        $ranks = [];
+        foreach ($this->skillRanks->handle($characterId) as $skill) {
+            $ranks[$skill['skill']] = min($skill['rank'], Profession::SKILL_CAP);
+        }
+        $primary = array_map(fn (Profession $profession): int => $ranks[$profession->value] ?? 0, Profession::PRIMARY);
+        rsort($primary);
+
+        return [
+            ...array_slice($primary, 0, Profession::PRIMARY_HELD),
+            ...array_map(fn (Profession $profession): int => $ranks[$profession->value] ?? 0, Profession::SECONDARY),
         ];
     }
 }

@@ -1031,7 +1031,10 @@ Summit, Unbroken, Artisan, Explorer, Cartographer, Questing and Tracker stop whe
 cap, five professions at 300, or most of the zones, areas, quests and rares of the world. No legend asks for more than
 one character can reach (owner, 2026-11-22: "capped to possibility"). Cartographer counts the discoveries that give experience: the client's
 AreaTable has about 585 such areas in the zones of the two continents, and a discovery gives none at the level cap or
-far above the area's level, so legend at 500 asks for the areas of both factions' zones found while leveling. Delver, Crafter, Angler and Gatherer are
+far above the area's level, so legend at 500 asks for the areas of both factions' zones found while leveling. Artisan and Master count
+Cooking, First Aid, Fishing and the two primary professions with the highest ranks, each at most 300, and leave out
+Lockpicking and Poisons. `skill_ups` keeps the highest rank of a profession the character dropped, so a dropped
+primary can stand in for a held one, but the count never passes what two primaries reach. Delver, Crafter, Angler and Gatherer are
 sized for play given to them, such as 130 hours of fishing. The summary counts the feats held, and its counts by
 tier add up to them.
 
@@ -1099,8 +1102,8 @@ tier add up to them.
 | Wading | zones fished in | 1 | 5 | 10 | 20 | 30 |
 | Gatherer | nodes gathered | 10 | 250 | 1,500 | 5,000 | 15,000 |
 | Forager | zones gathered in | 1 | 5 | 10 | 20 | 30 |
-| Artisan | profession ranks | 75 | 300 | 750 | 1,350 | 1,500 |
-| Master | professions at rank 300 | 1 | 2 | 3 | 4 | 5 |
+| Artisan | ranks of the five professions one character can hold | 75 | 300 | 750 | 1,350 | 1,500 |
+| Master | of those five, the professions at rank 300 | 1 | 2 | 3 | 4 | 5 |
 | Practised | skill-ups | 10 | 300 | 1,000 | 1,800 | 2,500 |
 | Crafter | items crafted | 5 | 500 | 2,500 | 10,000 | 25,000 |
 | Repertoire | kinds of item crafted | 3 | 25 | 75 | 150 | 300 |
