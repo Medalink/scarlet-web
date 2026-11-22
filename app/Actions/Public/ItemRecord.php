@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 class ItemRecord
 {
-    public function __construct(private readonly ItemSources $sources) {}
+    public function __construct(private readonly ItemSources $sources, private readonly ItemPrices $prices) {}
 
     /**
-     * Everything the item page and `/public/items/{id}` show: what the item is and where it drops, by source and
-     * loot rule. The drop aggregates carry no ruleset, so every figure is over all rulesets. Null when nothing is
-     * known by this id.
+     * Everything the item page and `/public/items/{id}` show: what the item is, where it drops, by source and
+     * loot rule, and its auction price history for each ruleset and realm. The drop aggregates carry no ruleset, so
+     * every drop figure is over all rulesets. Null when nothing is known by this id.
      *
      * @return array<string, mixed>|null
      */
@@ -37,6 +37,7 @@ class ItemRecord
             'name' => is_string($name) ? $name : 'Item '.$id,
             'item' => $item === null ? null : (array) $item,
             'sources' => $sources,
+            'prices' => $this->prices->handle($id),
             'dropped' => $totals === null ? null : (int) $totals->dropped,
             'first_at' => $totals?->first_at,
             'source_count' => count(array_unique(array_map(fn (array $row): string => $row['source_kind'].':'.$row['source_id'], $sources))),

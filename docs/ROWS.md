@@ -262,6 +262,15 @@ minutes before the row. When the session has none, the first row of a run of row
 
 `BS`, the uploader's own row, is not decoded.
 
+### `auction_prices` (economy: `AQ`)
+
+One row per `AQ` line: a price the auction house showed the player. `kind` (string or null) is `c` a commodity
+search (lowest unit price, `quantity` everything on sale), `i` an item search (lowest buyout among the first 50
+results) or `b` one browse row. `item_id`, `price` (copper), `quantity`, `listings`, `item_level` and `suffix` are
+int or null each; `item_level` and `suffix` are the item key's and null for a commodity. `realm_id` (int or null) is
+the realm id of the session's `RU` line, null when the session has not read one by the time of the line. Sellers and
+bidders are never in the line.
+
 ### `camp_stays` (combat: `A`, `C`, `D`; xp: `AFK`; professions: `CR`; movement: `P`)
 
 One row per stay by a campfire: the span the character holds the aura Campfire Nearby (1283391), which the client

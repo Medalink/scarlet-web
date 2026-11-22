@@ -101,6 +101,7 @@ final class RecordPages
             'quality' => ItemTypes::quality($item['quality'] ?? null),
             'sub' => implode(' ', $facts),
             'sell' => ($item['sell_price'] ?? 0) > 0 ? Format::money($item['sell_price']) : null,
+            'prices' => ItemPriceHistory::markets($r['prices']),
             'figures' => [
                 ['label' => 'Dropped', 'value' => $r['dropped'] === null ? '–' : Format::number($r['dropped']), 'unit' => $r['dropped'] === null ? Format::TOO_FEW : null],
                 ['label' => 'Sources', 'value' => Format::number($r['source_count'])],

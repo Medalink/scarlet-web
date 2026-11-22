@@ -24,6 +24,7 @@ enum FactTable: string
     case MovementStretches = 'movement_stretches';
     case CreatureSightings = 'creature_sightings';
     case Emotes = 'emotes';
+    case AuctionPrices = 'auction_prices';
     case TalentChanges = 'talent_changes';
     case TalentSnapshots = 'talent_snapshots';
     case TalentRespecs = 'talent_respecs';
@@ -59,7 +60,7 @@ enum FactTable: string
             self::QuestEvents, self::QuestBaselines => SharingGroup::QUESTS,
             self::TitleBaselines => SharingGroup::COLLECTIONS,
             self::ExploredBaselines => SharingGroup::WORLD,
-            self::MoneyChanges => SharingGroup::ECONOMY,
+            self::MoneyChanges, self::AuctionPrices => SharingGroup::ECONOMY,
             self::LootOpens, self::LootDrops => SharingGroup::LOOT,
             self::SkillUps, self::Crafts => SharingGroup::PROFESSIONS,
             self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,

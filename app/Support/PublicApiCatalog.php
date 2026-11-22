@@ -109,9 +109,9 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'item', 'group' => 'Records', 'path' => '/items/{id}', 'action' => [RecordController::class, 'item'],
-                'summary' => 'One item: what it is and where it drops, by source and loot rule.',
+                'summary' => 'One item: what it is, where it drops by source and loot rule, and its auction prices.',
                 'params' => [['id', 'path', 'integer', 'The item id, as in the address of its page.']],
-                'returns' => '`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `dropped`, `source_count`, `best_rate`, `first_at`.',
+                'returns' => '`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`.',
                 'example' => '/items/1465', 'where' => ['id' => '[0-9]+'],
             ],
             [

@@ -433,13 +433,13 @@ Example: `curl https://<host>/api/v1/public/creatures/257926`
 
 #### `GET /public/items/{id}`
 
-One item: what it is and where it drops, by source and loot rule.
+One item: what it is, where it drops by source and loot rule, and its auction prices.
 
 | Parameter | In | Type | Meaning |
 | --- | --- | --- | --- |
 | `id` | path | integer | The item id, as in the address of its page. |
 
-`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `dropped`, `source_count`, `best_rate`, `first_at`.
+`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`.
 
 Example: `curl https://<host>/api/v1/public/items/1465`
 

@@ -208,6 +208,7 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `movement_stretches` | `W` | movement | mode (`f` running, `w` walking, `m` mounted, `s` swimming, `a` flying), yards, seconds, jumps; `jumpAt` is not kept |
 | `creature_sightings` | `NS` | world | npc, level, classification, type, map, cell |
 | `emotes` | `EM` | social | token, one row per use |
+| `auction_prices` | `AQ` | economy | a price the auction house showed: kind (`c` commodity search, `i` item search, `b` browse row), item, copper price, quantity, listings, item level, suffix, and the realm of the session. The item page reads the lowest search price per UTC day for each ruleset and realm, and a browse row only on a day with no search; no sellers or bidders are stored |
 | `camp_stays` | `A`, `C`, `D`, `AFK`, `CR`, `P` | combat | one stay by a campfire (the aura Campfire Nearby): seconds, AFK, sat and tent seconds, whether Camp Benefits came, the campfire, tent and chair the character placed, crafts, a death within 300 s after, the map position. `CP` is not read: it counts the hour-long Camp Benefits buff too and overstates the time at camp (Medalink/scarlet#2) |
 | `camp_benefits` | `A`, `D` | combat | one Camp Benefits aura or benefit buff held: spell, seconds, whether it was already on at the session start, whether a death took it |
 | `quest_baselines` | `QB` | quests | one read of the quests the client says the character completed: the total and the ids. The latest read's total is `characters.quests_completed`, which the lifetime quests board ranks |
