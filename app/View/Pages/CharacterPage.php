@@ -66,6 +66,7 @@ final class CharacterPage
         return [
             'id' => $character->id,
             'name' => Format::characterName($character->name),
+            'path' => '/c/'.rawurlencode($character->name),
             'owner' => $r['owner'],
             'economy' => $economy,
             'since' => $since,
@@ -120,8 +121,8 @@ final class CharacterPage
 
         return [
             'title' => $character->level === null || $raceAndClass === ''
-                ? $character->name.': character overview'
-                : $character->name.', level '.$character->level.' '.$raceAndClass,
+                ? Format::characterName($character->name).': character overview'
+                : Format::characterName($character->name).', level '.$character->level.' '.$raceAndClass,
             'description' => ($lead === '' ? '' : $lead.'. ').$list.'. Recorded by Scarlet in WoW Forever.',
         ];
     }

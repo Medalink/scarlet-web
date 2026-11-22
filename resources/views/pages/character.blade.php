@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['share']['title']" :description="$d['share']['description']" :canonical="'/c/'.rawurlencode($d['name'])" :index="! $d['owner']">
+<x-layouts.app :title="$d['share']['title']" :description="$d['share']['description']" :canonical="$d['path']" :index="! $d['owner']">
 <section @class(['ch-head', 'ch-rich', 'ch-bare' => ! $d['hasMap']]) aria-labelledby="h1">
   @if ($d['hasMap'])
   <div class="stage"><x-world-canvas id="map" :behind-head="true" label="Every path {{ $d['name'] }} walked, with deaths as crosses. Drag to move, click the map and scroll to zoom." :spec="$d['map']" />
@@ -18,7 +18,7 @@
 </section>
 <div class="wrap">
   @if ($d['owner'])<livewire:owner-bar :character-id="$d['id']" />@endif
-  @if ($d['ownerSeesVisitorView'])<div class="own"><span>Visitor view</span><span class="sp"><a href="/c/{{ rawurlencode($d['name']) }}">Back to your view</a></span></div>@endif
+  @if ($d['ownerSeesVisitorView'])<div class="own"><span>Visitor view</span><span class="sp"><a href="{{ $d['path'] }}">Back to your view</a></span></div>@endif
   @if ($d['records'])
   <section class="recs" aria-labelledby="h-records">
     <h2 id="h-records">Records</h2>
