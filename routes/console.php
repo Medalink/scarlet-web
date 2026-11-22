@@ -11,4 +11,5 @@ Schedule::command('search:scores')->hourly()->withoutOverlapping()->onOneServer(
 Schedule::command('rulesets:refile')->dailyAt('04:30')->withoutOverlapping()->onOneServer();
 Schedule::command('api-calls:prune')->dailyAt('03:50')->withoutOverlapping()->onOneServer();
 Schedule::command('feats:refresh')->dailyAt('04:10')->withoutOverlapping()->onOneServer();
+Schedule::command('loot:rebuild-keyed')->dailyAt('04:20')->withoutOverlapping()->onOneServer();
 Schedule::command('ingest:redecode --outdated')->everyTenMinutes()->withoutOverlapping()->onOneServer();

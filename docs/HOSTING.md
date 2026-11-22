@@ -615,9 +615,12 @@ What changed in the code around it:
 - The five keyed loot tables are plain tables the 15-minute policy never touches. `RebuildKeyedLoot` rebuilds the days
   of the same range and a day on each side at the end of the refresh, under the same lock (`RollupLock`), reading the
   windows of five days for a one-day range instead of every chunk. A one-day refresh on 280,000 kills and 330,000
-  windows over 30 days takes 0.65 s where the whole range takes 5.9 s. A change to how the tables count corrects only
-  the days a refresh covers, so a release that changes it ships a migration that rebuilds every day once, as
-  `2026_12_28` does; it waits up to 120 s for a refresh that is running.
+  windows over 30 days takes 0.65 s where the whole range takes 5.9 s. A change to how the tables count, and the set of
+  skin items that a mate's window is read against, reach only the days a refresh covers. `php artisan
+  loot:rebuild-keyed` rebuilds every day under the same lock, and the scheduler runs it daily at 04:20 UTC (without
+  overlapping, on one server); it waits up to 600 s for a refresh that is running and exits non-zero when the lock is
+  still held, and the next day's run tries again. A release that must correct the days at once ships a migration that
+  rebuilds them, as `2026_12_28` does.
 - TimescaleDB stops a transaction that updates more than 100,000 rows of compressed chunks. `rulesets:merge` and
   `maps:place-points` lift that limit for their own transactions (`DecompressionLimit`). A re-decode deletes by
   character and session and inserts new rows; both work on a compressed chunk, which becomes partly compressed and
