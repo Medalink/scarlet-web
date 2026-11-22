@@ -97,6 +97,12 @@ enum FactTable: string
                 SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
             ],
             self::CampBenefits => [SharingGroup::XP => ['xp']],
+            self::Kills => [SharingGroup::LOOT => ['loot_rule', 'group_size']],
+            self::LootOpens => [
+                SharingGroup::COMBAT => ['read'],
+                SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
+            ],
+            self::LootDrops => [SharingGroup::COMBAT => ['read']],
             self::Gathers => [
                 SharingGroup::COMBAT => ['in_combat'],
                 SharingGroup::LOOT => ['looted', 'source_id', 'again'],

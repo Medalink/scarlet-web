@@ -81,13 +81,14 @@ written. `at` is the span start.
 | `source_id` | int or null | npcID for `k`/`d`, questID for `q`, null otherwise |
 | `xp`, `xp_max` | int or null | the bar after the gain |
 
-### `kills` (combat: `K`)
+### `kills` (combat: `K`; loot: `LM`; social: `GP`)
 
 | Key | Type | |
 | --- | --- | --- |
 | `npc_id` | int or null | null for a player (`K p`) |
 | `player` | bool | `K` npcID is `p` |
 | `by` | int or null | `1` you or your pet, `0` a party member, `2` unattributed |
+| `loot_rule`, `group_size` | string or null, int or null | the rule in force at the kill, as on `loot_opens`: the `LM` method (`unknown` until a line says) and the group size from `GP`/`LM`. No threshold. Both null without a `loot` part, and a removed `loot` nulls them (`FactTable::groupColumns`) (decoder version 10) |
 
 ### `deaths` (combat: `D`, `DL`, `DR`)
 
@@ -179,7 +180,7 @@ The run count of OVERVIEW.md (`r`) is the number of rows left after this.
 OVERVIEW.md counts `earned` and `spent` of the `M` rows. The balance before the first anchor is not walked back;
 the job may do so from the following sessions.
 
-### `loot_opens` (loot: `LO`)
+### `loot_opens` (loot: `LO`, `LM`; combat: `C`, `CH`; movement: `P`)
 
 | Key | Type | |
 | --- | --- | --- |
@@ -189,8 +190,11 @@ the job may do so from the following sessions.
 | `slots` | int or null | |
 | `has_items` | bool | the line lists items (lines from before 2026-11-20 15:00 do not) |
 | `loot_rule`, `threshold`, `group_size` | string, int or null, int or null | the rule in force: `LM` method (`unknown` until a line says), threshold, and the group size from `GP`/`LM` |
+| `read` | string or null | what the window was read for. `herb`, `ore`, `fish` or `skin` when a cast of that kind ended within 2 s before the window and the window is of the kind's source (`g`, or `c` for skinning): the rule `gathers.looted` uses, taken from the same match, so a `skin` window is one a skinning `gathers` row counts as looted. Otherwise `loot` for a creature or object, `bag` for kind `i`, `other` for kind `o`. Casts are `combat` lines: null without a `combat` part, and a removed `combat` nulls it (decoder version 10) |
+| `item_rows` | int or null | the item entries of the window, a stack listed twice counted once, so the `window` rows of `loot_drops` that the window writes number the same; 0 is coin or currency only. Null when the line lists nothing (`has_items` false) (decoder version 10) |
+| `map`, `x`, `y` | int or null | the last `P` at or before the window, as `gathers` reads it. Null without a `movement` part or before a first `P`. The ingest adds `u` and `v` from `map` and `x`, `y` the way it does for `path_points` (decoder version 10) |
 
-### `loot_drops` (loot: `LO`, `O`)
+### `loot_drops` (loot: `LO`, `O`; combat: `C`, `CH`)
 
 | Key | Type | |
 | --- | --- | --- |
@@ -199,9 +203,12 @@ the job may do so from the following sessions.
 | `item_id` | int | |
 | `quantity` | int | |
 | `loot_rule`, `threshold`, `group_size` | | as `loot_opens` |
+| `read` | string or null | as `loot_opens`; for a receipt, that of the source window, null without one (decoder version 10) |
 
-Drop rates count `window` rows only (coin and currency entries of a window are not rows). `receipt` rows give the
-attribution for logs that have no item list.
+Drop rates count `window` rows only (coin and currency entries of a window are not rows). A window writes one row per
+item: stacks of one item listed in one window are added into one row, in the order the items first appear (decoder
+version 10; a window that listed an item twice wrote two rows before). `receipt` rows give the attribution for logs that
+have no item list.
 
 ### `boss_loot` (loot: `EL`)
 
@@ -257,8 +264,9 @@ cast that fails or is cancelled is not logged, so herb, ore and skin rows are su
 start and a `CH` when the channel ends; a `CH` with its cast is one row. A fishing channel under 2 s with no loot window
 is a cast the player cancelled and writes no row; without a `loot` part it cannot be told from a bite, so it is kept.
 A loot window belongs to the last attempt that ended before it, within 2 s, and to no other. The spell ids are one table in
-`part/src/professions.rs` (`App\Support\GatherKind` on the PHP side). Skinning has no line in any recorded session: it is
-built from FORMAT.md (a cast, then an `LO c` of the creature) and no recording has confirmed it yet.
+`part/src/professions.rs` (`App\Support\GatherKind` on the PHP side). Skinning is a cast, then an `LO c` of the creature
+(FORMAT.md). Recordings on the server confirm it (2026-11-22): skinning windows of one creature carry skin rows in
+`gather_items`. `loot_opens.read` is `skin` for the same windows by the decoder's rule.
 
 | Key | Type | |
 | --- | --- | --- |
@@ -648,6 +656,9 @@ The same holds for `camp_stays`: `afk_seconds` is null without `xp`, `crafts` wi
 null without `loot` and `in_combat` without `combat`, and `map`, `x`, `y`, `u`, `v` without `movement`
 (`gather_items.map` too); a removed group nulls the same columns, and a removed `build` nulls `pole_item`.
 Every `gather_items` row is read from loot lines, so a removed `loot` deletes those rows (`FactTable::alsoNeeds`).
+`loot_opens.read` and `loot_drops.read` are null without a `combat` part, since the casts that name a gathering window
+are `combat` lines; `loot_opens.map`, `x`, `y`, `u`, `v` are null without `movement`; `kills.loot_rule` and
+`kills.group_size` are null without `loot`. A removed group nulls the same columns.
 
 ## Counting rules
 

@@ -9,7 +9,7 @@ use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::build::parse_header;
 use crate::camp::{Camp, Known};
 use crate::death::Hit;
-use crate::professions::{Here, Present, Professions};
+use crate::professions::{Here, Present, Professions, item_of};
 use crate::reference::Reference;
 use crate::rows::Rows;
 use crate::social::Social;
@@ -22,7 +22,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 9;
+pub const DECODER_VERSION: u32 = 10;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -138,6 +138,15 @@ struct ItemAcc {
     tooltip: String,
 }
 
+#[derive(Clone)]
+struct LootWindow {
+    at: i64,
+    kind: String,
+    id: Option<i64>,
+    first_read: Option<bool>,
+    read: Option<&'static str>,
+}
+
 /// Which groups have a part in this call. Without one the counts it feeds are
 /// unknown (null), not zero.
 #[derive(Clone, Copy)]
@@ -170,7 +179,7 @@ struct Dec<'o> {
     group_size: Option<i64>,
     method: String,
     threshold: Option<i64>,
-    last_lo: Option<(i64, String, Option<i64>, Option<bool>)>,
+    last_lo: Option<LootWindow>,
     span: Option<Span>,
     last_level_t: i64,
     tp_total: Option<i64>,
@@ -398,10 +407,13 @@ impl Dec<'_> {
                 self.kills += 1;
                 self.fact("kills", t);
                 let npc = leading_id(field(&f, 0)).map(|n| n as i64);
+                let ruled = self.has.loot;
                 self.w
                     .opt("npc_id", npc)
                     .bool("player", field(&f, 0) == "p")
-                    .opt("by", num(&f, 1));
+                    .opt("by", num(&f, 1))
+                    .text("loot_rule", if ruled { &self.method } else { "" })
+                    .opt("group_size", self.group_size.filter(|_| ruled));
                 self.w.end();
             }
             "D" => {
@@ -487,13 +499,13 @@ impl Dec<'_> {
             }
             "LO" => self.on_loot_window(t, &f),
             "O" => {
-                let src = self.last_lo.clone().filter(|(lt, ..)| t - lt <= 5_000);
+                let src = self.last_lo.clone().filter(|w| t - w.at <= 5_000);
                 self.fact("loot_drops", t);
                 self.w.str("via", "receipt");
-                match src {
-                    Some((_, kind, id, first)) => {
-                        self.w.str("source_kind", &kind).opt("source_id", id);
-                        match first {
+                match &src {
+                    Some(w) => {
+                        self.w.str("source_kind", &w.kind).opt("source_id", w.id);
+                        match w.first_read {
                             Some(b) => self.w.bool("first_read", b),
                             None => self.w.null("first_read"),
                         };
@@ -509,6 +521,8 @@ impl Dec<'_> {
                     .opt("item_id", num(&f, 0))
                     .int("quantity", num(&f, 1).unwrap_or(1));
                 self.rule();
+                self.w
+                    .text("read", src.and_then(|w| w.read).unwrap_or_default());
                 self.w.end();
             }
             "SK" => {
@@ -938,7 +952,17 @@ impl Dec<'_> {
             "1" => Some(false),
             _ => None,
         };
-        self.last_lo = Some((t, kind.clone(), id, first));
+        let read = self.loot_read(&kind);
+        self.last_lo = Some(LootWindow {
+            at: t,
+            kind: kind.clone(),
+            id,
+            first_read: first,
+            read,
+        });
+        let list = field(f, 3);
+        let items = window_items(list);
+        let [map, x, y] = self.prof.pos().unwrap_or([None; 3]);
         self.fact("loot_opens", t);
         self.w.str("source_kind", &kind).opt("source_id", id);
         match first {
@@ -947,18 +971,19 @@ impl Dec<'_> {
         };
         self.w
             .opt("slots", num(f, 2))
-            .bool("has_items", !field(f, 3).is_empty());
+            .bool("has_items", !list.is_empty());
         self.rule();
+        self.w
+            .text("read", read.unwrap_or_default())
+            .opt(
+                "item_rows",
+                (!list.is_empty()).then_some(items.len() as i64),
+            )
+            .opt("map", map)
+            .opt("x", x)
+            .opt("y", y);
         self.w.end();
-        for el in field(f, 3).split(',') {
-            if el.is_empty() || el.starts_with('m') || el.starts_with('c') {
-                continue;
-            }
-            let Some(item) = leading_id(el) else { continue };
-            let qty = el
-                .split_once('x')
-                .and_then(|(_, q)| leading_id(q))
-                .unwrap_or(1) as i64;
+        for (item, qty) in items {
             self.fact("loot_drops", t);
             self.w
                 .str("via", "window")
@@ -968,11 +993,34 @@ impl Dec<'_> {
                 Some(b) => self.w.bool("first_read", b),
                 None => self.w.null("first_read"),
             };
-            self.w.int("item_id", item as i64).int("quantity", qty);
+            self.w.int("item_id", item).int("quantity", qty);
             self.rule();
+            self.w.text("read", read.unwrap_or_default());
             self.w.end();
         }
     }
+
+    fn loot_read(&self, kind: &str) -> Option<&'static str> {
+        if !self.has.combat {
+            return None;
+        }
+        Some(match kind {
+            "c" | "g" => self.prof.gathered().unwrap_or("loot"),
+            "i" => "bag",
+            _ => "other",
+        })
+    }
+}
+
+fn window_items(list: &str) -> Vec<(i64, i64)> {
+    let mut items: Vec<(i64, i64)> = Vec::new();
+    for (item, qty) in list.split(',').filter_map(item_of) {
+        match items.iter_mut().find(|(i, _)| *i == item) {
+            Some((_, total)) => *total += qty,
+            None => items.push((item, qty)),
+        }
+    }
+    items
 }
 
 impl Dec<'_> {

@@ -29,6 +29,7 @@ class PlaceWorldPoints
         'path_points' => ['map', 'x', 'y', 't.x / 10000.0', 't.y / 10000.0'],
         'camp_stays' => ['map', 'x', 'y', 't.x / 10000.0', 't.y / 10000.0'],
         'gathers' => ['map', 'x', 'y', 't.x / 10000.0', 't.y / 10000.0'],
+        'loot_opens' => ['map', 'x', 'y', 't.x / 10000.0', 't.y / 10000.0'],
         'deaths' => ['map_id', 'x', 'y', 't.x / 10000.0', 't.y / 10000.0'],
         'creature_sightings' => ['map', 'cell_x', 'cell_y', '(t.cell_x + 0.5) * 0.015', '(t.cell_y + 0.5) * 0.015'],
     ];

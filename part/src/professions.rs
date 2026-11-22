@@ -122,7 +122,8 @@ fn flag(f: &[&str], i: usize) -> Option<bool> {
     }
 }
 
-type Pos = Option<[Option<i64>; 3]>;
+/// The last `P` read: map, x and y.
+pub type Pos = Option<[Option<i64>; 3]>;
 
 #[derive(Clone, Copy)]
 pub struct Here {
@@ -205,6 +206,7 @@ pub struct Professions {
     gathers: Vec<Gather>,
     last_end: [Option<i64>; 4],
     awaiting: Option<usize>,
+    loot_read: Option<Kind>,
     items: Vec<(Source, i64, i64)>,
     receipts: Option<(i64, Source)>,
     caught: BTreeSet<i64>,
@@ -216,6 +218,17 @@ pub struct Professions {
 }
 
 impl Professions {
+    /// The gathering kind (`fish`, `herb`, `ore` or `skin`) of the attempt the last `LO` line was matched to, by the
+    /// rule that sets `gathers.looted`. None when that window followed no gathering cast.
+    pub fn gathered(&self) -> Option<&'static str> {
+        self.loot_read.map(Kind::name)
+    }
+
+    /// The last `P` read at or before the line being read.
+    pub fn pos(&self) -> Pos {
+        self.pos
+    }
+
     /// Reads one line; true when it was a craft that wrote a `crafts` row (not a lure).
     pub fn on_line(&mut self, at: i64, code: &str, f: &[&str], here: Here) -> bool {
         match code {
@@ -335,6 +348,7 @@ impl Professions {
 
     fn on_loot(&mut self, at: i64, f: &[&str], here: Here) {
         self.receipts = None;
+        self.loot_read = None;
         let source = field(f, 0);
         let id = num(f, 1);
         if let Some(i) = self.awaiting
@@ -343,6 +357,7 @@ impl Professions {
         {
             self.awaiting = None;
             let g = &mut self.gathers[i];
+            self.loot_read = Some(g.kind);
             g.looted = true;
             g.loot_at = Some(at);
             g.source_id = id;
@@ -380,13 +395,7 @@ impl Professions {
             self.receipts = Some((at + LOOT_WINDOW_MS, src));
             return;
         }
-        for el in field(f, 3).split(',') {
-            if el.is_empty() || el.starts_with('m') || el.starts_with('c') {
-                continue;
-            }
-            let Some((item, quantity)) = item_of(el) else {
-                continue;
-            };
+        for (item, quantity) in field(f, 3).split(',').filter_map(item_of) {
             self.add_item(src.clone(), item, quantity);
         }
     }
@@ -536,7 +545,10 @@ impl Professions {
     }
 }
 
-fn item_of(el: &str) -> Option<(i64, i64)> {
+pub(crate) fn item_of(el: &str) -> Option<(i64, i64)> {
+    if el.starts_with('m') || el.starts_with('c') {
+        return None;
+    }
     let item = leading_id(el)? as i64;
     let quantity = el
         .split_once('x')
