@@ -211,7 +211,9 @@ while in a group, and never the uploader as a `DP` (it skips the local player an
 that come within 1 s of the report's first line. A second `DM` line of the meter starts the next report. A report with
 at least one `DP` line is a group fight: `group_fights` goes up by 1, `group_own` by the report's `DM` total (0 when it
 has none) and `group_total` by that total plus the `DP` totals. The report counts for the level and place of its `DM`
-line. A session without `DP` lines has all three at 0 (decoder version 14).
+line. A session without `DP` lines has all three at 0 (decoder version 14). A report that has `DP` lines and no `DM`
+line writes no row of its own: it adds to the row of its key when the session has one, and is dropped when it has not,
+so no row has `fights` 0 and a nonzero `group_fights`.
 
 ### `meter_spells` (combat: `DS`)
 

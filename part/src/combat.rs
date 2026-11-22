@@ -165,8 +165,15 @@ impl Combat {
         if report.peers == 0 {
             return;
         }
+        let key = MeterKey {
+            meter,
+            level: report.now.level,
+            place: report.now.place,
+        };
+        let Some(row) = self.meters.get_mut(&key) else {
+            return;
+        };
         let own = report.own.unwrap_or(0);
-        let row = self.meter_row(meter, &report.now);
         row.group_total = row
             .group_total
             .saturating_add(own.saturating_add(report.others));

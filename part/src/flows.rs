@@ -12,6 +12,7 @@ const DELETE_ABSORBS_BAG_CHANGE_MS: i64 = 5_000;
 
 const OTHER: char = 'o';
 const DESTROYED: char = 'x';
+const PLACES: &str = "vbmtlacg";
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 struct Key {
@@ -38,7 +39,7 @@ pub struct Flows {
 fn place_of(where_: &str) -> char {
     let mut chars = where_.chars();
     match (chars.next(), chars.next()) {
-        (Some(c), None) if c.is_ascii_lowercase() && c != DESTROYED => c,
+        (Some(c), None) if PLACES.contains(c) => c,
         _ => OTHER,
     }
 }
