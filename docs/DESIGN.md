@@ -23,6 +23,7 @@ This file is the design. Build nothing that contradicts it; change it first. Num
 | Accounts | Sign in with Google or Battle.net. The account owns installs and characters | Private views and control from the browser. Only the provider's subject id is stored |
 | Linking the app | The app shows a code and opens the browser; the player confirms while signed in | No local listener, no token handed to the app, works from another device |
 | Other players' names | Pseudonyms everywhere except the Social group, and never public unless that player made their own character public | A name belongs to its owner |
+| Other addons' counts | Each additive statement another addon makes is an addon claim, decoded into its own table and reconciled per character and kind against Scarlet's own rows | History from before Scarlet and from moments it missed joins the totals, and nothing is counted twice (Addon counts) |
 | Repo | One Laravel app in this repo is the website and the API. The static pages keep serving from the `gh-pages` branch until the public deploy | Sign-in, search and private views need a server, and the owner wants the API to be part of the web |
 
 ## Words
@@ -36,6 +37,12 @@ This file is the design. Build nothing that contradicts it; change it first. Num
   ([groups.tsv](groups.tsv)).
 - **Part**: the lines of one group in one session.
 - **Ruleset**: how a character plays, read at the start of each session (see Rulesets).
+- **Origin**: where a number comes from: `scarlet` (its own lines), `backport` (the one-time Warchive import of
+  2026-11, sessions with no build), or an addon key (`fl`, `ff`, `mc`, ...).
+- **Addon claim**: one additive statement another addon makes, from a `YC` line (Addon counts). Not to be confused
+  with `part_claims`, which records the installs that listed a part.
+- **Store**: tells two histories of one addon apart, and is only a value the addon never rewrites while it keeps its
+  records (Mastercraft's `life.since`). Session claims have none: a session is its character and its end.
 
 ## Sharing groups
 
@@ -61,6 +68,7 @@ is in no group or in two, and the app, the decoder and the settings page all rea
 | `addons` | Other addons | The whole addon stream of ADDONS.md, every integration |
 | `imports` | Imported history from other addons | Gold balances, sales, purchases and other income and expense read from other addons' saved variables; owner-only, never in a board |
 | `fishing` | The Fishing Log | Records, journal, fishing sessions, bounties and the spot leaderboards the companion read from The Fishing Log's saved variables; other anglers as pseudonyms |
+| `counts` | Counts from other addons | Casts and catches, kills, runs and other totals other addons counted, added to Scarlet's own without counting anything twice (Addon counts). Includes The Fishing Log's and ForeverFishing's session totals; turning off `fishing` does not remove them |
 | `names` | Names and item facts | Not a switch. A name line (`N`, `SN`, `IN`, `II` and the like) is sent only in a session where a sent line uses that id |
 
 Rules:
@@ -198,6 +206,180 @@ Server-side removal:
   takes, so a removal waits for a running decode instead of deadlocking with it on the fact rows.
 
 The same two removals are on the account page of the web app.
+
+## Addon counts
+
+Other addons on the player's PC have counted what Scarlet counts: The Fishing Log, ForeverFishing and Mastercraft
+count casts and catches, NaowhForever kills, ForeverDungeonJournal runs, RXPGuides experience by level. The owner's
+goal (2026-11-22): every Scarlet user's addon data is "imported and part of our total scarlet data on the web and in
+the app", "marked as addon data but rolled into our datasets", and "we do not duplicate data". This section replaces
+the data rule of 2026-11-21 for addon claims; imported history (`imports`) keeps that rule, so it is still never added
+to an observed number.
+
+### What is summed
+
+An addon claim is one additive statement: a scope (this character, or the characters of a game account), a kind, a
+window (an event, a session, a day, a level, or a lifetime `[since, as of]`), dimensions (zone, item, npc) and
+amounts in Scarlet's metric names. A non-additive fact (a record weight, a first catch, an attunement step) is not a
+claim: it stays in its addon's group and is shown beside, never summed.
+
+Only a field this table maps becomes an amount. Each row was measured against Scarlet's own rows on the owner's data
+(2026-11-22, 12 sessions since 2026-11-20 19:36 UTC, 366 channel ends); a new integration adds its rows with its own
+measurement before it ships.
+
+| Origin | Field | Becomes | Measured against Scarlet |
+| --- | --- | --- | --- |
+| `fl` | session `outcomes.casts` | `casts` | equal in every session (326 of 326). Counts every fishing channel end, including the short cancelled channels Scarlet drops |
+| `fl` | session `outcomes.landed` | `landed` (`gathers.looted`) | equal in every session (295 of 295) |
+| `fl` | session `outcomes.unknown` | `unknown` | equal to Scarlet's dropped cancelled channels plus its unlooted rows (31 = 23 + 8) |
+| `fl` | session `count` plus the sum of the session's `spots[].junk` | `items` (`gather_items.quantity`) | 320 against 316, +1.3%. A session's `spots[].count` repeats the session's own `count` and is never summed |
+| `fl` | a session with no `outcomes` | `items` only | a catch started it: the player stopped the session between bite and loot |
+| `fl` | `early`, `escaped`, `cancelled`, `duration`, `elapsed`, weights, `value`, `catchSkill`, journal counts | nothing | messages, not casts; `cancelled` never fires on this client; weights are random rolls; the lifetime tables equal the sum of the sessions |
+| `ff` | session `casts`, `successfulCasts`, `catches` | `casts`, `landed`, `items` | as `fl`, plus one cast per cast a reload interrupted; no overlap with Scarlet, unmeasured |
+| `ff` | `lifetime`, `journal`, `fishingLocations`, `activeSeconds` | nothing | the lifetime equals the sessions on the owner's data (it also counts sessions with no catch, which are not saved); rod-equipped time is not fishing time |
+| `mc` | `fishing.life.casts`, `catches`, `gained` | `casts`, `landed`, `items` as an account `life` claim, reference only | 1.2%, 0.9% and 1.3% below the sum of `fl` and `ff` over its span |
+| `mc` | `life.escapes`, `sessions`, `seconds`, `history` | nothing | `escapes` never fires; sessions and seconds follow its own rules; `history` is gold and skill |
+
+### Lines, parts and the archive
+
+The companion writes claims as `YC` lines (Scarlet's FORMAT.md, "Addon counts"). It keeps an archive of every claim
+it has read per character, so an addon that wipes or caps its history (The Fishing Log's fresh start, a reinstall)
+takes nothing back. A claim's key is (origin, store, scope, window, kind, dims, window end, and window start for a
+lifetime). It never holds a part id or an install, so the same claim from two PCs is one claim. An account-scope
+claim names no character and no account: it is carried with the same text by every exported character of that game
+account folder.
+
+`YC` lines travel in one `counts` part per character and UTC day of the window's end, keyed like `imports` parts.
+`DecodeSession` sends them to `scarlet-part decode --counts`; the session decoder skips the group. A code the decoder
+does not know is counted and skipped, never fatal to the day. The server's decoder ships before an app writes a new
+kind, and `groups.tsv` before FORMAT.md lists a new code.
+
+`counts` is a group of its own and does not follow the group of the dataset a claim feeds: decode routes a part by its
+group, day parts (`imports`, `fishing`, `counts`) apart from session parts, and one code sits in one group. Each switch
+removes its own lines. Turning off Professions removes Scarlet's gathers; the addon's fishing counts stay until
+Counts from other addons is turned off. After either removal the character is reconciled again, so a claim that
+Scarlet's rows had covered can count once more, never twice.
+
+### Tables
+
+- `addon_claims`: one row per claim key per character: `character_id`, `origin`, `store`, `scope` (`c` or `a`),
+  `window`, `kind`, `from_at`, `to_at` (epoch seconds),
+  `dims` and `amounts` (jsonb), and, written by reconcile only, `status`, `counted` (jsonb), `evidence` (jsonb),
+  `ruleset_id`, `counted_ok`, `level` and `zone_id` (null when unknown, read as an unknown bucket, never guessed),
+  `reconcile_version`.
+  An account claim has one row per character whose parts carry it. Those characters are its scope, and the account
+  page and rule 7 read it once per key.
+- `addon_claim_parts(claim_id, part_id, amounts)`: the parts that carry a claim, each with the amounts it carried.
+  Decoding a part replaces its rows here and inserts claims whose key is new; a claim goes when no part carries it.
+  When carrying parts disagree, the claim takes the amounts of the part whose id sorts highest, and the audit lists
+  the claim. Decode reads no other table and writes no fact table or rollup, so Scarlet's own numbers cannot move.
+- `addon_days(character_id, day_key, decoder_version, reconcile_version)`: the scheduled outdated pass re-decodes and
+  re-reconciles these as it does sessions.
+
+### Reconcile
+
+`reconcile(character, kind)` is one function in `scarlet-part`, run by the server and by the app. It reads rows, not
+parts: the character's claims of the kind and its Scarlet rows of the kind (for fishing, `gathers` and
+`gather_items`), counted or not, and gives every claim exactly one status with its counted amounts and its evidence.
+Every counted amount is floored at 0 and rounded half up; a ratio whose denominator is 0 is 0. The server runs it under the character lock after any decode of
+the character, any removal, a ruleset re-file and a plausibility change.
+
+| Status | Counted | When |
+| --- | --- | --- |
+| `counted` | whole | no Scarlet row and no higher-ranked claim falls in its window |
+| `residual` | part | Scarlet's rows cover part of its window |
+| `superseded` | 0 | Scarlet's rows, a higher-ranked origin, the same claim on another character, or another claim of its origin cover it; the evidence names which |
+| `held` | 0 | an event with no matching Scarlet row inside a Scarlet session that recorded rows of its kind |
+| `rejected` | 0 | it fails its bounds: landed above casts, `casts - unknown` above the window's seconds / 2 + 1, a window in the future or before the addon existed |
+| `reference` | 0 | an account-scope claim: shown on the account page and checked as a ceiling, never added to a character |
+
+Rules, in order:
+
+1. **Clock.** Scarlet stamps with the PC's clock. `fl` session times and `mc` use the same clock and need no offset
+   (within 2.5 s on the owner's data). `ff` stamps with the game server's clock; the distance is that PC's clock
+   error, unmeasured on the owner's data. Until Scarlet's `S` line carries the server time, an `ff` claim counts only
+   when no Scarlet row of the kind lies within 24 hours of its window. Nearer than that it is `superseded` when rows
+   are assigned to it and `held` when none are, never `residual`. An event origin takes its offset per character from
+   the pairs that match, never a constant per origin.
+2. **Events** match one to one with an unused Scarlet row of the same key (npc, item) within the origin's tolerance.
+   Matched is `superseded` with the row it matched.
+3. **Dated claims against Scarlet.** Each Scarlet row is assigned, per origin, by its `at` (the cast start) to the
+   claim whose window contains it. A row in no window goes to the claim whose nearer edge is closest, within 60 s; at
+   equal distance, to the claim that starts later. With no row assigned, the claim is `counted`. Otherwise, for
+   fishing:
+   - casts: the claim's `casts - unknown` is at most the rows Scarlet keeps when it saw the whole window, because
+     `unknown` holds the cancelled channels Scarlet drops. Counted casts = `casts` x the share of `casts - unknown`
+     that the assigned rows do not cover.
+   - landed: counted = `landed` minus the assigned rows whose `looted` is true. A row whose `looted` is not true
+     subtracts no landed, whatever the reason; the decoder writes it false in the sessions of 2026-11-20 that read
+     no loot windows, so their landed and items stay with the claim.
+   - items: counted = `items` x counted landed / `landed`. Items follow landed so that a catch booked across a session
+     seam is not added on both sides.
+   - A claim without `casts` (a session a catch started) holds items of the last cast of the claim before it. It
+     counts them when no Scarlet row is assigned to it or to the claim of its origin that ends within 60 s before it
+     starts; otherwise it is `superseded` with that row as evidence.
+   - `superseded` when every counted amount is 0, else `residual`. The evidence holds the assigned rows (count, first
+     and last time, looted, items) and the difference between claimed and counted per metric.
+   Another kind maps its own anchor metric here in the same way before it ships.
+4. **Between characters.** A character-scope dated claim that equals a claim of another character of the same
+   account in origin, kind, window, `from`, `to` and amounts is one record read from two folders (a restored backup,
+   a copied folder). It counts on the character with the lowest id and is `superseded` on the others, with that claim
+   as evidence. A decode or removal that adds or removes such a claim reconciles the other characters too, locked
+   lowest id first.
+5. **Between origins.** A fixed rank per kind (fishing: `fl` above `ff`). A claim whose window overlaps a counted or
+   residual claim of a higher rank by more than 60 s is `superseded` whole. Two claims of one origin and one
+   character whose windows overlap, or whose ends are equal, are one, whatever their stores: the later end wins, then
+   the later start, then the store that sorts last. The others are `superseded` with its id.
+6. **Lifetime.** No mapped origin has a character-scope lifetime. A `life` claim with scope `c` is `held` until an
+   origin maps one and this rule is written with its measurement. The undated term is empty until then.
+7. **Account scope** is `reference`. Per store, the audit compares its latest read with Scarlet's rows plus the
+   counted claim amounts of its characters inside `[from, to]`, and lists a sum more than 2.5% above it as a note,
+   never a violation (Mastercraft ran 1.2% below the sum of the per-character addons; a character also played on
+   another PC, or with Mastercraft off, honestly exceeds it).
+
+On the owner's fishing data this gives Scarlet's 343 casts, 295 landed and 316 items, plus 0 casts, 39 landed and 40
+items from the two Fishing Log sessions before Scarlet read loot windows: 343, 334 and 356. With a Scarlet session
+withheld, its claim counts whole; releasing the session moves every total by exactly the stored differences
+(*measured*: the arithmetic of rule 3 run over R0's assignment of rows to the 12 sessions). Where only an addon saw a
+trip, its casts include the short cancelled channels Scarlet drops: 23 of 366 (6%) on the owner's data.
+
+### Reading
+
+- Scarlet's fact tables and rollups do not change. A total that includes addon data is three terms, each one query:
+  Scarlet, addon dated (by the UTC day of the window's end) and addon undated (lifetime). A chart with a time axis has
+  no undated term.
+- Rates, medians, hour of day, heat, trips, waits, lures, poles and skill-ups per cast read Scarlet's rows only, and a
+  page that shows them beside a total that includes addon data says which is which.
+- Leaderboards read Scarlet's rows only, until the owner decides otherwise.
+- A public figure split by origin is shown only when each side passes the character threshold; a player's own pages
+  always show the split.
+
+### Checks
+
+`php artisan addons:audit {character?}` runs these as SQL against the real database, prints per character and kind
+the table that explains the total (one line per status, with claims, amounts and the top evidence), and fails on any
+violation. It also runs on a schedule and logs breaches.
+
+1. Every claim has exactly one status; claimed = counted + superseded + held + rejected + the stored differences.
+2. 0 <= counted <= claimed; `superseded`, `held`, `rejected` and `reference` count 0.
+3. Every `superseded` and `residual` claim names its evidence.
+4. No Scarlet row is assigned to two claims of one origin.
+5. No two counted or residual dated claims of one character overlap by more than 60 s across origins, or at all
+   within one origin.
+6. Every page total equals Scarlet + addon dated + addon undated, and every breakdown sums to it with the unknown
+   bucket.
+7. Scarlet's row counts and rollup sums are the same before and after each ship of this work.
+8. The account notes of rule 7 are listed (a note, not a violation).
+9. No text field of a claim holds a `First-Last` name other than the character's own.
+10. No public bucket shows a per-origin figure from fewer characters than the threshold.
+11. No dated claim is counted or residual on two characters of one account with the same origin, kind, `from`, `to`
+    and amounts.
+
+The rest is proven on a copy of the owner's data under an invented name, through the real companion and the real
+upload, before any page reads a claim: importing twice changes no row, addon parts first or sessions first give the
+same hash, a wiped or truncated addon file changes nothing, a withheld Scarlet session moves totals by the stored
+differences, a group removed and restored gives the same hash, two installs of one account give no claim twice, and a
+Scarlet-only rate is the same before and after.
 
 ## Data model
 
