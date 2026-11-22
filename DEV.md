@@ -56,6 +56,8 @@ any host that is not 127.0.0.1, localhost or [::1], because it deletes what it u
   process and stops it unless it is 0. It loads the key pages at 1280 and 390 wide and types into the search box.
 - Last, it removes the upload.
 
+Public API answers are cached for 30 seconds at the origin, so every read adds a random `limit` to its address and a rerun never reads the last run's answer.
+
 The server needs Horizon running, `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than
 the default rate limits for repeated runs: `SCARLET_RATE_REGISTRATION_PER_IP=100` and
 `SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 2 registrations, about 22 public API requests, 38 page requests

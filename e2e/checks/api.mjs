@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { NAME, escapeRegExp, expectError, expectJson, expectStatus, failOn, pool } from "../support.mjs";
 
 const CONCURRENCY = 6;
@@ -48,9 +49,16 @@ function missingKeys(data, keys) {
   return keys.filter((key) => !(key in row));
 }
 
+function uncached(route, limit) {
+  const url = new URL(route, "http://e2e.invalid");
+  url.searchParams.set("limit", String(limit));
+  return url.pathname + url.search;
+}
+
 async function answerOf(ctx, route) {
   ctx.answers ??= new Map();
-  if (!ctx.answers.has(route)) ctx.answers.set(route, ctx.http.api("/api/v1/public" + route));
+  ctx.limit ??= crypto.randomInt(2, 101);
+  if (!ctx.answers.has(route)) ctx.answers.set(route, ctx.http.api("/api/v1/public" + uncached(route, ctx.limit)));
   return ctx.answers.get(route);
 }
 
