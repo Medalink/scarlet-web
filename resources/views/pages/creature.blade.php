@@ -14,8 +14,8 @@
       <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
       @endif
       @if ($d['drops'])
-      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Dropped', 'numeric' => true]]" style="margin-top:1.1rem" />
-      <p class="note">A drop rate is drops over corpses looted for the first time under that loot rule. Skinning and second looks are not counted. Drop rates cover every ruleset.</p>
+      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true]]" style="margin-top:1.1rem" />
+      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.@if ($d['skins']) Skinning is counted as looting here, so these rates are off until it is counted apart.@endif</p>
       @else
       <x-note>No drops recorded for this creature yet.</x-note>
       @endif

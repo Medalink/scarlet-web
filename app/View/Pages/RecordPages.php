@@ -4,7 +4,11 @@ namespace App\View\Pages;
 
 use App\Support\CreatureClass;
 use App\Support\KillerKind;
+use App\Support\LootRule;
 use App\Support\PageScope;
+use App\Support\RateEstimate;
+use App\Support\RateFlag;
+use App\Support\RateSample;
 use App\Support\WorldLayer;
 use App\View\Charts;
 use App\View\Format;
@@ -16,9 +20,6 @@ use App\View\ItemTypes;
  */
 final class RecordPages
 {
-    /** The loot rules as the pages name them; an unknown rule is shown as it is. */
-    private const array RULES = ['solo' => 'Solo', 'group' => 'Group loot', 'freeforall' => 'Free for all', 'unknown' => 'Unknown'];
-
     /** An item's bind type (items.bind_type) as a sentence. */
     private const array BINDS = [1 => 'Binds when picked up.', 2 => 'Binds when equipped.', 3 => 'Binds when used.', 4 => 'Quest item.'];
 
@@ -26,7 +27,7 @@ final class RecordPages
      * @param  array<string, mixed>  $r  the answer of CreatureRecord
      * @return array<string, mixed>
      */
-    public static function creature(array $r, ?string $rule): array
+    public static function creature(array $r): array
     {
         /** @var PageScope $scope */
         $scope = $r['scope'];
@@ -36,17 +37,15 @@ final class RecordPages
         $kills = $r['kills'];
         /** @var array{deaths: int|null, characters: int|null} $deaths */
         $deaths = $r['deaths'];
-        /** @var list<array<string, mixed>> $drops */
-        $drops = $r['drops'];
+        /** @var array{rule: string|null, windows: int, characters: int, skins_counted: bool, rules: list<array{rule: string, windows: int}>, rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $table */
+        $table = $r['drop_table'];
         /** @var list<array{id: int, name: string}> $zones */
         $zones = $facts['zones'];
 
-        $rules = array_values(array_unique(array_column($drops, 'loot_rule')));
-        $chosen = in_array($rule, $rules, true) ? $rule : ($rules[0] ?? null);
-        $shown = array_values(array_filter($drops, fn (array $row): bool => $row['loot_rule'] === $chosen));
-        $top = max(0.0001, (float) max([0.0, ...array_column($shown, 'rate')]));
-        $opens = $shown === [] ? null : (int) $shown[0]['opens'];
+        $chosen = $table['rule'];
+        $opens = $table['windows'] === 0 ? null : $table['windows'];
         $base = '/creatures/'.$r['id'];
+        $query = fn (?string $value): string => $base.'?'.http_build_query(array_filter(['ruleset' => $scope->ruleset?->slug(), 'rule' => $value]));
 
         return [
             'name' => $r['name'],
@@ -56,15 +55,25 @@ final class RecordPages
                 ['label' => 'Kills', 'value' => $kills['kills'] === null ? '–' : Format::number($kills['kills']), 'unit' => $kills['kills'] === null ? Format::TOO_FEW : null],
                 ['label' => 'Characters killed', 'value' => $deaths['characters'] === null ? '0' : Format::number($deaths['characters'])],
                 ['label' => 'Deaths per 1,000 kills', 'value' => $kills['kills'] && $deaths['deaths'] !== null ? Format::number($deaths['deaths'] / $kills['kills'] * 1000, 1) : '–'],
-                ['label' => 'Corpses looted', 'value' => $opens === null ? '–' : Format::number($opens), 'unit' => $chosen === null ? null : (self::RULES[$chosen] ?? $chosen)],
+                ['label' => 'Corpses looted', 'value' => $opens === null ? '–' : Format::number($opens), 'unit' => $chosen === null ? null : LootRule::words($chosen)],
             ],
             'threat' => RecordThreat::creature($kills['kills'], $deaths['deaths']),
-            'rules' => array_map(fn (string $item): array => ['label' => self::RULES[$item] ?? $item, 'href' => $base.'?'.http_build_query(array_filter(['ruleset' => $scope->ruleset?->slug(), 'rule' => $item])), 'on' => $item === $chosen], $rules),
+            'rules' => $table['rules'] === [] ? [] : [
+                ['label' => 'All rules', 'href' => $query(null), 'on' => $chosen === null],
+                ...array_map(fn (array $item): array => [
+                    'label' => LootRule::words($item['rule']), 'href' => $query($item['rule']), 'on' => $item['rule'] === $chosen,
+                    'disabled' => $item['rule'] !== $chosen && $item['windows'] < RateSample::HOLLOW_FROM,
+                ], $table['rules']),
+            ],
+            'tags' => $table['rows'] === [] ? [] : array_map(fn (RateFlag $flag): string => $flag->label(), array_values(array_filter($table['rows'][0]['estimate']->flags, fn (RateFlag $flag): bool => $flag !== RateFlag::QuestItem))),
+            'skins' => $table['skins_counted'],
             'drops' => array_map(fn (array $row): array => ['cells' => [
-                ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id']],
-                ['text' => Format::percent((float) $row['rate'], (float) $row['rate'] < 0.01 ? 2 : 1), 'bar' => max(0.15, (float) $row['rate'] / $top * 5.2).'rem'],
-                Format::number($row['opens']), Format::number($row['drops']),
-            ]], $shown),
+                ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id'], 'tag' => in_array(RateFlag::QuestItem, $row['estimate']->flags, true) ? RateFlag::QuestItem->label() : null],
+                ['rate' => $row['estimate']],
+                $row['estimate']->stated() ? $row['estimate']->range() : '–',
+                $row['estimate']->counts(),
+                Format::number($row['per_drop'], 1),
+            ]], $table['rows']),
             'map' => MapSpec::density(WorldLayer::Creatures, $scope->ruleset?->slug(), $r['map_zones'], $r['points'] === null ? ($zones[0]['id'] ?? null) : null, creature: (int) $r['id'], dots: $r['points']),
             'hasMap' => $r['points'] !== null || $r['heat'] !== [],
             'dots' => $r['points'] !== null,
@@ -114,7 +123,7 @@ final class RecordPages
             'bosses' => CraftingRows::encounters($r['encounters']),
             'rows' => array_map(fn (array $row): array => ['cells' => [
                 $row['source_kind'] === 'c' && $row['source'] !== null ? ['text' => (string) $row['source'], 'href' => '/creatures/'.$row['source_id']] : self::otherSource($row),
-                self::RULES[$row['loot_rule']] ?? (string) $row['loot_rule'],
+                LootRule::words((string) $row['loot_rule']),
                 ['text' => Format::percent((float) $row['rate'], (float) $row['rate'] < 0.01 ? 2 : 1), 'bar' => max(0.15, (float) $row['rate'] / $top * 5.2).'rem'],
                 Format::number($row['opens']), Format::number($row['drops']),
             ]], $sources),

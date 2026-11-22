@@ -20,10 +20,10 @@ class RecordController extends Controller
 {
     public function creature(RecordRequest $request, CreatureRecord $record, int $id): View
     {
-        $answer = $record->handle($id, $request->rulesetSlug(), $request->serverFilter());
+        $answer = $record->handle($id, $request->rulesetSlug(), $request->serverFilter(), $request->lootRule());
         abort_if($answer === null, 404);
 
-        return view('pages.creature', ['d' => RecordPages::creature($answer, $request->lootRule())]);
+        return view('pages.creature', ['d' => RecordPages::creature($answer)]);
     }
 
     public function item(RecordRequest $request, ItemRecord $record, int $id): View

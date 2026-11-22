@@ -3,6 +3,7 @@
 namespace App\Actions\Public;
 
 use App\Actions\Rollups\DropRates;
+use App\Actions\Rollups\SourceDrops;
 use App\Actions\Rollups\WorldHeat;
 use App\Support\KillerKind;
 use App\Support\NameKind;
@@ -21,6 +22,7 @@ class CreatureRecord
         private readonly RollupRead $read,
         private readonly ResolveScope $resolveScope,
         private readonly DropRates $drops,
+        private readonly SourceDrops $dropTable,
         private readonly WorldHeat $heat,
         private readonly MapZones $zones,
         private readonly CreaturePoints $points,
@@ -29,12 +31,13 @@ class CreatureRecord
 
     /**
      * Everything the creature page and `/public/creatures/{id}` show: what it is, kills and deaths to it, its drops
-     * under each loot rule and the cells where it was met. Null when nothing is known by this id or the ruleset is
-     * not known. Numbers under the character threshold are null or missing.
+     * under each loot rule, its drop table over every rule or over `$rule` alone, and the cells where it was met.
+     * Null when nothing is known by this id or the ruleset is not known. Numbers under the character threshold are
+     * null or missing.
      *
      * @return array<string, mixed>|null
      */
-    public function handle(int $id, ?string $ruleset, Server $server): ?array
+    public function handle(int $id, ?string $ruleset, Server $server, ?string $rule = null): ?array
     {
         $scope = $this->resolveScope->handle($ruleset, $server);
         $name = DB::table('names')->where('kind', NameKind::Npc->value)->where('id', $id)->orderByDesc('votes')->orderBy('name')->value('name');
@@ -53,6 +56,7 @@ class CreatureRecord
             'deaths' => $this->deaths($name, $ids),
             'deaths_by_level' => $this->deathsByLevel($name, $ids),
             'drops' => $this->drops->handle(self::SOURCE, $id),
+            'drop_table' => $this->dropTable->handle(self::SOURCE, $id, $rule),
             'heat' => $this->heat->handle(WorldLayer::Creatures, $ids, $id),
             'points' => $this->points->handle($id, $ids),
             'map_zones' => $this->zones->handle($ids),
