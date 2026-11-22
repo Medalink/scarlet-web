@@ -88,7 +88,7 @@ enum TalentTree: string
             self::RogueSubtlety => ['Subtlety'],
             self::PriestDiscipline => ['Discipline'],
             self::PriestHoly => ['Holy'],
-            self::PriestShadow => ['Shadow'],
+            self::PriestShadow => ['Shadow', 'Shadow Magic'],
             self::ShamanElemental => ['Elemental', 'Elemental Combat'],
             self::ShamanEnhancement => ['Enhancement'],
             self::ShamanRestoration => ['Restoration'],

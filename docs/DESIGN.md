@@ -1280,7 +1280,7 @@ renamed shows up.
 | Feat | For | Counts | Copper | Silver | Gold | Scarlet | Legend |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Battle Cry | Warrior | casts of Battle Shout | 10 | 400 | 2,000 | 6,000 | 25,000 |
-| Charger | Warrior | casts of Charge, Intercept, Intervene | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Charger | Warrior | casts of Charge, Intercept | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Executioner | Warrior | casts of Execute | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Stance Dancer | Warrior | casts of Battle Stance, Defensive Stance, Berserker Stance | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Mortal Striker | Warrior, Arms | casts of Mortal Strike | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
@@ -1295,16 +1295,16 @@ renamed shows up.
 | Vengeful | Warrior, Protection | casts of Revenge | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Blockade | Warrior, Protection | casts of Shield Block, Shield Wall, Shield Slam | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Shieldbearer | Warrior, Protection | hours played with Protection as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
-| Judicator | Paladin | casts of Judgement*, Judgment* | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Judicator | Paladin | casts of Judgement* | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Benediction | Paladin | casts of Blessing of *, Greater Blessing of * | 10 | 400 | 2,000 | 6,000 | 25,000 |
-| Last Resort | Paladin | casts of Lay on Hands | 1 | 10 | 40 | 120 | 400 |
+| Last Resort | Paladin | casts of Lay on Hands | 1 | 10 | 30 | 80 | 200 |
 | Untouchable | Paladin | casts of Divine Shield, Divine Protection | 1 | 30 | 125 | 400 | 1,500 |
 | Radiant | Paladin, Holy | casts of Holy Light | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Quickening | Paladin, Holy | casts of Flash of Light | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Purifier | Paladin, Holy | casts of Cleanse, Purify | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Lightbringer | Paladin, Holy | hours played with Holy as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
-| Bastion | Paladin, Protection | casts of Holy Shield, Avenger's Shield | 10 | 400 | 2,000 | 6,000 | 25,000 |
-| Lawbringer | Paladin, Protection | casts of Hammer of Justice | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Bastion | Paladin, Protection | casts of Holy Shield | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Lawbringer | Paladin, Protection | casts of Hammer of Justice | 5 | 100 | 500 | 1,500 | 6,000 |
 | Consecrator | Paladin, Protection | casts of Consecration | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Templar | Paladin, Protection | hours played with Protection as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Sealbearer | Paladin, Retribution | casts of Seal of * | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
@@ -1325,7 +1325,7 @@ renamed shows up.
 | Sharpshooter | Hunter, Marksmanship | hours played with Marksmanship as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Close Quarters | Hunter, Survival | casts of Raptor Strike, Mongoose Bite | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Wing Clipper | Hunter, Survival | casts of Wing Clip | 10 | 400 | 2,000 | 6,000 | 25,000 |
-| Escapist | Hunter, Survival | casts of Disengage, Deterrence, Wyvern Sting, Counterattack | 5 | 100 | 500 | 1,500 | 6,000 |
+| Escapist | Hunter, Survival | casts of Disengage, Deterrence, Counterattack | 5 | 100 | 500 | 1,500 | 6,000 |
 | Survivalist | Hunter, Survival | hours played with Survival as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Unseen | Rogue | casts of Stealth | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Pickpocket | Rogue | casts of Pick Pocket | 10 | 400 | 2,000 | 6,000 | 25,000 |
@@ -1333,7 +1333,7 @@ renamed shows up.
 | Vanishing Act | Rogue | casts of Vanish | 1 | 30 | 125 | 400 | 1,500 |
 | Eviscerator | Rogue, Assassination | casts of Eviscerate | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Bleeder | Rogue, Assassination | casts of Rupture, Garrote | 10 | 400 | 2,000 | 6,000 | 25,000 |
-| Cold Blooded | Rogue, Assassination | casts of Cold Blood | 5 | 100 | 500 | 1,500 | 6,000 |
+| Cold Blooded | Rogue, Assassination | casts of Cold Blood | 1 | 30 | 125 | 400 | 1,500 |
 | Assassin | Rogue, Assassination | hours played with Assassination as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Cutthroat | Rogue, Combat | casts of Sinister Strike | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
 | Gouger | Rogue, Combat | casts of Gouge | 10 | 400 | 2,000 | 6,000 | 25,000 |
@@ -1362,7 +1362,7 @@ renamed shows up.
 | Totemic | Shaman | casts of * Totem | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Pack Runner | Shaman | casts of Ghost Wolf | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Shock Therapy | Shaman | casts of Earth Shock, Flame Shock, Frost Shock | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
-| Twice Born | Shaman | casts of Reincarnation | 1 | 10 | 40 | 120 | 400 |
+| Twice Born | Shaman | casts of Reincarnation | 1 | 5 | 15 | 40 | 100 |
 | Bolt Thrower | Shaman, Elemental | casts of Lightning Bolt | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
 | Chain Reaction | Shaman, Elemental | casts of Chain Lightning | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Purger | Shaman, Elemental | casts of Purge | 10 | 400 | 2,000 | 6,000 | 25,000 |
@@ -1373,7 +1373,7 @@ renamed shows up.
 | Spiritwalker | Shaman, Enhancement | hours played with Enhancement as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Wave Rider | Shaman, Restoration | casts of Healing Wave, Lesser Healing Wave | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Chain Healer | Shaman, Restoration | casts of Chain Heal | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
-| Tide Turner | Shaman, Restoration | casts of Mana Tide Totem, Nature's Swiftness | 5 | 100 | 500 | 1,500 | 6,000 |
+| Tide Turner | Shaman, Restoration | casts of Mana Tide Totem, Nature's Swiftness | 1 | 30 | 125 | 400 | 1,500 |
 | Tidecaller | Shaman, Restoration | hours played with Restoration as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Sheep Herder | Mage | casts of Polymorph* | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Portal Master | Mage | casts of Portal: * | 1 | 30 | 125 | 400 | 1,500 |
@@ -1396,27 +1396,27 @@ renamed shows up.
 | Fearmonger | Warlock | casts of Fear, Howl of Terror, Death Coil | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Summoner | Warlock | casts of Ritual of Summoning | 1 | 30 | 125 | 400 | 1,500 |
 | Corruptor | Warlock, Affliction | casts of Corruption | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
-| Agonizer | Warlock, Affliction | casts of Bane of Agony, Curse of Agony | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Agonizer | Warlock, Affliction | casts of Bane of Agony | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Leech | Warlock, Affliction | casts of Drain Life, Siphon Life | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Hexweaver | Warlock, Affliction | hours played with Affliction as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
-| Demon Caller | Warlock, Demonology | casts of Summon Imp, Summon Voidwalker, Summon Succubus, Summon Felhunter, Summon Felguard, Inferno, Ritual of Doom | 5 | 100 | 500 | 1,500 | 6,000 |
+| Demon Caller | Warlock, Demonology | casts of Summon Imp, Summon Voidwalker, Summon Succubus, Summon Felhunter, Inferno, Ritual of Doom | 5 | 100 | 500 | 1,500 | 6,000 |
 | Funneler | Warlock, Demonology | casts of Health Funnel | 10 | 400 | 2,000 | 6,000 | 25,000 |
-| Pactbinder | Warlock, Demonology | casts of Demonic Sacrifice, Fel Domination, Subjugate Demon, Enslave Demon, Soul Link | 5 | 100 | 500 | 1,500 | 6,000 |
+| Pactbinder | Warlock, Demonology | casts of Demonic Sacrifice, Fel Domination, Subjugate Demon, Soul Link | 5 | 100 | 500 | 1,500 | 6,000 |
 | Demonologist | Warlock, Demonology | hours played with Demonology as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Bolt Slinger | Warlock, Destruction | casts of Shadow Bolt | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
 | Immolator | Warlock, Destruction | casts of Immolate | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Searing | Warlock, Destruction | casts of Searing Pain | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Destroyer | Warlock, Destruction | hours played with Destruction as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
-| Shapeshifter | Druid | casts of Bear Form, Dire Bear Form, Cat Form, Travel Form, Aquatic Form, Moonkin Form, Tree of Life | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
+| Shapeshifter | Druid | casts of Bear Form, Dire Bear Form, Cat Form, Travel Form, Aquatic Form, Moonkin Form | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Wild Gift | Druid | casts of Mark of the Wild, Gift of the Wild | 10 | 400 | 2,000 | 6,000 | 25,000 |
-| Back From The Brink | Druid | casts of Rebirth | 1 | 10 | 40 | 120 | 400 |
+| Back From The Brink | Druid | casts of Rebirth | 1 | 10 | 30 | 80 | 200 |
 | Entangler | Druid | casts of Entangling Roots, Hibernate | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Wrathbringer | Druid, Balance | casts of Wrath | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
 | Starcaller | Druid, Balance | casts of Starfire | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Moonlit | Druid, Balance | casts of Moonfire | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Stargazer | Druid, Balance | hours played with Balance as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Mauler | Druid, Feral | casts of Maul, Swipe | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
-| Shredder | Druid, Feral | casts of Claw, Shred, Rake, Mangle | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
+| Shredder | Druid, Feral | casts of Claw, Shred, Rake | 50 | 2,500 | 12,000 | 40,000 | 200,000 |
 | Savage | Druid, Feral | casts of Ferocious Bite, Rip | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
 | Wildheart | Druid, Feral | hours played with Feral as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Greenthumb | Druid, Restoration | casts of Healing Touch, Regrowth | 25 | 1,500 | 7,500 | 25,000 | 100,000 |
@@ -1425,42 +1425,42 @@ renamed shows up.
 | Grovekeeper | Druid, Restoration | hours played with Restoration as the main talent tree | 2 | 40 | 150 | 400 | 1,500 |
 | Caretaker | Healer | hours played in sessions played as a healer | 2 | 40 | 150 | 400 | 1,500 |
 | Lifegiver | Healer | healing the client's meter counted in sessions played as a healer | 2,500 | 500,000 | 5,000,000 | 25,000,000 | 150,000,000 |
-| Miracle Worker | Healer | the most healing in one fight in sessions played as a healer | 500 | 8,000 | 40,000 | 120,000 | 300,000 |
+| Miracle Worker | Healer | the most healing in one fight in sessions played as a healer | 500 | 8,000 | 30,000 | 75,000 | 150,000 |
 | Field Medic | Healer | dungeon runs in sessions played as a healer | 1 | 15 | 50 | 150 | 400 |
 | Chaplain | Healer | dungeon bosses killed in sessions played as a healer | 1 | 40 | 200 | 750 | 2,000 |
 | Raid Medic | Healer | raid bosses killed in sessions played as a healer | 1 | 20 | 80 | 250 | 650 |
 | Guardian Angel | Healer | dungeon runs with a boss kill and no death in sessions played as a healer | 1 | 8 | 30 | 80 | 250 |
 | Resurrector | Healer | casts of Resurrection, Redemption, Ancestral Spirit, Rebirth, Revive in sessions played as a healer | 1 | 30 | 125 | 400 | 1,500 |
-| Cleanser | Healer | casts of Cleanse, Purify, Dispel Magic, Cure Disease, Abolish Disease, Cure Poison, Abolish Poison, Remove Curse, Remove Lesser Curse in sessions played as a healer | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Cleanser | Healer | casts of Cleanse, Purify, Dispel Magic, Cure Disease, Abolish Disease, Cure Poison, Abolish Poison, Remove Curse in sessions played as a healer | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Battle Medic | Healer | kills in sessions played as a healer | 50 | 1,500 | 6,000 | 20,000 | 100,000 |
 | Stalwart | Tank | hours played in sessions played as a tank | 2 | 40 | 150 | 400 | 1,500 |
 | Damage Sponge | Tank | damage taken the client's meter counted in sessions played as a tank | 5,000 | 750,000 | 7,500,000 | 40,000,000 | 200,000,000 |
-| Unbreakable | Tank | the most damage taken in one fight in sessions played as a tank | 1,000 | 10,000 | 50,000 | 150,000 | 400,000 |
+| Unbreakable | Tank | the most damage taken in one fight in sessions played as a tank | 1,000 | 10,000 | 50,000 | 120,000 | 250,000 |
 | Vanguard | Tank | dungeon runs in sessions played as a tank | 1 | 15 | 50 | 150 | 400 |
 | Bulwark | Tank | dungeon bosses killed in sessions played as a tank | 1 | 40 | 200 | 750 | 2,000 |
 | Juggernaut | Tank | raid bosses killed in sessions played as a tank | 1 | 20 | 80 | 250 | 650 |
 | Immovable | Tank | dungeon runs with a boss kill and no death in sessions played as a tank | 1 | 8 | 30 | 80 | 250 |
-| Provoker | Tank | casts of Taunt, Mocking Blow, Challenging Shout, Growl, Challenging Roar, Righteous Defense in sessions played as a tank | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Provoker | Tank | casts of Taunt, Mocking Blow, Challenging Shout, Growl, Challenging Roar, Seal of Fury in sessions played as a tank | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Frontliner | Tank | kills in sessions played as a tank | 50 | 1,500 | 6,000 | 20,000 | 100,000 |
 | First To Fall | Tank | deaths in sessions played as a tank | 1 | 8 | 30 | 80 | 300 |
 | Brawler | Melee DPS | hours played in sessions played as melee DPS | 2 | 40 | 150 | 400 | 1,500 |
 | Bruiser | Melee DPS | damage the client's meter counted in sessions played as melee DPS | 5,000 | 1,000,000 | 10,000,000 | 50,000,000 | 300,000,000 |
-| Onslaught | Melee DPS | the most damage in one fight in sessions played as melee DPS | 1,000 | 10,000 | 50,000 | 150,000 | 400,000 |
+| Onslaught | Melee DPS | the most damage in one fight in sessions played as melee DPS | 1,000 | 10,000 | 50,000 | 120,000 | 250,000 |
 | Skirmisher | Melee DPS | dungeon runs in sessions played as melee DPS | 1 | 15 | 50 | 150 | 400 |
 | Headhunter | Melee DPS | dungeon bosses killed in sessions played as melee DPS | 1 | 40 | 200 | 750 | 2,000 |
 | Warbringer | Melee DPS | raid bosses killed in sessions played as melee DPS | 1 | 20 | 80 | 250 | 650 |
 | Untouched | Melee DPS | dungeon runs with a boss kill and no death in sessions played as melee DPS | 1 | 8 | 30 | 80 | 250 |
-| Silencer | Melee DPS | casts of Kick, Pummel, Shield Bash, Earth Shock, Hammer of Justice, Bash, Feral Charge in sessions played as melee DPS | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Silencer | Melee DPS | casts of Kick, Pummel, Shield Bash, Earth Shock, Hammer of Justice, Rebuke, Repentance, Bash, Feral Charge in sessions played as melee DPS | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Cleaver | Melee DPS | kills in sessions played as melee DPS | 50 | 1,500 | 6,000 | 20,000 | 100,000 |
 | Duelist | Melee DPS | players killed in sessions played as melee DPS | 1 | 20 | 80 | 400 | 2,000 |
 | Longshot | Ranged DPS | hours played in sessions played as ranged DPS | 2 | 40 | 150 | 400 | 1,500 |
 | Artillery | Ranged DPS | damage the client's meter counted in sessions played as ranged DPS | 5,000 | 1,000,000 | 10,000,000 | 50,000,000 | 300,000,000 |
-| Barrage | Ranged DPS | the most damage in one fight in sessions played as ranged DPS | 1,000 | 10,000 | 50,000 | 150,000 | 400,000 |
+| Barrage | Ranged DPS | the most damage in one fight in sessions played as ranged DPS | 1,000 | 10,000 | 50,000 | 120,000 | 250,000 |
 | Backliner | Ranged DPS | dungeon runs in sessions played as ranged DPS | 1 | 15 | 50 | 150 | 400 |
 | Spellslinger | Ranged DPS | dungeon bosses killed in sessions played as ranged DPS | 1 | 40 | 200 | 750 | 2,000 |
 | Siegebreaker | Ranged DPS | raid bosses killed in sessions played as ranged DPS | 1 | 20 | 80 | 250 | 650 |
 | Out Of Reach | Ranged DPS | dungeon runs with a boss kill and no death in sessions played as ranged DPS | 1 | 8 | 30 | 80 | 250 |
-| Warden | Ranged DPS | casts of Polymorph*, Fear, Freezing Trap, Hibernate, Entangling Roots, Shackle Undead, Banish, Scare Beast, Wyvern Sting in sessions played as ranged DPS | 10 | 400 | 2,000 | 6,000 | 25,000 |
+| Warden | Ranged DPS | casts of Polymorph*, Frost Nova, Fear, Howl of Terror, Banish, Freezing Trap, Scare Beast, Scatter Shot, Hibernate, Entangling Roots, Shackle Undead, Mind Control, Psychic Scream, Frost Shock, Earthbind Totem in sessions played as ranged DPS | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Sniper | Ranged DPS | kills in sessions played as ranged DPS | 50 | 1,500 | 6,000 | 20,000 | 100,000 |
 | Bombardier | Ranged DPS | players killed in sessions played as ranged DPS | 1 | 20 | 80 | 400 | 2,000 |
 
