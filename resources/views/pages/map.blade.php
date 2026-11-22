@@ -2,7 +2,7 @@
 <x-world>
   <x-slot:map>
     <div class="world-map">
-      <x-world-canvas id="map" label="The world map with heat from recorded {{ $d['layerWord'] }}. Drag to move, scroll to zoom." :spec="$d['map']" />
+      <x-world-canvas id="map" :fills-window="true" label="The world map with heat from recorded {{ $d['layerWord'] }}. Drag to move, scroll to zoom." :spec="$d['map']" />
     </div>
   </x-slot:map>
   <aside class="world-side">

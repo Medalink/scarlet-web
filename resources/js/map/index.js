@@ -23,6 +23,8 @@
 //   lookSwitch    an element to fill with the Survey / Game switch
 //   chrome        false to leave out the zoom buttons and the credit line (the page then draws its own and uses the
 //                 returned controls)
+//   pageScrolls   true for a map inside a page that scrolls: the wheel and a one-finger vertical swipe then scroll the
+//                 page, and the wheel zooms only with Ctrl or Command held; default false, the wheel zooms
 //   label         the canvas's accessible name
 // returns { fit, fitWorld, zoomBy, setLayers, setReveal, setLook, look, view, pending, destroy }
 
@@ -308,7 +310,7 @@ export function mountMap(canvas, options) {
                     window.location.assign(zone.href);
                 }
             },
-        }),
+        }, { pageScrolls: options.pageScrolls === true }),
     );
 
     const observer = new ResizeObserver(resize);

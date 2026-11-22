@@ -1,7 +1,7 @@
 <x-layouts.app :title="$d['name'].': a Scarlet character overview'" description="Records, hours, experience and deaths in each level, dungeons, loot and play history of {{ $d['name'] }}, from what the player chose to upload.">
 <section @class(['ch-head', 'ch-rich', 'ch-bare' => ! $d['hasMap']]) aria-labelledby="h1">
   @if ($d['hasMap'])
-  <div class="stage"><x-world-canvas id="map" label="Every path {{ $d['name'] }} walked, with deaths as crosses. Drag to move, scroll to zoom." :spec="$d['map']" />
+  <div class="stage"><x-world-canvas id="map" label="Every path {{ $d['name'] }} walked, with deaths as crosses. Drag to move, hold Ctrl or Command and scroll to zoom." :spec="$d['map']" />
     <ul class="legend ch-legend" aria-label="Map marks">
       <li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M1 7h22" stroke="#ff2d55" stroke-width="2"/></svg>every path walked</li>
       @if ($d['deathCount'])<li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M7.5 2.5l9 9M16.5 2.5l-9 9" stroke="#f0f1f3" stroke-width="1.7" stroke-linecap="round"/></svg>death</li>@endif

@@ -1,6 +1,6 @@
 <x-layouts.app :title="'Scarlet zone: '.$d['name']" description="Time played, deaths and creatures met in {{ $d['name'] }}.">
 <section class="ch-head" aria-labelledby="h1" style="min-height:27rem">
-  <div class="stage"><x-world-canvas id="map" label="Heat from every recorded path, with the zone {{ $d['name'] }} in view. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
+  <div class="stage"><x-world-canvas id="map" label="Heat from every recorded path, with the zone {{ $d['name'] }} in view. Drag to move, hold Ctrl or Command and scroll to zoom." :spec="$d['map']" /></div>
   <div class="ch-id wrap" style="padding-top:3rem">
     <div><h1 class="ch-name" id="h1">{{ $d['name'] }}</h1>
       <p class="ch-sub">@foreach ($d['facts'] as $fact)<span>{{ $fact }}</span>@endforeach</p></div>

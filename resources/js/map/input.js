@@ -1,10 +1,11 @@
-// Moving the map: drag, wheel, pinch and the keyboard. Handlers get canvas-relative CSS px.
+// Moving the map: drag, wheel, pinch and the keyboard. Handlers get canvas-relative CSS px. With `pageScrolls` the
+// wheel and a one-finger vertical swipe stay the page's, and the wheel zooms only with Ctrl or Command held.
 
 const WHEEL = 0.0015;
 const STEP = 1.5;
 const TAP = 5;
 
-export function attachInput(canvas, handlers) {
+export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
     const pointers = new Map();
     let moved = 0;
     let pinch = null;
@@ -62,6 +63,9 @@ export function attachInput(canvas, handlers) {
     };
 
     const wheel = (event) => {
+        if (pageScrolls && !event.ctrlKey && !event.metaKey) {
+            return;
+        }
         event.preventDefault();
         handlers.start();
         const lines = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 400 : 1;
@@ -96,7 +100,7 @@ export function attachInput(canvas, handlers) {
 
     const leave = () => handlers.hover(null, null);
 
-    canvas.style.touchAction = 'none';
+    canvas.style.touchAction = pageScrolls ? 'pan-y' : 'none';
     canvas.addEventListener('pointerdown', down);
     canvas.addEventListener('pointermove', move);
     canvas.addEventListener('pointerup', up);
