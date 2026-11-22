@@ -390,6 +390,17 @@ while a decode ran stays marked as waiting. Settings are in `config/scarlet.php`
 hours are left to `php artisan ingest:redecode`. `horizon:snapshot` runs every 5 minutes, which Horizon's metrics pages
 need.
 
+### What is proven
+
+- On a development checkout with a second Redis (`allkeys-lru`): a session of three parts whose job and queue were
+  deleted was decoded by the scheduled sweep, and sessions and cache keys appeared only in the second instance.
+- On production, after the deploy of 2026-11-22: `CONFIG GET maxmemory*` gave 256 MB `noeviction` on `redis` and 192 MB
+  `allkeys-lru` on `redis-cache`. A request to `/login` put one session in `redis-cache` database 2, and `redis`
+  database 0 held only Horizon, queue and lock keys. A real session with its three parts set back to undecoded was
+  decoded again by the 01:55 sweep with identical rows (`played_ms` 23000, 7 lines, same checksum of the session row).
+  Nobody flushed the queue's Redis there, since that deletes Horizon's failed jobs and the schedule locks.
+- A job lost together with its identity lock waits for the lock (15 minutes) before the next sweep queues it.
+
 ### Change the caps
 
 Edit `--maxmemory` in `deploy/compose.yaml` and run `bin/deploy`; `up -d --wait` recreates the instance, which loads its
