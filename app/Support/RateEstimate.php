@@ -11,12 +11,13 @@ use JsonSerializable;
  */
 final readonly class RateEstimate implements JsonSerializable
 {
-    /** The normal quantile of a two-sided 95% range. */
-    private const float Z = 1.959964;
-
     public const string UNIT_WINDOW = 'window';
 
     public const string UNIT_KILL = 'kill';
+
+    public const string UNIT_RECEIPT = 'receipt';
+
+    public const string UNIT_ROLL = 'roll';
 
     /**
      * @param  list<RateFlag>  $flags
@@ -42,12 +43,9 @@ final readonly class RateEstimate implements JsonSerializable
         if ($n === 0) {
             return new self($k, $n, 0.0, 0.0, 1.0, RateSample::Counts, $unit, $flags);
         }
-        $p = $k / $n;
-        $z2 = self::Z ** 2;
-        $centre = ($p + $z2 / (2 * $n)) / (1 + $z2 / $n);
-        $spread = self::Z * sqrt($p * (1 - $p) / $n + $z2 / (4 * $n ** 2)) / (1 + $z2 / $n);
+        $range = RateMath::wilson($k, $n);
 
-        return new self($k, $n, $p, max(0.0, $centre - $spread), min(1.0, $centre + $spread), RateSample::forWindows($n), $unit, $flags);
+        return new self($k, $n, $k / $n, $range['low'], $range['high'], RateSample::forWindows($n), $unit, $flags);
     }
 
     /** True when the rate and its range are shown: 10 windows or more. */

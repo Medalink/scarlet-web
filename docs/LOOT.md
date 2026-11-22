@@ -294,7 +294,7 @@ compared in the source), or nothing (an arm is under 10).
 
 **What a mark means.** The domain says the rule and the size do not change the table. So a mark is not a finding
 about the game. It lists the tags of both arms and it goes to a developer list (`/loot/groups?marks=1`, and the
-API), because the likeliest cause is counting. Ivory Boar Tusk is the proof: +24.9 points, range 9.8 to 40.6,
+API), because the likeliest cause is counting. Ivory Boar Tusk is the proof: +24.9 points, range 9.8 to 40.7,
 caused by skin windows.
 
 **Which arms are compared.** A chart compares the two arms with the most windows that are drawn (10 or more).

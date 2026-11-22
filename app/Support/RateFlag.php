@@ -7,17 +7,24 @@ enum RateFlag: string
 {
     case OneCharacter = 'one_character';
     case QuestItem = 'quest_item';
+    case OneReader = 'one_reader';
+    case DifferentCharacters = 'different_characters';
+    case RuleUnknown = 'rule_unknown';
+    case OtherCreatures = 'other_creatures';
 
     /**
-     * The tags of a row: its windows came from one character, its item is a quest item.
+     * The tags of a row or an arm: its windows came from one character, its item is a quest item, it counts the one
+     * reader of a free-for-all arm, or its windows are from before the session's first loot rule line.
      *
      * @return list<self>
      */
-    public static function tags(int|float $windowCharacters, bool $quest): array
+    public static function tags(int|float $windowCharacters, bool $quest, bool $oneReader = false, bool $ruleUnknown = false): array
     {
         return array_values(array_filter([
             (int) round($windowCharacters) === 1 ? self::OneCharacter : null,
             $quest ? self::QuestItem : null,
+            $oneReader ? self::OneReader : null,
+            $ruleUnknown ? self::RuleUnknown : null,
         ]));
     }
 
@@ -27,6 +34,10 @@ enum RateFlag: string
         return match ($this) {
             self::OneCharacter => '1 character',
             self::QuestItem => 'quest item',
+            self::OneReader => 'one reader',
+            self::DifferentCharacters => 'different characters',
+            self::RuleUnknown => 'rule unknown',
+            self::OtherCreatures => 'other creatures',
         };
     }
 }
