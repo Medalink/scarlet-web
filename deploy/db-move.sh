@@ -73,6 +73,7 @@ db_server() {
     printf 'DB_PASSWORD=%s\n' "$(srv "sed -n 's/^DB_PASSWORD=//p' /srv/scarlet-web/.env")"
     printf 'PGBR_PASS=%s\n' "$(tr -d '\r\n' < "$pass_file")"
   } | dsrv "sudo sh /srv/scarlet-db/deploy/server-setup-db.sh $pgbr_name $clients"
+  dsrv 'cat /srv/scarlet-db/etc/tls/server.crt' | srv 'mkdir -p /srv/scarlet-web/dbtls && cat > /srv/scarlet-web/dbtls/db-ca.crt && chmod 644 /srv/scarlet-web/dbtls/db-ca.crt'
 }
 
 db_keep_lock_alive() {

@@ -7,11 +7,14 @@
 //   node deploy/provision.mjs web --env load  the rehearsal app droplet scarlet-load-app
 //   node deploy/provision.mjs db --env load   the rehearsal database droplet scarlet-load-db
 //   node deploy/provision.mjs destroy --env load   delete the rehearsal droplets, volume and firewall (only resources named scarlet-load-*)
+//   node deploy/provision.mjs retag           give the app droplet the tag scarlet-app, let 5432 in from that tag only and take
+//                                             scarlet-web off the database droplet
 //   add --plan to print what would be created
 //
 // SCARLET_SECRETS is the folder with do-token, ops_ed25519.pub and tailscale-authkey (default: E:/Dev/secrets/scarlet-web
 // on Windows, ~/.config/scarlet-web elsewhere). Nothing is printed from those files and nothing is written back.
-// It touches only resources named scarlet-web, scarlet-db or scarlet-load-* and tags them scarlet-web. It never edits another
+// It touches only resources named scarlet-web, scarlet-db or scarlet-load-*; the app droplet is tagged scarlet-web and scarlet-app,
+// the database droplet scarlet-db (never scarlet-web, so the public firewall does not apply to it). It never edits another
 // droplet, firewall or key. The database droplet is reachable on tcp 5432 from the app droplet's tag only; there is no
 // inbound 22 anywhere: ssh goes over Tailscale, and a new node is signed here when Tailnet Lock is on.
 import { execFile } from 'node:child_process';
@@ -25,7 +28,7 @@ const run = promisify(execFile);
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 const option = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
-const verb = args.find((a) => ['web', 'db', 'destroy'].includes(a)) ?? 'web';
+const verb = args.find((a) => ['web', 'db', 'destroy', 'retag'].includes(a)) ?? 'web';
 const env = option('--env', 'prod');
 const plan = flag('--plan');
 if (!['prod', 'load'].includes(env)) throw new Error('--env is prod or load');
@@ -33,17 +36,18 @@ if (!['prod', 'load'].includes(env)) throw new Error('--env is prod or load');
 const REGION = 'nyc3';
 const IMAGE = 'ubuntu-24-04-x64';
 const TAG = 'scarlet-web';
+const APP_TAG = 'scarlet-app';
 const prod = env === 'prod';
 const roles = {
   web: {
     name: prod ? 'scarlet-web' : 'scarlet-load-app', size: 's-2vcpu-4gb', template: 'cloud-init.yaml', backups: prod,
-    tags: prod ? [TAG] : [TAG, 'scarlet-load', 'scarlet-load-app'], firewall: prod ? 'scarlet-web' : null,
+    tags: prod ? [TAG, APP_TAG] : [TAG, 'scarlet-load', 'scarlet-load-app'], firewall: prod ? 'scarlet-web' : null,
   },
   db: {
     name: prod ? 'scarlet-db' : 'scarlet-load-db', size: 's-1vcpu-2gb', template: 'cloud-init-db.yaml', backups: false,
-    tags: prod ? [TAG, 'scarlet-db'] : [TAG, 'scarlet-load', 'scarlet-load-db'], firewall: prod ? 'scarlet-web-db' : 'scarlet-load-db',
+    tags: prod ? ['scarlet-db'] : [TAG, 'scarlet-load', 'scarlet-load-db'], firewall: prod ? 'scarlet-web-db' : 'scarlet-load-db',
     volume: { name: prod ? 'scarlet-db-data' : 'scarlet-load-db-data', gigabytes: prod ? 50 : 10 },
-    dbTag: prod ? 'scarlet-db' : 'scarlet-load-db', appTag: prod ? TAG : 'scarlet-load-app',
+    dbTag: prod ? 'scarlet-db' : 'scarlet-load-db', appTag: prod ? APP_TAG : 'scarlet-load-app',
   },
 };
 
@@ -81,8 +85,34 @@ async function destroy() {
   console.log('destroy: done');
 }
 
+async function retag() {
+  if (!prod) throw new Error('retag only runs with --env prod');
+  const droplets = (await api('GET', 'droplets?per_page=200')).droplets;
+  const app = droplets.find((d) => d.name === 'scarlet-web');
+  const db = droplets.find((d) => d.name === 'scarlet-db');
+  const fw = (await api('GET', 'firewalls?per_page=200')).firewalls.find((f) => f.name === 'scarlet-web-db');
+  if (!app || !db || !fw) throw new Error('scarlet-web, scarlet-db and the firewall scarlet-web-db must all exist');
+  console.log(`retag: ${app.name} gets ${APP_TAG}; ${fw.name} accepts 5432 from ${APP_TAG} only; ${db.name} loses ${TAG} (tags now: ${db.tags.join(' ')})`);
+  if (plan) return;
+  const droplet = (d) => ({ resources: [{ resource_id: String(d.id), resource_type: 'droplet' }] });
+  await api('POST', 'tags', { name: APP_TAG });
+  await api('POST', `tags/${APP_TAG}/resources`, droplet(app));
+  const put = (sources) => api('PUT', `firewalls/${fw.id}`, {
+    name: fw.name, droplet_ids: fw.droplet_ids, tags: fw.tags, outbound_rules: fw.outbound_rules,
+    inbound_rules: fw.inbound_rules.map((r) => (r.ports === '5432' ? { ...r, sources: { tags: sources } } : r)),
+  });
+  await put([TAG, APP_TAG]);
+  await put([APP_TAG]);
+  if (db.tags.includes(TAG)) await api('DELETE', `tags/${TAG}/resources`, droplet(db));
+  console.log('retag: done');
+}
+
 if (verb === 'destroy') {
   await destroy();
+  process.exit(0);
+}
+if (verb === 'retag') {
+  await retag();
   process.exit(0);
 }
 

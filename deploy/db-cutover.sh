@@ -94,9 +94,11 @@ check() {
 set_env() {
   local target=$1
   [ -f state/env.before-db-move ] || cp .env state/env.before-db-move
-  grep -v -E '^(DB_HOST|DB_SSLMODE)=' .env > .env.new
+  grep -v -E '^(DB_HOST|DB_SSLMODE|DB_SSLROOTCERT)=' .env > .env.new
   if [ "$target" = local ]; then
     echo 'DB_HOST=postgres' >> .env.new
+  elif [ -s dbtls/db-ca.crt ]; then
+    printf 'DB_HOST=%s\nDB_SSLMODE=verify-ca\nDB_SSLROOTCERT=/etc/scarlet-dbtls/db-ca.crt\n' "$target" >> .env.new
   else
     printf 'DB_HOST=%s\nDB_SSLMODE=require\n' "$target" >> .env.new
   fi

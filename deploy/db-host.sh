@@ -87,7 +87,7 @@ human_age() {
 }
 
 status() {
-  local rc=0 pgbr_rc recovery row age failed archived last_failed_newer
+  local rc=0 pgbr_rc listen addr recovery row age failed archived last_failed_newer
   $dc ps --format '{{.Service}} {{.Status}}' postgres
   recovery=$(pg -c 'select pg_is_in_recovery()')
   if [ "$recovery" = t ]; then
@@ -123,7 +123,12 @@ for s in stanzas:
     print("pgbackrest last backup %s %s, %d h %d min ago, %d backups, WAL %s to %s" % (b["type"], b["label"], age // 3600, age % 3600 // 60, len(backups), s["archive"][0]["min"] if s.get("archive") else "?", s["archive"][0]["max"] if s.get("archive") else "?"))
 ' || pgbr_rc=$?
   if [ "$pgbr_rc" = 3 ] && [ "$recovery" = f ]; then echo "pgbackrest nothing to restore from: STALE"; rc=1; fi
-  echo "volume   $(df -h --output=used,size,pcent /mnt/scarlet-db-data | tail -n 1 | awk '{print $1 " of " $2 " (" $3 ")"}'); database $(pg -c "select pg_size_pretty(pg_database_size('scarlet'))")"
+  listen=$(sed -n 's/^DB_LISTEN=//p' /srv/scarlet-db/.env)
+  for addr in ${listen//,/ }; do
+    ss -ltn 'sport = :5432' | grep -qF "$addr:5432" || { echo "listen    not listening on $addr:5432: STALE"; rc=1; }
+  done
+  echo "listen    $listen"
+  echo "volume  $(df -h --output=used,size,pcent /mnt/scarlet-db-data | tail -n 1 | awk '{print $1 " of " $2 " (" $3 ")"}'); database $(pg -c "select pg_size_pretty(pg_database_size('scarlet'))")"
   return "$rc"
 }
 

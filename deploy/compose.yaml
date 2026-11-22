@@ -15,6 +15,7 @@ x-app: &app
   volumes:
     - logs:/app/storage/logs
     - /srv/scarlet-web/maps:/maps:ro
+    - /srv/scarlet-web/dbtls:/etc/scarlet-dbtls:ro
 
 x-after-databases: &after-databases
   depends_on:

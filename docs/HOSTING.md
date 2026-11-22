@@ -27,11 +27,16 @@ see the visitor, not Cloudflare. `www` redirects to the apex in nginx.
   IPv6 ranges and nothing else. There is no inbound 22. Outbound is open. Docker publishes ports around `ufw`, so
   the cloud firewall is the guard, and nothing else is published: php-fpm listens on `127.0.0.1:9000` and Redis is on
   the compose network only.
-- The cloud firewall `scarlet-web-db` (tag `scarlet-db`) lets in tcp 5432 from droplets with the tag `scarlet-web` and
-  nothing else: no 22, no public 5432. Postgres runs on the host network and listens on the VPC address of the database
-  droplet and loopback only. `pg_hba.conf` accepts the app droplet's VPC address with `hostssl` and `scram-sha-256`
-  (the app sets `DB_SSLMODE=require`; the certificate is self-signed, so this encrypts and does not verify). The VPC
-  `default-nyc3` is shared with other projects, which is why the firewall names a tag and not the network.
+- The cloud firewall `scarlet-web-db` (tag `scarlet-db`) lets in tcp 5432 from droplets with the tag `scarlet-app` and
+  nothing else: no 22, no public 5432. The app droplet has the tags `scarlet-web` and `scarlet-app`; the database droplet
+  has only `scarlet-db`, so the public firewall does not apply to it and a `scarlet-load-*` droplet is not a source.
+  Postgres runs on the host network and listens on the VPC address of the database droplet and loopback only; `status`
+  reports STALE when either address stops listening (it is the check for a late VPC interface after a reboot, which
+  was not tested by rebooting). `pg_hba.conf` accepts the app droplet's VPC address with `hostssl` and
+  `scram-sha-256`. The app sets `DB_SSLMODE=verify-ca` with `DB_SSLROOTCERT=/etc/scarlet-dbtls/db-ca.crt`, a copy of the
+  database droplet's self-signed `server.crt` that `bin/deploy db-server` puts in `/srv/scarlet-web/dbtls`; without that
+  file `set-env` falls back to `require`, which encrypts and does not verify. The VPC `default-nyc3` is shared with other
+  projects, which is why the firewall names a tag and not the network.
 - To open ssh for a while, add a tcp 22 rule for one address to the `scarlet-web` firewall and remove it after.
 - sshd allows the user `ops` with a key only; root login and passwords are off. `unattended-upgrades` is on and may
   reboot at 04:30 UTC on the app droplet and 05:45 UTC on the database droplet (the nightly dump runs at 03:15 and
@@ -198,7 +203,7 @@ into a scratch database (61 tables, 26 continuous aggregates, 15 hypertables).
 ## Database host
 
 PostgreSQL runs on its own droplet, `scarlet-db`, with its data on the block volume `scarlet-db-data`. The app droplet
-reaches it over the nyc3 VPC (`DB_HOST` is the droplet's private address, `DB_SSLMODE=require`). Redis stays on the app
+reaches it over the nyc3 VPC (`DB_HOST` is the droplet's private address, `DB_SSLMODE=verify-ca`). Redis stays on the app
 droplet. `deploy/compose.db.yaml` is the stack, `deploy/db-host.sh` runs on the database droplet and
 `deploy/db-cutover.sh` on the app droplet; `bin/deploy` calls both through `deploy/db-move.sh`.
 
@@ -210,9 +215,11 @@ bin/deploy r2                  # R2 credentials on the app droplet and the datab
 bin/deploy db-server           # folders, TLS key pair, pg_hba.conf, pgbackrest.conf, age and rclone, systemd units
 ```
 
-`provision.mjs` tags everything `scarlet-web` (the droplet also `scarlet-db`, the tag the firewall targets), formats and
+`provision.mjs` tags the droplet `scarlet-db` (the tag the firewall targets) and the volume `scarlet-web`, formats and
 mounts the volume in cloud-init, and runs `tailscale lock sign` for the new node, because the machine that provisions is
-a trusted signing node. `bin/deploy db-server` makes the pgBackRest passphrase in
+a trusted signing node. `node deploy/provision.mjs retag` moves an older install to the tags above. `etc/pgbackrest.conf`
+is mode 600 and owned by uid 1000, the postgres user inside the container, which has to read it; the host's `r2.env`
+is root-only because only root reads it, and `ops` has sudo either way. `bin/deploy db-server` makes the pgBackRest passphrase in
 `E:\Dev\secrets\scarlet-web\pgbackrest-passphrase` when it is missing. **Copy that file to a second place you control**:
 without it the WAL archive and the backups under `pgbackrest/` in the bucket cannot be read. It is also in
 `/srv/scarlet-db/etc/pgbackrest.conf` on the database droplet (mode 600). The data folder is bound from
@@ -225,7 +232,11 @@ volume is not mounted, so a missing volume cannot turn into a database on the ro
 bin/deploy db-move
 ```
 
-It holds the deploy lock for the whole move and runs these steps, which `deploy/db-move.sh` documents in its header:
+It holds the deploy lock for the whole move (the deploy lock also covers `rollback`, `db-server`, `db upgrade` and the
+`db-move` subcommands) and runs these steps, which `deploy/db-move.sh` documents in its header. Step 4 runs detached on
+the app droplet and is polled, so a dropped ssh session does not stop it; if it ends in an unexpected state the command
+reads both Postgres servers and the slots, prints which one writes and the command that finishes or undoes the move, and
+keeps the lock when it cannot read one side:
 
 1. The app droplet lets the database droplet copy it: the role `replicator`, one `pg_hba.conf` line for the compose
    network, the slot `scarlet_db_move`, and a relay container (nginx `stream`) on its Tailscale address, port 15432.
@@ -234,7 +245,8 @@ It holds the deploy lock for the whole move and runs these steps, which `deploy/
 3. `.env` gets `DB_HOST` and `DB_SSLMODE=require`; the idle slot starts with it and passes its health check (reads
    work on the standby); Horizon and the scheduler stop (queued jobs wait in Redis).
 4. The old Postgres goes read-only (`ALTER SYSTEM`, not a database setting, so nothing read-only replicates), writers
-   still in a transaction are ended after 5 seconds, the standby replays to the last WAL position and is promoted,
+   every transaction that began before the setting reached new sessions is given 3 seconds and then ended, the
+   standby replays to the last WAL position and is promoted,
    and nginx moves to the new slot. Reads never fail. Writes fail from the read-only switch until the nginx reload: 3 to
    4 seconds in the rehearsals.
 5. On the new primary: `pgbackrest stanza-create`, `check`, a first full backup, the timers (weekly full, daily
@@ -334,6 +346,9 @@ the R2 dump of 2026-11-21 19:50 UTC and the real `bin/deploy` commands:
   1 ms apart, at the nginx switch) and 4 failed writes of 500 in a 3.2 second window; `db-move rollback` had 0 failed
   reads in 4,048 and 4 failed writes of 404. A normal `bin/deploy` against the remote database: 0 failures in 3,502
   requests, and the replica container was not recreated.
+- The production move on 2026-11-22 (01:00 UTC), with the loop running against https://scarletweb.io: 0 failed reads in
+  6,340; 5 failed writes of 634 in a 4.2 second window; the cutover reported the old Postgres read-only for 11.3 seconds.
+  A normal deploy by another lead ran against the new database afterwards.
 - The app's connections reach Postgres from the app droplet's VPC address with TLS on; Postgres listens on the VPC
   address and loopback only.
 
