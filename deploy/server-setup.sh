@@ -96,4 +96,5 @@ else
   sudo systemctl disable --now scarlet-backup.timer >/dev/null 2>&1 || true
   echo "server: the database is on its own host; the nightly dump runs there"
 fi
+sh deploy/install-log-user.sh
 echo "server: ready"
