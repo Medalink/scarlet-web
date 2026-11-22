@@ -60,6 +60,8 @@ const REGISTRY = [
   { lane: "pages", name: "a missing character is a 404 page", independent: true, run: pages.missingPageIs404("/c/Nobody-Here") },
   { lane: "pages", name: "a profession without a page is a 404 page", independent: true, run: pages.missingPageIs404("/professions/lockpicking") },
   { lane: "pages", name: "a missing creature is a 404 page", independent: true, run: pages.missingPageIs404("/creatures/999999999") },
+  { lane: "pages", name: "an id past what the database stores is a 404 page, not an error", independent: true, run: pages.missingPageIs404("/creatures/2147483648") },
+  { lane: "pages", name: "an object id past what the database stores is a 404 page", independent: true, run: pages.missingPageIs404("/objects/3000000000") },
   { lane: "pages", name: "the public profession and camps pages stay public: canonical, indexed, edge cacheable, no cookie, no own-page words", run: pages.publicPagesStayPublic },
   { lane: "pages", name: "the account pages are closed to visitors", independent: true, run: pages.accountIsClosedToVisitors },
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },

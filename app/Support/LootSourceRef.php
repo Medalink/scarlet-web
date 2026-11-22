@@ -15,7 +15,7 @@ final readonly class LootSourceRef
     /** The reference a `source` parameter holds, or null for any other text. */
     public static function parse(?string $text): ?self
     {
-        if ($text === null || preg_match('/^([cg])([0-9]{1,10})$/', $text, $match) !== 1) {
+        if ($text === null || preg_match('/^([cg])('.RecordId::pattern().')$/', $text, $match) !== 1) {
             return null;
         }
 

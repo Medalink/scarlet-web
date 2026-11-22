@@ -10,6 +10,7 @@ use App\Support\LootRule;
 use App\Support\LootSort;
 use App\Support\LootSourceRef;
 use App\Support\LootView;
+use App\Support\RecordId;
 use App\Support\Server;
 use App\Support\WorldLayer;
 use Illuminate\Contracts\Validation\Validator;
@@ -35,7 +36,7 @@ class PublicRequest extends FormRequest
             'server' => ['nullable', Rule::enum(Server::class)],
             'layer' => ['nullable', Rule::enum(WorldLayer::class)],
             'class' => ['nullable', 'string', 'max:32', 'regex:/^[A-Za-z]+$/'],
-            'creature' => ['nullable', 'integer', 'min:1'],
+            'creature' => ['nullable', 'integer', 'between:1,'.RecordId::MAX],
             'level' => ['nullable', 'integer', 'min:0', 'max:'.(HeatGrid::LEVELS - 1)],
             'cursor' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:'.Cursor::MAX_LIMIT],
@@ -48,7 +49,7 @@ class PublicRequest extends FormRequest
             'quality' => ['nullable', 'integer', 'between:0,5'],
             'sort' => ['nullable', Rule::enum(LootSort::class)],
             'rule' => ['nullable', 'string', 'max:24', 'regex:/^[a-z]+$/'],
-            'source' => ['nullable', 'string', 'regex:/^[cg][0-9]{1,10}$/'],
+            'source' => ['nullable', 'string', 'regex:/^[cg]'.RecordId::pattern().'$/'],
             'a' => ['nullable', Rule::enum(LootRule::class)->except([LootRule::Personal, LootRule::Unknown])],
             'b' => ['nullable', Rule::enum(LootRule::class)->except([LootRule::Personal, LootRule::Unknown])],
             'marks' => ['nullable', 'boolean'],

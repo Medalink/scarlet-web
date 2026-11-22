@@ -4,6 +4,7 @@ namespace App\Http\Requests\Web;
 
 use App\Support\LootRule;
 use App\Support\LootSourceRef;
+use App\Support\RecordId;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +22,7 @@ class LootGroupsRequest extends FormRequest
         $compared = ['nullable', Rule::enum(LootRule::class)->except([LootRule::Personal, LootRule::Unknown])];
 
         return [
-            'source' => ['nullable', 'string', 'regex:/^[cg][0-9]{1,10}$/'],
+            'source' => ['nullable', 'string', 'regex:/^[cg]'.RecordId::pattern().'$/'],
             'a' => $compared,
             'b' => $compared,
             'marks' => ['nullable', 'boolean'],
