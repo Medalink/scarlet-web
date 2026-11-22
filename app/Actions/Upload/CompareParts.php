@@ -18,7 +18,8 @@ class CompareParts
 
     /**
      * Step 1 of the upload protocol: does the server hold exactly the parts the app holds for this
-     * character in the groups that are on? Compared by count and by the XOR of the part ids.
+     * character in the groups that are on? Compared by count and by the XOR of the part ids, over the
+     * parts this install listed (another install of the character may hold others).
      *
      * @param  list<string>  $groups
      * @return array{match: bool, count: int, digest: string}
@@ -36,7 +37,7 @@ class CompareParts
         }
 
         $held = $this->claim->handle($install, $character, create: false);
-        $server = $held === null ? ['count' => 0, 'digest' => PartDigest::EMPTY] : PartDigest::of($held->id, $groups);
+        $server = $held === null ? ['count' => 0, 'digest' => PartDigest::EMPTY] : PartDigest::of($install, $held->id, $groups);
 
         return ['match' => $server['count'] === $count && $server['digest'] === $digest] + $server;
     }

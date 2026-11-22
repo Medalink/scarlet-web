@@ -2,6 +2,7 @@
 
 namespace App\Support\Database;
 
+use App\Models\Install;
 use App\Models\Part;
 use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
@@ -37,13 +38,17 @@ final class PartIds
 
     /**
      * @param  list<string>|null  $groups  null for every group
+     * @param  Install|null  $install  only the parts this install claims
      * @return list<string> the hex ids of a character's parts in these groups
      */
-    public static function held(int $characterId, ?array $groups = null): array
+    public static function held(int $characterId, ?array $groups = null, ?Install $install = null): array
     {
         $query = Part::query()->where('character_id', $characterId)->selectRaw("encode(id, 'hex') as hex");
         if ($groups !== null) {
             $query->whereIn('group_key', $groups);
+        }
+        if ($install !== null) {
+            $query->claimedBy($install);
         }
 
         /** @var list<string> */

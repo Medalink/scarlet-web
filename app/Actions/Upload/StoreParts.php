@@ -10,6 +10,7 @@ use App\Support\Database\BinaryValue;
 use App\Support\Database\PartIds;
 use App\Support\Exceptions\ApiException;
 use App\Support\GroupRefusals;
+use App\Support\PartClaims;
 use App\Support\PartTool;
 use App\Support\SharingGroups;
 use App\Support\UploadQuota;
@@ -33,7 +34,7 @@ class StoreParts
     /**
      * Step 3 of the upload protocol: open the batch, check every part against what the last manifest
      * asked for, store the new ones and queue one decode per session that got a part. Repeating a
-     * request stores nothing and answers the same.
+     * request stores nothing and answers the same. The install claims every part of the request, new or already held.
      *
      * @return array{stored: list<string>, created: int}
      */
@@ -122,6 +123,8 @@ class StoreParts
                 IngestSession::dispatch($characterId, $session);
             }
         }
+
+        PartClaims::add($install, array_column($parts, 'id'));
 
         return ['stored' => array_column($parts, 'id'), 'created' => count($new)];
     }

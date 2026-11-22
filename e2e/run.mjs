@@ -24,6 +24,7 @@ import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
 import * as owner from "./checks/owner.mjs";
 import * as own from "./checks/own.mjs";
+import * as installs from "./checks/installs.mjs";
 import * as removal from "./checks/removal.mjs";
 
 const LANES = ["upload", "api", "pages", "browser", "owner"];
@@ -71,6 +72,7 @@ const REGISTRY = [
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },
+  { lane: "removal", name: `${ECHO} on two installs of one account: a sync of one keeps the other's parts, and a part only one lists goes when it drops it`, run: installs.twoInstallsKeepEachOthersParts },
   { lane: "removal", name: "removal answers and empties the status", run: removal.removalAnswersAndEmptiesStatus },
   { lane: "removal", name: "the stranger install's upload is removed too", run: removal.strangerIsRemoved },
   { lane: "removal", name: "the character is no longer served", run: removal.characterIsNoLongerServed },

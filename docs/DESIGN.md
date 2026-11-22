@@ -163,8 +163,10 @@ All upload requests are JSON or binary over HTTPS under `/api/v1/upload`, signed
    and a set digest: the XOR of all its part ids. The server answers `{"match": true}` when its own count and XOR are
    the same. A day with nothing new costs this one request.
 2. **Manifest.** On a mismatch the app sends `POST /manifest`: the character and every part as
-   `id, session, group, raw bytes`, zstd-compressed. The server answers with the ids it needs and deletes the parts it
-   holds that the manifest no longer lists (a group turned off with removal, a replaced session).
+   `id, session, group, raw bytes`, zstd-compressed. The server answers with the ids it needs, records that this install
+   lists the parts it already holds, and drops this install's claim on the parts the manifest no longer lists (a group
+   turned off with removal, a replaced session). A part is deleted when no install claims it. A character played on two
+   PCs keeps what each PC uploaded, and each install's `/sync` compares only the parts it claims.
 3. **Send.** `POST /parts`, `Content-Type: application/vnd.scarlet.parts+zstd`: one zstd frame (level 19, window up
    to 8 MiB) over the needed parts, each as a 4-byte little-endian length and the part text. At most 4 MiB compressed
    and 64 MiB decompressed per request, 20,000 parts; the app splits larger sets. The server recomputes each id,
@@ -203,7 +205,8 @@ Three layers. Only the first is the truth; the other two can be rebuilt from it.
 
 **1. Parts, stored once.** `parts(id bytea primary key, character_id, session_start, group_key, lines, raw_bytes,
 body bytea)`. `body` is the part text, zstd-compressed by `scarlet-part`, kept out of line and never recompressed by
-PostgreSQL. A part belongs to one character; the same id uploaded again is a no-op.
+PostgreSQL. A part belongs to one character; the same id uploaded again is a no-op. `part_claims(part_id, install_id)`
+holds the installs that listed each part (rows go with the part or the install).
 
 **2. Decoded facts, TimescaleDB hypertables.** One decode of a session reads all of its parts, merges them by time,
 carries the context forward the way FORMAT.md describes (zone, level, instance, group, loot rule) and writes rows.

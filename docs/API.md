@@ -205,8 +205,9 @@ Answer:
 ```
 
 `need` lists the ids the server does not hold, in manifest order. `present` is how many listed parts it already holds.
-`removed` is how many parts it held in the groups that are on and the manifest no longer lists; they and their decoded
-rows are gone. Parts of a group that is switched off in `groups` stay until the app removes the group (below).
+`removed` is how many parts it deleted: parts in the groups that are on that this install listed before, the manifest no
+longer lists and no other install of the character lists; they and their decoded rows are gone. A part another install
+of the character uploaded stays. Parts of a group that is switched off in `groups` stay until the app removes the group (below).
 
 ### `POST /upload/parts`
 
