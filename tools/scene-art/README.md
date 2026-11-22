@@ -2,8 +2,8 @@
 
 The art of the profession pages' heads: each scene's own models from the game (geometry, textures, particle emitters)
 and the icons its page shows. It is Blizzard's art, so it is never committed: it lives on the `maps` disk under the
-scene's name and reaches the server with the map tiles. The camp page has its own tool, `tools/camp-art`; this one
-reads models with the same `m2.mjs`.
+scene's name and reaches the server with the map tiles. The `camp` entry writes the same files as `tools/camp-art`
+(`camp/camp.json`, `camp/tex`, `camp/icons` named by spell id), so the camp art already on a disk keeps working.
 
 ## Needs
 
@@ -20,7 +20,7 @@ reads models with the same `m2.mjs`.
 node tools/scene-art/build.mjs fishing storage/app/maps/fishing [server address]
 ```
 
-The scenes are the twelve professions by slug (`fishing`, `herbalism`, `mining`, `skinning`, `alchemy`, `blacksmithing`,
+The scenes are `camp` and the twelve professions by slug (`fishing`, `herbalism`, `mining`, `skinning`, `alchemy`, `blacksmithing`,
 `enchanting`, `engineering`, `leatherworking`, `tailoring`, `cooking`, `first-aid`); each goes to a folder of its own name.
 
 ## Output

@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-/** A profession page's scene: the art it draws is on the `maps` disk under a folder of this name (tools/scene-art). */
+/** The scene a page's head draws, one per profession page and one for Camps: the art it draws is on the `maps` disk under a folder of this name (tools/scene-art). */
 enum Scene: string
 {
     case Fishing = 'fishing';
@@ -17,6 +17,7 @@ enum Scene: string
     case Tailoring = 'tailoring';
     case Cooking = 'cooking';
     case FirstAid = 'first-aid';
+    case Camp = 'camp';
 
     /** What a screen reader hears of the stage. */
     public function label(): string
@@ -34,6 +35,7 @@ enum Scene: string
             self::Tailoring => "A tailor's room, drawn from the game's own models: a loom, a spinning wheel, a table of cloth and thread, and bolts of cloth",
             self::Cooking => "A cook's fire, drawn from the game's own models: a cooking pot over a fire, a boar on a spit, a rack of smoked meat, a table of food and a sack",
             self::FirstAid => "A field hospital, drawn from the game's own models: a tent, a bed, first aid crates and a lantern",
+            self::Camp => "A camp at night, drawn from the game's own models: a Basic Campfire burning between a Camp Tent and a Camp Chair",
         };
     }
 
@@ -53,6 +55,7 @@ enum Scene: string
             self::Tailoring => self::onDrawnGround('Loom, spinning wheel, table, bolt of cloth and spool models, textures and effects'),
             self::Cooking => self::onDrawnGround('Cooking pot, spit, smoked meat rack, table, food and sack models, textures and effects'),
             self::FirstAid => self::onDrawnGround('Tent, bed, first aid crate and lantern models, textures and effects'),
+            self::Camp => 'Campfire, tent and chair models, textures, flames, sparks and light © Blizzard Entertainment, read from the WoW Forever client. The smoke and the ground are drawn by this page.',
         };
     }
 

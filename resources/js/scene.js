@@ -1,4 +1,4 @@
-// The scene of a profession head (docs/DESIGN.md, Art and game layer). This entry is a few lines; three.js and the
+// The scene of a page's head (docs/DESIGN.md, Art and game layer). This entry is a few lines; three.js and the
 // scene load as chunks of their own, only once the head is on screen and the browser has WebGL. When either fails the
 // stage keeps its size and shows its callouts as a list (data-state="off").
 

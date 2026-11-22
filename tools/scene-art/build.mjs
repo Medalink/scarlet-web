@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Writes one profession scene's game art from an installed WoW Forever client: its models as one JSON file, their
+// Writes one scene's game art from an installed WoW Forever client: its models as one JSON file, their
 // textures and the page's icons as PNG. Reads the client through a local file server (README.md). The output is
 // Blizzard's art: it goes on the maps disk, never into git.
 // Usage: node tools/scene-art/build.mjs <scene> <out dir> [server]
@@ -55,6 +55,13 @@ const SCENES = {
     'first-aid': {
         models: { tent: 197388, bed: 197266, crate: 199636, horde: 199639, lantern: 190869 },
         icons: {},
+    },
+    camp: {
+        models: { campfire: 8202386, tent: 197389, chair: 198116 },
+        icons: {
+            1229519: 136112, 1230124: 136077, 1230172: 132335, 1230164: 136101, 1230587: 237551,
+            1229513: 135740, 1229718: 236225, 1230098: 135979, 1230653: 135879,
+        },
     },
 };
 

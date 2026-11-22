@@ -9,7 +9,7 @@ use App\View\Design\Gallery;
 use App\View\Design\SceneHead;
 use Illuminate\Contracts\View\View;
 
-/** A profession scene's head over invented facts, in the local environment only (routes/web.php). */
+/** A scene's head over invented facts, in the local environment only (routes/web.php). */
 class SceneDesignController extends Controller
 {
     public function __invoke(Scene $scene): View

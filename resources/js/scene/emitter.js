@@ -9,7 +9,8 @@ const BLOW_UP = 1e3;
 /**
  * A particle emitter of a model, simulated on the CPU and drawn as instanced quads in one of three ways: facing the
  * camera, stretched along the velocity, or lying flat in the model's ground plane (flag 0x1000, water rings).
- * `o` is the spec's tuning: `boost` the rate, `grow` the size, `gain` the brightness, `streak` to force the stretch.
+ * `o` is the spec's tuning: `boost` the rate, `grow` the size, `gain` the brightness, `streak` to force the stretch,
+ * `cull` to draw front faces only (a streak is wound the other way round, so `cull` hides it).
  */
 export class Emitter {
     constructor(def, texture, loopMs, rand, o = {}) {
@@ -36,7 +37,7 @@ export class Emitter {
         for (const [n, a] of [['iPos', this.aPos], ['iVel', this.aVel], ['iCol', this.aCol], ['iSize', this.aSize]]) { a.setUsage(THREE.DynamicDrawUsage); geo.setAttribute(n, a); }
         this.mesh = new THREE.Mesh(geo, new THREE.ShaderMaterial({
             uniforms: { map: { value: texture }, grid: { value: new THREE.Vector2(def.cols, def.rows) }, mode: { value: this.flat ? 2 : this.streak ? 1 : 0 }, gain: { value: o.gain ?? (this.additive ? 0.62 : 1) }, add: { value: this.additive ? 1 : 0 } },
-            transparent: true, depthWrite: false, side: THREE.DoubleSide,
+            transparent: true, depthWrite: false, side: o.cull ? THREE.FrontSide : THREE.DoubleSide,
             blending: this.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
             vertexShader: `
                 attribute vec3 iPos; attribute vec3 iVel; attribute vec4 iCol; attribute vec3 iSize;

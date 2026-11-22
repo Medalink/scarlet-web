@@ -5,11 +5,12 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { Emitter } from './emitter.js';
 import { mulberry } from './math.js';
 import { buildModel, loadTextures } from './model.js';
+import { camp } from './settings/camp.js';
 import { ground } from './settings/ground.js';
 import { water } from './settings/water.js';
 
 const SHEET = 0x141416;
-const SETTINGS = { water, ground };
+const SETTINGS = { water, ground, camp };
 const SHADOWS = { plain: THREE.PCFShadowMap };
 const WIDE = 820;
 
@@ -18,9 +19,11 @@ const WIDE = 820;
  * (`models` by key, `tex` as `{ file id: url }`); `spec` is a file of resources/js/scene/scenes.
  *
  * `spec.props[]` is `{ key, model, at: [across, away], on, lift, turn, tilt, scale, emit, bob, anchor }`: `at` is where
- * the prop stands in the opening view, `emit` tunes each of the model's emitters by index (or `all`), `bob` floats it
- * and lets a bite duck it under, `anchor` is the point a callout stands on. `spec.setting` names what the page draws
- * itself (resources/js/scene/settings) and carries its configuration.
+ * the prop stands in the opening view, `emit` tunes each of the model's emitters by index (or `all`; `order` sets its
+ * render order), `bob` floats it and lets a bite duck it under, `anchor` is the point a callout stands on. `spec.setting`
+ * names what the page draws itself (resources/js/scene/settings) and carries its configuration. A setting is
+ * `{ lift(point), step(clock, eye, ripple, { camera, dt }), attach?(placed), warm?(dt) }`: `attach` gets the placed props
+ * by key as `{ holder, def }` once, and `warm` runs with each step of the warm-up.
  *
  * `opts`: `still`, `offset(width)`, `onFrame(points)` for the callouts, `onLost()` when the browser takes the context.
  */
@@ -53,11 +56,17 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
     world.rotation.x = -Math.PI / 2;
     scene.add(world);
 
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const [strength, radius, threshold] = spec.look.bloom;
+    const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), strength, radius, threshold);
+    composer.addPass(bloom);
+
     const yaw0 = spec.view.yaw;
     const spot = ([across, away]) => ({ x: Math.cos(yaw0) * across - Math.sin(yaw0) * away, z: -Math.sin(yaw0) * across - Math.cos(yaw0) * away });
-    const setting = SETTINGS[spec.setting.name](spec.setting, { scene, rand, spot, sheet: SHEET });
+    const setting = SETTINGS[spec.setting.name](spec.setting, { scene, rand, spot, sheet: SHEET, bloom });
 
-    const emitters = [], anchors = [], bobbers = [];
+    const emitters = [], anchors = [], bobbers = [], placed = {};
     for (const p of spec.props) {
         const def = data.models[p.model];
         const at = spot(p.at);
@@ -69,6 +78,7 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
         holder.scale.setScalar(p.scale ?? 1);
         holder.add(buildModel(def, tex));
         world.add(holder);
+        placed[p.key] = { holder, def };
         const mine = [];
         if (p.emit) def.particles.forEach((e, i) => {
             const o = p.emit[i] ?? p.emit.all;
@@ -76,7 +86,7 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
             const em = new Emitter(e, tex[def.textures[e.textures[0]].fdid], def.globalLoops[0], rand, o);
             em.mesh.position.fromArray(def.bones[e.bone]?.pivot ?? e.position);
             em.mesh.position.z += o.lift ?? 0;
-            em.mesh.renderOrder = e.position[2] < -0.5 ? 0 : 2;
+            em.mesh.renderOrder = o.order ?? (e.position[2] < -0.5 ? 0 : 2);
             holder.add(em.mesh);
             emitters.push(em);
             mine.push(em);
@@ -84,11 +94,7 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
         if (p.bob) bobbers.push({ holder, base: lift, at, emit: mine, next: 4 + rand() * 3, dip: 0, now: false });
         if (p.anchor) anchors.push({ key: p.key, at: new THREE.Vector3(at.x + (p.anchor[0] ?? 0), lift + p.anchor[1], at.z + (p.anchor[2] ?? 0)) });
     }
-
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const [strength, radius, threshold] = spec.look.bloom;
-    composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), strength, radius, threshold));
+    setting.attach?.(placed);
 
     let redraw = () => {};
     const offset = opts.offset ?? ((width) => (width > WIDE ? spec.view.offset.wide : spec.view.offset.narrow));
@@ -138,6 +144,7 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
         return ripple;
     };
 
+    const shot = { camera, dt: 0 };
     const draw = (dt) => {
         const ripple = tick(dt);
         view.yaw = yaw0 + view.turned + (still ? 0 : Math.sin(clock * 0.11) * spec.view.sway);
@@ -145,7 +152,8 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
         camera.position.set(view.target.x + Math.sin(view.yaw) * Math.cos(view.pitch) * view.dist, view.target.y + Math.sin(view.pitch) * view.dist, view.target.z + Math.cos(view.yaw) * Math.cos(view.pitch) * view.dist);
         camera.lookAt(view.target);
         camera.updateMatrixWorld();
-        setting.step(clock, camera.position, ripple);
+        shot.dt = dt;
+        setting.step(clock, camera.position, ripple, shot);
         composer.render();
 
         if (opts.onFrame) {
@@ -174,7 +182,10 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
     el.addEventListener('webglcontextlost', () => { lost = true; running = false; opts.onLost?.(); });
     redraw = () => { if (still) draw(0); };
 
-    for (let i = 0; i < spec.warmup; i++) tick(1 / 30);
+    for (let i = 0; i < spec.warmup; i++) {
+        tick(1 / 30);
+        setting.warm?.(1 / 30);
+    }
     if (still) draw(0); else start();
     return { scene, camera, renderer, view, bite: () => bobbers.forEach((b) => { b.now = true; }) };
 }

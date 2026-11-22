@@ -8,7 +8,7 @@ use App\Support\SceneArt;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/** Serves a profession scene's game art that tools/scene-art wrote to the `maps` disk. Public art, so nothing to authorize. */
+/** Serves a scene's game art that tools/scene-art wrote to the `maps` disk. Public art, so nothing to authorize. */
 class SceneArtController extends Controller
 {
     private const string ART_CACHE = 'public, max-age=31536000, immutable';

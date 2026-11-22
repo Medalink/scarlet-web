@@ -18,6 +18,7 @@ final class SceneHead
             Scene::Herbalism => ['2,310,400 picks', '5,120 characters', '3,840 hours picking'],
             Scene::Mining => ['1,870,200 strikes', '4,460 characters', '2,950 hours at the vein'],
             Scene::Skinning => ['1,402,900 skins', '3,980 characters', '1,120 hours skinning'],
+            Scene::Camp => ['12,480 visits', '3,120 characters', '4,030 hours by the fire'],
             default => ['840,300 crafts', '3,210 characters', '412 recipes'],
         };
         $callouts = match ($scene) {
@@ -41,6 +42,11 @@ final class SceneHead
                 ['key' => 'hides', 'title' => 'Hides', 'text' => 'A hide comes off rarely', 'share' => '1 skin in 21'],
                 ['key' => 'bag', 'title' => 'Ruined Leather Scraps', 'text' => 'What a low skill gets', 'share' => '9% of skins'],
             ],
+            Scene::Camp => [
+                ['key' => 'fire', 'title' => 'Campfire', 'text' => 'Sit 60 seconds for Camp Benefits', 'share' => '88% of visits sit down'],
+                ['key' => 'tent', 'title' => 'Camp Tent', 'text' => 'Rest 30 seconds for rested experience, once an hour', 'share' => '61% of visits use a tent'],
+                ['key' => 'chair', 'title' => 'Camp Chair', 'text' => 'Adds 2% critical strike to the benefits', 'share' => '44% of Camp Benefits come with a chair'],
+            ],
             Scene::Alchemy => self::crafting('Minor Healing Potion', 'Peacebloom'),
             Scene::Blacksmithing => self::crafting('Rough Sharpening Stone', 'Copper Bar'),
             Scene::Enchanting => self::crafting('Enchant Bracer - Minor Health', 'Strange Dust'),
@@ -52,7 +58,7 @@ final class SceneHead
         };
 
         return [
-            'title' => Profession::fromSlug($scene->value)->value ?? '',
+            'title' => $scene === Scene::Camp ? 'Camps' : Profession::fromSlug($scene->value)->value ?? '',
             'label' => $scene->label(),
             'facts' => $facts,
             'credit' => $scene->credit(),
