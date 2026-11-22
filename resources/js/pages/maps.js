@@ -28,7 +28,7 @@ function mount(canvas) {
     const map = mountMap(canvas, {
         reveal: plan?.at(0),
         manifestUrl: MANIFEST,
-        pageScrolls: !('fillsWindow' in canvas.dataset),
+        pageScrolls: 'behindHead' in canvas.dataset,
         zones: config.zones,
         layers: config.layers,
         fit: config.fit ?? undefined,

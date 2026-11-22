@@ -1,5 +1,7 @@
-// Moving the map: drag, wheel, pinch and the keyboard. Handlers get canvas-relative CSS px. With `pageScrolls` the
-// wheel and a one-finger vertical swipe stay the page's, and the wheel zooms only with Ctrl or Command held.
+// Moving the map: drag, wheel, pinch and the keyboard. Handlers get canvas-relative CSS px. With `pageScrolls` a
+// one-finger vertical swipe stays the page's, and so does the wheel until the map is clicked or dragged: from then the
+// wheel zooms, until the pointer leaves the map, the map loses focus or Escape is pressed. Ctrl or Command with the
+// wheel always zooms.
 
 const WHEEL = 0.0015;
 const STEP = 1.5;
@@ -9,6 +11,7 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
     const pointers = new Map();
     let moved = 0;
     let pinch = null;
+    let engaged = false;
 
     const local = (event) => {
         const box = canvas.getBoundingClientRect();
@@ -22,6 +25,7 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
 
     const down = (event) => {
         handlers.start();
+        engaged = true;
         canvas.setPointerCapture(event.pointerId);
         pointers.set(event.pointerId, local(event));
         moved = 0;
@@ -63,7 +67,7 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
     };
 
     const wheel = (event) => {
-        if (pageScrolls && !event.ctrlKey && !event.metaKey) {
+        if (pageScrolls && !engaged && !event.ctrlKey && !event.metaKey) {
             return;
         }
         event.preventDefault();
@@ -92,13 +96,22 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
             handlers.zoomCentre(1 / STEP);
         } else if (event.key === '0' || event.key === 'Home') {
             handlers.fitWorld();
+        } else if (event.key === 'Escape') {
+            engaged = false;
+            return;
         } else {
             return;
         }
         event.preventDefault();
     };
 
-    const leave = () => handlers.hover(null, null);
+    const release = () => {
+        engaged = false;
+    };
+    const leave = () => {
+        release();
+        handlers.hover(null, null);
+    };
 
     canvas.style.touchAction = pageScrolls ? 'pan-y' : 'none';
     canvas.addEventListener('pointerdown', down);
@@ -108,6 +121,7 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
     canvas.addEventListener('pointerleave', leave);
     canvas.addEventListener('wheel', wheel, { passive: false });
     canvas.addEventListener('keydown', key);
+    canvas.addEventListener('blur', release);
 
     return () => {
         canvas.removeEventListener('pointerdown', down);
@@ -117,6 +131,7 @@ export function attachInput(canvas, handlers, { pageScrolls = false } = {}) {
         canvas.removeEventListener('pointerleave', leave);
         canvas.removeEventListener('wheel', wheel);
         canvas.removeEventListener('keydown', key);
+        canvas.removeEventListener('blur', release);
     };
 }
 

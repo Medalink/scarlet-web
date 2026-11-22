@@ -701,9 +701,10 @@ as the same density surface instead (768 grid). The map opens on the dots' bound
 **The viewer** is the site's own canvas module, with no map library: tiles by zoom, drag and wheel and pinch to move,
 plus and minus keys, a heat layer drawn as a density surface, death crosses, a character's paths as scarlet
 lines, zone names from the dictionary at the zooms where they fit, and a link from a zone's name to its page. It
-loads only the tiles in view. On `/map`, where the map fills the window, the wheel zooms. A map inside a page that
-scrolls leaves the wheel and a one-finger vertical swipe to the page: there the wheel zooms only with Ctrl or Command
-held, and two fingers pinch and move the map. Dungeons and other maps that are not on the world keep the plain sheet with their own
+loads only the tiles in view. The wheel zooms a map, except one that lies behind a page head (a character page,
+a zone page): there the wheel and a one-finger vertical swipe scroll the page, so a visitor is never stopped on the way
+down. Clicking or dragging that map hands it the wheel until the pointer leaves it, and Ctrl or Command with the wheel
+always zooms. Two fingers pinch and move it. Dungeons and other maps that are not on the world keep the plain sheet with their own
 x, y.
 
 ## Hosting
