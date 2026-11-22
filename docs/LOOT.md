@@ -603,6 +603,7 @@ Taken 2026-11-22 as the design recommended; the owner can switch any of them.
 3. The addon adds a corpse key (a hash of the GUID) to `K`, `LO` and `LW` (phase 7). It reverses "the GUID is not
    stored" for creatures and objects only, as a hash.
 4. Group composition is public as class, role and level counts with no names, from `social` parts only. A
-   character with `social` off adds nothing to those modules.
+   character with `social` off adds nothing to those modules, and its own class is not used in its place: the class of
+   an uploader counts only for a session that has a `group_spans` row (Who received it, by class).
 5. A Loot item goes in the site nav after Map.
 6. Fishing stays on `/professions/fishing`, out of the explorer's tables, with one link.

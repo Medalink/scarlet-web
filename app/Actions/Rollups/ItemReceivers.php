@@ -8,15 +8,24 @@ use App\Support\LootVia;
 use App\Support\RollOutcome;
 use App\Support\RollType;
 use App\Support\RollupRead;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class ItemReceivers
 {
+    /**
+     * The class of a roller: the class the roll's line named (a `social` part), else the uploader's own class on its
+     * character row, but only for a session that has a `group_spans` row, since a removed `social` part deletes them and
+     * the class must not come back from the character (docs/LOOT.md, Decisions, 4).
+     */
+    private const string ROLLER_CLASS = 'upper(coalesce(r.class_file, case when r.mine and exists (select 1 from group_spans as s where s.character_id = r.character_id and s.session_start = r.session_start and s.counted) then c.class end))';
+
     public function __construct(private readonly RollupRead $read) {}
 
     /**
      * Who received one item, by class (docs/LOOT.md, Item page, Who received it): what the uploaders received from a loot
-     * window in a group of 2 or more, by their own class, and what their group mates received (`group_loot`, kind looted,
+     * window in a group of 2 or more, by their own class (only from a session that has a social part), and what their
+     * group mates received (`group_loot`, kind looted,
      * with the class the member's line named), and
      * for each class the rolls of need or greed that it made on the item and how many it won. Every figure is one
      * uploader's view of its own group, so a group with several uploaders is counted once for each. A class whose receipts
@@ -33,12 +42,14 @@ class ItemReceivers
             ->havingRaw('count(distinct character_id) >= ?', [$threshold]));
         $own = $this->read->rows(DB::table('loot_drops as d')->join('characters as c', 'c.id', '=', 'd.character_id')
             ->where('d.counted', true)->where('d.item_id', $itemId)->where('d.via', LootVia::Receipt->value)->whereNotNull('d.source_kind')->where('d.group_size', '>=', 2)->whereNotNull('c.class')
+            ->whereExists(fn (Builder $social): Builder => $social->selectRaw('1')->from('group_spans as s')
+                ->whereColumn('s.character_id', 'd.character_id')->whereColumn('s.session_start', 'd.session_start')->where('s.counted', true))
             ->selectRaw('upper(c.class) as class, count(*) as received')->groupByRaw('upper(c.class)')
             ->havingRaw('count(distinct d.character_id) >= ?', [$threshold]));
         $rolls = $this->read->rows(DB::table('loot_rolls as r')->leftJoin('characters as c', 'c.id', '=', 'r.character_id')
             ->where('r.counted', true)->where('r.item_id', $itemId)->whereIn('r.loot_rule', LootRule::rolled())->whereIn('r.roll_type', [RollType::Need->value, RollType::Greed->value])
-            ->selectRaw('upper(coalesce(r.class_file, case when r.mine then c.class end)) as class, count(*) as rolled, count(*) filter (where r.outcome = ?) as won', [RollOutcome::Won->value])
-            ->groupByRaw('upper(coalesce(r.class_file, case when r.mine then c.class end))')
+            ->selectRaw(self::ROLLER_CLASS.' as class, count(*) as rolled, count(*) filter (where r.outcome = ?) as won', [RollOutcome::Won->value])
+            ->groupByRaw(self::ROLLER_CLASS)
             ->havingRaw('count(distinct r.character_id) >= ?', [$threshold]));
 
         $by = [];
