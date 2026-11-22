@@ -4,7 +4,6 @@ namespace App\Actions\Public;
 
 use App\Actions\Rollups\DropRates;
 use App\Actions\Rollups\KillLoot;
-use App\Actions\Rollups\SoloLoot;
 use App\Actions\Rollups\SourceDrops;
 use App\Actions\Rollups\SourceRuleArms;
 use App\Actions\Rollups\WorldHeat;
@@ -29,7 +28,6 @@ class CreatureRecord
         private readonly DropRates $drops,
         private readonly SourceDrops $dropTable,
         private readonly SourceRuleArms $arms,
-        private readonly SoloLoot $solo,
         private readonly KillLoot $looted,
         private readonly WorldHeat $heat,
         private readonly MapZones $zones,
@@ -71,7 +69,7 @@ class CreatureRecord
             'skin_table' => $this->dropTable->handle(self::SOURCE, $id, null, LootRead::Skin),
             'rule_arms' => $this->arms->handle(self::SOURCE, $id, ArmSplit::Rule),
             'size_arms' => $this->arms->handle(self::SOURCE, $id, ArmSplit::Size, $rule),
-            'solo' => $this->solo->handle($id),
+            'solo' => $this->looted->handle($id, null, soloOnly: true),
             'looted' => $this->looted->handle($id, $table['rule']),
             'heat' => $this->heat->handle(WorldLayer::Creatures, $ids, $id),
             'points' => $this->points->handle($id, $ids),

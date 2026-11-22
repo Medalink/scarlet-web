@@ -12,17 +12,14 @@ enum Rollup: string
     case LevelTimeRuleset = 'level_time_ruleset';
     case KillsDailyCharacter = 'kills_daily_character';
     case KillsDailyRuleset = 'kills_daily_ruleset';
-    case KillsSoloDaily = 'kills_solo_daily';
     case DeathsDailyCharacter = 'deaths_daily_character';
     case DeathsDailyRuleset = 'deaths_daily_ruleset';
     case DungeonsDailyRuleset = 'dungeons_daily_ruleset';
     case QuestsDailyRuleset = 'quests_daily_ruleset';
     case MoneyDailyCharacter = 'money_daily_character';
     case MoneyDailyRuleset = 'money_daily_ruleset';
-    case LootWindowsDaily = 'loot_windows_daily';
     case LootItemsDaily = 'loot_items_daily';
     case LootWindowsCharacterDaily = 'loot_windows_character_daily';
-    case LootFreeForAllItemsDaily = 'loot_freeforall_items_daily';
     case LootReceiptsDaily = 'loot_receipts_daily';
     case LootWindowsUnkeyedDaily = 'loot_windows_unkeyed_daily';
     case LootItemsUnkeyedDaily = 'loot_items_unkeyed_daily';
