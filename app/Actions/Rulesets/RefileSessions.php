@@ -27,7 +27,7 @@ class RefileSessions
             ->select('s.character_id', 's.session_start');
 
         foreach ($mismatched->cursor() as $row) {
-            IngestSession::dispatch((int) $row->character_id, (int) $row->session_start);
+            IngestSession::dispatch((int) $row->character_id, (int) $row->session_start, true);
             $queued++;
         }
 

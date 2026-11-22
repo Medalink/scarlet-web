@@ -10,6 +10,12 @@
 //   node deploy/provision.mjs destroy --env load   delete the rehearsal droplets, volume, firewalls and tags (only resources named scarlet-load*)
 //   node deploy/provision.mjs retag           give the app droplet the tag scarlet-app, let 5432 in from that tag only and take
 //                                             scarlet-web off the database droplet
+//   node deploy/provision.mjs web --name scarlet-app-2    a further app droplet (scarlet-app-<x>; in the load environment
+//                                             scarlet-load-<x> or, with --set, scarlet-load-<set>-<x>), tagged like the first
+//   node deploy/provision.mjs redis --droplet scarlet-web   the firewall scarlet-web-redis: tcp 6379-6380 from the tag scarlet-app
+//                                             to the droplet tagged scarlet-redis (bin/deploy hosts prepare runs it before Redis
+//                                             listens on the VPC address)
+//   --set <name>      with --env load: the rehearsal droplets are scarlet-load-<name>-app, -db, -gen; destroy touches only those
 //   add --plan to print what would be created
 //
 // SCARLET_SECRETS is the folder with do-token, ops_ed25519.pub and tailscale-authkey (default: E:/Dev/secrets/scarlet-web
@@ -30,7 +36,7 @@ const run = promisify(execFile);
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 const option = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
-const verb = args.find((a) => ['web', 'db', 'gen', 'destroy', 'retag'].includes(a)) ?? 'web';
+const verb = args.find((a) => ['web', 'db', 'gen', 'destroy', 'retag', 'redis'].includes(a)) ?? 'web';
 const env = option('--env', 'prod');
 const plan = flag('--plan');
 if (!['prod', 'load'].includes(env)) throw new Error('--env is prod or load');
@@ -40,20 +46,25 @@ const IMAGE = 'ubuntu-24-04-x64';
 const TAG = 'scarlet-web';
 const APP_TAG = 'scarlet-app';
 const prod = env === 'prod';
+const set = option('--set', '');
+if (set && (prod || !/^[a-z0-9]+$/.test(set))) throw new Error('--set is one lowercase word and needs --env load');
+const base = set ? `scarlet-load-${set}` : 'scarlet-load';
+const prefix = `${base}-`;
+const extraName = option('--name', '');
 const roles = {
   web: {
-    name: prod ? 'scarlet-web' : 'scarlet-load-app', size: 's-2vcpu-4gb', template: 'cloud-init.yaml', backups: prod,
-    tags: prod ? [TAG, APP_TAG] : ['scarlet-load', 'scarlet-load-app'], firewall: prod ? 'scarlet-web' : 'scarlet-load-app', firewallTag: prod ? TAG : 'scarlet-load-app',
+    name: extraName || (prod ? 'scarlet-web' : `${prefix}app`), size: 's-2vcpu-4gb', template: 'cloud-init.yaml', backups: prod,
+    tags: prod ? [TAG, APP_TAG] : [base, `${prefix}app`], firewall: prod ? 'scarlet-web' : `${prefix}app`, firewallTag: prod ? TAG : `${prefix}app`,
   },
   db: {
-    name: prod ? 'scarlet-db' : 'scarlet-load-db', size: 's-1vcpu-2gb', template: 'cloud-init-db.yaml', backups: false,
-    tags: prod ? ['scarlet-db'] : ['scarlet-load', 'scarlet-load-db'], firewall: prod ? 'scarlet-web-db' : 'scarlet-load-db', firewallTag: prod ? 'scarlet-db' : 'scarlet-load-db',
-    volume: { name: prod ? 'scarlet-db-data' : 'scarlet-load-db-data', gigabytes: 50, tags: prod ? [TAG] : ['scarlet-load'] },
-    appTag: prod ? APP_TAG : 'scarlet-load-app',
+    name: prod ? 'scarlet-db' : `${prefix}db`, size: 's-1vcpu-2gb', template: 'cloud-init-db.yaml', backups: false,
+    tags: prod ? ['scarlet-db'] : [base, `${prefix}db`], firewall: prod ? 'scarlet-web-db' : `${prefix}db`, firewallTag: prod ? 'scarlet-db' : `${prefix}db`,
+    volume: { name: prod ? 'scarlet-db-data' : `${prefix}db-data`, gigabytes: 50, tags: prod ? [TAG] : [base] },
+    appTag: prod ? APP_TAG : `${prefix}app`,
   },
   gen: {
-    name: 'scarlet-load-gen', size: 's-4vcpu-8gb', template: 'cloud-init.yaml', backups: false,
-    tags: ['scarlet-load', 'scarlet-load-gen'], firewall: 'scarlet-load-gen', firewallTag: 'scarlet-load-gen',
+    name: `${prefix}gen`, size: 's-4vcpu-8gb', template: 'cloud-init.yaml', backups: false,
+    tags: [base, `${prefix}gen`], firewall: `${prefix}gen`, firewallTag: `${prefix}gen`,
   },
 };
 
@@ -71,22 +82,23 @@ async function api(method, path, body) {
   if (!res.ok && res.status !== 404) throw new Error(`${method} ${path}: ${res.status} ${text.slice(0, 300)}`);
   return text ? JSON.parse(text) : {};
 }
-const mine = (name) => /^scarlet-(web|db|load-.+)$/.test(name) || name === 'scarlet-web-db';
+const mine = (name) => /^scarlet-(web|db|app-[a-z0-9-]+|load-.+)$/.test(name) || name === 'scarlet-web-db';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function destroy() {
   if (prod) throw new Error('destroy only runs with --env load');
-  const droplets = (await api('GET', 'droplets?per_page=200')).droplets.filter((d) => d.name.startsWith('scarlet-load-'));
-  const volumes = (await api('GET', 'volumes?per_page=200')).volumes.filter((v) => v.name.startsWith('scarlet-load-'));
-  const firewalls = (await api('GET', 'firewalls?per_page=200')).firewalls.filter((f) => f.name.startsWith('scarlet-load-'));
-  const tags = (await api('GET', 'tags?per_page=200')).tags.filter((t) => t.name.startsWith('scarlet-load'));
+  const own = set ? prefix : 'scarlet-load-';
+  const droplets = (await api('GET', 'droplets?per_page=200')).droplets.filter((d) => d.name.startsWith(own));
+  const volumes = (await api('GET', 'volumes?per_page=200')).volumes.filter((v) => v.name.startsWith(own));
+  const firewalls = (await api('GET', 'firewalls?per_page=200')).firewalls.filter((f) => f.name.startsWith(own));
+  const tags = (await api('GET', 'tags?per_page=200')).tags.filter((t) => (set ? t.name === base || t.name.startsWith(prefix) : t.name.startsWith('scarlet-load')));
   console.log(`destroy: ${droplets.map((d) => d.name).join(', ') || 'no droplets'}; ${volumes.map((v) => v.name).join(', ') || 'no volumes'}; ${firewalls.map((f) => f.name).join(', ') || 'no firewalls'}; ${tags.map((t) => t.name).join(', ') || 'no tags'}`);
   if (plan) return;
   for (const d of droplets) {
     await run('ssh', ['-i', join(secrets, 'ops_ed25519'), '-o', 'IdentitiesOnly=yes', '-o', 'ConnectTimeout=8', `ops@${d.name}`, 'sudo tailscale logout'], { timeout: 20000 }).catch(() => {});
     await api('DELETE', `droplets/${d.id}`);
   }
-  for (let i = 0; i < 40 && (await api('GET', 'droplets?per_page=200')).droplets.some((d) => d.name.startsWith('scarlet-load-')); i++) await sleep(3000);
+  for (let i = 0; i < 40 && (await api('GET', 'droplets?per_page=200')).droplets.some((d) => d.name.startsWith(own)); i++) await sleep(3000);
   for (const v of volumes) await api('DELETE', `volumes/${v.id}`);
   for (const f of firewalls) await api('DELETE', `firewalls/${f.id}`);
   for (const t of tags) await api('DELETE', `tags/${t.name}`);
@@ -124,7 +136,7 @@ if (verb === 'retag') {
   process.exit(0);
 }
 
-const role = roles[verb];
+const role = roles[verb] ?? roles.web;
 if (!mine(role.name)) throw new Error(`refusing to touch ${role.name}`);
 
 const cloudflare = async (family) => (await (await fetch(`https://www.cloudflare.com/ips-${family}`)).text()).split('\n').map((s) => s.trim()).filter(Boolean);
@@ -134,6 +146,30 @@ const outbound = [
   { protocol: 'udp', ports: 'all', destinations: everywhere },
   { protocol: 'icmp', destinations: everywhere },
 ];
+async function redisFirewall() {
+  const name = option('--droplet', '');
+  if (!mine(name)) throw new Error(`refusing to touch ${name}`);
+  const droplet = (await api('GET', 'droplets?per_page=200')).droplets.find((d) => d.name === name);
+  if (!droplet) throw new Error(`droplet ${name} does not exist`);
+  const production = name === 'scarlet-web';
+  const source = production ? APP_TAG : name;
+  const tag = production ? 'scarlet-redis' : `${name}-redis`;
+  const firewall = production ? 'scarlet-web-redis' : `${name}-redis`;
+  if (!droplet.tags.includes(source)) throw new Error(`${name} does not carry the tag ${source}`);
+  const exists = (await api('GET', 'firewalls?per_page=200')).firewalls.some((f) => f.name === firewall);
+  console.log(`redis: ${firewall} accepts tcp 6379-6380 from tag ${source} on droplets tagged ${tag}${exists ? ' (exists)' : ''}; ${name} ${droplet.tags.includes(tag) ? 'has' : 'gets'} ${tag}`);
+  if (plan) return;
+  await api('POST', 'tags', { name: tag });
+  if (!exists) {
+    await api('POST', 'firewalls', { name: firewall, tags: [tag], inbound_rules: [{ protocol: 'tcp', ports: '6379-6380', sources: { tags: [source] } }], outbound_rules: outbound });
+  }
+  if (!droplet.tags.includes(tag)) await api('POST', `tags/${tag}/resources`, { resources: [{ resource_id: String(droplet.id), resource_type: 'droplet' }] });
+}
+if (verb === 'redis') {
+  await redisFirewall();
+  process.exit(0);
+}
+
 async function firewallRules() {
   if (verb === 'db') return { inbound_rules: [{ protocol: 'tcp', ports: '5432', sources: { tags: [role.appTag] } }], outbound_rules: outbound };
   if (verb === 'gen') return { inbound_rules: [], outbound_rules: outbound };

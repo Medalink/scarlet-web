@@ -91,6 +91,78 @@ nginx is not rebuilt per release. Its image is the pinned upstream one, its conf
 `/srv/scarlet-web/nginx` and reloaded, and the Cloudflare ranges, certificate and origin-pull switch are files it
 reads, so none of that needs a restart either.
 
+## Hosts and roles
+
+`deploy/hosts.tsv` lists the hosts, one line each: the tailnet name, the roles, and optional settings.
+
+```
+scarlet-web	web ingest scheduler
+scarlet-db	db
+```
+
+| Role | What the host runs |
+| --- | --- |
+| `web` | nginx and the blue/green php-fpm slots, the maps, the origin certificate |
+| `ingest` | Horizon with `supervisor-ingest`, which works the `ingest` queue first and the `backfill` queue when `ingest` is empty |
+| `scheduler` | `schedule`, Redis (both instances), the registry and the migrations of a release, and Horizon with `supervisor-rollups`, `-armory` and `-default` |
+| `db` | Postgres alone (`bin/deploy db-server`) |
+
+Exactly one host has `scheduler` and exactly one has `db`; `bin/deploy` refuses any other inventory before it touches a
+host. The scheduler's entries also use `onOneServer()`. Settings are `KEY=value` pairs separated by commas, written into
+that host's `.env` on each release: `SCARLET_INGEST_PROCESSES` (default 2, the supervisor's `maxProcesses`),
+`SCARLET_ROLLUPS_PROCESSES`, `SCARLET_ARMORY_PROCESSES` and `SCARLET_DEFAULT_PROCESSES`. Horizon starts only the
+supervisors of the host's roles (`SCARLET_ROLES`, which `rollout.sh` keeps in `release.env`); a host that sets none runs all
+three roles, which is the one-droplet stack.
+
+Backfill work (`rulesets:refile`, `ingest:redecode`, `talents:backfill`) queues `IngestSession` on `backfill`. The ingest
+supervisor takes `ingest` before `backfill`, so a backlog of re-decodes waits behind live uploads. A job in the backfill
+queue has its own identity, so a live upload of the same session is queued as well and a lock on the session
+(`IngestSession::handle`, kept in the queue's Redis) makes two decodes of one session wait for each other on any host.
+
+### Add a host
+
+1. Create the droplet: `node deploy/provision.mjs web --name scarlet-app-2` (the next name is `scarlet-app-<x>`). It has the
+   tags `scarlet-web` and `scarlet-app`, so the database firewall accepts it.
+2. Add its line to `deploy/hosts.tsv`, for example `scarlet-app-2	ingest	SCARLET_INGEST_PROCESSES=4`, and ship.
+3. `bin/deploy` does the rest before the first rollout (`bin/deploy hosts prepare` does it without a release):
+   - `node deploy/provision.mjs redis --droplet scarlet-web` creates the firewall `scarlet-web-redis` (tcp 6379 and 6380
+     from the tag `scarlet-app`, to the droplet tagged `scarlet-redis`);
+   - the scheduler host publishes Redis on its VPC address only (`deploy/compose.redis-vpc.yaml`, which `deploy/dc` adds when
+     `state/redis-vpc.env` exists): 6379 for the queue, 6380 for the cache and sessions, both with the Redis password.
+     This recreates the two Redis containers once (each saves its snapshot on stop and loads it again);
+   - the database host's `pg_hba.conf` gets the VPC address of every app host (`deploy/db-hba.sh`, then
+     `pg_reload_conf()`);
+   - the new host gets the primary's `.env` with `REDIS_HOST` and `REDIS_CACHE_HOST` set to the scheduler host's VPC address,
+     the database certificate and, with the `web` role, the origin certificate;
+   - the image arrives through the scheduler host's registry (a second `ssh -R`), or as `docker save` when the registry is
+     not answering.
+4. A second `web` host also needs a Cloudflare load balancer or a second origin address; `bin/deploy dns` writes only the
+   scheduler host's address.
+
+A host needs the database on its own host (`bin/deploy db-move`) first. With one app host nothing above runs: no firewall,
+no published Redis port, the same containers.
+
+### What is proven
+
+On throwaway droplets `scarlet-load-roles-app` (`web ingest scheduler`), `-db` and `-ingest` (since destroyed; the rehearsal
+used `deploy/provision.mjs ... --env load --set roles` and a hosts file with one more line):
+
+- `bin/deploy` with the third line prepared the new host itself (firewall, published Redis, `pg_hba.conf`, `.env`) and rolled
+  out: the app host ran `app-*`, `web`, `horizon-*`, `schedule`, `redis`, `redis-cache`, `registry`; the ingest host ran one
+  `horizon-*` and nothing else. `horizon:supervisors` listed `supervisor-ingest` (2 workers on `ingest,backfill`) for the
+  ingest host's master, and all four supervisors for the app host's.
+- 800 `IngestSession` jobs queued from the app host: 576 ran on the app host and 224 on the ingest host, none failed. After a
+  reboot of the app host (Redis came back on its VPC address), 400 more split 260 and 140.
+- A second `schedule` started by hand on the ingest host next to the first: at 03:30:00 `horizon:snapshot` ran on one,
+  `ingest:sweep` and `rulesets:detect` on the other, and each said it skipped the entries the first had taken.
+- Ports 6379, 6380 and 5432 on the app host's public address were closed.
+- An inventory with no scheduler host, two scheduler hosts, an unknown role, a duplicate host or a database host with other
+  roles is refused before any host is touched.
+
+Not exercised: a second `web` host (nginx, blue/green slots and the certificate copy are written, a Cloudflare origin for
+it is not), the registry route to a second host (the registry push timed out in the rehearsal, so images went as
+`docker save` through the fallback), and a backfill backlog behind live uploads.
+
 ### The migration rule
 
 A migration runs while the old code is still serving, and a rollback runs the old code against the new schema. So
@@ -359,7 +431,9 @@ to $36 a month at this size. Migrations would have to run without superuser righ
 
 ## Redis
 
-Two Redis instances run on the app droplet, so a full cache cannot stop the queue.
+Two Redis instances run on the app droplet, so a full cache cannot stop the queue. With a second app host
+([Hosts and roles](#hosts-and-roles)) both also listen on the droplet's VPC address (6379 and 6380) behind the firewall
+`scarlet-web-redis`; with one app host they listen on the compose network only.
 
 | Instance | Holds | Memory cap and policy |
 | --- | --- | --- |

@@ -61,6 +61,7 @@ return [
     // Queue names and the bounded limits of the jobs (App\Contracts\BoundedJob).
     'queues' => [
         'ingest' => 'ingest',
+        'backfill' => 'backfill',
         'rollups' => 'rollups',
         'armory' => 'armory',
     ],

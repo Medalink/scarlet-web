@@ -12,6 +12,10 @@
 # started on the new release.
 #
 # Migrations run before the switch while the old code still serves. They must be expand-only (docs/HOSTING.md).
+#
+# Roles: SCARLET_ROLES (bin/deploy passes the host's line of deploy/hosts.tsv; kept in release.env) says what this host runs.
+# web: nginx and the blue/green php-fpm slots. ingest: Horizon with the ingest supervisor. scheduler: the scheduler, Redis,
+# the registry, migrations and the other Horizon supervisors. A host with no SCARLET_ROLES runs all three, as one droplet always did.
 set -eu
 cd /srv/scarlet-web
 dc=deploy/dc
@@ -24,21 +28,27 @@ if ! flock -n 9; then
   flock 9
 fi
 
-# deploy/ is replaced on every deploy, so nginx reads its files from folders that stay in place.
-nginx_changed=$(diff -rq deploy/nginx nginx 2>/dev/null | grep -Ec '^(Files .* differ|Only in deploy/nginx)' || true)
-cp -a deploy/nginx/. nginx/
-[ -f state/upstream.conf ] || echo 'upstream php { server 127.0.0.1:9000; }' > state/upstream.conf
-if [ ! -f state/aop.conf ]; then
-  if [ -f aop.conf ]; then mv aop.conf state/aop.conf; else cp deploy/nginx/aop-off.conf state/aop.conf; fi
-fi
-[ -f tls/origin-pull-ca.pem ] || cp deploy/nginx/origin-pull-ca.pem tls/origin-pull-ca.pem
-
 get() { sed -n "s/^$1=//p" release.env | tail -n 1; }
 put() {
   grep -v "^$1=" release.env > release.env.new || true
   printf '%s=%s\n' "$1" "$2" >> release.env.new
   mv release.env.new release.env
 }
+roles=${SCARLET_ROLES:-$(get SCARLET_ROLES)}
+roles=${roles:-web ingest scheduler}
+[ "$roles" = "$(get SCARLET_ROLES)" ] || put SCARLET_ROLES "$roles"
+has_role() { case " $roles " in *" $1 "*) return 0 ;; esac; return 1; }
+
+nginx_changed=0
+if has_role web; then
+  nginx_changed=$(diff -rq deploy/nginx nginx 2>/dev/null | grep -Ec '^(Files .* differ|Only in deploy/nginx)' || true)
+  cp -a deploy/nginx/. nginx/
+  [ -f state/upstream.conf ] || echo 'upstream php { server 127.0.0.1:9000; }' > state/upstream.conf
+  if [ ! -f state/aop.conf ]; then
+    if [ -f aop.conf ]; then mv aop.conf state/aop.conf; else cp deploy/nginx/aop-off.conf state/aop.conf; fi
+  fi
+  [ -f tls/origin-pull-ca.pem ] || cp deploy/nginx/origin-pull-ca.pem tls/origin-pull-ca.pem
+fi
 slot_port() { if [ "$1" = blue ]; then echo 9001; else echo 9002; fi; }
 check_port() { if [ "$1" = blue ]; then echo 8091; else echo 8092; fi; }
 slot_var() { if [ "$1" = blue ]; then echo BLUE_RELEASE; else echo GREEN_RELEASE; fi; }
@@ -129,6 +139,26 @@ start_slot() {
   phase start-health "$t_start"
 }
 
+swap_workers() {
+  put SCARLET_RELEASE "$1"
+  retiring=$(running_horizons)
+  workers=
+  if has_role ingest || has_role scheduler; then workers=$(idle_horizon); fi
+  if has_role scheduler; then workers="$workers schedule"; fi
+  [ -n "$workers" ] || return 0
+  $dc stop $workers >/dev/null 2>&1 || true
+  $dc rm -f $workers >/dev/null 2>&1 || true
+  $dc up -d --no-deps $workers
+  drain_without_rollout_lock "$retiring"
+  for svc in $workers; do
+    if ! $dc ps --services --status running "$svc" | grep -qx "$svc"; then
+      echo "rollout: $svc is not running on $1" >&2
+      $dc logs --no-log-prefix --tail 40 "$svc" >&2 || true
+      return 1
+    fi
+  done
+}
+
 switch_slot() {
   release=$1
   slots
@@ -156,30 +186,20 @@ switch_slot() {
 
   phase stop-old-app "$t_old"
   t_workers=$(date +%s.%N)
-  put SCARLET_RELEASE "$release"
-  retiring=$(running_horizons)
-  nxt_horizon=$(idle_horizon)
-  $dc stop "$nxt_horizon" schedule >/dev/null 2>&1 || true
-  # rm clears a container an interrupted rollout left behind: a recreate of it dies on
-  # "container name already in use" and horizon or schedule would keep running the old release.
-  $dc rm -f "$nxt_horizon" schedule >/dev/null 2>&1 || true
-  $dc up -d --no-deps "$nxt_horizon" schedule
-  drain_without_rollout_lock "$retiring"
-  # A failed recreate can still print nothing on compose's side or exit 0, so check the state itself.
-  for svc in "$nxt_horizon" schedule; do
-    if ! $dc ps --services --status running "$svc" | grep -qx "$svc"; then
-      echo "rollout: $svc is not running on $release" >&2
-      $dc logs --no-log-prefix --tail 40 "$svc" >&2 || true
-      return 1
-    fi
-  done
+  swap_workers "$release" || return 1
   phase start-workers "$t_workers"
   phase switch "$t_switch"
 }
 
 activate() {
-  start_slot "$1" || return 1
-  switch_slot "$1"
+  if has_role web; then
+    start_slot "$1" || return 1
+    switch_slot "$1"
+    return
+  fi
+  t_workers=$(date +%s.%N)
+  swap_workers "$1" || return 1
+  phase start-workers "$t_workers"
 }
 
 prune_images() {
@@ -243,25 +263,32 @@ fi
 new=$1
 docker image inspect "scarlet-web-app:$new" >/dev/null
 t_migrate=$(date +%s.%N)
-$dc pull --quiet --policy missing redis redis-cache web
-if grep -qx "DB_HOST=postgres" .env; then $dc up -d --no-recreate --wait postgres; fi
-$dc up -d --wait redis redis-cache web
-[ "$nginx_changed" -eq 0 ] || reload_nginx
+infra=
+if has_role scheduler; then infra="redis redis-cache"; fi
+if has_role web; then infra="$infra web"; fi
+if [ -n "$infra" ]; then
+  $dc pull --quiet --policy missing $infra
+  if has_role scheduler && grep -qx "DB_HOST=postgres" .env; then $dc up -d --no-recreate --wait postgres; fi
+  $dc up -d --wait $infra
+  if has_role web && [ "$nginx_changed" -ne 0 ]; then reload_nginx; fi
+fi
 phase compose-up "$t_migrate"
 t_migrate=$(date +%s.%N)
 
-SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools sh -ec '
-  php artisan migrate --force --no-interaction
-  php artisan scarlet:storage-policies --no-interaction
-  php artisan maps:load-rects --no-interaction
-  php artisan app:release-notes:publish --from-file=storage/app/release-notes.json --no-interaction
-  php artisan cache:clear --no-interaction'
+if has_role scheduler; then
+  SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools sh -ec '
+    php artisan migrate --force --no-interaction
+    php artisan scarlet:storage-policies --no-interaction
+    php artisan maps:load-rects --no-interaction
+    php artisan app:release-notes:publish --from-file=storage/app/release-notes.json --no-interaction
+    php artisan cache:clear --no-interaction'
+fi
 phase migrate "$t_migrate"
 
 activate "$new" || exit 1
 grep -qx "$new" releases || echo "$new" >> releases
 t_prune=$(date +%s.%N)
 prune_images
-prune_registry || echo "rollout: the registry was not pruned"
+if has_role scheduler; then prune_registry || echo "rollout: the registry was not pruned"; fi
 phase prune "$t_prune"
 echo "rollout: $new is serving"

@@ -19,7 +19,7 @@ class QueueRedecode
         $sessions = DB::table('parts')->select('character_id', 'session_start')->distinct()->orderBy('character_id')->orderBy('session_start');
 
         foreach ($sessions->cursor() as $row) {
-            IngestSession::dispatch((int) $row->character_id, (int) $row->session_start);
+            IngestSession::dispatch((int) $row->character_id, (int) $row->session_start, true);
             $queued++;
         }
 

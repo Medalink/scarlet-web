@@ -13,7 +13,9 @@ x-app: &app
   restart: unless-stopped
   networks: [backend]
   environment:
-    REDIS_CACHE_HOST: redis-cache
+    REDIS_CACHE_HOST: ${REDIS_CACHE_HOST:-redis-cache}
+    REDIS_CACHE_PORT: ${REDIS_CACHE_PORT:-6379}
+    SCARLET_ROLES: ${SCARLET_ROLES:-web ingest scheduler}
   volumes:
     - logs:/app/storage/logs
     - /srv/scarlet-web/maps:/maps:ro

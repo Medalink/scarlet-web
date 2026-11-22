@@ -1,0 +1,3 @@
+# host	roles (web, ingest, scheduler, db)	settings (KEY=value,KEY=value; optional)
+scarlet-web	web ingest scheduler
+scarlet-db	db

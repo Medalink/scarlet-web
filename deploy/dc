@@ -1,4 +1,8 @@
 #!/bin/sh
 # docker compose for the scarlet-web stack on the server: deploy/dc ps, deploy/dc logs -f horizon, deploy/dc exec app sh.
+# With state/redis-vpc.env (bin/deploy writes it once a second app host exists) both Redis instances also listen on the VPC address.
 cd /srv/scarlet-web/deploy
+if [ -s ../state/redis-vpc.env ]; then
+  exec docker compose -f compose.yaml -f compose.redis-vpc.yaml --env-file ../.env --env-file ../release.env --env-file ../state/redis-vpc.env "$@"
+fi
 exec docker compose -f compose.yaml --env-file ../.env --env-file ../release.env "$@"

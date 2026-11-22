@@ -42,16 +42,7 @@ chown 1000:1000 etc/tls/server.key etc/tls/server.crt
 chmod 600 etc/tls/server.key
 chmod 644 etc/tls/server.crt
 
-{
-  echo '# written by deploy/server-setup-db.sh'
-  echo 'local   all             all                                     trust'
-  echo 'local   replication     all                                     trust'
-  for c in $clients; do
-    echo "hostssl all             all             $c/32            scram-sha-256"
-    echo "hostssl replication     replicator      $c/32            scram-sha-256"
-  done
-} > etc/pg_hba.conf
-chmod 644 etc/pg_hba.conf
+sh deploy/db-hba.sh $clients
 
 if [ -n "${PGBR_PASS:-}" ]; then
   (

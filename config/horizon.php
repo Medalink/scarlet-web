@@ -1,5 +1,23 @@
 <?php
 
+$roles = preg_split('/\s+/', trim((string) env('SCARLET_ROLES', 'web ingest scheduler')), -1, PREG_SPLIT_NO_EMPTY);
+$supervisorRole = [
+    'supervisor-ingest' => 'ingest',
+    'supervisor-rollups' => 'scheduler',
+    'supervisor-armory' => 'scheduler',
+    'supervisor-default' => 'scheduler',
+];
+$forThisHost = fn (array $supervisors): array => array_filter(
+    $supervisors,
+    fn (string $name): bool => in_array($supervisorRole[$name], $roles, true),
+    ARRAY_FILTER_USE_KEY,
+);
+
+$ingestProcesses = static fn (int $default): array => [
+    'maxProcesses' => (int) env('SCARLET_INGEST_PROCESSES', $default),
+    'minProcesses' => (int) env('SCARLET_INGEST_PROCESSES', $default),
+];
+
 return [
 
     /*
@@ -194,12 +212,12 @@ return [
     |
     */
 
-    'defaults' => [
+    'defaults' => $forThisHost([
         // Decoding parts into rows: one job per character and session, each with its own limits.
         'supervisor-ingest' => [
             'connection' => 'redis',
-            'queue' => ['ingest'],
-            'balance' => 'simple',
+            'queue' => ['ingest', 'backfill'],
+            'balance' => false,
             'maxProcesses' => 2,
             'maxTime' => 3600,
             'maxJobs' => 500,
@@ -247,23 +265,22 @@ return [
             'timeout' => 60,
             'nice' => 0,
         ],
-    ],
+    ]),
 
     'environments' => [
-        'production' => [
-            // One 4 GB server runs the database and Redis too: two decoders at up to 1 GB each, not six.
-            'supervisor-ingest' => ['maxProcesses' => 2],
-            'supervisor-rollups' => ['maxProcesses' => 1],
-            'supervisor-armory' => ['maxProcesses' => 1],
-            'supervisor-default' => ['maxProcesses' => 2, 'balanceMaxShift' => 1, 'balanceCooldown' => 3],
-        ],
+        'production' => $forThisHost([
+            'supervisor-ingest' => $ingestProcesses(2),
+            'supervisor-rollups' => ['maxProcesses' => (int) env('SCARLET_ROLLUPS_PROCESSES', 1)],
+            'supervisor-armory' => ['maxProcesses' => (int) env('SCARLET_ARMORY_PROCESSES', 1)],
+            'supervisor-default' => ['maxProcesses' => (int) env('SCARLET_DEFAULT_PROCESSES', 2), 'balanceMaxShift' => 1, 'balanceCooldown' => 3],
+        ]),
 
-        'local' => [
-            'supervisor-ingest' => ['maxProcesses' => 3],
-            'supervisor-rollups' => ['maxProcesses' => 1],
-            'supervisor-armory' => ['maxProcesses' => 1],
-            'supervisor-default' => ['maxProcesses' => 2],
-        ],
+        'local' => $forThisHost([
+            'supervisor-ingest' => $ingestProcesses(3),
+            'supervisor-rollups' => ['maxProcesses' => (int) env('SCARLET_ROLLUPS_PROCESSES', 1)],
+            'supervisor-armory' => ['maxProcesses' => (int) env('SCARLET_ARMORY_PROCESSES', 1)],
+            'supervisor-default' => ['maxProcesses' => (int) env('SCARLET_DEFAULT_PROCESSES', 2)],
+        ]),
     ],
 
     /*

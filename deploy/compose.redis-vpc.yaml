@@ -1,0 +1,10 @@
+name: scarlet-web
+
+services:
+  redis:
+    ports:
+      - "${REDIS_VPC_ADDRESS}:6379:6379"
+
+  redis-cache:
+    ports:
+      - "${REDIS_VPC_ADDRESS}:6380:6379"

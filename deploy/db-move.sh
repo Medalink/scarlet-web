@@ -67,7 +67,7 @@ db_server() {
     echo "db-server: made the pgBackRest passphrase in $pass_file. Keep a second copy: without it the WAL archive and backups in R2 cannot be read."
   fi
   step_r2 dsrv
-  clients=$(app_private_address)
+  clients=$(app_private_addresses)
   tar -C "$here" -cf - deploy | dsrv 'sudo install -d -o ops -g ops -m 750 /srv/scarlet-db && tar -C /srv/scarlet-db --no-same-owner -xf -'
   {
     printf 'DB_PASSWORD=%s\n' "$(srv "sed -n 's/^DB_PASSWORD=//p' /srv/scarlet-web/.env")"

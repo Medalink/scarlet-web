@@ -20,10 +20,17 @@
 #   bin/deploy db-move [rollback|abort|retire|finish]   move the database to the database host, or back; see deploy/db-move.sh
 #   bin/deploy db status        the database host: role, archiver, last pgBackRest backup, volume, replication
 #   bin/deploy db upgrade       push this checkout's deploy/ to the database host and recreate Postgres if its pin changed
+#   bin/deploy hosts [prepare]  list deploy/hosts.tsv (a host, its roles web, ingest, scheduler or db, optional KEY=value settings);
+#                               `prepare` sets up every other app host: Redis on the VPC, database access, .env, certificate
 #
-# Settings (environment): SCARLET_SECRETS (folder with ops_ed25519, cloudflare-token), DEPLOY_HOST (default
-# scarlet-web, its tailnet name), DEPLOY_BUILD_HOST (default medaware; `local` builds on this machine),
-# DEPLOY_REPO (default the GitHub repository), DEPLOY_DB_HOST (default scarlet-db), DEPLOY_PGBR_NAME (the pgBackRest folder in
+# Hosts: deploy/hosts.tsv lists them, one line each. Exactly one host has the role scheduler (it also holds Redis, the registry
+# and runs migrations) and exactly one has db. A release builds once, then prepares and rolls out each app host with its roles:
+# the scheduler host first, then the others. A host with the role ingest runs only Horizon's ingest supervisor.
+#
+# Settings (environment): SCARLET_SECRETS (folder with ops_ed25519, cloudflare-token), DEPLOY_INVENTORY (a hosts file other
+# than deploy/hosts.tsv), DEPLOY_HOST and DEPLOY_DB_HOST (one scheduler host and the database host, ignoring the file; the load
+# environment sets them), DEPLOY_BUILD_HOST (default medaware; `local` builds on this machine),
+# DEPLOY_REPO (default the GitHub repository), DEPLOY_PGBR_NAME (the pgBackRest folder in
 # the bucket and the prefix of its passphrase file in the secrets folder; default pgbackrest).
 set -euo pipefail
 
@@ -33,17 +40,95 @@ case "$(uname -s)" in
   *) default_secrets=$HOME/.config/scarlet-web ;;
 esac
 secrets=${SCARLET_SECRETS:-$default_secrets}
-host=${DEPLOY_HOST:-scarlet-web}
 build_host=${DEPLOY_BUILD_HOST:-medaware}
-db_host=${DEPLOY_DB_HOST:-scarlet-db}
 pgbr_name=${DEPLOY_PGBR_NAME:-pgbackrest}
 repo=${DEPLOY_REPO:-https://github.com/Medalink/scarlet-web.git}
 cf="node $here/deploy/cloudflare.mjs"
 export SCARLET_SECRETS=$secrets
 
+inv_hosts=()
+inv_roles=()
+inv_settings=()
+host=
+db_host=
+
+load_inventory() {
+  local file=${DEPLOY_INVENTORY:-$here/deploy/hosts.tsv} name roles settings i j word key kv schedulers=() dbs=()
+  if [ -z "${DEPLOY_INVENTORY:-}" ] && { [ -n "${DEPLOY_HOST:-}" ] || [ -n "${DEPLOY_DB_HOST:-}" ]; }; then
+    inv_hosts=("${DEPLOY_HOST:-scarlet-web}" "${DEPLOY_DB_HOST:-scarlet-db}")
+    inv_roles=("web ingest scheduler" db)
+    inv_settings=("" "")
+  else
+    [ -f "$file" ] || { echo "deploy: no inventory at $file" >&2; exit 1; }
+    while IFS=$'\t' read -r name roles settings || [ -n "$name" ]; do
+      name=${name%$'\r'} roles=${roles%$'\r'} settings=${settings%$'\r'}
+      case $name in '' | '#'*) continue ;; esac
+      inv_hosts+=("$name")
+      inv_roles+=("$roles")
+      inv_settings+=("$settings")
+    done < "$file"
+  fi
+  for i in "${!inv_hosts[@]}"; do
+    name=${inv_hosts[$i]}
+    [[ $name =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "deploy: inventory: '$name' is not a host name" >&2; exit 1; }
+    for ((j = 0; j < i; j++)); do
+      [ "${inv_hosts[$j]}" != "$name" ] || { echo "deploy: inventory: $name is listed twice" >&2; exit 1; }
+    done
+    [ -n "${inv_roles[$i]}" ] || { echo "deploy: inventory: $name has no roles" >&2; exit 1; }
+    for word in ${inv_roles[$i]}; do
+      case $word in
+        web | ingest) ;;
+        scheduler) schedulers+=("$name") ;;
+        db) dbs+=("$name") ;;
+        *) echo "deploy: inventory: $name has the unknown role '$word' (web, ingest, scheduler, db)" >&2; exit 1 ;;
+      esac
+    done
+    case " ${inv_roles[$i]} " in
+      *" db "*) [ "${inv_roles[$i]}" = db ] || { echo "deploy: inventory: $name has the role db and others; the database host does only that" >&2; exit 1; } ;;
+    esac
+    for kv in ${inv_settings[$i]//,/ }; do
+      key=${kv%%=*}
+      [[ $key =~ ^[A-Z][A-Z0-9_]*$ && $kv == *=* && ${kv#*=} =~ ^[A-Za-z0-9_.:/@-]*$ ]] || { echo "deploy: inventory: $name: '$kv' is not KEY=value" >&2; exit 1; }
+    done
+  done
+  [ "${#schedulers[@]}" -eq 1 ] || { echo "deploy: inventory: the scheduler runs on exactly one host, found ${#schedulers[@]} (${schedulers[*]:-none})" >&2; exit 1; }
+  [ "${#dbs[@]}" -eq 1 ] || { echo "deploy: inventory: exactly one host has the role db, found ${#dbs[@]} (${dbs[*]:-none})" >&2; exit 1; }
+  host=${schedulers[0]}
+  db_host=${dbs[0]}
+}
+load_inventory
+
+index_of() {
+  local i
+  for i in "${!inv_hosts[@]}"; do
+    if [ "${inv_hosts[$i]}" = "$1" ]; then echo "$i"; return; fi
+  done
+  echo "deploy: $1 is not in the inventory" >&2
+  exit 1
+}
+roles_of() { echo "${inv_roles[$(index_of "$1")]}"; }
+settings_of() { echo "${inv_settings[$(index_of "$1")]}"; }
+has_role() { case " $(roles_of "$1") " in *" $2 "*) return 0 ;; esac; return 1; }
+other_app_hosts() {
+  local h
+  for h in "${inv_hosts[@]}"; do
+    [ "$h" = "$host" ] || [ "$h" = "$db_host" ] || echo "$h"
+  done
+}
+
 ssh_opts=(-i "$secrets/ops_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30)
-srv() { ssh "${ssh_opts[@]}" "ops@$host" "$@"; }
-dsrv() { ssh "${ssh_opts[@]}" "ops@$db_host" "$@"; }
+at() {
+  local target=$1
+  shift
+  ssh "${ssh_opts[@]}" "ops@$target" "$@"
+}
+srv() { at "$host" "$@"; }
+dsrv() { at "$db_host" "$@"; }
+roll_at() {
+  local target=$1
+  shift
+  at "$target" "SCARLET_ROLES='$(roles_of "$target")' /srv/scarlet-web/deploy/rollout.sh $*"
+}
 on_build() {
   if [ "$build_host" = local ]; then bash -c "$1"; else ssh -o ServerAliveInterval=30 "$build_host" "$1"; fi
 }
@@ -51,9 +136,10 @@ on_build() {
 build_src='$(echo /data/$(id -un))/scratch/scarlet-web-build/src'
 
 push_deploy_folder() {
-  local t0
+  local t0 target=${1:-$host}
   t0=$(now)
-  on_build "tar -C $build_src -cf - deploy" | srv 'rm -rf /srv/scarlet-web/deploy.new && mkdir -p /srv/scarlet-web/deploy.new && tar -C /srv/scarlet-web/deploy.new --strip-components=1 --no-same-owner -xf - && rm -rf /srv/scarlet-web/deploy && mv /srv/scarlet-web/deploy.new /srv/scarlet-web/deploy'
+  on_build "tar -C $build_src -cf - deploy" | at "$target" 'rm -rf /srv/scarlet-web/deploy.new && mkdir -p /srv/scarlet-web/deploy.new && tar -C /srv/scarlet-web/deploy.new --strip-components=1 --no-same-owner -xf - && rm -rf /srv/scarlet-web/deploy && mv /srv/scarlet-web/deploy.new /srv/scarlet-web/deploy'
+  [ "$target" = "$host" ] || return 0
   echo "phase deploy-folder $(span "$t0" "$(now)")" >> "$timing/ship.out"
 }
 
@@ -166,6 +252,75 @@ ship_images() {
   ship_whole_image "$tag"
 }
 
+private_address_of() { at "$1" 'curl -fsS http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address'; }
+
+app_private_addresses() {
+  local h out
+  out=$(app_private_address)
+  for h in $(other_app_hosts); do out="$out $(private_address_of "$h")"; done
+  echo "$out"
+}
+
+ship_image_to() {
+  local target=$1 tag=$2 job rc=1 local_port=$((tunnel_port + 1))
+  if at "$target" "docker image inspect scarlet-web-app:$tag >/dev/null 2>&1"; then return 0; fi
+  if [ "${DEPLOY_TRANSPORT:-registry}" = registry ]; then
+    ssh "${ssh_opts[@]}" -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$local_port:127.0.0.1:$registry_port" "ops@$host" &
+    job=$!
+    for _ in $(seq 1 50); do
+      curl -sf --max-time 2 -o /dev/null "http://127.0.0.1:$local_port/v2/" && break
+      sleep 0.2
+    done
+    ssh "${ssh_opts[@]}" -o ExitOnForwardFailure=yes -R "127.0.0.1:$registry_port:127.0.0.1:$local_port" "ops@$target" \
+      "docker pull -q $registry_url/scarlet-web-app:$tag >/dev/null && docker tag $registry_url/scarlet-web-app:$tag scarlet-web-app:$tag && docker rmi $registry_url/scarlet-web-app:$tag >/dev/null" && rc=0
+    kill "$job" 2>/dev/null || true
+  fi
+  if [ "$rc" != 0 ]; then
+    echo "deploy: sending the whole image to $target"
+    srv "docker save scarlet-web-app:$tag | zstd -T2 -3" | at "$target" 'zstd -d | docker load'
+  fi
+}
+
+# What a second app host needs before its first rollout, each step safe to run again: the database lets its VPC address in,
+# Redis on the scheduler host listens on the VPC (firewall first), and the host gets the stack's .env with Redis pointed at
+# the scheduler host plus its own settings, the database certificate and, for the web role, the origin certificate.
+prepare_host() {
+  local target=$1 paddr addr all roles marker have kv
+  roles=$(roles_of "$target")
+  db_moved || { echo "deploy: $target needs the database on $db_host: run bin/deploy db-move first" >&2; exit 1; }
+  paddr=$(app_private_address)
+  addr=$(private_address_of "$target")
+  all=$(app_private_addresses)
+  marker="$paddr $addr $roles | $all"
+  have=$(at "$target" 'cat /srv/scarlet-web/state/host-ready 2>/dev/null' || true)
+  if [ "$have" != "$marker" ]; then
+    echo "deploy: preparing $target ($roles)"
+    node "$here/deploy/provision.mjs" redis --droplet "$host"
+    srv "cd /srv/scarlet-web && mkdir -p state && if [ \"\$(cat state/redis-vpc.env 2>/dev/null)\" != 'REDIS_VPC_ADDRESS=$paddr' ]; then echo 'REDIS_VPC_ADDRESS=$paddr' > state/redis-vpc.env && deploy/dc up -d --wait redis redis-cache; fi"
+    tar -C "$here" -cf - deploy/db-hba.sh | dsrv 'tar -C /srv/scarlet-db --no-same-owner -xf -'
+    dsrv "sudo sh /srv/scarlet-db/deploy/db-hba.sh $all"
+    at "$target" 'sudo install -d -o ops -g ops -m 750 /srv/scarlet-web /srv/scarlet-web/state /srv/scarlet-web/dbtls'
+    tar -C "$here" -cf - deploy | at "$target" 'tar -C /srv/scarlet-web --no-same-owner -xf -'
+    srv 'cat /srv/scarlet-web/dbtls/db-ca.crt' | at "$target" 'cat > /srv/scarlet-web/dbtls/db-ca.crt && chmod 644 /srv/scarlet-web/dbtls/db-ca.crt'
+    if has_role "$target" web; then
+      srv 'tar -C /srv/scarlet-web -cf - tls' | at "$target" 'tar -C /srv/scarlet-web --no-same-owner -xf - && chmod 600 /srv/scarlet-web/tls/origin.key && install -d -m 755 /srv/scarlet-web/maps'
+    fi
+  fi
+  {
+    srv 'grep -vE "^(REDIS_HOST|REDIS_PORT|REDIS_CACHE_HOST|REDIS_CACHE_PORT|SCARLET_[A-Z_]*PROCESSES)=" /srv/scarlet-web/.env'
+    printf 'REDIS_HOST=%s\nREDIS_PORT=6379\nREDIS_CACHE_HOST=%s\nREDIS_CACHE_PORT=6380\n' "$paddr" "$paddr"
+    for kv in $(settings_of "$target" | tr ',' ' '); do printf '%s\n' "$kv"; done
+  } | at "$target" 'umask 077 && cat > /srv/scarlet-web/.env.new && mv /srv/scarlet-web/.env.new /srv/scarlet-web/.env && touch /srv/scarlet-web/release.env && chmod 755 /srv/scarlet-web/dbtls'
+  at "$target" "echo '$marker' > /srv/scarlet-web/state/host-ready"
+}
+
+apply_settings() {
+  local target=$1 kv
+  for kv in $(settings_of "$target" | tr ',' ' '); do
+    at "$target" "cd /srv/scarlet-web && grep -v '^${kv%%=*}=' .env > .env.new; echo '$kv' >> .env.new; chmod 600 .env.new; mv .env.new .env"
+  done
+}
+
 # One deploy at a time, build included: every deploy builds in the same clone on the build host and unpacks into the
 # same folders on the server. The lock is a folder on the server; one older than 40 minutes is a crashed deploy's.
 lock=/srv/scarlet-web/state/deploy.lock
@@ -197,12 +352,22 @@ release() {
   local folder_job=$!
   ship_images "${sha:0:12}"
   wait "$folder_job"
-  local end
+  local end other
   end=$(now)
   laps+=("image transfer|$(span "$lap_at" "$(cat "$timing/sent")")" "load or pull on droplet|$(span "$(cat "$timing/sent")" "$end")")
   lap_at=$end
-  srv "/srv/scarlet-web/deploy/rollout.sh ${sha:0:12}" 2>&1 | tee "$timing/rollout.out"
+  for other in $(other_app_hosts); do
+    prepare_host "$other"
+    push_deploy_folder "$other"
+    ship_image_to "$other" "${sha:0:12}"
+  done
+  apply_settings "$host"
+  roll_at "$host" "${sha:0:12}" 2>&1 | tee "$timing/rollout.out"
   lap rollout
+  for other in $(other_app_hosts); do
+    echo "deploy: rolling out on $other ($(roles_of "$other"))"
+    roll_at "$other" "${sha:0:12}" 2>&1 | tee "$timing/rollout-$other.out"
+  done
   echo "deploy: $sha is live"
 }
 
@@ -272,14 +437,39 @@ backups_report() {
 
 case "${1:-release}" in
   release) release "${2:-main}" ;;
-  rollback) take_lock; srv '/srv/scarlet-web/deploy/rollout.sh --rollback' ;;
+  rollback)
+    take_lock
+    roll_at "$host" --rollback
+    for other in $(other_app_hosts); do
+      echo "deploy: rolling $other back"
+      roll_at "$other" --rollback || echo "deploy: $other has no earlier release; it stays on its current one"
+    done
+    ;;
+  hosts)
+    case "${2:-list}" in
+      list)
+        for i in "${!inv_hosts[@]}"; do
+          printf '%-24s %-26s %s\n' "${inv_hosts[$i]}" "${inv_roles[$i]}" "${inv_settings[$i]}"
+        done
+        ;;
+      prepare)
+        take_lock
+        for other in $(other_app_hosts); do prepare_host "$other"; done
+        ;;
+      *) echo "deploy: hosts [list|prepare]" >&2; exit 2 ;;
+    esac
+    ;;
   status)
     srv '/srv/scarlet-web/deploy/dc ps; cat /srv/scarlet-web/release.env'
+    for other in $(other_app_hosts); do
+      echo "== $other ($(roles_of "$other"))"
+      at "$other" '/srv/scarlet-web/deploy/dc ps; cat /srv/scarlet-web/release.env'
+    done
     $cf status
     db_moved && db_status
     backups_report
     ;;
-  logs) srv "/srv/scarlet-web/deploy/dc logs --tail 100 -f ${2:-}" ;;
+  logs) at "${3:-$host}" "/srv/scarlet-web/deploy/dc logs --tail 100 -f ${2:-}" ;;
   backup)
     run=srv
     ! db_moved || run=dsrv
@@ -310,8 +500,11 @@ case "${1:-release}" in
     ;;
   maps)
     [ -f "${2:?folder with manifest.json}/manifest.json" ] || { echo "deploy: no manifest.json in $2" >&2; exit 1; }
-    tar -C "$2" -cf - . | srv 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf - && chmod -R a+rX /srv/scarlet-web/maps'
-    echo "deploy: maps copied to /srv/scarlet-web/maps"
+    for target in $(printf '%s\n' "$host" $(other_app_hosts) | sort -u); do
+      has_role "$target" web || continue
+      tar -C "$2" -cf - . | at "$target" 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf - && chmod -R a+rX /srv/scarlet-web/maps'
+      echo "deploy: maps copied to /srv/scarlet-web/maps on $target"
+    done
     ;;
   server) step_server ;;
   tls) step_tls ;;
