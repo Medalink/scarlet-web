@@ -852,9 +852,9 @@ the heat rollups are keyed by a world cell: `cell_i = floor(u * 768)` and `cell_
 512. The world is 3:2 (16032 by 10688 px at the top zoom), so those cells are square: 20.875 px at the top zoom, about
 1.3 of the world's 1002 by 668 units a side. A point with no `u, v` is in no cell. `bin/artisan maps:place-points` fills
 the nulls of rows whose map has a rectangle, in windows of seven days, then refreshes the world heat and measures
-again the sessions whose path points it placed; it finds nothing to do on a second run. The deploy runs it after
-`maps:load-rects`, so a rectangle added to the table reaches the points recorded before it, and nothing is uploaded
-again. Kills carry no
+again the sessions whose path points it placed; it finds nothing to do on a second run. `maps:load-rects` does the
+same after it loads the table, and the deploy runs that, so a rectangle added to the table reaches the points
+recorded before it, and nothing is uploaded again. Kills carry no
 position, so the map's third layer is the creatures met (`creature_sightings`), not kills.
 
 **Heat levels.** Heat is kept at four cell sizes so that zooming in shows detail, not bigger squares. Level `n` is a grid

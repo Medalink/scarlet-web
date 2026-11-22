@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\DB;
  * Fills `u, v` on the rows that have none, from `map_rects` (docs/DESIGN.md, Maps). It touches only rows whose map has a
  * rectangle, so it can run again whenever rectangles arrive, and a second run finds nothing to do. It works in
  * windows of seven days, so one statement stays small, then brings the world heat up to date over what it changed and
- * measures the sessions whose path points it placed, and any session with placed points and no distance yet. The
- * deploy runs it after `maps:load-rects`, so a rectangle added to docs/map-rects.tsv reaches the points recorded
- * before it. Must not be called from a transaction (the refresh is a CALL).
+ * measures the sessions whose path points it placed, and any session with placed points and no distance yet.
+ * `maps:load-rects` runs it after loading, and the deploy runs that, so a rectangle added to docs/map-rects.tsv
+ * reaches the points recorded before it. Must not be called from a transaction (the refresh is a CALL).
  */
 class PlaceWorldPoints
 {

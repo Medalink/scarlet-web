@@ -285,7 +285,6 @@ if has_role scheduler; then
     php artisan migrate --force --no-interaction
     php artisan scarlet:storage-policies --no-interaction
     php artisan maps:load-rects --no-interaction
-    php artisan maps:place-points --no-interaction
     php artisan app:release-notes:publish --from-file=storage/app/release-notes.json --no-interaction
     php artisan cache:clear --no-interaction'
 fi
