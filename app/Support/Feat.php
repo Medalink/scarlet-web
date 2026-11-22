@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Str;
+
 /** The feats of a character page: what each counts, its icon and the five thresholds of its tiers (docs/DESIGN.md "Art and game layer"). */
 enum Feat: string
 {
@@ -111,6 +113,18 @@ enum Feat: string
         return $this->row()[0];
     }
 
+    /** The name a card shows: "Long Haul", "Errand Runner". */
+    public function label(): string
+    {
+        return Str::headline($this->name);
+    }
+
+    /** Decimal places of a value: 1 for Wayfarer, 0 for every other feat. */
+    public function decimals(): int
+    {
+        return $this === self::Wayfarer ? 1 : 0;
+    }
+
     /** The count as the page says it: "6,969 kills", "1 kill", and "Level 42" for a feat that is a level or a rank. */
     public function says(string $number, bool $one = false): string
     {
@@ -145,37 +159,37 @@ enum Feat: string
             self::Steadfast => ['clock', 'day played in a row', 'days played in a row', [2, 7, 21, 60, 180]],
             self::Seasoned => ['clock', 'week played', 'weeks played', [1, 4, 12, 26, 52]],
             self::Regular => ['hours', 'session played', 'sessions played', [5, 60, 250, 600, 3000]],
-            self::LongHaul => ['hours', 'session of two hours or more', 'sessions of two hours or more', [1, 15, 60, 150, 600]],
-            self::Longstanding => ['clock', 'day since the first recorded session', 'days since the first recorded session', [7, 30, 90, 180, 365]],
+            self::LongHaul => ['hours', 'two-hour session', 'two-hour sessions', [1, 15, 60, 150, 600]],
+            self::Longstanding => ['clock', 'day since the first session', 'days since the first session', [7, 30, 90, 180, 365]],
             self::Unbroken => ['shield', 'level reached without dying', 'levels reached without dying', [10, 20, 35, 50, 60]],
             self::Slayer => ['kills', 'kill', 'kills', [100, 2500, 10000, 30000, 150000]],
             self::Bestiary => ['creature', 'kind of creature killed', 'kinds of creature killed', [10, 250, 750, 1250, 2000]],
-            self::Finisher => ['kills', 'killing blow of your own', 'killing blows of your own', [50, 1000, 5000, 15000, 75000]],
+            self::Finisher => ['kills', 'killing blow', 'killing blows', [50, 1000, 5000, 15000, 75000]],
             self::Gladiator => ['kills', 'player killed', 'players killed', [1, 25, 100, 500, 2500]],
             self::Rampage => ['kills', 'kill in one session', 'kills in one session', [50, 300, 600, 1000, 2000]],
             self::Fallen => ['deaths', 'death', 'deaths', [1, 10, 40, 100, 400]],
-            self::Flattened => ['deaths', 'point of damage in the biggest killing blow from a creature', 'points of damage in the biggest killing blow from a creature', [50, 300, 1000, 2500, 5000]],
+            self::Flattened => ['deaths', 'damage in one killing blow', 'damage in one killing blow', [50, 300, 1000, 2500, 5000]],
             self::Nemesis => ['deaths', 'death to one killer', 'deaths to one killer', [2, 4, 8, 15, 30]],
             self::Territorial => ['pin', 'kill in one zone', 'kills in one zone', [50, 500, 1500, 4000, 12000]],
-            self::Roamer => ['pin', 'zone with 100 kills or more', 'zones with 100 kills or more', [1, 8, 16, 24, 32]],
+            self::Roamer => ['pin', 'zone with 100 kills', 'zones with 100 kills', [1, 8, 16, 24, 32]],
             self::Questing => ['quests', 'quest turned in', 'quests turned in', [10, 150, 500, 1000, 1500]],
-            self::ErrandRunner => ['quests', 'quest turned in in one session', 'quests turned in in one session', [3, 10, 20, 35, 50]],
+            self::ErrandRunner => ['quests', 'quest in one session', 'quests in one session', [3, 10, 20, 35, 50]],
             self::Fickle => ['quests', 'quest abandoned', 'quests abandoned', [1, 20, 75, 150, 300]],
             self::Cartographer => ['zones', 'area discovered', 'areas discovered', [5, 100, 300, 600, 800]],
-            self::LocalHero => ['quests', 'zone with 25 quests or more turned in', 'zones with 25 quests or more turned in', [1, 4, 8, 12, 18]],
-            self::Thorough => ['quests', 'quest turned in in one zone', 'quests turned in in one zone', [10, 30, 60, 90, 110]],
+            self::LocalHero => ['quests', 'zone with 25 quests turned in', 'zones with 25 quests turned in', [1, 4, 8, 12, 18]],
+            self::Thorough => ['quests', 'quest in one zone', 'quests in one zone', [10, 30, 60, 90, 110]],
             self::Delver => ['dungeons', 'dungeon run', 'dungeon runs', [1, 20, 75, 200, 500]],
             self::Vanquisher => ['crown', 'dungeon boss killed', 'dungeon bosses killed', [1, 50, 250, 1000, 2500]],
             self::Spelunker => ['dungeons', 'dungeon or raid entered', 'dungeons and raids entered', [1, 5, 12, 18, 22]],
             self::Raider => ['crown', 'raid run', 'raid runs', [1, 10, 40, 100, 250]],
             self::Conqueror => ['crown', 'raid boss killed', 'raid bosses killed', [1, 25, 100, 300, 800]],
             self::DeepDweller => ['dungeons', 'hour inside dungeons', 'hours inside dungeons', [1, 20, 75, 200, 600]],
-            self::Flawless => ['shield', 'dungeon run with a boss killed and no death', 'dungeon runs with a boss killed and no death', [1, 10, 40, 100, 300]],
+            self::Flawless => ['shield', 'deathless dungeon run', 'deathless dungeon runs', [1, 10, 40, 100, 300]],
             self::Familiar => ['dungeons', 'run of one dungeon', 'runs of one dungeon', [2, 8, 20, 50, 120]],
             self::Soloist => ['dungeons', 'dungeon run alone', 'dungeon runs alone', [1, 5, 20, 50, 150]],
             self::FullHouse => ['characters', 'dungeon run in a group of five', 'dungeon runs in a group of five', [1, 20, 75, 200, 500]],
             self::Explorer => ['zones', 'zone entered', 'zones entered', [5, 20, 40, 55, 65]],
-            self::Globetrotter => ['zones', 'zone with an hour or more of play', 'zones with an hour or more of play', [2, 10, 20, 30, 40]],
+            self::Globetrotter => ['zones', 'zone played for an hour', 'zones played for an hour', [2, 10, 20, 30, 40]],
             self::Local => ['pin', 'hour in one zone', 'hours in one zone', [2, 15, 40, 100, 300]],
             self::Wayfarer => ['distance', 'world width walked', 'world widths walked', [1, 15, 60, 150, 750]],
             self::Jumper => ['jumps', 'jump', 'jumps', [100, 5000, 20000, 50000, 250000]],
@@ -188,14 +202,14 @@ enum Feat: string
             self::Scout => ['creature', 'elite creature seen', 'elite creatures seen', [5, 75, 250, 500, 900]],
             self::Witness => ['crown', 'boss seen', 'bosses seen', [1, 5, 15, 30, 50]],
             self::Naturalist => ['creature', 'kind of creature seen', 'kinds of creature seen', [25, 750, 2000, 3500, 5000]],
-            self::Skullseer => ['creature', 'creature seen whose level the game hides', 'creatures seen whose level the game hides', [1, 5, 20, 50, 100]],
+            self::Skullseer => ['creature', 'skull-level creature seen', 'skull-level creatures seen', [1, 5, 20, 50, 100]],
             self::Looter => ['item', 'corpse looted', 'corpses looted', [10, 1500, 6000, 15000, 75000]],
             self::Scavenger => ['item', 'poor item looted', 'poor items looted', [5, 250, 1000, 3000, 12000]],
             self::Lucky => ['item', 'uncommon item looted', 'uncommon items looted', [1, 100, 400, 1000, 4000]],
             self::Collector => ['item', 'rare item looted', 'rare items looted', [1, 15, 60, 150, 500]],
             self::Jackpot => ['item', 'epic item looted', 'epic items looted', [1, 3, 10, 25, 75]],
             self::Curator => ['item', 'kind of item received', 'kinds of item received', [25, 600, 1500, 2500, 4000]],
-            self::Unboxer => ['item', 'container opened from the bags', 'containers opened from the bags', [1, 25, 100, 300, 1000]],
+            self::Unboxer => ['item', 'container opened', 'containers opened', [1, 25, 100, 300, 1000]],
             self::Angler => ['fish', 'fish caught', 'fish caught', [10, 250, 1500, 5000, 15000]],
             self::Fishmonger => ['fish', 'kind of catch', 'kinds of catch', [3, 15, 30, 45, 60]],
             self::Wading => ['fish', 'zone fished in', 'zones fished in', [1, 5, 10, 20, 30]],
