@@ -375,16 +375,16 @@ Example: `curl https://<host>/api/v1/public/leaderboards/most-quests?limit=2`
 
 #### `GET /public/search`
 
-Characters (only those made public), creatures, items, zones and quests whose name contains the text, best match first.
+Characters (only those made public), creatures, items, zones and quests whose name holds every word of the text, and the site's own pages. Best match first: exact, prefix, word, contains, then a close spelling when nothing else matched.
 
 | Parameter | In | Type | Meaning |
 | --- | --- | --- | --- |
 | `q` | query | string | The text to search for, 2 to 80 characters. |
-| `kind` | query | string | `characters`, `creatures`, `items`, `zones` or `quests`. Leave out for the first hits of every kind. |
+| `kind` | query | string | `characters`, `creatures`, `items`, `zones` or `quests`. Leave out for the first hits of every kind and the pages. |
 | `cursor` | query | string | The `next_cursor` of the previous page. |
 | `limit` | query | integer | Rows per page, 1 to 100. Default 25. |
 
-Without `kind`: `data` has one entry per kind with `count` and `hits`. With `kind`: `data` is the list of hits, paged with `meta.next_cursor`. A hit has `kind`, `id`, `name`, `path` and the numbers of its kind.
+Without `kind`: `data` has one entry per kind and a sixth, `pages`, each with `count` and `hits`. With `kind`: `data` is the list of hits, paged with `meta.next_cursor`. A hit has `kind`, `id`, `name`, `path`, `match` (`exact`, `prefix`, `word`, `contains` or `fuzzy`) and the numbers of its kind; a text of digits also finds the creature, item, quest or zone with that id as an `exact` hit. A page hit has `title`, `path`, `meta` and `match`.
 
 Example: `curl https://<host>/api/v1/public/search?q=ash&kind=zones`
 

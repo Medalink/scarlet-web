@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Actions\Public\Search;
+use App\Actions\Public\SearchPages;
 use App\Http\Requests\Api\PublicRequest;
 use App\Support\Cursor;
 use App\Support\Exceptions\ApiException;
 use App\Support\SearchKind;
 use Illuminate\Http\JsonResponse;
 
-/** Search over public characters, creatures, items, zones and quests. */
+/** Search over public characters, creatures, items, zones, quests and the site's own pages. */
 class SearchController extends PublicController
 {
-    public function __invoke(PublicRequest $request, Search $search): JsonResponse
+    public function __invoke(PublicRequest $request, Search $search, SearchPages $pages): JsonResponse
     {
         $term = $request->term();
         if ($term === null) {
@@ -28,7 +29,11 @@ class SearchController extends PublicController
         $answer = $search->handle($term, $kind, $offset, $limit);
 
         if ($kind === null) {
-            return $this->respond(array_map(fn (array $group): array => ['count' => $group['count'], 'hits' => $group['hits']], $answer), ['q' => $term, 'per_kind' => $limit]);
+            $groups = array_map(fn (array $group): array => ['count' => $group['count'], 'hits' => $group['hits']], $answer);
+            $found = $pages->handle($term);
+            $groups['pages'] = ['count' => count($found), 'hits' => array_slice($found, 0, $limit)];
+
+            return $this->respond($groups, ['q' => $term, 'per_kind' => $limit]);
         }
         [$hits, $next] = Cursor::page($answer[$kind->value]['hits'], $offset, $limit);
 

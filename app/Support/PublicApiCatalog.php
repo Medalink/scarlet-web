@@ -81,9 +81,9 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'search', 'group' => 'Search', 'path' => '/search', 'action' => SearchController::class,
-                'summary' => 'Characters (only those made public), creatures, items, zones and quests whose name contains the text, best match first.',
-                'params' => ['q', ['kind', 'query', 'string', '`characters`, `creatures`, `items`, `zones` or `quests`. Leave out for the first hits of every kind.'], 'cursor', 'limit'],
-                'returns' => 'Without `kind`: `data` has one entry per kind with `count` and `hits`. With `kind`: `data` is the list of hits, paged with `meta.next_cursor`. A hit has `kind`, `id`, `name`, `path` and the numbers of its kind.',
+                'summary' => 'Characters (only those made public), creatures, items, zones and quests whose name holds every word of the text, and the site\'s own pages. Best match first: exact, prefix, word, contains, then a close spelling when nothing else matched.',
+                'params' => ['q', ['kind', 'query', 'string', '`characters`, `creatures`, `items`, `zones` or `quests`. Leave out for the first hits of every kind and the pages.'], 'cursor', 'limit'],
+                'returns' => 'Without `kind`: `data` has one entry per kind and a sixth, `pages`, each with `count` and `hits`. With `kind`: `data` is the list of hits, paged with `meta.next_cursor`. A hit has `kind`, `id`, `name`, `path`, `match` (`exact`, `prefix`, `word`, `contains` or `fuzzy`) and the numbers of its kind; a text of digits also finds the creature, item, quest or zone with that id as an `exact` hit. A page hit has `title`, `path`, `meta` and `match`.',
                 'example' => '/search?q=ash&kind=zones', 'where' => [],
             ],
             [

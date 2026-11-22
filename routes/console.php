@@ -6,5 +6,6 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('ingest:sweep')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
 Schedule::command('rulesets:detect')->everyTenMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('search:scores')->hourly()->withoutOverlapping()->onOneServer();
 // A safety net: sessions that sit under another ruleset than their character's are decoded again.
 Schedule::command('rulesets:refile')->dailyAt('04:30')->withoutOverlapping()->onOneServer();

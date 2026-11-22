@@ -2,64 +2,154 @@
 
 namespace App\Actions\Public;
 
+use App\Support\NameKind;
 use App\Support\Rollup;
 use App\Support\RollupRead;
 use App\Support\SearchKind;
+use App\Support\SearchMatch;
+use App\Support\SearchTier;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 
 class Search
 {
+    /** The fewest characters of text that look for a close spelling. */
+    private const int FUZZY_MIN_LENGTH = 4;
+
     public function __construct(private readonly RollupRead $read, private readonly ListRulesets $rulesets) {}
 
     /**
-     * Public characters, creatures, items, zones and quests whose name contains the text, best match first (a name
-     * that starts with it, then the shortest). With no kind, each kind answers its first `$limit` hits and its total;
-     * with a kind, that kind answers `$limit + 1` hits from `$offset` so the caller can tell whether a next page
-     * exists. A hit carries what it is and the numbers a result line shows; a number under the character threshold
-     * is null. Characters are listed only when their owner made them public.
+     * Public characters, creatures, items, zones and quests whose name holds every word of the text, best match first:
+     * the tier of the match (`SearchMatch`), then what players did with the thing (`search_scores`; a character's
+     * time played), then the shorter name. Close spellings are looked for only when nothing matched any other way in
+     * any kind asked for, at pg_trgm's own word similarity threshold (0.6), closest first. With no kind, each kind
+     * answers its first `$limit` hits and its total; with a kind, that kind answers `$limit + 1` hits from `$offset` so
+     * the caller can tell whether a next page exists. A hit carries how it matched and the numbers a result line
+     * shows; a number under the character threshold is null. Characters are listed only when their owner made them
+     * public.
      *
      * @return array<string, array{count: int, hits: list<array<string, mixed>>}>
      */
     public function handle(string $term, ?SearchKind $kind, int $offset, int $limit): array
     {
-        $pattern = '%'.addcslashes($term, '\\%_').'%';
+        $take = $kind === null ? $limit : $limit + 1;
+        $kinds = $kind === null ? SearchKind::cases() : [$kind];
         $answer = [];
+        if (SearchMatch::words($term) === []) {
+            foreach ($kinds as $each) {
+                $answer[$each->value] = ['count' => 0, 'hits' => []];
+            }
 
-        foreach ($kind === null ? SearchKind::cases() : [$kind] as $each) {
-            $query = $this->matches($each, $pattern, $term);
-            $answer[$each->value] = [
-                'count' => (clone $query)->reorder()->getCountForPagination(),
-                'hits' => $this->enrich($each, array_values($query->offset($offset)->limit($kind === null ? $limit : $limit + 1)->get()->map(fn (object $row): array => (array) $row)->all())),
-            ];
+            return $answer;
+        }
+
+        foreach ($kinds as $each) {
+            $answer[$each->value] = $this->found($each, $this->strict($each, $term), $offset, $take);
+        }
+        if (array_sum(array_column($answer, 'count')) > 0 || mb_strlen(trim($term)) < self::FUZZY_MIN_LENGTH) {
+            return $answer;
+        }
+        foreach ($kinds as $each) {
+            $answer[$each->value] = $this->found($each, $this->close($each, $term), $offset, $take, SearchMatch::Fuzzy);
         }
 
         return $answer;
     }
 
-    private function matches(SearchKind $kind, string $pattern, string $term): Builder
+    /**
+     * The count and the page of one query; `$as` names the tier of every hit when the query does not rank them.
+     *
+     * @return array{count: int, hits: list<array<string, mixed>>}
+     */
+    private function found(SearchKind $kind, Builder $query, int $offset, int $take, ?SearchMatch $as = null): array
+    {
+        $count = $query->getCountForPagination();
+        $rows = $count === 0 ? [] : $this->fetch($query, $offset, $take);
+        if ($as !== null) {
+            $rows = array_map(fn (array $row): array => [...$row, 'tier' => $as->rank()], $rows);
+        }
+
+        return ['count' => $count, 'hits' => $this->enrich($kind, $rows)];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fetch(Builder $query, int $offset, int $take): array
+    {
+        return array_values($query->offset($offset)->limit($take)->get()->map(fn (object $row): array => (array) $row)->all());
+    }
+
+    private function strict(SearchKind $kind, string $term): Builder
     {
         $nameKind = $kind->nameKind();
         if ($nameKind !== null) {
-            return DB::table('names')
-                ->where('kind', $nameKind->value)
-                ->where('name', 'ilike', $pattern)
-                ->groupBy('id')
-                ->selectRaw('id, (array_agg(name order by votes desc, name))[1] as name')
-                ->orderByRaw('(lower(min(name)) like lower(?)) desc', [addcslashes($term, '\\%_').'%'])
-                ->orderByRaw('length(min(name))')
-                ->orderBy('id');
+            [$holds, $holdBindings] = SearchTier::filter('names.name', $term, 'names.id');
+            [$rank, $rankBindings] = SearchTier::rank('names.name', $term, 'names.id', grouped: true);
+
+            return $this->named($kind, $nameKind)
+                ->whereRaw($holds, $holdBindings)
+                ->selectRaw($rank, $rankBindings)
+                ->orderBy('tier')->orderByRaw('s.score desc nulls last')->orderByRaw('min(length(names.name))')->orderBy('names.id');
         }
 
         if ($kind === SearchKind::Zones) {
-            return DB::table('zones')->where('name', 'ilike', $pattern)->select('id', 'name')
-                ->orderByRaw('(lower(name) like lower(?)) desc', [addcslashes($term, '\\%_').'%'])->orderByRaw('length(name)')->orderBy('id');
+            [$holds, $holdBindings] = SearchTier::filter('zones.name', $term, 'zones.id');
+            [$rank, $rankBindings] = SearchTier::rank('zones.name', $term, 'zones.id');
+
+            return $this->scored($kind, 'zones', 'id')->select('zones.id', 'zones.name')
+                ->whereRaw($holds, $holdBindings)
+                ->selectRaw($rank, $rankBindings)
+                ->orderBy('tier')->orderByRaw('s.score desc nulls last')->orderByRaw('length(zones.name)')->orderBy('zones.id');
         }
 
-        return DB::table('characters')->where('is_public', true)->where('name_key', 'ilike', $pattern)
+        [$holds, $holdBindings] = SearchTier::filter('characters.name_key', $term);
+        [$rank, $rankBindings] = SearchTier::rank('characters.name_key', $term);
+
+        return $this->characterRows()
+            ->whereRaw($holds, $holdBindings)
+            ->selectRaw($rank, $rankBindings)
+            ->orderBy('tier')->orderByRaw('case when played_known then played_seconds end desc nulls last')->orderByRaw('length(name)')->orderBy('id');
+    }
+
+    private function close(SearchKind $kind, string $term): Builder
+    {
+        $text = mb_strtolower(trim($term));
+        $nameKind = $kind->nameKind();
+        if ($nameKind !== null) {
+            return $this->named($kind, $nameKind)->whereRaw('names.name %> ?', [$text])
+                ->orderByRaw('max(word_similarity(?, names.name)) desc', [$text])->orderByRaw('s.score desc nulls last')->orderByRaw('min(length(names.name))')->orderBy('names.id');
+        }
+
+        if ($kind === SearchKind::Zones) {
+            return $this->scored($kind, 'zones', 'id')->select('zones.id', 'zones.name')->whereRaw('zones.name %> ?', [$text])
+                ->orderByRaw('word_similarity(?, zones.name) desc', [$text])->orderByRaw('s.score desc nulls last')->orderByRaw('length(zones.name)')->orderBy('zones.id');
+        }
+
+        return $this->characterRows()->whereRaw('characters.name_key %> ?', [$text])
+            ->orderByRaw('word_similarity(?, characters.name_key) desc', [$text])->orderByRaw('case when played_known then played_seconds end desc nulls last')->orderByRaw('length(name)')->orderBy('id');
+    }
+
+    /** The names of one kind, one row per id with its most voted name. */
+    private function named(SearchKind $kind, NameKind $nameKind): Builder
+    {
+        return $this->scored($kind, 'names', 'id')
+            ->where('names.kind', $nameKind->value)
+            ->groupBy('names.id', 's.score')
+            ->selectRaw('names.id, (array_agg(names.name order by names.votes desc, names.name))[1] as name');
+    }
+
+    private function scored(SearchKind $kind, string $table, string $id): Builder
+    {
+        return DB::table($table)->leftJoin('search_scores as s', fn (JoinClause $join) => $join->on('s.id', '=', $table.'.'.$id)->where('s.kind', $kind->value));
+    }
+
+    private function characterRows(): Builder
+    {
+        return DB::table('characters')->where('is_public', true)
             ->select('id', 'name', 'race', 'class', 'level', 'played_seconds', 'played_known', 'recorded_seconds')
-            ->selectRaw('(select s.ruleset_id from sessions s where s.character_id = characters.id order by s.end_at desc limit 1) as ruleset_id')
-            ->orderByRaw('(name_key like lower(?)) desc', [addcslashes($term, '\\%_').'%'])->orderByRaw('length(name)')->orderBy('id');
+            ->selectRaw('(select s.ruleset_id from sessions s where s.character_id = characters.id order by s.end_at desc limit 1) as ruleset_id');
     }
 
     /**
@@ -84,6 +174,7 @@ class Search
             'kind' => $kind->value,
             'id' => (int) $hit['id'],
             'name' => (string) $hit['name'],
+            'match' => SearchMatch::fromRank((int) $hit['tier'])->value,
             'path' => $kind->path().($kind === SearchKind::Characters ? $hit['name'] : $hit['id']),
             ...($kind === SearchKind::Characters ? ['race' => $hit['race'], 'class' => $hit['class'], 'level' => $hit['level'] === null ? null : (int) $hit['level'], 'played_seconds' => $hit['played_known'] ? (int) $hit['played_seconds'] : null, 'recorded_seconds' => (int) $hit['recorded_seconds']] : []),
             ...($more[(int) $hit['id']] ?? []),

@@ -589,6 +589,54 @@ reached, so its counts by tier add up to the feats held.
 The feats and their thresholds are one table in code (`App\Support\Feat`). Nothing is stored: a feat is computed
 from the character's totals on each read, so a re-decode or a removal changes it with no migration.
 
+### Search
+
+Search finds public characters, creatures, items, zones, quests and the site's own pages by name. One Action,
+`App\Actions\Public\Search`, answers the search page, the instant results under a search field and the public API.
+
+**How a name matches.** The text is split into words and every word must be in the name. A hit carries how it
+matched, and the tiers rank in this order (`App\Support\SearchMatch`):
+
+| Tier | A name matches when | Example for "wolf" |
+|---|---|---|
+| `exact` | it is the text, ignoring case | Wolf |
+| `prefix` | it starts with the text | Wolfguard Worg |
+| `word` | one of its words starts with the text | Timber Wolf |
+| `contains` | the text is somewhere inside it | Direwolf |
+| `fuzzy` | it is a close spelling of the text | "razormne wolf" finds Razormane Wolf |
+
+A number finds the creature, item, quest or zone with that id as an `exact` hit. `fuzzy` runs only when
+nothing matched any other way, in any kind asked for, and the text has four characters or more, so a correct spelling
+costs what it cost before and never pulls in look-alikes. It uses the trigram indexes the search already has (`word_similarity` at 0.6, PostgreSQL's default:
+0.5 let "stats" find Starving Mountain Lion), with no new index. It finds a dropped, doubled or swapped letter inside a
+longer word; two letters swapped in a four-letter word share too few trigrams to be found. Close spellings list the
+closest first.
+
+**Order inside a tier** is by how much players did with the thing, most first, then the shorter name: kills for a
+creature, turn-ins for a quest, hours played for a zone, sources for an item, time played for a character. The
+numbers are the ones a result line shows, under the same character threshold, read from `search_scores` (kind, id,
+score), which a scheduled Action refills every hour from the rollups. A thing with no score ranks after those with
+one.
+
+**Site pages** are results too: the dashboards, each leaderboard, each ruleset, each class and spec of the talents
+pages, the map, the download and the API reference. They come from a registry in code
+(`App\Support\SitePages`), matched the same way on their title and a few keywords, and read no table.
+
+**Instant results.** The search field in the header and the one on `/search` are comboboxes
+(`resources/js/site/search.js`). From two characters they show a panel with the best hit of every kind first, grouped
+with the kind's glyph, the class colour of a character and the quality colour of an item, and a last row that opens
+the full results. `/` puts the cursor in the header field, the arrow keys move through the hits, Enter opens the
+marked one or the full results, Escape closes the panel. With no text the panel lists the last searches made on this
+device, kept in the browser only. The panel reads `GET /search/suggest?q=`, a page route (so it shares the pages'
+rate limit and edge cache) that answers the lines already formatted; the script formats nothing. Without the script
+the field is the plain form it was.
+
+**The search page.** The field sits in a page head over the contour art. Results open with the best hit as one large
+line with its numbers, then the groups; the matched part of each name is marked. When only close spellings matched,
+the page says so above them. With no text, and under a search that found nothing, the page shows what players search
+for by doing it: the most killed creatures, the zones with the most deaths, the most finished quests
+(`App\Actions\Public\SearchStart`, which calls the three rollup Actions that already rank them).
+
 ### Versions and release notes
 
 The package `medalink/laravel-app-version` (a `vcs` repository in `composer.json`, pinned to the newest tag that is at
