@@ -3,6 +3,7 @@
 //! desktop companion and by the server. See docs/DESIGN.md.
 
 pub mod build;
+pub mod camp;
 pub mod compare;
 pub mod decode;
 pub mod groups;

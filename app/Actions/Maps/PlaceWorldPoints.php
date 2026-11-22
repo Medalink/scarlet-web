@@ -17,9 +17,10 @@ class PlaceWorldPoints
 {
     private const int WINDOW = 7 * 86400;
 
-    /** The three tables, with the columns that hold their map, x and y; a sighting's cell is the middle of its cell. */
+    /** The placed tables, with the columns that hold their map, x and y; a sighting's cell is the middle of its cell. */
     private const array TABLES = [
         'path_points' => ['map', 't.x / 10000.0', 't.y / 10000.0'],
+        'camp_stays' => ['map', 't.x / 10000.0', 't.y / 10000.0'],
         'deaths' => ['map_id', 't.x / 10000.0', 't.y / 10000.0'],
         'creature_sightings' => ['map', '(t.cell_x + 0.5) * 0.015', '(t.cell_y + 0.5) * 0.015'],
     ];

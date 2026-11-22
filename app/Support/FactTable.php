@@ -28,9 +28,17 @@ enum FactTable: string
     case TalentSnapshots = 'talent_snapshots';
     case TalentRespecs = 'talent_respecs';
     case TalentGroupSpans = 'talent_group_spans';
+    case CampStays = 'camp_stays';
+    case CampBenefits = 'camp_benefits';
 
     /** `money_changes.src` of a balance carried over from the `S` line (core), against `M` money lines (economy). */
     public const string MONEY_LINE = 'M';
+
+    /** `camp_stays.ended` when the campfire aura went while the session ran. */
+    public const string CAMP_ENDED_AURA = 'w';
+
+    /** `camp_stays.ended` when the session ended with the character still near the fire. */
+    public const string CAMP_ENDED_SESSION = 's';
 
     /** The sharing group whose removal deletes these rows. */
     public function group(): string
@@ -38,7 +46,7 @@ enum FactTable: string
         return match ($this) {
             self::PlaySpans, self::LevelUps => SharingGroup::CORE,
             self::XpGains => SharingGroup::XP,
-            self::Kills, self::Deaths, self::DungeonRuns => SharingGroup::COMBAT,
+            self::Kills, self::Deaths, self::DungeonRuns, self::CampStays, self::CampBenefits => SharingGroup::COMBAT,
             self::QuestEvents => SharingGroup::QUESTS,
             self::MoneyChanges => SharingGroup::ECONOMY,
             self::LootOpens, self::LootDrops => SharingGroup::LOOT,
@@ -66,6 +74,11 @@ enum FactTable: string
     {
         return match ($this) {
             self::PlaySpans => [SharingGroup::XP => ['afk_ms']],
+            self::CampStays => [
+                SharingGroup::XP => ['afk_seconds'],
+                SharingGroup::PROFESSIONS => ['crafts'],
+                SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
+            ],
             default => [],
         };
     }

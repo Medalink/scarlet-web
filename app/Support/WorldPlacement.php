@@ -29,6 +29,7 @@ class WorldPlacement
     {
         return match ($table) {
             FactTable::PathPoints => $this->place($row['map'] ?? null, $row['x'] ?? null, $row['y'] ?? null, self::POSITION_SCALE),
+            FactTable::CampStays => $this->place($row['map'] ?? null, $row['x'] ?? null, $row['y'] ?? null, self::POSITION_SCALE),
             FactTable::Deaths => $this->place($row['map_id'] ?? null, $row['x'] ?? null, $row['y'] ?? null, self::POSITION_SCALE),
             FactTable::CreatureSightings => $this->sighting($row),
             default => null,
@@ -38,7 +39,7 @@ class WorldPlacement
     /** Whether the table has `u, v` columns. */
     public static function places(FactTable $table): bool
     {
-        return in_array($table, [FactTable::PathPoints, FactTable::Deaths, FactTable::CreatureSightings], strict: true);
+        return in_array($table, [FactTable::PathPoints, FactTable::CampStays, FactTable::Deaths, FactTable::CreatureSightings], strict: true);
     }
 
     /**

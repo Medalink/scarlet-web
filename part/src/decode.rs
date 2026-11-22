@@ -6,6 +6,7 @@
 //! ROWS.md.
 
 use crate::build::parse_header;
+use crate::camp::{Camp, Known};
 use crate::rows::Rows;
 use crate::tables::{Groups, NameRefs, leading_id};
 use crate::talents::{Ctx, Talents};
@@ -16,7 +17,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 2;
+pub const DECODER_VERSION: u32 = 3;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -136,6 +137,7 @@ struct Has {
     quests: bool,
     combat: bool,
     economy: bool,
+    professions: bool,
 }
 
 struct Dec<'o> {
@@ -203,9 +205,10 @@ struct Dec<'o> {
     items: BTreeMap<u64, ItemAcc>,
     pn: BTreeMap<String, String>,
     talents: Talents,
+    camp: Camp,
 }
 
-fn prefix(
+pub(crate) fn prefix(
     w: &mut Rows,
     table: &str,
     session: i64,
@@ -353,6 +356,7 @@ impl Dec<'_> {
             "L" => self.on_level(t, &f),
             "Z" => self.on_zone(t, &f),
             "AFK" => {
+                self.camp.on_afk(t, field(&f, 0) == "1");
                 if let Some(span) = self.span.as_mut() {
                     if field(&f, 0) == "1" {
                         span.afk_since.get_or_insert(t);
@@ -374,6 +378,7 @@ impl Dec<'_> {
             }
             "D" => {
                 self.deaths += 1;
+                self.camp.on_death(t);
                 let d = Death {
                     t,
                     level: self.lvl(),
@@ -492,7 +497,13 @@ impl Dec<'_> {
                     .bool("baseline", field(&f, 4) == "s");
                 self.w.end();
             }
+            "A" => {
+                let (level, zone_id) = (self.lvl(), self.zone_id);
+                self.camp.on_aura(t, &f, level, zone_id);
+            }
+            "C" => self.camp.on_cast(t, &f),
             "CR" => {
+                self.camp.on_craft(t);
                 self.fact("crafts", t);
                 self.w
                     .opt("item_id", num(&f, 0))
@@ -504,6 +515,7 @@ impl Dec<'_> {
                 self.w.end();
             }
             "P" => {
+                self.camp.on_pos(&f);
                 self.fact("path_points", t);
                 self.w
                     .opt("map", num(&f, 0))
@@ -890,6 +902,11 @@ impl Dec<'_> {
         }
         let s = self.session;
         self.talents.finish(s, &mut self.w);
+        let known = Known {
+            afk: self.has.xp,
+            crafts: self.has.professions,
+        };
+        std::mem::take(&mut self.camp).finish(s, self.end_ms, known, &mut self.w);
         for d in std::mem::take(&mut self.death_list) {
             prefix(&mut self.w, "deaths", s, d.t, d.level, d.zone_id);
             let (m, x, y) = d
@@ -1184,6 +1201,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
             quests: has_group("quests"),
             combat: has_group("combat"),
             economy: has_group("economy"),
+            professions: has_group("professions"),
         },
         session,
         hour_cuts: 0,
@@ -1241,6 +1259,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         items: BTreeMap::new(),
         pn: BTreeMap::new(),
         talents: Talents::default(),
+        camp: Camp::default(),
     };
     for l in &lines {
         d.line(l);

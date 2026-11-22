@@ -208,6 +208,47 @@ A stretch of movement ended: one row per `W` line. `mode` (string or null) is `f
 
 One row per emote use. `token` (string or null) is the emote the way the addon writes it (`LOL`, `WAVE`).
 
+### `camp_stays` (combat: `A`, `C`, `D`; xp: `AFK`; professions: `CR`; movement: `P`)
+
+One row per stay by a campfire: the span the character holds the aura Campfire Nearby (1283391), which the client
+gives only while a fire is in range. `at` is the start of the stay, and `level` and `zone_id` are those at that time.
+The spell ids and their kinds are one table in `part/src/camp.rs` (`App\Support\CampSpell` on the PHP side). An `A 0`
+for an aura that is not open is ignored, and so is an `A 1` for a stay, sit or tent aura that is already open. An `A 1`
+for a Camp Benefits aura or benefit buff that is already open is a new gain: it closes the held row at that time and
+opens the next. A stay still open at the session's end closes at the session's end. The `CP` camp-visit line is not read: it also counts the hour-long Camp Benefits buff, so
+it overstates the time at a camp (Medalink/scarlet#2).
+
+| Key | Type | |
+| --- | --- | --- |
+| `seconds` | int | length of the stay: the `seconds` of the `A 0` line, rounded; else the time to the session's end |
+| `carried` | bool | the aura was on at the session start (`A 1` initial `s`): the row continues a stay of the session before |
+| `ended` | string | `w` the aura went while the session ran, `s` the session ended near the fire |
+| `afk_seconds` | int or null | time between `AFK 1` and `AFK 0` inside the stay. Null without an `xp` part |
+| `sat_seconds` | int | time inside the stay that a sit timer aura (Welcoming Campfire, 1229739 or 1289723) was held |
+| `benefits` | bool | an `A 1` of Camp Benefits (1229741) fell inside the stay. A gain that was already on at the session start does not count. A sit that finishes while the buff is held logs no `A 1` in the recordings, so such a stay is false |
+| `tent_seconds` | int | time inside the stay that the tent rest aura (1229487) was held |
+| `campfire_spell_id` | int or null | the campfire the character placed (1307227 Basic, 1307252 Journeyman, 1307237 Expert): the last `C` of one from 60 s before the stay to its end, and not before the end of the stay before it, so one cast counts for one stay. Null when the fire was someone else's or already there |
+| `placed_tent`, `placed_chair` | bool | the same for the Camp Tent (1307230) and Camp Chair (1307229) casts |
+| `crafts` | int or null | `CR` lines inside the stay. Null without a `professions` part |
+| `died_after` | bool | a `D` from 2 s before the stay's end (the `D` line can come before the `A 0`) to 300 s after it. False for a stay the session ended |
+| `map`, `x`, `y` | int or null | the last `P` at or before the start of the stay, as `path_points` reads it. Null without a `movement` part or before a first `P` |
+
+The ingest adds `u` and `v` from `map` and `x`, `y` the way it does for `path_points`.
+
+### `camp_benefits` (combat: `A`, `D`)
+
+One row per Camp Benefits aura (1229741) or benefit buff held, whether or not a stay of the same session holds it: the
+nine buffs of the objects placed at a camp are 1229519 Camp Chair, 1230124 First Aid Kit, 1230172 Sharpening Wheel,
+1230164 Lodestone, 1230587 Mana Well, 1229513 Incense Candle, 1229718 Faction Banner, 1230098 Fish Bowl and 1230653
+Enchanted Lute. `at` is when it was gained.
+
+| Key | Type | |
+| --- | --- | --- |
+| `spell_id` | int | |
+| `seconds` | int | held: the `seconds` of the `A 0` line, rounded; else the time to the next gain of the same spell or to the session's end |
+| `carried` | bool | already on at the session start (`A 1` initial `s`) |
+| `lost_to_death` | bool | a `D` line within 2 s of the aura ending, before or after. False when the session ended it or a new gain replaced it |
+
 ### `creature_sightings` (world: `NS`)
 
 `npc_id`, `npc_level` (int or null; -1 when the client hides it), `classification` (string or null),
@@ -370,6 +411,8 @@ without an `xp` part; no `dungeon_runs` row and no `money_changes` row of `src` 
 or an `economy` part. A job that sums counters treats null as "not sent", never as 0.
 Removing a group from the server nulls the same counters (`SessionRows::GROUP_COUNTERS`, `distance` for `movement`
 included) and `play_spans.afk_ms` for `xp` (`FactTable::groupColumns`), so a removed group reads as one never sent.
+The same holds for `camp_stays`: `afk_seconds` is null without `xp`, `crafts` without `professions`, and `map`, `x`, `y`,
+`u`, `v` without `movement`.
 
 ## Counting rules
 

@@ -208,6 +208,8 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `movement_stretches` | `W` | movement | mode (`f` running, `w` walking, `m` mounted, `s` swimming, `a` flying), yards, seconds, jumps; `jumpAt` is not kept |
 | `creature_sightings` | `NS` | world | npc, level, classification, type, map, cell |
 | `emotes` | `EM` | social | token, one row per use |
+| `camp_stays` | `A`, `C`, `D`, `AFK`, `CR`, `P` | combat | one stay by a campfire (the aura Campfire Nearby): seconds, AFK, sat and tent seconds, whether Camp Benefits came, the campfire, tent and chair the character placed, crafts, a death within 300 s after, the map position. `CP` is not read: it counts the hour-long Camp Benefits buff too and overstates the time at camp (Medalink/scarlet#2) |
+| `camp_benefits` | `A`, `D` | combat | one Camp Benefits aura or benefit buff held: spell, seconds, whether it was already on at the session start, whether a death took it |
 | `talent_changes` | `TA` | build | a point picked, refunded or swapped: node, ranks, the ordinal of the point in the build, the respec it belongs to |
 | `talent_snapshots` | `TG`, `TA` | build | the build as ranks, tab points, build hash and loadout, one row per change of it |
 | `talent_respecs` | `TA`, `TQ` | build | refunds that came together: points moved, cost, hash before and after |
@@ -221,7 +223,8 @@ A name becomes the shown one for an id when most uploads agree on it.
 The talent tables are the build group's. Removing the group deletes their rows and clears `characters.spec_tab_id`,
 `talent_points` and `build_hash`, which copy the character's latest snapshot. `php artisan talents:backfill` queues a
 fresh decode of every session that has a build part; it fills the talent tables from parts uploaded before the decoder
-knew them, and is safe to run twice.
+knew them, and is safe to run twice. The camp tables need no command: they came with decoder version 3, so the
+scheduled re-decode fills them from the stored combat parts.
 
 How the tables are built (decisions the first implementation made):
 
