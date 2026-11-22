@@ -560,7 +560,6 @@ public gold-by-level means, while `money_daily_character` reads every row. `kill
 | `dungeons_daily_ruleset` | 1 day | instance | runs, seconds sketch, deaths |
 | `quests_daily_ruleset` | 1 day | quest | turn-ins, xp |
 | `money_daily_character`, `money_daily_ruleset` | 1 day | level | earned, spent |
-| `drops_daily`, `opens_daily` | 1 day | source, item, loot rule | drops, quantity, opens (drop rate is drops over first opens). Replaced by the two below; dropped once nothing reads them |
 | `loot_windows_daily` | 1 day | source, read, loot rule, group size, zone | windows (first reads of the source), item rows, characters |
 | `loot_items_daily` | 1 day | source, read, loot rule, group size, zone, item | windows that list the item, quantity, characters |
 | `kills_solo_daily` | 1 day | npc | solo kills: counted, own credit, group size 0 or 1, from 2026-11-20 21:00 UTC (docs/LOOT.md, Metrics); read by the creature page's solo figures |

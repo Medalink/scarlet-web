@@ -162,7 +162,7 @@ Rules the design follows:
 1. A drop table counts windows, and calls them corpses, because a window is the only place the whole table of a
    corpse is seen.
 2. One character never double counts a corpse. The addon remembers each GUID for 5 minutes and writes `again 1`
-   on a second read; those rows are excluded (`first_read is not false`, as `opens_daily` does).
+   on a second read; those rows are excluded (`first_read is not false`, in both loot aggregates).
 3. Across characters under rules with one looter per corpse (solo, group loot, round robin, need before greed,
    master looter), a corpse has one first read.
 4. Under free for all every member may open the corpse. Two uploaders in one group both run Scarlet, so each
@@ -197,8 +197,8 @@ solo kill    member kill where credit = 1 and group_size in (0, 1) and at >= 202
 ```
 
 A window also carries `read`. A drop table reads `read = 'loot'`, a skinning table `read = 'skin'`, and fishing,
-herbs and ore are `fish`, `herb`, `ore`. Before phase 2 every creature window was counted as loot and a source
-with leather or hide rows carried the tag `skins counted`; the tag is no longer set.
+herbs and ore are `fish`, `herb`, `ore`. Before phase 2 every creature window was counted as loot, skinning
+included.
 
 **A window with no `read`** is from a session not decoded at version 10 yet, or from one with no `combat` part: the
 casts that name a gathering window are `combat` lines, so such a session never gets a `read`. Such a window may be
@@ -297,7 +297,6 @@ tag of the estimate. The enum holds the tags of the phases built so far.
 | Tag | API value | Set when | From |
 | --- | --- | --- | --- |
 | `1 character` | `one_character` | every window of the row or arm is from one character | phase 1 |
-| `skins counted` | `skins_counted` | the source has leather or hide rows. Phase 2 reads skinning apart from looting, so a row is never mixed and the tag stops being set; the case goes with the old aggregates | phase 1 |
 | `quest item` | `quest_item` | the item binds as a quest item | phase 1 |
 | `one reader` | `one_reader` | a free-for-all arm that two or more characters contributed to | phase 4 |
 | `different characters` | `different_characters` | the two arms of a comparison share no character | phase 4 |
@@ -436,8 +435,8 @@ then an object is labelled by what it gives.
   `SourceRuleArms`, `LootRuleEffects`, `ObjectRecord`. `DropRates` and `ItemSources` stay until their callers
   move, then go (three ships).
 - **Two new aggregates beside the old two**: `loot_windows_daily` (source, `read`, rule, size, zone; windows, item
-  rows, characters) and `loot_items_daily` (the same keys and item; windows with the item, quantity).
-  `opens_daily` and `drops_daily` are dropped after the callers move.
+  rows, characters) and `loot_items_daily` (the same keys and item; windows with the item, quantity). The old
+  `opens_daily` and `drops_daily` are dropped.
 - **Enums own the strings**: `LootRead`, `RateFlag`, `LootRule` (the eight methods), so `scarlet.identityLiteral`
   holds.
 - **API**: `/public/loot/sources`, `/public/loot/items`, `/public/loot/groups`, `/public/objects/{id}`, and a

@@ -19,8 +19,6 @@ enum Rollup: string
     case QuestsDailyRuleset = 'quests_daily_ruleset';
     case MoneyDailyCharacter = 'money_daily_character';
     case MoneyDailyRuleset = 'money_daily_ruleset';
-    case DropsDaily = 'drops_daily';
-    case OpensDaily = 'opens_daily';
     case LootWindowsDaily = 'loot_windows_daily';
     case LootItemsDaily = 'loot_items_daily';
     case SkillsDailyRuleset = 'skills_daily_ruleset';
