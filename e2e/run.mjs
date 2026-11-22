@@ -74,7 +74,7 @@ const REGISTRY = [
   { lane: "browser", name: "the narrow pages fit at 390", run: browser.narrowPagesFit },
   { lane: "browser", name: "search suggests while typing", run: browser.searchSuggestsWhileTyping },
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
-  { lane: "owner", name: "the admin opens the four admin pages privately, and /admin/api counts the upload and a character asked for by name", run: admin.adminSeesTheApiCalls },
+  { lane: "owner", name: "the admin opens the admin pages privately, /admin/api counts the upload and a character asked for by name, and /admin/characters finds the characters", run: admin.adminSeesTheApiCalls },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },

@@ -1,7 +1,7 @@
-import { Jar, NAME, STRICT, Skip, expectStatus } from "../support.mjs";
+import { Jar, NAME, STRANGER, STRICT, Skip, expectStatus } from "../support.mjs";
 import { signIn } from "./pages.mjs";
 
-const PAGES = ["/admin", "/admin/api", "/admin/database", "/admin/ingest"];
+const PAGES = ["/admin", "/admin/characters", "/admin/api", "/admin/database", "/admin/ingest"];
 const ADMIN = "development:development-1";
 
 /** Every admin page answers a visitor like a path that does not exist: 404 and no cookie. */
@@ -15,8 +15,9 @@ export async function adminIsHiddenFromVisitors(ctx) {
 }
 
 /**
- * The development sign-in, listed in SCARLET_ADMINS by e2e/boot.mjs, opens the four pages privately, and /admin/api
- * counts the upload the lane made and a character it asked for by name.
+ * The development sign-in, listed in SCARLET_ADMINS by e2e/boot.mjs, opens the admin pages privately, and /admin/api
+ * counts the upload the lane made and a character it asked for by name, and /admin/characters finds the lane's
+ * characters, public or not, by part of the name.
  */
 export async function adminSeesTheApiCalls(ctx) {
   const jar = new Jar();
@@ -39,4 +40,11 @@ export async function adminSeesTheApiCalls(ctx) {
     if (uploads === 0) throw new Error("/admin/api: expected the upload requests of the lane to be counted, saw none");
     if (!answer.text.includes(`>${NAME}</a>`)) throw new Error(`/admin/api: expected it to list ${NAME} among the characters looked up`);
   }
+  for (const name of [NAME, STRANGER]) {
+    const part = name.slice(0, 5).toLowerCase();
+    const found = expectStatus(await ctx.http.request(`/admin/characters?q=${part}`, { jar, headers: { Accept: "text/html" } }), 200, `GET /admin/characters?q=${part}`);
+    if (!found.text.includes(name.replace("-", " "))) throw new Error(`/admin/characters?q=${part}: expected ${name} in the list`);
+  }
+  const none = expectStatus(await ctx.http.request("/admin/characters?q=zzzzzz", { jar, headers: { Accept: "text/html" } }), 200, "GET /admin/characters?q=zzzzzz");
+  if (!none.text.includes("No character matches")) throw new Error("/admin/characters?q=zzzzzz: expected the empty state");
 }

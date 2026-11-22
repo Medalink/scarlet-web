@@ -991,8 +991,15 @@ from the browser.
 
 ## Admin
 
-`/admin` is the operator's view of the whole site: totals and trends, who calls the API, the database and the ingest
-pipeline. Four pages: `/admin` (overview), `/admin/api`, `/admin/database` and `/admin/ingest`.
+`/admin` is the operator's view of the whole site: totals and trends, every character, who calls the API, the database
+and the ingest pipeline. Pages: `/admin` (overview), `/admin/characters`, `/admin/api`, `/admin/database` and
+`/admin/ingest`.
+
+**Characters.** `/admin/characters` lists every character, public and private, the most recently seen first, 50 to a
+page (`App\Actions\Admin\ListCharacters`). `?q=` matches part of the name (`name_key`, which the trigram index serves),
+or `#12` the characters of account 12; `?show=public` or `private` keeps one visibility. A row shows the level, race
+and class, realm, account, installs, decoded sessions, played time, first and last seen and a plausibility flag; a
+public character links to its page. The list is read on each request, not cached.
 
 **Who sees it.** An account opens it when one of its sign-ins is listed in `scarlet.admins`, which `SCARLET_ADMINS`
 sets as `provider:subject` pairs separated by commas (`google:1234`). Email cannot be the key: no email is stored
