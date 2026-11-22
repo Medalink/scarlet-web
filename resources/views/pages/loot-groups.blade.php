@@ -64,6 +64,16 @@
       <p class="note">{{ $d['composition']['note'] }}</p>
       @endif
     </x-module>
+    @if ($d['marks'])
+    <x-module span="w12" :first="true" :last="true" id="h-m" heading="Marked differences">
+      @if ($d['marks']['empty'])
+      <x-note>{{ $d['marks']['empty'] }}</x-note>
+      @else
+      <x-table :rows="$d['marks']['rows']" :columns="$d['marks']['columns']" style="margin-top:1.1rem" />
+      <p class="note">{{ $d['marks']['note'] }}</p>
+      @endif
+    </x-module>
+    @endif
   </x-sheet>
 </div>
 </x-layouts.app>

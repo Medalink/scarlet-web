@@ -13,6 +13,6 @@ class LootGroupsController extends Controller
 {
     public function __invoke(LootGroupsRequest $request, LootGroups $groups): View
     {
-        return view('pages.loot-groups', ['d' => LootGroupsPage::from($groups->handle($request->source(), $request->ruleA(), $request->ruleB()))]);
+        return view('pages.loot-groups', ['d' => LootGroupsPage::from($groups->handle($request->source(), $request->ruleA(), $request->ruleB(), $request->marks()))]);
     }
 }

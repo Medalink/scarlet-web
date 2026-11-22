@@ -2,9 +2,12 @@
 
 namespace App\View\Pages;
 
+use App\Support\ArmSplit;
+use App\Support\LootArm;
 use App\Support\LootRule;
 use App\Support\LootSourceKind;
 use App\Support\LootSourceRef;
+use App\Support\RateDifference;
 use App\Support\RateEstimate;
 use App\Support\RateSample;
 use App\View\Format;
@@ -34,6 +37,8 @@ final class LootGroupsPage
         $kills = $r['kills'];
         /** @var array{need: list<array{class: string, armor: int, need: int, greed: int, pass: int}>, skins: list<array{skinner: bool, looted: int, skinned: int}>, roles: list<array{tank: bool, healer: bool, kills: int, seconds: int}>} $composition */
         $composition = $r['composition'];
+        /** @var list<array{source: LootSourceRef, name: string|null, split: ArmSplit, rule: string|null, item_id: int, item: string|null, pair: list<LootArm>, cells: list<array{arm: LootArm, estimate: RateEstimate}>, difference: RateDifference}>|null $marks */
+        $marks = $r['marks'];
 
         return [
             'sub' => self::sub($figures),
@@ -52,6 +57,7 @@ final class LootGroupsPage
             'rolls' => GroupRolls::rolls($rolls, $source !== null),
             'kills' => GroupKillRates::bySize($kills, $source !== null),
             'composition' => GroupCompositionTables::from($composition, $source !== null),
+            'marks' => GroupMarks::from($marks),
         ];
     }
 
