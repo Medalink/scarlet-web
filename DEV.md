@@ -44,7 +44,9 @@ by a hash of its folder name; `bin/dev start -Port 8480` picks one). `/up` is th
 node e2e/run.mjs --url http://127.0.0.1:<port>      # E2E_URL works too; --only upload|api|pages|browser
 ```
 
-It runs on Windows with Node 24 and no packages, takes 9 to 13 seconds and exits 1 when a check fails. It refuses
+It runs on Windows with Node 24 and no packages, takes 9 to 13 seconds and exits 1 when a check fails. On Linux,
+`node e2e/boot.mjs` starts the app for one run on a database, Redis prefix and port of its own, runs the lane and
+drops all of it (7 to 9 seconds); `ship` runs that on medaware before a change lands. It refuses
 any host that is not 127.0.0.1, localhost or [::1], because it deletes what it uploads.
 
 - upload: registers an install, signs requests, uploads the two invented characters of `e2e/fixture` and waits for
@@ -62,7 +64,8 @@ The server needs Horizon running, `SCARLET_DEV_LOGIN=true` for the link check (s
 the default rate limits for repeated runs: `SCARLET_RATE_REGISTRATION_PER_IP=100` and
 `SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 2 registrations, about 22 public API requests, 38 page requests
 and 9 requests on the `throttle:60,1` routes, which no setting lifts. Rollup numbers are not checked, because they
-arrive seconds after the upload. A server without map art skips the map-art check.
+arrive seconds after the upload. A server without map art skips the map-art check. Each run leaves one linked install on the development account of
+a `bin/dev` server, since the API has no call that removes an install.
 
 ## What runs where
 
