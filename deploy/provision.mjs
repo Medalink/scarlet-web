@@ -6,15 +6,17 @@
 //   node deploy/provision.mjs db              the database droplet scarlet-db with its 50 GB volume and the firewall scarlet-web-db
 //   node deploy/provision.mjs web --env load  the rehearsal app droplet scarlet-load-app
 //   node deploy/provision.mjs db --env load   the rehearsal database droplet scarlet-load-db
-//   node deploy/provision.mjs destroy --env load   delete the rehearsal droplets, volume and firewall (only resources named scarlet-load-*)
+//   node deploy/provision.mjs gen --env load  the load generator droplet scarlet-load-gen (it alone may reach the rehearsal app on 80 and 443)
+//   node deploy/provision.mjs destroy --env load   delete the rehearsal droplets, volume, firewalls and tags (only resources named scarlet-load*)
 //   node deploy/provision.mjs retag           give the app droplet the tag scarlet-app, let 5432 in from that tag only and take
 //                                             scarlet-web off the database droplet
 //   add --plan to print what would be created
 //
 // SCARLET_SECRETS is the folder with do-token, ops_ed25519.pub and tailscale-authkey (default: E:/Dev/secrets/scarlet-web
 // on Windows, ~/.config/scarlet-web elsewhere). Nothing is printed from those files and nothing is written back.
-// It touches only resources named scarlet-web, scarlet-db or scarlet-load-*; the app droplet is tagged scarlet-web and scarlet-app,
-// the database droplet scarlet-db (never scarlet-web, so the public firewall does not apply to it). It never edits another
+// It touches only resources named scarlet-web, scarlet-db or scarlet-load*; the app droplet is tagged scarlet-web and scarlet-app,
+// the database droplet scarlet-db (never scarlet-web, so the public firewall does not apply to it). The rehearsal droplets carry
+// only scarlet-load* tags, so no production firewall or tag rule ever reaches them. It never edits another
 // droplet, firewall or key. The database droplet is reachable on tcp 5432 from the app droplet's tag only; there is no
 // inbound 22 anywhere: ssh goes over Tailscale, and a new node is signed here when Tailnet Lock is on.
 import { execFile } from 'node:child_process';
@@ -28,7 +30,7 @@ const run = promisify(execFile);
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 const option = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
-const verb = args.find((a) => ['web', 'db', 'destroy', 'retag'].includes(a)) ?? 'web';
+const verb = args.find((a) => ['web', 'db', 'gen', 'destroy', 'retag'].includes(a)) ?? 'web';
 const env = option('--env', 'prod');
 const plan = flag('--plan');
 if (!['prod', 'load'].includes(env)) throw new Error('--env is prod or load');
@@ -41,13 +43,17 @@ const prod = env === 'prod';
 const roles = {
   web: {
     name: prod ? 'scarlet-web' : 'scarlet-load-app', size: 's-2vcpu-4gb', template: 'cloud-init.yaml', backups: prod,
-    tags: prod ? [TAG, APP_TAG] : [TAG, 'scarlet-load', 'scarlet-load-app'], firewall: prod ? 'scarlet-web' : null,
+    tags: prod ? [TAG, APP_TAG] : ['scarlet-load', 'scarlet-load-app'], firewall: prod ? 'scarlet-web' : 'scarlet-load-app', firewallTag: prod ? TAG : 'scarlet-load-app',
   },
   db: {
     name: prod ? 'scarlet-db' : 'scarlet-load-db', size: 's-1vcpu-2gb', template: 'cloud-init-db.yaml', backups: false,
-    tags: prod ? ['scarlet-db'] : [TAG, 'scarlet-load', 'scarlet-load-db'], firewall: prod ? 'scarlet-web-db' : 'scarlet-load-db',
-    volume: { name: prod ? 'scarlet-db-data' : 'scarlet-load-db-data', gigabytes: prod ? 50 : 10 },
-    dbTag: prod ? 'scarlet-db' : 'scarlet-load-db', appTag: prod ? APP_TAG : 'scarlet-load-app',
+    tags: prod ? ['scarlet-db'] : ['scarlet-load', 'scarlet-load-db'], firewall: prod ? 'scarlet-web-db' : 'scarlet-load-db', firewallTag: prod ? 'scarlet-db' : 'scarlet-load-db',
+    volume: { name: prod ? 'scarlet-db-data' : 'scarlet-load-db-data', gigabytes: 50, tags: prod ? [TAG] : ['scarlet-load'] },
+    appTag: prod ? APP_TAG : 'scarlet-load-app',
+  },
+  gen: {
+    name: 'scarlet-load-gen', size: 's-4vcpu-8gb', template: 'cloud-init.yaml', backups: false,
+    tags: ['scarlet-load', 'scarlet-load-gen'], firewall: 'scarlet-load-gen', firewallTag: 'scarlet-load-gen',
   },
 };
 
@@ -73,7 +79,8 @@ async function destroy() {
   const droplets = (await api('GET', 'droplets?per_page=200')).droplets.filter((d) => d.name.startsWith('scarlet-load-'));
   const volumes = (await api('GET', 'volumes?per_page=200')).volumes.filter((v) => v.name.startsWith('scarlet-load-'));
   const firewalls = (await api('GET', 'firewalls?per_page=200')).firewalls.filter((f) => f.name.startsWith('scarlet-load-'));
-  console.log(`destroy: ${droplets.map((d) => d.name).join(', ') || 'no droplets'}; ${volumes.map((v) => v.name).join(', ') || 'no volumes'}; ${firewalls.map((f) => f.name).join(', ') || 'no firewalls'}`);
+  const tags = (await api('GET', 'tags?per_page=200')).tags.filter((t) => t.name.startsWith('scarlet-load'));
+  console.log(`destroy: ${droplets.map((d) => d.name).join(', ') || 'no droplets'}; ${volumes.map((v) => v.name).join(', ') || 'no volumes'}; ${firewalls.map((f) => f.name).join(', ') || 'no firewalls'}; ${tags.map((t) => t.name).join(', ') || 'no tags'}`);
   if (plan) return;
   for (const d of droplets) {
     await run('ssh', ['-i', join(secrets, 'ops_ed25519'), '-o', 'IdentitiesOnly=yes', '-o', 'ConnectTimeout=8', `ops@${d.name}`, 'sudo tailscale logout'], { timeout: 20000 }).catch(() => {});
@@ -82,6 +89,7 @@ async function destroy() {
   for (let i = 0; i < 40 && (await api('GET', 'droplets?per_page=200')).droplets.some((d) => d.name.startsWith('scarlet-load-')); i++) await sleep(3000);
   for (const v of volumes) await api('DELETE', `volumes/${v.id}`);
   for (const f of firewalls) await api('DELETE', `firewalls/${f.id}`);
+  for (const t of tags) await api('DELETE', `tags/${t.name}`);
   console.log('destroy: done');
 }
 
@@ -128,6 +136,11 @@ const outbound = [
 ];
 async function firewallRules() {
   if (verb === 'db') return { inbound_rules: [{ protocol: 'tcp', ports: '5432', sources: { tags: [role.appTag] } }], outbound_rules: outbound };
+  if (verb === 'gen') return { inbound_rules: [], outbound_rules: outbound };
+  if (!prod) {
+    const gen = { tags: ['scarlet-load-gen'] };
+    return { inbound_rules: [{ protocol: 'tcp', ports: '80', sources: gen }, { protocol: 'tcp', ports: '443', sources: gen }], outbound_rules: outbound };
+  }
   const cfSources = { addresses: [...(await cloudflare('v4')), ...(await cloudflare('v6'))] };
   return { inbound_rules: [{ protocol: 'tcp', ports: '80', sources: cfSources }, { protocol: 'tcp', ports: '443', sources: cfSources }], outbound_rules: outbound };
 }
@@ -140,7 +153,7 @@ if (existing) {
 
 if (plan) {
   const v = role.volume ? `, volume ${role.volume.name} ${role.volume.gigabytes} GB` : '';
-  console.log(`would create: droplet ${role.name} ${role.size} ${REGION}${v}, tags ${role.tags.join(' ')}, firewall ${role.firewall ?? '(the scarlet-web one by tag)'}`);
+  console.log(`would create: droplet ${role.name} ${role.size} ${REGION}${v}, tags ${role.tags.join(' ')}, firewall ${role.firewall}`);
   process.exit(0);
 }
 
@@ -162,8 +175,7 @@ for (const tag of role.tags) await api('POST', 'tags', { name: tag });
 if (role.firewall) {
   const firewalls = (await api('GET', 'firewalls?per_page=200')).firewalls;
   if (!firewalls.some((f) => f.name === role.firewall)) {
-    const tags = verb === 'db' ? [role.dbTag] : [TAG];
-    await api('POST', 'firewalls', { name: role.firewall, tags, ...(await firewallRules()) });
+    await api('POST', 'firewalls', { name: role.firewall, tags: [role.firewallTag], ...(await firewallRules()) });
   }
 }
 
@@ -171,12 +183,12 @@ let volume;
 if (role.volume) {
   const volumes = (await api('GET', 'volumes?per_page=200')).volumes;
   volume = volumes.find((v) => v.name === role.volume.name)
-    ?? (await api('POST', 'volumes', { name: role.volume.name, region: REGION, size_gigabytes: role.volume.gigabytes, filesystem_type: 'ext4', filesystem_label: 'scarlet-db-data', tags: [TAG] })).volume;
+    ?? (await api('POST', 'volumes', { name: role.volume.name, region: REGION, size_gigabytes: role.volume.gigabytes, filesystem_type: 'ext4', filesystem_label: 'scarlet-db-data', tags: role.volume.tags })).volume;
 }
 
 const { droplet } = await api('POST', 'droplets', {
   name: role.name, region: REGION, size: role.size, image: IMAGE,
-  ssh_keys: [key.id], backups: role.backups, monitoring: true, ipv6: verb === 'web', tags: role.tags, user_data: userData,
+  ssh_keys: [key.id], backups: role.backups, monitoring: true, ipv6: prod && verb === 'web', tags: role.tags, user_data: userData,
   ...(volume ? { volumes: [volume.id] } : {}),
 });
 console.log(`created droplet ${droplet.name} id ${droplet.id}; waiting for an address`);

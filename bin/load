@@ -1,0 +1,93 @@
+#!/bin/bash
+# The load environment: scarlet-load-app, scarlet-load-db (50 GB volume) and scarlet-load-gen in nyc3, built from this checkout and
+# destroyed after a run. Every command here pins bin/deploy to the scarlet-load-* hosts, so none of them can reach production.
+#
+#   bin/load up                provision the three droplets, install the stack (database host, self-signed certificate, lifted
+#                              rate limits) and deploy main
+#   bin/load deploy [ref]      bin/deploy for the load app (a sha or main)
+#   bin/load put <file> <app|db|gen> <path>   copy a file to a droplet
+#   bin/load sh <app|db|gen> [command]        a shell on a droplet
+#   bin/load sample <seconds>  run deploy/load-sample.sh on the app and database droplets, print both TSVs when it ends
+#   bin/load down              purge the load prefixes in R2, then delete the droplets, volume, firewalls and tags
+#   bin/load status            what DigitalOcean and the tailnet hold under the name scarlet-load
+#
+# Environment: SCARLET_SECRETS (default E:/Dev/secrets/scarlet-web on Windows, ~/.config/scarlet-web elsewhere). The pgBackRest
+# repository is pgbackrest-load in the bucket and the nightly dump goes under load/, so production's copies stay as they are.
+set -euo pipefail
+
+here=$(cd "$(dirname "$0")/.." && pwd)
+case "$(uname -s)" in
+  MINGW* | MSYS*) default_secrets=E:/Dev/secrets/scarlet-web ;;
+  *) default_secrets=$HOME/.config/scarlet-web ;;
+esac
+secrets=${SCARLET_SECRETS:-$default_secrets}
+export SCARLET_SECRETS=$secrets
+export DEPLOY_HOST=scarlet-load-app DEPLOY_DB_HOST=scarlet-load-db DEPLOY_PGBR_NAME=pgbackrest-load R2_PREFIX=load/
+
+for name in "$DEPLOY_HOST" "$DEPLOY_DB_HOST"; do
+  case $name in scarlet-load-*) ;; *) echo "load: $name is not a scarlet-load-* host" >&2; exit 1 ;; esac
+done
+
+ssh_opts=(-i "$secrets/ops_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30)
+host_of() {
+  case $1 in
+    app) echo scarlet-load-app ;;
+    db) echo scarlet-load-db ;;
+    gen) echo scarlet-load-gen ;;
+    *) echo "load: the droplet is app, db or gen" >&2; exit 2 ;;
+  esac
+}
+on() { local h; h=$(host_of "$1"); shift; ssh "${ssh_opts[@]}" "ops@$h" "$@"; }
+provision() { node "$here/deploy/provision.mjs" "$@" --env load; }
+private_address() { on "$1" 'curl -fsS http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address'; }
+
+lifted_limits='SCARLET_RATE_REGISTRATION_PER_IP=100000000
+SCARLET_RATE_UPLOAD_PER_INSTALL=100000000
+SCARLET_RATE_UPLOAD_PER_IP=100000000
+SCARLET_RATE_PUBLIC_ANONYMOUS=100000000
+SCARLET_RATE_PUBLIC_TOKEN=100000000'
+
+install_stack() {
+  local db_ip app_ip
+  "$here/bin/deploy" server
+  on app 'sudo systemctl disable --now scarlet-backup.timer >/dev/null 2>&1; true'
+  on app 'cd /srv/scarlet-web && openssl req -x509 -key tls/origin.key -subj /CN=scarlet-load-app -addext subjectAltName=DNS:scarlet-load-app -days 5 -out tls/origin.pem && chmod 644 tls/origin.pem'
+  printf '%s\n' "$lifted_limits" | on app 'cat >> /srv/scarlet-web/.env'
+  "$here/bin/deploy" db-server
+  on db '/srv/scarlet-db/deploy/db-host.sh up && /srv/scarlet-db/deploy/db-host.sh primary-ready'
+  db_ip=$(private_address db)
+  on app "cd /srv/scarlet-web && deploy/db-cutover.sh set-env $db_ip"
+  app_ip=$(private_address app)
+  on gen "grep -q scarlet-load-app /etc/hosts || echo '$app_ip scarlet-load-app' | sudo tee -a /etc/hosts >/dev/null"
+}
+
+case "${1:-help}" in
+  up)
+    provision web & provision db & provision gen &
+    wait
+    install_stack
+    "$here/bin/deploy" "${2:-main}"
+    ;;
+  deploy) shift; exec "$here/bin/deploy" "$@" ;;
+  put) scp "${ssh_opts[@]}" "${2:?file}" "ops@$(host_of "${3:?droplet}"):${4:?path}" ;;
+  sh) shift; target=${1:?droplet}; shift; on "$target" "$@" ;;
+  sample)
+    seconds=${2:-60}
+    for role in app db; do on "$role" "cd /srv/scarlet-$([ $role = app ] && echo web || echo db) && timeout $((seconds + 5)) deploy/load-sample.sh $role $seconds" > "${TMPDIR:-/tmp}/sample-$role.tsv" & done
+    wait
+    ;;
+  down)
+    on db 'sudo sh -c "set -a; . /etc/scarlet-web/r2.env; set +a; export RCLONE_CONFIG=/dev/null RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true; for p in pgbackrest-load load; do rclone purge R2:\$R2_BUCKET/\$p || true; done"' || echo "load: the R2 prefixes pgbackrest-load/ and load/ were not purged; remove them by hand" >&2
+    provision destroy
+    ;;
+  status)
+    node -e "
+      const t=require('fs').readFileSync(process.argv[1],'utf8').trim();
+      (async()=>{const h={authorization:'Bearer '+t};
+        for(const k of ['droplets','volumes','firewalls','tags']){const r=await (await fetch('https://api.digitalocean.com/v2/'+k+'?per_page=200',{headers:h})).json();
+          console.log(k+':',(r[k]||[]).map(x=>x.name).filter(n=>n.startsWith('scarlet-load')).join(', ')||'none');}})()" "$secrets/do-token"
+    tailscale status | grep scarlet-load || echo "tailnet: no scarlet-load node"
+    ;;
+  help | -h | --help) sed -n '2,15p' "$0" ;;
+  *) echo "load: unknown command $1" >&2; exit 2 ;;
+esac

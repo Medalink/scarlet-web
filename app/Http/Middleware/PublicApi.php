@@ -18,10 +18,6 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class PublicApi
 {
-    public const int ANONYMOUS_PER_MINUTE = 60;
-
-    public const int TOKEN_PER_MINUTE = 600;
-
     public const int MAX_AGE = 300;
 
     public function __construct(private readonly RateLimiter $limiter) {}
@@ -31,7 +27,7 @@ class PublicApi
         try {
             [$key, $max] = $this->budget($request);
         } catch (ApiException $refusal) {
-            return $this->headers($request, $refusal->render(), self::ANONYMOUS_PER_MINUTE, 0);
+            return $this->headers($request, $refusal->render(), (int) config('scarlet.rate.public.anonymous'), 0);
         }
 
         if ($this->limiter->tooManyAttempts($key, $max)) {
@@ -57,7 +53,7 @@ class PublicApi
     {
         $bearer = $request->bearerToken();
         if ($bearer === null) {
-            return ['api-public-ip:'.$request->ip(), self::ANONYMOUS_PER_MINUTE];
+            return ['api-public-ip:'.$request->ip(), (int) config('scarlet.rate.public.anonymous')];
         }
 
         $token = PersonalAccessToken::findToken($bearer);
@@ -65,7 +61,7 @@ class PublicApi
             throw ApiException::invalidToken();
         }
 
-        return ['api-public-token:'.$token->getKey(), self::TOKEN_PER_MINUTE];
+        return ['api-public-token:'.$token->getKey(), (int) config('scarlet.rate.public.token')];
     }
 
     private function headers(Request $request, Response $response, int $max, int $remaining): Response

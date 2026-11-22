@@ -39,8 +39,8 @@ final class DevelopersPage
                 ...array_map(fn (string $title, array $links): array => ['title' => $title, 'links' => $links], array_keys($groups), array_values($groups)),
             ],
             'endpoints' => $endpoints,
-            'anonymous' => PublicApi::ANONYMOUS_PER_MINUTE,
-            'token' => PublicApi::TOKEN_PER_MINUTE,
+            'anonymous' => (int) config('scarlet.rate.public.anonymous'),
+            'token' => (int) config('scarlet.rate.public.token'),
             'ability' => Account::API_ABILITY,
             'maxAge' => PublicApi::MAX_AGE,
         ];

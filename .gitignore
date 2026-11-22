@@ -27,3 +27,4 @@ Thumbs.db
 /storage/phpstan
 /storage/app/maps
 /tools/map-tiles/node_modules
+/tools/loadgen/target

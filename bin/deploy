@@ -245,6 +245,7 @@ step_r2() {
   {
     printf 'RCLONE_CONFIG_R2_TYPE=s3\nRCLONE_CONFIG_R2_PROVIDER=Cloudflare\n'
     printf 'R2_BUCKET=%s\n' "${R2_BUCKET:-scarlet-web-backups}"
+    [ -z "${R2_PREFIX:-}" ] || printf 'R2_PREFIX=%s\n' "$R2_PREFIX"
     printf 'RCLONE_CONFIG_R2_ACCESS_KEY_ID=%s\n' "$(tr -d '\r\n' < "$secrets/r2-access-key-id")"
     printf 'RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=%s\n' "$(tr -d '\r\n' < "$secrets/r2-secret-access-key")"
     printf 'RCLONE_CONFIG_R2_ENDPOINT=%s\n' "$(tr -d '\r\n' < "$secrets/r2-endpoint")"

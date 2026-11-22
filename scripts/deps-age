@@ -30,6 +30,7 @@ $packages = [
     ...pnpmPackages($root.'/pnpm-lock.yaml'),
     ...pnpmPackages($root.'/tools/map-tiles/pnpm-lock.yaml'),
     ...cargoPackages($root.'/part/Cargo.lock'),
+    ...cargoPackages($root.'/tools/loadgen/Cargo.lock'),
     ...dockerPackages($root.'/docker'),
 ];
 

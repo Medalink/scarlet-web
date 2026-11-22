@@ -32,8 +32,16 @@ return [
 
     // Laravel rate limiter budgets: `registration` per IP, `upload` per install and per IP.
     'rate' => [
-        'registration' => ['per_ip' => 5, 'seconds' => 3600],
-        'upload' => ['per_install' => 240, 'per_ip' => 600, 'seconds' => 60],
+        'registration' => ['per_ip' => (int) env('SCARLET_RATE_REGISTRATION_PER_IP', 5), 'seconds' => 3600],
+        'upload' => [
+            'per_install' => (int) env('SCARLET_RATE_UPLOAD_PER_INSTALL', 240),
+            'per_ip' => (int) env('SCARLET_RATE_UPLOAD_PER_IP', 600),
+            'seconds' => 60,
+        ],
+        'public' => [
+            'anonymous' => (int) env('SCARLET_RATE_PUBLIC_ANONYMOUS', 60),
+            'token' => (int) env('SCARLET_RATE_PUBLIC_TOKEN', 600),
+        ],
     ],
 
     // The newest desktop app build, read from the GitHub releases of Medalink/scarlet-app (App\Actions\Release\ShowAppDownload).

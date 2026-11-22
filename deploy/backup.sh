@@ -12,7 +12,7 @@
 # (RCLONE_CONFIG_R2_*) plus R2_BUCKET. Only the public age key, deploy/backup-age.pub, is on this machine: the private
 # key stays with the owner, so a copy of this server cannot read the backups.
 #
-# R2 layout: daily/scarlet-<stamp>.dump.age every night, the newest 14 kept; weekly/ gets a copy of the Sunday (UTC)
+# R2 layout (under R2_PREFIX when r2.env sets one, as the load environment does so it never touches production's copies): daily/scarlet-<stamp>.dump.age every night, the newest 14 kept; weekly/ gets a copy of the Sunday (UTC)
 # dump, the newest 8 kept. Any failure exits non-zero, which shows as a failed unit and in `bin/deploy backups`.
 set -euo pipefail
 
@@ -22,7 +22,7 @@ keep_daily=${BACKUP_KEEP_DAILY:-14}
 keep_weekly=${BACKUP_KEEP_WEEKLY:-8}
 stale_seconds=${BACKUP_STALE_SECONDS:-93600}
 bucket=${R2_BUCKET:-scarlet-web-backups}
-remote() { echo "R2:$bucket/$1"; }
+remote() { echo "R2:$bucket/${R2_PREFIX:-}$1"; }
 
 # rclone reads its settings from the environment; it never writes a config file or a cache outside /tmp.
 export RCLONE_CONFIG=${RCLONE_CONFIG:-/dev/null} RCLONE_CACHE_DIR=${RCLONE_CACHE_DIR:-/tmp/rclone-cache-scarlet} RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true
