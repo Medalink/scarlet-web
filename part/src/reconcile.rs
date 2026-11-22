@@ -8,11 +8,12 @@ mod rules;
 
 use rules::Event;
 use serde_json::{Map, Value, json};
+use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 /// The version of the rules below. The scheduled pass reconciles a character again when its claims carry an
 /// older one.
-pub const RECONCILE_VERSION: u32 = 4;
+pub const RECONCILE_VERSION: u32 = 5;
 
 const EPOCH_FLOOR: i64 = 1_566_777_600;
 const FUTURE_SLACK: i64 = 86_400;
@@ -255,7 +256,11 @@ fn twin(input: &Input, c: &Claim) -> Option<Decision> {
     let from = c.start() * 1000 - rules::ASSIGN_SLACK_MS;
     let until = c.to * 1000 + rules::ASSIGN_SLACK_MS;
     let own = (
-        !rules::holds_rows(input.rows.iter().map(|r| r.at), from, until),
+        Reverse(rules::rows_within(
+            input.rows.iter().map(|r| r.at),
+            from,
+            until,
+        )),
         input.character.id,
     );
     let (key, holder, same) = input
@@ -263,8 +268,8 @@ fn twin(input: &Input, c: &Claim) -> Option<Decision> {
         .iter()
         .filter_map(|o| {
             let same = o.claims.iter().find(|x| rules::same_record(c, x))?;
-            let rows = rules::holds_rows(o.rows.iter().copied(), from, until);
-            Some(((!rows, o.id), o, same))
+            let rows = rules::rows_within(o.rows.iter().copied(), from, until);
+            Some(((Reverse(rows), o.id), o, same))
         })
         .min_by_key(|(key, _, _)| *key)?;
     (key < own).then(|| {
@@ -506,7 +511,7 @@ fn dated_origin(
 
 /// Decide every claim of one character and kind: bounds, then the account's total as a reference, kinds,
 /// origins and metrics no rule maps, a lifetime of one character, the same record on another character that
-/// holds Scarlet rows beside it or has the lower id (rule 4), the same origin's overlapping claims (rule 5), then
+/// holds more Scarlet rows beside it, or as many and a lower id (rule 4), the same origin's overlapping claims (rule 5), then
 /// per origin from the highest rank the rows
 /// assigned to each claim (rules 1 and 3) and the claims of higher ranks (rule 5), and events (rule 2).
 /// Outcomes come back in the order of `input.character.claims`.

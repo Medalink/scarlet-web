@@ -92,8 +92,8 @@ pub(super) fn same_record(a: &Claim, b: &Claim) -> bool {
         && a.amounts == b.amounts
 }
 
-pub(super) fn holds_rows(mut rows: impl Iterator<Item = i64>, from: i64, until: i64) -> bool {
-    rows.any(|at| at >= from && at <= until)
+pub(super) fn rows_within(rows: impl Iterator<Item = i64>, from: i64, until: i64) -> usize {
+    rows.filter(|&at| at >= from && at <= until).count()
 }
 
 pub(super) fn covers(claimed_above: i64, claimed: i64) -> bool {

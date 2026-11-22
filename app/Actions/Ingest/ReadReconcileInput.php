@@ -12,8 +12,11 @@ class ReadReconcileInput
     /** How far past a claim's window Scarlet's rows are read, in seconds; rule 1 looks 24 hours around a window. */
     private const int REACH = 86_400;
 
-    /** How far past a claim's window another character's rows count for rule 4, in seconds. */
-    private const int TWIN_REACH = 60;
+    /**
+     * How far past a claim's window another character's rows are read for rule 4, in seconds: a second more than the
+     * minute the rule counts in, so that the part's own bounds in milliseconds are the only filter on either side.
+     */
+    private const int TWIN_REACH = 61;
 
     private const string SCOPE_CHARACTER = 'c';
 
@@ -80,8 +83,9 @@ class ReadReconcileInput
     }
 
     /**
-     * The times, in epoch milliseconds, of the character's fish `gathers` rows within a minute of the window of one
-     * of its dated claims of the kind: what rule 4 compares between the characters that hold one record.
+     * The times, in epoch milliseconds, of every one of the character's fish `gathers` rows within a minute and a
+     * second of the window of one of its dated claims of the kind, once each: what rule 4 counts between the
+     * characters that hold one record, the same way it counts the rows of the character itself.
      *
      * @return list<int>
      */
@@ -89,14 +93,17 @@ class ReadReconcileInput
     {
         $rows = DB::select(
             <<<'SQL'
-            select distinct round(extract(epoch from g.at) * 1000)::bigint as at_ms
-            from addon_claims c
-            join gathers g on g.character_id = c.character_id and g.kind = ?
-                and g.at between to_timestamp(coalesce(c.from_at, c.to_at) - ?::bigint) and to_timestamp(c.to_at + ?::bigint)
-            where c.character_id = ? and c.kind = ? and c.scope = ? and c.window <> 'life'
+            select round(extract(epoch from g.at) * 1000)::bigint as at_ms
+            from gathers g
+            where g.character_id = ? and g.kind = ?
+                and exists (
+                    select 1 from addon_claims c
+                    where c.character_id = g.character_id and c.kind = ? and c.scope = ? and c.window <> 'life'
+                        and g.at between to_timestamp(coalesce(c.from_at, c.to_at) - ?::bigint) and to_timestamp(c.to_at + ?::bigint)
+                )
             order by at_ms
             SQL,
-            [GatherKind::Fish->value, self::TWIN_REACH, self::TWIN_REACH, $characterId, $kind->value, self::SCOPE_CHARACTER],
+            [$characterId, GatherKind::Fish->value, $kind->value, self::SCOPE_CHARACTER, self::TWIN_REACH, self::TWIN_REACH],
         );
 
         return array_values(array_map(fn (stdClass $row): int => (int) $row->at_ms, $rows));

@@ -10,7 +10,7 @@
  * stop of the claim before it, and one that was not looted (rule 3, seams), a session uploaded in two halves, a claim a catch started whose
  * neighbour's rows were not looted, a claim an `ff` count covers in part and one that only ends inside it (rule 5), a claim whose casts were all
  * cancelled inside a Scarlet session, two characters that hold one record (rule 4) with the lower id uploaded first,
- * with the rows on the higher id, and linked by an account afterwards. Each case names the totals the history has.
+ * with the rows on the higher id, with some rows on the lower and more on the higher, and linked by an account afterwards. Each case names the totals the history has.
  * A lane that waits only for the server to stop changing would read the last case's state, so it waits until no
  * addon day of the character has a null reconcile version (docs/DESIGN.md, Reconcile) and its row and claim counts
  * are the ones the case uploaded, and compares hashes only after that.
@@ -93,7 +93,7 @@ function part(session, group, rows, extra, name = NAME) {
   return { id, session, group, text, lines: rows.length, raw_bytes: Buffer.byteLength(text), ...extra };
 }
 
-function partsOf(session, lines, extra) {
+function partsOf(session, lines, extra, name = NAME) {
   const byGroup = new Map();
   for (const [at, code, ...fields] of lines) {
     const group = GROUP_OF[code];
@@ -107,7 +107,7 @@ function partsOf(session, lines, extra) {
       before = at;
       return row;
     });
-    return part(session, group, rows, extra);
+    return part(session, group, rows, extra, name);
   });
 }
 
@@ -118,7 +118,7 @@ const header = () => [
   [160, "K", STONETUSK_BOAR],
 ];
 
-function sessionOf(casts, { tag, loot = true } = {}) {
+function sessionOf(casts, { tag, loot = true, name = NAME } = {}) {
   const first = Math.min(...casts.map((cast) => cast.at));
   const start = Math.floor(first - 0.3);
   const ms = (t) => Math.round((t - start) * 1000);
@@ -134,7 +134,7 @@ function sessionOf(casts, { tag, loot = true } = {}) {
     }
   }
   lines.push([end + 50, "ES"]);
-  return { start, end: start + (end + 50) / 1000, parts: partsOf(start, lines, tag === undefined ? {} : { trip: tag }) };
+  return { start, end: start + (end + 50) / 1000, parts: partsOf(start, lines, tag === undefined ? {} : { trip: tag }, name) };
 }
 
 function scarletParts(trip) {
@@ -469,6 +469,22 @@ async function twinFirst() {
   check("addons:audit passes for both characters", audited.status === 0, audited.stdout + audited.stderr);
 }
 
+async function twinWithMoreRows() {
+  const record = "casts=10;landed=10;items=10;unknown=0";
+  const copy = sessionOf([looted(10), looted(40)], { name: TWIN });
+  const original = sessionOf(Array.from({ length: 10 }, (_, i) => looted(10 + 28 * i)));
+  const counts = (name) => countsPartsOf([claimIn(0, 300, record)], name);
+  await fresh(client);
+  await upload(known([...copy.parts, ...counts(TWIN)]), TWIN);
+  await upload(known([...original.parts, ...counts(NAME)]));
+  const [mine, twin] = await settle([NAME, TWIN], (n, t) => n.gathers === 10 && n.claims === 1 && t.gathers === 2 && t.claims === 1, "two characters that hold one record and some rows");
+  const [loser] = claimsOf(TWIN);
+  check("a copy with 2 rows of its own in the window, uploaded first, and the original with 10: the record counts once, 10/10/10 on the original and 2/2/2 on the copy", sum(mine.total) === "10/10/10" && sum(twin.total) === "2/2/2", `${sum(mine.total)} and ${sum(twin.total)}`);
+  check("the copy's claim is superseded by rule 4 and names the original, which holds more rows", loser.status === "superseded" && loser.rule === "4" && loser.with_character === NAME, JSON.stringify(loser));
+  const audited = artisan("addons:audit");
+  check("addons:audit passes for both characters", audited.status === 0, audited.stdout + audited.stderr);
+}
+
 async function linked() {
   await fresh(client, second);
   await upload(ALL);
@@ -595,6 +611,7 @@ async function main() {
   await straddled();
   await cancelled();
   await twinFirst();
+  await twinWithMoreRows();
   await linked();
 
   await fresh(client, second);

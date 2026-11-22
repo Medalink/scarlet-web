@@ -394,11 +394,14 @@ Rules, in order:
    Another kind maps its own anchor metric here in the same way before it ships.
 4. **Between characters.** A character-scope claim that equals a claim of another character of the same account in
    origin, kind, window, `from`, `to`, dims and amounts (the store is ignored, events are included) is one record read
-   from two folders (a restored backup, a copied folder). It counts on the character that has Scarlet rows of the kind
-   within 60 s of the claim's window, and on the lowest id when none or more than one has (among those that have rows;
-   among all when none does). It is `superseded` on the others, with that claim and its character as evidence. The
-   lowest id alone would count a copied folder's history twice whenever the copy was uploaded first: its claim counts
-   on the copy and the original's rows count beside it. Characters are of one account when they share a game account,
+   from two folders (a restored backup, a copied folder). It counts on the character that holds the most Scarlet rows of
+   the kind within 60 s of the claim's window, and on the lowest id among those that hold as many (among all when
+   none holds any). Every character counts its own rows and the others' the same way, once each. It is `superseded` on
+   the others, with that claim and its character as evidence. The lowest id alone would count a copied folder's history
+   twice whenever the copy was uploaded first: its claim counts on the copy and the original's rows count beside it.
+   The lowest id among those that hold rows would do the same beside a character that holds more of them: with 2 rows
+   of its own in the window on the copy and 50 on the original, the copy counted 48 casts beside the original's 50
+   rows. Characters are of one account when they share a game account,
    or an install that uploaded both, and so on transitively among the characters that hold claims. A decode or
    removal that adds or removes such a claim or the rows beside it reconciles the other characters too, locked lowest
    id first.
