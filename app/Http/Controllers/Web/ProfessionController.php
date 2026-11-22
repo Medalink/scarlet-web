@@ -44,7 +44,7 @@ class ProfessionController extends Controller
         /** @var list<array{id: int, slug: string, label: string, kind: string|null}> $rulesets */
         $rulesets = $answer['rulesets'];
         $rect = is_array($answer['heat'] ?? null) ? MapRect::query()->find((int) $answer['heat']['map']) : null;
-        $page = $kind === null ? CraftingPage::data($profession, $answer) : GatheringPage::data($kind, $scene, $answer, $rect);
+        $page = $kind === null ? CraftingPage::data($profession, $answer) : GatheringPage::data($kind, $answer, $rect);
         $map = $page['dots'] === null ? null : MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $mapZones->handle($scope->ids), dots: $page['dots']);
         $path = '/professions/'.$slug;
         $query = array_filter(['ruleset' => $scope->ruleset?->slug(), 'server' => $scope->server === Server::All ? null : $scope->server->value]);

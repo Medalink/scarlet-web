@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Writes one scene's game art from an installed WoW Forever client: its models as one JSON file, their
-// textures and the page's icons as PNG. Reads the client through a local file server (README.md). The output is
-// Blizzard's art: it goes on the maps disk, never into git.
+// textures and the camp page's icons as PNG (item icons are items.mjs). Reads the client through a local file
+// server (README.md). The output is Blizzard's art: it goes on the maps disk, never into git.
 // Usage: node tools/scene-art/build.mjs <scene> <out dir> [server]
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -10,7 +10,7 @@ import { readModel } from './m2.mjs';
 const SCENES = {
     fishing: {
         models: { bobber: 201000, school: 219405, box: 189092, pole: 189093, rack: 189091 },
-        icons: { 4603: 133887, 13755: 133899, 13422: 133897, 6362: 133890, 6359: 134299, 7973: 134433, 13754: 134301, 21153: 133907, 6351: 132765 },
+        icons: {},
     },
     herbalism: {
         models: { peacebloom: 219481, silverleaf: 219487, mageroyal: 219470, briarthorn: 219502, bruiseweed: 219440, kingsblood: 219443, fadeleaf: 219449, khadgar: 219468, goldthorn: 219462, lotus: 219483 },

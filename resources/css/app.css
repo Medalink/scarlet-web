@@ -511,6 +511,7 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .benefits td:nth-child(2) { white-space: normal; min-width: 11rem; }
 .buff img, .buff-none { width: 1.6rem; height: 1.6rem; border-radius: 3px; border: 1px solid var(--line2); flex: none; }
 .buff-none { display: inline-block; }
+.rank .who img, .rank .who .buff-none { width: 1.6rem; height: 1.6rem; margin-right: 0.6rem; vertical-align: middle; border-radius: 3px; border: 1px solid var(--line2); }
 .pair { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 1.2rem; border-top: 1px solid var(--line2); }
 .pair > div { padding: 0.9rem 1rem 0.2rem 0; }
 .pair > div + div { padding-left: 1rem; border-left: 1px solid var(--line); }

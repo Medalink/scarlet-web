@@ -624,6 +624,14 @@ rides in the same folder too, one folder per scene. PHP serves it at `/scene-art
 scene shows only while `<scene>/<scene>.json` exists there. A new build is live within five minutes, as with the camp. The command
 copies it with a folder that also holds one of the three above, such as `storage/app/maps`.
 
+The item icons (`items/`, from `node tools/scene-art/items.mjs <Item table as CSV> storage/app/maps/items`: `items.json` and
+`icons/<file id>.png`, about 14 MiB) travel in the same folder, so the same command carries them. The item tables show
+an icon only while `items/items.json` exists there; a new build is live within five minutes.
+
+nginx serves `/item-icons/<file id>.png` and a scene's `/scene-art/<scene>/tex/` and `icons/` files from that folder
+as it does the tiles, with no PHP and no cookie. PHP answers the same addresses in development, and on the droplet
+until `bin/deploy` has carried `deploy/nginx/nginx.conf` there. A scene's `models.json` stays with PHP.
+
 ## Edge cache
 
 Cloudflare caches three kinds of answer, each only for a visitor with no credentials. A request with an `Authorization`
@@ -632,7 +640,7 @@ and the origin use the same test.
 
 | What | Origin sends | Edge result |
 | --- | --- | --- |
-| `/map-tiles/` | nginx from disk, `public, immutable`, no cookie | cached for a year |
+| `/map-tiles/`, `/item-icons/`, a scene's `tex/` and `icons/` | nginx from disk, `public, immutable`, no cookie | cached for a year |
 | `/api/v1/public/*` | `App\Http\Middleware\PublicApi`: `public, max-age=300, s-maxage=300`, 30 for the answers that name characters (`private` with an `Authorization` header) | cached 5 minutes, or 30 seconds |
 | The public pages (`routes/pages.php`, `/`, `/demo`) | `App\Http\Middleware\EdgeCacheable`: no session, no cookie, `s-maxage=60` | cached 1 minute |
 

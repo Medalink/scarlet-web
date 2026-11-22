@@ -3,6 +3,7 @@
 namespace App\View\Pages;
 
 use App\Support\Board;
+use App\Support\ItemIcons;
 use App\Support\Profession;
 use App\View\Format;
 
@@ -131,7 +132,7 @@ final class CraftingPage
     /**
      * @param  list<array<string, mixed>>  $recipes
      * @param  array<string, int|float|null>  $t
-     * @return array{rows: list<array<string, mixed>>, note: string|null}|null
+     * @return array{rows: list<array<string, mixed>>, icons: bool, note: string|null}|null
      */
     private static function recipes(array $recipes, array $t): ?array
     {
@@ -140,13 +141,16 @@ final class CraftingPage
         }
         $top = max([1, ...array_column($recipes, 'crafts')]);
         $different = (int) $t['recipes'];
+        $icons = ItemIcons::icons(array_map(fn (array $recipe): int => (int) $recipe['item_id'], array_filter($recipes, fn (array $recipe): bool => $recipe['item_id'] !== null)));
 
         return [
+            'icons' => array_filter($icons) !== [],
             'rows' => array_map(fn (array $recipe): array => [
                 'label' => (string) ($recipe['name'] ?? 'Recipe '.$recipe['recipe_id']),
                 'href' => '/spells/'.$recipe['recipe_id'],
                 'makes' => $recipe['item_id'] === null ? null : (string) ($recipe['item'] ?? 'Item '.$recipe['item_id']),
                 'makesHref' => $recipe['item_id'] === null ? null : '/items/'.$recipe['item_id'],
+                'makesIcon' => $recipe['item_id'] === null ? null : $icons[(int) $recipe['item_id']],
                 'crafts' => Format::number((int) $recipe['crafts']),
                 'bar' => round((int) $recipe['crafts'] / $top * self::BAR_REM, 2).'rem',
                 'made' => Format::number((int) $recipe['made']),
@@ -209,8 +213,10 @@ final class CraftingPage
             return null;
         }
         $top = max([1, ...array_column($rows, 'quantity')]);
+        $icons = ItemIcons::icons(array_map(fn (array $row): int => (int) $row['item_id'], $rows));
 
         return array_map(fn (array $row, int $i): array => [
+            'icon' => $icons[(int) $row['item_id']],
             'label' => (string) ($row['name'] ?? 'Item '.$row['item_id']),
             'value' => $i === 0 ? Format::number((int) $row['quantity']).' used' : Format::number((int) $row['quantity']),
             'share' => (int) $row['quantity'] / $top * 100,

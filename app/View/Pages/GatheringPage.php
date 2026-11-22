@@ -5,8 +5,7 @@ namespace App\View\Pages;
 use App\Models\MapRect;
 use App\Support\Board;
 use App\Support\GatherKind;
-use App\Support\Scene;
-use App\Support\SceneArt;
+use App\Support\ItemIcons;
 use App\View\Format;
 
 /** The data of docs/comps/fishing.html from the answer of App\Actions\Public\GatheringDashboard, in the shape of ProfessionPage. */
@@ -29,7 +28,7 @@ final class GatheringPage
      * @param  array<string, mixed>  $r  the answer of GatheringDashboard
      * @return array<string, mixed>
      */
-    public static function data(GatherKind $kind, Scene $scene, array $r, ?MapRect $rect): array
+    public static function data(GatherKind $kind, array $r, ?MapRect $rect): array
     {
         $w = GatheringWords::of($kind);
         $t = StatsPage::totals($r['totals']);
@@ -38,7 +37,7 @@ final class GatheringPage
         $heat = is_array($r['heat'] ?? null) ? $r['heat'] : null;
         $levels = ProfessionCharts::byLevel(StatsPage::rows($r['by_level']));
         $arranged = ProfessionPage::arrange(self::ROWS, $few ? [] : [
-            'items' => self::items($scene, StatsPage::rows($r['items']), $t, $w),
+            'items' => self::items(StatsPage::rows($r['items']), $t, $w),
             'ends' => self::ends($kind, $t, StatsPage::rows($r['lures']), (int) ($r['lured'] ?? 0), $w),
             'waits' => GatheringCharts::waits(StatsPage::rows($r['waits']), $w),
             'points' => ProfessionCharts::perPoint(StatsPage::rows($r['per_point']), 'looted', $w['results']),
@@ -136,19 +135,19 @@ final class GatheringPage
      * @param  array<string, string>  $w
      * @return array{rows: list<array<string, mixed>>, icons: bool, note: string}|null
      */
-    private static function items(Scene $scene, array $items, array $t, array $w): ?array
+    private static function items(array $items, array $t, array $w): ?array
     {
         $looted = (int) $t['looted'];
         if ($items === [] || $looted === 0) {
             return null;
         }
         $top = max(array_map(fn (array $item): float => min(1.0, (int) $item['gathers'] / $looted), $items));
-        $icons = array_map(fn (array $item): ?string => SceneArt::icon($scene, (int) $item['item_id']), $items);
+        $icons = ItemIcons::icons(array_map(fn (array $item): int => (int) $item['item_id'], $items));
 
         return [
             'icons' => array_filter($icons) !== [],
-            'rows' => array_map(fn (array $item, ?string $icon): array => [
-                'icon' => $icon,
+            'rows' => array_map(fn (array $item): array => [
+                'icon' => $icons[(int) $item['item_id']],
                 'label' => (string) ($item['name'] ?? 'Item '.$item['item_id']),
                 'href' => '/items/'.$item['item_id'],
                 'share' => CampsPage::share(min((int) $item['gathers'], $looted), $looted) ?? '–',
@@ -156,7 +155,7 @@ final class GatheringPage
                 'skill' => $item['median_skill'] === null ? '–' : Format::number((float) $item['median_skill']),
                 'zone' => is_array($item['zone']) ? (string) ($item['zone']['name'] ?? 'Zone '.$item['zone']['zone_id']) : null,
                 'zoneHref' => is_array($item['zone']) ? '/zones/'.$item['zone']['zone_id'] : null,
-            ], $items, $icons),
+            ], $items),
             'note' => Format::count((int) $t['items'], 'different item').' came up from '.$w['attempts'].'.',
         ];
     }
@@ -221,8 +220,10 @@ final class GatheringPage
             return null;
         }
         $top = max([1, ...array_column($rows, 'opens')]);
+        $icons = ItemIcons::icons(array_map(fn (array $row): int => (int) $row['item_id'], $rows));
 
         return array_map(fn (array $row, int $i): array => [
+            'icon' => $icons[(int) $row['item_id']],
             'label' => (string) ($row['name'] ?? 'Item '.$row['item_id']),
             'value' => $i === 0 ? 'found '.Format::count((int) $row['opens'], 'time') : Format::number((int) $row['opens']),
             'share' => (int) $row['opens'] / $top * 100,
@@ -239,8 +240,10 @@ final class GatheringPage
         if ($rows === [] || $casts === 0) {
             return null;
         }
+        $icons = ItemIcons::icons(array_map(fn (array $row): int => (int) $row['item_id'], $rows));
 
         return array_map(fn (array $row, int $i): array => [
+            'icon' => $icons[(int) $row['item_id']],
             'label' => (string) ($row['name'] ?? 'Item '.$row['item_id']),
             'value' => (CampsPage::share(min((int) $row['casts'], $casts), $casts) ?? '–').($i === 0 ? ' of casts' : ''),
             'share' => min(100, (int) $row['casts'] / $casts * 100),
