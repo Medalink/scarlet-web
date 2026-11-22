@@ -84,7 +84,7 @@ class TimeCounts
         return intdiv((int) abs(Carbon::parse((string) $last)->diffInSeconds(Carbon::parse((string) $first))), self::DAY_SECONDS);
     }
 
-    /** The level the character died at first, or its level when it never died; null when the first death has no level (the rule of the page's Feats). */
+    /** The level the character died at first, or its level when it never died; null when the first death has no level. */
     private function unbroken(int $characterId, ?int $level): ?int
     {
         $death = DB::table('deaths')->where('character_id', $characterId)->orderBy('at')->first(['level']);
