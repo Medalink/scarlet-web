@@ -38,6 +38,8 @@ final class ClassRows
 
     private ?Meters $meters = null;
 
+    private ?MeterSpellLevels $meterLevels = null;
+
     /** @var array<int, int>|null */
     private ?array $played = null;
 
@@ -132,6 +134,17 @@ final class ClassRows
         }
 
         return $this->holds[$table->value] ?? false;
+    }
+
+    public function meterSpellLevels(): MeterSpellLevels
+    {
+        if ($this->meterLevels === null) {
+            $rows = self::fetch($this->counted('meter_spells')->groupBy('meter', 'spell_id', 'level')
+                ->selectRaw('meter, spell_id, level, least(coalesce(sum(amount), 0), ?) as amount', [self::CAP]));
+            $this->meterLevels = new MeterSpellLevels($rows, $this->names->handle(NameKind::Spell, self::ids($rows, 'spell_id')));
+        }
+
+        return $this->meterLevels;
     }
 
     /**
