@@ -889,7 +889,7 @@ page's title, description and that image. The landing page also carries a `WebSi
 Search results, the sign-in page, the account pages, the link page and a private character seen by its owner carry
 `<meta name="robots" content="noindex">` and no canonical link. Every other page names itself as canonical: the
 canonical is the page's path with the query string dropped, so filter variants (`?server=`, `?class=`, `?cursor=`,
-`?rule=`, `?level=`, `?layer=`, `?sessions=`) point at the unfiltered page. `/stats?ruleset=x` names `/rulesets/x`,
+`?rule=`, `?level=`, `?layer=`, `?sessions=`, `?view=`, `?zone=`, `?min=`, `?max=`, `?quality=`, `?sort=`) point at the unfiltered page. `/stats?ruleset=x` names `/rulesets/x`,
 and a character page names the character's stored spelling (`/c/Name-Surname`).
 
 `/sitemap.xml` is a sitemap index. It lists `/sitemaps/pages.xml`, which holds the fixed pages and a ruleset, board

@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\DevelopersController;
 use App\Http\Controllers\Web\DownloadController;
 use App\Http\Controllers\Web\HardcoreDeathsController;
 use App\Http\Controllers\Web\LeaderboardController;
+use App\Http\Controllers\Web\LootController;
 use App\Http\Controllers\Web\MapController;
 use App\Http\Controllers\Web\ProfessionController;
 use App\Http\Controllers\Web\RecordController;
@@ -24,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 // The public pages: dashboards, the map, boards, search, result pages and characters. Every one reads App\Actions\Public.
 Route::get('/stats', StatsController::class);
 Route::get('/map', MapController::class);
+Route::get('/loot', LootController::class);
 Route::get('/camps', CampsController::class);
 Route::get('/professions/{slug}', ProfessionController::class)->where('slug', '[a-z-]+');
 Route::get('/search', SearchController::class);

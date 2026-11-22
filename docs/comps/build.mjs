@@ -650,7 +650,7 @@ page("loot.html", "Scarlet loot: what creatures and objects give and how often",
     <section class="mod w12 first last" aria-labelledby="h-s">
       <div class="mod-head"><h2 id="h-s">Sources</h2>
         <div class="seg" role="group" aria-label="Show"><a href="#" aria-current="true">Creatures</a><a href="#">Objects</a><a href="#">Containers</a><a href="#">Items</a></div></div>
-      <form class="find" role="search" action="loot.html">
+      <form class="refine" role="search" action="loot.html">
         <label class="vh" for="f-q">Search</label><input id="f-q" name="q" type="search" placeholder="Creature, object or item">
         <select class="pick" name="zone" aria-label="Zone"><option value="">Every zone</option><option>Saltmarsh Reach</option><option>Hollowmere</option><option>The Cinder Flats</option></select>
         <input name="min" type="number" min="1" max="70" placeholder="Level from" aria-label="Level from"><input name="max" type="number" min="1" max="70" placeholder="to" aria-label="Level to">

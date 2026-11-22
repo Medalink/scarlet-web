@@ -12,6 +12,28 @@ enum LootSourceKind: string
     case Bag = 'i';
     case Other = 'o';
 
+    /** The page of a source of this kind: a creature, an object, or the item a container is. */
+    public function page(int $id): ?string
+    {
+        return match ($this) {
+            self::Creature => '/creatures/'.$id,
+            self::Object => '/objects/'.$id,
+            self::Bag => '/items/'.$id,
+            self::Other => null,
+        };
+    }
+
+    /** What a source is called: its dictionary name, else its kind and id (`Object 649094`). */
+    public function title(?string $name, int $id): string
+    {
+        return $name ?? match ($this) {
+            self::Creature => 'Creature '.$id,
+            self::Object => 'Object '.$id,
+            self::Bag => 'Item '.$id,
+            self::Other => 'Source '.$id,
+        };
+    }
+
     /**
      * Adds `source`, the dictionary name of the row's creature, object or container, to a query over a loot aggregate
      * aliased `d`: null when the dictionary has no name for it.
