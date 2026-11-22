@@ -33,13 +33,15 @@ final class TalentTree
         foreach ($layout['nodes'] as $id => $node) {
             $points[$id] = [$node['x'] / 10, -$node['y'] / 10];
         }
+        $spacing = self::spacing($points);
+        $strays = array_flip(self::strays($points, $marks, $spacing * self::STRAY));
+        if (count($strays) < count($points)) {
+            $points = array_diff_key($points, $strays);
+            $layout['nodes'] = array_diff_key($layout['nodes'], $strays);
+        }
         if ($points === []) {
             return ['box' => '0 0 1 1', 'r' => 1.0, 'minw' => 0, 'nodes' => [], 'edges' => [], 'headings' => []];
         }
-        $spacing = self::spacing($points);
-        $strays = array_flip(self::strays($points, $marks, $spacing * self::STRAY));
-        $points = array_diff_key($points, $strays);
-        $layout['nodes'] = array_diff_key($layout['nodes'], $strays);
         $r = round($spacing * self::FILL, 2);
 
         $nodes = [];
