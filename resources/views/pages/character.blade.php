@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['share']['title']" :description="$d['share']['description']" :canonical="$d['path']" :index="! $d['owner']">
+<x-layouts.app :title="$d['share']['title']" :description="$d['share']['description']" :canonical="$d['path']" :index="! $d['owner']" :styles="$d['classBand'] ? ['resources/css/class.css'] : []">
 <section @class(['ch-head', 'ch-rich', 'ch-bare' => ! $d['hasMap']]) aria-labelledby="h1">
   @if ($d['hasMap'])
   <div class="stage"><x-world-canvas id="map" :behind-head="true" label="Every path {{ $d['name'] }} walked, with deaths as crosses. Drag to move, click the map and scroll to zoom." :spec="$d['map']" />
@@ -19,7 +19,7 @@
 <div class="wrap">
   @if ($d['owner'])<livewire:owner-bar :character-id="$d['id']" />@endif
   @if ($d['ownerSeesVisitorView'])<div class="own"><span>Visitor view</span><span class="sp"><a href="{{ $d['path'] }}">Back to your view</a></span></div>@endif
-  @if ($d['matches'] > 0)<p class="note"><a href="{{ $d['path'] }}/battlegrounds">Battleground scoreboards, {{ \App\View\Format::count($d['matches'], 'match', 'matches') }}</a></p>@endif
+  <x-class.nav :links="$d['links']" :name="$d['name']" :class-name="$d['className']" current="character" />
   @if ($d['records'])
   <section class="recs" aria-labelledby="h-records">
     <h2 id="h-records">Records</h2>
@@ -42,6 +42,7 @@
     <ol class="stands">@foreach ($d['standings'] as $stand)<li @if ($stand['medal']) class="{{ $stand['medal'] }}" @endif><span class="place"><span class="vh">Place </span>{{ $stand['place'] }}</span><a class="board" href="{{ $stand['href'] }}">{{ $stand['title'] }}</a><span class="val">{{ $stand['value'] }}</span><span class="of">of {{ $stand['of'] }}</span></li>@endforeach</ol>
   </section>
   @endif
+  @if ($d['classBand'])<x-class.band :band="$d['classBand']" :icons="$d['classIcons']" />@endif
   @if ($d['week'])
   <section class="week" aria-labelledby="h-week">
     <div><h2 id="h-week">This week</h2><p>{{ $d['week']['range'] }}</p></div>

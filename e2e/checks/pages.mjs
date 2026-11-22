@@ -68,8 +68,8 @@ export async function deathIsCountedOnce(ctx) {
 
 export async function scoreboardIsShownWithoutNames(ctx) {
   const character = expectStatus(await ctx.http.page(`/c/${PROBE}`), 200, `/c/${PROBE}`);
-  if (!character.text.includes(`/c/${PROBE}/battlegrounds`) || !character.text.includes("Battleground scoreboards, 1 match")) {
-    throw new Error(`/c/${PROBE} should link its 1 match with a scoreboard, saw ${character.text.slice(0, 600)}`);
+  if (!character.text.includes(`<a href="/c/${PROBE}/battlegrounds">Battlegrounds</a>`)) {
+    throw new Error(`/c/${PROBE} should link its battlegrounds in the line of pages under the head, saw ${character.text.slice(0, 600)}`);
   }
   const answer = expectStatus(await ctx.http.page(`/c/${PROBE}/battlegrounds`), 200, `/c/${PROBE}/battlegrounds`);
   const problems = [];

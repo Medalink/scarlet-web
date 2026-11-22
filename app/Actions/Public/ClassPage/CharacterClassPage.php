@@ -2,11 +2,9 @@
 
 namespace App\Actions\Public\ClassPage;
 
-use App\Actions\Public\CountBattlegroundMatches;
 use App\Models\Character;
 use App\Support\ClassPage\CharacterLine;
 use App\Support\ClassPage\ClassPage;
-use App\Support\ClassPage\Links;
 use App\Support\PlayerClass;
 use App\View\Format;
 
@@ -16,7 +14,7 @@ class CharacterClassPage
         private readonly ReadClassParts $read,
         private readonly ReadClassComparison $comparison,
         private readonly ClassFeatCards $feats,
-        private readonly CountBattlegroundMatches $matches,
+        private readonly CharacterLinks $links,
     ) {}
 
     /**
@@ -37,12 +35,11 @@ class CharacterClassPage
         if ($read === null) {
             return null;
         }
-        $path = '/c/'.rawurlencode($character->name);
         $parts = $read->parts;
         $page = new ClassPage(
             $class,
             new CharacterLine(Format::characterName($character->name), (int) $character->level, $read->facts->hours, $read->facts->build, $parts->icon),
-            new Links($path, $path.'/'.$class->slug(), null, $this->matches->handle($character->id) > 0 ? $path.'/battlegrounds' : null),
+            $this->links->handle($character),
             $parts->callouts,
             $parts->figures,
             $parts->sheet,
