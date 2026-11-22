@@ -12,6 +12,11 @@ final class RulesetsPage
     /** The comparison chart draws the busiest rulesets, in the order of these chart classes. */
     private const array LINES = ['a' => 'var(--accent)', 'b' => 'var(--fg)', 'c' => 'var(--s-dungeon)'];
 
+    /** The width of the widest bar of a table column, as on the record pages. */
+    private const float BAR_REM = 5.2;
+
+    private const float BAR_MIN_REM = 0.15;
+
     /**
      * @param  array<string, mixed>  $r
      * @return array<string, mixed>
@@ -28,7 +33,12 @@ final class RulesetsPage
 
         $unidentified = fn (array $row): bool => ($byId[$row['ruleset_id']]['kind'] ?? null) === null;
         usort($rows, fn (array $a, array $b): int => [$unidentified($a), (int) ($b['characters'] ?? 0)] <=> [$unidentified($b), (int) ($a['characters'] ?? 0)]);
-        $table = array_map(fn (array $row): array => self::row($row, $byId[$row['ruleset_id']]), $rows);
+        $counted = array_filter($rows, fn (array $row): bool => $row['characters'] !== null);
+        $top = [
+            'characters' => (float) max([0, ...array_map(fn (array $row): int => (int) $row['characters'], $counted)]),
+            'hours' => (float) max([0, ...array_map(fn (array $row): float => (float) $row['seconds'] / 3600, $counted)]),
+        ];
+        $table = array_map(fn (array $row): array => self::row($row, $byId[$row['ruleset_id']], $top), $rows);
         if (! array_any($rulesets, fn (array $ruleset): bool => $ruleset['kind'] === RulesetKind::Hardcore->value)) {
             $table[] = self::notOut(RulesetKind::Hardcore);
         }
@@ -45,9 +55,10 @@ final class RulesetsPage
     /**
      * @param  array<string, mixed>  $row
      * @param  array{id: int, slug: string, label: string, hardcore: bool}  $ruleset
+     * @param  array{characters: float, hours: float}  $top  the largest value of each bar column
      * @return array{cells: list<mixed>}
      */
-    private static function row(array $row, array $ruleset): array
+    private static function row(array $row, array $ruleset, array $top): array
     {
         $name = ['text' => $ruleset['label'], 'href' => '/rulesets/'.$ruleset['slug']];
         if ($row['characters'] === null) {
@@ -58,13 +69,27 @@ final class RulesetsPage
 
         return ['cells' => [
             $name,
-            Format::number($characters),
-            Format::number(round($hours)),
+            ['text' => Format::number($characters), ...self::bar($characters, $top['characters'])],
+            ['text' => Format::number(round($hours)), ...self::bar($hours, $top['hours'])],
             $row['median_to_target'] === null ? 'None recorded' : Format::duration((float) $row['median_to_target']),
             $hours > 0 ? Format::number((int) $row['deaths'] / $hours, 2) : '–',
             Format::percent((int) $row['reached'] / $characters).' ('.Format::number((int) $row['reached']).')',
             (int) $row['xp'] > 0 ? Format::percent((int) $row['quest_xp'] / (int) $row['xp']) : '–',
         ]];
+    }
+
+    /**
+     * The bar of a table cell, scaled to the largest value of its column; no bar for a value of zero.
+     *
+     * @return array{bar?: string}
+     */
+    private static function bar(float|int $value, float $top): array
+    {
+        if ($value <= 0 || $top <= 0) {
+            return [];
+        }
+
+        return ['bar' => max(self::BAR_MIN_REM, $value / $top * self::BAR_REM).'rem'];
     }
 
     /**

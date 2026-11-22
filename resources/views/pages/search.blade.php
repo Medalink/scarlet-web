@@ -10,17 +10,17 @@
     @if ($d['kind'])
     @php($group = $d['groups'][$d['kind']->value])
     <x-module span="w12" :first="true" :last="true">
-      <x-search-group :title="$group['title']" :count="$group['count']" :hits="$group['hits']" />
+      <x-search-group :title="$group['title']" :icon="$group['icon']" :count="$group['count']" :hits="$group['hits']" />
       @if ($d['next'])<p class="note"><a href="{{ $d['next'] }}">Next {{ \App\View\Pages\SearchPage::PAGE }}</a></p>@endif
     </x-module>
     @else
     @php($left = array_filter([$d['groups']['characters'], $d['groups']['zones']], fn ($g) => $g['hits']))
     @php($right = array_filter([$d['groups']['creatures'], $d['groups']['items'], $d['groups']['quests']], fn ($g) => $g['hits']))
     <x-module span="w5" :first="true">
-      @foreach ($left as $i => $group)<x-search-group :title="$group['title']" :count="$group['count']" :hits="$group['hits']" :more="$group['more']" :spaced="$loop->index > 0" />@endforeach
+      @foreach ($left as $i => $group)<x-search-group :title="$group['title']" :icon="$group['icon']" :count="$group['count']" :hits="$group['hits']" :more="$group['more']" :spaced="$loop->index > 0" />@endforeach
     </x-module>
     <x-module span="w7" :last="true">
-      @foreach ($right as $i => $group)<x-search-group :title="$group['title']" :count="$group['count']" :hits="$group['hits']" :more="$group['more']" :spaced="$loop->index > 0" />@endforeach
+      @foreach ($right as $i => $group)<x-search-group :title="$group['title']" :icon="$group['icon']" :count="$group['count']" :hits="$group['hits']" :more="$group['more']" :spaced="$loop->index > 0" />@endforeach
     </x-module>
     @endif
   </x-sheet>

@@ -1,7 +1,7 @@
 <x-layouts.app :title="'Scarlet talents: '.$d['title']" current="talents" description="{{ $d['sub'] }}">
 <div class="wrap">
   <x-page-head :title="$d['title']">
-    <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
+    <x-slot:sub><span data-class="{{ $d['classKey'] }}"><i class="dotc" aria-hidden="true"></i>{{ $d['className'] }}</span> · {{ $d['sub'] }}</x-slot:sub>
     <x-slot:filters>
       <x-scope-filters :filters="$filters" />
     </x-slot:filters>

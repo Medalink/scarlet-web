@@ -36,6 +36,7 @@ final class SearchPage
             }
             $groups[$name] = [
                 'title' => $each->label(),
+                'icon' => self::icon($each),
                 'count' => Format::number($group['count']),
                 'hits' => array_map(fn (array $hit): array => self::hit($each, $hit), $hits),
                 'more' => $kind === null && $group['count'] > count($hits) ? ['href' => $link($each), 'label' => Format::number($group['count'] - count($hits)).' more '.strtolower($each->label())] : null,
@@ -70,6 +71,7 @@ final class SearchPage
 
         return $line + match ($kind) {
             SearchKind::Characters => [
+                'class' => ($hit['class'] ?? null) === null || $hit['class'] === '' ? null : strtoupper((string) $hit['class']),
                 'meta' => trim(Format::character($hit['level'], $hit['race'], $hit['class']).(isset($hit['ruleset_label']) ? ' · '.$hit['ruleset_label'] : '')),
                 'value' => $hit['played_seconds'] === null ? Format::duration($hit['recorded_seconds']).' recorded' : Format::duration($hit['played_seconds']).' played',
             ],
@@ -90,6 +92,18 @@ final class SearchPage
                 'meta' => 'Quest',
                 'value' => is_numeric($hit['turn_ins'] ?? null) ? Format::count($hit['turn_ins'], 'turn-in') : '',
             ],
+        };
+    }
+
+    /** The glyph of a group heading, a name of resources/views/components/icon.blade.php. */
+    private static function icon(SearchKind $kind): string
+    {
+        return match ($kind) {
+            SearchKind::Characters => 'characters',
+            SearchKind::Creatures => 'creature',
+            SearchKind::Items => 'item',
+            SearchKind::Zones => 'pin',
+            SearchKind::Quests => 'quests',
         };
     }
 

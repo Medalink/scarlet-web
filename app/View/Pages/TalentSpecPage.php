@@ -29,7 +29,7 @@ final class TalentSpecPage
             'sub' => $specs === [] ? 'No talent builds recorded yet.' : Format::count($total, 'character').' with a talent build, in '.Format::count(count($specs), 'spec').'.',
             'columns' => [['label' => 'Spec'], ['label' => 'Class'], ['label' => 'Characters', 'numeric' => true]],
             'rows' => array_map(fn (array $spec): array => ['cells' => [
-                ['text' => $spec['name'], 'href' => '/talents/'.$spec['class_slug'].'/'.$spec['slug']], Format::className($spec['class']), Format::number($spec['characters']),
+                ['text' => $spec['name'], 'href' => '/talents/'.$spec['class_slug'].'/'.$spec['slug'], 'dot' => true, 'characterClass' => strtoupper($spec['class'])], Format::className($spec['class']), Format::number($spec['characters']),
             ]], $specs),
         ];
     }
@@ -68,6 +68,8 @@ final class TalentSpecPage
 
         return [
             'title' => $a['spec'].' '.Format::className((string) $a['class']),
+            'classKey' => strtoupper((string) $a['class']),
+            'className' => Format::className((string) $a['class']),
             'sub' => $n === 0 ? 'No character has a build read at '.mb_strtolower($bracket->label()).'.' : 'n = '.Format::count($n, 'character').', each counted by its latest build at '.mb_strtolower($bracket->label()).'.',
             'n' => $n,
             'brackets' => self::control($bracket, $path, $scope),
