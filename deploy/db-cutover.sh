@@ -33,6 +33,7 @@ password=$(env_value DB_PASSWORD)
 local_pg() { $dc exec -T postgres psql -X -U postgres -d scarlet -Atq "$@"; }
 remote_pg() { $dc exec -T -e PGPASSWORD="$password" postgres psql -X "host=$1 port=5432 user=postgres dbname=scarlet sslmode=require connect_timeout=5" -Atq "${@:2}"; }
 image() { $dc config --images | grep "$1" | head -n 1; }
+client_pg() { docker run --rm -e PGPASSWORD="$password" --entrypoint psql "$(image timescaledb-ha)" -X "host=$1 port=5432 user=postgres dbname=scarlet sslmode=require connect_timeout=5" -Atq "${@:2}"; }
 now() { date +%s.%N; }
 running_horizons() {
   for service in horizon horizon-blue horizon-green horizon-a horizon-b horizon-c; do
@@ -248,13 +249,19 @@ retire() {
   local ip
   ip=$(env_value DB_HOST)
   [ "$ip" != postgres ] || { echo "retire: the app still uses the local Postgres" >&2; exit 1; }
-  [ "$(remote_pg "$ip" -c "select pg_is_in_recovery()")" = f ] || { echo "retire: the database host is not a primary" >&2; exit 1; }
-  [ "$(remote_pg "$ip" -c "select coalesce(extract(epoch from now() - last_archived_time) < 600, false) from pg_stat_archiver")" = t ] \
+  [ "$(client_pg "$ip" -c "select pg_is_in_recovery()")" = f ] || { echo "retire: the database host is not a primary" >&2; exit 1; }
+  [ "$(client_pg "$ip" -c "select coalesce(extract(epoch from now() - last_archived_time) < 600, false) from pg_stat_archiver")" = t ] \
     || { echo "retire: the database host has not archived WAL in 10 minutes" >&2; exit 1; }
-  remote_pg "$ip" -c "select pg_drop_replication_slot('scarlet_reverse') where exists (select from pg_replication_slots where slot_name = 'scarlet_reverse')" >/dev/null
   $dc stop -t 60 postgres
   $dc rm -f postgres
-  docker volume rm scarlet-web_pgdata
+  local tries=0
+  until [ "$(client_pg "$ip" -c "select count(*) from pg_replication_slots where slot_name = 'scarlet_reverse'")" = 0 ]; do
+    tries=$((tries + 1))
+    [ "$tries" -le 30 ] || { echo "retire: the scarlet_reverse slot is still active on the database host" >&2; exit 1; }
+    client_pg "$ip" -c "select pg_drop_replication_slot(slot_name) from pg_replication_slots where slot_name = 'scarlet_reverse' and not active" >/dev/null
+    sleep 2
+  done
+  if docker volume inspect scarlet-web_pgdata >/dev/null 2>&1; then docker volume rm scarlet-web_pgdata >/dev/null; fi
   rm -f "$state"
   echo "retire: the local Postgres and its volume are gone; the database host is the only copy besides R2"
 }
