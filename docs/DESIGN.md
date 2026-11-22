@@ -585,7 +585,7 @@ comps and is specified here, not in them.
 | `/account` | Characters and their public switches, installs and revoking them, recent uploads and when each install last contacted the site, sharing groups, removals, API keys |
 | `/account/characters` | Private, signed in only. The account's characters side by side: totals, a table of the characters, play time by day stacked by character (last 30 days), gold with copper moved between your own characters kept apart, time two characters were online together (sessions overlapping by 60 s or more), time in each level against the median of the character's ruleset, and profession ranks. Alts exist only here and in the owner bar of `/c/{name}`, which links the account's other characters. No public page, board, rollup or API response groups, dedupes or weights by account: each character is its own player there, and `characters.account_id` and `first_install_id` are hidden from the model's serialization |
 
-A dungeon is `/zones/{id}` with the negative instance id (`/zones/-90`).
+A dungeon is `/zones/{id}` with the negative instance id (`/zones/-90`). Its page has a Map section with the dungeon's floor maps, one floor at a time, while they are on the `maps` disk (Maps, Dungeon maps).
 
 ### Search engines and link previews
 
@@ -910,6 +910,16 @@ with a one-year cache under a path that carries the build's version.
 **Two looks.** *Game* is the art as baked. *Survey* is the site's dark sheet, built from the same tiles at build
 time: luminance mapped onto the sheet's greys, the sea darkest, so scarlet data reads on it the way it does on the
 landing page. The viewer remembers the choice. Survey is the default.
+
+**Dungeon maps.** A recording carries no position inside a dungeon, so a dungeon is not on the world map. Its page
+shows the map of each floor instead: the pictures the OpenMap addon ships (Blizzard's own dungeon maps, maps of WoW
+Forever's dungeons drawn by a player who lets OpenMap use them, and maps laid from the game's minimap pictures),
+drawn in the dark look by `tools/map-tiles/dungeons.mjs`: light and dark kept, most of the colour taken out. OpenMap's
+boss places become numbered pins, and each boss in the list under the map links to its creature page when the site
+knows a creature of that name. The pictures are not in git: they live on the `maps` disk under `dungeons/` with
+`dungeons.json`, `/dungeon-maps/{instance}/{floor}.webp` serves them, and a page has the section only while that list
+has its instance (`App\Support\DungeonMaps`). A drawn map is credited to its artist under the picture, by the name
+OpenMap credits, which comes from `dungeons.json` and is not in this repo.
 
 **Credit.** Every page that shows the art says "Map art © Blizzard Entertainment. Map by OpenMap." under the
 map, with OpenMap linked. Data or code copied from OpenMap into this repo carries its MIT notice

@@ -191,6 +191,22 @@ It takes about 15 seconds and 1.5 GB of memory, and replaces the folder: the til
 everything that went in, so a new build is a new set of addresses. The label tables are the files the app's
 `tools/map-labels.mjs` writes next to its maps.
 
+## Dungeon maps
+
+A dungeon's page (`/zones/-<instance id>`) shows the dungeon's floor maps: the pictures the OpenMap addon ships,
+in the site's dark look, with OpenMap's boss pins. They are Blizzard's art and a player's, so they are not in git.
+To make them:
+
+```sh
+cd tools/map-tiles
+pnpm install --frozen-lockfile
+node dungeons.mjs "<WoW folder>/_forever_/Interface/AddOns/OpenMap" ../../storage/app/maps/dungeons
+```
+
+It takes a few seconds and writes 78 floors of 33 instances, about 6 MiB, with `dungeons.json`. The site reads that
+list at most once in five minutes and serves the pictures at `/dungeon-maps/<instance id>/<floor>.webp`. Without
+the folder a dungeon's page has no map section. `bin/deploy maps` carries it to the server (docs/HOSTING.md, Map art).
+
 ## Troubleshooting
 
 - `The image scarlet-web-dev:latest does not exist`: run `bin/dev image`.

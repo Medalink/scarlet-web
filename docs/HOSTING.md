@@ -613,6 +613,11 @@ once it is copied. Never commit the tiles.
 The camp page's art (`camp/`, from `tools/camp-art`) rides in the same folder, so the same command carries it. PHP serves it
 at `/camp-art/` from the `maps` disk; the page shows its art only while `camp/camp.json` exists there.
 
+The dungeon floor maps (`dungeons/`, from `tools/map-tiles/dungeons.mjs`) ride there too. PHP serves them at
+`/dungeon-maps/` from the `maps` disk, and a dungeon's page shows its map only while `dungeons/dungeons.json` lists it.
+The command takes a folder that holds any of the three, so `bin/deploy maps` on a folder with only `dungeons/` in it
+copies the dungeon maps and leaves the tiles and the camp art on the droplet as they are.
+
 ## Edge cache
 
 Cloudflare caches three kinds of answer, each only for a visitor with no credentials. A request with an `Authorization`

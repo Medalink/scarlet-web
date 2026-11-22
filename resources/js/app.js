@@ -6,3 +6,4 @@ import './site/tally.js';
 import './site/search.js';
 import './site/dialog.js';
 import './site/feat-toasts.js';
+import './site/floors.js';

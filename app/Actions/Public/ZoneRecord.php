@@ -4,6 +4,7 @@ namespace App\Actions\Public;
 
 use App\Actions\Rollups\WorldHeat;
 use App\Models\MapRect;
+use App\Support\DungeonMaps;
 use App\Support\KillerKind;
 use App\Support\KillerRows;
 use App\Support\NameKind;
@@ -25,8 +26,8 @@ class ZoneRecord
 
     /**
      * Everything the zone page and `/public/zones/{id}` show: time played here and the levels it is played at,
-     * deaths and what caused them, the creatures met here, and the zone's place on the world map. Zone ids are uiMap
-     * ids, or the negative instance id of a dungeon. Null when the zone is unknown or the ruleset is not known.
+     * deaths and what caused them, the creatures met here, the zone's place on the world map and a dungeon's floor
+     * maps. Zone ids are uiMap ids, or the negative instance id of a dungeon. Null when the zone is unknown or the ruleset is not known.
      *
      * @return array<string, mixed>|null
      */
@@ -56,7 +57,35 @@ class ZoneRecord
             'heat' => $this->heat->handle(WorldLayer::Paths, $ids, level: 0),
             'death_heat' => $this->heat->handle(WorldLayer::Deaths, $ids),
             'map_zones' => $this->zones->handle($ids),
+            'floors' => $this->floors($id),
         ];
+    }
+
+    /**
+     * A dungeon's floor maps (DungeonMaps), each boss with the id of the creature of that name when one is known:
+     * the one met in this dungeon, else the one with the most votes for the name.
+     *
+     * @return list<array<string, mixed>> name, credit, src, width, height, bosses (name, x, y, npc_id)
+     */
+    private function floors(int $id): array
+    {
+        $floors = $id < 0 ? DungeonMaps::floors(-$id) : [];
+        $names = array_values(array_unique(array_column(array_merge(...array_column($floors, 'bosses')), 'name')));
+        $named = $names === [] ? [] : DB::table('names')->where('kind', NameKind::Npc->value)->whereIn('name', $names)->orderBy('votes')->orderByDesc('id')->get(['id', 'name'])->all();
+        $met = $named === [] ? [] : array_column($this->read->rows(
+            $this->read->from(Rollup::CreatureFactsDaily, null)->select('npc_id')->where('zone_id', $id)->whereIn('npc_id', array_column($named, 'id'))->groupBy('npc_id'),
+        ), 'npc_id');
+        $known = [];
+        foreach ([$named, array_filter($named, fn (object $row): bool => in_array($row->id, $met))] as $rows) {
+            foreach ($rows as $row) {
+                $known[$row->name] = (int) $row->id;
+            }
+        }
+
+        return array_map(fn (array $floor): array => [...$floor, 'bosses' => array_map(
+            fn (array $boss): array => [...$boss, 'npc_id' => $known[$boss['name']] ?? null],
+            $floor['bosses'],
+        )], $floors);
     }
 
     /**

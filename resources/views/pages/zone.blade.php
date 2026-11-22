@@ -13,6 +13,31 @@
     @if ($d['threat'])
     <x-threat :threat="$d['threat']" />
     @endif
+    @if ($d['floors'])
+    <x-module span="w12" :first="true" :last="true" class="floors" id="h-map" heading="Map">
+      @if (count($d['floors']) > 1)
+      <noscript><style>.floors .seg { display: none; } .floors .floor[hidden] { display: grid; }</style></noscript>
+      <x-slot:controls><x-seg label="Floor" buttons :items="array_map(fn (array $floor, int $n): array => ['label' => $floor['label'], 'on' => $n === 0, 'data' => ['floor' => $n]], $d['floors'], array_keys($d['floors']))" /></x-slot:controls>
+      @endif
+      @foreach ($d['floors'] as $n => $floor)
+      <figure class="floor" data-floor="{{ $n }}"@if ($n > 0) hidden @endif>
+        <div class="floor-map"><img src="{{ $floor['src'] }}" width="{{ $floor['width'] }}" height="{{ $floor['height'] }}" alt="Map of {{ $floor['label'] }}" loading="{{ $n > 0 ? 'lazy' : 'eager' }}" decoding="async">
+          @foreach ($floor['bosses'] as $b => $boss)
+          <span class="floor-pin" style="left:{{ $boss['left'] }}%;top:{{ $boss['top'] }}%" title="{{ $boss['label'] }}" aria-hidden="true">{{ $b + 1 }}</span>
+          @endforeach
+        </div>
+        @if ($floor['bosses'])
+        <ol class="floor-bosses" aria-label="Bosses on {{ $floor['label'] }}">
+          @foreach ($floor['bosses'] as $boss)
+          <li>@if ($boss['href'])<a href="{{ $boss['href'] }}">{{ $boss['label'] }}</a>@else{{ $boss['label'] }}@endif</li>
+          @endforeach
+        </ol>
+        @endif
+        <figcaption>@if ($floor['credit'])Map drawn by {{ $floor['credit'] }} for <a href="https://github.com/openmap-world/openmap" rel="noopener">OpenMap</a>.@else Map art © Blizzard Entertainment. Map by <a href="https://github.com/openmap-world/openmap" rel="noopener">OpenMap</a>.@endif</figcaption>
+      </figure>
+      @endforeach
+    </x-module>
+    @endif
     <x-module span="w5" :first="true" id="h-k" heading="Deadliest here">
       @if ($d['killers'])
       <x-rank :rows="$d['killers']" />

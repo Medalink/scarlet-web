@@ -1,5 +1,5 @@
 // Reads the BLP2 files OpenMap bakes its world tiles into (DXT1, DXT3 or DXT5 with mip maps) and returns
-// the first mip as straight RGBA. Written from the BLP2 layout: a 148 byte header, then the mips.
+// the first mip as straight RGBA. A file with one bit of alpha and alpha type 0 is DXT1, as the game's own tiles are. Written from the BLP2 layout: a 148 byte header, then the mips.
 
 const ENCODING_DXT = 2;
 
@@ -19,7 +19,7 @@ export function decodeBlp(buf) {
         throw new Error(`BLP encoding ${encoding} is not DXT`);
     }
 
-    const dxt = alphaDepth === 0 ? 1 : alphaType === 1 ? 3 : 5;
+    const dxt = alphaDepth === 0 || (alphaDepth === 1 && alphaType === 0) ? 1 : alphaType === 1 ? 3 : 5;
     const data = buf.subarray(offset, offset + size);
     const out = Buffer.alloc(width * height * 4);
     const blockBytes = dxt === 1 ? 8 : 16;

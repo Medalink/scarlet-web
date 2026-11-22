@@ -12,7 +12,8 @@
 #   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env on the app droplet and
 #                               the database host (run before `server` and `db-server`)
 #   bin/deploy cache-rules      write Cloudflare's Cache Rules for the public API, the public pages and the map manifest
-#   bin/deploy maps <folder>    copy map tiles (a folder with manifest.json) to the droplet's disk, outside the image
+#   bin/deploy maps <folder>    copy map art (a folder with manifest.json, camp/camp.json or dungeons/dungeons.json) to the
+#                               droplet's disk, outside the image
 #   bin/deploy bootstrap [ref]  first install: server, DNS, certificate, release, strict TLS, origin pulls
 #   bin/deploy server | tls | dns | strict | aop     the steps of bootstrap, each safe to run again
 #   bin/deploy ring-key <file>  let the flow ring deploy: install scripts/deploy/ring-entry.sh on the droplet and allow the public
@@ -517,7 +518,10 @@ case "${1:-release}" in
     esac
     ;;
   maps)
-    [ -f "${2:?folder with manifest.json}/manifest.json" ] || { echo "deploy: no manifest.json in $2" >&2; exit 1; }
+    [ -f "${2:?folder with map art}/manifest.json" ] || [ -f "$2/camp/camp.json" ] || [ -f "$2/dungeons/dungeons.json" ] || {
+      echo "deploy: no manifest.json, camp/camp.json or dungeons/dungeons.json in $2" >&2
+      exit 1
+    }
     for target in $(printf '%s\n' "$host" $(other_app_hosts) | sort -u); do
       has_role "$target" web || continue
       tar -C "$2" -cf - . | at "$target" 'mkdir -p /srv/scarlet-web/maps && tar -C /srv/scarlet-web/maps --no-same-owner -xf - && chmod -R a+rX /srv/scarlet-web/maps'

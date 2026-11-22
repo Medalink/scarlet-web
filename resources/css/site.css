@@ -372,6 +372,21 @@ figure figcaption { margin-top: 0.8rem; font-size: 0.9rem; color: var(--muted); 
 .seg button + button { border-left: 1px solid var(--line2); }
 .seg button:hover { color: var(--fg); }
 .seg button[aria-pressed="true"] { background: var(--fg); color: var(--ink); font-weight: 700; }
+.floor { margin-top: 1.2rem; display: grid; grid-template-columns: minmax(0, 1002px) minmax(0, 1fr); gap: 0 2rem; align-items: start; }
+.floor[hidden] { display: none; }
+.floors .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.floors .seg button { flex: none; white-space: nowrap; }
+.floor figcaption { grid-column: 1; }
+.floor-map { position: relative; max-width: 1002px; border: 1px solid var(--line2); border-radius: 3px; overflow: hidden; }
+.floor-map img { display: block; width: 100%; height: auto; }
+.floor-pin { position: absolute; transform: translate(-50%, -50%); min-width: 1.5rem; height: 1.5rem; padding: 0 0.3rem; border-radius: 0.75rem; background: var(--accent); color: var(--ink); font: 700 0.8rem/1.5rem var(--body); text-align: center; box-shadow: 0 0 0 2px var(--bg); }
+.floor-bosses { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 0.5rem; margin: 0; padding: 0; list-style: none; counter-reset: boss; }
+.floor-bosses li { counter-increment: boss; }
+@media (max-width: 1280px) {
+  .floor { grid-template-columns: minmax(0, 1fr); }
+  .floor-bosses { grid-column: 1; grid-row: auto; flex-direction: row; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin-top: 1rem; }
+}
+.floor-bosses li::before { content: counter(boss); display: inline-block; min-width: 1.3rem; margin-right: 0.45rem; border-radius: 0.65rem; background: var(--accent); color: var(--ink); font: 700 0.75rem/1.3rem var(--body); text-align: center; }
 .seg button:focus-visible { outline-offset: -3px; }
 
 .xp { margin-top: 1.4rem; }

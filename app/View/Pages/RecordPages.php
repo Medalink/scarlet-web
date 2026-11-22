@@ -157,6 +157,7 @@ final class RecordPages
             ],
             'threat' => RecordThreat::zone($hours, $deathCount),
             'map' => MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $r['map_zones'], $r['rect'] === null ? null : (int) $r['id']),
+            'floors' => self::floors($r),
             'killers' => array_map(fn (array $row): array => [
                 'label' => (string) $row['killer'], 'value' => Format::number($row['deaths']), 'share' => (int) $row['deaths'] / $topKills * 100,
                 'href' => $row['kind'] === KillerKind::Creature->value && $row['npc_id'] !== null ? '/creatures/'.$row['npc_id'] : null,
@@ -166,6 +167,28 @@ final class RecordPages
                 'value' => Format::number($row['sightings']), 'share' => (int) $row['sightings'] / $topSeen * 100,
             ], $creatures),
         ];
+    }
+
+    /**
+     * A dungeon's floor maps for the page: one tab and one picture a floor, each boss a numbered pin at a share of
+     * the picture and a row of the list under it. A floor with no name of its own takes the dungeon's, or its number.
+     *
+     * @param  array<string, mixed>  $r  the answer of ZoneRecord
+     * @return list<array<string, mixed>>
+     */
+    private static function floors(array $r): array
+    {
+        /** @var list<array<string, mixed>> $floors */
+        $floors = $r['floors'];
+
+        return array_map(fn (array $floor, int $n): array => [
+            'label' => $floor['name'] ?? (count($floors) === 1 ? $r['name'] : 'Floor '.($n + 1)),
+            'src' => $floor['src'], 'width' => $floor['width'], 'height' => $floor['height'], 'credit' => $floor['credit'],
+            'bosses' => array_map(fn (array $boss): array => [
+                'label' => (string) $boss['name'], 'href' => $boss['npc_id'] === null ? null : '/creatures/'.$boss['npc_id'],
+                'left' => round((float) $boss['x'] * 100, 2), 'top' => round((float) $boss['y'] * 100, 2),
+            ], $floor['bosses']),
+        ], $floors, array_keys($floors));
     }
 
     /**
