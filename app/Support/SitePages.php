@@ -30,10 +30,7 @@ final class SitePages
             self::page('Stats', '/stats', 'Dashboard of the recorded play of every ruleset', ['statistics', 'overview', 'numbers']),
             self::page('World map', '/map', 'Where characters walked, died and met creatures', ['map', 'heat', 'heatmap', 'deaths', 'paths']),
             self::page('Camps', '/camps', 'How players use the campsite: visits, Camp Benefits and what gets set up', ['camp', 'campfire', 'tent', 'chair', 'rested', 'benefits']),
-            self::page('Fishing', '/professions/fishing', 'What players catch, how long a bite takes and where they fish', ['fish', 'fishing', 'catch', 'bobber', 'profession']),
-            self::page('Herbalism', '/professions/herbalism', 'What players pick, how long a pick takes and where they pick herbs', ['herb', 'herbs', 'herbalism', 'pick', 'profession']),
-            self::page('Mining', '/professions/mining', 'What players mine, how many strikes a vein takes and where they mine', ['ore', 'mine', 'mining', 'vein', 'profession']),
-            self::page('Skinning', '/professions/skinning', 'What players skin, which creatures give the most and where they skin', ['skin', 'skinning', 'leather', 'hide', 'profession']),
+            ...array_map(self::profession(...), Profession::withPages()),
             self::page('Rulesets', '/rulesets', 'The rulesets side by side', ['compare', 'comparison']),
             self::page('Hardcore deaths', '/hardcore-deaths', 'Hardcore deaths by level and by day', ['hardcore', 'deaths', 'died', 'death']),
         ];
@@ -55,6 +52,28 @@ final class SitePages
         $pages[] = self::page('API reference', '/developers', 'The public API: every path, its parameters and its answer', ['api', 'developers', 'developer', 'endpoints', 'json', 'documentation']);
 
         return $pages;
+    }
+
+    /** @return array{title: string, path: string, meta: string, keywords: list<string>} */
+    private static function profession(Profession $profession): array
+    {
+        [$meta, $keywords] = match ($profession) {
+            Profession::Fishing => ['What players catch, how long a bite takes and where they fish', ['fish', 'fishing', 'catch', 'bobber']],
+            Profession::Herbalism => ['What players pick, how long a pick takes and where they pick herbs', ['herb', 'herbs', 'herbalism', 'pick']],
+            Profession::Mining => ['What players mine, how many strikes a vein takes and where they mine', ['ore', 'mine', 'mining', 'vein']],
+            Profession::Skinning => ['What players skin, which creatures give the most and where they skin', ['skin', 'skinning', 'leather', 'hide']],
+            Profession::Alchemy => ['What players brew, which recipes they craft most and what the crafts use', ['alchemy', 'potion', 'elixir', 'flask', 'craft']],
+            Profession::Blacksmithing => ['What players forge, which recipes they craft most and what the crafts use', ['blacksmithing', 'smith', 'forge', 'anvil', 'craft']],
+            Profession::Enchanting => ['What players enchant, which recipes they craft most and what the crafts use', ['enchanting', 'enchant', 'disenchant', 'craft']],
+            Profession::Engineering => ['What players build, which recipes they craft most and what the crafts use', ['engineering', 'gadget', 'gnomish', 'goblin', 'craft']],
+            Profession::Leatherworking => ['What players sew from leather, which recipes they craft most and what the crafts use', ['leatherworking', 'leather', 'armor', 'craft']],
+            Profession::Tailoring => ['What players sew from cloth, which recipes they craft most and what the crafts use', ['tailoring', 'cloth', 'bag', 'craft']],
+            Profession::Cooking => ['What players cook, which recipes they craft most and what the crafts use', ['cooking', 'cook', 'food', 'recipe', 'craft']],
+            Profession::FirstAid => ['What players make with First Aid, which recipes they craft most and what the crafts use', ['first aid', 'bandage', 'craft']],
+            Profession::Lockpicking, Profession::Poisons => ['', []],
+        };
+
+        return self::page($profession->value, '/professions/'.$profession->slug(), $meta, [...$keywords, 'profession']);
     }
 
     /**

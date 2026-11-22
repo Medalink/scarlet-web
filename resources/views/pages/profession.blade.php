@@ -29,7 +29,7 @@
   <x-sheet>
     @foreach ($d['layout'] as $row)
     @foreach ($row as $i => $module)
-    <x-module :span="$module['span']" :first="$i === 0" :last="$i === count($row) - 1" :class="in_array($module['key'], ['items', 'board']) ? 'camp-mod' : null" :id="'h-'.$module['key']" :heading="$d['heads'][$module['key']]">
+    <x-module :span="$module['span']" :first="$i === 0" :last="$i === count($row) - 1" :class="$module['class']" :id="'h-'.$module['key']" :heading="$d['heads'][$module['key']]">
       @include('pages.profession.'.$module['key'], ['m' => $d['modules'][$module['key']], 'w' => $d['words']])
     </x-module>
     @endforeach

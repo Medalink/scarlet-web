@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class CraftReagents
 {
+    /** The items the answer lists: a list this long may leave out more. */
+    public const int LIMIT = 10;
+
     public function __construct(private readonly RollupRead $read) {}
 
     /**
@@ -20,7 +23,7 @@ class CraftReagents
      * @param  int|list<int>|null  $rulesetId
      * @return list<array{item_id: int, name: string|null, quantity: int}>
      */
-    public function handle(Profession $profession, int|array|null $rulesetId = null, int $limit = 10): array
+    public function handle(Profession $profession, int|array|null $rulesetId = null, int $limit = self::LIMIT): array
     {
         $crafted = $this->read->shown(
             $this->read->from(Rollup::CraftsDailyRecipeRuleset, $rulesetId)

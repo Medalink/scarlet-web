@@ -12,7 +12,7 @@ export default {
         ],
     },
     props: [
-        { key: 'station', model: 'pot', at: [0.3, 0.2], scale: 1.5, emit: { all: {} }, anchor: [0, 2.6, 0] },
+        { key: 'station', model: 'pot', at: [0.3, 0.2], scale: 1.5, emit: { all: {} }, anchor: [0, 3.7, 0] },
         { key: 'work', model: 'boar', at: [3.9, 2.6], lift: 0.3, scale: 0.85, turn: 2.2, anchor: [0, 2.4, 0] },
         { key: 'rack', model: 'rack', at: [6.4, 6], scale: 0.8, emit: { all: {} } },
         { key: 'stock', model: 'table', at: [-2.4, -1], scale: 0.9, turn: 0.9, anchor: [0, 1.7, 0] },

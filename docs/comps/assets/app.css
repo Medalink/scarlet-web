@@ -251,9 +251,6 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
   .camp-head .stage[data-state="off"] .callouts { display: none; }
   .scene-head { padding-top: 0; }
   .scene-head .stage { height: min(96vw, 26rem); }
-  .scene-head .callout span { display: none; }
-  .scene-head .callout b { padding-bottom: 0; }
-  .scene-head .callout em { display: block; padding-bottom: calc(0.9rem + var(--lift, 0px)); }
   .scene-head .stage[data-state="off"] { height: 5rem; }
   .scene-head .stage[data-state="off"] .callouts { display: none; }
 }
@@ -270,4 +267,5 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .trades a:hover { color: var(--fg); }
 .trades a[aria-current="page"] { color: var(--fg); font-weight: 700; box-shadow: 0 2px 0 var(--accent); }
 .catches td { vertical-align: middle; }
+.data td small.uses { display: block; max-width: 30rem; margin-top: 0.2rem; font-size: 0.85rem; line-height: 1.35; color: var(--muted); white-space: normal; }
 .data .n + :not(.n) { padding-left: 1.6rem; }

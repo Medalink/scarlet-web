@@ -25,10 +25,10 @@ final class GatheringCallouts
         $item = StatsPage::rows($r['items'])[0] ?? null;
         $zone = StatsPage::rows($r['zones'])[0] ?? null;
         $creature = StatsPage::rows($r['creatures'])[0] ?? null;
-        $of = fn (mixed $part, int $whole, string $suffix): ?string => ($share = CampsPage::share(min((int) $part, $whole), $whole)) === null ? null : $share.' '.$suffix;
+        $of = ProfessionPage::shareOf(...);
         $itemName = $item === null ? null : (string) ($item['name'] ?? 'Item '.$item['item_id']);
         $zoneName = $zone === null ? null : (string) ($zone['name'] ?? 'Zone '.$zone['zone_id']);
-        $seconds = $t['median_seconds'] === null ? null : self::seconds((float) $t['median_seconds']);
+        $seconds = $t['median_seconds'] === null ? null : ProfessionPage::seconds((float) $t['median_seconds']);
         $skillUps = $of($t['skill_ups'], $attempts, 'give a skill point');
 
         $callouts = match ($kind) {
@@ -54,21 +54,6 @@ final class GatheringCallouts
             ],
         };
 
-        $kept = [];
-        foreach ($callouts as [$key, $title, $text, $share]) {
-            if ($title !== null && $text !== null) {
-                $kept[] = ['key' => $key, 'title' => $title, 'text' => $text, 'share' => $share];
-            }
-        }
-
-        return $kept;
-    }
-
-    /** "15 seconds", "3.2 seconds": a whole number from ten seconds up. */
-    public static function seconds(float $seconds): string
-    {
-        $text = $seconds < 10 ? Format::number($seconds, 1) : Format::number($seconds);
-
-        return $text.($text === '1' || $text === '1.0' ? ' second' : ' seconds');
+        return ProfessionPage::callouts($callouts);
     }
 }

@@ -5,6 +5,8 @@ import path from "node:path";
 
 const out = process.argv[2];
 const NAV = [["stats", "Stats"], ["world", "Map"], ["camps", "Camps"], ["fishing", "Professions"], ["rulesets", "Rulesets"], ["leaderboards", "Leaderboards"], ["search", "Search"], ["developers", "API"]];
+const TRADES_ALL = ["Fishing", "Herbalism", "Mining", "Skinning", "Alchemy", "Blacksmithing", "Enchanting", "Engineering", "Leatherworking", "Tailoring", "Cooking", "First Aid"];
+const TRADES = (cur) => TRADES_ALL.map((name) => `<a href="#"${name === cur ? ' aria-current="page"' : ""}>${name}</a>`).join("");
 const mark = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>`;
 
 function page(file, title, cur, body, script = "", signedIn = false) {
@@ -732,7 +734,7 @@ page("fishing.html", "Scarlet fishing: casts, catches and skill", "fishing", `
 
 <div class="wrap">
   <nav class="trades" aria-label="Professions">
-    <a href="#">Herbalism</a><a href="#">Mining</a><a href="#">Skinning</a><a href="#" aria-current="page">Fishing</a>
+    ${TRADES("Fishing")}
   </nav>
   <p class="credit">Bobber, fish school, tackle box, pole and fish rack models, textures, ripples and splashes © Blizzard Entertainment, read from the WoW Forever client. The water, the bank and the moonlight are drawn by this page.</p>
   <dl class="week n6" aria-label="Totals">
@@ -880,3 +882,122 @@ page("fishing.html", "Scarlet fishing: casts, catches and skill", "fishing", `
 `);
 
 console.log("wrote", fs.readdirSync(out).filter((f) => f.endsWith(".html")).join(" "));
+page("cooking.html", "Scarlet cooking: crafts, recipes and skill", "fishing", `
+<section class="ch-head scene-head" aria-labelledby="h1">
+  <div class="stage" data-state="off" role="img" aria-label="A cook's fire, drawn from the game's own models: a cooking pot over a fire, a boar on a spit, a rack of smoked meat, a table of food and a sack">
+    <div class="callouts" aria-hidden="true">
+      <p class="callout left" data-key="station" hidden><b>Spotted Yellowtail</b><span>The most made recipe</span><em>38% of crafts</em></p>
+      <p class="callout left" data-key="work" hidden><b>A sitting</b><span>31 crafts in a row</span><em>2.4 seconds apart</em></p>
+      <p class="callout left" data-key="stock" hidden><b>Raw Spotted Yellowtail</b><span>The most used material</span><em>27% of materials</em></p>
+    </div>
+  </div>
+  <div class="ch-id wrap">
+    <div><h1 class="ch-name" id="h1">Cooking</h1>
+      <p class="ch-sub"><span>812,440 crafts</span><span>3,190 characters</span><span>1,204,300 items made</span></p></div>
+    <div class="filters"><div class="seg" role="group" aria-label="Ruleset"><a href="#" aria-current="true">All</a><a href="#">Standard</a><a href="#">Hardcore</a><a href="#">Slow</a></div></div>
+  </div>
+</section>
+
+<div class="wrap">
+  <nav class="trades" aria-label="Professions">${TRADES("Cooking")}</nav>
+  <p class="credit">Cooking pot, spit, smoked meat rack, table, food and sack models, textures and effects © Blizzard Entertainment, read from the WoW Forever client. The ground and the light are drawn by this page.</p>
+  <dl class="week n6" aria-label="Totals">
+    <div><dt>Crafts that give a skill point</dt><dd>61%</dd></div><div><dt>Recipes crafted</dt><dd>74</dd></div><div><dt>Items made</dt><dd>1,204,300</dd></div>
+    <div><dt>Characters who craft</dt><dd>29%</dd></div><div><dt>Median skill</dt><dd>212</dd></div><div><dt>Characters at 300</dt><dd>402</dd></div>
+  </dl>
+
+  <div class="sheet">
+    <section class="mod w12 first last camp-mod" aria-labelledby="h-recipes">
+      <h2 id="h-recipes">What gets made</h2>
+      <div class="scroll-x"><table class="data catches" style="margin-top:1.1rem">
+        <thead><tr><th>Recipe</th><th>Makes</th><th class="n">Crafts</th><th class="n">Made</th><th class="n">Characters</th><th class="n">Median skill</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#">Spotted Yellowtail</a><small class="uses">Raw Spotted Yellowtail</small></td><td><a href="#">Spotted Yellowtail</a></td><td class="n"><i class="bar" style="width:5.6rem"></i>309,420</td><td class="n">309,420</td><td class="n">1,940</td><td class="n">252</td></tr>
+          <tr><td><a href="#">Roast Raptor</a><small class="uses">Raptor Flesh, Mild Spices</small></td><td><a href="#">Roast Raptor</a></td><td class="n"><i class="bar" style="width:3.3rem"></i>182,100</td><td class="n">182,100</td><td class="n">1,610</td><td class="n">184</td></tr>
+          <tr><td><a href="#">Herb Baked Egg</a><small class="uses">Small Egg</small></td><td><a href="#">Herb Baked Egg</a></td><td class="n"><i class="bar" style="width:2.2rem"></i>121,360</td><td class="n">121,360</td><td class="n">2,205</td><td class="n">24</td></tr>
+          <tr><td><a href="#">Boiled Clams</a><small class="uses">Clam Meat, Refreshing Spring Water ×2</small></td><td><a href="#">Boiled Clams</a></td><td class="n"><i class="bar" style="width:1.4rem"></i>76,880</td><td class="n">76,880</td><td class="n">980</td><td class="n">78</td></tr>
+          <tr><td><a href="#">Spiced Wolf Meat</a><small class="uses">Wolf Meat, Mild Spices</small></td><td><a href="#">Spiced Wolf Meat</a></td><td class="n"><i class="bar" style="width:0.9rem"></i>49,610</td><td class="n">49,610</td><td class="n">1,330</td><td class="n">97</td></tr>
+        </tbody></table></div>
+      <p class="note">The 5 recipes with the most crafts, of 74 crafted.</p>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-diff">
+      <h2 id="h-diff">How hard the recipe was when it was made</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>The recipe was</th><th class="n">Crafts</th><th class="n">Gave a skill point</th></tr></thead>
+        <tbody>
+          <tr><td>Optimal</td><td class="n">402,118</td><td class="n">96%</td></tr>
+          <tr><td>Medium</td><td class="n">211,903</td><td class="n">71%</td></tr>
+          <tr><td>Easy</td><td class="n">118,742</td><td class="n">22%</td></tr>
+          <tr><td>Trivial</td><td class="n">79,677</td><td class="n">0%</td></tr>
+        </tbody></table></div>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-pts">
+      <h2 id="h-pts">Crafts for a skill point, by skill</h2>
+      <div class="plot"><svg id="pts" role="img" aria-label="Crafts between two skill points at each skill"></svg></div>
+      <p class="note">Slowest: skill 275 to 299, at 9.4 crafts for a skill point.</p>
+    </section>
+
+    <section class="mod w8 first" aria-labelledby="h-when">
+      <h2 id="h-when">When players craft</h2>
+      <div class="hours" id="when" role="img" aria-label="Crafts by weekday and hour of the player's own day"></div>
+      <p class="readout"><b>Busiest hour</b>: Sat 20:00 UTC</p>
+    </section>
+    <section class="mod last" aria-labelledby="h-sit">
+      <h2 id="h-sit">A sitting</h2>
+      <dl class="pair" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div><dt>Median length</dt><dd>1m 12s<small>crafts no more than two minutes apart, over the last 90 days</small></dd></div>
+        <div><dt>Median crafts</dt><dd>31<small>over the last 90 days</small></dd></div>
+      </dl>
+      <dl class="pair" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0.9rem">
+        <div><dt>Sittings</dt><dd>41,806<small>of all time</small></dd></div>
+        <div><dt>Seconds between crafts</dt><dd>2.4<small>median within a sitting, of all time</small></dd></div>
+      </dl>
+    </section>
+
+    <section class="mod w7 first" aria-labelledby="h-reagents">
+      <h2 id="h-reagents">What the crafts used</h2>
+      <ol class="rank plain">
+        <li><a class="who" href="#">Raw Spotted Yellowtail</a><span class="val">309,420 used</span><span class="track"><i style="width:100%"></i></span></li>
+        <li><a class="who" href="#">Mild Spices</a><span class="val">231,710</span><span class="track"><i style="width:75%"></i></span></li>
+        <li><a class="who" href="#">Raptor Flesh</a><span class="val">182,100</span><span class="track"><i style="width:59%"></i></span></li>
+        <li><a class="who" href="#">Refreshing Spring Water</a><span class="val">153,760</span><span class="track"><i style="width:50%"></i></span></li>
+        <li><a class="who" href="#">Small Egg</a><span class="val">121,360</span><span class="track"><i style="width:39%"></i></span></li>
+      </ol>
+      <p class="note">From the recipes whose materials are on record.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-zones">
+      <h2 id="h-zones">Zones with the most crafts</h2>
+      <ol class="rank">
+        <li><a class="who" href="#">Saltmarsh Reach</a><span class="val">212,400 crafts</span><span class="track"><i style="width:100%"></i></span></li>
+        <li><a class="who" href="#">Pale Rest</a><span class="val">148,010</span><span class="track"><i style="width:70%"></i></span></li>
+        <li><a class="who" href="#">Greywatch Ford</a><span class="val">96,318</span><span class="track"><i style="width:45%"></i></span></li>
+        <li><a class="who" href="#">Hollowmere</a><span class="val">71,950</span><span class="track"><i style="width:34%"></i></span></li>
+      </ol>
+    </section>
+
+    <section class="mod w12 first last camp-mod" aria-labelledby="h-top">
+      <h2 id="h-top">Most crafts</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th class="rk">#</th><th>Character</th><th>Class</th><th class="n">Crafts</th><th>Ruleset</th></tr></thead>
+        <tbody>
+          <tr><td class="rk">1</td><td><a href="character.html">Name-Surname</a></td><td>Orc Warrior</td><td class="n">9,402</td><td>Hardcore</td></tr>
+          <tr><td class="rk">2</td><td><a href="character.html">Name-Surname</a></td><td>Human Mage</td><td class="n">7,977</td><td>Standard</td></tr>
+          <tr><td class="rk">3</td><td><a href="character.html">Name-Surname</a></td><td>Tauren Druid</td><td class="n">6,260</td><td>Slow</td></tr>
+          <tr><td class="rk">4</td><td><a href="character.html">Name-Surname</a></td><td>Night Elf Hunter</td><td class="n">4,871</td><td>Standard</td></tr>
+          <tr><td class="rk">5</td><td><a href="character.html">Name-Surname</a></td><td>Dwarf Paladin</td><td class="n">3,114</td><td>Hardcore</td></tr>
+        </tbody></table></div>
+    </section>
+  </div>
+</div>
+</div>`, `
+(() => {
+  const rand = Comp.rng(41);
+  Comp.bars("pts", { w: 400, h: 250, x0: -0.5, x1: 11.5, y1: 12, yt: [0, 4, 8, 12], xt: [0, 2, 4, 6, 8, 10],
+    data: Array.from({ length: 12 }, (_, i) => [i, 1 + 8.4 * Math.pow(i / 11, 2.2) + rand() * 0.3]) });
+  Comp.hours("when", (d, h) => {
+    const evening = Math.exp(-((h - 20) ** 2) / 8) + 0.4 * Math.exp(-((h - 13) ** 2) / 14), week = d >= 5 ? 1.15 : 0.9;
+    return Math.max(0, Math.min(4, Math.round(evening * week * 3.4 + (rand() - 0.5) * 0.9)));
+  });
+})();
+`);

@@ -65,6 +65,14 @@ enum Profession: string
         };
     }
 
+    /** The scene of the profession's page, null when it has no page. */
+    public function scene(): ?Scene
+    {
+        $slug = $this->slug();
+
+        return $slug === null ? null : Scene::from($slug);
+    }
+
     /** The gathering the profession is, null for a crafting profession. */
     public function gatherKind(): ?GatherKind
     {

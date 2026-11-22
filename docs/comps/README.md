@@ -15,6 +15,7 @@ A page is built from its comp and reviewed against it: same markup classes, same
 | `stats.html` | `/stats` and, with a ruleset chosen in the filters, `/rulesets/{slug}` |
 | `camps.html` | `/camps`. The head is a still: the page draws the game's campfire, tent and chair there, and the comp holds no game art |
 | `fishing.html` | `/professions/{slug}` for the four gathering professions. The comp is Fishing; Herbalism, Mining and Skinning use the same modules with their own words (a pick, a strike, a skin) and leave out the modules that are fishing only. The head is a still: the page draws the profession's scene there |
+| `cooking.html` | `/professions/{slug}` for the eight crafting professions. The comp is Cooking; the others use the same modules and leave out the ones they have no rows for. The head is a still, and there is no map module |
 | `rulesets.html` | `/rulesets` |
 | `leaderboards.html` | `/leaderboards` |
 | `search.html` | `/search` |
