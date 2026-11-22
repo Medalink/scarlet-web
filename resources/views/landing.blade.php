@@ -11,7 +11,7 @@
       <p class="hero-links">
         <x-get-app />
         <a href="/demo">See a character overview</a>
-        <a href="#events">All <span data-codes>227</span> event codes</a>
+        <a href="#events">All <span data-codes>252</span> event codes</a>
       </p>
     </div>
 
@@ -44,7 +44,7 @@
 
   <section class="band" id="events" aria-labelledby="h-events">
     <div class="wrap">
-      <h2 id="h-events">Scarlet writes <span data-codes>227</span> kinds of event lines</h2>
+      <h2 id="h-events">Scarlet writes <span data-codes>252</span> kinds of event lines</h2>
       <p class="intro">Every line has a time to the hundredth of a second, a code and its fields. These codes are the whole format. Pick one to read what it records.</p>
       <div class="events">
         <div class="reader" aria-live="polite">
@@ -86,7 +86,7 @@
       <h2 id="h-capture">The capture map: <span data-cap="recorded">789</span> of <span data-cap="points">4,132</span> client data points are recorded</h2>
       <div class="capture">
       <div>
-        <p class="intro">The capture map lists every function and event the WoW Forever client documents, build <span id="build">1.60.1.70959</span>, and the globals its own interface calls that the documentation leaves out, sorted by what they are about. A data point is an event, or a function that returns a value.</p>
+        <p class="intro">The capture map lists every function and event the WoW Forever client documents, build <span id="build">1.60.1.70959</span>, and the globals its own interface calls that the documentation leaves out, sorted by what they are about. A data point is an event, or a function that returns a value. Interface plumbing such as frames, settings and sound is listed on the map and not counted here.</p>
         <dl class="funnel">
           <div><dt data-cap="points">4,132</dt><dd>data points in the capture map</dd></div>
           <div><dt data-cap="leftOut">3,343</dt><dd>left out, each with a written reason</dd></div>
