@@ -178,6 +178,19 @@ the job may do so from the following sessions.
 Drop rates count `window` rows only (coin and currency entries of a window are not rows). `receipt` rows give the
 attribution for logs that have no item list.
 
+### `boss_loot` (loot: `EL`)
+
+Someone in the uploader's group received an item from a boss encounter. Every member of the group who uploads writes
+a row for the same drop, so a page counts a drop once (DESIGN.md).
+
+| Key | Type | |
+| --- | --- | --- |
+| `encounter_id` | int or null | the client's encounter id |
+| `item_id` | int or null | |
+| `quantity` | int or null | |
+| `who` | string or null | the receiver: the uploader's own `Name-Surname` for their loot, a `~` pseudonym for another player unless the social group is on |
+| `class_file` | string or null | the receiver's class file name |
+
 ### `skill_ups` (professions: `SK`, `SL`)
 
 | Key | Type | |
@@ -443,6 +456,21 @@ One row per distinct (zone id, zone name) in the session. `at` is the session st
 | `instance_id` | int or null | |
 | `instance_type` | string or null | |
 | `difficulty_id` | int or null | |
+
+### `recipes` (professions: `RQ`)
+
+`session`, `recipe_spell_id`, `at` (ms of the line), `output_item_id`, `min_quantity`, `max_quantity`, `reagents`
+(string or null: `itemID:count` joined by commas), `optional_slots`, `type` (int or null, the client's recipe type).
+One row per recipe of the session, the last line read. A recipe is the same for every uploader: the app keeps the
+newest row of each id.
+
+### `spells` (names group: `SI`, `SD`)
+
+`session`, `spell_id`, `at` (ms of the newest line), `icon_id`, `cast_ms`, `min_range`, `max_range` (ints or null),
+`costs` (string or null: `powerType:cost` joined by commas), `passive` (bool or null), `description` (string or null,
+300 characters at most). `SI` fills the first seven keys and `SD` the last; a session with only one of them has nulls
+for the other, and the app keeps the known value. One row per spell of the session. `SI` and `SD` do not write a
+`names` row.
 
 ### `names` (names group)
 

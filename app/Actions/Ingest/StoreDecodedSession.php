@@ -13,6 +13,7 @@ class StoreDecodedSession
         private readonly DeleteFactRows $deleteRows,
         private readonly InsertFactRows $insertRows,
         private readonly UpsertDictionaries $dictionaries,
+        private readonly UpsertReferenceFacts $reference,
         private readonly UpsertTalentLayouts $layouts,
         private readonly SummarizeTalents $talents,
         private readonly SummarizeBaselines $baselines,
@@ -81,6 +82,7 @@ class StoreDecodedSession
         $span = $this->sessionRows->write($characterId, $sessionStart, $rulesetId, $counted, $decoded->summary);
         $this->distance->handle($characterId, $sessionStart);
         $this->dictionaries->handle($characterId, $decoded, countVotes: ! $namesCounted);
+        $this->reference->handle($decoded);
         $this->layouts->handle($decoded, countUpload: ! $namesCounted);
 
         return $span;

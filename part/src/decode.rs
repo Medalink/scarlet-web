@@ -8,6 +8,7 @@
 use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::build::parse_header;
 use crate::camp::{Camp, Known};
+use crate::reference::Reference;
 use crate::rows::Rows;
 use crate::social::Social;
 use crate::tables::{Groups, NameRefs, leading_id};
@@ -19,7 +20,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 6;
+pub const DECODER_VERSION: u32 = 7;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -210,6 +211,7 @@ struct Dec<'o> {
     camp: Camp,
     social: Social,
     baselines: Baselines,
+    reference: Reference,
 }
 
 pub(crate) fn prefix(
@@ -349,7 +351,7 @@ impl Dec<'_> {
             self.end_ms = self.end_ms.max(t);
         }
         if let Some(kind) = NameRefs::get().def_kind(code) {
-            self.define(code, kind, &f);
+            self.define(code, kind, t, &f);
             return;
         }
         // A login's first lines come before its `S` line. Only the lines that
@@ -567,6 +569,16 @@ impl Dec<'_> {
                 self.w.text("token", field(&f, 0));
                 self.w.end();
             }
+            "RQ" => self.reference.on_rq(t, &f),
+            "EL" => {
+                let ctx = Ctx {
+                    session: self.session,
+                    at: t,
+                    level: self.lvl(),
+                    zone_id: self.zone_id,
+                };
+                Reference::on_el(&ctx, &mut self.w, &f);
+            }
             "HD" | "WH" | "IG" | "BM" | "BO" => {
                 let ctx = Ctx {
                     session: self.session,
@@ -694,7 +706,7 @@ impl Dec<'_> {
         }
     }
 
-    fn define(&mut self, code: &str, kind: u8, f: &[&str]) {
+    fn define(&mut self, code: &str, kind: u8, t: i64, f: &[&str]) {
         let Some(id) = leading_id(field(f, 0)) else {
             return;
         };
@@ -705,6 +717,8 @@ impl Dec<'_> {
             }
             "IQ" => self.items.entry(id).or_default().quality = num(f, 1),
             "IT" => self.items.entry(id).or_default().tooltip = field(f, 1).to_string(),
+            "SI" => self.reference.on_si(t, id, f),
+            "SD" => self.reference.on_sd(t, id, f),
             _ => {
                 self.names
                     .entry((kind, id))
@@ -1069,6 +1083,7 @@ impl Dec<'_> {
                 .text("tooltip", &it.tooltip);
             self.w.end();
         }
+        self.reference.finish(&mut self.w, s);
         for (p, name) in std::mem::take(&mut self.pn) {
             self.w.begin("pn");
             self.w
@@ -1321,6 +1336,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         camp: Camp::default(),
         social: Social::default(),
         baselines: Baselines::default(),
+        reference: Reference::default(),
     };
     for l in &lines {
         d.line(l);

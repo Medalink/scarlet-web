@@ -3,7 +3,7 @@
 namespace App\Support;
 
 /**
- * What `scarlet-part decode` wrote for one session (docs/ROWS.md): fact rows per table, the dictionaries,
+ * What `scarlet-part decode` wrote for one session (docs/ROWS.md): fact rows per table, the dictionaries, the recipes and spells,
  * the talent layouts, the pseudonyms and the session's own summary row.
  */
 final class DecodedSession
@@ -16,6 +16,12 @@ final class DecodedSession
 
     /** @var list<array<string, mixed>> */
     public array $items = [];
+
+    /** @var list<array<string, mixed>> */
+    public array $recipes = [];
+
+    /** @var list<array<string, mixed>> */
+    public array $spells = [];
 
     /** @var list<array<string, mixed>> */
     public array $zones = [];
@@ -51,6 +57,8 @@ final class DecodedSession
             match ($table) {
                 'names' => $decoded->names[] = $row,
                 'items' => $decoded->items[] = $row,
+                'recipes' => $decoded->recipes[] = $row,
+                'spells' => $decoded->spells[] = $row,
                 'zones' => $decoded->zones[] = $row,
                 'pn' => $decoded->pseudonyms[] = $row,
                 'talent_trees' => $decoded->talentTrees[] = $row,
