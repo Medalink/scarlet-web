@@ -1027,8 +1027,11 @@ play of the one before: silver about 50 hours, gold about 200, scarlet about 500
 2,500 (owner, 2026-11-21: "much much much harder", "bronze can be easy to get people interested but then things get
 slow", "make legends larger, go 150k" for kills with scarlet at 30,000). The thresholds were sized from the rates of
 one character that plays a lot (53 kills, 2.7 quests and 0.29 world widths an hour), so they are a first setting.
-Summit, Unbroken, Artisan, Explorer, Questing and Tracker stop where the game does: legend is the level cap, five
-professions at 300, or most of the zones, quests and rares of the world. Delver, Crafter, Angler and Gatherer are
+Summit, Unbroken, Artisan, Explorer, Cartographer, Questing and Tracker stop where the game does: legend is the level
+cap, five professions at 300, or most of the zones, areas, quests and rares of the world. No legend asks for more than
+one character can reach (owner, 2026-11-22: "capped to possibility"). Cartographer counts the discoveries that give experience: the client's
+AreaTable has about 585 such areas in the zones of the two continents, and a discovery gives none at the level cap or
+far above the area's level, so legend at 500 asks for the areas of both factions' zones found while leveling. Delver, Crafter, Angler and Gatherer are
 sized for play given to them, such as 130 hours of fishing. The summary counts the feats held, and its counts by
 tier add up to them.
 
@@ -1056,7 +1059,7 @@ tier add up to them.
 | Questing | quests turned in | 10 | 150 | 500 | 1,000 | 1,500 |
 | Errand Runner | quests turned in in one session | 3 | 10 | 20 | 35 | 50 |
 | Fickle | quests abandoned | 1 | 20 | 75 | 150 | 300 |
-| Cartographer | areas discovered | 5 | 100 | 300 | 600 | 800 |
+| Cartographer | areas discovered that gave experience | 5 | 100 | 250 | 400 | 500 |
 | Local Hero | zones with 25 quests or more turned in | 1 | 4 | 8 | 12 | 18 |
 | Thorough | quests turned in in one zone | 10 | 30 | 60 | 90 | 110 |
 | Delver | dungeon runs | 1 | 20 | 75 | 200 | 500 |

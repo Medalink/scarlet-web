@@ -183,7 +183,7 @@ enum Feat: string
             self::Questing => ['quests', 'quest turned in', 'quests turned in', [10, 150, 500, 1000, 1500]],
             self::ErrandRunner => ['quests', 'quest in one session', 'quests in one session', [3, 10, 20, 35, 50]],
             self::Fickle => ['quests', 'quest abandoned', 'quests abandoned', [1, 20, 75, 150, 300]],
-            self::Cartographer => ['zones', 'area discovered', 'areas discovered', [5, 100, 300, 600, 800]],
+            self::Cartographer => ['zones', 'area discovered', 'areas discovered', [5, 100, 250, 400, 500]],
             self::LocalHero => ['quests', 'zone with 25 quests turned in', 'zones with 25 quests turned in', [1, 4, 8, 12, 18]],
             self::Thorough => ['quests', 'quest in one zone', 'quests in one zone', [10, 30, 60, 90, 110]],
             self::Delver => ['dungeons', 'dungeon run', 'dungeon runs', [1, 20, 75, 200, 500]],
