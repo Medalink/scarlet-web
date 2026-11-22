@@ -90,7 +90,7 @@ final class PublicApiCatalog
                 'name' => 'character', 'group' => 'Characters', 'path' => '/characters/{name}', 'action' => [CharacterController::class, 'show'],
                 'summary' => 'A public character: race, class, level, ruleset, time played, this week, distance walked, feats and standings. A character that is not public answers 404.',
                 'params' => [['name', 'path', 'string', 'The character name, `Name-Surname`.']],
-                'returns' => '`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (a list, highest tier first: `key`, one of `summit`, `slayer`, `questing`, `delver`, `explorer`, `veteran`, `devoted`, `wayfarer`, `jumper`, `swimmer`, `unbroken`, `artisan`, `crafter`, `angler`, `gatherer` or `tracker`, `name`, `value`, `tier` from 0 for none to 5 for legend, with `tier_name` one of `Copper`, `Silver`, `Gold`, `Scarlet` or `Legend`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the sum of the character\'s profession ranks), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.',
+                'returns' => '`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (every feat that applies to the character: those earned first, rarest first, then those not yet earned, closest first. `key` is one of '.self::featKeys().'; the gold feats `earner`, `spender`, `tycoon` and `windfall` are listed only when `meta.economy` is true; `name`, `value`, `tier` from 0 for none to 5 for legend, with `tier_name` one of `Copper`, `Silver`, `Gold`, `Scarlet` or `Legend`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the sum of the character\'s profession ranks), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.',
                 'example' => '/characters/Tolvir-Greane', 'where' => ['name' => '[^/]+'],
             ],
             [
@@ -158,5 +158,10 @@ final class PublicApiCatalog
     public static function params(array $params): array
     {
         return array_map(fn (string|array $param): array => is_string($param) ? self::PARAMS[$param] : $param, $params);
+    }
+
+    private static function featKeys(): string
+    {
+        return implode(', ', array_map(fn (Feat $feat): string => '`'.$feat->value.'`', Feat::cases()));
     }
 }

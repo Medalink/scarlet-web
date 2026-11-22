@@ -4,3 +4,4 @@ import './charts.js';
 import './pages/maps.js';
 import './site/tally.js';
 import './site/search.js';
+import './site/dialog.js';

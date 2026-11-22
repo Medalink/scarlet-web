@@ -2,11 +2,11 @@
 
 namespace App\Actions\Public;
 
+use App\Actions\Feats\ShowCharacterFeats;
 use App\Actions\Public\Character\CapState;
 use App\Actions\Public\Character\CreaturesMet;
 use App\Actions\Public\Character\DeathLog;
 use App\Actions\Public\Character\DungeonRuns;
-use App\Actions\Public\Character\Feats;
 use App\Actions\Public\Character\HeatCells;
 use App\Actions\Public\Character\HourlyPlay;
 use App\Actions\Public\Character\ItemsFound;
@@ -63,7 +63,7 @@ class CharacterOverview
         private readonly QuestsDone $questsDone,
         private readonly CreaturesMet $creaturesMet,
         private readonly SkillHistory $skillHistory,
-        private readonly Feats $feats,
+        private readonly ShowCharacterFeats $feats,
         private readonly Standings $standings,
     ) {}
 
@@ -113,7 +113,7 @@ class CharacterOverview
             'skills' => $skills,
             'talents' => $this->talents->handle($id),
             'records' => $records,
-            'feats' => $last === null ? [] : $this->feats->handle($character, $totals, $records, $skills, $dungeons),
+            'feats' => $last === null ? [] : $this->feats->handle($character, $economy),
             'standings' => $this->standings->handle($character),
             'killed' => $this->mostKilled->handle($id),
             'crafted' => $this->mostCrafted->handle($id),

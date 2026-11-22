@@ -82,7 +82,7 @@ final class CharacterPage
             'week' => $week === null ? null : self::week($week, $economy),
             'levels' => $levels,
             'records' => CharacterRecords::tiles($r['records'], $totals, $since),
-            'feats' => CharacterFeats::section($r['feats'], $character),
+            'feats' => CharacterFeatWall::section($r['feats'], $character),
             'modes' => CharacterSections::distance($r['records']['modes'], $since),
             'standings' => CharacterStandings::rows($r['standings']),
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
