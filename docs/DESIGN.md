@@ -428,7 +428,8 @@ Rules, in order:
 7. **Account scope** is `reference`. Per store, the audit compares its latest read with Scarlet's rows plus the
    counted claim amounts of its characters inside `[from, to]`, and lists a sum more than 2.5% above it as a note,
    never a violation (Mastercraft ran 1.2% below the sum of the per-character addons; a character also played on
-   another PC, or with Mastercraft off, honestly exceeds it).
+   another PC, or with Mastercraft off, honestly exceeds it). It does the same for a herb or ore read, its `attempts`
+   against the characters' `gathers` rows of that kind; a kind with no source of Scarlet rows is never compared.
 
 On the owner's fishing data this gives Scarlet's 343 casts, 295 landed and 316 items, plus 0 casts, 39 landed and 40
 items from the two Fishing Log sessions before Scarlet read loot windows: 343, 334 and 356. With a Scarlet session
@@ -499,10 +500,14 @@ after that.
   does not show beside a table of numbers. A new player's history in an addon is part of the totals from the first
   upload, public pages (under the `scarlet.min_characters` rule above), the account's own page and the character page.
 - The account page. `/account/characters` shows, for the signed-in account only, each account-scope `life` claim once per
-  origin, store, kind and dims, at its latest read, under a heading such as "Mastercraft lifetime fishing": the addon's
-  casts, catches and fish, its `from_at` and `to_at`, and under it what Scarlet's rows plus the counted claims of the
+  origin, store, kind and dims, at its latest read, under a heading by kind: "Mastercraft lifetime fishing" (the addon's
+  casts, catches and fish), "Mastercraft lifetime herb gathers" and "Mastercraft lifetime ore gathers" (its attempts).
+  Each shows the read's `from_at` and `to_at`, and under it what Scarlet's rows plus the counted claims of the
   characters of the account that carry the read add up to inside `[from, to]`, the sum of rule 7 and of the audit
-  (`SumScarletAndClaims`). A sum more than 2.5% above a figure is written under the table as a note. A read is left out
+  (`SumScarletAndClaims`). Scarlet's rows are picked by kind: fishing's `gathers` (casts, those looted as catches) and
+  `gather_items` (fish), and for herb and ore the characters' `gathers` rows of that kind, one attempt each. A kind with
+  no source of Scarlet rows (`kill`, `run`, `xp`) has no figures and no note, and the page does not show it. A sum more
+  than 2.5% above a figure is written under the table as a note, for herb and ore as for fishing. A read is left out
   while a character that carries it has a null reconcile version, and the flag above switches it off with the other
   reads. The public API and the public pages never read it.
 - The character page. The Fish caught tile adds the claims' `landed` and says "From addons" with their count, to the

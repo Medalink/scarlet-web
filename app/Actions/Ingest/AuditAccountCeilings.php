@@ -9,8 +9,6 @@ class AuditAccountCeilings
 {
     private const float TOLERANCE = 1.025;
 
-    private const array METRICS = ['casts', 'landed', 'items'];
-
     private const string LIFETIME = 'life';
 
     private const string SCOPE_ACCOUNT = 'a';
@@ -34,10 +32,10 @@ class AuditAccountCeilings
                 continue;
             }
             $sum = $this->sums->handle($read['kind'], $characters, $read['from'], $read['to']);
-            foreach (self::METRICS as $metric) {
+            foreach ($sum as $metric => $total) {
                 $ceiling = (float) ($read['amounts'][$metric] ?? 0);
-                if (isset($read['amounts'][$metric]) && $sum[$metric] > $ceiling * self::TOLERANCE) {
-                    $notes[] = "{$read['origin']} store '{$read['store']}' {$read['kind']} {$metric}: Scarlet and its counted claims add up to {$sum[$metric]} and the account's latest read says {$read['amounts'][$metric]}";
+                if (isset($read['amounts'][$metric]) && $total > $ceiling * self::TOLERANCE) {
+                    $notes[] = "{$read['origin']} store '{$read['store']}' {$read['kind']} {$metric}: Scarlet and its counted claims add up to {$total} and the account's latest read says {$read['amounts'][$metric]}";
                 }
             }
         }

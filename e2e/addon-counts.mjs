@@ -20,7 +20,7 @@
  * It needs the app's database settings, which boot.mjs hands to its command. It is not part of the default lane.
  *
  * With both installs linked it also reads the public and the account's own fishing page and the character's page.
- * The account's characters page shows each lifetime read once, with what Scarlet and the counted addons add up to inside its window and the ceiling note of rule 7.
+ * The account's characters page shows each lifetime read once, with what Scarlet and the counted addons add up to inside its window and the ceiling note of rule 7: fishing's casts, catches and fish, and Mastercraft's herb and ore attempts against the herb and ore gathers of an invented gatherer.
  * By default they show Scarlet, what the addons added and the total, which equal the database's; run with
  * ADDON_COUNTS_PAGES=false (boot.mjs passes it on) they show Scarlet's own numbers and nothing from addons. ADDON_PAGES_DIR=<folder> keeps the pages read, for a before and after comparison.
  */
@@ -399,6 +399,49 @@ async function addonOnly() {
 
 const sum = (rows) => rows.join("/");
 
+const HERB_SPELL = 2366;
+const ORE_SPELL = 2575;
+const HERB_SKILL_LINE = 182;
+const ORE_SKILL_LINE = 186;
+
+function gatherSession(name) {
+  const start = CASE_DAY - 3600;
+  const lines = [
+    [0, "S", "1.15.8", "ROGUE", "Human", 3, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
+    [100, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
+    [150, "SL", HERB_SKILL_LINE, 5, 75, 0, "s"],
+    [150, "SL", ORE_SKILL_LINE, 5, 75, 0, "s"],
+  ];
+  [HERB_SPELL, HERB_SPELL, HERB_SPELL, ORE_SPELL, ORE_SPELL].forEach((spell, k) => lines.push([10_000 * (k + 1), "C", spell, 1.5]));
+  lines.push([60_000, "ES"]);
+  return partsOf(start, lines, {}, name);
+}
+
+async function gatheredReferences(jar) {
+  const read = async () => plain(expectStatus(await http.page("/account/characters", { jar }), 200, "GET /account/characters signed in").text);
+  const herb = "Mastercraft lifetime herb gathers";
+  const ore = "Mastercraft lifetime ore gathers";
+  let shown = await read();
+  if (!PAGES_ON) {
+    check("with the flag off the characters page reads no herb or ore claim", !shown.includes(herb) && !shown.includes(ore));
+    return;
+  }
+  for (let i = 0; i < 40 && !(shown.includes(herb) && shown.includes(ore)); i += 1) {
+    await sleep(POLL_MS);
+    shown = await read();
+  }
+  const span = `${shownDay(0)} ${shownDay(CASE_DAY)}`;
+  const pair = (claimed, scarlet) => `Mastercraft ${span} ${claimed} Scarlet and counted addons ${span} ${scarlet}`;
+  const module = (heading) => (shown.includes(heading) ? shown.slice(shown.indexOf(heading), shown.indexOf(heading) + 700) : "");
+  console.log(`account characters page: ${module(herb)} | ${module(ore)}`);
+  check("the characters page shows each herb and ore heading once", shown.split(herb).length === 2 && shown.split(ore).length === 2, shown.slice(0, 600));
+  check("the herb reads show Mastercraft's 84 and 2 attempts beside Scarlet's 3 gathers", shown.includes(pair(84, 3)) && shown.includes(pair(2, 3)), module(herb));
+  check("the ore read shows Mastercraft's 272 attempts beside Scarlet's 2 gathers", shown.includes(pair(272, 2)), module(ore));
+  check("herb and ore have the one column, Attempts", module(herb).includes("Source Since As of Attempts Mastercraft") && module(ore).includes("Source Since As of Attempts Mastercraft"), `${module(herb)} | ${module(ore)}`);
+  check("the herb read of 2 raises a note, 50.0% above", shown.includes("Attempts: 3 against 2 in Mastercraft, 50.0% above."), module(herb));
+  check("the reads under 2.5% above raise no note: herb 84 and ore 272", shown.split("Attempts: ").length === 2, shown);
+}
+
 async function gatheredAndReturned() {
   await fresh(client, second);
   await ensureLinked();
@@ -406,23 +449,29 @@ async function gatheredAndReturned() {
   const day = Math.floor(to / 86400) * 86400;
   const claims = [
     claimOf({ origin: "mc", scope: "a", window: "life", kind: "herb", to, amounts: "attempts=84" }),
+    claimOf({ origin: "mc", store: "alt", scope: "a", window: "life", kind: "herb", to, amounts: "attempts=2" }),
     claimOf({ origin: "mc", scope: "a", window: "life", kind: "ore", to, amounts: "attempts=272" }),
   ];
   const returned = part(day, "imports", [`3600000\tYU\tTSM\te\t2589\t20\t5`, `3600000\tYU\tTSM\tx\t2592\t12\t1`], {}, GATHERER);
-  await upload(known([...countsPartsOf(claims, GATHERER), returned]), GATHERER, client, [...GROUP_ORDER, "imports"]);
+  const gathering = gatherSession(GATHERER);
+  await upload(known([...gathering, ...countsPartsOf(claims, GATHERER), returned]), GATHERER, client, [...GROUP_ORDER, "imports"]);
   const imported = () => Number(db(`select count(*) from imported_records where ${own(GATHERER)}`));
-  const state = await settleOne(GATHERER, (s) => s.claims === 2 && imported() === 2, "the herb and ore claims and the returned auctions");
+  const state = await settleOne(GATHERER, (s) => s.sessions === 1 && s.claims === 3 && imported() === 2, "the herb and ore claims, the gathers and the returned auctions");
   const kinds = db(`select string_agg(concat_ws('/', c.kind, c.scope, c.window, c.status), ' ' order by c.kind) from addon_claims c where c.${own(GATHERER)}`);
-  check("an account life claim of kind herb and one of kind ore decode and reconcile to reference", kinds === "herb/a/life/reference ore/a/life/reference", kinds);
-  check("they add nothing to any total, and no Scarlet row exists for them", sum(state.total) === "0/0/0" && state.counted.every((n) => n === 0) && state.gathers === 0, `${sum(state.scarlet)} + ${sum(state.counted)}`);
-  const amounts = db(`select string_agg(c.kind || '=' || (c.amounts ->> 'attempts'), ' ' order by c.kind) from addon_claims c where c.${own(GATHERER)}`);
-  check("the claims keep the addon's attempts, herb 84 and ore 272", amounts === "herb=84 ore=272", amounts);
+  check("account life claims of kind herb (two stores) and ore decode and reconcile to reference", kinds === "herb/a/life/reference herb/a/life/reference ore/a/life/reference", kinds);
+  check("they add nothing to any total, and Scarlet has no fishing row", sum(state.total) === "0/0/0" && state.counted.every((n) => n === 0) && state.gathers === 0, `${sum(state.scarlet)} + ${sum(state.counted)}`);
+  const amounts = db(`select string_agg(c.kind || '=' || (c.amounts ->> 'attempts'), ' ' order by c.kind, (c.amounts ->> 'attempts')::int desc) from addon_claims c where c.${own(GATHERER)}`);
+  check("the claims keep the addon's attempts, herb 84 and 2 and ore 272", amounts === "herb=84 herb=2 ore=272", amounts);
+  const gathered = db(`select string_agg(kind || '=' || n, ' ' order by kind) from (select kind, count(*) as n from gathers where ${own(GATHERER)} group by kind) t`);
+  check("Scarlet's own rows are 3 herb and 2 ore gathers", gathered === "herb=3 ore=2", gathered);
   const lines = db(`select string_agg(concat_ws('/', kind, source, item_id, quantity, copper, via, at), ' ' order by at) from imported_records where ${own(GATHERER)}`);
   check("the returned auctions land as expired and cancel records: item, count, no copper, the stack size in via", lines === `expired/TSM/2589/20/0/5/${day + 3600} cancel/TSM/2592/12/0/1/${day + 7200}`, lines);
   const audited = audit(GATHERER);
   check("the audit passes with herb and ore claims", audited.status === 0, audited.stdout + audited.stderr);
+  check("rule 7 notes the herb read of 2 attempts against Scarlet's 3 and no other", /store 'alt' herb attempts: Scarlet and its counted claims add up to 3 and the account's latest read says 2/.test(audited.stdout) && !/herb attempts: [^\n]*says 84/.test(audited.stdout) && !/ore attempts/.test(audited.stdout), audited.stdout);
   const jar = new Jar();
   await signIn(http, jar);
+  await gatheredReferences(jar);
   const own_ = plain(expectStatus(await http.page(`/c/${GATHERER}`, { jar }), 200, `GET /c/${GATHERER} signed in`).text);
   check("the owner's character page shows 2 returned auctions and 32 items", own_.includes("Returned auctions 2") && own_.includes("Items returned 32"), own_.slice(0, 600));
   const roster = plain(expectStatus(await http.page("/account/characters", { jar }), 200, "GET /account/characters signed in").text);

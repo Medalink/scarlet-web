@@ -22,7 +22,7 @@ class ShowAccountReferences
      * the sum reads only the characters given.
      *
      * @param  list<int>  $characterIds
-     * @return list<array{origin: string, store: string, kind: string, from: int, to: int, amounts: array<string, int>, sum: array{casts: int, landed: int, items: int}}>
+     * @return list<array{origin: string, store: string, kind: string, from: int, to: int, amounts: array<string, int>, sum: array<string, int>}>
      */
     public function handle(array $characterIds): array
     {
