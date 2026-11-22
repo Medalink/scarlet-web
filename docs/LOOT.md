@@ -501,7 +501,11 @@ object is labelled by what it gives.
   like the others (a day, a source, a read, a rule, a size, a zone), so a page reads rows in proportion to what was
   recorded, never a row for each window. Rebuilt whole, 260,000 keyed windows, 780,000 window items, 20,000 windows
   from members and 260,000 kills (about 100 times the production rows of 2026-11-22, spread over 300 sources) take
-  4.8 s on the development machine and leave 2,101 window rows and 6,302 item rows.
+  4.8 s on the development machine and leave 2,101 window rows and 6,302 item rows. Spread over 2,000 sources and 30
+  days, with no grouping at all, the same rows take 10 s and leave 153,637 and 460,911; the index of sources and items
+  then reads in 19 ms and 79 ms from the counted views, where counting the distinct corpse keys of the same rows at
+  page time takes 257 ms and 884 ms and reads every window, and a cold `/loot` takes 1.6 s, `/creatures/{id}` 0.2 s
+  and a warm page 40 ms.
 - The group tables (`group_spans`, `group_loot`, `loot_rolls`) are read directly, through `RollupRead` and its cache.
 - **Enums own the strings**: `LootRead`, `RateFlag`, `LootRule` (the eight methods), so `scarlet.identityLiteral`
   holds.
@@ -534,7 +538,7 @@ Each phase is a few small ships and leaves the site working. Phases 1 to 4 need 
 | 4. Rule and size inside a source | the two comparison charts, the mark and its developer list, `/loot/groups` with What a corpse held, What the looter kept and Kills an hour by size | phase 2 |
 | 5. Who received and rolls | decode `LT`, `LD`, `RW`, `RL` into `group_loot` and `loot_rolls`; Share of group loot, Rolls, Rolls in groups on the item page | decoder bump only; the lines are already uploaded |
 | 6. Composition | `group_spans`, `group_at`, `class_file` on rolls and receipts; the composition module; Who received it by class | decoder bump; `social` parts |
-| 7. Exact corpses | **write side done** (decoder version 12): corpse key on `K`, `LO`, `LW`; `LW` uploaded; `peer_opens`, `peer_drops`; `group_loot` source; object names. **read side, later:** count by key, rates a kill for grouped play, the `one reader` tag removed | addon release and the sharing-group change, both shipped |
+| 7. Exact corpses | **write side done** (decoder version 12): corpse key on `K`, `LO`, `LW`; `LW` uploaded; `peer_opens`, `peer_drops`; `group_loot` source; object names. **read side done:** every page counts a corpse with a key once (the counted views), `corpses looted of kills` and `Of kills` cover grouped play, and `one reader` and its tag apply only to the windows with no key of a free-for-all arm; no arm carries the tag once none of its windows lacks a key | addon release and the sharing-group change, both shipped |
 
 Phase 1 is one support class, two Actions, two Blade modules and two comps. It changes what a visitor reads: a row
 that said `0.8%` from one drop says `1 of 125, 0.1 to 4.4%`, a source with three windows stops showing rates, and
