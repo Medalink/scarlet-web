@@ -29,6 +29,7 @@ final class SitePages
         $pages = [
             self::page('Stats', '/stats', 'Dashboard of the recorded play of every ruleset', ['statistics', 'overview', 'numbers']),
             self::page('World map', '/map', 'Where characters walked, died and met creatures', ['map', 'heat', 'heatmap', 'deaths', 'paths']),
+            self::page('Loot', '/loot', 'What creatures, objects and containers gave and how often each item dropped', ['loot', 'drops', 'drop rate', 'drop rates', 'loot table']),
             self::page('Camps', '/camps', 'How players use the campsite: visits, Camp Benefits and what gets set up', ['camp', 'campfire', 'tent', 'chair', 'rested', 'benefits']),
             ...array_map(self::profession(...), Profession::withPages()),
             self::page('Rulesets', '/rulesets', 'The rulesets side by side', ['compare', 'comparison']),

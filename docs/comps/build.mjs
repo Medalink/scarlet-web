@@ -513,6 +513,7 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
           ${ranked([dropRow("Stalker Hide", "item.html", 52, 126, "1.0", "", null, "26 of 64"), dropRow("Cracked Tooth", "item.html", 36, 126, "1.0", "", null, "18 of 64"), dropRow("Saltmarsh Cleaver", "item.html", 2, 126, "1.0", "q2", null, "1 of 64"), dropRow("Marshwalker Greaves", "item.html", 1, 126, "1.0", "q3", null, "0 of 64")])}
         </tbody></table></div>
       <p class="note">A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset. Of kills is corpses that held the item over the kills the character got credit for while playing alone; a kill nobody looted counts against it.</p>
+      <p class="note"><a href="loot.html">All loot</a></p>
     </section>
     <section class="mod w5 last" aria-labelledby="h-w">
       <h2 id="h-w">Where it was met</h2>
@@ -583,6 +584,7 @@ page("item.html", "Marshwalker Greaves: where it drops", "search", `
           ${ranked([dropRow("Reed Snapper", "creature.html", 1, 7, "1.0", "", "Loot"), dropRow("Silt-Crusted Chest", "item.html", 1, 3, "1.0", "", "Container")])}
         </tbody></table></div>
       <p class="note">A drop rate is corpses of the source that held the item over corpses of the source read the same way for the first time, one row for each source and way it was read. Sources read 10 times or more rank by the low end of the 95% range; below the line, sources read fewer times show their counts only. Drop rates cover every ruleset.</p>
+      <p class="note"><a href="loot.html">All loot</a></p>
     </section>
     <section class="mod last" aria-labelledby="h-r"><h2 id="h-r">Rolls in groups</h2>
       <ol class="rank"><li><span class="who">Need</span><span class="val">61% · 14 of 23</span><span class="track"><i style="width:61%"></i></span></li><li><span class="who">Greed</span><span class="val">30% · 7 of 23</span><span class="track"><i style="width:30%"></i></span></li><li><span class="who">Pass</span><span class="val">9% · 2 of 23</span><span class="track"><i style="width:9%"></i></span></li></ol>
@@ -621,6 +623,7 @@ page("object.html", "Weathered Reed Chest: what it gives", "search", `
           ${ranked([dropRow("Reed Twine", "item.html", 28, 48, "1.0"), dropRow("Salt-Cured Pelt", "item.html", 19, 48, "1.0"), dropRow("Marshwalker Greaves", "item.html", 1, 48, "1.0", "q3")])}
         </tbody></table></div>
       <p class="note">A drop rate is times opened that held the item over times opened for the first time. The band is the 95% range; from 10 to 29 openings it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.</p>
+      <p class="note"><a href="loot.html">All loot</a></p>
     </section>
     <section class="mod w5 last" aria-labelledby="h-w">
       <h2 id="h-w">Where it was opened</h2>

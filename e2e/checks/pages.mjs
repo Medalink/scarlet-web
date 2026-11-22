@@ -10,6 +10,7 @@ const PAGES = [
   { path: "/", shows: heading("Scarlet records what you do in WoW Forever") },
   { path: "/demo", shows: heading("Maren Ashlow") },
   { path: "/stats", shows: heading("All characters") },
+  { path: "/loot", shows: heading("Loot") },
   { path: "/map", shows: heading("World map") },
   { path: "/camps", shows: heading("Camps") },
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },

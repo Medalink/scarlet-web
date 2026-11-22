@@ -17,6 +17,7 @@
       @else
       <x-note>No drops of this item are recorded yet.</x-note>
       @endif
+      <p class="note"><a href="/loot">All loot</a></p>
     </x-module>
     @if ($d['gathered'])
     <x-module span="w12" :last="end($tail) === 'gathered'" id="h-g" heading="Where it's gathered">

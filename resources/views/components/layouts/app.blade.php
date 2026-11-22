@@ -3,7 +3,7 @@
 @props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => '', 'canonical' => null, 'index' => true, 'brand' => true])
 @php
     $signedIn = $signedIn || auth()->check();
-    $primary = ['stats' => ['Stats', '/stats'], 'world' => ['Map', '/map'], 'leaderboards' => ['Leaderboards', '/leaderboards']];
+    $primary = ['stats' => ['Stats', '/stats'], 'world' => ['Map', '/map'], 'loot' => ['Loot', '/loot'], 'leaderboards' => ['Leaderboards', '/leaderboards']];
     $explore = ['camps' => ['Camps', '/camps'], 'professions' => ['Professions', '/professions/fishing'], 'rulesets' => ['Rulesets', '/rulesets'], 'talents' => ['Talents', '/talents']];
     $inExplore = array_key_exists($current, $explore);
 @endphp

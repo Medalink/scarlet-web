@@ -15,6 +15,7 @@
       @else
       <x-note>No drops recorded for this object yet.@if ($d['unread']) {{ $d['unread'] }}@endif</x-note>
       @endif
+      <p class="note"><a href="/loot">All loot</a></p>
     </x-module>
     <x-module span="w5" :last="true" id="h-w" heading="Where it was opened">
       @if ($d['hasMap'])

@@ -1222,7 +1222,7 @@ least 7 days old) turns git history into a version and release notes.
 - **Distance** is in world widths; a step longer than 0.05 of the world is a teleport and is not counted. Distance by
   mode on the character page is different: the yards its `W` movement stretches report. The Wayfarer feat and the
   most-distance board stay on the path length.
-- **Phone header**: Stats and Map stay in the landing and demo header on a phone; the other pages drop out first.
+- **Phone header**: Stats, Map and Loot stay in the landing and demo header on a phone; the other pages drop out first.
 - **View transitions**: the `@view-transition` opt-in is also inline in the head, ahead of every stylesheet. Chromium
   re-checks the opt-in as each sheet loads, and with the rule only in site.css a click was cancelled with an unhandled
   rejection whenever another sheet arrived first.

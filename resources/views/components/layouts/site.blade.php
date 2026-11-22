@@ -26,6 +26,7 @@
       <a class="demo" href="/demo"@if ($demo) aria-current="page"@endif>Character overview</a>
       <a href="/stats">Stats</a>
       <a href="/map">Map</a>
+      <a href="/loot">Loot</a>
       <details class="nav-more app"><summary>Explore</summary><div class="nav-menu">@foreach ($explore as [$label, $path])<a href="{{ $path }}">{{ $label }}</a>@endforeach</div></details>
       <a class="get" href="/download">Get the app</a>
     </nav>
