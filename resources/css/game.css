@@ -191,6 +191,46 @@ dialog::backdrop { overflow: hidden; overscroll-behavior: contain; }
 }
 @keyframes feats-in { from { opacity: 0; translate: 0 0.6rem; } }
 @keyframes feats-fade { from { opacity: 0; } }
+.feat-toast { position: fixed; inset: auto 1.5rem 1.5rem auto; z-index: 100; display: none; align-items: center; gap: 0.9rem; box-sizing: border-box; width: min(22rem, calc(100vw - 3rem)); max-width: none; height: auto; margin: 0; padding: 0.8rem 0.9rem; overflow: visible; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); opacity: 0; transition-property: opacity, display, overlay; transition-duration: 200ms; transition-timing-function: ease-out; transition-behavior: allow-discrete; }
+.feat-toast:is(:popover-open, .\:popover-open):where(:not([data-closing])) { display: flex; opacity: 1; transition-duration: 240ms; transition-timing-function: var(--ease-out); @starting-style { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+    .feat-toast { transition-property: opacity, translate, display, overlay; }
+    .feat-toast:is(:popover-open, .\:popover-open):where(:not([data-closing])) { translate: 0 0; @starting-style { translate: 0 0.8rem; } }
+}
+@media (prefers-reduced-motion: reduce) {
+    .feat-toast, .feat-toast:is(:popover-open, .\:popover-open):where(:not([data-closing])) { transition-duration: 150ms; }
+}
+@media (max-width: 26rem) { .feat-toast { left: 1.5rem; width: auto; } }
+.feat-toast-say { flex: 1 1 auto; min-width: 0; }
+.feat-toast-l { font: 500 0.72rem/1 var(--mono); color: var(--muted); }
+.feat-toast .feat-n { margin-top: 0.4rem; font-size: 1.2rem; }
+.feat-toast-x { flex: none; align-self: flex-start; display: grid; place-items: center; width: 2rem; height: 2rem; margin: -0.35rem -0.4rem 0 0; padding: 0; border: 1px solid transparent; border-radius: 3px; background: none; color: var(--muted); font-size: 1.3rem; line-height: 1; cursor: pointer; }
+@media (pointer: coarse) { .feat-toast-x { width: 2.75rem; height: 2.75rem; } }
+.feat-toast-x:hover { color: var(--fg); border-color: var(--line2); }
+.feat-toast-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seal-slot { position: relative; flex: none; display: grid; width: 3rem; }
+.seal-slot > .seal { grid-area: 1 / 1; width: 3rem; overflow: hidden; }
+.seal-slot .ico { width: 1.2rem; height: 1.2rem; }
+.feat-toast .seal.was { z-index: 1; color: var(--metal); border-color: currentColor; box-shadow: none; background: radial-gradient(circle, color-mix(in srgb, var(--metal) 20%, transparent) 0 54%, transparent 55%); }
+.feat-toast .seal.was.f1 { --metal: var(--copper); } .feat-toast .seal.was.f2 { --metal: var(--silver); } .feat-toast .seal.was.f3 { --metal: var(--gold); }
+.feat-toast .seal.was.f4 { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+.seal-slot::after, .seal:not(.was)::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; opacity: 0; }
+.seal-slot::after { inset: 0; border: 2px solid var(--metal); }
+.seal:not(.was)::after { inset: 0; background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.6) 50%, transparent 62%); }
+@media (prefers-reduced-motion: no-preference) {
+    .feat-toast:is(:popover-open, .\:popover-open):where(:not([data-closing])) .seal { animation: seal-stamp 420ms var(--ease-out) 120ms backwards; }
+    .feat-toast:is(:popover-open, .\:popover-open):where(:not([data-closing])) .seal-slot::after { animation: seal-ring 700ms ease-out 500ms; }
+    .feat-toast.t5:is(:popover-open, .\:popover-open):where(:not([data-closing])) .seal-slot::after { animation-iteration-count: 2; }
+    .feat-toast:is(:popover-open, .\:popover-open):where(:not([data-closing])) .seal:not(.was)::after { animation: seal-sweep 600ms ease-in-out 560ms backwards; }
+    .feat-toast:is(:popover-open, .\:popover-open):where(:not([data-closing])) .seal.was { animation: seal-stamp 420ms var(--ease-out) 120ms backwards, seal-was 120ms linear 480ms forwards; }
+}
+@keyframes seal-stamp { from { scale: 1.35; opacity: 0; } 35% { opacity: 1; } }
+@keyframes seal-ring { from { scale: 1; opacity: 0.7; } to { scale: 1.7; opacity: 0; } }
+@keyframes seal-sweep { from { translate: -100% 0; opacity: 1; } to { translate: 100% 0; opacity: 1; } }
+@keyframes seal-was { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+    .seal.was { display: none; }
+}
 
 .sheet > .sect { position: relative; }
 .sheet > .sect::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 3.5rem; height: 2px; background: var(--accent); }

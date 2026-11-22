@@ -120,8 +120,8 @@ export async function accountIsClosedToVisitors(ctx) {
   expectStatus(await ctx.http.page("/login"), 200, "GET /login");
 }
 
-export async function appLinksToAccount(ctx) {
-  const { http, jar } = ctx;
+/** Signs `jar` in through the development sign-in. Skipped where the server has it off. */
+export async function signIn(http, jar) {
   const login = expectStatus(await http.request("/login", { jar, headers: { Accept: "text/html" } }), 200, "GET /login");
   if (!login.text.includes('action="/auth/development"')) {
     const off = "the development sign-in is off: set SCARLET_DEV_LOGIN=true in the server's .env";
@@ -132,10 +132,10 @@ export async function appLinksToAccount(ctx) {
   if (signedIn.status !== 302 || !(signedIn.headers.get("location") ?? "").endsWith("/account")) {
     throw new Error(`POST /auth/development: expected a redirect to /account, saw ${signedIn.status} ${signedIn.headers.get("location")}: ${signedIn.text.slice(0, 300)}`);
   }
+}
 
-  const label = `scarlet-web e2e link ${crypto.randomBytes(6).toString("hex")}`;
-  const app = new InstallClient(ctx.base, label, http.fetch);
-  expectStatus(await app.register(), 201, "POST /api/v1/installs for the linking app");
+/** Links the install of `app` to the account `jar` is signed in to, with a link code as the app does it. */
+export async function linkToAccount(http, jar, app) {
   const code = expectJson(expectStatus(await app.linkCode(), 201, "POST /api/v1/installs/link-code"), "the link code").code;
   if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code ?? "")) throw new Error(`the link code should look like XXXX-XXXX, saw ${JSON.stringify(code)}`);
 
@@ -147,6 +147,16 @@ export async function appLinksToAccount(ctx) {
   if (confirmed.status !== 302 || !(confirmed.headers.get("location") ?? "").endsWith("/account")) {
     throw new Error(`POST /link: expected a redirect to /account, saw ${confirmed.status} ${confirmed.headers.get("location")}: ${confirmed.text.slice(0, 300)}`);
   }
+}
+
+export async function appLinksToAccount(ctx) {
+  const { http, jar } = ctx;
+  await signIn(http, jar);
+
+  const label = `scarlet-web e2e link ${crypto.randomBytes(6).toString("hex")}`;
+  const app = new InstallClient(ctx.base, label, http.fetch);
+  expectStatus(await app.register(), 201, "POST /api/v1/installs for the linking app");
+  await linkToAccount(http, jar, app);
 
   const me = expectJson(expectStatus(await app.me(), 200, "GET /api/v1/installs/me after the link"), "installs/me after the link");
   if (me.linked !== true) throw new Error(`after the link the install should say linked: true, saw ${JSON.stringify(me)}`);

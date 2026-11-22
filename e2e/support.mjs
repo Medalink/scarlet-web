@@ -113,6 +113,10 @@ export class Jar {
   header() {
     return [...this.#cookies].map(([name, value]) => `${name}=${value}`).join("; ");
   }
+
+  entries() {
+    return [...this.#cookies].map(([name, value]) => ({ name, value }));
+  }
 }
 
 export function parseJson(text) {

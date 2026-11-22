@@ -96,14 +96,14 @@ export class Browser {
     return asked.stdout.trim();
   }
 
-  /** Opens a tab at `width` pixels, loads `url` and waits for the load event and the fonts. */
-  async open(url, { width, height }) {
+  /** Opens a tab at `width` pixels, loads `url` with `cookies` (a name and a value each) and waits for the load event and the fonts. */
+  async open(url, { width, height, cookies = [] }) {
     const target = await fetch(`http://127.0.0.1:${this.#port}/json/new?url=about:blank`, { method: "PUT", signal: AbortSignal.timeout(CALL_MS) }).then((response) => response.json());
     const tab = new Tab(target, this.#onRequest);
     await tab.connect();
     await Promise.all(["Runtime", "Page", "Log", "Network"].map((domain) => tab.send(`${domain}.enable`)));
     await tab.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
-    await tab.send("Network.setCookie", { ...ORIGIN_COOKIE, url: new URL(url).origin });
+    for (const cookie of [ORIGIN_COOKIE, ...cookies]) await tab.send("Network.setCookie", { ...cookie, url: new URL(url).origin });
     await tab.navigate(url);
     return tab;
   }

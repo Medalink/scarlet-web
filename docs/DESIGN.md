@@ -669,6 +669,20 @@ the deploy is announced; a row inserted later starts at 0, so a new character's 
 `POST /installs/me/feats/seen` and `MarkOwnedFeatsSeen` call it. `GET /public/characters/{name}` carries neither
 `seen_tier` nor `new`.
 
+**Feat toasts.** The signed-in owner of a character sees a toast on that character's page for each new feat, in the
+order of `new`. The stack is part of the owner's Livewire feat wall, so a visitor, a signed-out viewer and `?as=visitor`
+get no toast markup and no script work. About 600 ms after the page has loaded, and only while the tab is visible
+(otherwise when it becomes visible), the toasts play one at a time at the bottom right, above the page and above an
+open feats dialog. Each says "Feat earned" or "Upgraded from Silver", the feat name and its new tier, stays 4.2 s,
+pauses while hovered or focused, and has a close button; the next follows 300 ms after one leaves. At most five play.
+When more are new, a sixth toast says "N more feats" with a "View all" button that opens the feats dialog. Showing a
+toast marks it on the server (`FeatWall::seen`, through `MarkOwnedFeatsSeen`): the toast's feat and tier, or for the
+"more feats" toast every feat beyond the fifth. A toast that never showed is not marked, one that was closed early
+stays marked, and a reload after the sequence shows nothing. A pin toggle re-renders the section but not the stack,
+so it does not restart or repeat the sequence. The seal stamps in (scale 1.35 to 1, a ring in the tier's colour, one
+light sweep; an upgrade starts in the previous tier's colours and changes at the stamp; Legend rings twice). With
+reduced motion there is no movement, scale, ring or sweep, only a 150 ms fade, on the same timings.
+
 A feat is one tier of one ladder. Copper comes in the first session or two. Each later tier takes several times the
 play of the one before: silver about 50 hours, gold about 200, scarlet about 500 and legend, the top tier, about
 2,500 (owner, 2026-11-21: "much much much harder", "bronze can be easy to get people interested but then things get

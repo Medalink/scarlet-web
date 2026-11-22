@@ -3,10 +3,11 @@
  * 30 seconds. It uploads three invented characters (e2e/fixture), reads them back through the API, the pages and the
  * browser, and removes them again.
  *
- *   node e2e/run.mjs [--url http://127.0.0.1:8557] [--only upload|api|pages|browser] [--keep <dir>] [--browser <path>]
+ *   node e2e/run.mjs [--url http://127.0.0.1:8557] [--only upload|api|pages|browser|owner] [--keep <dir>] [--browser <path>]
  *
  * Without --url it reads E2E_URL. Only a local address is accepted. The upload lane always runs first, because the
- * other lanes read what it uploaded, and the removal always runs last. Exit 0 when every check passes, 1 when one
+ * other lanes read what it uploaded. The owner lane runs after them, because it links the uploading install to an
+ * account, and the removal always runs last. Exit 0 when every check passes, 1 when one
  * fails, 2 on a usage error.
  */
 
@@ -20,9 +21,10 @@ import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
 import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
+import * as owner from "./checks/owner.mjs";
 import * as removal from "./checks/removal.mjs";
 
-const LANES = ["upload", "api", "pages", "browser"];
+const LANES = ["upload", "api", "pages", "browser", "owner"];
 const SERVER_CONNECTIONS = 3;
 const INSTALL_LABEL = "scarlet-web e2e install";
 
@@ -57,6 +59,7 @@ const REGISTRY = [
   { lane: "browser", name: "the key pages run clean at 1280", run: browser.pagesRunClean },
   { lane: "browser", name: "the narrow pages fit at 390", run: browser.narrowPagesFit },
   { lane: "browser", name: "search suggests while typing", run: browser.searchSuggestsWhileTyping },
+  { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
   { lane: "removal", name: "removal answers and empties the status", run: removal.removalAnswersAndEmptiesStatus },
   { lane: "removal", name: "the character is no longer served", run: removal.characterIsNoLongerServed },
 ];
@@ -106,7 +109,7 @@ const ctx = {
 
 const EOL = "\n";
 const indented = (message) => String(message).split(EOL).map((line) => `  ${line}`).join(EOL);
-const STAGES = [["upload", "api", "pages", "browser"], ["removal"]];
+const STAGES = [["upload", "api", "pages", "browser"], ["owner"], ["removal"]];
 const uploaded = Promise.withResolvers();
 let failed = 0;
 let skipped = 0;
