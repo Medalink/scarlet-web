@@ -17,7 +17,7 @@ class ShowImportedHistory
      * for the owner's own pages; no board, rollup or public page counts these rows. A character with none is left out.
      *
      * @param  list<int>  $characterIds
-     * @return array<int, array<string, mixed>> by character id: sources, first, last, sales, sales_copper, buys, buys_copper, gold, days, items
+     * @return array<int, array<string, mixed>> by character id: sources, first, last, sales, sales_copper, buys, buys_copper, returned, returned_items, gold, days, items
      */
     public function handle(array $characterIds): array
     {
@@ -29,7 +29,8 @@ class ShowImportedHistory
         $totals = DB::table('imported_records')->whereIn('character_id', $characterIds)->groupBy('character_id')
             ->selectRaw("character_id, min(at) as first, max(at) as last, string_agg(distinct source, ',' order by source) as sources,
                 count(*) filter (where kind = 'sale') as sales, coalesce(sum(copper) filter (where kind = 'sale'), 0) as sales_copper,
-                count(*) filter (where kind = 'buy') as buys, coalesce(sum(copper) filter (where kind = 'buy'), 0) as buys_copper")
+                count(*) filter (where kind = 'buy') as buys, coalesce(sum(copper) filter (where kind = 'buy'), 0) as buys_copper,
+                count(*) filter (where kind in ('expired', 'cancel')) as returned, coalesce(sum(quantity) filter (where kind in ('expired', 'cancel')), 0) as returned_items")
             ->get();
         foreach ($totals as $row) {
             $out[(int) $row->character_id] = [
@@ -40,6 +41,8 @@ class ShowImportedHistory
                 'sales_copper' => (int) $row->sales_copper,
                 'buys' => (int) $row->buys,
                 'buys_copper' => (int) $row->buys_copper,
+                'returned' => (int) $row->returned,
+                'returned_items' => (int) $row->returned_items,
                 'gold' => [],
                 'days' => [],
                 'items' => [],

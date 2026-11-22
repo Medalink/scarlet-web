@@ -9,4 +9,6 @@ enum ImportedKind: string
     case Sale = 'sale';
     case Buy = 'buy';
     case Other = 'other';
+    case Expired = 'expired';
+    case Cancel = 'cancel';
 }

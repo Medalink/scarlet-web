@@ -13,7 +13,7 @@ pub const GROUP: &str = "imports";
 const DAY_MS: i64 = 86_400_000;
 
 /// The line codes of the group, in FORMAT.md order.
-pub const CODES: [&str; 4] = ["YG", "YS", "YB", "YM"];
+pub const CODES: [&str; 5] = ["YG", "YS", "YB", "YM", "YU"];
 
 /// One part for each UTC day that has lines. Its session key is the day's start in epoch seconds;
 /// no real session starts at midnight sharp more than a hair's breadth of the time, and when one
@@ -53,7 +53,9 @@ pub fn build_parts(character: &str, mut events: Vec<Ev>, opts: &Options) -> Vec<
 }
 
 /// Rows of table `imported` from the imports parts among `parts` (other groups are ignored), one
-/// per line: `kind`, `at` (epoch ms), `source`, `via`, `item_id`, `quantity`, `copper`.
+/// per line: `kind`, `at` (epoch ms), `source`, `via`, `item_id`, `quantity`, `copper`. A `YU` line
+/// is kind `expired` or `cancel`, with the stack size in `via` and no copper; one whose kind is
+/// neither `e` nor `x` is skipped.
 /// Returns the number of rows.
 pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String> {
     let mut rows = Rows::new(out);
@@ -75,6 +77,14 @@ pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String>
             let f: Vec<&str> = f.collect();
             let int = |i: usize| f.get(i).and_then(|v| v.parse::<i64>().ok());
             let source = f.first().copied().unwrap_or("");
+            let returned = match f.get(1).copied() {
+                Some("e") => "expired",
+                Some("x") => "cancel",
+                _ => "",
+            };
+            if code == "YU" && returned.is_empty() {
+                continue;
+            }
             rows.begin("imported");
             match code {
                 "YG" => {
@@ -103,6 +113,15 @@ pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String>
                         .null("item_id")
                         .null("quantity")
                         .int("copper", int(2).unwrap_or(0));
+                }
+                "YU" => {
+                    rows.str("kind", returned)
+                        .int("at", t)
+                        .str("source", source)
+                        .text("via", f.get(4).copied().unwrap_or(""))
+                        .opt("item_id", int(2))
+                        .opt("quantity", int(3))
+                        .int("copper", 0);
                 }
                 _ => return Err(format!("unknown imports code {code}")),
             }

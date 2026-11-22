@@ -41,6 +41,7 @@ if (!base) throw new Error("E2E_URL is not set: run this through e2e/boot.mjs");
 const NAME = "Quill-Fisher";
 const TWIN = "Quill-Twin";
 const ONLY = "Quill-Dockhand";
+const GATHERER = "Quill-Herbalist";
 const LABEL = "scarlet-web e2e addon counts install";
 const LABEL_TWO = "scarlet-web e2e addon counts second install";
 const FISHING_CAST = 18248;
@@ -300,9 +301,9 @@ async function settle(names, ready, what) {
 
 const settleOne = async (name, ready, what) => (await settle([name], ready, what))[0];
 
-async function upload(held, name = NAME, app = client) {
+async function upload(held, name = NAME, app = client, groups = GROUP_ORDER) {
   const manifest = held.map(({ id, session, group, lines, raw_bytes }) => ({ id, session, group, lines, raw_bytes }));
-  const answer = expectJson(expectStatus(await app.manifest(name, GROUP_ORDER, manifest), 200, "POST /upload/manifest"), "POST /upload/manifest");
+  const answer = expectJson(expectStatus(await app.manifest(name, groups, manifest), 200, "POST /upload/manifest"), "POST /upload/manifest");
   const need = answer.need ?? [];
   if (need.length > 0) expectStatus(await app.parts(need.map((id) => BY_ID.get(id).text)), 200, "POST /upload/parts");
 }
@@ -365,16 +366,19 @@ async function pages(state) {
   check(`the fishing pages count Scarlet's own ${count(state.scarlet[0])} casts and the character page its ${count(state.scarlet[1])} catches`, addonPages.every((name) => shown[name].includes(`Fishing ${count(state.scarlet[0])} casts`)) && shown.character.includes(`${count(state.scarlet[1])} Fish caught since`));
 }
 
+async function ensureLinked() {
+  const linkedNow = expectJson(expectStatus(await client.me(), 200, "GET /installs/me"), "installs/me").linked === true;
+  if (linkedNow) return;
+  const jar = new Jar();
+  await signIn(http, jar);
+  await linkToAccount(http, jar, client);
+}
+
 async function addonOnly() {
   await fresh(client, second);
   const rows = Number(db("select count(*) from gathers where kind = 'fish'"));
   check("no character holds a Scarlet fishing row", rows === 0, `${rows} rows`);
-  const linkedNow = expectJson(expectStatus(await client.me(), 200, "GET /installs/me"), "installs/me").linked === true;
-  if (!linkedNow) {
-    const jar = new Jar();
-    await signIn(http, jar);
-    await linkToAccount(http, jar, client);
-  }
+  await ensureLinked();
   const claims = [claimIn(0, 600, "casts=40;landed=36;items=38"), claimIn(3600, 4200, "casts=25;landed=20;items=27")];
   await upload(known(countsPartsOf(claims, ONLY)), ONLY);
   const state = await settleOne(ONLY, (s) => s.claims === claims.length, "the addon-only character");
@@ -394,6 +398,38 @@ async function addonOnly() {
 }
 
 const sum = (rows) => rows.join("/");
+
+async function gatheredAndReturned() {
+  await fresh(client, second);
+  await ensureLinked();
+  const to = CASE_DAY;
+  const day = Math.floor(to / 86400) * 86400;
+  const claims = [
+    claimOf({ origin: "mc", scope: "a", window: "life", kind: "herb", to, amounts: "attempts=84" }),
+    claimOf({ origin: "mc", scope: "a", window: "life", kind: "ore", to, amounts: "attempts=272" }),
+  ];
+  const returned = part(day, "imports", [`3600000\tYU\tTSM\te\t2589\t20\t5`, `3600000\tYU\tTSM\tx\t2592\t12\t1`], {}, GATHERER);
+  await upload(known([...countsPartsOf(claims, GATHERER), returned]), GATHERER, client, [...GROUP_ORDER, "imports"]);
+  const imported = () => Number(db(`select count(*) from imported_records where ${own(GATHERER)}`));
+  const state = await settleOne(GATHERER, (s) => s.claims === 2 && imported() === 2, "the herb and ore claims and the returned auctions");
+  const kinds = db(`select string_agg(concat_ws('/', c.kind, c.scope, c.window, c.status), ' ' order by c.kind) from addon_claims c where c.${own(GATHERER)}`);
+  check("an account life claim of kind herb and one of kind ore decode and reconcile to reference", kinds === "herb/a/life/reference ore/a/life/reference", kinds);
+  check("they add nothing to any total, and no Scarlet row exists for them", sum(state.total) === "0/0/0" && state.counted.every((n) => n === 0) && state.gathers === 0, `${sum(state.scarlet)} + ${sum(state.counted)}`);
+  const amounts = db(`select string_agg(c.kind || '=' || (c.amounts ->> 'attempts'), ' ' order by c.kind) from addon_claims c where c.${own(GATHERER)}`);
+  check("the claims keep the addon's attempts, herb 84 and ore 272", amounts === "herb=84 ore=272", amounts);
+  const lines = db(`select string_agg(concat_ws('/', kind, source, item_id, quantity, copper, via, at), ' ' order by at) from imported_records where ${own(GATHERER)}`);
+  check("the returned auctions land as expired and cancel records: item, count, no copper, the stack size in via", lines === `expired/TSM/2589/20/0/5/${day + 3600} cancel/TSM/2592/12/0/1/${day + 7200}`, lines);
+  const audited = audit(GATHERER);
+  check("the audit passes with herb and ore claims", audited.status === 0, audited.stdout + audited.stderr);
+  const jar = new Jar();
+  await signIn(http, jar);
+  const own_ = plain(expectStatus(await http.page(`/c/${GATHERER}`, { jar }), 200, `GET /c/${GATHERER} signed in`).text);
+  check("the owner's character page shows 2 returned auctions and 32 items", own_.includes("Returned auctions 2") && own_.includes("Items returned 32"), own_.slice(0, 600));
+  const roster = plain(expectStatus(await http.page("/account/characters", { jar }), 200, "GET /account/characters signed in").text);
+  check("the account's characters page lists the character's returned auctions beside its sales and purchases", roster.includes("Imported history") && roster.includes("Returned"), roster.slice(0, 600));
+  const visitor = plain(expectStatus(await http.page(`/c/${GATHERER}`), 200, `GET /c/${GATHERER}`).text);
+  check("a visitor sees no imported history", !visitor.includes("Returned auctions"));
+}
 const claimOfTrip = (trip) => `${own(NAME)} and origin = 'fl' and addon_claims.window = 'session' and to_at = ${TRIPS[trip].to}`;
 const claimCount = (name, where) => Number(db(`select count(*) from addon_claims c join characters ch on ch.id = c.character_id where ch.name = '${name}' and ${where}`));
 const fresh = async (...apps) => {
@@ -724,6 +760,7 @@ async function main() {
   await twinWithMoreRows();
   await linked();
   await addonOnly();
+  await gatheredAndReturned();
 
   await fresh(client, second);
 }

@@ -32,6 +32,7 @@ final class ImportedHistoryPage
                 Format::moneyText($h['sales_copper']),
                 Format::number($h['buys']),
                 Format::moneyText($h['buys_copper']),
+                Format::number($h['returned']),
                 Format::number(count($h['gold'])),
             ]];
         }
@@ -40,7 +41,7 @@ final class ImportedHistoryPage
         }
 
         return [
-            'columns' => [['label' => 'Character'], ['label' => 'From'], ['label' => 'Covers'], ['label' => 'Sales', 'numeric' => true], ['label' => 'Received', 'numeric' => true], ['label' => 'Purchases', 'numeric' => true], ['label' => 'Paid', 'numeric' => true], ['label' => 'Gold days', 'numeric' => true]],
+            'columns' => [['label' => 'Character'], ['label' => 'From'], ['label' => 'Covers'], ['label' => 'Sales', 'numeric' => true], ['label' => 'Received', 'numeric' => true], ['label' => 'Purchases', 'numeric' => true], ['label' => 'Paid', 'numeric' => true], ['label' => 'Returned', 'numeric' => true], ['label' => 'Gold days', 'numeric' => true]],
             'rows' => $rows,
         ];
     }
@@ -63,6 +64,8 @@ final class ImportedHistoryPage
                 ['label' => 'Received', 'value' => Format::moneyText($h['sales_copper'])],
                 ['label' => 'Purchases', 'value' => Format::number($h['buys'])],
                 ['label' => 'Paid', 'value' => Format::moneyText($h['buys_copper'])],
+                ['label' => 'Returned auctions', 'value' => Format::number($h['returned'])],
+                ['label' => 'Items returned', 'value' => Format::number($h['returned_items'])],
                 ['label' => 'Gold days', 'value' => Format::number(count($h['gold']))],
             ],
             'gold' => self::gold($h['gold']),

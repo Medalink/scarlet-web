@@ -12,6 +12,8 @@ enum AddonKind: string
     case Kill = 'kill';
     case Run = 'run';
     case Xp = 'xp';
+    case Herb = 'herb';
+    case Ore = 'ore';
 
     public function hasRows(): bool
     {

@@ -66,7 +66,7 @@ is in no group or in two, and the app, the decoder and the settings page all rea
 | `collections` | Collections, achievements, Legacy and reputation | Legacy Challenges and points, mounts, pets, reputation, statistics |
 | `client` | Game client and addons loaded | Client checks, addon list, UI errors, screenshots, loading screens |
 | `addons` | Other addons | The whole addon stream of ADDONS.md, every integration |
-| `imports` | Imported history from other addons | Gold balances, sales, purchases and other income and expense read from other addons' saved variables; owner-only, never in a board |
+| `imports` | Imported history from other addons | Gold balances, sales, purchases, returned auctions and other income and expense read from other addons' saved variables; owner-only, never in a board |
 | `fishing` | The Fishing Log | Records, journal, fishing sessions, bounties and the spot leaderboards the companion read from The Fishing Log's saved variables; other anglers as pseudonyms |
 | `counts` | Counts from other addons | Casts and catches, kills, runs and other totals other addons counted, added to Scarlet's own without counting anything twice (Addon counts). Includes The Fishing Log's and ForeverFishing's session totals; turning off `fishing` does not remove them |
 | `names` | Names and item facts | Not a switch. A name line (`N`, `SN`, `IN`, `II` and the like) is sent only in a session where a sent line uses that id |
@@ -133,15 +133,20 @@ the server runs its binary.
 
 ### Imported history
 
-The `imports` group carries gold balances, sales, purchases and other income and expense that the companion read from
+The `imports` group carries gold balances, sales, purchases, returned auctions and other income and expense that the companion read from
 other addons' saved variables (Scarlet's FORMAT.md, "Imported history"). They are a third kind of record beside lifetime
 and observed numbers and stay apart from both:
 
 - One part per UTC day, whose session key is that day's start in epoch seconds. `DecodeSession` sends these parts to
   `scarlet-part decode --imports` and `StoreImportedRecords` replaces the day's rows in `imported_records`; the session
   decoder skips the group, so no session, fact row, rollup or board ever sees them.
+- A line is `YG` (kind `gold`; `source` is `TSM` or `Mastercraft`), `YS` (`sale`), `YB` (`buy`), `YM` (`other`) or `YU`.
+  `YU` is an auction that came back: kind `e` becomes `expired` and `x` becomes `cancel`, with `item_id`, `quantity` = the
+  line's count, `copper` 0 and the stack size in `via`. A `YU` of any other kind is skipped. The decoder fails a day on
+  a code it does not know, so a decoder that reads a new code ships before any app writes it.
 - `imported_records` has no public reader. `ShowImportedHistory` feeds the signed-in owner's character page and the
-  account's characters page, both labelled with the source. Removing the group or the character deletes its rows.
+  account's characters page, both labelled with the source. Both show the returned auctions (expired and cancelled) as a count, with the items in all.
+  Removing the group or the character deletes its rows.
 
 ### The Fishing Log
 
@@ -238,6 +243,7 @@ measurement before it ships.
 | `ff` | session `casts`, `successfulCasts`, `catches` | `casts`, `landed`, `items` | as `fl`, plus one cast per cast a reload interrupted; no overlap with Scarlet, unmeasured |
 | `ff` | `lifetime`, `journal`, `fishingLocations`, `activeSeconds` | nothing | the lifetime equals the sessions on the owner's data (it also counts sessions with no catch, which are not saved); rod-equipped time is not fishing time |
 | `mc` | `fishing.life.casts`, `catches`, `gained` | `casts`, `landed`, `items` as an account `life` claim, reference only | 1.2%, 0.9% and 1.3% below the sum of `fl` and `ff` over its span |
+| `mc` | `nodes[*].c` summed by profession | `attempts` for kind `herb` and `ore`, as an account `life` claim (store empty), reference only | measured on the owner's data: ore 272 = Scarlet's 272 gathers (77 of 77 nodes equal), herb 84 against 85 inside Scarlet's window (73 of 80 nodes equal), plus 355 herb gathers before Scarlet's first herb row that no character can be given |
 | `mc` | `life.escapes`, `sessions`, `seconds`, `history` | nothing | `escapes` never fires; sessions and seconds follow its own rules; `history` is gold and skill |
 
 ### Lines, parts and the archive
@@ -252,7 +258,8 @@ account folder.
 `YC` lines travel in one `counts` part per character and UTC day of the window's end, keyed like `imports` parts.
 `DecodeSession` sends them to `scarlet-part decode --counts`; the session decoder skips the group. A code the decoder
 does not know is counted and skipped, never fatal to the day. The server's decoder ships before an app writes a new
-kind, and `groups.tsv` before FORMAT.md lists a new code.
+kind. Scarlet's FORMAT.md lists a new code before `groups.tsv` does, because `scarlet-part check-groups` reads FORMAT.md
+from Scarlet's main and fails a group that lists a code FORMAT.md lacks.
 
 `counts` is a group of its own and does not follow the group of the dataset a claim feeds: decode routes a part by its
 group, day parts (`imports`, `fishing`, `counts`) apart from session parts, and one code sits in one group. Each switch
@@ -281,7 +288,7 @@ Scarlet's rows had covered can count once more, never twice.
 
 `scarlet-part decode --counts` reads a day's `counts` parts and writes one `claim` row per `YC` line (the part's id,
 the key fields, `dims`, `amounts`) and a closing `day` row with the decoder version and the lines skipped: a code that
-is not `YC`, a kind the decoder does not list (`fishing`, `kill`, `run`, `xp`), a line it cannot read, and a key a part
+is not `YC`, a kind the decoder does not list (`fishing`, `kill`, `run`, `xp`, `herb`, `ore`), a line it cannot read, and a key a part
 repeats (the last line wins). Nothing is fatal to the day. `StoreAddonClaims` takes the rows under the character lock;
 a key whose `counts` parts are all gone decodes again, which drops the claims only they carried. Removing the `counts`
 group, or the character, deletes the character's claims.
