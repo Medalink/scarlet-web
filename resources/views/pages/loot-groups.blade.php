@@ -48,6 +48,22 @@
       <p class="note">{{ $d['rolls']['note'] }}</p>
       @endif
     </x-module>
+    <x-module span="w12" :first="true" :last="true" id="h-g" heading="Group composition">
+      @if ($d['composition']['empty'])
+      <x-note>{{ $d['composition']['empty'] }}</x-note>
+      @else
+      @if ($d['composition']['need'])
+      <x-table :rows="$d['composition']['need']['rows']" :columns="$d['composition']['need']['columns']" style="margin-top:1.1rem" />
+      @endif
+      @if ($d['composition']['skins'])
+      <x-table :rows="$d['composition']['skins']['rows']" :columns="$d['composition']['skins']['columns']" style="margin-top:1.4rem" />
+      @endif
+      @if ($d['composition']['roles'])
+      <x-table :rows="$d['composition']['roles']['rows']" :columns="$d['composition']['roles']['columns']" style="margin-top:1.4rem" />
+      @endif
+      <p class="note">{{ $d['composition']['note'] }}</p>
+      @endif
+    </x-module>
   </x-sheet>
 </div>
 </x-layouts.app>

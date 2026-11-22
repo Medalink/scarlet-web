@@ -32,6 +32,8 @@ final class LootGroupsPage
         $rolls = $r['rolls'];
         /** @var list<array{size: int, kills: int, seconds: int}> $kills */
         $kills = $r['kills'];
+        /** @var array{need: list<array{class: string, armor: int, need: int, greed: int, pass: int}>, skins: list<array{skinner: bool, looted: int, skinned: int}>, roles: list<array{tank: bool, healer: bool, kills: int, seconds: int}>} $composition */
+        $composition = $r['composition'];
 
         return [
             'sub' => self::sub($figures),
@@ -49,6 +51,7 @@ final class LootGroupsPage
             'share' => GroupRolls::share($share, $source !== null),
             'rolls' => GroupRolls::rolls($rolls, $source !== null),
             'kills' => GroupKillRates::bySize($kills, $source !== null),
+            'composition' => GroupCompositionTables::from($composition, $source !== null),
         ];
     }
 
