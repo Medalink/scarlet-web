@@ -10,6 +10,9 @@
   <section class="pg-head" aria-label="Filters" style="grid-template-columns:minmax(0,1fr)"><div class="filters"><x-scope-filters :filters="$d['filters']" /></div></section>
   <x-figures :items="$d['figures']" />
   <x-sheet>
+    @if ($d['threat'])
+    <x-threat :threat="$d['threat']" />
+    @endif
     <x-module span="w5" :first="true" id="h-k" heading="Deadliest here">
       @if ($d['killers'])
       <x-rank :rows="$d['killers']" />

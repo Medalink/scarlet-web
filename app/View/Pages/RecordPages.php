@@ -57,6 +57,7 @@ final class RecordPages
                 ['label' => 'Deaths per 1,000 kills', 'value' => $kills['kills'] && $deaths['deaths'] !== null ? Format::number($deaths['deaths'] / $kills['kills'] * 1000, 1) : '–'],
                 ['label' => 'Corpses looted', 'value' => $opens === null ? '–' : Format::number($opens), 'unit' => $chosen === null ? null : (self::RULES[$chosen] ?? $chosen)],
             ],
+            'threat' => RecordThreat::creature($kills['kills'], $deaths['deaths']),
             'rules' => array_map(fn (string $item): array => ['label' => self::RULES[$item] ?? $item, 'href' => $base.'?'.http_build_query(array_filter(['ruleset' => $scope->ruleset?->slug(), 'rule' => $item])), 'on' => $item === $chosen], $rules),
             'drops' => array_map(fn (array $row): array => ['cells' => [
                 ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id']],
@@ -150,6 +151,7 @@ final class RecordPages
                 ['label' => 'Deaths', 'value' => $deaths === null ? '0' : Format::number($deathCount)],
                 ['label' => 'Deaths an hour', 'value' => $hours === null || $hours < 1 ? '–' : Format::number($deathCount / $hours, 2)],
             ],
+            'threat' => RecordThreat::zone($hours, $deathCount),
             'map' => MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $r['map_zones'], $r['rect'] === null ? null : (int) $r['id']),
             'killers' => array_map(fn (array $row): array => [
                 'label' => (string) $row['killer'], 'value' => Format::number($row['deaths']), 'share' => (int) $row['deaths'] / $topKills * 100,

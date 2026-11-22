@@ -6,6 +6,9 @@
   </x-page-head>
   <x-figures :items="$d['figures']" />
   <x-sheet>
+    @if ($d['threat'])
+    <x-threat :threat="$d['threat']" />
+    @endif
     <x-module span="w7" :first="true" id="h-d" heading="Drops">
       @if ($d['rules'])
       <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
