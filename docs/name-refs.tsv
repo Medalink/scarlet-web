@@ -129,3 +129,11 @@ GN	1	gossip		def	defines the name of the id in field 1
 BN	1	stat		def	defines the name of the id in field 1
 TN	1	flight		def	defines the name of the id in field 1
 TY	1	talenttab		def	defines the name of the id in field 1
+RQ	1	spell		id	recipe spell
+RQ	2	item		id	output item
+RQ	5	item		list	reagents, elements itemID:count
+SI	1	spell		def	spell fact; sent with the spell
+SD	1	spell		def	spell fact; sent with the spell
+EL	2	item		id	
+AQ	2	item		id	
+IG	2	item		part2	slot:itemID:enchantID:suffixID joined by commas
