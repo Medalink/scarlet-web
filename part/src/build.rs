@@ -75,6 +75,13 @@ pub fn part_id(text: &str) -> [u8; 32] {
     Sha256::digest(text.as_bytes()).into()
 }
 
+pub const MIN_AT_MS: i64 = -210_866_803_200_000;
+pub const MAX_AT_MS: i64 = 9_224_318_015_999_000;
+
+pub fn at_in_range(ms: i64) -> bool {
+    (MIN_AT_MS..=MAX_AT_MS).contains(&ms)
+}
+
 /// `(character, session, group)` from a part's header line.
 pub fn parse_header(text: &str) -> Option<(&str, i64, &str)> {
     let head = text.split('\n').next()?;
@@ -83,7 +90,10 @@ pub fn parse_header(text: &str) -> Option<(&str, i64, &str)> {
         return None;
     }
     let character = f.next()?;
-    let session = f.next()?.parse().ok()?;
+    let session: i64 = f.next()?.parse().ok()?;
+    if !at_in_range(session.checked_mul(1000)?) {
+        return None;
+    }
     let group = f.next()?;
     if f.next().is_some() || character.is_empty() || group.is_empty() {
         return None;

@@ -6,7 +6,7 @@
 //! ROWS.md.
 
 use crate::baselines::{Baselines, Ctx as BaselineCtx};
-use crate::build::parse_header;
+use crate::build::{at_in_range, parse_header};
 use crate::camp::{Camp, Known};
 use crate::combat::Combat;
 use crate::death::Hit;
@@ -25,7 +25,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 13;
+pub const DECODER_VERSION: u32 = 14;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -68,6 +68,10 @@ pub fn num(f: &[&str], i: usize) -> Option<i64> {
     s.parse::<i64>()
         .ok()
         .or_else(|| s.parse::<f64>().ok().map(|x| x.round() as i64))
+}
+
+fn level(f: &[&str], i: usize) -> Option<i64> {
+    num(f, i).filter(|l| (1..=i64::from(i16::MAX)).contains(l))
 }
 
 pub(crate) fn field<'a>(f: &[&'a str], i: usize) -> &'a str {
@@ -822,7 +826,7 @@ impl Dec<'_> {
         for (slot, i) in self.s_fields.iter_mut().zip([0, 1, 2, 4, 5]) {
             *slot = field(f, i).to_string();
         }
-        self.level = num(f, 3).filter(|l| *l > 0).unwrap_or(0);
+        self.level = level(f, 3).unwrap_or(0);
         self.level_start = self.level;
         self.last_level_t = t;
         self.xp_bar = (num(f, 10), num(f, 11));
@@ -844,7 +848,7 @@ impl Dec<'_> {
     }
 
     fn on_level(&mut self, t: i64, f: &[&str]) {
-        let Some(l) = num(f, 0).filter(|l| *l > 0) else {
+        let Some(l) = level(f, 0) else {
             return;
         };
         self.charge(t, false);
@@ -1405,7 +1409,10 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
                 backsteps += 1;
             }
             after_line = true;
-            t += dt;
+            t = t
+                .checked_add(dt)
+                .filter(|t| at_in_range(*t))
+                .ok_or_else(|| format!("bad line in a {group} part"))?;
             lines.push(DLine {
                 t,
                 rank: tie_rank(code, gi),

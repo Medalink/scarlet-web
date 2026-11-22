@@ -36,8 +36,8 @@ Fact rows start with the same five keys (the job adds `character_id` and `rulese
 | --- | --- | --- |
 | `t` | string | table name |
 | `session` | int | session key (seconds) |
-| `at` | int | time of the row, ms |
-| `level` | int or null | level at that time (`S` field 4, then each `L`); null before it is known |
+| `at` | int | time of the row, ms. A part whose session, or a line whose running time, is outside year 4713 BC to 294276 (`timestamptz`) is refused: `a part has no valid header` or `bad line in a <group> part` (decoder version 14) |
+| `level` | int or null | level at that time (`S` field 4, then each `L`); null before it is known. A level outside 1 to 32767 (`smallint`) counts as unknown: an `L` line with one is skipped and an `S` field 4 with one gives null (decoder version 14) |
 | `zone_id` | int or null | the zone at that time: `uiMapID` of the last `Z` line that named a zone; for an instance, which has no uiMapID, the **negative** of its `instanceMapID`; null before the first `Z` |
 
 `names`, `items`, `pn` and `sessions` carry `session` only (and `sessions` has its own time keys).
