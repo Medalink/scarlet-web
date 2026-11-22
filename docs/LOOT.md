@@ -214,14 +214,20 @@ Rules the design follows:
    reads of one corpse across `loot_opens` and `peer_opens`, one window is kept: a character's own before one a
    member sent, then the earliest read (`peer_opens.at` less `late_s`), and the items are that window's. A window a
    member sent says nothing of what it was read for, and a member's skinning is shared like its looting: a creature's
-   counts as `skin` when every item in it is an item that a `gather_items` row of kind `skin` has (a window with no
-   item is `loot`), else as `loot`; an object's takes the read its own windows have most (`loot`, `herb` or `ore`),
-   and an object nobody opened for itself counts nowhere. The set of skin items is read when the tables are rebuilt,
-   so a corpse a member skinned counts as loot until some character has skinned that item. An unkeyed window a member
+   counts as `skin` when it lists a skin item (a window with no item is `loot`), else as `loot`; an object's takes the
+   read its own windows have most (`loot`, `herb` or `ore`), and an object nobody opened for itself counts nowhere. A
+   skin item is an item that a `gather_items` row of kind `skin` has and that no loot window of a character lists
+   (`loot_drops` via `window`, read `loot`): `gather_items` holds the whole list of a skinning read, so the meat of a
+   corpse nobody had looted joins it, and a mate's loot window of meat alone is loot. A mate's skin window that still
+   lists meat is skin by its leather. The set is read from every row at each rebuild, so a corpse a member skinned
+   counts as loot until some character has skinned that item, and the days outside a range rebuilt keep the set of
+   their own rebuild until the next whole one (`loot:rebuild-keyed`, daily). An unkeyed window a member
    sent counts nowhere, since it cannot be told from the uploader's own. A window a member sent whose sender runs an
    addon from before the key is the sender's own unkeyed window under another name: the unkeyed aggregates count that
-   one, so a kept window a member sent is left out of the three window tables when a window with no key, from any
-   character, was read within 5 s of it with the same items (it still joins its kill). A kill is not a window:
+   one, so a kept window a member sent is left out of the three window tables when it pairs with a window with no
+   key: the nearest one, from any character, that was read within 5 s of it with the same items and the same loot
+   rule, each of the two in one pair at most, so a duo's second corpse of the same creature stays counted (it still
+   joins its kill). A kill is not a window:
    `kills` joins the windows by key, and a keyed kill with no window is a corpse nobody looted or that held nothing,
    so kills never go into the count of looted corpses. Every kill with a key counts, whoever got the credit, and a
    kill read for skinning only is not looted. Where the counts live is under Developer and agent experience.
@@ -525,8 +531,9 @@ object is labelled by what it gives.
   and a day on each side (a window a member sent can be read up to a day before it was sent, which can move a corpse to
   the day before), deleting and inserting only those days, from the windows and kills of a day beyond them on each side.
   Two rows of one corpse more than a day apart would be two corpses in a range and one in a whole rebuild; rows of one
-  corpse are seconds apart. The days a rebuild covers are the only ones it corrects, so a change to the counting ships a
-  migration that rebuilds every day once (`2026_12_28`). The views `loot_windows_counted`,
+  corpse are seconds apart. The days a rebuild covers are the only ones it corrects, so `loot:rebuild-keyed` rebuilds
+  every day once a day at 04:20 UTC (under the same lock), which also brings the older days to the current set of skin
+  items and to a change in the counting; a release that must correct them at once ships a migration (`2026_12_28`). The views `loot_windows_counted`,
   `loot_items_counted` and `loot_windows_character_counted` put a keyed table under its unkeyed twin with a `keyed`
   column, in the shape of the aggregate they replace, so a read changes one table name. The keyed rows are aggregated
   like the others (a day, a source, a read, a rule, a size, a zone), so a page reads rows in proportion to what was

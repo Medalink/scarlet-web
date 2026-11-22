@@ -15,14 +15,19 @@ class RebuildKeyedLoot
      * source_id, corpse_key, read)`, and for an object the same key more than 5 minutes after the last read is a second
      * opening of a respawned object. Of the windows of one corpse the table keeps one: a character's own before a window a
      * member sent, then the earliest read (`peer_opens.at` less `late_s`), so the items are those of one whole window. A
-     * window a member sent has no `read`: a creature's counts as `skin` when every item in it is one that a `gather_items`
-     * row of kind `skin` has (the member skinned the corpse and the leather came in its `LW`), else as `loot`; an object's
-     * takes the read its own windows have most (`loot`, `herb` or `ore`) and an object nobody opened for itself counts
-     * nowhere. A kept window a member sent is also kept out of the three window tables, though not out of the kills, when a
-     * window with no key sits within 5 s of its read with the same items: that window is the sender's own read of the same
-     * corpse (a sender on an addon before the key writes none) and the unkeyed aggregates count it. The `characters` of a
-     * row are the characters whose window the table kept. Kills of a corpse are one row each by `(npc_id, corpse_key)`, from
-     * a session with a `loot` part, whoever got the credit, with the corpse's loot window when one was kept.
+     * window a member sent has no `read`: a creature's counts as `skin` when it lists a skin item, else as `loot`. A skin
+     * item is an item that a `gather_items` row of kind `skin` has and that no `loot` window of a character lists, since
+     * `gather_items` holds the whole list of a skinning read and the meat of a corpse nobody looted would join it. A skin
+     * window of a mate that lists leftover meat is still `skin` by its leather, and a mate's loot window of meat alone is
+     * `loot`. The set is read from every row, not from the days rebuilt, and the days outside a range keep the set of their
+     * own rebuild until the next whole one. An object's window takes the read its own windows have most (`loot`, `herb` or
+     * `ore`) and an object nobody opened for itself counts nowhere. A kept window a member sent is also kept out of the
+     * three window tables, though not out of the kills, when it pairs with a window with no key: the nearest one within 5 s
+     * of its read with the same items and the same loot rule, each of the two in one pair at most (the sender's own read of
+     * the same corpse, since a sender on an addon before the key writes none, and the unkeyed aggregates count it). The
+     * `characters` of a row are the characters whose window the table kept. Kills of a corpse are one row each by `(npc_id,
+     * corpse_key)`, from a session with a `loot` part, whoever got the credit, with the corpse's loot window when one was
+     * kept.
      *
      * `$from` and `$until` (epoch seconds, `$until` excluded) name the days that changed; both null rebuilds everything.
      * Rows read days a corpse can reach, so the days rebuilt are those of the range and the day before and after it (a
@@ -79,11 +84,13 @@ class RebuildKeyedLoot
                         where source_kind = 'g' and at >= (select s_from from loot_range) and at < (select peer_until from loot_range)
                     )
                 group by source_id
-            ), skin_items as (
-                select distinct item_id from gather_items where kind = 'skin'
+            ), skin_items as materialized (
+                select item_id from gather_items where kind = 'skin'
+                except
+                select item_id from loot_drops where via = 'window' and counted and read = 'loot'
             ), peer_signatures as (
                 select character_id, session_start, at, source_kind, source_id, corpse_key,
-                       count(*) as item_count, count(*) filter (where skin) as skin_count,
+                       count(*) filter (where skin) as skin_count,
                        string_agg(item_id::text || 'x' || quantity, ',' order by item_id) as signature
                 from (
                     select d.character_id, d.session_start, d.at, d.source_kind, d.source_id, d.corpse_key, d.item_id, sum(d.quantity) as quantity, bool_or(s.item_id is not null) as skin
@@ -94,7 +101,7 @@ class RebuildKeyedLoot
                 ) merged
                 group by character_id, session_start, at, source_kind, source_id, corpse_key
             ), unkeyed_signatures as (
-                select o.at as read_at, o.source_kind, o.source_id, coalesce(g.signature, '') as signature
+                select o.character_id, o.session_start, o.at as read_at, o.source_kind, o.source_id, o.loot_rule, coalesce(g.signature, '') as signature
                 from loot_opens o
                 left join (
                     select character_id, session_start, at, source_kind, source_id, string_agg(item_id::text || 'x' || quantity, ',' order by item_id) as signature
@@ -111,7 +118,7 @@ class RebuildKeyedLoot
                     and o.at >= (select s_from from loot_range) and o.at < (select s_until from loot_range)
             ), peer_reads as (
                 select p.at - make_interval(secs => coalesce(p.late_s, 0)) as read_at, p.at, p.character_id, p.session_start, p.source_kind, p.source_id,
-                       case when p.source_kind = 'c' then case when sig.item_count > 0 and sig.skin_count = sig.item_count then 'skin' else 'loot' end
+                       case when p.source_kind = 'c' then case when sig.skin_count > 0 then 'skin' else 'loot' end
                             else coalesce(case when p.read = 'fish' then 'fish' end, g.read) end as read,
                        coalesce(sig.signature, '') as signature, p.loot_rule, p.group_size, p.zone_id, p.item_rows, p.corpse_key
                 from peer_opens p
@@ -122,11 +129,21 @@ class RebuildKeyedLoot
                     and p.at >= (select s_from from loot_range) and p.at < (select peer_until from loot_range)
                     and p.at - make_interval(secs => coalesce(p.late_s, 0)) >= (select s_from from loot_range)
                     and p.at - make_interval(secs => coalesce(p.late_s, 0)) < (select s_until from loot_range)
-            ), matched_peers as (
-                select distinct r.character_id, r.session_start, r.at, r.source_kind, r.source_id, r.corpse_key
+            ), near_pairs as (
+                select r.character_id, r.session_start, r.at, r.source_kind, r.source_id, r.corpse_key,
+                       u.character_id as u_character_id, u.session_start as u_session_start, u.read_at as u_read_at,
+                       abs(extract(epoch from u.read_at - r.read_at)) as gap
                 from peer_reads r
-                join unkeyed_signatures u on u.source_kind = r.source_kind and u.source_id = r.source_id and u.signature = r.signature
+                join unkeyed_signatures u on u.source_kind = r.source_kind and u.source_id = r.source_id and u.signature = r.signature and u.loot_rule = r.loot_rule
                     and u.read_at between r.read_at - interval '5 seconds' and r.read_at + interval '5 seconds'
+            ), nearest_unkeyed as (
+                select distinct on (character_id, session_start, at, source_kind, source_id, corpse_key) *
+                from near_pairs
+                order by character_id, session_start, at, source_kind, source_id, corpse_key, gap, u_character_id, u_session_start, u_read_at
+            ), matched_peers as (
+                select distinct on (u_character_id, u_session_start, u_read_at, source_kind, source_id) character_id, session_start, at, source_kind, source_id, corpse_key
+                from nearest_unkeyed
+                order by u_character_id, u_session_start, u_read_at, source_kind, source_id, gap, character_id, session_start, at, corpse_key
             ), candidates as (
                 select 0 as peer, false as matched, o.at as read_at, o.at, o.character_id, o.session_start, o.source_kind, o.source_id, o.read, o.loot_rule, o.group_size, o.zone_id, o.item_rows, o.corpse_key
                 from loot_opens o
