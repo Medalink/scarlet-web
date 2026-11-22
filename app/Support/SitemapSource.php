@@ -37,7 +37,7 @@ class SitemapSource
         }, $rows->all()));
     }
 
-    /** The rows of a kind: public characters, the zones table, or the names dictionary of the kind. */
+    /** The rows of a kind: public characters, the zones table, or the names dictionary of the kind (for objects, those the search finds). */
     private function base(SearchKind $kind): Builder
     {
         return match ($kind) {
@@ -45,6 +45,8 @@ class SitemapSource
             SearchKind::Zones => DB::table('zones'),
             SearchKind::Creatures => DB::table('names')->where('kind', NameKind::Npc->value)->distinct(),
             SearchKind::Items => DB::table('names')->where('kind', NameKind::Item->value)->distinct(),
+            SearchKind::Objects => DB::table('names')->where('kind', NameKind::Object->value)->distinct()
+                ->whereExists(fn (Builder $scored) => $scored->selectRaw('1')->from('search_scores as s')->where('s.kind', SearchKind::Objects->value)->whereColumn('s.id', 'names.id')),
             SearchKind::Quests => DB::table('names')->where('kind', NameKind::Quest->value)->distinct(),
         };
     }

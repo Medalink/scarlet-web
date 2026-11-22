@@ -857,7 +857,7 @@ comps and is specified here, not in them.
 | `/rulesets`, `/rulesets/{slug}` | The same dashboard per ruleset, and rulesets side by side |
 | `/hardcore-deaths` | Public. Hardcore deaths by the level the character died at and by day (the last 90 days). Rows are the server's death notices (`hardcore_deaths`); a death counts once however many uploaders saw it, by name (the notice text when it names none), level and minute. Rows of flagged sessions are left out. A notice names the dead character, never a page's owner, so the page shows counts only and no names |
 | `/leaderboards` | Fastest to a level, fewest deaths, most quests, most quests completed, hardcore survivors, per ruleset |
-| `/search` | Characters that are public, creatures, items, zones, quests |
+| `/search` | Characters that are public, creatures, items, objects, zones, quests. An object is a hit when it has a name and a loot window of loot, herbs or ore counted under the character threshold (docs/LOOT.md, phase 3; comp `search.html`): the line is its name, `Object` and how many times it was opened. Its score is the windows. The bobber of a fishing line is not one |
 | `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths, talents (the latest build of each talent group drawn on its tree, or listed by tab while no layout is stored; the order the points were taken in; respecs; talent facts: characters with the same build at the same level, respec count and gold, the least picked talent among the class and spec, the level of the first build with 31 points in one tree, the longest and median wait to spend a point, and picks refunded within ten minutes, each with its n). A Lifetime chapter, shown when a read is stored, gives the client's own totals of quests completed, titles known and zones explored (the latest `QB`, `KT` and `EB`) and the instance locks that still hold with their reset time (`IS`); a character without those lines shows no chapter. The hero map redraws the walked cells in the order they were first walked (a day at a time, from the daily heat aggregate), with the Level figure counting up and each death appearing at its day; a Replay button runs it again, and a viewer who prefers reduced motion gets the finished map. Skills lead with the profession ranks over played time, placed from the hours played; play time is the last 21 days and the hour of the week, drawn in the viewer's time zone from the hourly aggregate and in UTC without script. Public when its owner says so; the owner sees the private parts too |
 | `/c/{name}/battlegrounds` | The scoreboards of a character's ten latest battlegrounds that have `BO` rows (`battleground_scores`): every player the client read, by faction, with killing blows, honorable kills, deaths, honor, damage and healing, under the zone and the result of the match when the `pvp` group holds its `BM` lines (`battleground_matches`). A match is one uploader's rows that share `match_at`; two uploaders of one match each have their own. Visible exactly when the character's page is. Other players' names follow the privacy rule: the owner sees them, a visitor sees a name (linked to its page) only when that player's own character is public, and every other row says "a player". The character page links it when the character has a match with a scoreboard |
 | `/talents`, `/talents/{class}/{spec}` | Public. Every spec with the characters that play it, and one spec: pick rate by node (a heat on the real tree when a layout is stored, a table always), the most common order of points, builds by level bracket, and builds and outcomes (the ten most held builds with the level-ups, median time to level, deaths and dungeon runs that happened while each was held, from one snapshot to the next; `?level=10-19` to `60`; `ruleset` and `server` as on `/stats`). Each character counts once, by its latest counted build read inside the bracket, and every figure prints its n. `/stats` carries a Talents block with the most played specs |
@@ -895,7 +895,7 @@ and a character page names the character's stored spelling (`/c/Name-Surname`).
 
 `/sitemap.xml` is a sitemap index. It lists `/sitemaps/pages.xml`, which holds the fixed pages and a ruleset, board
 and talent spec page for each that exists, and one file per 25,000 rows for each kind: public characters
-(`/c/{name}`, with `lastmod` from `last_seen_at`), creatures, items, zones and quests. `robots.txt` disallows
+(`/c/{name}`, with `lastmod` from `last_seen_at`), creatures, items, objects (those the search finds), zones and quests. `robots.txt` disallows
 `/auth/`, `/account` and `/link`, and names `https://scarletweb.io/sitemap.xml`.
 
 The JSON answers the pages fetch (`/api/v1/public/*` and a character's heat endpoint) carry
@@ -1129,7 +1129,7 @@ the characters whose stored value reaches it (one query, cached 15 minutes), and
 
 ### Search
 
-Search finds public characters, creatures, items, zones, quests and the site's own pages by name. One Action,
+Search finds public characters, creatures, items, objects, zones, quests and the site's own pages by name. One Action,
 `App\Actions\Public\Search`, answers the search page, the instant results under a search field and the public API.
 
 **How a name matches.** The text is split into words and every word must be in the name. A hit carries how it
@@ -1143,7 +1143,7 @@ matched, and the tiers rank in this order (`App\Support\SearchMatch`):
 | `contains` | the text is somewhere inside it | Direwolf |
 | `fuzzy` | it is a close spelling of the text | "razormne wolf" finds Razormane Wolf |
 
-A number finds the creature, item, quest or zone with that id as an `exact` hit. `fuzzy` runs only when
+A number finds the creature, item, object, quest or zone with that id as an `exact` hit. `fuzzy` runs only when
 nothing matched any other way, in any kind asked for, and the text has four characters or more, so a correct spelling
 costs what it cost before and never pulls in look-alikes. It uses the trigram indexes the search already has (`word_similarity` at 0.6, PostgreSQL's default:
 0.5 let "stats" find Starving Mountain Lion), with no new index. It finds a dropped, doubled or swapped letter inside a
@@ -1151,7 +1151,7 @@ longer word; two letters swapped in a four-letter word share too few trigrams to
 closest first.
 
 **Order inside a tier** is by how much players did with the thing, most first, then the shorter name: kills for a
-creature, turn-ins for a quest, hours played for a zone, sources for an item, time played for a character. The
+creature, turn-ins for a quest, hours played for a zone, sources for an item, times opened for an object, time played for a character. An object with no score is not found. The
 numbers are the ones a result line shows, under the same character threshold, read from `search_scores` (kind, id,
 score), which a scheduled Action refills every hour from the rollups. A thing with no score ranks after those with
 one.

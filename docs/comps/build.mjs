@@ -429,10 +429,10 @@ page("search.html", "Search Scarlet", "search", `
   <section class="pg-head" aria-labelledby="h1" style="grid-template-columns:minmax(0,1fr)">
     <div><h1 id="h1">Search</h1>
       <form class="search-box" role="search"><label class="vh" for="sq">Search for</label><input id="sq" type="search" value="marsh"><button class="btn" type="submit">Search</button></form>
-      <p class="sub">23 results for "marsh". Characters appear only when their owner made them public.</p></div>
+      <p class="sub">24 results for "marsh". Characters appear only when their owner made them public.</p></div>
   </section>
   <div class="sheet">
-    <section class="mod w12 first last" style="padding-bottom:1rem"><div class="seg" role="group" aria-label="Kind"><a href="#" aria-current="true">All 23</a><a href="#">Characters 2</a><a href="#">Creatures 9</a><a href="#">Items 6</a><a href="#">Zones 2</a><a href="#">Quests 4</a></div></section>
+    <section class="mod w12 first last" style="padding-bottom:1rem"><div class="seg" role="group" aria-label="Kind"><a href="#" aria-current="true">All 24</a><a href="#">Characters 2</a><a href="#">Creatures 9</a><a href="#">Items 6</a><a href="#">Objects 1</a><a href="#">Zones 2</a><a href="#">Quests 4</a></div></section>
     <section class="mod w5 first"><h2 class="kind">Characters <span>2</span></h2>
       <a class="hit" href="character.html"><b>Marsha-Venn</b><span>Level 44 Troll Hunter · Standard, PvE</span><span class="val">5d 2h played</span></a>
       <a class="hit" href="character.html"><b>Tolmarsh-Greane</b><span>Level 12 Orc Warrior · Hardcore, PvE</span><span class="val">9h played</span></a>
@@ -448,6 +448,8 @@ page("search.html", "Search Scarlet", "search", `
       <h2 class="kind" style="margin-top:2rem">Items <span>6</span></h2>
       <a class="hit" href="item.html"><b class="q3">Marshwalker Greaves</b><span>Item level 28 mail feet</span><span class="val">Drops from 3 creatures</span></a>
       <a class="hit" href="item.html"><b class="q2">Saltmarsh Cleaver</b><span>Item level 26 two-handed axe</span><span class="val">Drops from 5 creatures</span></a>
+      <h2 class="kind" style="margin-top:2rem">Objects <span>1</span></h2>
+      <a class="hit" href="object.html"><b>Marsh Reed Cache</b><span>Object</span><span class="val">48 openings</span></a>
       <h2 class="kind" style="margin-top:2rem">Quests <span>4</span></h2>
       <a class="hit" href="quest.html"><b>The Marsh Takes Its Due</b><span>Level 23 · Saltmarsh Reach</span><span class="val">4,210 turn-ins</span></a>
     </section>

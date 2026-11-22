@@ -159,6 +159,7 @@ final class SearchSuggest
             SearchKind::Characters => 'characters',
             SearchKind::Creatures => 'creature',
             SearchKind::Items => 'item',
+            SearchKind::Objects => 'gather',
             SearchKind::Zones => 'pin',
             SearchKind::Quests => 'quests',
         };

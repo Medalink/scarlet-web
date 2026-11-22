@@ -182,6 +182,10 @@ final class SearchPage
                 'meta' => trim((($hit['item_level'] ?? null) ? 'Item level '.$hit['item_level'].' ' : '').ItemTypes::describe($hit['class_id'] ?? null, $hit['subclass_id'] ?? null, $hit['equip_loc'] ?? null)),
                 'value' => is_numeric($hit['sources'] ?? null) ? 'Drops from '.Format::count($hit['sources'], 'source') : '',
             ],
+            SearchKind::Objects => [
+                'meta' => 'Object',
+                'value' => is_numeric($hit['opened'] ?? null) ? Format::count($hit['opened'], 'opening') : '',
+            ],
             SearchKind::Zones => [
                 'meta' => is_numeric($hit['deaths'] ?? null) ? Format::count($hit['deaths'], 'death') : 'No play recorded',
                 'value' => is_numeric($hit['seconds'] ?? null) ? Format::count(round($hit['seconds'] / 3600), 'hour') : '',
@@ -214,6 +218,7 @@ final class SearchPage
             SearchKind::Characters => 'Character',
             SearchKind::Creatures => 'Creature',
             SearchKind::Items => 'Item',
+            SearchKind::Objects => 'Object',
             SearchKind::Zones => 'Zone',
             SearchKind::Quests => 'Quest',
         };
@@ -226,6 +231,7 @@ final class SearchPage
             SearchKind::Characters => 'characters',
             SearchKind::Creatures => 'creature',
             SearchKind::Items => 'item',
+            SearchKind::Objects => 'gather',
             SearchKind::Zones => 'pin',
             SearchKind::Quests => 'quests',
         };

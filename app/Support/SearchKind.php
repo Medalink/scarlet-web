@@ -8,6 +8,7 @@ enum SearchKind: string
     case Characters = 'characters';
     case Creatures = 'creatures';
     case Items = 'items';
+    case Objects = 'objects';
     case Zones = 'zones';
     case Quests = 'quests';
 
@@ -23,6 +24,7 @@ enum SearchKind: string
             self::Characters => '/c/',
             self::Creatures => '/creatures/',
             self::Items => '/items/',
+            self::Objects => '/objects/',
             self::Zones => '/zones/',
             self::Quests => '/quests/',
         };
@@ -34,6 +36,7 @@ enum SearchKind: string
         return match ($this) {
             self::Creatures => NameKind::Npc,
             self::Items => NameKind::Item,
+            self::Objects => NameKind::Object,
             self::Quests => NameKind::Quest,
             default => null,
         };

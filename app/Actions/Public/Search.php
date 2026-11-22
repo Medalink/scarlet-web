@@ -2,7 +2,10 @@
 
 namespace App\Actions\Public;
 
+use App\Support\LootListing;
 use App\Support\LootRead;
+use App\Support\LootRule;
+use App\Support\LootSourceKind;
 use App\Support\NameKind;
 use App\Support\Rollup;
 use App\Support\RollupRead;
@@ -21,7 +24,7 @@ class Search
     public function __construct(private readonly RollupRead $read, private readonly ListRulesets $rulesets) {}
 
     /**
-     * Public characters, creatures, items, zones and quests whose name holds every word of the text, best match first:
+     * Public characters, creatures, items, objects, zones and quests whose name holds every word of the text, best match first:
      * the tier of the match (`SearchMatch`), then what players did with the thing (`search_scores`; a character's
      * time played), then the shorter name. Close spellings are looked for only when nothing matched any other way in
      * any kind asked for, at pg_trgm's own word similarity threshold (0.6), closest first. With no kind, each kind
@@ -137,6 +140,7 @@ class Search
     {
         return $this->scored($kind, 'names', 'id')
             ->where('names.kind', $nameKind->value)
+            ->when($kind === SearchKind::Objects, fn (Builder $query): Builder => $query->whereNotNull('s.score'))
             ->groupBy('names.id', 's.score')
             ->selectRaw('names.id, (array_agg(names.name order by names.votes desc, names.name))[1] as name');
     }
@@ -166,6 +170,7 @@ class Search
         $more = match ($kind) {
             SearchKind::Creatures => $this->creatures($ids),
             SearchKind::Items => $this->items($ids),
+            SearchKind::Objects => $this->objects($ids),
             SearchKind::Zones => $this->zones($ids),
             SearchKind::Quests => $this->quests($ids),
             SearchKind::Characters => $this->characters($hits),
@@ -221,6 +226,17 @@ class Search
         }
 
         return $found;
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return array<int, array<string, mixed>>
+     */
+    private function objects(array $ids): array
+    {
+        return $this->keyed($this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->from(Rollup::LootWindowsDaily, null)), 'loot_rule', null)
+            ->selectRaw('source_id, sum(windows) as opened, distinct_count(rollup(characters)) as characters')
+            ->where('source_kind', LootSourceKind::Object->value)->whereIn('source_id', $ids)->groupBy('source_id'))), 'source_id', ['opened']);
     }
 
     /**

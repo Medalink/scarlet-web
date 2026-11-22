@@ -23,7 +23,7 @@
     </x-module>
     @else
     @php($left = array_filter([$d['groups']['characters'], $d['groups']['zones'], $d['groups']['pages'] ?? null], fn ($g) => $g && $g['hits']))
-    @php($right = array_filter([$d['groups']['creatures'], $d['groups']['items'], $d['groups']['quests']], fn ($g) => $g['hits']))
+    @php($right = array_filter([$d['groups']['creatures'], $d['groups']['items'], $d['groups']['objects'], $d['groups']['quests']], fn ($g) => $g['hits']))
     @if ($left)
     <x-module :span="$right ? 'w5' : 'w12'" :first="true" :last="! $right">
       @foreach ($left as $group)<x-search-group :title="$group['title']" :icon="$group['icon']" :count="$group['count']" :hits="$group['hits']" :more="$group['more']" :spaced="$loop->index > 0" />@endforeach
