@@ -1,0 +1,3 @@
+{{-- A game icon inside a chart's SVG: pin is the icon, x, y and dim of FlowLayout or LinkLayout. --}}
+@props(['pin', 'icons'])
+@if ($pin)@php($url = $icons->url($pin['ref']))@if ($url)<image class="fi{{ $pin['dim'] ? ' dim' : '' }}" href="{{ $url }}" x="{{ $pin['x'] }}" y="{{ $pin['y'] }}" width="20" height="20"/>@else<rect class="fi{{ $pin['dim'] ? ' dim' : '' }}" x="{{ $pin['x'] }}" y="{{ $pin['y'] }}" width="20" height="20" rx="3"/>@endif @endif

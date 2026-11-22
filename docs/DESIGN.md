@@ -1467,7 +1467,21 @@ It shows what only that class does: a warlock's soul shards, Life Tap and demons
 The design is approved: the comp is `docs/comps/class.html` (the Warlock) and the Scarlet app gets the same
 view. What is built so far is the art: the nine heads (`warrior` to `druid` in `resources/js/scene/scenes/` and in the
 `SCENES` table of `tools/scene-art`, with `AppSupportScene` and `PlayerClass::scene()` naming them, and `/design/scenes/{class}`
-showing each over invented numbers) and the spell icons (Spell icons). The pages are not built yet.
+showing each over invented numbers) and the spell icons (Spell icons). The view layer of the pages is built; the
+route, the controller and the data are not.
+
+**What is built (the view layer).** `App\Support\ClassPage\ClassPage` is the typed page object every class fills: the
+character line, the links, the callouts, the six figures, rows of modules (each a list of blocks), the talent modules,
+the party rows, the comparison and the feats. A block is a `Flow`, `Link`, `Mirror`, `Stack`, `Bag`, `Rank`, `Pair`,
+`Split`, `Titled` or `Columns`; each renders through `resources/views/components/class/<name>.blade.php`, and
+`<x-class.page>` lays out the skeleton. The geometry of the flow, link and mirror charts is in `App\View\ClassPage`
+(`FlowLayout`, `LinkLayout`, `MirrorLayout`) and is drawn on the server with no JavaScript. `ClassIcons::of` collects
+every `Icon` on a page so the page resolves them once, items through `ItemIcons` and spells through `SpellIcons`. The
+class colour is `data-class` plus `--class`. The rules are in
+`resources/css/class.css`, scoped under `.cls-page` and `.cls-band`, loaded only by a page that asks for it, so no other
+page changes. `/design/class`, `/design/class-rogue` and `/design/class-shaman` render the Warlock, Rogue and Shaman
+pages from invented numbers (`App\View\Design\ClassPages`); the band (`<x-class.band>`) is built and not placed on
+`/c/{name}`. The head's scene and callouts come from the art that the nine heads provide.
 
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when

@@ -1,0 +1,3 @@
+{{-- A game icon of the class page at its final size. icon: App\Support\ClassPage\Icon or null; icons: its IconMap. A reference with no file is an empty square; no reference is nothing, or an empty square when `any` says another row of the list has one. --}}
+@props(['icon', 'icons', 'any' => false])
+@if ($icon)@php($url = $icons->url($icon))@if ($url)<img class="ic" src="{{ $url }}" alt="" width="26" height="26" loading="lazy">@else<i class="buff-none ic" aria-hidden="true"></i>@endif @elseif ($any)<i class="buff-none ic" aria-hidden="true"></i>@endif

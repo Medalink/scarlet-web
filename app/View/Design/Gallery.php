@@ -3,6 +3,7 @@
 namespace App\View\Design;
 
 use App\View\Charts;
+use App\View\Design\ClassPages\ClassGallery;
 use App\View\Format;
 use App\View\Pages\Filters;
 use DateTimeImmutable;
@@ -33,6 +34,9 @@ final class Gallery
         'login' => 'login.html',
         'link' => 'link.html',
         'developers' => 'developers.html',
+        'class' => 'class.html',
+        'class-rogue' => 'the Rogue mock',
+        'class-shaman' => 'the Shaman mock',
     ];
 
     /** Gallery page → its view. */
@@ -51,6 +55,9 @@ final class Gallery
         'login' => 'design.login',
         'link' => 'design.link',
         'developers' => 'design.developers',
+        'class' => 'design.class',
+        'class-rogue' => 'design.class',
+        'class-shaman' => 'design.class',
     ];
 
     /** Where a gallery page lives. */
@@ -74,6 +81,7 @@ final class Gallery
             'character' => CharacterPage::data(),
             'account', 'login', 'link' => AccountPages::data($page),
             'developers' => DevelopersPage::data(),
+            'class', 'class-rogue', 'class-shaman' => ClassGallery::data($page),
             default => [],
         };
     }
