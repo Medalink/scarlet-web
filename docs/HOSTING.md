@@ -205,6 +205,12 @@ and allows one port forward, to the loopback registry. The entry takes nine verb
 rollout, rollback, release, sums, status) and a release must be 12 hex digits. The key gets no shell, cannot write a
 file, cannot install a deploy folder and is not on the database host. The ops key stays on medaviper.
 
+The ring takes the deploy lock before it builds and frees it on exit, including on SIGTERM, SIGINT and SIGHUP. A
+SIGKILL, such as the one an engine restart sends, leaves the lock behind. Only one ring runs at a time, so when the
+lock is taken and no other `ring.sh deploy` runs on medaware, the ring calls `unlock` once, which frees a lock the ring
+took and leaves one `bin/deploy` took. Otherwise it waits up to 10 minutes. The droplet clears any lock older than 40
+minutes on its own.
+
 What the ring cannot do, and `bin/deploy` with the ops key still does:
 
 - **A change to a file a rollout reads on the droplet**: `deploy/rollout.sh`, `deploy/dc`, `deploy/compose.yaml`,

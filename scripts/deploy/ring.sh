@@ -32,14 +32,29 @@ skip() {
   exit 0
 }
 
+another_ring_runs() {
+  for pid in $(pgrep -f 'ring[.]sh deploy' || true); do
+    [ "$pid" = "$$" ] || [ "$pid" = "$PPID" ] || return 0
+  done
+  return 1
+}
+
 take_lock() {
   tries=0
   until entry lock; do
     tries=$((tries + 1))
+    if [ "$tries" -eq 1 ] && ! another_ring_runs; then
+      echo "ring: no other ring runs here, so a ring lock on the droplet was left by a killed ring; freeing it" >&2
+      entry unlock || true
+      continue
+    fi
     [ "$tries" -lt 200 ] || { echo "ring: the deploy lock stayed taken for 10 minutes" >&2; exit 1; }
     sleep 3
   done
   trap 'entry unlock || true; [ -z "${tunnel:-}" ] || kill "$tunnel" 2>/dev/null || true' EXIT
+  trap 'exit 143' TERM
+  trap 'exit 130' INT
+  trap 'exit 129' HUP
 }
 
 deploy() {
