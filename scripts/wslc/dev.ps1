@@ -25,7 +25,10 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $wslc = 'C:\Program Files\WSL\wslc.exe'
 if (-not (Test-Path $wslc)) { throw 'wslc is not installed. Run `wsl --update` in an elevated PowerShell, then `wslc info`.' }
 
-$slug = ((Split-Path -Leaf $root).ToLower() -replace '^scarlet-(api|web)(-|$)', '' -replace '[^a-z0-9]+', '-').Trim('-')
+function SlugOf([string] $folder) { return ($folder.ToLower() -replace '^scarlet-(api|web)(-|$)', '' -replace '[^a-z0-9]+', '-').Trim('-') }
+$slug = SlugOf (Split-Path -Leaf $root)
+$linkedWorktree = Test-Path -PathType Leaf (Join-Path $root '.git')
+if ($slug -eq '' -and $linkedWorktree) { $slug = SlugOf (Split-Path -Leaf (Split-Path -Parent $root)) }
 if ($slug -eq '') { $slug = 'main' }
 $tools = "scarlet-web-wt-$slug"
 $database = 'scarlet_web_wt_' + ($slug -replace '-', '_')

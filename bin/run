@@ -2,7 +2,9 @@
 # Runs a command in this checkout's tools container (see DEV.md): bin/run php artisan about
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
-slug=$(basename "$root" | tr 'A-Z' 'a-z' | sed -E -e 's/^scarlet-(api|web)(-|$)//' -e 's/[^a-z0-9]+/-/g' -e 's/^-//' -e 's/-$//')
+slug_of() { basename "$1" | tr 'A-Z' 'a-z' | sed -E -e 's/^scarlet-(api|web)(-|$)//' -e 's/[^a-z0-9]+/-/g' -e 's/^-//' -e 's/-$//'; }
+slug=$(slug_of "$root")
+if [ -z "$slug" ] && [ -f "$root/.git" ]; then slug=$(slug_of "$(dirname "$root")"); fi
 [ -n "$slug" ] || slug=main
 tty=
 if [ -t 0 ] && [ -t 1 ]; then tty=-t; fi

@@ -50,7 +50,9 @@ by a hash of its folder name; `bin/dev start -Port 8480` picks one). `/up` is th
 | `scarlet-web-wt-<folder>-schedule` | same | `php artisan schedule:work` |
 
 `<folder>` is the checkout folder without a leading `scarlet-api-` or `scarlet-web-`: the checkout `scarlet-api-app`
-is `app`, and the main checkout `scarlet-web` is `main`. Each worktree has its own containers, its own `vendor/` and
+is `app`, and the main checkout `scarlet-web` is `main`. A linked worktree whose own folder is `scarlet-web` (a
+worktree of several repos keeps each repo under its name) takes the folder above it instead, so it never shares
+`main`'s containers. Each worktree has its own containers, its own `vendor/` and
 `node_modules/` volumes (`scarlet-web-wt-<folder>-vendor`, `-node_modules`), its own Redis, cache, Horizon and
 session prefixes (`scarlet_web_wt_<folder>_...`) and its own database `scarlet_web_wt_<folder>`, a copy of
 `template1` that already has TimescaleDB. The containers share the network `scarlet-web`, so the app reaches the
