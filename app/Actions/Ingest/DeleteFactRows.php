@@ -31,6 +31,10 @@ class DeleteFactRows
 
         foreach ($tables as $table) {
             $query = DB::table($table->value)->whereIn('character_id', $characterIds);
+            $kinds = $group === null ? null : $table->kindsOf($group);
+            if ($kinds !== null) {
+                $query->whereIn('kind', $kinds);
+            }
             if ($sessionStart !== null) {
                 $query->where('session_start', $sessionStart);
             }

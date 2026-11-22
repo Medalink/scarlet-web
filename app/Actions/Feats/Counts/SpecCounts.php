@@ -127,7 +127,8 @@ class SpecCounts
         }
         $casts = [];
         foreach (DB::table('spell_casts')->where('character_id', $id)->where('counted', true)
-            ->selectRaw('session_start, spell_id, casts')->get() as $cast) {
+            ->groupBy('session_start', 'spell_id')
+            ->selectRaw('session_start, spell_id, sum(casts) as casts')->get() as $cast) {
             $casts[(int) $cast->session_start][(int) $cast->spell_id] = (int) $cast->casts;
         }
 

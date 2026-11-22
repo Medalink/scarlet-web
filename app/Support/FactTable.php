@@ -16,6 +16,10 @@ enum FactTable: string
     case DeathHits = 'death_hits';
     case SpellCasts = 'spell_casts';
     case MeterTotals = 'meter_totals';
+    case MeterSpells = 'meter_spells';
+    case StateTimes = 'state_times';
+    case ItemFlows = 'item_flows';
+    case ClassTallies = 'class_tallies';
     case DungeonRuns = 'dungeon_runs';
     case QuestEvents = 'quest_events';
     case MoneyChanges = 'money_changes';
@@ -67,13 +71,14 @@ enum FactTable: string
         return match ($this) {
             self::PlaySpans, self::LevelUps => SharingGroup::CORE,
             self::XpGains => SharingGroup::XP,
-            self::Kills, self::Deaths, self::DeathHits, self::SpellCasts, self::MeterTotals,
+            self::Kills, self::Deaths, self::DeathHits, self::SpellCasts, self::MeterTotals, self::MeterSpells,
+            self::StateTimes, self::ClassTallies,
             self::DungeonRuns, self::CampStays, self::CampBenefits, self::InstanceLocks => SharingGroup::COMBAT,
             self::QuestEvents, self::QuestBaselines => SharingGroup::QUESTS,
             self::TitleBaselines => SharingGroup::COLLECTIONS,
             self::ExploredBaselines => SharingGroup::WORLD,
             self::MoneyChanges, self::AuctionPrices => SharingGroup::ECONOMY,
-            self::LootOpens, self::LootDrops, self::BossLoot, self::GroupLoot, self::LootRolls, self::PeerOpens, self::PeerDrops => SharingGroup::LOOT,
+            self::LootOpens, self::LootDrops, self::BossLoot, self::GroupLoot, self::LootRolls, self::PeerOpens, self::PeerDrops, self::ItemFlows => SharingGroup::LOOT,
             self::SkillUps, self::Crafts, self::Gathers, self::GatherItems => SharingGroup::PROFESSIONS,
             self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,
@@ -125,8 +130,22 @@ enum FactTable: string
                 SharingGroup::MOVEMENT => ['map', 'x', 'y', 'u', 'v'],
             ],
             self::GatherItems => [SharingGroup::MOVEMENT => ['map']],
+            self::StateTimes => [SharingGroup::COMBAT => ['fight_ms']],
+            self::ItemFlows => [SharingGroup::COMBAT => ['spell_id']],
             default => [],
         };
+    }
+
+    /**
+     * The `kind` values that a group's removal deletes from a table that holds the rows of several groups, or null
+     * when the removal deletes every row of the table that belongs to the group. `state_times` reads `combat`,
+     * `movement` and `build` lines, so a removed group deletes its own kinds and the rows of the other kinds stay.
+     *
+     * @return list<string>|null
+     */
+    public function kindsOf(string $group): ?array
+    {
+        return $this === self::StateTimes ? StateKind::of($group) : null;
     }
 
     /**
@@ -148,7 +167,9 @@ enum FactTable: string
     {
         return array_values(array_filter(
             self::cases(),
-            fn (self $table): bool => $table->group() === $group || in_array($group, $table->alsoNeeds(), true),
+            fn (self $table): bool => $table->group() === $group
+                || in_array($group, $table->alsoNeeds(), true)
+                || ($table->kindsOf($group) ?? []) !== [],
         ));
     }
 
