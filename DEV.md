@@ -49,7 +49,7 @@ It runs on Windows with Node 24 and no packages, takes 9 to 13 seconds and exits
 drops all of it (7 to 9 seconds); `ship` runs that on medaware before a change lands. It refuses
 any host that is not 127.0.0.1, localhost or [::1], because it deletes what it uploads.
 
-- upload: registers two installs, signs requests, uploads the invented characters of `e2e/fixture` (one from the second
+- upload: registers two installs, signs requests, uploads the invented characters of `e2e/fixture` (two from the second
   install, which no account is linked to) and waits for Horizon to decode them.
 - api: every endpoint the `/developers` page lists, the uploaded character's facts, search, 404 and 422 answers, and
   the numbers of the six professions the fixture has lines for.
@@ -81,6 +81,13 @@ An invented character that uploads only a `counts` part, and so has no Scarlet r
 flag on its pages show Scarlet 0 and from addons 65, 56 and 65, with it off they show no addon figure.
 `ADDON_PAGES_DIR=<folder>` writes the pages it read there (`only-` before the name for that character), so two runs can
 be compared with `diff` after the per-run tokens and the port are replaced.
+
+`node e2e/class-rows.mjs` is a third check that needs no server and runs in under a second. It decodes the Spell-Ledger
+fixture (`e2e/ledger-lines.mjs`, a rogue of the second install: seven fights, two deaths and a level-up) with the real
+`scarlet-part` binary and compares the 130 rows of the six class tables (docs/ROWS.md, "The class tables") with
+`e2e/ledger-expected.mjs`, which was worked out by hand from those lines. A second decode must write the same bytes.
+Build the binary first (`cargo build --release` in `part/`) or pass `--bin`. After a change to `ledger-lines.mjs`, run
+`node e2e/build-fixture.mjs` and change the expected rows to match.
 
 Public API answers are cached for 30 seconds at the origin, so every read adds a random `limit` to its address and a rerun never reads the last run's answer.
 

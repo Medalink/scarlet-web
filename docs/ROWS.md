@@ -186,8 +186,8 @@ total that is not a number writes nothing.
 | `group_own` | int | the uploader's own total in those fights, 0 for a fight with no `DM` line |
 | `group_fights` | int | how many such fights |
 
-The addon writes the uploader's own total as `DM` and the other members as `DP` lines, up to 10 for a fight, and never
-the uploader as a `DP`. The decoder reads one **report** for each meter: the `DM` line and the `DP` lines of that meter
+The addon writes the uploader's own total as `DM` and the other members as `DP` lines, up to 10 for a fight and only
+while in a group, and never the uploader as a `DP` (it skips the local player and enemy sources). The decoder reads one **report** for each meter: the `DM` line and the `DP` lines of that meter
 that come within 1 s of the report's first line. A second `DM` line of the meter starts the next report. A report with
 at least one `DP` line is a group fight: `group_fights` goes up by 1, `group_own` by the report's `DM` total (0 when it
 has none) and `group_total` by that total plus the `DP` totals. The report counts for the level and place of its `DM`

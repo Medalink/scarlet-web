@@ -3,8 +3,8 @@
  * 10 to 11 at second 700 and plays seven fights, two deaths, the auras, totems, pets, mounts, tracking, weapons and
  * bag changes of the class tables (docs/ROWS.md, "The class tables"), so every table and every `class_tallies` key
  * holds a row. Each line is `[milliseconds since the session began, code, ...fields]`, as e2e/build-fixture.mjs reads
- * them. The expected rows are worked out by hand from these lines and listed in the ship note of the change that
- * added them.
+ * them. The rows they must decode to are in e2e/ledger-expected.mjs, and e2e/class-rows.mjs compares them with the
+ * decoder's output.
  */
 
 const ELWYNN = 1429;
