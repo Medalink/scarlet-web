@@ -278,6 +278,7 @@ dialog::backdrop { overflow: hidden; overscroll-behavior: contain; }
     .rank .track i { transform-origin: left center; }
     .podium .plinth { animation: grow-y linear backwards; animation-timeline: view(); animation-range: entry 0% cover 30%; }
     .ascent .flag { animation: rise linear backwards; animation-timeline: view(); animation-range: entry 20% cover 35%; }
+    .rank.still .track i { animation: none; }
   }
 }
 

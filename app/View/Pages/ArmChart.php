@@ -80,23 +80,16 @@ final class ArmChart
             $empty = 'No item has 10 drops yet.';
         }
 
-        return ['empty' => $empty, 'rows' => array_map(fn (array $row): array => self::row($row, $pair, $drawn), $source), 'note' => $source === [] ? null : self::note($arms, $undrawn, $explain), 'groups' => null];
+        return ['empty' => $empty, 'rows' => array_map(fn (array $row): array => self::row($row, $pair, $drawn), $source), 'note' => $source === [] ? null : self::note($undrawn, $explain), 'groups' => null];
     }
 
-    /**
-     * @param  list<LootArm>  $arms
-     */
-    private static function note(array $arms, ?string $undrawn, bool $explain): ?string
+    private static function note(?string $undrawn, bool $explain): ?string
     {
         if (! $explain) {
             return $undrawn;
         }
-        $reader = array_filter($arms, fn (LootArm $arm): bool => $arm->drawn() && $arm->reader !== null) !== [];
 
-        return 'Items with 10 drops or more. Hollow marks are 10 to 29 corpses, solid ones 30 or more.'
-            .($undrawn === null ? '' : ' '.$undrawn)
-            .' A difference is marked only when both arms have 30 corpses and its 95% range stays off zero after the number of items shown is taken into account.'
-            .($reader ? ' Free for all counts the one character who read most of its corpses, since two players of a group may open the same corpse.' : '');
+        return 'Items with 10 drops or more. Hollow marks rest on 10 to 29 corpses.'.($undrawn === null ? '' : ' '.$undrawn);
     }
 
     /**

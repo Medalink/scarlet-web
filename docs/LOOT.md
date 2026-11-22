@@ -102,10 +102,11 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
   kills`: `76.9%` with `40 of 52` beside it, a dash in place of the share under 10 kills, and no figure when the creature has no solo kills. Drops
   gains an **Of kills** column (`24 of 52`), the windows that listed the item over the same solo kills, shown under
   All rules and Solo. A kill nobody looted counts against it, so the page says `of kills`, never `drop rate`.
-- The note under Drops is one line: `A drop rate is corpses that held the item over corpses looted for the first
-  time. The range is 95%.` Drops counts windows read for loot only (`read = 'loot'`); windows read for skinning are
-  in Skinning. When windows were left out because their session has no `read`, the note adds `Left out: N corpses
-  from sessions that do not record what a corpse was read for.`
+- Drops has no explanation of a drop rate: the columns and the `k of n` say it. Under the table one line carries the
+  tags, `Of kills counts a kill nobody looted against the item.` when the column is shown, and, when windows were
+  left out because their session has no `read`, `Left out: N corpses from sessions that do not record what a corpse
+  was read for.` Drops counts windows read for loot only (`read = 'loot'`); windows read for skinning are in
+  Skinning, which has no note. No module of the loot pages carries more than one short line of explanation.
 
 ### Object, `/objects/{id}`
 

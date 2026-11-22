@@ -18,7 +18,7 @@
       <x-note>{{ $d['kept']['empty'] }}</x-note>
       @else
       <x-table :rows="$d['kept']['rows']" :columns="$d['kept']['columns']" style="margin-top:1.1rem" />
-      <p class="note">Items the uploader received from a corpse over the items the corpse held, by the rule and size in force when it was looted. Under 100% means other members took items.</p>
+      <p class="note">Under 100% means other members took items.</p>
       @endif
     </x-module>
     <x-module span="w7" :first="true" id="h-s" heading="Your share of group loot">

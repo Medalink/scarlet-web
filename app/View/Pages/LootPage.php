@@ -132,9 +132,9 @@ final class LootPage
     private static function note(LootView $view): string
     {
         return match ($view) {
-            LootView::Creatures => 'Corpses looted counts each corpse once, the first time a character read it. Most common item is the item that was in the most of them, with its 95% range; under 10 corpses it shows its counts only. Skinning is counted apart. Every ruleset and every loot rule but personal loot.',
-            LootView::Objects, LootView::Containers => 'Opened counts each opening once, the first time a character read it. Most common item is the item that was in the most of them, with its 95% range; under 10 openings it shows its counts only. Every ruleset and every loot rule but personal loot.',
-            LootView::Items => 'Dropped counts the corpses and openings that held the item, once each, from loot, skinning, herbs, ore and containers. Best source is the source where the item has the highest low end of its 95% range, shown with its rate; under 10 corpses it shows its counts only.',
+            LootView::Creatures => 'Each corpse counts once. Skinning and personal loot are left out.',
+            LootView::Objects, LootView::Containers => 'Each opening counts once. Personal loot is left out.',
+            LootView::Items => 'Each corpse or opening that held the item counts once.',
         };
     }
 

@@ -44,7 +44,7 @@ final class GroupCompositionTables
                     $yes($row['tank']), $yes($row['healer']), Format::number($row['kills']), Format::number($row['seconds'] / 3600, 1), GroupKillRates::perHour($row['kills'], $row['seconds']),
                 ]], $answer['roles']),
             ],
-            'note' => 'Classes and roles of the members a group\'s uploader could see, with no names. Need is the share of rolls of the characters that uploaded and have that class. Only the uploader\'s own Skinning is recorded, so a group mate who skins is counted under No. Kills an hour counts the groups whose members were all seen. A character with the social group off adds nothing here. A rate is from '.RateSample::HOLLOW_FROM.' rolls, corpses or kills; under that the cell is empty.'.($narrowed ? ' This module covers every creature; a source does not narrow it.' : ''),
+            'note' => 'Only the uploader\'s own Skinning is recorded.'.($narrowed ? ' Covers every creature, not only this source.' : ''),
         ];
     }
 }

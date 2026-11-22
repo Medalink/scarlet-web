@@ -107,7 +107,7 @@ final class LootGroupsPage
             'empty' => $empty,
             'columns' => [['label' => 'Rule'], ['label' => 'Items per corpse', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => $source === null ? 'Creatures' : 'Sources', 'numeric' => true]],
             'rows' => array_map(fn (array $row): array => ['cells' => [LootRule::words($row['rule']), Format::number($row['items'], 2), Format::number($row['corpses']), Format::number($e['sources'])]], $rows),
-            'note' => $difference === null || $rows === [] ? null : self::effectNote($pair, $difference, (int) $e['sources'], (int) $e['windows'], (int) $e['more'], $unit),
+            'note' => $difference === null || $rows === [] ? null : self::effectNote($pair, $difference, (int) $e['sources'], (int) $e['windows'], $unit),
         ];
     }
 
@@ -115,7 +115,7 @@ final class LootGroupsPage
      * @param  list<string>  $pair
      * @param  array{difference: float, low: float, high: float}  $difference
      */
-    private static function effectNote(array $pair, array $difference, int $sources, int $windows, int $more, string $unit): string
+    private static function effectNote(array $pair, array $difference, int $sources, int $windows, string $unit): string
     {
         $range = number_format($difference['low'], 2).' to '.number_format($difference['high'], 2);
         $first = strtolower(LootRule::words($pair[0]));
@@ -124,9 +124,7 @@ final class LootGroupsPage
             ? ucfirst($second).' holds '.number_format(abs($difference['difference']), 2).' items '.($difference['difference'] > 0 ? 'more' : 'fewer').' per corpse than '.$first.', range '.$range.'.'
             : 'No difference found between '.$first.' and '.$second.': '.($difference['difference'] < 0 ? '-' : '+').number_format(abs($difference['difference']), 2).' items per corpse, range '.$range.'.';
 
-        return $stated.' This rests on '.Format::count($sources, $unit).' with '.RateSample::HOLLOW_FROM.' corpses or more under both rules, '.Format::count($windows, 'corpse')
-            .', and counts each '.$unit.' by the corpses it has under both.'
-            .($more > 0 ? ' '.Format::count($more, $unit).' more '.($more === 1 ? 'was' : 'were').' seen under both rules with fewer corpses.' : '');
+        return $stated.' Over '.Format::count($sources, $unit).', '.Format::count($windows, 'corpse').'.';
     }
 
     /**

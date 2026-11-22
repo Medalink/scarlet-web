@@ -2,7 +2,6 @@
 
 namespace App\View\Pages;
 
-use App\Actions\Rollups\LootMarks;
 use App\Support\ArmSplit;
 use App\Support\LootArm;
 use App\Support\LootRule;
@@ -34,7 +33,7 @@ final class GroupMarks
                 $mark['difference']->words().', '.$mark['difference']->range(),
                 implode(', ', array_map(fn (RateFlag $flag): string => $flag->label(), $mark['difference']->flags)),
             ]], $marks),
-            'note' => 'A difference between loot rules or group sizes is a counting fault until shown otherwise: the game\'s drop table does not depend on either. The '.LootMarks::CHECKED.' creatures and objects with the most corpses under two rules or two sizes are checked.',
+            'note' => 'A difference between rules or sizes is a counting fault until shown otherwise.',
         ];
     }
 

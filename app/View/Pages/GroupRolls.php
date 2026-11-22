@@ -11,7 +11,7 @@ use App\View\Format;
 /** The Your share of group loot and Rolls modules of the loot rules and group size page (docs/comps/groups.html). */
 final class GroupRolls
 {
-    private const string WIDE = ' This module covers every creature; a source does not narrow it.';
+    private const string WIDE = ' Covers every creature, not only this source.';
 
     /**
      * @param  list<array{rule: string, size: int, yours: int, others: int, estimate: RateEstimate}>  $rows  the answer of GroupShare
@@ -26,7 +26,7 @@ final class GroupRolls
                 LootRule::words($row['rule']), (string) $row['size'], Format::number($row['yours']), Format::number($row['others']),
                 ['rate' => $row['estimate']], Format::percent(1 / $row['size'], 1),
             ]], $rows),
-            'note' => 'Yours is what the uploaders received from corpses. Others is what the uploaders\' group mates received from corpses, as the client reported it; an item pushed to a mate is left out. Pooled over uploaders, so each member\'s mean share is the figure. Only the rules that owe every member an equal share are listed; under free for all and master looter nothing does.'.($narrowed ? self::WIDE : ''),
+            'note' => 'Only the rules that owe every member an equal share are listed.'.($narrowed ? self::WIDE : ''),
         ];
     }
 
@@ -56,7 +56,7 @@ final class GroupRolls
                 LootRule::words($row['rule']), $quality($row['threshold']), Format::number($row['corpses']),
                 $row['corpses'] >= RateSample::HOLLOW_FROM ? Format::number($row['items'] / $row['corpses'] * 100, 1) : '–',
             ]], $rolls['thresholds']),
-            'note' => 'Rolls of the characters that uploaded. A roll another member made reaches every uploader in the group, so it is counted by none of them. A rate is from 10 rolls; under that the cell is empty.'.($narrowed ? self::WIDE : ''),
+            'note' => 'Rolls of the characters that uploaded.'.($narrowed ? self::WIDE : ''),
         ];
     }
 }

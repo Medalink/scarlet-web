@@ -11,7 +11,9 @@
       @endif
       @if ($d['drops'])
       <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Opened', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true]]" style="margin-top:1.1rem" />
-      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach A drop rate is times opened that held the item over times opened for the first time. The band is the 95% range; from 10 to 29 openings it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.@if ($d['unread']) {{ $d['unread'] }}@endif</p>
+      @if ($d['tags'] || $d['unread'])
+      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach @if ($d['unread']){{ $d['unread'] }}@endif</p>
+      @endif
       @else
       <x-note>No drops recorded for this object yet.@if ($d['unread']) {{ $d['unread'] }}@endif</x-note>
       @endif

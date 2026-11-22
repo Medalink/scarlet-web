@@ -27,14 +27,14 @@
     </x-module>
     <x-module span="w7" :first="true" id="h-z" heading="Zones">
       @if ($d['zones'])
-      <x-rank :rows="$d['zones']" plain />
+      <x-rank :rows="$d['zones']" plain still />
       @else
       <x-note>No zone is recorded yet.</x-note>
       @endif
     </x-module>
     <x-module span="w5" :last="true" id="h-r" heading="Loot rule and group size">
       @if ($d['rules'])
-      <x-rank :rows="$d['rules']" plain />
+      <x-rank :rows="$d['rules']" plain still />
       @else
       <x-note>No loot rule is recorded yet.</x-note>
       @endif

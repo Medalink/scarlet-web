@@ -18,7 +18,7 @@ final class GroupKillRates
             'empty' => $rows === [] ? 'No kill in a group of two or more is recorded yet.' : null,
             'columns' => [['label' => 'Size', 'numeric' => true], ['label' => 'Kills', 'numeric' => true], ['label' => 'Hours', 'numeric' => true], ['label' => 'Kills an hour', 'numeric' => true]],
             'rows' => array_map(fn (array $row): array => ['cells' => [(string) $row['size'], Format::number($row['kills']), Format::number($row['seconds'] / 3600, 1), self::perHour($row['kills'], $row['seconds'])]], $rows),
-            'note' => 'Kills a member of a group got credit for, over the hours that member spent in a group of that size. Time alone is not counted, and a session with no kills adds no hours. A rate is from '.RateSample::HOLLOW_FROM.' kills; under that the cell is empty.'.($narrowed ? ' This module covers every creature; a source does not narrow it.' : ''),
+            'note' => 'Time alone is not counted.'.($narrowed ? ' Covers every creature, not only this source.' : ''),
         ];
     }
 

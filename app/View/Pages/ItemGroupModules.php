@@ -36,7 +36,7 @@ final class ItemGroupModules
 
         return [
             'rows' => $rows,
-            'note' => 'Rolls of the characters that uploaded. '.Format::number($rolls['all_passed']).' of the '.Format::number($total).' were passed by everyone. A rate is from '.RateSample::HOLLOW_FROM.' rolls; under that the row shows its counts.',
+            'note' => Format::number($rolls['all_passed']).' of the '.Format::number($total).' rolls were passed by everyone.',
         ];
     }
 
@@ -59,7 +59,7 @@ final class ItemGroupModules
                 $total >= RateSample::HOLLOW_FROM ? Format::percent($row['received'] / $total, 1) : '–',
                 $row['rolled'] > 0 ? Format::number($row['won']).' of '.Format::number($row['rolled']) : '–',
             ]], $receivers),
-            'note' => 'What other members of a group received, by class and never by name, and what the uploaders received. Each figure is one uploader\'s view of its group, so a group with several uploaders counts once for each. Won by roll is the rolls of need or greed that the class made on this item and won. A member whose class is not recorded is left out. A share is from '.RateSample::HOLLOW_FROM.' receipts.',
+            'note' => 'A group with several uploaders counts once for each.',
         ];
     }
 }

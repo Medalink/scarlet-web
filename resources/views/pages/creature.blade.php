@@ -15,7 +15,9 @@
       @endif
       @if ($d['drops'])
       <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true], ...($d['ofKills'] ? [['label' => 'Of kills', 'numeric' => true]] : [])]" style="margin-top:1.1rem" />
-      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.@if ($d['ofKills']) Of kills is windows that listed the item over the kills the character got credit for while playing alone; a kill nobody looted counts against it.@endif @if ($d['unread']) {{ $d['unread'] }}@endif</p>
+      @if ($d['tags'] || $d['ofKills'] || $d['unread'])
+      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach @if ($d['ofKills'])Of kills counts a kill nobody looted against the item. @endif @if ($d['unread']){{ $d['unread'] }}@endif</p>
+      @endif
       @else
       <x-note>No drops recorded for this creature yet.@if ($d['unread']) {{ $d['unread'] }}@endif</x-note>
       @endif
@@ -38,9 +40,7 @@
     </x-module>
     @if ($d['skinning'])
     <x-module span="w5" :last="true" id="h-k" heading="Skinning">
-      <x-table :rows="$d['skinning']" :columns="[['label' => 'Item'], ['label' => 'Share of skins', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Skins', 'numeric' => true]]" style="margin-top:1.1rem" />
-      <p class="note">A share is skins that held the item over skins of this creature read for the first time. The band is the 95% range. Skinning does not depend on the loot rule.</p>
-    </x-module>
+      <x-table :rows="$d['skinning']" :columns="[['label' => 'Item'], ['label' => 'Share of skins', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Skins', 'numeric' => true]]" style="margin-top:1.1rem" />    </x-module>
     @endif
     @if ($d['ruleArms'])
     <x-module span="w12" :first="true" :last="true" id="h-r" :heading="$d['ruleArms']['heading']">
