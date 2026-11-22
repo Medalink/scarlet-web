@@ -169,9 +169,15 @@ final class TalentSpecPage
         return [
             'columns' => [['label' => 'Talent'], ['label' => 'Characters', 'numeric' => true], ['label' => 'Pick rate', 'numeric' => true], ['label' => 'Average rank', 'numeric' => true]],
             'rows' => array_map(fn (array $node): array => ['cells' => [
-                $node['name'] ?? 'Node '.$node['node'], Format::number($node['taken']).' of '.Format::number($n), Format::percent($node['rate']), Format::number($node['rank'], 1),
+                self::spell($node['name'] ?? 'Node '.$node['node'], $node['spell']), Format::number($node['taken']).' of '.Format::number($n), Format::percent($node['rate']), Format::number($node['rank'], 1),
             ]], $nodes),
         ];
+    }
+
+    /** @return string|array{text: string, href: string} a spell's name linked to its page when the talent has a spell */
+    private static function spell(string $name, ?int $spell): string|array
+    {
+        return $spell === null ? $name : ['text' => $name, 'href' => '/spells/'.$spell];
     }
 
     /**
@@ -183,7 +189,7 @@ final class TalentSpecPage
         return [
             'columns' => [['label' => 'Point', 'numeric' => true], ['label' => 'Talent'], ['label' => 'Took it', 'numeric' => true], ['label' => 'Characters', 'numeric' => true]],
             'rows' => array_map(fn (array $row): array => ['cells' => [
-                (string) $row['point'], $row['name'] ?? 'Unnamed talent', Format::percent($row['characters'] / max(1, $row['total'])), Format::number($row['total']),
+                (string) $row['point'], self::spell($row['name'] ?? 'Unnamed talent', $row['spell']), Format::percent($row['characters'] / max(1, $row['total'])), Format::number($row['total']),
             ]], $order),
         ];
     }

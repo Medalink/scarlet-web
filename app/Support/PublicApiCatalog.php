@@ -117,10 +117,24 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'item', 'group' => 'Records', 'path' => '/items/{id}', 'action' => [RecordController::class, 'item'],
-                'summary' => 'One item: what it is, where it drops by source and loot rule, and its auction prices.',
+                'summary' => 'One item: what it is, where it drops by source and loot rule, the boss encounters that dropped it, the recipes that make or use it, and its auction prices.',
                 'params' => [['id', 'path', 'integer', 'The item id, as in the address of its page.']],
-                'returns' => '`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`.',
+                'returns' => '`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`, `encounters` (encounter, item, dropped, characters), `made_by` and `used_in` (recipes: spell, output, reagents).',
                 'example' => '/items/1465', 'where' => ['id' => '[0-9]+'],
+            ],
+            [
+                'name' => 'spell', 'group' => 'Records', 'path' => '/spells/{id}', 'action' => [RecordController::class, 'spell'],
+                'summary' => 'One spell: what the client says about it (icon, cast time, range, cost, description) and, for a recipe, what it makes and needs.',
+                'params' => [['id', 'path', 'integer', 'The spell id, as in the address of its page.']],
+                'returns' => '`data`: `name`, `facts` (`icon_id`, `cast_ms`, `min_range`, `max_range`, `costs` as `powerType:cost` joined by commas, `passive`, `description`) and `recipe` (`output`, `optional_slots`, `reagents`).',
+                'example' => '/spells/133', 'where' => ['id' => '[0-9]+'],
+            ],
+            [
+                'name' => 'encounter', 'group' => 'Records', 'path' => '/encounters/{id}', 'action' => [RecordController::class, 'encounter'],
+                'summary' => 'One boss encounter: the items it dropped, each drop counted once however many players of the group uploaded it.',
+                'params' => [['id', 'path', 'integer', 'The encounter id, as in the address of its page.']],
+                'returns' => '`data.drops`: `item_id`, `item`, `dropped` and `characters`, most dropped first.',
+                'example' => '/encounters/1065', 'where' => ['id' => '[0-9]+'],
             ],
             [
                 'name' => 'zone', 'group' => 'Records', 'path' => '/zones/{id}', 'action' => [RecordController::class, 'zone'],

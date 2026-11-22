@@ -27,6 +27,8 @@ const PAGES = [
   { path: "/items/769", shows: heading("Chunk of Boar Meat") },
   { path: "/zones/1436", shows: heading("Westfall") },
   { path: "/quests/783", shows: heading("A Threat Within") },
+  { path: "/spells/2660", shows: heading("Rough Sharpening Stone") },
+  { path: "/encounters/1065", shows: heading("Encounter 1065") },
 ];
 
 function tokenIn(html) {
@@ -74,6 +76,26 @@ export async function scoreboardIsShownWithoutNames(ctx) {
   if (!/<td class="n ?">4<\/td><td class="n ?">9<\/td>/.test(answer.text)) problems.push("4 killing blows and 9 honorable kills in the Alliance row");
   for (const name of ["Pella", "Dorn", "Kesta"]) if (answer.text.includes(name)) problems.push(`no name, but ${name} is shown`);
   if (problems.length > 0) throw new Error(`/c/${PROBE}/battlegrounds: expected ${problems.join(", ")}: ${answer.text.slice(answer.text.indexOf("<table"), answer.text.indexOf("<table") + 900)}`);
+}
+
+export async function recipeSpellAndBossLootAreShown(ctx) {
+  const problems = [];
+  const spell = expectStatus(await ctx.http.page("/spells/2660"), 200, "/spells/2660").text;
+  if (!/<td>Rough Stone<\/a><\/td>|>Rough Stone<\/a>/.test(spell)) problems.push("/spells/2660 lists the reagent Rough Stone");
+  for (const shown of ["3.0 s", "Creates a Rough Sharpening Stone.", "What it makes and needs"]) {
+    if (!spell.includes(shown)) problems.push(`/spells/2660 shows ${shown}`);
+  }
+  const made = expectStatus(await ctx.http.page("/items/2862"), 200, "/items/2862").text;
+  if (!made.includes("Recipes that make it") || !made.includes("/spells/2660")) problems.push("/items/2862 lists the recipe that makes it");
+  const used = expectStatus(await ctx.http.page("/items/2835"), 200, "/items/2835").text;
+  if (!used.includes("Recipes that use it")) problems.push("/items/2835 lists the recipe that uses it");
+  const dropped = expectStatus(await ctx.http.page("/items/769"), 200, "/items/769").text;
+  if (!dropped.includes("Boss encounters that dropped it") || !dropped.includes("/encounters/1065")) problems.push("/items/769 lists the encounter that dropped it");
+  const encounter = expectStatus(await ctx.http.page("/encounters/1065"), 200, "/encounters/1065").text;
+  if (!/Chunk of Boar Meat<\/a><\/td><td class="n ?">1<\/td><td class="n ?">2<\/td>/.test(encounter)) {
+    problems.push("/encounters/1065 counts the drop two uploaders heard once, from 2 characters");
+  }
+  if (problems.length > 0) throw new Error(`expected ${problems.join(", ")}`);
 }
 
 export function missingPageIs404(route) {

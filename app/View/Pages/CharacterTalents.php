@@ -35,6 +35,12 @@ final class CharacterTalents
         ];
     }
 
+    /** @return string|array{text: string, href: string} a spell's name linked to its page when the talent has a spell */
+    private static function spellCell(string $name, ?int $spell): string|array
+    {
+        return $spell === null ? $name : ['text' => $name, 'href' => '/spells/'.$spell];
+    }
+
     /**
      * @param  array<string, mixed>  $facts
      * @param  list<array<string, mixed>>  $respecs
@@ -101,7 +107,7 @@ final class CharacterTalents
         $nodes = $group['nodes'];
         foreach ($nodes as $node) {
             $byTab[$node['tab'] !== null && isset($known[$node['tab']]) ? $node['tab'] : 0][] = [
-                'cells' => [$node['name'] ?? ($node['spell'] === null ? 'Node '.$node['node'] : 'Spell '.$node['spell']), (string) $node['rank']],
+                'cells' => [self::spellCell($node['name'] ?? ($node['spell'] === null ? 'Node '.$node['node'] : 'Spell '.$node['spell']), $node['spell']), (string) $node['rank']],
             ];
         }
         $sections = [];

@@ -14,7 +14,14 @@
       "lines": 1,
       "raw_bytes": 101,
       "session": 1795180000
+    },
+    {
+      "group": "loot",
+      "id": "ab445751c42892eaed6700ba7622f8a2810e65146a4ef7af503dbcc81423e59d",
+      "lines": 1,
+      "raw_bytes": 84,
+      "session": 1795180000
     }
   ],
-  "set_digest": "67c83fe4a85756afa4a3bbceba4f55562f65d4d1ec2d217cd634bc609d4a603e"
+  "set_digest": "cc8c68b56c7fc44549c4bb74cc6dadf4ae6bb1c58663d6d3860900a8896985a3"
 }

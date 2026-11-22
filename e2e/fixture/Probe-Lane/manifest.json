@@ -66,11 +66,25 @@
     },
     {
       "group": "names",
-      "id": "1adec8f32f97f0e72d1a149360eaa8877c2e34bac760089b81d39e5bacef2423",
-      "lines": 2,
-      "raw_bytes": 88,
+      "id": "606bf0583ddbb3e5944703c9611e5761d4733a3e297ad207d48bd2011dd0434b",
+      "lines": 7,
+      "raw_bytes": 264,
+      "session": 1795180000
+    },
+    {
+      "group": "professions",
+      "id": "a0a8f648d359c0af2aac5cd8fea88aef578807d8f118437013edd758bda9320a",
+      "lines": 1,
+      "raw_bytes": 83,
+      "session": 1795180000
+    },
+    {
+      "group": "loot",
+      "id": "d28e0c15996b304274c61d6fe969d079fffc87a58f34832aa4cc51a0f05b3026",
+      "lines": 1,
+      "raw_bytes": 81,
       "session": 1795180000
     }
   ],
-  "set_digest": "9e60fbed5a2c3de2951e75eef607f1fa82eac315344e640c8b54533f76bbe023"
+  "set_digest": "96f3391b02528e0d72292303e032548a82c34deca4787eca692d999d8a768567"
 }

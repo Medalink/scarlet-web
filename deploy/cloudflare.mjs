@@ -63,7 +63,7 @@ async function record(type, name, content) {
 const HOST = `http.host eq "${ZONE}"`;
 const NO_CREDENTIALS = 'not any(lower(http.request.headers.names[*])[*] eq "authorization") and not http.cookie contains "scarlet_session" and not http.cookie contains "remember_web_"';
 const PAGES = ['/', '/demo', '/stats', '/map', '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/talents', '/rulesets'];
-const PAGE_PREFIXES = ['/c/', '/creatures/', '/items/', '/zones/', '/quests/', '/leaderboards/', '/talents/', '/rulesets/'];
+const PAGE_PREFIXES = ['/c/', '/creatures/', '/items/', '/spells/', '/encounters/', '/zones/', '/quests/', '/leaderboards/', '/talents/', '/rulesets/'];
 const CACHE_RULES = [
   {
     description: 'Public API for callers without credentials',

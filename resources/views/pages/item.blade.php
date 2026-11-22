@@ -1,3 +1,5 @@
+@php($tail = array_keys(array_filter(['made' => $d['made'], 'uses' => $d['uses'], 'bosses' => $d['bosses'], 'prices' => $d['prices']])))
+@php($recipeColumns = [['label' => 'Recipe'], ['label' => 'Makes'], ['label' => 'Needs']])
 <x-layouts.app :title="$d['name'].': where it drops and how often'" :description="trim($d['sub'].' Where '.$d['name'].' drops in WoW Forever and how often.')">
 <div class="wrap">
   <x-page-head :title="$d['name']" :class="$d['quality']" :single="true">
@@ -5,7 +7,7 @@
   </x-page-head>
   <x-figures :items="$d['figures']" />
   <x-sheet>
-    <x-module span="w12" :first="true" :last="! $d['prices']" id="h-s" heading="Where it drops">
+    <x-module span="w12" :first="true" :last="$tail === []" id="h-s" heading="Where it drops">
       @if ($d['rows'])
       <x-table :rows="$d['rows']" :columns="[['label' => 'Source'], ['label' => 'Loot rule'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Looted', 'numeric' => true], ['label' => 'Dropped', 'numeric' => true]]" style="margin-top:1.1rem" />
       <p class="note">A drop rate is drops over corpses looted for the first time under that loot rule. Drop rates cover every ruleset.</p>
@@ -13,6 +15,22 @@
       <x-note>No drops of this item are recorded yet.</x-note>
       @endif
     </x-module>
+    @if ($d['bosses'])
+    <x-module span="w12" :last="end($tail) === 'bosses'" id="h-b" heading="Boss encounters that dropped it">
+      <x-table :rows="$d['bosses']" :columns="[['label' => 'Encounter'], ['label' => 'Dropped', 'numeric' => true]]" style="margin-top:1.1rem" />
+      <p class="note">A drop is counted once however many players of the group uploaded it.</p>
+    </x-module>
+    @endif
+    @if ($d['made'])
+    <x-module span="w12" :last="end($tail) === 'made'" id="h-m" heading="Recipes that make it">
+      <x-table :rows="$d['made']" :columns="$recipeColumns" style="margin-top:1.1rem" />
+    </x-module>
+    @endif
+    @if ($d['uses'])
+    <x-module span="w12" :last="end($tail) === 'uses'" id="h-u" heading="Recipes that use it">
+      <x-table :rows="$d['uses']" :columns="$recipeColumns" style="margin-top:1.1rem" />
+    </x-module>
+    @endif
     @if ($d['prices'])
     <x-module span="w12" :last="true" id="h-p" heading="Auction price">
       @foreach ($d['prices'] as $market)

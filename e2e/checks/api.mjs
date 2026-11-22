@@ -5,7 +5,7 @@ const CONCURRENCY = 6;
 const RULESET = "unidentified";
 const FACTS_WAIT_MS = 10_000;
 const FACTS_POLL_MS = 250;
-const RECORDS = { characters: NAME, creatures: "113", items: "769", quests: "783", zones: "1436" };
+const RECORDS = { characters: NAME, creatures: "113", items: "769", quests: "783", zones: "1436", spells: "2660", encounters: "1065" };
 
 const SHAPES = [
   ["/stats", ["totals", "coverage", "rulesets"]],
@@ -22,6 +22,8 @@ const SHAPES = [
   ["/items/{id}", ["id", "name", "sources", "dropped", "source_count", "best_rate"]],
   ["/zones/{id}", ["id", "name", "rect", "played", "deaths", "killers", "creatures"]],
   ["/quests/{id}", ["id", "name", "totals", "levels", "zones"]],
+  ["/spells/{id}", ["id", "name", "facts", "recipe"]],
+  ["/encounters/{id}", ["id", "drops"]],
   ["/map/heat", ["cells"]],
   ["/map/density", ["level", "columns", "rows", "cells"]],
 ];
@@ -120,6 +122,8 @@ export async function recordsAreServed(ctx) {
     ["/creatures/113", (data) => data.name === "Stonetusk Boar", "the name Stonetusk Boar"],
     ["/items/769", (data) => data.name === "Chunk of Boar Meat", "the name Chunk of Boar Meat"],
     ["/quests/783", (data) => data.name === "A Threat Within", "the name A Threat Within"],
+    ["/spells/2660", (data) => data.name === "Rough Sharpening Stone" && data.recipe?.reagents?.[0]?.name === "Rough Stone", "the recipe Rough Sharpening Stone with the reagent Rough Stone"],
+    ["/encounters/1065", (data) => data.drops?.length === 1 && data.drops[0].dropped === 1 && data.drops[0].characters === 2, "one drop of Chunk of Boar Meat counted once from 2 characters"],
     ["/zones/1436", (data) => data.name === "Westfall", "the name Westfall"],
     ["/zones/1429", (data) => data.name === "Elwynn Forest", "the name Elwynn Forest"],
   ];

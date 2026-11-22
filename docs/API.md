@@ -470,15 +470,39 @@ Example: `curl https://<host>/api/v1/public/creatures/257926`
 
 #### `GET /public/items/{id}`
 
-One item: what it is, where it drops by source and loot rule, and its auction prices.
+One item: what it is, where it drops by source and loot rule, the boss encounters that dropped it, the recipes that make or use it, and its auction prices.
 
 | Parameter | In | Type | Meaning |
 | --- | --- | --- | --- |
 | `id` | path | integer | The item id, as in the address of its page. |
 
-`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`. `item` holds the item's facts (class, equip slot, levels, sell price, bind type, stack, quality) and is `null` while no upload has carried them (an `II` line): an item known only by name and drops, such as one seen in a loot line, still answers with `name` and `sources`.
+`data`: `item`, `sources` (source, loot rule, drops, opens, rate), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `dropped`, `source_count`, `best_rate`, `first_at`, `encounters` (encounter, item, dropped, characters), `made_by` and `used_in` (recipes: spell, output, reagents). `item` holds the item's facts (class, equip slot, levels, sell price, bind type, stack, quality) and is `null` while no upload has carried them (an `II` line): an item known only by name and drops, such as one seen in a loot line, still answers with `name` and `sources`.
 
 Example: `curl https://<host>/api/v1/public/items/1465`
+
+#### `GET /public/spells/{id}`
+
+One spell: what the client says about it (icon, cast time, range, cost, description) and, for a recipe, what it makes and needs.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `id` | path | integer | The spell id, as in the address of its page. |
+
+`data`: `name`, `facts` (`icon_id`, `cast_ms`, `min_range`, `max_range`, `costs` as `powerType:cost` joined by commas, `passive`, `description`) and `recipe` (`output`, `optional_slots`, `reagents`).
+
+Example: `curl https://<host>/api/v1/public/spells/133`
+
+#### `GET /public/encounters/{id}`
+
+One boss encounter: the items it dropped, each drop counted once however many players of the group uploaded it.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `id` | path | integer | The encounter id, as in the address of its page. |
+
+`data.drops`: `item_id`, `item`, `dropped` and `characters`, most dropped first.
+
+Example: `curl https://<host>/api/v1/public/encounters/1065`
 
 #### `GET /public/zones/{id}`
 

@@ -108,6 +108,9 @@ final class RecordPages
                 ['label' => 'Best drop rate', 'value' => $r['best_rate'] === null ? '–' : Format::percent((float) $r['best_rate'], $r['best_rate'] < 0.01 ? 2 : 1)],
                 ['label' => 'First recorded', 'value' => $first ?? '–'],
             ],
+            'made' => CraftingRows::recipes($r['made_by']),
+            'uses' => CraftingRows::recipes($r['used_in']),
+            'bosses' => CraftingRows::encounters($r['encounters']),
             'rows' => array_map(fn (array $row): array => ['cells' => [
                 $row['source_kind'] === 'c' && $row['source'] !== null ? ['text' => (string) $row['source'], 'href' => '/creatures/'.$row['source_id']] : self::otherSource($row),
                 self::RULES[$row['loot_rule']] ?? (string) $row['loot_rule'],
