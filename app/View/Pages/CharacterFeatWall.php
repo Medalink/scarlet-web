@@ -10,8 +10,8 @@ use App\View\Format;
  * The Feats section of the character page, from the `feats` of App\Actions\Public\CharacterOverview: the six at the top
  * of the list and the cards of the dialog that lists the rest.
  *
- * @phpstan-type Row array{key: string, name: string, value: int|float, tier: int, tier_name: string|null, threshold: int|null, next: int|null}
- * @phpstan-type Card array{tier: int, icon: string, name: string, tier_name: string|null, detail: string, track: list<int>}
+ * @phpstan-type Row array{key: string, name: string, value: int|float, tier: int, tier_name: string|null, threshold: int|null, next: int|null, pinned: bool}
+ * @phpstan-type Card array{key: string, pinned: bool, tier: int, icon: string, name: string, tier_name: string|null, detail: string, track: list<int>}
  */
 final class CharacterFeatWall
 {
@@ -19,13 +19,21 @@ final class CharacterFeatWall
 
     /**
      * @param  list<Row>  $feats
-     * @return array{held: int, total: int, tiers: list<array{count: int, name: string}>, since: string|null, top: list<Card>, earned: list<Card>, unearned: list<Card>}|null
+     * @return array{held: int, total: int, tiers: list<array{count: int, name: string}>, since: string|null, limit: int, pinned: list<Card>, top: list<Card>, earned: list<Card>, unearned: list<Card>}|null
      */
     public static function section(array $feats, Character $character): ?array
     {
         if ($feats === []) {
             return null;
         }
+        $byKey = array_column(array_filter($feats, fn (array $feat): bool => $feat['pinned']), null, 'key');
+        $pinned = [];
+        foreach ($character->pinned_feats ?? [] as $key) {
+            if (isset($byKey[$key])) {
+                $pinned[] = $byKey[$key];
+            }
+        }
+        $unpinned = array_values(array_filter($feats, fn (array $feat): bool => ! $feat['pinned']));
         $earned = array_values(array_filter($feats, fn (array $feat): bool => $feat['tier'] >= 1));
         $tiers = [];
         for ($tier = count(Feat::TIERS); $tier >= 1; $tier--) {
@@ -40,7 +48,9 @@ final class CharacterFeatWall
             'total' => count($feats),
             'tiers' => $tiers,
             'since' => $character->whole_life || $character->first_seen_at === null ? null : $character->first_seen_at->utc()->format('j M Y'),
-            'top' => array_map(self::card(...), array_slice($feats, 0, self::TOP)),
+            'limit' => Character::MAX_PINNED_FEATS,
+            'pinned' => array_map(self::card(...), $pinned),
+            'top' => array_map(self::card(...), array_slice($unpinned, 0, self::TOP)),
             'earned' => array_map(self::card(...), $earned),
             'unearned' => array_map(self::card(...), array_values(array_filter($feats, fn (array $feat): bool => $feat['tier'] === 0))),
         ];
@@ -53,7 +63,7 @@ final class CharacterFeatWall
     private static function card(array $feat): array
     {
         return [
-            'tier' => $feat['tier'], 'icon' => Feat::from($feat['key'])->icon(), 'name' => $feat['name'], 'tier_name' => $feat['tier_name'],
+            'key' => $feat['key'], 'pinned' => $feat['pinned'], 'tier' => $feat['tier'], 'icon' => Feat::from($feat['key'])->icon(), 'name' => $feat['name'], 'tier_name' => $feat['tier_name'],
             'detail' => self::detail($feat), 'track' => self::track($feat),
         ];
     }

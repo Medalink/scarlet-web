@@ -13,8 +13,14 @@ if (!('commandForElement' in HTMLButtonElement.prototype)) {
 
 if (!('closedBy' in HTMLDialogElement.prototype)) {
     document.addEventListener('click', (event) => {
-        if (event.target instanceof HTMLDialogElement && event.target.matches('[closedby="any"]')) {
-            event.target.close();
+        const dialog = event.target;
+        if (!(dialog instanceof HTMLDialogElement) || !dialog.matches('[closedby="any"]')) {
+            return;
+        }
+        const box = dialog.getBoundingClientRect();
+        const inside = box.top <= event.clientY && event.clientY <= box.bottom && box.left <= event.clientX && event.clientX <= box.right;
+        if (!inside) {
+            dialog.close();
         }
     });
 }

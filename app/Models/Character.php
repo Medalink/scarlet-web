@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $is_public
  * @property bool $show_economy
  * @property string $plausibility
+ * @property list<string>|null $pinned_feats feat keys the owner pinned, in the order pinned
  * @property string|null $armory_kind the ruleset the Forever Armory named for the character
  * @property string|null $armory_slug the Armory's own slug for it, kept when this code has no kind for it
  * @property string|null $declared_kind
@@ -30,6 +31,8 @@ class Character extends Model
 
     public const string FLAGGED = 'flagged';
 
+    public const int MAX_PINNED_FEATS = 3;
+
     protected $guarded = [];
 
     protected $hidden = ['account_id', 'first_install_id'];
@@ -41,6 +44,7 @@ class Character extends Model
             'is_public' => 'boolean',
             'show_economy' => 'boolean',
             'plausibility_flags' => 'array',
+            'pinned_feats' => 'array',
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
         ];

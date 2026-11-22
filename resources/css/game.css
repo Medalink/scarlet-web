@@ -160,6 +160,19 @@ h2 > .ico, h3 > .ico { width: 0.9em; height: 0.9em; margin-right: 0.45rem; verti
 .feats-sum b { font: 750 1.9rem/1 var(--display); color: var(--fg); margin-right: 0.35rem; }
 .feats-top { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .feats-top + .btn { margin-top: 1.6rem; }
+.feats-pinned { padding-bottom: 1.7rem; border-bottom: 1px solid var(--line); }
+.feats-pinned + .feats-top { margin-top: 1.7rem; }
+.feats-all .feat { position: relative; }
+.feat:has(.feat-pin) > div { padding-right: 2.4rem; }
+.feat-pin { position: absolute; top: -0.35rem; right: -0.35rem; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; padding: 0; border: 1px solid transparent; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; }
+.feat-pin .ico { width: 1.15rem; height: 1.15rem; }
+.feat-pin:hover:not(:disabled) { color: var(--fg); border-color: var(--line2); }
+.feat-pin[aria-pressed="true"] { color: var(--accent); }
+.feat-pin[aria-pressed="true"] .ico { fill: currentColor; }
+.feat-pin:disabled { opacity: 0.35; cursor: not-allowed; }
+.feat-pin:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.feats-all > header > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.2rem 1rem; }
+.feats-pins { font: 500 0.9rem/1 var(--mono); color: var(--muted); }
 @media (max-width: 64rem) { .feats-top { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 40rem) { .feats-top { grid-template-columns: minmax(0, 1fr); } }
 .feats-all { width: min(72rem, calc(100vw - 2rem)); max-height: 90dvh; margin: auto; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); flex-direction: column; }

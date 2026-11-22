@@ -14,9 +14,10 @@ class ShowCharacterFeats
     /**
      * Earned feats first, rarest first: the fewest characters holding the tier this one holds, then the higher tier, then
      * the order of `Feat`. The feats not yet earned follow, closest to copper first. Rarity orders the list and is not in
-     * a row. The gold feats are left out unless `$economy`.
+     * a row. The gold feats are left out unless `$economy`. `pinned` marks the feats the owner pinned; pinning does not
+     * move a row.
      *
-     * @return list<array{key: string, name: string, value: int|float, tier: int, tier_name: string|null, threshold: int|null, next: int|null}>
+     * @return list<array{key: string, name: string, value: int|float, tier: int, tier_name: string|null, threshold: int|null, next: int|null, pinned: bool}>
      */
     public function handle(Character $character, bool $economy): array
     {
@@ -40,7 +41,9 @@ class ShowCharacterFeats
         }
         usort($entries, fn (array $a, array $b): int => $this->compare($a, $b));
 
-        return array_column($entries, 'row');
+        $pinned = $character->pinned_feats ?? [];
+
+        return array_map(fn (array $entry): array => $entry['row'] + ['pinned' => in_array($entry['row']['key'], $pinned, true)], $entries);
     }
 
     /**
