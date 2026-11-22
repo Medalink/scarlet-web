@@ -934,12 +934,14 @@ const warlock = (() => {
   const KILLS = [["Your killing blow", 58], ["A curse, a bane or the demon, after you looked away", 31], ["A party member", 11]];
   const CONTROL = [["fear", 2210], ["deathcoil", 301], ["howl", 96], ["banish", 44], ["enslave", 38]];
   const FEATS = [
-    [3, "Soul Hoarder", "Gold", "32 soul shards held at once", [100, 100, 100, 40, 0]],
-    [2, "Blood for Mana", "Silver", `${n(TAPS)} Life Taps of 25,000`, [100, 100, 46, 0, 0]],
-    [2, "Summoner", "Silver", "186 players summoned of 250", [100, 100, 62, 0, 0]],
-    [1, "Stone Giver", "Copper", "41 healthstones handed out of 50", [100, 82, 0, 0, 0]],
-    [1, "Tapped Out", "Copper", "6 deaths within 5 seconds of a Life Tap", [100, 60, 0, 0, 0]],
-    [0, "Back from the Stone", "", "9 of 10 deaths undone by your own soulstone", [90, 0, 0, 0, 0]],
+    [3, "Soul Harvester", "Gold", "5, 640 of 6, 000 casts of Drain Soul", [100, 100, 100, 91, 0]],
+    [3, "Leech", "Gold", "2, 940 of 6, 000 casts of Drain Life and Siphon Life", [100, 100, 100, 24, 0]],
+    [3, "Summoner", "Gold", "186 of 400 casts of Ritual of Summoning", [100, 100, 100, 22, 0]],
+    [3, "Life Tapper", "Gold", "11, 065 of 25, 000 casts of Life Tap", [100, 100, 100, 20, 0]],
+    [3, "Fearmonger", "Gold", "2, 607 of 6, 000 casts of Fear, Howl of Terror and Death Coil", [100, 100, 100, 15, 0]],
+    [3, "Hexweaver", "Gold", "188 of 400 hours with Affliction as the main tree", [100, 100, 100, 15, 0]],
+    [3, "Corruptor", "Gold", "9, 480 of 25, 000 casts of Corruption", [100, 100, 100, 11, 0]],
+    [2, "Agonizer", "Silver", "6, 120 of 7, 500 casts of Bane of Agony", [100, 100, 77, 0, 0]],
   ];
   const SOURCES = [["drainsoul", NAMES.drainsoul, 4314], ["shadowburn", NAMES.shadowburn, 498]];
   const SPENDS = [
@@ -1132,7 +1134,7 @@ const warlock = (() => {
 
   <section class="recs" aria-labelledby="h-feats">
     <h2 id="h-feats">Warlock feats</h2>
-    <p class="feats-sum"><span><b>5</b>of 6 feats</span><span><b>1</b>Gold</span><span><b>2</b>Silver</span><span><b>2</b>Copper</span></p>
+    <p class="feats-sum"><span><b>8</b>of 8 feats</span><span><b>7</b>Gold</span><span><b>1</b>Silver</span><span><b>0</b>Copper</span></p>
     <ul class="feats feats-top">${FEATS.map(([tier, name, tierName, detail, track]) => `<li class="feat t${tier}"><span class="seal">${gi()}</span><div><p class="feat-n">${name}${tierName ? `<small>${tierName}</small>` : ""}</p><p class="feat-d">${detail}</p><span class="feat-to" aria-hidden="true">${track.map((s) => `<i style="--at:${s}%"></i>`).join("")}</span></div></li>`).join("")}</ul>
   </section>
 </div>`;

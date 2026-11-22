@@ -918,7 +918,7 @@ comps and is specified here, not in them.
 | `/search` | Characters that are public, creatures, items, objects, zones, quests. An object is a hit when it has a name and a loot window of loot, herbs or ore counted under the character threshold (docs/LOOT.md, phase 3; comp `search.html`): the line is its name, `Object` and how many times it was opened. Its score is the windows. The bobber of a fishing line is not one |
 | `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths, talents (the latest build of each talent group drawn on its tree, or listed by tab while no layout is stored; the order the points were taken in; respecs; talent facts: characters with the same build at the same level, respec count and gold, the least picked talent among the class and spec, the level of the first build with 31 points in one tree, the longest and median wait to spend a point, and picks refunded within ten minutes, each with its n). A Lifetime chapter, shown when a read is stored, gives the client's own totals of quests completed, titles known and zones explored (the latest `QB`, `KT` and `EB`) and the instance locks that still hold with their reset time (`IS`); a character without those lines shows no chapter. The hero map redraws the walked cells in the order they were first walked (a day at a time, from the daily heat aggregate), with the Level figure counting up and each death appearing at its day; a Replay button runs it again, and a viewer who prefers reduced motion gets the finished map. Skills lead with the profession ranks over played time, placed from the hours played; play time is the last 21 days and the hour of the week, drawn in the viewer's time zone from the hourly aggregate and in UTC without script. Public when its owner says so; the owner sees the private parts too |
 | `/c/{name}/battlegrounds` | The scoreboards of a character's ten latest battlegrounds that have `BO` rows (`battleground_scores`): every player the client read, by faction, with killing blows, honorable kills, deaths, honor, damage and healing, under the zone and the result of the match when the `pvp` group holds its `BM` lines (`battleground_matches`). A match is one uploader's rows that share `match_at`; two uploaders of one match each have their own. Visible exactly when the character's page is. Other players' names follow the privacy rule: the owner sees them, a visitor sees a name (linked to its page) only when that player's own character is public, and every other row says "a player". The character page links it when the character has a match with a scoreboard |
-| `/c/{name}/{class}` | Designed, not built (Class pages, below; the comp is `docs/comps/class.html`). A character's page for its class, with the class's slug: a head of the game's own models for what the class is known by, six figures, the chart only that class has, rows by level and by spell, a module for each talent the build has that changes how the class plays, what the class does for other players, the character against others of its class and level bracket, and the class's six feats. Visible exactly when the character's page is |
+| `/c/{name}/{class}` | Designed, not built (Class pages, below; the comp is `docs/comps/class.html`). A character's page for its class, with the class's slug: a head of the game's own models for what the class is known by, six figures, the chart only that class has, rows by level and by spell, a module for each talent the build has that changes how the class plays, what the class does for other players, the character against others of its class and level bracket, and the feats the catalog holds for its class and its build's talent tree. Visible exactly when the character's page is |
 | `/talents`, `/talents/{class}/{spec}` | Public. Every spec with the characters that play it, and one spec: pick rate by node (a heat on the real tree when a layout is stored, a table always), the most common order of points, builds by level bracket, and builds and outcomes (the ten most held builds with the level-ups, median time to level, deaths and dungeon runs that happened while each was held, from one snapshot to the next; `?level=10-19` to `60`; `ruleset` and `server` as on `/stats`). Each character counts once, by its latest counted build read inside the bracket, and every figure prints its n. `/stats` carries a Talents block with the most played specs |
 | `/creatures/{id}`, `/items/{id}`, `/zones/{id}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels. An item page also lists the boss encounters that dropped it (`boss_loot`) and the recipes that make or use it (`recipes`, `recipe_reagents`). A creature page, and an object page, add two modules under the drop table (docs/LOOT.md, phase 4; comp `creature.html`): Drop rate by loot rule and Drop rate by group size under the rule the page shows (`?rule=`, else the rule with most corpses). Each is one row for every item with 10 drops or more and one mark for every rule (or size) on a shared 0 to 100% axis: the dot is the rate, the line its 95% range, `k of n` beside it, hollow from 10 to 29 corpses and not drawn under 10. A free-for-all arm that two or more characters contributed to counts its one reader and carries `one reader`. The first two arms drawn (the most corpses) are compared: the row says `no difference found`, or marks the difference in points with its Newcombe range and the tags of both arms when both arms have 30 corpses and the range stays off zero after 0.05 is divided by the number of items in the chart. A personal-loot arm is drawn and never compared. When fewer than two arms are drawn the module says which rules, or which sizes with their corpses, were recorded. A creature or object page also links `/loot/groups?source=`. An item page adds Rolls in groups (the uploaders' own rolls of the item under the rules that roll: need, greed and pass as a rate with its counts, a bar from 10 rolls, and how many of the rolls everyone passed) and Who received it by class (what other members of a group received by class, from `group_loot` and the class their line named, and what the uploaders received, with each class's share of the receipts from 10 receipts and the rolls of need or greed it made on the item and won; one uploader's view of its group, so a group with several uploaders counts once for each). The two sit side by side under Where it drops, or alone when only one has data; each is left out when fewer than `min_characters` characters contributed (comp `item.html`). A zone page adds Looted here under Creatures met here (docs/LOOT.md, phase 3; comp `zone.html`): the five creatures looted most often in the zone with their corpses looted and most common item, the five items that dropped most often with their best source (each rate with its 95% range, or its counts under 10 corpses), and the link `All loot in {zone}` to `/loot?zone={id}`. It counts every ruleset and every loot rule but personal loot, so the ruleset filter of the page does not narrow it, and fishing is not in it. The module is left out while the zone has no loot |
 | `/items/{id}` loot modules | Public (docs/LOOT.md, phase 3; comps `item.html`, `container.html`). Under the item's drop modules: **By zone** (a third) lists the zones where creatures were looted and held the item: Zone, Dropped (corpses that held it) and Per 100 corpses, the share of the zone's creature corpses looted for the first time that held it, with its 95% range after it, or `k of n` while the zone has under 10 corpses; the ten zones with most drops, by Dropped; every ruleset and every loot rule but personal loot. **Where it was looted** (w8) marks the map with where the character stood at each of the newest 600 windows that held the item, as the creature and object pages do. Both are left out for an item no window held. An item that is a container (windows read as `bag`) adds **What it holds**, the object page's drop table over what the container gave: Item, Drop rate with its range, Range, Opened and Per drop, without the rule control. Gathering sources keep Where it's gathered, and fishing windows are in none of them |
@@ -1417,7 +1417,9 @@ carries a band of five of the class's figures above "This week", linking to the 
    totems, resurrections.
 7. **Against other characters of the class.** Six of the page's figures as a place among characters of the same
    class in the level bracket, drawn on `.rules`. Hidden for a bracket under the character threshold.
-8. **Class feats.** Six feats for each class, on the feat wall with the others (below).
+8. **Class feats.** The feats the catalog already holds for the character: the four of its class and the four of
+   the talent tree its latest build has most points in, read from the stored rows as the feat wall reads them. The
+   page adds no feat of its own, and the other trees' feats and the role feats stay on the wall.
 
 **Colour.** The class colour (`data-class`, `--class`) carries the class's own resource and its charts' first series.
 Scarlet stays what it is everywhere else: recorded totals, the character against others, tiers. Grey is what was
@@ -1486,8 +1488,8 @@ Four limits, stated on the page where they bite:
   points. A page shows none of these until the addon writes them, and the design holds no placeholder for them.
 - **The top five.** The damage meter names a fight's five largest spells, so a "by spell" rank says so under it.
 - **A death walked off.** `SR` says a soulstone or Reincarnation was on offer, not that it was taken. The build
-  settles how a taken one is read from the lines after the death before Back from the Stone, Not Today or the
-  Reincarnation module count anything.
+  settles how a taken one is read from the lines after the death before the soulstone and Reincarnation modules
+  count anything.
 
 The web needs the lines decoded: today no table holds casts, auras, pet spans or bag changes. The build adds daily
 aggregates by character, level and spell (casts, in-fight casts, channel seconds), by character, level and aura
@@ -1495,66 +1497,10 @@ aggregates by character, level and spell (casts, in-fight casts, channel seconds
 recounted like the rest. The comparison against other characters of the class needs a rollup of the six figures by
 class and level bracket. The app reads the same lines from the character's own log and needs neither.
 
-**Class feats.** Six for each class, 54 in all, five tiers each like every feat. A character's wall and summary count
-the 75 and its own class's six; another class's feats are never listed as unearned. The thresholds are a first
-setting, sized so gold takes about the 200 hours Veteran's gold takes.
-
-| Class | Feat | Counts | Copper | Silver | Gold | Scarlet | Legend |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Warlock | Soul Hoarder | most soul shards held at once | 4 | 12 | 24 | 44 | 72 |
-| Warlock | Blood for Mana | Life Taps | 100 | 2,500 | 25,000 | 60,000 | 150,000 |
-| Warlock | Summoner | players summoned | 5 | 50 | 250 | 1,000 | 5,000 |
-| Warlock | Stone Giver | healthstones handed to other players | 5 | 50 | 250 | 1,000 | 5,000 |
-| Warlock | Tapped Out | deaths within 5 seconds of a Life Tap | 1 | 10 | 25 | 50 | 100 |
-| Warlock | Back from the Stone | deaths undone by the character's own soulstone | 10 | 50 | 150 | 400 | 1,000 |
-| Warrior | First In | Charges and Intercepts | 50 | 1,000 | 10,000 | 30,000 | 100,000 |
-| Warrior | Executioner | kills within a second of an Execute | 25 | 500 | 5,000 | 15,000 | 50,000 |
-| Warrior | Never Without a Shout | hours with Battle Shout up | 2 | 25 | 100 | 300 | 1,000 |
-| Warrior | Held the Line | hours in Defensive Stance | 2 | 25 | 100 | 300 | 1,000 |
-| Warrior | Arms Collector | weapon types fought with | 2 | 4 | 6 | 8 | 10 |
-| Warrior | Last Resort | Retaliations, Shield Walls and Recklessnesses | 1 | 25 | 150 | 400 | 1,000 |
-| Paladin | Judge and Jury | judgements | 50 | 2,500 | 25,000 | 60,000 | 150,000 |
-| Paladin | Blessed Be | blessings cast | 50 | 1,000 | 10,000 | 30,000 | 100,000 |
-| Paladin | Bubble Hearth | Hearthstones used inside a Divine Shield | 1 | 3 | 10 | 25 | 50 |
-| Paladin | Laying on of Hands | Lay on Hands not followed by a death within 10 seconds | 1 | 25 | 250 | 600 | 1,500 |
-| Paladin | Scourge of the Undead | undead and demons killed | 50 | 1,000 | 10,000 | 30,000 | 100,000 |
-| Paladin | The Last Favour | Divine Interventions | 1 | 5 | 25 | 60 | 150 |
-| Hunter | Full Quiver | shots fired | 500 | 10,000 | 100,000 | 300,000 | 1,000,000 |
-| Hunter | Best Friend | hours with one pet out | 2 | 50 | 250 | 600 | 1,500 |
-| Hunter | Menagerie | pet families tamed | 2 | 5 | 10 | 15 | 20 |
-| Hunter | Trapper | traps set | 25 | 250 | 2,500 | 7,500 | 25,000 |
-| Hunter | Played Dead | Feign Deaths not followed by a death within 5 seconds | 5 | 50 | 500 | 1,500 | 5,000 |
-| Hunter | Empty Quiver | fights in a row that ended with ammo left | 250 | 1,000 | 2,500 | 5,000 | 10,000 |
-| Rogue | Unseen | hours in stealth | 2 | 50 | 500 | 1,000 | 2,000 |
-| Rogue | Light Fingers | pockets picked | 25 | 500 | 5,000 | 15,000 | 50,000 |
-| Rogue | Locksmith | lockpicking skill | 75 | 150 | 225 | 275 | 300 |
-| Rogue | Apothecary | kinds of poison applied | 1 | 2 | 3 | 4 | 5 |
-| Rogue | Clean Getaway | Vanishes not followed by a death within 10 seconds | 5 | 50 | 500 | 1,500 | 5,000 |
-| Rogue | Never Saw It Coming | fights opened from stealth | 50 | 1,000 | 10,000 | 30,000 | 100,000 |
-| Priest | Lifeline | healing done | 25,000 | 500,000 | 5,000,000 | 15,000,000 | 50,000,000 |
-| Priest | Bubble Wrap | Power Word: Shields | 50 | 1,000 | 10,000 | 30,000 | 100,000 |
-| Priest | Back on Your Feet | Resurrections | 5 | 50 | 500 | 1,500 | 5,000 |
-| Priest | Both Sides | the lower of hours in Shadowform and healing done in units of 10,000 | 2 | 25 | 100 | 300 | 1,000 |
-| Priest | Mind Over Matter | hours of Mind Control | 1 | 3 | 10 | 25 | 50 |
-| Priest | Fortified | Fortitudes cast | 50 | 1,000 | 10,000 | 30,000 | 100,000 |
-| Shaman | Four Corners | fights with a totem of all four elements down | 25 | 500 | 5,000 | 15,000 | 50,000 |
-| Shaman | Totem Pole | totems dropped | 250 | 5,000 | 50,000 | 150,000 | 500,000 |
-| Shaman | Shock Therapy | shocks cast | 100 | 2,500 | 25,000 | 60,000 | 150,000 |
-| Shaman | Pack Runner | hours as a Ghost Wolf | 2 | 25 | 250 | 600 | 1,500 |
-| Shaman | Not Today | Reincarnations | 1 | 10 | 100 | 250 | 500 |
-| Shaman | Earthbound | hours of totems standing | 50 | 1,000 | 10,000 | 30,000 | 100,000 |
-| Mage | Waterworks | water conjured | 100 | 1,000 | 10,000 | 30,000 | 100,000 |
-| Mage | Open Door | portals opened | 5 | 50 | 500 | 1,500 | 5,000 |
-| Mage | Shepherd | Polymorphs | 25 | 500 | 5,000 | 15,000 | 50,000 |
-| Mage | The Big Pull | most kills in one fight | 3 | 6 | 12 | 20 | 30 |
-| Mage | Blink and Gone | Blinks | 25 | 500 | 5,000 | 15,000 | 50,000 |
-| Mage | Vending Machine | stacks of water and food handed to other players | 10 | 250 | 2,500 | 7,500 | 25,000 |
-| Druid | Shapeshifter | shapeshifts | 100 | 2,500 | 25,000 | 60,000 | 150,000 |
-| Druid | Bear With It | hours as a bear | 2 | 25 | 250 | 600 | 1,500 |
-| Druid | Nine Lives | hours as a cat | 2 | 25 | 250 | 600 | 1,500 |
-| Druid | Road Runner | hours in Travel Form | 2 | 25 | 250 | 600 | 1,500 |
-| Druid | Second Chance | Rebirths | 1 | 25 | 250 | 600 | 1,500 |
-| Druid | All of the Above | the lowest of three counts of dungeon fights: most damage taken in the group, most healing, most damage | 1 | 10 | 50 | 150 | 500 |
+**Class feats.** The first design gave each class six feats of its own (most soul shards held at once, deaths within
+5 seconds of a Life Tap). The class, talent-tree and role feats landed the same day, so the page shows those and the
+six were dropped; what they counted stays on the page as modules. One feat cannot be earned on this client: Zealot
+counts Crusader Strike, which build 1.60.1.71037 has no player spell for.
 
 **The app.** The Scarlet app gets a view named for the character's class, after Talents in its navigation, shown
 only for that class's characters. It carries the same charts from the character's own log with no upload: a banner
