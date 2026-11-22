@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
  * it names characters; one to a caller with credentials is private. The origin keeps each successful answer for
  * `ANSWER_SECONDS`, keyed by the endpoint and the parameters PublicRequest validates, so callers that miss the edge
  * (keys, unknown query parameters, another spelling of a name) do not each run its queries.
+ * Every answer says `X-Robots-Tag: noindex`, which keeps the JSON out of search results while pages may still fetch it.
  */
 class PublicApi
 {
@@ -173,6 +174,7 @@ class PublicApi
         $response->headers->set('X-RateLimit-Limit', (string) $max);
         $response->headers->set('X-RateLimit-Remaining', (string) max(0, $remaining));
         $response->headers->set('Vary', 'Authorization');
+        $response->headers->set('X-Robots-Tag', 'noindex');
 
         if (! $response->isSuccessful()) {
             $response->headers->set('Cache-Control', 'no-store');

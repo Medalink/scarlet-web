@@ -15,6 +15,6 @@ class CharacterHeatController extends Controller
         $answer = $heat->handle($name, $request->viewerAccountId());
         abort_if($answer === null, 404);
 
-        return response()->json(['data' => $answer]);
+        return response()->json(['data' => $answer])->header('X-Robots-Tag', 'noindex');
     }
 }

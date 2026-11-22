@@ -11,8 +11,10 @@ use App\Http\Controllers\Web\ReleaseNotesController;
 use App\Http\Controllers\Web\RulesetsController;
 use App\Http\Controllers\Web\SearchController;
 use App\Http\Controllers\Web\SearchSuggestController;
+use App\Http\Controllers\Web\SitemapController;
 use App\Http\Controllers\Web\StatsController;
 use App\Http\Controllers\Web\TalentsController;
+use App\Support\SearchKind;
 use Illuminate\Support\Facades\Route;
 
 // The public pages: dashboards, the map, boards, search, result pages and characters. Every one reads App\Actions\Public.
@@ -35,3 +37,9 @@ Route::get('/talents', [TalentsController::class, 'index']);
 Route::get('/talents/{class}/{name}', [TalentsController::class, 'show'])->where(['class' => '[a-z]+', 'name' => '[a-z0-9-]+']);
 Route::get('/rulesets', RulesetsController::class);
 Route::get('/rulesets/{slug}', StatsController::class)->where('slug', '[a-z0-9-]+');
+Route::get('/sitemap.xml', [SitemapController::class, 'index']);
+Route::get('/sitemaps/pages.xml', [SitemapController::class, 'pages']);
+Route::get('/sitemaps/{kind}-{page}.xml', [SitemapController::class, 'kind'])->where([
+    'kind' => implode('|', array_map(fn (SearchKind $kind): string => $kind->value, SearchKind::cases())),
+    'page' => '[1-9][0-9]{0,3}',
+]);

@@ -18,6 +18,6 @@ class SearchSuggestController extends Controller
         $answer = $term === '' ? [] : $search->handle($term, null, 0, SearchSuggest::PER_KIND);
         $found = $term === '' ? [] : $pages->handle($term);
 
-        return response()->json(SearchSuggest::data($answer, $found, $term));
+        return response()->json(SearchSuggest::data($answer, $found, $term))->header('X-Robots-Tag', 'noindex');
     }
 }

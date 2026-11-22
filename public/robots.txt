@@ -1,2 +1,6 @@
 User-agent: *
-Disallow:
+Disallow: /auth/
+Disallow: /account
+Disallow: /link
+
+Sitemap: https://scarletweb.io/sitemap.xml

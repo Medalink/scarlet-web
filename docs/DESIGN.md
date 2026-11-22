@@ -516,6 +516,30 @@ comps and is specified here, not in them.
 
 A dungeon is `/zones/{id}` with the negative instance id (`/zones/-90`).
 
+### Search engines and link previews
+
+Every page's head carries a title ending in ` | Scarlet` (pages that name themselves, like the landing page and the
+sign-in page, leave it off), a meta description, a canonical link, and Open Graph and Twitter tags with one share
+image, `public/share.png`, 1200 by 630. A link shared in Discord, Slack, X, Facebook, iMessage or WhatsApp shows the
+page's title, description and that image. The landing page also carries a `WebSite` JSON-LD block.
+
+Search results, the sign-in page, the account pages, the link page and a private character seen by its owner carry
+`<meta name="robots" content="noindex">` and no canonical link. Every other page names itself as canonical: the
+canonical is the page's path with the query string dropped, so filter variants (`?server=`, `?class=`, `?cursor=`,
+`?rule=`, `?level=`, `?layer=`, `?sessions=`) point at the unfiltered page. `/stats?ruleset=x` names `/rulesets/x`,
+and a character page names the character's stored spelling (`/c/Name-Surname`).
+
+`/sitemap.xml` is a sitemap index. It lists `/sitemaps/pages.xml`, which holds the fixed pages and a ruleset, board
+and talent spec page for each that exists, and one file per 25,000 rows for each kind: public characters
+(`/c/{name}`, with `lastmod` from `last_seen_at`), creatures, items, zones and quests. `robots.txt` disallows
+`/auth/`, `/account` and `/link`, and names `https://scarletweb.io/sitemap.xml`.
+
+The JSON answers the pages fetch (`/api/v1/public/*` and a character's heat endpoint) carry
+`X-Robots-Tag: noindex` instead of a robots.txt rule, so a crawler following a URL into them does not index them.
+
+`tools/share-image/build` draws the share image and the touch icon from `share.html` and `icon.html`.
+`node e2e/seo.mjs <base URL>` asks a running site for all of the above and prints what is missing.
+
 ### Art and game layer
 
 The stats pages show the same numbers as art and as a game (owner, 2026-11-21: "more fun, more gamified and more
