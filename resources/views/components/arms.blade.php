@@ -23,6 +23,6 @@
 @if ($chart['empty'])
 <x-note>{{ $chart['empty'] }}</x-note>
 @endif
-@if ($chart['note'])
-<p class="note">{{ $chart['note'] }}</p>
+@if ($chart['note'] || $chart['groups'])
+<p class="note">{{ $chart['note'] }}@if ($chart['groups']) <a href="{{ $chart['groups'] }}">Loot rules and group size</a> for this creature.@endif</p>
 @endif

@@ -17,9 +17,10 @@ final class ArmChart
 {
     /**
      * @param  array<string, mixed>  $answer  the answer of SourceRuleArms over loot rules
+     * @param  string  $groups  the address of the groups page narrowed to this source
      * @return array<string, mixed>|null null when the source has no windows to split
      */
-    public static function rules(array $answer): ?array
+    public static function rules(array $answer, string $groups): ?array
     {
         /** @var list<array{rule: string, windows: int}> $rules */
         $rules = $answer['rules'];
@@ -37,7 +38,7 @@ final class ArmChart
             default => null,
         };
 
-        return ['heading' => 'Drop rate by loot rule'] + self::chart($answer, $empty, self::undrawn($arms, fn (LootArm $arm): string => strtolower($arm->label).' with '.$arm->windows), true);
+        return ['heading' => 'Drop rate by loot rule', 'groups' => $groups] + self::chart($answer, $empty, self::undrawn($arms, fn (LootArm $arm): string => strtolower($arm->label).' with '.$arm->windows), true);
     }
 
     /**
@@ -64,7 +65,7 @@ final class ArmChart
 
     /**
      * @param  array<string, mixed>  $answer
-     * @return array{empty: string|null, rows: list<array<string, mixed>>, note: string|null}
+     * @return array{empty: string|null, rows: list<array<string, mixed>>, note: string|null, groups: string|null}
      */
     private static function chart(array $answer, ?string $empty, ?string $undrawn, bool $explain): array
     {
@@ -79,7 +80,7 @@ final class ArmChart
             $empty = 'No item has 10 drops yet.';
         }
 
-        return ['empty' => $empty, 'rows' => array_map(fn (array $row): array => self::row($row, $pair, $drawn), $source), 'note' => $source === [] ? null : self::note($arms, $undrawn, $explain)];
+        return ['empty' => $empty, 'rows' => array_map(fn (array $row): array => self::row($row, $pair, $drawn), $source), 'note' => $source === [] ? null : self::note($arms, $undrawn, $explain), 'groups' => null];
     }
 
     /**
