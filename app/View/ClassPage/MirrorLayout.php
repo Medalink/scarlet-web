@@ -3,6 +3,7 @@
 namespace App\View\ClassPage;
 
 use App\Support\ClassPage\Mirror;
+use App\Support\ClassPage\Stack;
 
 /**
  * The geometry of a mirror chart in an SVG 760 by 290: bars up and down from one axis at each level, the axis
@@ -94,9 +95,12 @@ final class MirrorLayout
         return 10 * $power;
     }
 
-    /** @return list<int> the tens inside the range, or its two ends when it holds none */
+    /** @return list<int> every level of a short range, else the tens inside it, or its two ends when it holds none */
     private static function levels(int $first, int $last): array
     {
+        if ($last - $first < Stack::EVERY_LEVEL_UP_TO) {
+            return range($first, $last);
+        }
         $tens = [];
         for ($level = (int) (ceil($first / 10) * 10); $level <= $last; $level += 10) {
             $tens[] = $level;
