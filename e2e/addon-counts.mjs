@@ -10,7 +10,7 @@
  * stop of the claim before it, and one that was not looted (rule 3, seams), a session uploaded in two halves, a claim a catch started whose
  * neighbour's rows were not looted, a claim an `ff` count covers in part and one that only ends inside it (rule 5), a claim whose casts were all
  * cancelled inside a Scarlet session, two characters that hold one record (rule 4) with the lower id uploaded first,
- * with the rows on the higher id, with some rows on the lower and more on the higher, and linked by an account afterwards. Each case names the totals the history has.
+ * with the rows on the higher id, with some rows on the lower and more on the higher, a day with no claim that the outdated pass must not queue twice, and linked by an account afterwards. Each case names the totals the history has.
  * A lane that waits only for the server to stop changing would read the last case's state, so it waits until no
  * addon day of the character has a null reconcile version (docs/DESIGN.md, Reconcile) and its row and claim counts
  * are the ones the case uploaded, and compares hashes only after that.
@@ -352,6 +352,27 @@ const fresh = async (...apps) => {
   for (const app of apps) expectStatus(await app.remove(), 200, "DELETE /upload");
 };
 
+async function emptyDay() {
+  const skipped = [{ to: CASE_DAY, day: Math.floor(CASE_DAY / 86400) * 86400, line: ["fl", "", "c", "session", "mining", CASE_DAY - 60, CASE_DAY, "", "casts=3"] }];
+  const parts = known(countsPartsOf(skipped));
+  const days = () => Number(db(`select count(*) from addon_days where ${own(NAME)}`));
+  const unstamped = () => Number(db("select count(*) from addon_days where reconcile_version is null"));
+  await fresh(client);
+  await upload(parts);
+  await settleOne(NAME, (s) => s.claims === 0 && days() === 1, "a day with no claim");
+  check("a counts day whose only line is a kind nothing maps holds no claim and is stamped with the reconcile version", days() === 1 && unstamped() === 0, `${days()} days, ${unstamped()} without a version`);
+  db(`update addon_days set reconcile_version = null where ${own(NAME)}`);
+  const requeued = artisan("ingest:redecode", "--outdated");
+  check("with its version cleared the outdated pass queues the character", /[1-9]\d* outdated sessions, addon days and characters queued/.test(requeued.stdout), requeued.stdout + requeued.stderr);
+  await settleOne(NAME, (s) => s.claims === 0 && days() === 1, "the day is stamped again");
+  const idle = artisan("ingest:redecode", "--outdated");
+  check("with every day stamped the outdated pass queues nothing", unstamped() === 0 && /^0 outdated sessions, addon days and characters queued/.test(idle.stdout.trim()), idle.stdout + idle.stderr);
+  const counts = countsPartsOf([claimIn(0, 300, "casts=10;landed=10;items=10;unknown=0")]);
+  await upload(known([...counts]));
+  const filled = await settleOne(NAME, (s) => s.claims === 1, "the first claim of a character with a stamped empty day");
+  check("the first claim of a character with a stamped empty day is decided and the day stamped again, 10/10/10", sum(filled.total) === "10/10/10" && filled.nullDays === 0 && filled.unreconciled === 0, `${sum(filled.total)} with ${filled.nullDays} unstamped days`);
+}
+
 async function seam(label, gap, firstOfLater) {
   const earlier = sessionOf(Array.from({ length: 10 }, (_, i) => looted(10 + 28 * i)));
   const later = sessionOf([looted(firstOfLater), ...Array.from({ length: 9 }, (_, j) => looted(330 + 30 * j))]);
@@ -602,6 +623,7 @@ async function main() {
   const last = audit();
   check("addons:audit passes at the end", last.status === 0, last.stdout + last.stderr);
 
+  await emptyDay();
   await seam("a stop and a cast 0.8 s later: windows [0,300] and [302,600], the later session's first cast at 300.8", 2, 300.8);
   await seam("a cast at the stop itself: windows [0,300] and [301,600], the later session's first cast at 300.0", 1, 300);
   await seamKept();

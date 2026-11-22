@@ -9,8 +9,10 @@ class InvalidateReconciles
     public function __construct(private readonly AddonClaimSiblings $siblings) {}
 
     /**
-     * Mark every addon day of the characters in `$characterIds` and of the characters linked to them that hold claims
-     * as not reconciled: their `reconcile_version` becomes null (docs/DESIGN.md, Reconcile). A write that can change
+     * Mark every addon day of the characters in `$characterIds`, whether or not they hold claims, and of the characters
+     * linked to them that hold claims as not reconciled: their `reconcile_version` becomes null (docs/DESIGN.md,
+     * Reconcile). A character with no claims has days too (a day whose lines were all skipped), and the claims it
+     * receives next must not sit beside a version stamped before them. A write that can change
      * what a claim counts calls this inside its own transaction, so the verdicts a page reads are never stamped current
      * beside rows or claims they were not decided on; the queued reconcile is the fast path and the scheduled outdated
      * pass the guarantee. Call it after the transaction's character locks and before its writes: the day rows are
@@ -22,7 +24,7 @@ class InvalidateReconciles
      */
     public function handle(array $characterIds): array
     {
-        $ids = [];
+        $ids = array_map(intval(...), $characterIds);
         foreach ($characterIds as $characterId) {
             $ids = [...$ids, ...$this->siblings->handle($characterId)];
         }

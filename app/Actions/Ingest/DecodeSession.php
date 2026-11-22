@@ -30,12 +30,13 @@ class DecodeSession
      * tables, and the catches in a session's `addons` parts go to the fishing lines too. Every decode replaces the
      * key's fishing lines, so a removed part takes its lines with it. A key that held `counts` parts decodes them again
      * even when none is left, which drops the claims only they carried. Whatever the decode did, the claims of the
-     * character and of the characters linked to it are reconciled afterwards (docs/DESIGN.md, Reconcile).
+     * character and of the characters linked to it are reconciled afterwards (docs/DESIGN.md, Reconcile), and a character
+     * whose `counts` day holds no claim is reconciled once to stamp the day.
      */
     public function handle(int $characterId, int $sessionStart): void
     {
         $this->decode($characterId, $sessionStart);
-        if ($this->siblings->handle($characterId) !== []) {
+        if ($this->siblings->handle($characterId) !== [] || AddonDay::query()->where('character_id', $characterId)->whereNull('reconcile_version')->exists()) {
             ReconcileCharacterClaims::dispatch($characterId);
         }
     }

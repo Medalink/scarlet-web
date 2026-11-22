@@ -25,7 +25,9 @@ class ReconcileAddonClaims
      * character and kind at a time, on what was read without a lock. The result is written in one short transaction
      * that locks the characters lowest id first, reads the same input again and writes only when it is unchanged;
      * a change in between makes the whole run start over, three times at most. A claim row is written only where a
-     * column differs, so a second run changes nothing and returns 0.
+     * column differs, so a second run changes nothing and returns 0. The addon days of the character are stamped with
+     * the version too when it holds no claims itself, or none are linked to it: there is nothing to decide, and the
+     * outdated pass must not queue it again.
      *
      * @return int claims whose stored verdict changed
      */
@@ -33,9 +35,6 @@ class ReconcileAddonClaims
     {
         for ($attempt = 0; $attempt < self::ATTEMPTS; $attempt++) {
             $ids = $this->siblings->handle($characterId);
-            if ($ids === []) {
-                return 0;
-            }
             $now = time();
             $inputs = $this->read($characterId, $ids, $now);
             $verdicts = $this->verdicts($inputs);
@@ -91,7 +90,8 @@ class ReconcileAddonClaims
         $version = $this->tool->reconcileVersion();
 
         return DB::transaction(function () use ($characterId, $ids, $now, $inputs, $verdicts, $version): ?int {
-            Character::query()->whereIn('id', $ids)->lockedInOrder()->pluck('id');
+            $locked = array_values(array_unique([...$ids, $characterId]));
+            Character::query()->whereIn('id', $locked)->lockedInOrder()->pluck('id');
             if ($this->siblings->handle($characterId) !== $ids || $this->read($characterId, $ids, $now) !== $inputs) {
                 return null;
             }
@@ -102,8 +102,8 @@ class ReconcileAddonClaims
                 foreach ($claims as $claim) {
                     $changed += $this->write($claim, $sessions[$claim['id']] ?? null, $version);
                 }
-                DB::table('addon_days')->where('character_id', $id)->where(fn ($days) => $days->whereNull('reconcile_version')->orWhere('reconcile_version', '<>', $version))->update(['reconcile_version' => $version]);
             }
+            DB::table('addon_days')->whereIn('character_id', $locked)->where(fn ($days) => $days->whereNull('reconcile_version')->orWhere('reconcile_version', '<>', $version))->update(['reconcile_version' => $version]);
 
             return $changed;
         });

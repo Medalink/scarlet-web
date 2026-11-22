@@ -330,8 +330,10 @@ linked to it in its own transaction: the store of a decoded session or of a day 
 `RemoveEverything` (for the characters linked to the removed ones), the link of an install and a ruleset merge. The
 dispatch after the commit is the fast path and the outdated pass the guarantee, so a worker or request that dies
 between the commit and the dispatch leaves the version null and the next pass decides again. The reconcile stamps the
-version under the same locks that it writes the verdicts with. A page reads a claim only while its character has no
-null version.
+version under the same locks that it writes the verdicts with, on the days of every character it decided and of the
+one it was asked for, so a character whose day holds no claim (every line of it skipped) is stamped once and a pass
+with nothing changed queues nothing. A write nulls the days of the characters it names whether or not they hold claims.
+A page reads a claim only while its character has no null version.
 
 Each claim stores `status`, `counted` and `evidence`, the `ruleset_id` and `counted_ok` of the session that holds the
 window's end (else the nearest session in time), and the `level` and `zone_id` of the last Scarlet row assigned to it
