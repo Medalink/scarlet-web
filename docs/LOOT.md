@@ -204,11 +204,18 @@ Rules the design follows:
    its key, so for an object the same key more than 5 minutes after the last read is a second opening. Of the first
    reads of one corpse across `loot_opens` and `peer_opens`, one window is kept: a character's own before one a
    member sent, then the earliest read (`peer_opens.at` less `late_s`), and the items are that window's. A window a
-   member sent says nothing of what it was read for: a creature's counts as `loot`, an object's takes the read its
-   own windows have most (`loot`, `herb` or `ore`), and an object nobody opened for itself counts nowhere. An unkeyed
-   window a member sent counts nowhere, since it cannot be told from the uploader's own. A kill is not a window:
+   member sent says nothing of what it was read for, and a member's skinning is shared like its looting: a creature's
+   counts as `skin` when every item in it is an item that a `gather_items` row of kind `skin` has (a window with no
+   item is `loot`), else as `loot`; an object's takes the read its own windows have most (`loot`, `herb` or `ore`),
+   and an object nobody opened for itself counts nowhere. The set of skin items is read when the tables are rebuilt,
+   so a corpse a member skinned counts as loot until some character has skinned that item. An unkeyed window a member
+   sent counts nowhere, since it cannot be told from the uploader's own. A window a member sent whose sender runs an
+   addon from before the key is the sender's own unkeyed window under another name: the unkeyed aggregates count that
+   one, so a kept window a member sent is left out of the three window tables when a window with no key, from any
+   character, was read within 5 s of it with the same items (it still joins its kill). A kill is not a window:
    `kills` joins the windows by key, and a keyed kill with no window is a corpse nobody looted or that held nothing,
-   so kills never go into the count of looted corpses. Where the counts live is under Developer and agent experience.
+   so kills never go into the count of looted corpses. Every kill with a key counts, whoever got the credit, and a
+   kill read for skinning only is not looted. Where the counts live is under Developer and agent experience.
 8. Kills with no corpse key are never summed across characters as corpses. Their figures are solo only, or per member
    (member kills over member hours), where two uploaders in one group add to both sides of the ratio. A kill with a
    key is one corpse whoever got credit, so corpses looted of kills covers grouped play too (rule 7).
