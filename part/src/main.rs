@@ -19,7 +19,7 @@ const USAGE: &str = "usage:
   scarlet-part batch --parts-dir <dir> --out <file> [--split]
   scarlet-part unbatch --in <file> --out-dir <dir> [--stored]
   scarlet-part inflate < <zstd frame> > <bytes>
-  scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin [--imports | --fishing]
+  scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin [--imports | --fishing | --counts]
   scarlet-part check-overview --parts-dir <dir> --overview <overview.json>
   scarlet-part decoder-version
   scarlet-part measure --root <out dir> --folders a,b,c [--runs 5] [--dump-text <dir>]
@@ -352,7 +352,7 @@ fn decode(args: Vec<OsString>) -> Result<(), String> {
     let (f, files) = flags(
         args,
         &["parts-dir", "session"],
-        &["stdin", "imports", "fishing"],
+        &["stdin", "imports", "fishing", "counts"],
     )?;
     let mut texts: Vec<String> = Vec::new();
     if f.contains_key("stdin") {
@@ -390,6 +390,15 @@ fn decode(args: Vec<OsString>) -> Result<(), String> {
         let refs: Vec<&str> = texts.iter().map(String::as_str).collect();
         let mut out = String::new();
         scarlet_part::fishing::decode_fishing(&refs, &mut out)?;
+        return std::io::stdout()
+            .lock()
+            .write_all(out.as_bytes())
+            .map_err(|e| e.to_string());
+    }
+    if f.contains_key("counts") {
+        let refs: Vec<&str> = texts.iter().map(String::as_str).collect();
+        let mut out = String::new();
+        scarlet_part::counts::decode_counts(&refs, &mut out)?;
         return std::io::stdout()
             .lock()
             .write_all(out.as_bytes())

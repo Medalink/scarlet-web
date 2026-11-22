@@ -38,5 +38,7 @@ final class SharingGroup
 
     public const string FISHING = 'fishing';
 
+    public const string COUNTS = 'counts';
+
     public const string ADDONS = 'addons';
 }

@@ -94,6 +94,43 @@ impl<'a> Rows<'a> {
         }
     }
 
+    /// An object of strings, in the order given.
+    pub fn str_map<'v>(
+        &mut self,
+        key: &str,
+        v: impl IntoIterator<Item = (&'v str, &'v str)>,
+    ) -> &mut Self {
+        let _ = write!(self.out, ",\"{key}\":{{");
+        for (i, (name, s)) in v.into_iter().enumerate() {
+            if i > 0 {
+                self.out.push(',');
+            }
+            self.quoted(name);
+            self.out.push(':');
+            self.quoted(s);
+        }
+        self.out.push('}');
+        self
+    }
+
+    /// An object of finite decimals, in the order given.
+    pub fn num_map<'v>(
+        &mut self,
+        key: &str,
+        v: impl IntoIterator<Item = (&'v str, f64)>,
+    ) -> &mut Self {
+        let _ = write!(self.out, ",\"{key}\":{{");
+        for (i, (name, n)) in v.into_iter().enumerate() {
+            if i > 0 {
+                self.out.push(',');
+            }
+            self.quoted(name);
+            let _ = write!(self.out, ":{n}");
+        }
+        self.out.push('}');
+        self
+    }
+
     pub fn strs(&mut self, key: &str, v: &[&str]) -> &mut Self {
         let _ = write!(self.out, ",\"{key}\":[");
         for (i, s) in v.iter().enumerate() {

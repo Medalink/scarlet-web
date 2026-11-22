@@ -54,6 +54,10 @@ class DeleteFactRows
             }
             $deleted += $query->delete();
         }
+        if ($sessionStart === null && ($group === null || $group === SharingGroup::COUNTS)) {
+            $deleted += DB::table('addon_claims')->whereIn('character_id', $characterIds)->delete();
+            DB::table('addon_days')->whereIn('character_id', $characterIds)->delete();
+        }
         if ($group === SharingGroup::SOCIAL && $sessionStart === null) {
             $deleted += DB::table('pseudonyms')->whereIn('character_id', $characterIds)->delete();
         }

@@ -22,6 +22,7 @@ final class GroupDescriptions
         'client' => 'Client checks, the addon list, UI errors and screenshots taken.',
         'addons' => 'What Scarlet records from other addons you run.',
         'fishing' => 'Records, journal, fishing sessions, bounties and the spot leaderboards Scarlet read from The Fishing Log. Other anglers are sent as pseudonyms.',
+        'counts' => 'Casts, catches, kills and runs that other addons on your PC counted, added to your totals once.',
         'imports' => 'Gold, sales and purchases Scarlet read from other addons on your PC. Only you see them.',
     ];
 

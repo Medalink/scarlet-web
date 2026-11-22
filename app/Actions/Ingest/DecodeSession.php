@@ -4,6 +4,7 @@ namespace App\Actions\Ingest;
 
 use App\Jobs\RefreshCharacterFeats;
 use App\Jobs\RefreshRollups;
+use App\Models\AddonDay;
 use App\Models\Part;
 use App\Support\Database\BinaryValue;
 use App\Support\DecodedSession;
@@ -17,14 +18,16 @@ class DecodeSession
         private readonly StoreDecodedSession $store,
         private readonly StoreImportedRecords $imports,
         private readonly StoreFishingLines $fishing,
+        private readonly StoreAddonClaims $claims,
     ) {}
 
     /**
      * Decode the stored parts of one session of one character and replace the session's rows with the result.
      * With no part left it removes the session's rows. Safe to run twice: the same parts give the same rows.
-     * The parts of groups `imports` and `fishing` are keyed by the start of a UTC day and go to their own tables, and
-     * the catches in a session's `addons` parts go to the fishing lines too. Every decode replaces the key's fishing
-     * lines, so a removed part takes its lines with it.
+     * The parts of groups `imports`, `fishing` and `counts` are keyed by the start of a UTC day and go to their own
+     * tables, and the catches in a session's `addons` parts go to the fishing lines too. Every decode replaces the
+     * key's fishing lines, so a removed part takes its lines with it. A key that held `counts` parts decodes them again
+     * even when none is left, which drops the claims only they carried.
      */
     public function handle(int $characterId, int $sessionStart): void
     {
@@ -32,9 +35,11 @@ class DecodeSession
         $imported = [];
         $fishing = [];
         $catches = [];
+        $counts = [];
         $partIds = [];
         $importedIds = [];
         $fishingIds = [];
+        $countsIds = [];
         $parts = Part::query()
             ->where('character_id', $characterId)
             ->where('session_start', $sessionStart)
@@ -55,6 +60,12 @@ class DecodeSession
 
                 continue;
             }
+            if ($part->group_key === SharingGroup::COUNTS) {
+                $counts[] = $part->body();
+                $countsIds[] = $id;
+
+                continue;
+            }
             if ($part->group_key === SharingGroup::ADDONS) {
                 $catches[] = $part->body();
             }
@@ -68,7 +79,10 @@ class DecodeSession
         if ($imported !== [] || $parts->isEmpty()) {
             $this->imports->handle($characterId, $sessionStart, $imported === [] ? [] : $this->tool->decodeImports($imported), $importedIds);
         }
-        if ($bodies === [] && ($imported !== [] || $fishing !== [])) {
+        if ($counts !== [] || AddonDay::query()->where('character_id', $characterId)->where('day_key', $sessionStart)->exists()) {
+            $this->claims->handle($characterId, $sessionStart, $counts === [] ? [] : $this->tool->decodeCounts($counts), $countsIds);
+        }
+        if ($bodies === [] && ($imported !== [] || $fishing !== [] || $counts !== [])) {
             return;
         }
 

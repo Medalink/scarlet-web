@@ -266,15 +266,25 @@ Scarlet's rows had covered can count once more, never twice.
   `window`, `kind`, `from_at`, `to_at` (epoch seconds),
   `dims` and `amounts` (jsonb), and, written by reconcile only, `status`, `counted` (jsonb), `evidence` (jsonb),
   `ruleset_id`, `counted_ok`, `level` and `zone_id` (null when unknown, read as an unknown bucket, never guessed),
-  `reconcile_version`.
+  `reconcile_version`. The columns from `status` on stay null until reconcile runs. `key_from` is generated: `from_at`
+  for a lifetime, 0 for every other window, so one unique index holds the whole key.
   An account claim has one row per character whose parts carry it. Those characters are its scope, and the account
   page and rule 7 read it once per key.
-- `addon_claim_parts(claim_id, part_id, amounts)`: the parts that carry a claim, each with the amounts it carried.
+- `addon_claim_parts(claim_id, part_id, amounts, from_at)`: the parts that carry a claim, each with the amounts and
+  window start it carried.
   Decoding a part replaces its rows here and inserts claims whose key is new; a claim goes when no part carries it.
-  When carrying parts disagree, the claim takes the amounts of the part whose id sorts highest, and the audit lists
-  the claim. Decode reads no other table and writes no fact table or rollup, so Scarlet's own numbers cannot move.
+  When carrying parts disagree, the claim takes the amounts and window start of the part whose id sorts highest, and
+  the audit lists the claim. Decode reads no other table and writes no fact table or rollup, so Scarlet's own numbers
+  cannot move.
 - `addon_days(character_id, day_key, decoder_version, reconcile_version)`: the scheduled outdated pass re-decodes and
   re-reconciles these as it does sessions.
+
+`scarlet-part decode --counts` reads a day's `counts` parts and writes one `claim` row per `YC` line (the part's id,
+the key fields, `dims`, `amounts`) and a closing `day` row with the decoder version and the lines skipped: a code that
+is not `YC`, a kind the decoder does not list (`fishing`, `kill`, `run`, `xp`), a line it cannot read, and a key a part
+repeats (the last line wins). Nothing is fatal to the day. `StoreAddonClaims` takes the rows under the character lock;
+a key whose `counts` parts are all gone decodes again, which drops the claims only they carried. Removing the `counts`
+group, or the character, deletes the character's claims.
 
 ### Reconcile
 
@@ -359,6 +369,11 @@ trip, its casts include the short cancelled channels Scarlet drops: 23 of 366 (6
 `php artisan addons:audit {character?}` runs these as SQL against the real database, prints per character and kind
 the table that explains the total (one line per status, with claims, amounts and the top evidence), and fails on any
 violation. It also runs on a schedule and logs breaches.
+
+Until reconcile exists it holds the checks that need no status and prints the claims and summed amounts per character,
+scope and kind: every claim has a carrying part and takes the amounts of the one whose id sorts highest (a note lists
+claims whose parts disagree), no character holds one key twice, and no text field names a player but the character
+(check 9).
 
 1. Every claim has exactly one status; claimed = counted + superseded + held + rejected + the stored differences.
 2. 0 <= counted <= claimed; `superseded`, `held`, `rejected` and `reference` count 0.

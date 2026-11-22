@@ -6,6 +6,7 @@ pub mod baselines;
 pub mod build;
 pub mod camp;
 pub mod compare;
+pub mod counts;
 pub mod death;
 pub mod decode;
 pub mod fishing;

@@ -95,6 +95,18 @@ class PartTool
     }
 
     /**
+     * Decode the `counts` parts of one day into newline-delimited JSON: a `claim` row per `YC` line and a closing `day`
+     * row with the decoder version and the lines skipped.
+     *
+     * @param  list<string>  $bodies  the `body` column of each part
+     * @return list<array<string, mixed>>
+     */
+    public function decodeCounts(array $bodies): array
+    {
+        return $this->decodeRows($bodies, '--counts');
+    }
+
+    /**
      * @param  list<string>  $bodies
      * @return list<array<string, mixed>>
      */
