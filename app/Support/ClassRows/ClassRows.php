@@ -180,6 +180,28 @@ final class ClassRows
         return (int) $this->counted('kills')->where('player', false)->where('credit', 0)->count();
     }
 
+    /** Deaths of the character over the sessions that count. */
+    public function deaths(): int
+    {
+        return (int) $this->counted('deaths')->count();
+    }
+
+    /**
+     * The item class and subclass the client gave each item (`II`), for the ids that have them.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, array{class: int, subclass: int}>
+     */
+    public function itemKinds(array $ids): array
+    {
+        $kinds = [];
+        foreach (DB::table('items')->whereIn('item_id', $ids)->whereNotNull('class_id')->whereNotNull('subclass_id')->get(['item_id', 'class_id', 'subclass_id']) as $row) {
+            $kinds[(int) $row->item_id] = ['class' => (int) $row->class_id, 'subclass' => (int) $row->subclass_id];
+        }
+
+        return $kinds;
+    }
+
     /** The character's played time over the sessions that count, in milliseconds. */
     public function playedMs(): int
     {

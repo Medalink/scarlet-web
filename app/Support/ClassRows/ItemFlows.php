@@ -17,6 +17,18 @@ final class ItemFlows
         return $this->flow(fn (int $id): bool => in_array($id, $ids, true));
     }
 
+    /** @return list<int> the ids of every item that moved, with a name or without */
+    public function ids(): array
+    {
+        return array_values(array_unique(array_map(fn (object $row): int => (int) $row->item_id, $this->rows)));
+    }
+
+    /** The name the client gave an item, or null when no line named it. */
+    public function nameOf(int $id): ?string
+    {
+        return $this->itemNames[$id] ?? null;
+    }
+
     /** The flow of every item whose name matches a pattern (`*` is any text). */
     public function named(string ...$patterns): ItemFlow
     {
