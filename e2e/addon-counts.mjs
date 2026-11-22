@@ -1,9 +1,19 @@
 /**
  * Proof of Addon counts (docs/DESIGN.md, "Addon counts") over the real upload API of the running app. An invented
  * character uploads twelve fishing sessions of Scarlet's own rows and one `counts` part per day holding what another
- * addon counted for the same twelve trips, plus two lifetime reads of that addon. The checks read what the server
+ * addon counted for the same twelve trips, plus two lifetime reads of that addon; session 8 carries the instants the
+ * owner's data has, a cast inside the session whose loot arrives 9.4 s after the stop. The checks read what the server
  * decided from its database: the totals (Scarlet's rows plus the claims that add), the same state reached by another
  * order or after a group was removed and restored, and `php artisan addons:audit`.
+ *
+ * Then small invented characters each hold one case a verdict can get wrong: a cast 0.8 s and one 1.0 s after the
+ * stop of the claim before it (rule 3, seams), a session uploaded in two halves, a claim a catch started whose
+ * neighbour's rows were not looted, a claim an `ff` count covers in part (rule 5), a claim whose casts were all
+ * cancelled inside a Scarlet session, two characters that hold one record (rule 4) with the lower id uploaded first,
+ * with the rows on the higher id, and linked by an account afterwards. Each case names the totals the history has.
+ * A lane that waits only for the server to stop changing would read the last case's state, so it waits until no
+ * addon day of the character has a null reconcile version (docs/DESIGN.md, Reconcile) and its row and claim counts
+ * are the ones the case uploaded, and compares hashes only after that.
  *
  *   node e2e/boot.mjs -- node e2e/addon-counts.mjs
  *
@@ -13,8 +23,9 @@
 import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { linkToAccount, signIn } from "./checks/pages.mjs";
 import { InstallClient } from "./client.mjs";
-import { expectJson, expectStatus, sleep } from "./support.mjs";
+import { Http, Jar, expectJson, expectStatus, sleep } from "./support.mjs";
 
 const repo = path.resolve(import.meta.dirname, "..");
 const base = process.env.E2E_URL;
@@ -23,6 +34,7 @@ if (!base) throw new Error("E2E_URL is not set: run this through e2e/boot.mjs");
 const NAME = "Quill-Fisher";
 const TWIN = "Quill-Twin";
 const LABEL = "scarlet-web e2e addon counts install";
+const LABEL_TWO = "scarlet-web e2e addon counts second install";
 const FISHING_CAST = 18248;
 const FISHING_BOBBER = 35591;
 const SMALLFISH = 6291;
@@ -34,9 +46,13 @@ const LOOT_DELAY = 0.6;
 const GROUP_OF = { S: "core", Z: "core", ES: "core", C: "combat", CH: "combat", LO: "loot", SL: "professions" };
 const GROUP_ORDER = ["core", "combat", "loot", "professions", "counts"];
 const SETTLE_MS = 120_000;
-const STEADY_POLLS = 8;
+const STEADY_POLLS = 6;
+const POLL_MS = 500;
 const WITHHELD = 7;
 const FULL_TOTAL = "343/334/356";
+const WHOLE_TOTAL = "366/334/360";
+const BOUNDARY = 8;
+let hashFull = null;
 
 const TRIPS = [
   ["2026-11-20T19:49:07Z", 779, 30, 29, 1, 30, 30, 0, null, null, 0.1, 1.9],
@@ -58,6 +74,11 @@ const LIFETIME_END = Date.parse("2026-11-22T17:55:00Z") / 1000;
 const LIFETIME_CLAIMS = [
   ["mc", "2026-11-06", Date.parse("2026-11-06T16:53:28Z") / 1000, LIFETIME_END, "casts=2488;landed=2254;items=2364"],
   ["mc", "2026-11-17", Date.parse("2026-11-17T00:00:00Z") / 1000, LIFETIME_END, "casts=100;landed=90;items=95"],
+];
+const instant = (iso) => Date.parse(iso) / 1000;
+const BOUNDARY_CASTS = [
+  { at: instant("2026-11-21T00:13:09.680Z"), seconds: 3, loot: null },
+  { at: instant("2026-11-21T00:13:14.500Z"), seconds: 10.3, loot: { at: instant("2026-11-21T00:13:25.400Z"), quantity: 3 } },
 ];
 
 function part(session, group, rows, extra, name = NAME) {
@@ -84,7 +105,33 @@ function partsOf(session, lines, extra) {
   });
 }
 
+const header = () => [
+  [0, "S", "1.15.8", "ROGUE", "Human", 3, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
+  [100, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
+  [150, "SL", FISHING_SKILL_LINE, 5, 75, 0, "s"],
+];
+
+function sessionOf(casts, { tag, loot = true } = {}) {
+  const first = Math.min(...casts.map((cast) => cast.at));
+  const start = Math.floor(first - 0.3);
+  const ms = (t) => Math.round((t - start) * 1000);
+  const lines = header();
+  if (loot) lines.push([200, "LO", "c", STONETUSK_BOAR, 1, `${SMALLFISH}x1`, 1]);
+  let end = 0;
+  for (const cast of casts) {
+    lines.push([ms(cast.at), "C", FISHING_CAST], [ms(cast.at + cast.seconds), "CH", FISHING_CAST, cast.seconds]);
+    end = Math.max(end, ms(cast.at + cast.seconds));
+    if (cast.loot) {
+      lines.push([ms(cast.loot.at), "LO", "g", FISHING_BOBBER, 1, `${SMALLFISH}x${cast.loot.quantity}`, 0]);
+      end = Math.max(end, ms(cast.loot.at));
+    }
+  }
+  lines.push([end + 50, "ES"]);
+  return { start, end: start + (end + 50) / 1000, parts: partsOf(start, lines, tag === undefined ? {} : { trip: tag }) };
+}
+
 function scarletParts(trip) {
+  if (trip.at === BOUNDARY) return sessionOf(BOUNDARY_CASTS, { tag: trip.at });
   const roles = [
     ...Array(trip.looted ?? 0).fill("looted"),
     ...Array(trip.kept - (trip.looted ?? 0)).fill("kept"),
@@ -98,42 +145,33 @@ function scarletParts(trip) {
   const channel = (role) => (role === "cancelled" ? 1 : role === "kept" ? Math.max(2.2, Math.min(3, step - 0.8)) : Math.max(2.2, Math.min(6, step - 0.8)));
   const lastStart = n > 1 ? lastEnd - channel(roles[n - 1]) - (roles[n - 1] === "looted" ? LOOT_DELAY : 0) : first;
   const spacing = n > 1 ? (lastStart - first) / (n - 1) : 0;
-  const start = Math.floor(first - 0.3);
-  const ms = (t) => Math.round((t - start) * 1000);
   const quantities = Array.from({ length: trip.looted ?? 0 }, (_, k) => Math.floor(trip.quantity / trip.looted) + (k < trip.quantity % trip.looted ? 1 : 0));
   let looting = 0;
-  const lines = [
-    [0, "S", "1.15.8", "ROGUE", "Human", 3, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
-    [100, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
-    [150, "SL", FISHING_SKILL_LINE, 5, 75, 0, "s"],
-  ];
-  if (!TRIPS_WITHOUT_LOOT.includes(trip.at)) lines.push([200, "LO", "c", STONETUSK_BOAR, 1, `${SMALLFISH}x1`, 1]);
-  let end = 0;
-  roles.forEach((role, k) => {
-    const cast = first + k * spacing;
+  const casts = roles.map((role, k) => {
+    const at = first + k * spacing;
     const seconds = channel(role);
-    lines.push([ms(cast), "C", FISHING_CAST], [ms(cast + seconds), "CH", FISHING_CAST, seconds]);
-    end = ms(cast + seconds);
-    if (role === "looted") {
-      end = ms(cast + seconds + LOOT_DELAY);
-      lines.push([end, "LO", "g", FISHING_BOBBER, 1, `${SMALLFISH}x${quantities[looting++]}`, 0]);
-    }
+    return { at, seconds, loot: role === "looted" ? { at: at + seconds + LOOT_DELAY, quantity: quantities[looting++] } : null };
   });
-  lines.push([end + 50, "ES"]);
-  return { start, end: start + (end + 50) / 1000, parts: partsOf(start, lines, { trip: trip.at }) };
+  return sessionOf(casts, { tag: trip.at, loot: !TRIPS_WITHOUT_LOOT.includes(trip.at) });
+}
+
+function claimOf({ origin = "fl", store = "", scope = "c", window = "session", kind = "fishing", from, to, dims = "", amounts }) {
+  return { to, day: Math.floor(to / 86400) * 86400, line: [origin, store, scope, window, kind, from ?? "", to, dims, amounts] };
+}
+
+function countsPartsOf(claims, name = NAME) {
+  const days = [...new Set(claims.map((c) => c.day))].sort();
+  return days.map((day) => part(day, "counts", claims.filter((c) => c.day === day).map((c) => `${c.to * 1000}\tYC\t${c.line.join("\t")}`), {}, name));
 }
 
 function countsParts(name = NAME) {
-  const claims = TRIPS.map((trip) => ({
-    day: Math.floor(trip.to / 86400) * 86400,
+  const claims = TRIPS.map((trip) => claimOf({
+    from: trip.to - trip.elapsed,
     to: trip.to,
-    line: ["fl", "", "c", "session", "fishing", trip.to - trip.elapsed, trip.to, "", `casts=${trip.casts};landed=${trip.landed};items=${trip.items};unknown=${trip.unknown}`],
+    amounts: `casts=${trip.casts};landed=${trip.landed};items=${trip.items};unknown=${trip.unknown}`,
   }));
-  for (const [origin, store, from, to, amounts] of LIFETIME_CLAIMS) {
-    claims.push({ day: Math.floor(to / 86400) * 86400, to, line: [origin, store, "a", "life", "fishing", from, to, "", amounts] });
-  }
-  const days = [...new Set(claims.map((c) => c.day))].sort();
-  return days.map((day) => part(day, "counts", claims.filter((c) => c.day === day).map((c) => `${c.to * 1000}\tYC\t${c.line.join("\t")}`), {}, name));
+  for (const [origin, store, from, to, amounts] of LIFETIME_CLAIMS) claims.push(claimOf({ origin, store, scope: "a", window: "life", from, to, amounts }));
+  return countsPartsOf(claims, name);
 }
 
 const scarlet = TRIPS.map(scarletParts);
@@ -143,8 +181,20 @@ for (let i = 1; i < scarlet.length; i += 1) {
 const COUNTS = countsParts();
 const TWIN_COUNTS = countsParts(TWIN);
 const ALL = [...scarlet.flatMap((s) => s.parts), ...COUNTS];
-const BY_ID = new Map([...ALL, ...TWIN_COUNTS].map((p) => [p.id, p]));
 const CLAIMS = TRIPS.length + LIFETIME_CLAIMS.length;
+const BY_ID = new Map();
+const known = (parts) => {
+  for (const p of parts) BY_ID.set(p.id, p);
+  return parts;
+};
+known(ALL);
+known(TWIN_COUNTS);
+
+const CASE_DAY = Date.parse("2026-11-10T12:00:00Z") / 1000;
+const CHANNEL = 3;
+const looted = (cast, quantity = 1) => ({ at: CASE_DAY + cast, seconds: CHANNEL, loot: { at: CASE_DAY + cast + CHANNEL + LOOT_DELAY, quantity } });
+const kept = (cast) => ({ at: CASE_DAY + cast, seconds: CHANNEL, loot: null });
+const claimIn = (from, to, amounts, extra = {}) => claimOf({ from: CASE_DAY + from, to: CASE_DAY + to, amounts, ...extra });
 
 function db(statement) {
   const run = spawnSync("psql", ["-h", process.env.DB_HOST, "-p", process.env.DB_PORT, "-U", process.env.DB_USERNAME, "-d", process.env.DB_DATABASE, "-v", "ON_ERROR_STOP=1", "-At", "-F", "|", "-c", statement], { encoding: "utf8", env: process.env });
@@ -154,42 +204,57 @@ function db(statement) {
 
 const artisan = (...args) => spawnSync("php", ["artisan", ...args], { cwd: repo, encoding: "utf8", env: process.env });
 
-const OWN = `character_id = (select id from characters where name = '${NAME}')`;
+const own = (name) => `character_id = (select id from characters where name = '${name}')`;
 const METRICS = ["casts", "landed", "items"];
-const scarletRows = (session) => `
-  (select count(*) from gathers where ${OWN} and kind = 'fish'${session}),
-  (select count(*) from gathers where ${OWN} and kind = 'fish' and looted${session}),
-  (select coalesce(sum(quantity), 0) from gather_items where ${OWN} and kind = 'fish' and container_item_id is null${session})`;
-const CLAIM_HASH = `
+const scarletRows = (name, session = "") => `
+  (select count(*) from gathers where ${own(name)} and kind = 'fish'${session}),
+  (select count(*) from gathers where ${own(name)} and kind = 'fish' and looted${session}),
+  (select coalesce(sum(quantity), 0) from gather_items where ${own(name)} and kind = 'fish' and container_item_id is null${session})`;
+const claimHash = (name) => `
   select coalesce(md5(string_agg(row_text, E'\\n' order by row_text)), 'none') from (
     select concat_ws('|', ch.name, c.origin, c.store, c.scope, c.window, c.kind, coalesce(c.from_at::text, ''), c.to_at, c.dims::text, c.amounts::text,
       coalesce(c.status, ''), coalesce(c.counted::text, ''), coalesce(c.evidence::text, ''), coalesce(r.key, ''), coalesce(c.counted_ok::text, ''),
       coalesce(c.level::text, ''), coalesce(c.zone_id::text, ''), coalesce(c.reconcile_version::text, '')) as row_text
     from addon_claims c join characters ch on ch.id = c.character_id left join rulesets r on r.id = c.ruleset_id
-    where ch.name = '${NAME}') t`;
-const ROW_HASH = `
+    where ch.name = '${name}') t`;
+const rowHash = (name) => `
   select coalesce(md5(string_agg(row_text, E'\\n' order by row_text)), 'none') from (
     select concat_ws('|', g.at::text, g.looted::text, g.level::text, g.zone_id::text, g.counted::text, r.key) as row_text
-    from gathers g join rulesets r on r.id = g.ruleset_id where g.${OWN}
+    from gathers g join rulesets r on r.id = g.ruleset_id where g.${own(name)}
     union all
-    select concat_ws('|', at::text, item_id, quantity, coalesce(container_item_id::text, '')) from gather_items where ${OWN}) t`;
+    select concat_ws('|', at::text, item_id, quantity, coalesce(container_item_id::text, '')) from gather_items where ${own(name)}) t`;
 
-function snapshot() {
-  const counted = METRICS.map((m) => `(select coalesce(sum((c.counted ->> '${m}')::numeric), 0) from addon_claims c where c.${OWN} and c.status in ('counted', 'residual'))`);
-  const [sessions, claims, unreconciled, ...rest] = db(`
-    select (select count(*) from sessions where ${OWN}),
-      (select count(*) from addon_claims where ${OWN}),
-      (select count(*) from addon_claims where ${OWN} and status is null),
-      ${scarletRows("")}, ${counted.join(", ")}, (${CLAIM_HASH}), (${ROW_HASH})`).split("|");
-  const scarletTerm = rest.slice(0, 3).map(Number);
-  const countedTerm = rest.slice(3, 6).map(Number);
+function snapshot(name) {
+  const counted = METRICS.map((m) => `(select coalesce(sum((c.counted ->> '${m}')::numeric), 0) from addon_claims c where c.${own(name)} and c.status in ('counted', 'residual'))`);
+  const state = JSON.parse(db(`
+    select json_build_object(
+      'sessions', (select count(*) from sessions where ${own(name)}),
+      'claims', (select count(*) from addon_claims where ${own(name)}),
+      'unreconciled', (select count(*) from addon_claims where ${own(name)} and status is null),
+      'nullDays', (select count(*) from addon_days where ${own(name)} and reconcile_version is null),
+      'scarlet', (select json_build_array(${scarletRows(name)})),
+      'counted', json_build_array(${counted.join(", ")}),
+      'hash', (${claimHash(name)}) || '|' || (${rowHash(name)}))`));
+  const scarletTerm = state.scarlet.map(Number);
+  const countedTerm = state.counted.map(Number);
   return {
-    sessions: Number(sessions), gathers: scarletTerm[0], claims: Number(claims), unreconciled: Number(unreconciled),
-    scarlet: scarletTerm, counted: countedTerm, total: scarletTerm.map((n, k) => n + countedTerm[k]), hash: rest.slice(6).join("|"),
+    sessions: Number(state.sessions), gathers: scarletTerm[0], claims: Number(state.claims), unreconciled: Number(state.unreconciled), nullDays: Number(state.nullDays),
+    scarlet: scarletTerm, counted: countedTerm, total: scarletTerm.map((n, k) => n + countedTerm[k]), hash: state.hash,
   };
 }
 
+function claimsOf(name) {
+  return JSON.parse(db(`
+    select coalesce(json_agg(t order by t.to_at, t.origin, t.id), '[]'::json) from (
+      select c.id, c.origin, c.scope, c.window, c.from_at, c.to_at, c.status, c.evidence ->> 'rule' as rule, c.evidence #>> '{with,character}' as with_character,
+        coalesce((c.evidence #>> '{rows,n}')::int, 0) as rows_n, jsonb_exists(c.evidence, 'session') as in_session,
+        coalesce(c.counted ->> 'casts', '-') || '/' || coalesce(c.counted ->> 'landed', '-') || '/' || coalesce(c.counted ->> 'items', '-') as counted
+      from addon_claims c join characters ch on ch.id = c.character_id where ch.name = '${name}') t`));
+}
+
 const client = new InstallClient(base, LABEL);
+const second = new InstallClient(base, LABEL_TWO);
+const http = new Http(base);
 let checks = 0;
 const failures = [];
 
@@ -200,141 +265,263 @@ function check(name, ok, detail = "") {
 }
 
 async function waiting() {
-  const answer = expectStatus(await client.status(), 200, "GET /upload/status");
-  return (expectJson(answer, "GET /upload/status").characters ?? []).find((c) => c.name === NAME)?.sessions_waiting ?? 0;
+  let total = 0;
+  for (const app of [client, second]) {
+    const answer = expectStatus(await app.status(), 200, "GET /upload/status");
+    total += (expectJson(answer, "GET /upload/status").characters ?? []).reduce((n, c) => n + (c.sessions_waiting ?? 0), 0);
+  }
+  return total;
 }
 
-async function settle(ready, what) {
+async function settle(names, ready, what) {
   const deadline = Date.now() + SETTLE_MS;
   let last = null;
   let steady = 0;
   while (Date.now() < deadline) {
-    const now = snapshot();
-    steady = now.hash === last ? steady + 1 : 0;
-    last = now.hash;
-    if (steady >= STEADY_POLLS && now.unreconciled === 0 && ready(now) && (await waiting()) === 0) return now;
-    await sleep(500);
+    const now = names.map(snapshot);
+    const key = JSON.stringify(now);
+    steady = key === last ? steady + 1 : 0;
+    last = key;
+    const reconciled = now.every((s) => s.unreconciled === 0 && s.nullDays === 0);
+    if (steady >= STEADY_POLLS && reconciled && ready(...now) && (await waiting()) === 0) return now;
+    await sleep(POLL_MS);
   }
-  throw new Error(`${what}: the server did not settle in ${SETTLE_MS / 1000}s, last seen ${JSON.stringify(snapshot())}`);
+  throw new Error(`${what}: the server did not settle in ${SETTLE_MS / 1000}s, last seen ${JSON.stringify(names.map(snapshot))}`);
 }
 
-async function upload(held, name = NAME) {
+const settleOne = async (name, ready, what) => (await settle([name], ready, what))[0];
+
+async function upload(held, name = NAME, app = client) {
   const manifest = held.map(({ id, session, group, lines, raw_bytes }) => ({ id, session, group, lines, raw_bytes }));
-  const answer = expectJson(expectStatus(await client.manifest(name, GROUP_ORDER, manifest), 200, "POST /upload/manifest"), "POST /upload/manifest");
+  const answer = expectJson(expectStatus(await app.manifest(name, GROUP_ORDER, manifest), 200, "POST /upload/manifest"), "POST /upload/manifest");
   const need = answer.need ?? [];
-  if (need.length > 0) expectStatus(await client.parts(need.map((id) => BY_ID.get(id).text)), 200, "POST /upload/parts");
+  if (need.length > 0) expectStatus(await app.parts(need.map((id) => BY_ID.get(id).text)), 200, "POST /upload/parts");
 }
 
-const audit = () => artisan("addons:audit", NAME);
+const audit = (name = NAME) => artisan("addons:audit", name);
 const sum = (rows) => rows.join("/");
-const claimOf = (trip) => `${OWN} and origin = 'fl' and addon_claims.window = 'session' and to_at = ${TRIPS[trip].to}`;
+const claimOfTrip = (trip) => `${own(NAME)} and origin = 'fl' and addon_claims.window = 'session' and to_at = ${TRIPS[trip].to}`;
+const claimCount = (name, where) => Number(db(`select count(*) from addon_claims c join characters ch on ch.id = c.character_id where ch.name = '${name}' and ${where}`));
+const fresh = async (...apps) => {
+  for (const app of apps) expectStatus(await app.remove(), 200, "DELETE /upload");
+};
+
+async function seam(label, gap, firstOfLater) {
+  const earlier = sessionOf(Array.from({ length: 10 }, (_, i) => looted(10 + 28 * i)));
+  const later = sessionOf([looted(firstOfLater), ...Array.from({ length: 9 }, (_, j) => looted(330 + 30 * j))]);
+  const even = "casts=10;landed=10;items=10;unknown=0";
+  const parts = known([...earlier.parts, ...later.parts, ...countsPartsOf([claimIn(0, 300, even), claimIn(300 + gap, 600, even)])]);
+  await fresh(client);
+  await upload(parts);
+  const state = await settleOne(NAME, (s) => s.gathers === 20 && s.claims === 2 && s.sessions === 2, label);
+  const claims = claimsOf(NAME);
+  check(`${label}: Scarlet's 20 rows and the two claims make 20/20/20, nothing twice`, sum(state.total) === "20/20/20", `${sum(state.scarlet)} + ${sum(state.counted)} = ${sum(state.total)}`);
+  check(`${label}: each claim holds 10 of the rows, so both are superseded`, claims.length === 2 && claims.every((c) => c.status === "superseded" && c.rows_n === 10), JSON.stringify(claims));
+  const audited = audit();
+  check(`${label}: the audit passes`, audited.status === 0, audited.stdout);
+}
+
+async function halves() {
+  const casts = Array.from({ length: 20 }, (_, i) => looted(10 + 30 * i, [2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1][i]));
+  const whole = sessionOf(casts);
+  const half = sessionOf(casts.slice(0, 10));
+  if (half.start !== whole.start) throw new Error("the half session must start where the whole one does");
+  const counts = countsPartsOf([claimIn(0, 620, "casts=25;landed=20;items=25;unknown=5")]);
+  known([...whole.parts, ...half.parts, ...counts]);
+  await fresh(client);
+  await upload([...whole.parts, ...counts]);
+  const reference = await settleOne(NAME, (s) => s.gathers === 20 && s.claims === 1, "the whole session");
+  check("a session of 20 looted casts and its claim of 25 casts, 5 of them cancelled: 20/20/25", sum(reference.total) === "20/20/25", sum(reference.total));
+  await fresh(client);
+  await upload([...half.parts, ...counts]);
+  const partial = await settleOne(NAME, (s) => s.gathers === 10 && s.claims === 1, "the first half");
+  check("only the first 10 casts uploaded: the claim counts the half it does not cover, 13/10/13 (12.5 rounds up) beside Scarlet's 10/10/13", sum(partial.counted) === "13/10/13" && sum(partial.scarlet) === "10/10/13", `${sum(partial.scarlet)} + ${sum(partial.counted)}`);
+  await upload([...whole.parts, ...counts]);
+  const completed = await settleOne(NAME, (s) => s.gathers === 20 && s.claims === 1, "the second half arrives");
+  check("the rest arrives: 20/20/25 and the hash of the whole upload", sum(completed.total) === "20/20/25" && completed.hash === reference.hash, `${sum(completed.total)} ${completed.hash} against ${reference.hash}`);
+  check("the audit passes with the session in halves", audit().status === 0);
+}
+
+async function catchStarted() {
+  const session = sessionOf([kept(5), kept(20), kept(35)], { loot: false });
+  const parts = known([...session.parts, ...countsPartsOf([claimIn(0, 46, "casts=3;landed=3;items=2;unknown=0"), claimIn(56, 80, "items=3")])]);
+  await fresh(client);
+  await upload(parts);
+  const state = await settleOne(NAME, (s) => s.gathers === 3 && s.claims === 2, "the catch-started pair");
+  const [first, next] = claimsOf(NAME);
+  check("a claim a catch started, beside a claim whose 3 rows were not looted: its 3 items count, 3/3/5", sum(state.total) === "3/3/5", `${sum(state.scarlet)} + ${sum(state.counted)} = ${sum(state.total)}`);
+  check("the first claim is residual 0/3/2 and the catch-started one is counted 0/0/3", first.status === "residual" && first.counted === "0/3/2" && next.status === "counted" && next.counted === "-/-/3", JSON.stringify([first, next]));
+  check("the audit passes with the catch-started pair", audit().status === 0);
+}
+
+async function covered() {
+  const parts = known(countsPartsOf([claimIn(0, 7200, "casts=500;landed=450;items=470", { origin: "ff" }), claimIn(6600, 7200, "casts=40;landed=36;items=38")]));
+  await fresh(client);
+  await upload(parts);
+  const state = await settleOne(NAME, (s) => s.claims === 2, "the covered claim");
+  const [ff, fl] = claimsOf(NAME).sort((a, b) => a.origin.localeCompare(b.origin));
+  check("an ff session of 7200 s whose last 600 s a Fishing Log session covers: 500/450/470, nothing lost", sum(state.total) === "500/450/470", `${sum(state.counted)}`);
+  check("ff is residual 460/414/432 by rule 5 and fl is counted 40/36/38", ff.status === "residual" && ff.rule === "5" && ff.counted === "460/414/432" && fl.status === "counted" && fl.counted === "40/36/38", JSON.stringify([ff, fl]));
+  const audited = audit();
+  check("the audit passes with a residual that overlaps the claim above it", audited.status === 0, audited.stdout);
+}
+
+async function cancelled() {
+  const session = sessionOf([looted(780), looted(800), looted(1460), looted(1480)]);
+  const none = "casts=3;landed=0;items=0;unknown=3";
+  const parts = known([...session.parts, ...countsPartsOf([claimIn(1000, 1060, none), claimIn(5000, 5060, none)])]);
+  await fresh(client);
+  await upload(parts);
+  const state = await settleOne(NAME, (s) => s.gathers === 4 && s.claims === 2, "the cancelled claims");
+  const [inside, outside] = claimsOf(NAME);
+  check("3 casts cancelled inside a Scarlet session add nothing, 3 outside any session count: 7/4/4", sum(state.total) === "7/4/4", `${sum(state.scarlet)} + ${sum(state.counted)}`);
+  check("the claim inside the session is superseded and names the session, the one outside is counted whole", inside.status === "superseded" && inside.in_session && outside.status === "counted" && outside.counted === "3/0/0", JSON.stringify([inside, outside]));
+  const audited = audit();
+  check("the audit passes with a claim superseded by a session", audited.status === 0, audited.stdout);
+}
+
+async function twinFirst() {
+  await fresh(client);
+  await upload(TWIN_COUNTS, TWIN);
+  await upload(COUNTS);
+  const [mine, twin] = await settle([NAME, TWIN], (n, t) => n.claims === CLAIMS && t.claims === CLAIMS, "two characters with the same counts");
+  check("the same counts on two characters with no rows: they count once, on the lower id (the twin uploaded first)", sum(twin.total) === WHOLE_TOTAL && sum(mine.total) === "0/0/0", `${sum(twin.total)} and ${sum(mine.total)}`);
+  await upload(ALL);
+  const [rows, copy] = await settle([NAME, TWIN], (n, t) => n.gathers === 343 && n.claims === CLAIMS && t.claims === CLAIMS, "the rows arrive on the higher id");
+  const superseded = `c.scope = 'c' and c.status = 'superseded' and c.evidence ->> 'rule' = '4' and c.evidence #>> '{with,character}' = '${NAME}'`;
+  check(`the rows arrive on the higher id: the counts move to it and the totals are ${FULL_TOTAL}`, sum(rows.total) === FULL_TOTAL && sum(copy.total) === "0/0/0", `${sum(rows.total)} and ${sum(copy.total)}`);
+  check("the lower id's 12 character-scope claims are superseded by rule 4 and name the character that holds the rows", claimCount(TWIN, superseded) === TRIPS.length, `${claimCount(TWIN, superseded)} of ${TRIPS.length}`);
+  check("the character with the rows is unchanged by the twin: the same hash as with no twin", rows.hash === hashFull, `${rows.hash} against ${hashFull}`);
+  const audited = artisan("addons:audit");
+  check("addons:audit passes for both characters", audited.status === 0, audited.stdout + audited.stderr);
+}
+
+async function linked() {
+  await fresh(client, second);
+  await upload(ALL);
+  await upload(TWIN_COUNTS, TWIN, second);
+  const [mine, copy] = await settle([NAME, TWIN], (n, t) => n.gathers === 343 && n.claims === CLAIMS && t.claims === CLAIMS, "two installs that no account links");
+  check(`two installs of nobody's account: each counts its own, ${FULL_TOTAL} and ${WHOLE_TOTAL}`, sum(mine.total) === FULL_TOTAL && sum(copy.total) === WHOLE_TOTAL, `${sum(mine.total)} and ${sum(copy.total)}`);
+  const jar = new Jar();
+  await signIn(http, jar);
+  await linkToAccount(http, jar, client);
+  await linkToAccount(http, jar, second);
+  const superseded = `c.scope = 'c' and c.status = 'superseded' and c.evidence ->> 'rule' = '4' and c.evidence #>> '{with,character}' = '${NAME}'`;
+  const [after, twin] = await settle([NAME, TWIN], (n, t) => n.claims === CLAIMS && claimCount(TWIN, superseded) === TRIPS.length && t.claims === CLAIMS, "the link of the second install");
+  check(`linking both installs to one account decides again with no new upload: the twin counts nothing, ${FULL_TOTAL}`, sum(twin.total) === "0/0/0" && sum(after.total) === FULL_TOTAL && after.hash === hashFull, `${sum(after.total)} and ${sum(twin.total)}`);
+  const audited = artisan("addons:audit");
+  check("addons:audit passes after the link", audited.status === 0, audited.stdout + audited.stderr);
+}
 
 async function main() {
-  const registered = await client.register();
-  if (registered.status !== 200 && registered.status !== 201) expectStatus(registered, 201, "POST /installs");
-  expectStatus(await client.remove(), 200, "DELETE /upload");
+  for (const app of [client, second]) {
+    const registered = await app.register();
+    if (registered.status !== 200 && registered.status !== 201) expectStatus(registered, 201, "POST /installs");
+  }
+  await fresh(client, second);
   console.log(`fixture: ${scarlet.length} Scarlet trips in ${scarlet.flatMap((s) => s.parts).length} parts, ${COUNTS.length} counts parts, ${ALL.length} in all`);
 
   await upload(ALL);
-  const full = await settle((s) => s.sessions >= TRIPS.length && s.claims === CLAIMS, "the full upload");
-  const hashFull = full.hash;
+  const full = await settleOne(NAME, (s) => s.sessions === TRIPS.length && s.gathers === 343 && s.claims === CLAIMS, "the full upload");
+  hashFull = full.hash;
   check("the full upload: Scarlet's own rows are 343 casts, 295 landed, 316 items", sum(full.scarlet) === "343/295/316", sum(full.scarlet));
   check(`the totals, Scarlet plus counted, are ${FULL_TOTAL}`, sum(full.total) === FULL_TOTAL, `${sum(full.scarlet)} + ${sum(full.counted)} = ${sum(full.total)}`);
   check("every claim has a status", full.unreconciled === 0);
+  const [eight, nine] = [BOUNDARY, BOUNDARY + 1].map((t) => claimsOf(NAME).find((c) => c.origin === "fl" && c.to_at === TRIPS[t].to));
+  check("session 8's second cast starts inside its window and its loot arrives 9.4 s after the stop: session 8's claim holds its 2 rows, session 9's its 6, and both count 0", eight?.rows_n === 2 && nine?.rows_n === 6 && eight.counted === "0/0/0" && nine.counted === "0/0/0", JSON.stringify([eight, nine]));
   const first = audit();
   console.log(first.stdout.trim());
   check("addons:audit passes", first.status === 0, first.stdout + first.stderr);
   check("the small lifetime read raises a ceiling note", /store '2026-11-17' fishing casts/.test(first.stdout), first.stdout);
   check("the large lifetime read raises none", !/says 2488/.test(first.stdout));
 
-  db(`update addon_claims set status = null, counted = null, evidence = null, ruleset_id = null, counted_ok = null, level = null, zone_id = null, reconcile_version = null where ${OWN}`);
+  const blank = `update addon_claims set status = null, counted = null, evidence = null, ruleset_id = null, counted_ok = null, level = null, zone_id = null, reconcile_version = null where ${own(NAME)}`;
+  db(blank);
   const firstRun = artisan("addons:reconcile", NAME);
-  const blank = snapshot();
+  const afterBlank = snapshot(NAME);
   const secondRun = artisan("addons:reconcile", NAME);
-  const twice = snapshot();
-  check(`reconcile from blank columns writes ${CLAIMS} claims and reproduces the hash`, firstRun.stdout.includes(`${CLAIMS} claims changed`) && blank.hash === hashFull, `${firstRun.stdout.trim()} ${firstRun.stderr}`);
+  const twice = snapshot(NAME);
+  check(`reconcile from blank columns writes ${CLAIMS} claims and reproduces the hash`, firstRun.stdout.includes(`${CLAIMS} claims changed`) && afterBlank.hash === hashFull, `${firstRun.stdout.trim()} ${firstRun.stderr}`);
   check("reconcile twice changes nothing: 0 claims changed, same hash", secondRun.stdout.includes(": 0 claims changed") && twice.hash === hashFull, secondRun.stdout.trim());
 
-  const daysOf = (where) => Number(db(`select count(*) from addon_days where ${OWN} and ${where}`));
+  const daysOf = (where) => Number(db(`select count(*) from addon_days where ${own(NAME)} and ${where}`));
   check("every addon day of the character carries the current reconcile version", daysOf("reconcile_version is not null") === COUNTS.length && daysOf("reconcile_version is null") === 0, `${daysOf("reconcile_version is null")} days without one`);
-  db(`update addon_claims set status = null, counted = null, evidence = null, ruleset_id = null, counted_ok = null, level = null, zone_id = null, reconcile_version = null where ${OWN}`);
-  db(`update addon_days set reconcile_version = null where ${OWN}`);
+  db(blank);
+  db(`update addon_days set reconcile_version = null where ${own(NAME)}`);
   const outdatedRun = artisan("ingest:redecode", "--outdated");
-  const outdated = await settle((s) => s.claims === CLAIMS && s.hash === hashFull, "the outdated pass");
+  const outdated = await settleOne(NAME, (s) => s.claims === CLAIMS && s.gathers === 343, "the outdated pass");
   check("the outdated pass queues the character and decides every claim again: the same hash", /[1-9]\d* outdated sessions, addon days and characters queued/.test(outdatedRun.stdout) && outdated.hash === hashFull, `${outdatedRun.stdout.trim()} ${outdatedRun.stderr}`);
   check("the outdated pass stamps every addon day", daysOf("reconcile_version is null") === 0 && daysOf("reconcile_version is not null") === COUNTS.length);
 
   expectStatus(await client.request("DELETE", "/api/v1/upload/groups/counts"), 200, "DELETE groups/counts");
-  const noCounts = await settle((s) => s.claims === 0, "the counts group removal");
+  const noCounts = await settleOne(NAME, (s) => s.claims === 0 && s.gathers === 343, "the counts group removal");
   check("counts group removed: no claims, Scarlet's own 343/295/316 stays", sum(noCounts.total) === "343/295/316" && noCounts.gathers === 343, sum(noCounts.total));
   check("the audit passes with no claims", audit().status === 0);
   expectStatus(await client.request("PUT", "/api/v1/upload/groups/counts"), 200, "PUT groups/counts");
   await upload(ALL);
-  const restoredCounts = await settle((s) => s.claims === CLAIMS && s.hash === hashFull, "the counts group restore");
+  const restoredCounts = await settleOne(NAME, (s) => s.claims === CLAIMS && s.gathers === 343, "the counts group restore");
   check("counts group restored: the same hash", restoredCounts.hash === hashFull);
 
   expectStatus(await client.request("DELETE", "/api/v1/upload/groups/professions"), 200, "DELETE groups/professions");
-  const noRows = await settle((s) => s.gathers === 0 && s.claims === CLAIMS, "the professions group removal");
-  check("professions group removed: no Scarlet rows, every claim counts whole, 366/334/360", sum(noRows.total) === "366/334/360", sum(noRows.total));
+  const noRows = await settleOne(NAME, (s) => s.gathers === 0 && s.claims === CLAIMS, "the professions group removal");
+  check(`professions group removed: no Scarlet rows, every claim counts whole, ${WHOLE_TOTAL}`, sum(noRows.total) === WHOLE_TOTAL, sum(noRows.total));
   check("the audit passes with no Scarlet rows", audit().status === 0);
   expectStatus(await client.request("PUT", "/api/v1/upload/groups/professions"), 200, "PUT groups/professions");
   await upload(ALL);
-  const restoredRows = await settle((s) => s.gathers === 343 && s.hash === hashFull, "the professions group restore");
+  const restoredRows = await settleOne(NAME, (s) => s.gathers === 343 && s.claims === CLAIMS, "the professions group restore");
   check("professions group restored: the same hash", restoredRows.hash === hashFull);
 
-  expectStatus(await client.remove(), 200, "DELETE /upload");
+  await fresh(client);
   await upload(ALL.filter((p) => p.trip !== WITHHELD));
-  const without = await settle((s) => s.claims === CLAIMS && s.gathers === 123, "the upload without trip 7");
+  const without = await settleOne(NAME, (s) => s.claims === CLAIMS && s.gathers === 123, "the upload without trip 7");
   check("trip 7 withheld: its claim counts whole, totals 347/334/359", sum(without.total) === "347/334/359" && sum(without.scarlet) === "123/80/84", `${sum(without.scarlet)} + ${sum(without.counted)}`);
   check("the audit passes with trip 7 withheld", audit().status === 0);
-  check("trip 7's claim is counted", db(`select status from addon_claims where ${claimOf(WITHHELD)}`) === "counted");
+  check("trip 7's claim is counted", db(`select status from addon_claims where ${claimOfTrip(WITHHELD)}`) === "counted");
   await upload(ALL);
-  const arrived = await settle((s) => s.gathers === 343 && s.hash === hashFull, "trip 7 arrives");
-  const stored = db(`select concat_ws('|', evidence #>> '{diff,casts}', evidence #>> '{diff,landed}', evidence #>> '{diff,items}') from addon_claims where ${claimOf(WITHHELD)}`).split("|").map(Number);
-  const rows = db(`select ${scarletRows(` and session_start = ${scarlet[WITHHELD].start}`)}`).split("|").map(Number);
+  const arrived = await settleOne(NAME, (s) => s.gathers === 343 && s.claims === CLAIMS, "trip 7 arrives");
+  const stored = db(`select concat_ws('|', evidence #>> '{diff,casts}', evidence #>> '{diff,landed}', evidence #>> '{diff,items}') from addon_claims where ${claimOfTrip(WITHHELD)}`).split("|").map(Number);
+  const rows = db(`select ${scarletRows(NAME, ` and session_start = ${scarlet[WITHHELD].start}`)}`).split("|").map(Number);
   const moved = arrived.total.map((n, k) => n - without.total[k]);
   const expected = rows.map((n, k) => n - stored[k]);
   check("trip 7 arrives: each total moves by the trip's Scarlet rows minus the claim's stored difference", sum(moved) === sum(expected), `moved ${sum(moved)}, rows ${sum(rows)} minus stored ${sum(stored)} is ${sum(expected)}`);
   check(`trip 7 arrived: the totals are ${FULL_TOTAL} and the hash is the full upload's`, sum(arrived.total) === FULL_TOTAL && arrived.hash === hashFull, sum(arrived.total));
 
-  expectStatus(await client.remove(), 200, "DELETE /upload");
+  await fresh(client);
   const held = ALL.filter((p) => p.group === "counts");
   await upload(held);
-  const countsOnly = await settle((s) => s.claims === CLAIMS && s.gathers === 0, "counts first");
-  check("counts first, no Scarlet session yet: every claim counts whole, 366/334/360", sum(countsOnly.total) === "366/334/360", sum(countsOnly.total));
+  const countsOnly = await settleOne(NAME, (s) => s.claims === CLAIMS && s.gathers === 0, "counts first");
+  check(`counts first, no Scarlet session yet: every claim counts whole, ${WHOLE_TOTAL}`, sum(countsOnly.total) === WHOLE_TOTAL, sum(countsOnly.total));
   for (let i = TRIPS.length - 1; i >= 0; i -= 1) {
     held.push(...scarlet[i].parts);
     await upload(held);
   }
-  const reversed = await settle((s) => s.gathers === 343 && s.hash === hashFull, "sessions in reverse order");
+  const reversed = await settleOne(NAME, (s) => s.gathers === 343 && s.claims === CLAIMS, "sessions in reverse order");
   check(`reversed upload order: ${FULL_TOTAL} and the same hash`, sum(reversed.total) === FULL_TOTAL && reversed.hash === hashFull, `${sum(reversed.total)} ${reversed.hash} against ${hashFull}`);
+
   await upload(TWIN_COUNTS, TWIN);
-  const twinOf = (where) => Number(db(`select count(*) from addon_claims c join characters ch on ch.id = c.character_id where ch.name = '${TWIN}' and ${where}`));
-  const twinReady = () => twinOf("true") === CLAIMS && twinOf("c.status is null") === 0 && snapshot().hash === hashFull;
-  const until = async (ready, what) => {
-    const deadline = Date.now() + SETTLE_MS;
-    let steady = 0;
-    while (Date.now() < deadline) {
-      steady = ready() ? steady + 1 : 0;
-      if (steady >= STEADY_POLLS) return;
-      await sleep(500);
-    }
-    throw new Error(`${what}: the twin's claims did not settle: ${twinOf("true")} claims, ${twinOf("c.status is null")} without a status`);
-  };
-  await until(twinReady, "the twin's counts");
+  const [, twinAfter] = await settle([NAME, TWIN], (n, t) => n.gathers === 343 && t.claims === CLAIMS, "the twin's counts");
   const twinRule = `c.scope = 'c' and c.status = 'superseded' and c.evidence ->> 'rule' = '4' and c.evidence #>> '{with,character}' = '${NAME}'`;
-  check("a second character of the install holds the same counts: its 12 character-scope claims are superseded by rule 4 and name the first", twinOf(twinRule) === TRIPS.length, `${twinOf(twinRule)} of ${TRIPS.length}`);
-  check("its 2 account-scope claims are reference and nothing of it counts", twinOf("c.scope = 'a' and c.status = 'reference'") === LIFETIME_CLAIMS.length && twinOf("c.status in ('counted', 'residual')") === 0);
-  check("the first character is unchanged by it: the same hash", snapshot().hash === hashFull);
+  check("a second character of the install holds the same counts: its 12 character-scope claims are superseded by rule 4 and name the first", claimCount(TWIN, twinRule) === TRIPS.length, `${claimCount(TWIN, twinRule)} of ${TRIPS.length}`);
+  check("its 2 account-scope claims are reference and nothing of it counts", claimCount(TWIN, "c.scope = 'a' and c.status = 'reference'") === LIFETIME_CLAIMS.length && sum(twinAfter.total) === "0/0/0");
+  check("the first character is unchanged by it: the same hash", snapshot(NAME).hash === hashFull);
   const twinAudit = artisan("addons:audit");
   check("addons:audit passes for both characters", twinAudit.status === 0, twinAudit.stdout + twinAudit.stderr);
   await upload([], TWIN);
-  await until(() => twinOf("true") === 0 && snapshot().hash === hashFull, "the twin lists no parts");
-  check("the twin lists no parts: its claims go and the first character is unchanged", twinOf("true") === 0 && snapshot().hash === hashFull);
+  await settle([NAME, TWIN], (n, t) => t.claims === 0 && n.gathers === 343, "the twin lists no parts");
+  check("the twin lists no parts: its claims go and the first character is unchanged", claimCount(TWIN, "true") === 0 && snapshot(NAME).hash === hashFull);
   const last = audit();
   check("addons:audit passes at the end", last.status === 0, last.stdout + last.stderr);
 
-  expectStatus(await client.remove(), 200, "DELETE /upload");
+  await seam("a stop and a cast 0.8 s later: windows [0,300] and [302,600], the later session's first cast at 300.8", 2, 300.8);
+  await seam("a cast at the stop itself: windows [0,300] and [301,600], the later session's first cast at 300.0", 1, 300);
+  await halves();
+  await catchStarted();
+  await covered();
+  await cancelled();
+  await twinFirst();
+  await linked();
+
+  await fresh(client, second);
 }
 
 try {

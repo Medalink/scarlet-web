@@ -430,7 +430,21 @@ counts has its 12 character-scope claims `superseded` by rule 4 with the first c
 `reference`, and the first character's hash does not move, with the twin there and after its parts are gone. On the
 owner's data the second cast of session 8 starts at 00:13:14.50, inside the session's window; its loot arrives 9.4 s
 after the stop. The Fishing Log booked its landed to session 8 and its 3 items to session 9, rule 3 assigns the row to
-session 8, and both claims count 0 (*measured*: the binary on the real rows).
+session 8, and both claims count 0 (*measured*: the binary on the real rows, and the proof uploads session 8 with
+those instants).
+
+The same lane holds one invented character per case a verdict can get wrong, each with the totals its history has
+(2026-11-22, 58 checks): a cast 0.8 s after a stop and one at the stop, each beside a claim that began 1 or 2 s later,
+make 20, 20 and 20, not 21 (seams); a session uploaded in halves counts 13, 10 and 13 beside Scarlet's 10, 10 and 13
+(12.5 rounds up), then 20, 20 and 25 with the hash of the whole upload; a claim a catch started beside 3 rows that were
+not looted counts its 3 items, 3, 3 and 5 in all; an `ff` session of 7200 s whose last 600 s a `fl` session covers is
+residual 460, 414 and 432, 500, 450 and 470 in all; 3 cancelled casts inside a Scarlet session count nothing and the
+same claim outside any session counts 3 (7, 4 and 4 with Scarlet's rows); two characters with the same counts and no
+rows count once on the lower id, the twin uploaded first (366, 334 and 360), and once the rows arrive on the higher id
+the counts move there (343, 334 and 356, the lower id superseded); two installs of nobody's account each count their
+own history, and linking both installs to one account supersedes the twin's claims with no new upload. The lane waits
+for the character to have no null `reconcile_version` and the rows and claims it uploaded, and compares hashes only
+after that.
 
 ### Reading
 
