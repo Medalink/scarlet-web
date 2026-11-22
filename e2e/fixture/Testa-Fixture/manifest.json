@@ -1,0 +1,125 @@
+{
+  "character": "Testa-Fixture",
+  "parts": [
+    {
+      "group": "core",
+      "id": "8cc2844a6bef7135993fb2b45db1b246fb5475fb9eb3a13c33b1f0a300b15e07",
+      "lines": 6,
+      "raw_bytes": 219,
+      "session": 1795000000
+    },
+    {
+      "group": "xp",
+      "id": "8f258880c30f1604fe8ff949f6f58d28af01f7a9ac2ee8ab7fdb19c49f94f7e7",
+      "lines": 3,
+      "raw_bytes": 123,
+      "session": 1795000000
+    },
+    {
+      "group": "quests",
+      "id": "dbd802b84eee40193f9c512337d889cd40d4c42658f6b9a2e1ebd5d135b3617b",
+      "lines": 3,
+      "raw_bytes": 103,
+      "session": 1795000000
+    },
+    {
+      "group": "combat",
+      "id": "fe6889e486ec3cf7f80e1354ab796bef128cf3a214dee382a2a636abae75cb03",
+      "lines": 7,
+      "raw_bytes": 118,
+      "session": 1795000000
+    },
+    {
+      "group": "movement",
+      "id": "3c3abcf3471f2123ea9a37442ff9b474bcd8874418df16256e43a31b63c93584",
+      "lines": 14,
+      "raw_bytes": 386,
+      "session": 1795000000
+    },
+    {
+      "group": "world",
+      "id": "adfaf81022684bf3bbbbfe558ac136648bea96aaeb5bed65d1cdfb090c0d95d2",
+      "lines": 3,
+      "raw_bytes": 184,
+      "session": 1795000000
+    },
+    {
+      "group": "loot",
+      "id": "25101b17914354e9ab7aa367a4f258e74daca08fcc7f5a382c0a1afd927c6f44",
+      "lines": 9,
+      "raw_bytes": 225,
+      "session": 1795000000
+    },
+    {
+      "group": "economy",
+      "id": "5932bd141493e093caffca22c0dd9a6927100d3337a8ecc32acbceff286c79b8",
+      "lines": 4,
+      "raw_bytes": 119,
+      "session": 1795000000
+    },
+    {
+      "group": "build",
+      "id": "a61da1995d5347799b22567813ca68aaa5c72983694b5efec8f445c7135651cf",
+      "lines": 2,
+      "raw_bytes": 133,
+      "session": 1795000000
+    },
+    {
+      "group": "names",
+      "id": "68d447b4dd19530452d1c11c441bf971d01f3c46c6aefc39ebc24c653852fd65",
+      "lines": 7,
+      "raw_bytes": 227,
+      "session": 1795000000
+    },
+    {
+      "group": "addons",
+      "id": "3d97be87cb360b3a0f75db2a627f61efa4bc84384f1e26c814b0d26c4cf1f99e",
+      "lines": 1,
+      "raw_bytes": 78,
+      "session": 1795000000
+    },
+    {
+      "group": "core",
+      "id": "a2e2379afdc32c9c5666ba8174770d9ef4f6f54b7e8655f0bb8e769d6ef7b047",
+      "lines": 4,
+      "raw_bytes": 190,
+      "session": 1795090000
+    },
+    {
+      "group": "combat",
+      "id": "66b82b4137d6ecb4242ba0e7fd1b3c4545f6e3d1fe73a32683221bc574f56a48",
+      "lines": 6,
+      "raw_bytes": 107,
+      "session": 1795090000
+    },
+    {
+      "group": "movement",
+      "id": "e27ddf4d4785e3e896f883a34cbfe7e2d6e9d33d0daa1363dc0a772a654331ff",
+      "lines": 12,
+      "raw_bytes": 330,
+      "session": 1795090000
+    },
+    {
+      "group": "world",
+      "id": "f8650f400f2a46294e770dd3333af0aa870cdc9ed6c20f9b7017b9879d5722c1",
+      "lines": 1,
+      "raw_bytes": 98,
+      "session": 1795090000
+    },
+    {
+      "group": "build",
+      "id": "e04c7af9be2875e27568c72a926ecc133ab2ce15c06477b4bd274178c388d105",
+      "lines": 1,
+      "raw_bytes": 87,
+      "session": 1795090000
+    },
+    {
+      "group": "names",
+      "id": "b7a599b56850d8694e2487431458981714ede4491ee1d8aa0f4e33bffa64b20b",
+      "lines": 1,
+      "raw_bytes": 73,
+      "session": 1795090000
+    }
+  ],
+  "set_digest": "b14012469ffb1250c78e31efb3831f71445dab1c13059f33a7368cf16d384a39"
+}
