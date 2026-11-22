@@ -5,7 +5,7 @@
 .top.solid { position: static; border-bottom: 1px solid var(--line2); }
 .top.solid .top-in { height: 4.25rem; }
 .top .nav { align-items: center; }
-.top-find { flex: 0 1 17rem; margin-left: auto; }
+.top-find { flex: 0 1 17rem; margin-left: auto; position: relative; }
 .top-find input { font: 400 0.95rem/1.2 var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line2); border-radius: 3px; padding: 0.5rem 0.7rem; width: 100%; }
 .top-find input::placeholder { color: var(--muted); opacity: 1; }
 .top-find input:focus-visible { outline-offset: 0; border-color: var(--soft); }
@@ -92,6 +92,34 @@
 .search-box { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.6rem; margin-top: 1.4rem; max-width: 44rem; }
 .search-box input { font: 400 1.25rem/1.2 var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line2); border-radius: 3px; padding: 0.8rem 1rem; width: 100%; }
 .search-box input:focus-visible { outline-offset: 0; border-color: var(--soft); }
+.find { position: relative; min-width: 0; display: grid; }
+.find-panel { position: absolute; z-index: 30; inset: calc(100% + 0.35rem) 0 auto 0; max-height: min(30rem, 70vh); overflow-y: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line2); border-radius: 3px; box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.5); text-align: start; }
+.top-find .find-panel { inset-inline: auto 0; width: min(31rem, calc(100vw - 2 * var(--gut))); }
+.find-panel[hidden] { display: none; }
+.find-panel[data-stale] .find-list { opacity: 0.45; pointer-events: none; }
+.find-head[hidden] { display: none; }
+.find-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.5rem 0.9rem; border-bottom: 1px solid var(--line); font-size: 0.82rem; color: var(--muted); }
+.find-clear { font: 500 0.82rem/1 var(--body); color: var(--text); background: none; border: 0; padding: 0.3rem 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--line2); text-underline-offset: 0.24em; }
+.find-clear:hover { color: var(--soft); }
+.find-opt { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto; column-gap: 0.7rem; align-items: baseline; padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.find-opt:last-child { border-bottom: 0; }
+.find-opt:hover { background: rgba(255, 255, 255, 0.04); }
+.find-opt[aria-selected="true"] { background: rgba(255, 45, 85, 0.12); box-shadow: inset 2px 0 0 var(--accent); }
+.find-ico { grid-row: 1 / span 2; align-self: center; color: var(--muted); display: flex; }
+.find-ico[data-class] { color: var(--class); }
+.find-opt b { color: var(--fg); font-weight: 600; font-size: 1rem; min-width: 0; overflow-wrap: anywhere; }
+.find-opt b.q0 { color: var(--q0); } .find-opt b.q1 { color: var(--q1); } .find-opt b.q2 { color: var(--q2); } .find-opt b.q3 { color: var(--q3); } .find-opt b.q4 { color: var(--q4); }
+.find-opt mark { background: rgba(255, 45, 85, 0.22); color: var(--fg); border-radius: 2px; }
+.find-meta { grid-column: 2; color: var(--muted); font-size: 0.86rem; min-width: 0; }
+.find-val { grid-column: 3; grid-row: 1 / span 2; align-self: center; color: var(--text); font-size: 0.86rem; text-align: end; white-space: nowrap; }
+.find-all { position: sticky; bottom: 0; background: var(--panel); display: block; color: var(--fg); font-weight: 600; font-size: 0.95rem; }
+.find-all::after { content: " \2192"; color: var(--soft); }
+.find-recent { grid-template-columns: 1.4rem minmax(0, 1fr); }
+@media (prefers-reduced-motion: no-preference) {
+  .find-panel { animation: find-in 0.12s ease-out; }
+  .find-list { transition: opacity 0.12s; }
+  @keyframes find-in { from { opacity: 0; translate: 0 -0.25rem; } }
+}
 .results { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); }
 .hit { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--line); text-decoration: none; }
 .hit b { color: var(--fg); font-weight: 600; font-size: 1.08rem; }
