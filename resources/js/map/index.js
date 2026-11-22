@@ -429,6 +429,9 @@ export function mountMap(canvas, options) {
 
     loadManifest(options.manifestUrl)
         .then((loaded) => {
+            if (!loaded) {
+                return;
+            }
             art.manifest = loaded;
             view.setWorld(loaded.world);
             if (!moved) {
@@ -446,6 +449,9 @@ export function mountMap(canvas, options) {
     if (options.sheets) {
         loadManifest(options.sheets)
             .then((loaded) => {
+                if (!loaded) {
+                    return;
+                }
                 sheets.manifest = loaded;
                 sheets.tiles = new TileSource(loaded, { tileBase: options.sheets.replace(/\/[^/]*$/, ''), onLoad: schedule });
                 schedule();

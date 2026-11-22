@@ -5,8 +5,12 @@ const RETRIES = 6;
 const RETRY_MS = 300;
 const KEEP = 400;
 
+/** Resolves to null when the server answers 204: no art is installed there. */
 export async function loadManifest(url) {
     const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (response.status === 204) {
+        return null;
+    }
     if (!response.ok) {
         throw new Error(`The map manifest answered ${response.status}.`);
     }

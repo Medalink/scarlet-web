@@ -15,10 +15,13 @@ class MapTileController extends Controller
 
     private const string MANIFEST_CACHE = 'public, max-age=300';
 
+    /** 204 when no art is installed: browsers log a 404 as a console error, and this is a normal state. */
     public function manifest(): Response
     {
         $disk = Storage::disk('maps');
-        abort_unless($disk->exists('manifest.json'), 404);
+        if (! $disk->exists('manifest.json')) {
+            return response()->noContent();
+        }
 
         return response((string) $disk->get('manifest.json'), headers: [
             'Content-Type' => 'application/json',

@@ -8,7 +8,6 @@ const WIDE = ["/", "/stats", "/map", "/hardcore-deaths", "/leaderboards", "/sear
 const NARROW = ["/", "/stats", "/hardcore-deaths"];
 const TABS = 4;
 const SUGGEST_MS = 5000;
-const MAP_ART_ABSENT = /map-tiles\/manifest\.json|The map manifest answered 404/;
 
 function browserOf(ctx) {
   if (!ctx.browser) throw new Skip("no browser is running: the window check did not pass");
@@ -48,18 +47,17 @@ async function mapArtInstalled(ctx) {
 export async function mapArtIsServed(ctx) {
   if (await mapArtInstalled(ctx)) return;
   if (process.env.E2E_MAP_ART === "1") throw new Error("the server has map art (E2E_MAP_ART=1), but /map-tiles/manifest.json does not answer 200");
-  throw new Skip("this server has no map art (storage/app/maps/manifest.json), so the 404 of its manifest and the map script's error about it are not counted against the pages");
+  throw new Skip("this server has no map art (storage/app/maps/manifest.json), so the map art is not checked");
 }
 
 function cleanPages(routes, width, strict) {
   return async (ctx) => {
     const browser = browserOf(ctx);
-    const mapArt = await mapArtInstalled(ctx);
     const problems = await pool(routes, TABS, async (route) => {
       let tab;
       try {
         tab = await browser.open(ctx.base + route, { width, height: width > 600 ? 800 : 844 });
-        const found = strict ? tab.problems.filter((problem) => mapArt || !MAP_ART_ABSENT.test(problem)) : [];
+        const found = strict ? [...tab.problems] : [];
         const overflow = await tab.overflow(width);
         if (overflow > 0) found.push(`the page is ${overflow}px wider than the window`);
         if (found.length === 0) return null;
