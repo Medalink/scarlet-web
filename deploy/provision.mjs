@@ -166,15 +166,13 @@ for (let i = 0; i < 90 && !signed; i++) {
   await sleep(5000);
   let out = '';
   try { out = (await run(tailscale, ['lock', 'status'])).stdout; } catch (e) { out = `${e.stdout ?? ''}`; }
-  const line = out.split('\n').find((l) => l.includes(role.name) && /nodekey:[0-9a-f]+/.test(l) && !/\bsigned\b/i.test(l));
+  const own = new RegExp(`^\\s*${role.name}(-\\d+)?\\.`);
+  const line = out.split('\n').find((l) => own.test(l) && /nodekey:[0-9a-f]+/.test(l));
   const nodekey = line?.match(/nodekey:[0-9a-f]+/)?.[0];
   if (nodekey) {
     await run(tailscale, ['lock', 'sign', nodekey]);
     signed = true;
-    console.log(`signed ${role.name} (${nodekey.slice(0, 16)}...) in the tailnet`);
-  } else if (out.includes(role.name) === false && i > 6 && (await run(tailscale, ['status'])).stdout.includes(role.name)) {
-    signed = true;
-    console.log(`${role.name} is in the tailnet`);
+    console.log(`signed ${line.trim().split(/\s+/)[0]} (${nodekey.slice(0, 16)}...) in the tailnet`);
   }
 }
 if (!signed) throw new Error(`${role.name} did not show up as a locked node; check the Tailscale auth key (a used one-use key fails quietly) and tailscale lock status`);

@@ -26,7 +26,7 @@ const seconds = Number(option('--seconds', 60));
 const readsPerSecond = Number(option('--reads-per-sec', 10));
 const writesPerSecond = Number(option("--writes-per-sec", 1));
 const insecure = args.includes('--insecure');
-const statePath = option('--state', join(process.env.TEMP ?? tmpdir(), `scarlet-db-probe-${hostName}.json`));
+const statePath = option('--state', join(process.env.TEMP ?? tmpdir(), `scarlet-db-probe-${base.hostname}-${hostName}.json`));
 
 function send(method, path, headers = {}, body = '') {
   return new Promise((resolve) => {
