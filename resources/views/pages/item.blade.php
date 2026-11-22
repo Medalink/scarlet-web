@@ -8,9 +8,12 @@
   <x-figures :items="$d['figures']" />
   <x-sheet>
     <x-module span="w12" :first="true" :last="$tail === []" id="h-s" heading="Where it drops">
+      @if ($d['rules'])
+      <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
+      @endif
       @if ($d['rows'])
-      <x-table :rows="$d['rows']" :columns="[['label' => 'Source'], ['label' => 'Loot rule'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Looted', 'numeric' => true], ['label' => 'Dropped', 'numeric' => true]]" style="margin-top:1.1rem" />
-      <p class="note">A drop rate is drops over corpses looted for the first time under that loot rule. Drop rates cover every ruleset.</p>
+      <x-table :rows="$d['rows']" :columns="[['label' => 'Source'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true]]" style="margin-top:1.1rem" />
+      <p class="note">A drop rate is corpses of the source that held the item over corpses of the source looted for the first time, one row for each source. Sources looted 10 times or more rank by the low end of the 95% range; below the line, sources looted fewer times show their counts only. Drop rates cover every ruleset.</p>
       @else
       <x-note>No drops of this item are recorded yet.</x-note>
       @endif

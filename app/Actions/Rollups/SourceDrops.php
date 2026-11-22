@@ -9,7 +9,6 @@ use App\Support\RateEstimate;
 use App\Support\RateFlag;
 use App\Support\Rollup;
 use App\Support\RollupRead;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class SourceDrops
@@ -70,7 +69,7 @@ class SourceDrops
         $query = DB::table(Rollup::OpensDaily->value)
             ->selectRaw('sum(opens) as opens, distinct_count(rollup(characters)) as characters')
             ->where('source_kind', $sourceKind)->where('source_id', $sourceId);
-        $row = $this->read->rows($this->inView($query, 'loot_rule', $rule)
+        $row = $this->read->rows(LootRule::within($query, 'loot_rule', $rule)
             ->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')]))[0] ?? null;
 
         return $row === null || $row['opens'] === null ? null : ['windows' => (int) $row['opens'], 'characters' => (int) round((float) $row['characters'])];
@@ -87,14 +86,8 @@ class SourceDrops
             ->selectRaw('sum(d.drops) as drops, sum(d.quantity) as quantity, i.class_id, i.subclass_id, i.bind_type')
             ->where('d.source_kind', $sourceKind)->where('d.source_id', $sourceId);
 
-        return $this->read->rows($this->inView($query, 'd.loot_rule', $rule)
+        return $this->read->rows(LootRule::within($query, 'd.loot_rule', $rule)
             ->groupBy('d.item_id', 'i.class_id', 'i.subclass_id', 'i.bind_type')
             ->havingRaw('distinct_count(rollup(d.characters)) >= ?', [(int) config('scarlet.min_characters')]));
-    }
-
-    /** One rule, or every rule but personal loot, whose windows each read a table of their own. */
-    private function inView(Builder $query, string $column, ?string $rule): Builder
-    {
-        return $rule === null ? $query->where($column, '<>', LootRule::Personal->value) : $query->where($column, $rule);
     }
 }

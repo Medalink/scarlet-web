@@ -28,7 +28,7 @@ class RecordController extends Controller
 
     public function item(RecordRequest $request, ItemRecord $record, int $id): View
     {
-        $answer = $record->handle($id);
+        $answer = $record->handle($id, $request->lootRule());
         abort_if($answer === null, 404);
 
         return view('pages.item', ['d' => RecordPages::item($answer)]);

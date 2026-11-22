@@ -89,9 +89,12 @@ final class RecordPages
     {
         /** @var array<string, mixed>|null $item */
         $item = $r['item'];
-        /** @var list<array<string, mixed>> $sources */
-        $sources = $r['sources'];
-        $top = max(0.0001, (float) max([0.0, ...array_column($sources, 'rate')]));
+        /** @var array{rule: string|null, rules: list<string>, rows: list<array{source_kind: string, source_id: int, source: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $bySource */
+        $bySource = $r['by_source'];
+        $stated = array_values(array_filter($bySource['rows'], fn (array $row): bool => $row['estimate']->stated()));
+        $counted = array_values(array_filter($bySource['rows'], fn (array $row): bool => ! $row['estimate']->stated()));
+        $best = $stated === [] || $stated[0]['estimate']->sample !== RateSample::Solid ? null : $stated[0]['estimate'];
+        $query = fn (?string $rule): string => '/items/'.$r['id'].($rule === null ? '' : '?'.http_build_query(['rule' => $rule]));
 
         $facts = [];
         if ($item !== null) {
@@ -115,19 +118,43 @@ final class RecordPages
             'figures' => [
                 ['label' => 'Dropped', 'value' => $r['dropped'] === null ? '–' : Format::number($r['dropped']), 'unit' => $r['dropped'] === null ? Format::TOO_FEW : null],
                 ['label' => 'Sources', 'value' => Format::number($r['source_count'])],
-                ['label' => 'Best drop rate', 'value' => $r['best_rate'] === null ? '–' : Format::percent((float) $r['best_rate'], $r['best_rate'] < 0.01 ? 2 : 1)],
+                ['label' => 'Best drop rate', 'value' => $best === null ? '–' : $best->percent()],
                 ['label' => 'First recorded', 'value' => $first ?? '–'],
             ],
             'made' => CraftingRows::recipes($r['made_by']),
             'uses' => CraftingRows::recipes($r['used_in']),
             'bosses' => CraftingRows::encounters($r['encounters']),
-            'rows' => array_map(fn (array $row): array => ['cells' => [
-                $row['source_kind'] === 'c' && $row['source'] !== null ? ['text' => (string) $row['source'], 'href' => '/creatures/'.$row['source_id']] : self::otherSource($row),
-                LootRule::words((string) $row['loot_rule']),
-                ['text' => Format::percent((float) $row['rate'], (float) $row['rate'] < 0.01 ? 2 : 1), 'bar' => max(0.15, (float) $row['rate'] / $top * 5.2).'rem'],
-                Format::number($row['opens']), Format::number($row['drops']),
-            ]], $sources),
+            'rules' => $bySource['rules'] === [] ? [] : [
+                ['label' => 'All rules', 'href' => $query(null), 'on' => $bySource['rule'] === null],
+                ...array_map(fn (string $rule): array => ['label' => LootRule::words($rule), 'href' => $query($rule), 'on' => $rule === $bySource['rule']], $bySource['rules']),
+            ],
+            'rows' => [
+                ...array_map(self::sourceRow(...), $stated),
+                ...($stated !== [] && $counted !== [] ? [['hair' => true]] : []),
+                ...array_map(self::sourceRow(...), $counted),
+            ],
         ];
+    }
+
+    /**
+     * @param  array{source_kind: string, source_id: int, source: string|null, quantity: int, per_drop: float, estimate: RateEstimate}  $row
+     * @return array{cells: list<array<string, mixed>|string>}
+     */
+    private static function sourceRow(array $row): array
+    {
+        $estimate = $row['estimate'];
+        $skins = in_array(RateFlag::SkinsCounted, $estimate->flags, true) ? RateFlag::SkinsCounted->label() : null;
+        $source = $row['source_kind'] === 'c' && $row['source'] !== null
+            ? ['text' => $row['source'], 'href' => '/creatures/'.$row['source_id']]
+            : self::otherSource($row);
+
+        return ['cells' => [
+            [...$source, 'tag' => $skins],
+            ['rate' => $estimate],
+            $estimate->stated() ? $estimate->range() : '–',
+            $estimate->counts(),
+            Format::number($row['per_drop'], 1),
+        ]];
     }
 
     /**

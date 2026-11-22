@@ -3,6 +3,7 @@
 namespace App\Actions\Public;
 
 use App\Actions\Rollups\ItemSources;
+use App\Actions\Rollups\SourceRates;
 use App\Support\NameKind;
 use App\Support\Rollup;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,7 @@ class ItemRecord
 {
     public function __construct(
         private readonly ItemSources $sources,
+        private readonly SourceRates $sourceRates,
         private readonly ItemPrices $prices,
         private readonly ItemCrafting $crafting,
         private readonly BossDrops $bossDrops,
@@ -19,12 +21,13 @@ class ItemRecord
     /**
      * Everything the item page and `/public/items/{id}` show: what the item is, where it drops, by source and
      * loot rule, and its auction price history for each ruleset and realm. The drop aggregates carry no ruleset, so
-     * every drop figure is over all rulesets. It also lists the recipes that make it or use it and the boss encounters
-     * that dropped it. Null when nothing is known by this id.
+     * every drop figure is over all rulesets. `by_source` is the same drops as one row for each source over every loot
+     * rule, or over `$rule` alone, with each rate as its counts and range. It also lists the recipes that make it or
+     * use it and the boss encounters that dropped it. Null when nothing is known by this id.
      *
      * @return array<string, mixed>|null
      */
-    public function handle(int $id): ?array
+    public function handle(int $id, ?string $rule = null): ?array
     {
         $name = DB::table('names')->where('kind', NameKind::Item->value)->where('id', $id)->orderByDesc('votes')->orderBy('name')->value('name');
         $item = DB::table('items')->where('item_id', $id)->first();
@@ -43,6 +46,7 @@ class ItemRecord
             'name' => is_string($name) ? $name : 'Item '.$id,
             'item' => $item === null ? null : (array) $item,
             'sources' => $sources,
+            'by_source' => $this->sourceRates->handle($id, $rule),
             'prices' => $this->prices->handle($id),
             ...$this->crafting->handle($id),
             'encounters' => $this->bossDrops->handle($id, null, 25),

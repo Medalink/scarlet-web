@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Database\Query\Builder;
+
 /** The loot rule in force for a window: the decoder's `loot_opens.loot_rule` (docs/ROWS.md). */
 enum LootRule: string
 {
@@ -26,6 +28,12 @@ enum LootRule: string
             self::Personal => 'Personal loot',
             self::Unknown => 'Unknown',
         };
+    }
+
+    /** The rows of one rule, or of every rule but personal loot, whose windows each read a table of their own. */
+    public static function within(Builder $query, string $column, ?string $rule): Builder
+    {
+        return $rule === null ? $query->where($column, '<>', self::Personal->value) : $query->where($column, $rule);
     }
 
     /** A rule's words for a stored value; a value this enum does not know is shown as it is. */
