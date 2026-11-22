@@ -59,6 +59,13 @@
 .data a { text-decoration-thickness: 1px; }
 .data .rk { color: var(--muted); width: 2.6rem; font-family: var(--mono); font-stretch: 85%; font-size: 0.82em; }
 .data td .bar { display: inline-block; height: 0.4rem; background: var(--accent); border-radius: 2px; vertical-align: 0.12em; margin-right: 0.5rem; min-width: 2px; }
+.rb { display: inline-block; position: relative; width: 6.5rem; height: 0.4rem; background: rgba(255, 255, 255, 0.09); border-radius: 2px; vertical-align: 0.12em; margin-right: 0.6rem; }
+.rb .band { position: absolute; top: 0; bottom: 0; min-width: 2px; background: rgba(255, 45, 85, 0.38); border-radius: 2px; }
+.rb .dot { position: absolute; top: 50%; width: 0.6rem; height: 0.6rem; margin: -0.3rem 0 0 -0.3rem; border-radius: 50%; background: var(--accent); }
+.rb.hollow .band { background: transparent; border: 1px dashed var(--accent); }
+.rb.hollow .dot { background: var(--ink); border: 2px solid var(--accent); }
+.data tr.hair td { padding: 0; border-bottom: 1px solid var(--line2); }
+.data .mut { color: var(--muted); }
 .data tr.me td { background: rgba(255, 45, 85, 0.08); }
 .tag { display: inline-block; font: 500 0.66rem/1 var(--mono); font-stretch: 85%; color: var(--text); border: 1px solid var(--line2); border-radius: 2px; padding: 0.22rem 0.4rem; vertical-align: 0.1em; margin-left: 0.4rem; }
 .tag.hc { color: var(--soft); border-color: var(--deep); }
