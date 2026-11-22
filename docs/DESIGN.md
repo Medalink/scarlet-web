@@ -424,12 +424,46 @@ built from the four crafting aggregates through `Craft*` reads under `app/Action
 recipe's reagents, `Leaderboard` for the profession's board of crafts (`most-alchemy-crafts` to `most-first-aid-crafts`,
 from `crafts_daily_character`) and `play_hourly_ruleset` for the characters in the scope. The medians of rank, the
 characters at the cap and the `by_level` table are the gathering ones: `RankSummary` and `RankByLevel` read either
-profession's by-character aggregate, and `ScopeCharacters` reads the characters with play. A highest rank is `skill` plus
+profession's by-character aggregate, and `ScopePlay` reads the characters with play. A highest rank is `skill` plus
 the rise that followed the craft. One figure reads the rows of the last 90 days, `CraftSittings`: a sitting is a run of
 crafts of one profession in one session in which each follows the one before within 120 seconds (`sitting_gap`, null on
 the first), from its first craft to its last. `recipes` lists the twelve with the most crafts and the item their crafts
 made most often, `reagents` is each uploaded recipe's reagents times its crafts. A trade nobody has recorded, or one under
 the character threshold, answers zero totals, `characters` null and empty lists.
+
+**A player's own numbers.** The camps page and the twelve profession pages have a twin over only the characters of the
+signed-in account (`/account/camps`, `/account/professions/{slug}`, Pages). It is the same dashboards, reads, views and
+scenes with a different scope, so no read, view model or view exists twice. A scope is a ruleset id, a list of them or
+none (`PageScope::$ids`, as above), or a `CharacterScope`: character ids within those rulesets. The ids come only from the
+signed-in account (`$account->characters()`), never from the request, and a dashboard's `handle()` takes them as its last
+argument, where `null` is the public answer and an empty list is an account with no characters, which answers the empty
+state and never the public numbers.
+
+`RollupRead` is the one place that turns a scope into a source and a threshold. For a ruleset scope it reads the
+aggregate. For a `CharacterScope` it reads the aggregate's own definition, kept by TimescaleDB
+(`timescaledb_information.continuous_aggregates.view_definition`), with the fact table it names narrowed to
+`character_id = any(...)`, as a subquery under the aggregate's name. The definition is kept for 5 minutes (the catalog read
+was 5 ms for each of the 7 aggregates of a gathering page, 28 ms of 94) and `RollupRead` is bound per request. The columns, the sketches and the numbers are the
+aggregate's own, over only those characters' rows, and the plan uses the `(character_id, at)` index of the fact table. A
+definition that does not name its fact table exactly once after `FROM` is refused with an exception. The reads that go to a
+fact table (`GatherTrips`, `CraftSittings`) narrow it through `RollupRead::table()` the same way. No aggregate, migration or
+copy of an aggregate's SQL is added for this.
+
+A character scope has no public threshold: a player's own rows are shown from one character, whatever
+`SCARLET_MIN_CHARACTERS` says, and every read takes its threshold from `RollupRead::threshold()`. The own board ranks the
+account's own characters, private ones included, from the same by-character aggregates. Played time and the scope's
+character count follow the scope, so "a played hour" is the player's own hour; `ScopePlay` reads both in one statement,
+for a player's own from the counted `play_spans` rows, since a sum and a count do not need the hourly grouping and its
+sketches. A player's own pages read `counted` rows only, like the public ones, so their numbers sit beside everyone's; the
+character rollups read flagged rows too.
+
+A player's own numbers read the rows as they are now, while everyone's are refreshed aggregates up to an hour behind, so the
+two can differ for the current hour or day. `/account/professions` picks its profession from the refreshed by-character
+aggregates, so a character that gathered this hour does not move it yet. A character scope skips the threshold's
+`having`, which keeps the sketch of characters out of every read that does not select it. Measured on one invented
+character with 100,000 gathers and 1,000,000 play spans over a year, the own Fishing page takes 1.0 s with the read cache
+cleared (1.6 s before the play reads were merged) and 0.12 s with it warm; with 1,000,000 gathers and 2,000,000 spans it
+takes 5.1 s cold and 0.16 s warm. A page reads each answer for a minute, then stale for five.
 
 Aggregates refresh on a policy and once more, for the affected time range, after a decode or a removal. Removing a
 group or everything deletes the fact rows; TimescaleDB records the change and the refresh takes the contribution out

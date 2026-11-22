@@ -3,6 +3,7 @@
 namespace App\Actions\Rollups;
 
 use App\Support\CampSpell;
+use App\Support\CharacterScope;
 use App\Support\Rollup;
 use App\Support\RollupRead;
 
@@ -17,23 +18,23 @@ class CampBuffed
      * nobody played is left out and the sum is scaled up to all the seconds held. `seconds` counts every aura held, a
      * carried one included; `xp` and `deaths` are the sums of the rows the decoder filled (version 7 and later), and
      * each is set against the held time of the rows that have it, `xp_seconds` and `deaths_seconds`. Null while fewer
-     * than `config('scarlet.min_characters')` characters held the aura.
+     * than the scope's threshold of characters held the aura.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return array{seconds: int, xp_seconds: int, deaths_seconds: int, xp: int|null, deaths: int|null, expected_xp: float|null, expected_deaths: float|null}|null
      */
-    public function handle(int|array|null $rulesetId = null): ?array
+    public function handle(int|array|CharacterScope|null $scope = null): ?array
     {
-        $held = $this->read->from(Rollup::CampBenefitsDailyRuleset, $rulesetId)->where('spell_id', CampSpell::CampBenefits->value);
+        $held = $this->read->from(Rollup::CampBenefitsDailyRuleset, $scope)->where('spell_id', CampSpell::CampBenefits->value);
         $total = $this->read->rows((clone $held)->selectRaw('coalesce(sum(seconds), 0) as seconds, coalesce(sum(xp_seconds), 0) as xp_seconds, coalesce(sum(deaths_seconds), 0) as deaths_seconds, sum(xp) as xp, sum(deaths) as deaths, distinct_count(rollup(characters)) as characters'))[0] ?? null;
-        if ($total === null || (int) $total['characters'] < (int) config('scarlet.min_characters')) {
+        if ($total === null || (int) $total['characters'] < $this->read->threshold($scope)) {
             return null;
         }
 
         $levels = $this->read->rows((clone $held)->selectRaw('level, coalesce(sum(xp_seconds), 0) as xp_seconds, coalesce(sum(deaths_seconds), 0) as deaths_seconds')->whereNotNull('level')->groupBy('level'));
-        $played = $this->byLevel(Rollup::PlayHourlyRuleset, $rulesetId, 'level, (sum(ms) / 1000.0)::float as total');
-        $xp = $this->byLevel(Rollup::XpDailyRuleset, $rulesetId, 'level, sum(xp) as total');
-        $deaths = $this->byLevel(Rollup::DeathsDailyRuleset, $rulesetId, 'level, sum(deaths) as total');
+        $played = $this->byLevel(Rollup::PlayHourlyRuleset, $scope, 'level, (sum(ms) / 1000.0)::float as total');
+        $xp = $this->byLevel(Rollup::XpDailyRuleset, $scope, 'level, sum(xp) as total');
+        $deaths = $this->byLevel(Rollup::DeathsDailyRuleset, $scope, 'level, sum(deaths) as total');
 
         return [
             'seconds' => (int) $total['seconds'],
@@ -68,13 +69,13 @@ class CampBuffed
     }
 
     /**
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @param  literal-string  $select  `level` and the scope's `total` there
      * @return array<int, int|float> level => total
      */
-    private function byLevel(Rollup $rollup, int|array|null $rulesetId, string $select): array
+    private function byLevel(Rollup $rollup, int|array|CharacterScope|null $scope, string $select): array
     {
-        $rows = $this->read->rows($this->read->from($rollup, $rulesetId)->selectRaw($select)->whereNotNull('level')->groupBy('level'));
+        $rows = $this->read->rows($this->read->from($rollup, $scope)->selectRaw($select)->whereNotNull('level')->groupBy('level'));
         $out = [];
         foreach ($rows as $row) {
             $out[(int) $row['level']] = $row['total'] + 0;

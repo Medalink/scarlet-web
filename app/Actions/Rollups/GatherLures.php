@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\GatherKind;
 use App\Support\NameKind;
 use App\Support\Rollup;
@@ -14,14 +15,14 @@ class GatherLures
     /**
      * The casts made within `GatherKind::LURE_SECONDS` of applying a lure, by lure, most first: every lure with enough
      * characters is counted in `casts`, and `lures` lists the first `$limit`. A lure fewer than
-     * `config('scarlet.min_characters')` characters used is left out.
+     * the scope's threshold of characters used is left out.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return array{casts: int, lures: list<array{spell_id: int, name: string|null, casts: int}>}
      */
-    public function handle(GatherKind $kind, int|array|null $rulesetId = null, int $limit = 6): array
+    public function handle(GatherKind $kind, int|array|CharacterScope|null $scope = null, int $limit = 6): array
     {
-        $query = $this->read->from(Rollup::GathersDailyGearRuleset, $rulesetId)
+        $query = $this->read->from(Rollup::GathersDailyGearRuleset, $scope)
             ->where('kind', $kind->value)
             ->whereNotNull('lure_spell')
             ->where('lure_minutes', '<=', intdiv(GatherKind::LURE_SECONDS, 60))
@@ -34,7 +35,7 @@ class GatherLures
             'spell_id' => (int) $row['spell_id'],
             'name' => $row['name'] === null ? null : (string) $row['name'],
             'casts' => (int) $row['casts'],
-        ], $this->read->rows($this->read->shown($query)));
+        ], $this->read->rows($this->read->shown($query, $scope)));
 
         return ['casts' => array_sum(array_column($lures, 'casts')), 'lures' => array_slice($lures, 0, $limit)];
     }

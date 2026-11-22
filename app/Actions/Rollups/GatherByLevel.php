@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\GatherKind;
 use App\Support\Rollup;
 
@@ -11,13 +12,13 @@ class GatherByLevel
 
     /**
      * The median over characters of the highest rank each had at each character level, ascending. A level fewer than
-     * `config('scarlet.min_characters')` characters gathered at is left out.
+     * the scope's threshold of characters gathered at is left out.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return list<array{level: int, median_skill: float|null, characters: int|null}>
      */
-    public function handle(GatherKind $kind, int|array|null $rulesetId = null): array
+    public function handle(GatherKind $kind, int|array|CharacterScope|null $scope = null): array
     {
-        return $this->ranks->handle(Rollup::GathersDailyCharacter, 'kind', $kind->value, $rulesetId);
+        return $this->ranks->handle(Rollup::GathersDailyCharacter, 'kind', $kind->value, $scope);
     }
 }

@@ -18,11 +18,10 @@ use App\Actions\Rollups\GatherTotals;
 use App\Actions\Rollups\GatherTrips;
 use App\Actions\Rollups\GatherWaits;
 use App\Actions\Rollups\GatherZones;
-use App\Actions\Rollups\ScopeCharacters;
+use App\Actions\Rollups\ScopePlay;
 use App\Support\Board;
+use App\Support\CharacterScope;
 use App\Support\GatherKind;
-use App\Support\Rollup;
-use App\Support\RollupRead;
 use App\Support\Server;
 
 class GatheringDashboard
@@ -34,8 +33,7 @@ class GatheringDashboard
         private readonly ResolveScope $resolveScope,
         private readonly ListRulesets $rulesets,
         private readonly Leaderboard $leaderboard,
-        private readonly RollupRead $read,
-        private readonly ScopeCharacters $scopeCharacters,
+        private readonly ScopePlay $scopePlay,
         private readonly GatherTotals $totals,
         private readonly GatherTrips $trips,
         private readonly GatherSkill $skill,
@@ -56,19 +54,21 @@ class GatheringDashboard
 
     /**
      * Everything the page of one gathering and `/public/professions/{slug}` show for the rulesets of the scope, from the
-     * gathering aggregates. An attempt is looted when a loot window followed it. A number or a row that fewer than
-     * `config('scarlet.min_characters')` characters contributed to is null or missing: the totals are zero and
-     * `characters` is null while the whole scope is under the threshold.
+     * gathering aggregates. `$characters` narrows it to a player's own characters (null is everyone's, an empty list an
+     * account with no characters). An attempt is looted when a loot window followed it. A number or a row that fewer than
+     * the scope's threshold of characters contributed to (`RollupRead::threshold()`) is null or missing: the totals are
+     * zero and `characters` is null while the whole scope is under the threshold.
      *
+     * @param  list<int>|null  $characters
      * @return array<string, mixed>|null null when the ruleset is not known
      */
-    public function handle(GatherKind $kind, ?string $ruleset = null, Server $server = Server::All): ?array
+    public function handle(GatherKind $kind, ?string $ruleset = null, Server $server = Server::All, ?array $characters = null): ?array
     {
-        $scope = $this->resolveScope->handle($ruleset, $server);
+        $scope = $this->resolveScope->handle($ruleset, $server, $characters);
         if ($scope === null) {
             return null;
         }
-        $ids = $scope->ids;
+        $ids = $scope->rollup();
         $lures = $kind === GatherKind::Fish ? $this->lures->handle($kind, $ids) : null;
 
         return [
@@ -88,23 +88,22 @@ class GatheringDashboard
             'creatures' => $kind === GatherKind::Skin ? $this->creatures->handle($kind, $ids) : [],
             'zones' => $this->zones->handle($kind, $ids),
             'heat' => $this->heatOf($kind, $ids),
-            'board' => $this->boardOf($kind, $ruleset, $server),
+            'board' => $this->boardOf($kind, $ruleset, $server, $characters),
         ];
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return array<string, mixed>
      */
-    private function totalsOf(GatherKind $kind, int|array|null $ids, ?int $lured): array
+    private function totalsOf(GatherKind $kind, int|array|CharacterScope|null $ids, ?int $lured): array
     {
         $totals = $this->totals->handle($kind, $ids);
-        $scopeCharacters = $this->scopeCharacters->handle($ids);
-        $played = $scopeCharacters === null ? 0 : $this->read->sum($this->read->from(Rollup::PlayHourlyRuleset, $ids), 'ms') / 1000;
+        $play = $this->scopePlay->handle($ids);
         if ($totals === null) {
             return [
-                'attempts' => 0, 'looted' => 0, 'characters' => null, 'scope_characters' => $scopeCharacters, 'seconds' => 0,
-                'played_seconds' => (int) round($played), 'median_seconds' => null, 'trips' => 0, 'median_trip_seconds' => null,
+                'attempts' => 0, 'looted' => 0, 'characters' => null, 'scope_characters' => $play['characters'] ?? null, 'seconds' => 0,
+                'played_seconds' => $play['seconds'] ?? 0, 'median_seconds' => null, 'trips' => 0, 'median_trip_seconds' => null,
                 'median_trip_attempts' => null, 'in_combat' => 0, 'skill_ups' => 0, 'median_skill' => null, 'at_cap' => null,
                 'items' => 0, 'container_catches' => 0, 'schools' => null, 'first_strikes' => null,
             ];
@@ -117,9 +116,9 @@ class GatheringDashboard
             'attempts' => $totals['attempts'],
             'looted' => $totals['looted'],
             'characters' => $totals['characters'],
-            'scope_characters' => $scopeCharacters,
+            'scope_characters' => $play['characters'] ?? null,
             'seconds' => $totals['seconds'],
-            'played_seconds' => (int) round($played),
+            'played_seconds' => $play['seconds'] ?? 0,
             'median_seconds' => $totals['median_seconds'],
             'trips' => $totals['trips'],
             'median_trip_seconds' => $trips['median_seconds'],
@@ -136,20 +135,23 @@ class GatheringDashboard
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return array{zone_id: int, map: int, name: string|null, cells: list<array{cell_x: int, cell_y: int, visits: int}>}|null
      */
-    private function heatOf(GatherKind $kind, int|array|null $ids): ?array
+    private function heatOf(GatherKind $kind, int|array|CharacterScope|null $ids): ?array
     {
         $heat = $this->heat->handle($kind, $ids);
 
         return $heat === null ? null : ['zone_id' => $heat['map'], ...$heat];
     }
 
-    /** @return list<array<string, mixed>> */
-    private function boardOf(GatherKind $kind, ?string $ruleset, Server $server): array
+    /**
+     * @param  list<int>|null  $characters
+     * @return list<array<string, mixed>>
+     */
+    private function boardOf(GatherKind $kind, ?string $ruleset, Server $server, ?array $characters): array
     {
-        $board = $this->leaderboard->handle(Board::ofGathering($kind), $ruleset, $server, null, 0, self::BOARD_ROWS);
+        $board = $this->leaderboard->handle(Board::ofGathering($kind), $ruleset, $server, null, 0, self::BOARD_ROWS, null, $characters);
 
         return array_slice($board['rows'] ?? [], 0, self::BOARD_ROWS);
     }

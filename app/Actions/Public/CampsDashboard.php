@@ -12,10 +12,10 @@ use App\Actions\Rollups\CampLengths;
 use App\Actions\Rollups\CampTotals;
 use App\Actions\Rollups\CampZones;
 use App\Actions\Rollups\PlayTimeByLevel;
+use App\Actions\Rollups\ScopePlay;
 use App\Support\Board;
 use App\Support\CampSpell;
-use App\Support\Rollup;
-use App\Support\RollupRead;
+use App\Support\CharacterScope;
 use App\Support\Server;
 
 class CampsDashboard
@@ -27,7 +27,7 @@ class CampsDashboard
         private readonly ResolveScope $resolveScope,
         private readonly ListRulesets $rulesets,
         private readonly Leaderboard $leaderboard,
-        private readonly RollupRead $read,
+        private readonly ScopePlay $scopePlay,
         private readonly CampTotals $totals,
         private readonly CampFires $fires,
         private readonly CampBenefitsBySpell $benefits,
@@ -41,20 +41,22 @@ class CampsDashboard
     ) {}
 
     /**
-     * Everything the camps page and `/public/camps` show for the rulesets of the scope, from the camp aggregates. A
-     * visit is a stay that began in the session. A number or a row that fewer than `config('scarlet.min_characters')`
-     * characters contributed to is null or missing: the totals are zero and `characters` is null while the whole scope is
-     * under the threshold, and a campfire or benefit under it counts zero.
+     * Everything the camps page and `/public/camps` show for the rulesets of the scope, from the camp aggregates.
+     * `$characters` narrows it to a player's own characters (null is everyone's, an empty list an account with no
+     * characters). A visit is a stay that began in the session. A number or a row that fewer than the scope's threshold of
+     * characters (`RollupRead::threshold()`) contributed to is null or missing: the totals are zero and `characters` is
+     * null while the whole scope is under the threshold, and a campfire or benefit under it counts zero.
      *
+     * @param  list<int>|null  $characters
      * @return array<string, mixed>|null null when the ruleset is not known
      */
-    public function handle(?string $ruleset = null, Server $server = Server::All): ?array
+    public function handle(?string $ruleset = null, Server $server = Server::All, ?array $characters = null): ?array
     {
-        $scope = $this->resolveScope->handle($ruleset, $server);
+        $scope = $this->resolveScope->handle($ruleset, $server, $characters);
         if ($scope === null) {
             return null;
         }
-        $ids = $scope->ids;
+        $ids = $scope->rollup();
         $totals = $this->totals->handle($ids);
 
         return [
@@ -70,18 +72,18 @@ class CampsDashboard
             'buffed' => $this->buffed->handle($ids),
             'zones' => $this->zones->handle($ids),
             'heat' => $this->heatOf($ids),
-            'board' => $this->boardOf($ruleset, $server),
+            'board' => $this->boardOf($ruleset, $server, $characters),
         ];
     }
 
     /**
      * @param  array<string, mixed>|null  $totals
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return array<string, mixed>
      */
-    private function totalsOf(?array $totals, int|array|null $ids): array
+    private function totalsOf(?array $totals, int|array|CharacterScope|null $ids): array
     {
-        $played = $totals === null ? 0 : $this->read->sum($this->read->from(Rollup::PlayHourlyRuleset, $ids), 'ms') / 1000;
+        $played = $totals === null ? 0 : $this->scopePlay->handle($ids)['seconds'] ?? 0;
         $totals ??= array_fill_keys(['visits', 'seconds', 'earned', 'sat', 'tented', 'tent_rests', 'logged_out', 'died_after', 'afk_seconds', 'afk_known_seconds', 'crafted', 'crafts_known', 'placed_tent', 'placed_chair'], 0) + ['characters' => null, 'median_seconds' => null];
 
         return [
@@ -95,10 +97,10 @@ class CampsDashboard
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return list<array{spell_id: int|null, label: string, visits: int}>
      */
-    private function firesOf(int|array|null $ids): array
+    private function firesOf(int|array|CharacterScope|null $ids): array
     {
         $visits = $this->fires->handle($ids);
         $rows = array_map(fn (CampSpell $spell): array => ['spell_id' => $spell->value, 'label' => $spell->label(), 'visits' => $visits[$spell->value] ?? 0], CampSpell::campfires());
@@ -108,19 +110,19 @@ class CampsDashboard
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return array{gains: int, seconds: int, lost_to_death: int, characters: int|null}
      */
-    private function campBenefits(int|array|null $ids): array
+    private function campBenefits(int|array|CharacterScope|null $ids): array
     {
         return $this->benefitRow($this->benefits->handle($ids)[CampSpell::CampBenefits->value] ?? null);
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return list<array{spell_id: int, label: string, effect: string, gains: int, two_hour_gains: int, seconds: int, lost_to_death: int, characters: int|null}>
      */
-    private function benefitsOf(int|array|null $ids): array
+    private function benefitsOf(int|array|CharacterScope|null $ids): array
     {
         $seen = $this->benefits->handle($ids);
         $rows = array_map(fn (CampSpell $spell): array => [
@@ -144,10 +146,10 @@ class CampsDashboard
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return list<array{level: int, visits: int, tent_rests: int, played_seconds: int}>
      */
-    private function byLevelOf(int|array|null $ids): array
+    private function byLevelOf(int|array|CharacterScope|null $ids): array
     {
         $played = [];
         foreach ($this->played->handle($ids) as $row) {
@@ -158,20 +160,23 @@ class CampsDashboard
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return array{zone_id: int, map: int, name: string|null, cells: list<array{cell_x: int, cell_y: int, visits: int}>}|null
      */
-    private function heatOf(int|array|null $ids): ?array
+    private function heatOf(int|array|CharacterScope|null $ids): ?array
     {
         $heat = $this->heat->handle($ids);
 
         return $heat === null ? null : ['zone_id' => $heat['map'], ...$heat];
     }
 
-    /** @return list<array<string, mixed>> */
-    private function boardOf(?string $ruleset, Server $server): array
+    /**
+     * @param  list<int>|null  $characters
+     * @return list<array<string, mixed>>
+     */
+    private function boardOf(?string $ruleset, Server $server, ?array $characters): array
     {
-        $board = $this->leaderboard->handle(Board::MostTimeByTheFire, $ruleset, $server, null, 0, self::BOARD_ROWS);
+        $board = $this->leaderboard->handle(Board::MostTimeByTheFire, $ruleset, $server, null, 0, self::BOARD_ROWS, null, $characters);
 
         return array_slice($board['rows'] ?? [], 0, self::BOARD_ROWS);
     }

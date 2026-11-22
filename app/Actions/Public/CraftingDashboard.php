@@ -13,8 +13,9 @@ use App\Actions\Rollups\CraftTotals;
 use App\Actions\Rollups\CraftZones;
 use App\Actions\Rollups\RankByLevel;
 use App\Actions\Rollups\RankSummary;
-use App\Actions\Rollups\ScopeCharacters;
+use App\Actions\Rollups\ScopePlay;
 use App\Support\Board;
+use App\Support\CharacterScope;
 use App\Support\NameKind;
 use App\Support\Profession;
 use App\Support\Rollup;
@@ -31,7 +32,7 @@ class CraftingDashboard
         private readonly Leaderboard $leaderboard,
         private readonly RecipeFacts $recipeFacts,
         private readonly ResolveNames $names,
-        private readonly ScopeCharacters $scopeCharacters,
+        private readonly ScopePlay $scopePlay,
         private readonly CraftTotals $totals,
         private readonly CraftSittings $sittings,
         private readonly CraftRecipeCount $recipeCount,
@@ -47,19 +48,21 @@ class CraftingDashboard
 
     /**
      * Everything the page of one crafting profession and `/public/professions/{slug}` show for the rulesets of the scope,
-     * from the crafting aggregates. A number or a row that fewer than `config('scarlet.min_characters')` characters
-     * contributed to is null or missing: the totals are zero and `characters` is null while the whole scope is under the
-     * threshold, and so they are for a profession nobody has crafted with.
+     * from the crafting aggregates. `$characters` narrows it to a player's own characters (null is everyone's, an empty
+     * list an account with no characters). A number or a row that fewer than the scope's threshold of characters
+     * (`RollupRead::threshold()`) contributed to is null or missing: the totals are zero and `characters` is null while
+     * the whole scope is under the threshold, and so they are for a profession nobody has crafted with.
      *
+     * @param  list<int>|null  $characters
      * @return array<string, mixed>|null null when the ruleset is not known
      */
-    public function handle(Profession $profession, ?string $ruleset = null, Server $server = Server::All): ?array
+    public function handle(Profession $profession, ?string $ruleset = null, Server $server = Server::All, ?array $characters = null): ?array
     {
-        $scope = $this->resolveScope->handle($ruleset, $server);
+        $scope = $this->resolveScope->handle($ruleset, $server, $characters);
         if ($scope === null) {
             return null;
         }
-        $ids = $scope->ids;
+        $ids = $scope->rollup();
 
         return [
             'scope' => $scope,
@@ -73,17 +76,17 @@ class CraftingDashboard
             'hours' => $this->hours->handle($profession, $ids),
             'reagents' => $this->reagents->handle($profession, $ids),
             'zones' => $this->zones->handle($profession, $ids),
-            'board' => $this->boardOf($profession, $ruleset, $server),
+            'board' => $this->boardOf($profession, $ruleset, $server, $characters),
         ];
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return array<string, mixed>
      */
-    private function totalsOf(Profession $profession, int|array|null $ids): array
+    private function totalsOf(Profession $profession, int|array|CharacterScope|null $ids): array
     {
-        $scopeCharacters = $this->scopeCharacters->handle($ids);
+        $scopeCharacters = $this->scopePlay->handle($ids)['characters'] ?? null;
         $totals = $this->totals->handle($profession, $ids);
         if ($totals === null) {
             return [
@@ -113,10 +116,10 @@ class CraftingDashboard
     }
 
     /**
-     * @param  int|list<int>|null  $ids
+     * @param  int|list<int>|CharacterScope|null  $ids
      * @return list<array<string, mixed>>
      */
-    private function recipesOf(Profession $profession, int|array|null $ids): array
+    private function recipesOf(Profession $profession, int|array|CharacterScope|null $ids): array
     {
         $rows = $this->recipes->handle($profession, $ids);
         $facts = $this->recipeFacts->handle(array_map(fn (array $row): int => $row['recipe_id'], $rows));
@@ -144,14 +147,17 @@ class CraftingDashboard
         }, $rows);
     }
 
-    /** @return list<array<string, mixed>> */
-    private function boardOf(Profession $profession, ?string $ruleset, Server $server): array
+    /**
+     * @param  list<int>|null  $characters
+     * @return list<array<string, mixed>>
+     */
+    private function boardOf(Profession $profession, ?string $ruleset, Server $server, ?array $characters): array
     {
         $board = Board::ofCrafting($profession);
         if ($board === null) {
             return [];
         }
-        $answer = $this->leaderboard->handle($board, $ruleset, $server, null, 0, self::BOARD_ROWS);
+        $answer = $this->leaderboard->handle($board, $ruleset, $server, null, 0, self::BOARD_ROWS, null, $characters);
 
         return array_slice($answer['rows'] ?? [], 0, self::BOARD_ROWS);
     }

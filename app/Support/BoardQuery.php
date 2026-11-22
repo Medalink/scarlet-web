@@ -30,7 +30,7 @@ class BoardQuery
 
     private const string BY_CRAFTED = 'g.crafts desc, c.id';
 
-    /** The query of one board, public characters only, best first. A row carries `name`, `race`, `class`, `account_id`, `whole_life`, `first_seen_at`, `deaths`, `ruleset_id`, `value` and `at`. */
+    /** The query of one board, public characters only (a player's own page: the player's characters), best first. A row carries `name`, `race`, `class`, `account_id`, `whole_life`, `first_seen_at`, `deaths`, `ruleset_id`, `value` and `at`. */
     public function ranked(Board $board, PageScope $scope): Builder
     {
         $query = $board->level() === null ? $this->totals($board, $scope) : $this->fastest($board, $scope);
@@ -112,7 +112,7 @@ class BoardQuery
         return DB::table('character_levels as cl')
             ->join('characters as c', 'c.id', '=', 'cl.character_id')
             ->joinSub($totals, 's', 's.character_id', '=', 'c.id')
-            ->where('c.is_public', true)
+            ->tap(fn (Builder $q): Builder => $this->listed($q, $scope))
             ->where('cl.counted', true)
             ->where('cl.level', $level)
             ->where('cl.xp_off_reach', false)
@@ -126,7 +126,7 @@ class BoardQuery
     {
         $query = DB::table('characters as c')
             ->joinSub($this->sessionTotals($scope), 's', 's.character_id', '=', 'c.id')
-            ->where('c.is_public', true)
+            ->tap(fn (Builder $q): Builder => $this->listed($q, $scope))
             ->select('c.name', 'c.race', 'c.class', 'c.account_id', 'c.whole_life', 'c.first_seen_at', 's.deaths', 's.ruleset_id', 's.last_at as at');
 
         return match ($board) {
@@ -144,10 +144,23 @@ class BoardQuery
         };
     }
 
+    /** Who is on a board: the public characters, or for a player's own page the player's characters, private ones included. */
+    private function listed(Builder $query, PageScope $scope): Builder
+    {
+        return $scope->characters === null ? $query->where('c.is_public', true) : $query->whereIn('c.id', $scope->characters);
+    }
+
+    /** Narrows a by-character table to the characters of a player's own page. */
+    private function ofCharacters(Builder $query, PageScope $scope): Builder
+    {
+        return $scope->characters === null ? $query : $query->whereIn('character_id', $scope->characters);
+    }
+
     /** Time by a campfire of each character in the rulesets of the scope, from the by-character aggregate. */
     private function campTime(PageScope $scope): Builder
     {
         return DB::table(Rollup::CampStaysDailyCharacter->value)
+            ->tap(fn (Builder $q): Builder => $this->ofCharacters($q, $scope))
             ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('ruleset_id', $scope->ids))
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('ruleset_id', $scope->ids))
             ->groupBy('character_id')
@@ -158,6 +171,7 @@ class BoardQuery
     private function gathered(Board $board, PageScope $scope): Builder
     {
         return DB::table(Rollup::GathersDailyCharacter->value)
+            ->tap(fn (Builder $q): Builder => $this->ofCharacters($q, $scope))
             ->where('kind', $board->gathering()?->value)
             ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('ruleset_id', $scope->ids))
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('ruleset_id', $scope->ids))
@@ -169,6 +183,7 @@ class BoardQuery
     private function crafted(Board $board, PageScope $scope): Builder
     {
         return DB::table(Rollup::CraftsDailyCharacter->value)
+            ->tap(fn (Builder $q): Builder => $this->ofCharacters($q, $scope))
             ->where('profession_id', $board->crafting()?->skillLine())
             ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('ruleset_id', $scope->ids))
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('ruleset_id', $scope->ids))
@@ -203,6 +218,7 @@ class BoardQuery
     private function sessionTotals(PageScope $scope): Builder
     {
         return DB::table('sessions')
+            ->tap(fn (Builder $q): Builder => $this->ofCharacters($q, $scope))
             ->where('counted', true)
             ->when(is_int($scope->ids), fn (Builder $q): Builder => $q->where('ruleset_id', $scope->ids))
             ->when(is_array($scope->ids), fn (Builder $q): Builder => $q->whereIn('ruleset_id', $scope->ids))

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\Rollup;
 use App\Support\RollupRead;
 
@@ -12,14 +13,14 @@ class CampTotals
     /**
      * What the stays by a campfire add up to in the scope. A visit is a stay that began in the session; `seconds` and
      * the AFK seconds count every stay, a carried one included. The median is of the visits. Null while fewer than
-     * `config('scarlet.min_characters')` characters stayed.
+     * the scope's threshold of characters stayed.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return array{visits: int, characters: int, seconds: int, median_seconds: float|null, earned: int, sat: int, tented: int, tent_rests: int, logged_out: int, died_after: int, afk_seconds: int, afk_known_seconds: int, crafted: int, crafts_known: int, placed_tent: int, placed_chair: int}|null
      */
-    public function handle(int|array|null $rulesetId = null): ?array
+    public function handle(int|array|CharacterScope|null $scope = null): ?array
     {
-        $query = $this->read->from(Rollup::CampStaysHourlyRuleset, $rulesetId)->selectRaw(
+        $query = $this->read->from(Rollup::CampStaysHourlyRuleset, $scope)->selectRaw(
             'coalesce(sum(visits), 0) as visits, distinct_count(rollup(characters)) as characters, coalesce(sum(seconds), 0) as seconds,'
             .' approx_percentile(0.5, rollup(visit_seconds)) as median_seconds,'
             .' coalesce(sum(earned), 0) as earned, coalesce(sum(sat), 0) as sat, coalesce(sum(tented), 0) as tented,'
@@ -29,7 +30,7 @@ class CampTotals
             .' coalesce(sum(placed_tent), 0) as placed_tent, coalesce(sum(placed_chair), 0) as placed_chair'
         );
         $row = $this->read->rows($query)[0] ?? null;
-        if ($row === null || (int) $row['characters'] < (int) config('scarlet.min_characters')) {
+        if ($row === null || (int) $row['characters'] < $this->read->threshold($scope)) {
             return null;
         }
 

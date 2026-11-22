@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\GatherKind;
 use App\Support\Rollup;
 use App\Support\RollupRead;
@@ -12,27 +13,27 @@ class GatherHeat
 
     /**
      * The zone map with the most attempts, and its 100 by 100 cells (`cell_x`, `cell_y` from 0 to 100) with the attempts
-     * that began in each, as `visits` like the camps' heat. A cell fewer than `config('scarlet.min_characters')`
+     * that began in each, as `visits` like the camps' heat. A cell fewer than the scope's threshold of
      * characters gathered in is left out. Null when no map has a cell to show.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return array{map: int, name: string|null, cells: list<array{cell_x: int, cell_y: int, visits: int}>}|null
      */
-    public function handle(GatherKind $kind, int|array|null $rulesetId = null): ?array
+    public function handle(GatherKind $kind, int|array|CharacterScope|null $scope = null): ?array
     {
-        $top = $this->read->from(Rollup::GathersHeatDailyRuleset, $rulesetId)
+        $top = $this->read->from(Rollup::GathersHeatDailyRuleset, $scope)
             ->where('kind', $kind->value)
             ->selectRaw('map, (select z.name from zones z where z.id = map) as name')
             ->groupBy('map')
             ->orderByRaw('sum(attempts) desc')
             ->orderBy('map')
             ->limit(1);
-        $map = $this->read->rows($this->read->shown($top))[0] ?? null;
+        $map = $this->read->rows($this->read->shown($top, $scope))[0] ?? null;
         if ($map === null) {
             return null;
         }
 
-        $cells = $this->read->from(Rollup::GathersHeatDailyRuleset, $rulesetId)
+        $cells = $this->read->from(Rollup::GathersHeatDailyRuleset, $scope)
             ->where('kind', $kind->value)
             ->where('map', $map['map'])
             ->selectRaw('cell_x, cell_y, sum(attempts) as visits')
@@ -45,7 +46,7 @@ class GatherHeat
             'name' => $map['name'] === null ? null : (string) $map['name'],
             'cells' => array_map(
                 fn (array $row): array => ['cell_x' => (int) $row['cell_x'], 'cell_y' => (int) $row['cell_y'], 'visits' => (int) $row['visits']],
-                $this->read->rows($this->read->shown($cells)),
+                $this->read->rows($this->read->shown($cells, $scope)),
             ),
         ];
     }

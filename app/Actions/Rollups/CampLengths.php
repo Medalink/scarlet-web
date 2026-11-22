@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\Rollup;
 use App\Support\RollupRead;
 
@@ -13,12 +14,12 @@ class CampLengths
      * Visits by length: `step` is the length in half minutes, at most 40 (20 minutes and over). Only steps with visits
      * and enough characters are listed.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return list<array{step: int, visits: int}>
      */
-    public function handle(int|array|null $rulesetId = null): array
+    public function handle(int|array|CharacterScope|null $scope = null): array
     {
-        $query = $this->read->from(Rollup::CampStaysHourlyRuleset, $rulesetId)
+        $query = $this->read->from(Rollup::CampStaysHourlyRuleset, $scope)
             ->selectRaw('step, sum(visits) as visits')
             ->groupBy('step')
             ->havingRaw('sum(visits) > 0')
@@ -26,7 +27,7 @@ class CampLengths
 
         return array_map(
             fn (array $row): array => ['step' => (int) $row['step'], 'visits' => (int) $row['visits']],
-            $this->read->rows($this->read->shown($query)),
+            $this->read->rows($this->read->shown($query, $scope)),
         );
     }
 }

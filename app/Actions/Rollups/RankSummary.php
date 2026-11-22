@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\Profession;
 use App\Support\Rollup;
 use App\Support\RollupRead;
@@ -14,15 +15,15 @@ class RankSummary
     /**
      * The median over characters of the highest rank each had in the scope, and how many of them reached the cap, from a
      * by-character aggregate with `max_skill` whose rows of one profession have `$column` equal to `$value`. A character
-     * with no rank on record is left out. Both are null while fewer than `config('scarlet.min_characters')` characters
+     * with no rank on record is left out. Both are null while fewer than the scope's threshold of characters
      * have one.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return array{median_skill: float|null, at_cap: int|null}
      */
-    public function handle(Rollup $rollup, string $column, string|int $value, int|array|null $rulesetId = null): array
+    public function handle(Rollup $rollup, string $column, string|int $value, int|array|CharacterScope|null $scope = null): array
     {
-        $best = $this->read->from($rollup, $rulesetId)
+        $best = $this->read->from($rollup, $scope)
             ->where($column, $value)
             ->selectRaw('character_id, max(max_skill) as skill')
             ->groupBy('character_id');
@@ -30,7 +31,7 @@ class RankSummary
             ->whereNotNull('skill')
             ->selectRaw('count(*) as characters, percentile_cont(0.5) within group (order by skill) as median_skill, count(*) filter (where skill >= ?) as at_cap', [Profession::SKILL_CAP]);
         $row = $this->read->rows($query)[0] ?? null;
-        if ($row === null || (int) $row['characters'] < (int) config('scarlet.min_characters')) {
+        if ($row === null || (int) $row['characters'] < $this->read->threshold($scope)) {
             return ['median_skill' => null, 'at_cap' => null];
         }
 

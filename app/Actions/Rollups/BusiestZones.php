@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\Rollup;
 use App\Support\RollupRead;
 
@@ -13,21 +14,21 @@ class BusiestZones
      * The zones where most play time was spent, with the deaths in them. Zone ids are uiMap ids, or the negative
      * instance id of a dungeon.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return list<array<string, mixed>> zone_id, zone, seconds, deaths, characters
      */
-    public function handle(int|array|null $rulesetId = null, int $limit = 12): array
+    public function handle(int|array|CharacterScope|null $scope = null, int $limit = 12): array
     {
-        $query = $this->read->from(Rollup::PlayHourlyRuleset, $rulesetId)
+        $query = $this->read->from(Rollup::PlayHourlyRuleset, $scope)
             ->selectRaw('zone_id, (select z.name from zones z where z.id = zone_id) as zone, (sum(ms) / 1000.0)::float as seconds, distinct_count(rollup(characters)) as characters')
             ->whereNotNull('zone_id')
             ->groupBy('zone_id')
             ->orderByRaw('sum(ms) desc')
             ->orderBy('zone_id')
             ->limit($limit);
-        $rows = $this->read->rows($this->read->shown($query));
+        $rows = $this->read->rows($this->read->shown($query, $scope));
 
-        $deaths = array_column($this->read->rows($this->read->from(Rollup::DeathsDailyRuleset, $rulesetId)
+        $deaths = array_column($this->read->rows($this->read->from(Rollup::DeathsDailyRuleset, $scope)
             ->selectRaw('zone_id, sum(deaths) as deaths')
             ->whereIn('zone_id', array_column($rows, 'zone_id'))
             ->groupBy('zone_id')), 'deaths', 'zone_id');

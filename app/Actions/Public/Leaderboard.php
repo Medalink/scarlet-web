@@ -17,13 +17,15 @@ class Leaderboard
     /**
      * One board for the public characters that have counted sessions, best first, a page at a time. Reads
      * `$limit + 1` rows so the caller can tell whether a next page exists. `$viewerAccountId` marks the viewer's own
-     * characters (`mine`) and changes nothing else. Null when the ruleset is not known.
+     * characters (`mine`) and changes nothing else. `$characters` ranks only those characters, private ones included, for a
+     * player's own page. Null when the ruleset is not known.
      *
+     * @param  list<int>|null  $characters
      * @return array{scope: PageScope, board: Board, rows: list<array<string, mixed>>, total: int, classes: list<string>}|null
      */
-    public function handle(Board $board, ?string $ruleset, Server $server, ?string $class, int $offset, int $limit, ?int $viewerAccountId = null): ?array
+    public function handle(Board $board, ?string $ruleset, Server $server, ?string $class, int $offset, int $limit, ?int $viewerAccountId = null, ?array $characters = null): ?array
     {
-        $scope = $this->resolveScope->handle($ruleset, $server);
+        $scope = $this->resolveScope->handle($ruleset, $server, $characters);
         if ($scope === null) {
             return null;
         }

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\RollupRead;
 use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -16,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(RollupRead::class);
     }
 
     /**

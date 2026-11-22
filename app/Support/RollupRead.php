@@ -4,8 +4,10 @@ namespace App\Support;
 
 use Closure;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * What every read of a ruleset aggregate shares: the optional ruleset (none means every ruleset, summed)
@@ -18,24 +20,66 @@ use Illuminate\Support\Facades\DB;
  */
 class RollupRead
 {
-    /** @param  int|list<int>|null  $rulesetId  one ruleset, several (an empty list matches none) or null for all */
-    public function from(Rollup $rollup, int|array|null $rulesetId): Builder
+    private const int DEFINITION_SECONDS = 300;
+
+    /** @var array<string, array{definition: string, table: string}> */
+    private array $definitions = [];
+
+    /**
+     * The aggregate over the scope. A `CharacterScope` reads the aggregate's own definition over only those characters'
+     * rows (docs/DESIGN.md, Rollups, A player's own numbers).
+     *
+     * @param  int|list<int>|CharacterScope|null  $scope  one ruleset, several (an empty list matches none), null for all, or characters
+     */
+    public function from(Rollup $rollup, int|array|CharacterScope|null $scope): Builder
     {
-        return $this->table($rollup->value, $rulesetId);
+        if (! $scope instanceof CharacterScope) {
+            return $this->table($rollup->value, $scope);
+        }
+
+        $source = new Expression('('.$this->narrowed($rollup->value).') as '.$rollup->value); // @phpstan-ignore argument.type (the aggregate's own SQL from the catalog, with one binding)
+
+        return $this->withRulesets(DB::query()->from($source)->addBinding($scope->characterArray(), 'from'), $scope->rulesetIds);
     }
 
-    /** @param  int|list<int>|null  $rulesetId */
-    public function table(string $table, int|array|null $rulesetId): Builder
+    /**
+     * A table, or an aggregate, narrowed to the scope's rulesets, and to its characters when it has them.
+     *
+     * @param  int|list<int>|CharacterScope|null  $scope
+     */
+    public function table(string $table, int|array|CharacterScope|null $scope): Builder
     {
-        return DB::table($table)
-            ->when(is_int($rulesetId), fn (Builder $query): Builder => $query->where('ruleset_id', $rulesetId))
-            ->when(is_array($rulesetId), fn (Builder $query): Builder => $query->whereIn('ruleset_id', $rulesetId));
+        if ($scope instanceof CharacterScope) {
+            return $this->withRulesets(DB::table($table)->whereIn('character_id', $scope->characterIds), $scope->rulesetIds);
+        }
+
+        return $this->withRulesets(DB::table($table), $scope);
     }
 
-    /** Hide the groups that fewer than `config('scarlet.min_characters')` characters contributed to. */
-    public function shown(Builder $query): Builder
+    /**
+     * The fewest characters a group needs to be shown: `config('scarlet.min_characters')` in the public scopes, and one
+     * for the characters of a player, whose own rows are shown whole.
+     *
+     * @param  int|list<int>|CharacterScope|null  $scope
+     */
+    public function threshold(int|array|CharacterScope|null $scope): int
     {
-        return $query->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')]);
+        return $scope instanceof CharacterScope ? 1 : (int) config('scarlet.min_characters');
+    }
+
+    /**
+     * Hide the groups that fewer than the scope's threshold of characters contributed to. Every read of a scope that can
+     * be a `CharacterScope` passes it.
+     *
+     * @param  int|list<int>|CharacterScope|null  $scope
+     */
+    public function shown(Builder $query, int|array|CharacterScope|null $scope = null): Builder
+    {
+        if ($scope instanceof CharacterScope) {
+            return $query;
+        }
+
+        return $query->havingRaw('distinct_count(rollup(characters)) >= ?', [$this->threshold($scope)]);
     }
 
     /** @return list<array<string, mixed>> */
@@ -58,6 +102,49 @@ class RollupRead
         return $this->remember('sum:'.$column, $query, fn (): int|float => $query->sum($column) + 0);
     }
 
+    /** @param  int|list<int>|null  $rulesetId */
+    private function withRulesets(Builder $query, int|array|null $rulesetId): Builder
+    {
+        return $query
+            ->when(is_int($rulesetId), fn (Builder $query): Builder => $query->where('ruleset_id', $rulesetId))
+            ->when(is_array($rulesetId), fn (Builder $query): Builder => $query->whereIn('ruleset_id', $rulesetId));
+    }
+
+    /**
+     * The aggregate's stored definition with its fact table replaced by that table's rows of the characters in one
+     * binding. The definition names the fact table exactly once, after `FROM`, and has no placeholder of its own.
+     */
+    private function narrowed(string $view): string
+    {
+        $stored = $this->definitions[$view] ??= $this->definition($view);
+        $fact = $stored['table'];
+        $narrowed = preg_replace('/\bfrom\s+'.preg_quote($fact, '/').'\b/i', 'FROM (SELECT * FROM '.$fact.' WHERE character_id = ANY (?::bigint[])) '.$fact, $stored['definition'], -1, $count);
+        if ($count !== 1 || ! is_string($narrowed) || str_contains($stored['definition'], '?')) {
+            throw new RuntimeException("The definition of {$view} does not name {$fact} exactly once and nothing else to bind.");
+        }
+
+        return $narrowed;
+    }
+
+    /**
+     * Kept for `DEFINITION_SECONDS`, since a definition changes only with a migration and the catalog read costs about
+     * 5 ms, a third of an own page's time when it is read for each aggregate.
+     *
+     * @return array{definition: string, table: string}
+     */
+    private function definition(string $view): array
+    {
+        /** @var array{definition: string, table: string} */
+        return Cache::remember(self::definitionKey($view), self::DEFINITION_SECONDS, function () use ($view): array {
+            $row = DB::table('timescaledb_information.continuous_aggregates')->where('view_name', $view)->first(['view_definition', 'hypertable_name']);
+            if ($row === null) {
+                throw new RuntimeException("{$view} is not a continuous aggregate.");
+            }
+
+            return ['definition' => rtrim(trim((string) $row->view_definition), ';'), 'table' => (string) $row->hypertable_name];
+        });
+    }
+
     /** @param  Closure(): mixed  $read */
     private function remember(string $kind, Builder $query, Closure $read): mixed
     {
@@ -68,6 +155,11 @@ class RollupRead
         );
 
         return $wrapped[0];
+    }
+
+    private static function definitionKey(string $view): string
+    {
+        return 'rollup-definition:'.$view;
     }
 
     private static function key(string $kind, Builder $query): string

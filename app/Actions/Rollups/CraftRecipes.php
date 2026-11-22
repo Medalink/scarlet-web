@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\NameKind;
 use App\Support\Profession;
 use App\Support\Rollup;
@@ -15,22 +16,22 @@ class CraftRecipes
      * The recipes with the most crafts. `name` is the recipe's spell and `item` the item the crafts of it made most often,
      * each null while the dictionary has no name for it, and `item_id` is null when no craft of it named an item.
      * `median_skill` is the median rank before a craft, from a percentile sketch. A recipe fewer than
-     * `config('scarlet.min_characters')` characters crafted is left out.
+     * the scope's threshold of characters crafted is left out.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return list<array{recipe_id: int, name: string|null, item_id: int|null, item: string|null, crafts: int, made: int, skill_ups: int, characters: int|null, median_skill: float|null}>
      */
-    public function handle(Profession $profession, int|array|null $rulesetId = null, int $limit = 12): array
+    public function handle(Profession $profession, int|array|CharacterScope|null $scope = null, int $limit = 12): array
     {
-        $query = $this->read->from(Rollup::CraftsDailyRecipeRuleset, $rulesetId)
+        $query = $this->read->from(Rollup::CraftsDailyRecipeRuleset, $scope)
             ->where('profession_id', $profession->skillLine())
             ->selectRaw('recipe_id, (select n.name from names n where n.kind = ? and n.id = recipe_id order by n.votes desc, n.name limit 1) as name, sum(crafts) as crafts, coalesce(sum(made), 0) as made, sum(skill_ups) as skill_ups, distinct_count(rollup(characters)) as characters, approx_percentile(0.5, rollup(skill_digest)) as median_skill', [NameKind::Spell->value])
             ->groupBy('recipe_id')
             ->orderByRaw('sum(crafts) desc')
             ->orderBy('recipe_id')
             ->limit($limit);
-        $rows = $this->read->rows($this->read->shown($query));
-        $items = $this->items($profession, $rulesetId, array_map(fn (array $row): int => (int) $row['recipe_id'], $rows));
+        $rows = $this->read->rows($this->read->shown($query, $scope));
+        $items = $this->items($profession, $scope, array_map(fn (array $row): int => (int) $row['recipe_id'], $rows));
 
         return array_map(fn (array $row): array => [
             'recipe_id' => (int) $row['recipe_id'],
@@ -46,16 +47,16 @@ class CraftRecipes
     }
 
     /**
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @param  list<int>  $recipes
      * @return array<int, array{item_id: int, name: string|null}> recipe id => the item its crafts made most often
      */
-    private function items(Profession $profession, int|array|null $rulesetId, array $recipes): array
+    private function items(Profession $profession, int|array|CharacterScope|null $scope, array $recipes): array
     {
         if ($recipes === []) {
             return [];
         }
-        $query = $this->read->from(Rollup::CraftsDailyRecipeRuleset, $rulesetId)
+        $query = $this->read->from(Rollup::CraftsDailyRecipeRuleset, $scope)
             ->where('profession_id', $profession->skillLine())
             ->whereIn('recipe_id', $recipes)
             ->whereNotNull('item_id')
@@ -66,7 +67,7 @@ class CraftRecipes
             ->orderBy('item_id');
 
         $items = [];
-        foreach ($this->read->rows($this->read->shown($query)) as $row) {
+        foreach ($this->read->rows($this->read->shown($query, $scope)) as $row) {
             $items[(int) $row['recipe_id']] ??= ['item_id' => (int) $row['item_id'], 'name' => $row['name'] === null ? null : (string) $row['name']];
         }
 

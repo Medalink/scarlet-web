@@ -4,6 +4,7 @@ namespace App\Actions\Public;
 
 use App\Actions\Rollups\BusiestZones;
 use App\Models\MapRect;
+use App\Support\CharacterScope;
 
 class MapZones
 {
@@ -13,13 +14,13 @@ class MapZones
      * The zone rectangles of the world with what was recorded in each, for the map's readout and its zone names.
      * A zone with no recorded play has no `seconds`.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return list<array{id: int, name: string, u0: float, v0: float, u1: float, v1: float, seconds: float|null, deaths: int|null, characters: int|null}>
      */
-    public function handle(int|array|null $rulesetId = null): array
+    public function handle(int|array|CharacterScope|null $scope = null): array
     {
         $stats = [];
-        foreach ($this->busiest->handle($rulesetId, 500) as $row) {
+        foreach ($this->busiest->handle($scope, 500) as $row) {
             $stats[(int) $row['zone_id']] = $row;
         }
 

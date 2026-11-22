@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\GatherKind;
 use App\Support\Rollup;
 use App\Support\RollupRead;
@@ -13,16 +14,16 @@ class GatherItemTotals
 
     /**
      * How many different items the attempts gave, and how many of those item rows were a container that was opened later
-     * in the scope. An item fewer than `config('scarlet.min_characters')` characters got is not counted among the items.
+     * in the scope. An item fewer than the scope's threshold of characters got is not counted among the items.
      * An attempt that gave two such containers counts twice in `container_catches`: no key ties an item row to its cast.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      * @return array{items: int, container_catches: int}
      */
-    public function handle(GatherKind $kind, int|array|null $rulesetId = null): array
+    public function handle(GatherKind $kind, int|array|CharacterScope|null $scope = null): array
     {
-        $given = fn () => $this->read->from(Rollup::GatherItemsDailyRuleset, $rulesetId)->where('kind', $kind->value);
-        $items = $this->read->shown($given()->whereNull('container_item_id')->selectRaw('item_id')->groupBy('item_id'));
+        $given = fn () => $this->read->from(Rollup::GatherItemsDailyRuleset, $scope)->where('kind', $kind->value);
+        $items = $this->read->shown($given()->whereNull('container_item_id')->selectRaw('item_id')->groupBy('item_id'), $scope);
         $opened = $given()->whereNotNull('container_item_id')->select('container_item_id');
         $caught = $given()->whereNull('container_item_id')->whereIn('item_id', $opened)->selectRaw('coalesce(sum(items), 0) as caught');
 

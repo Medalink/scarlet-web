@@ -11,22 +11,25 @@ class ResolveScope
     /**
      * The rulesets a page reads: the one whose slug is given, else the ones of the chosen server, else all. An address
      * from before a ruleset was its kind (a slug of signals, with or without the kind token, or a row id) names the row
-     * that took over that ruleset's sessions. Null when the slug names no ruleset.
+     * that took over that ruleset's sessions. Null when the slug names no ruleset. `$characters` are the characters of one
+     * account for a player's own page; null is everyone's.
+     *
+     * @param  list<int>|null  $characters
      */
-    public function handle(?string $rulesetSlug, Server $server = Server::All): ?PageScope
+    public function handle(?string $rulesetSlug, Server $server = Server::All, ?array $characters = null): ?PageScope
     {
         if ($rulesetSlug === null || $rulesetSlug === '') {
             $mode = $server->warMode();
             if ($mode === null) {
-                return new PageScope(null, $server, null);
+                return new PageScope(null, $server, null, $characters);
             }
 
-            return new PageScope(null, $server, array_values(Ruleset::query()->whereNull('merged_into')->where('war_mode', $mode)->pluck('id')->map(fn (mixed $id): int => (int) $id)->all()));
+            return new PageScope(null, $server, array_values(Ruleset::query()->whereNull('merged_into')->where('war_mode', $mode)->pluck('id')->map(fn (mixed $id): int => (int) $id)->all()), $characters);
         }
 
         $ruleset = $this->taken(ctype_digit($rulesetSlug) ? Ruleset::query()->find((int) $rulesetSlug) : $this->bySlug($rulesetSlug));
 
-        return $ruleset === null ? null : new PageScope($ruleset, Server::All, $ruleset->id);
+        return $ruleset === null ? null : new PageScope($ruleset, Server::All, $ruleset->id, $characters);
     }
 
     /** The row that holds the sessions of this one: the row itself, or the row it was merged into. */

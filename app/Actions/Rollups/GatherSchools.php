@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CharacterScope;
 use App\Support\GatherKind;
 use App\Support\Rollup;
 use App\Support\RollupRead;
@@ -13,11 +14,11 @@ class GatherSchools
     /**
      * The looted attempts whose loot window was not the bobber's: a catch from a school.
      *
-     * @param  int|list<int>|null  $rulesetId
+     * @param  int|list<int>|CharacterScope|null  $scope
      */
-    public function handle(GatherKind $kind, int|array|null $rulesetId = null): int
+    public function handle(GatherKind $kind, int|array|CharacterScope|null $scope = null): int
     {
-        $query = $this->read->from(Rollup::GathersDailySourceRuleset, $rulesetId)
+        $query = $this->read->from(Rollup::GathersDailySourceRuleset, $scope)
             ->where('kind', $kind->value)
             ->where('source_id', '<>', GatherKind::BOBBER)
             ->selectRaw('coalesce(sum(looted), 0) as looted');
