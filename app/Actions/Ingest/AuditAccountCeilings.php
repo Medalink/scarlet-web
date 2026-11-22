@@ -2,9 +2,6 @@
 
 namespace App\Actions\Ingest;
 
-use App\Support\AddonKind;
-use App\Support\ClaimStatus;
-use App\Support\GatherKind;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -17,6 +14,8 @@ class AuditAccountCeilings
     private const string LIFETIME = 'life';
 
     private const string SCOPE_ACCOUNT = 'a';
+
+    public function __construct(private readonly SumScarletAndClaims $sums) {}
 
     /**
      * Check 8 of docs/DESIGN.md, Addon counts, Checks (rule 7): for each store that keeps an account total, its latest
@@ -34,7 +33,7 @@ class AuditAccountCeilings
             if ($characterId !== null && ! in_array($characterId, $characters, true)) {
                 continue;
             }
-            $sum = $this->sum($read, $characters);
+            $sum = $this->sums->handle($read['kind'], $characters, $read['from'], $read['to']);
             foreach (self::METRICS as $metric) {
                 $ceiling = (float) ($read['amounts'][$metric] ?? 0);
                 if (isset($read['amounts'][$metric]) && $sum[$metric] > $ceiling * self::TOLERANCE) {
@@ -89,43 +88,5 @@ class AuditAccountCeilings
             SQL,
             [self::SCOPE_ACCOUNT, self::LIFETIME, $read['origin'], $read['store'], $read['kind'], $read['dims'], $read['to']],
         )));
-    }
-
-    /**
-     * @param  array{origin: string, store: string, kind: string, dims: string, from: int, to: int, amounts: array<string, int|float>}  $read
-     * @param  list<int>  $characters
-     * @return array<string, int|float>
-     */
-    private function sum(array $read, array $characters): array
-    {
-        $sum = ['casts' => 0, 'landed' => 0, 'items' => 0];
-        if (AddonKind::tryFrom($read['kind'])?->hasRows() !== true) {
-            return $sum;
-        }
-        $fish = GatherKind::Fish->value;
-        $gathers = DB::table('gathers')->whereIn('character_id', $characters)->where('kind', $fish)
-            ->whereRaw('at between to_timestamp(?) and to_timestamp(?)', [$read['from'], $read['to']])
-            ->selectRaw('count(*) as casts, count(*) filter (where looted) as landed')->first();
-        $sum['casts'] = (int) ($gathers->casts ?? 0);
-        $sum['landed'] = (int) ($gathers->landed ?? 0);
-        $sum['items'] = (int) DB::table('gather_items')->whereIn('character_id', $characters)->where('kind', $fish)->whereNull('container_item_id')
-            ->whereRaw('at between to_timestamp(?) and to_timestamp(?)', [$read['from'], $read['to']])->sum('quantity');
-
-        $counted = DB::select(
-            <<<'SQL'
-            select a.metric, sum((a.value #>> '{}')::numeric) as total
-            from addon_claims c cross join lateral jsonb_each(c.counted) as a(metric, value)
-            where c.character_id = any(?::bigint[]) and c.kind = ? and c.status in (?, ?) and c.to_at between ? and ?
-            group by a.metric
-            SQL,
-            ['{'.implode(',', $characters).'}', $read['kind'], ...ClaimStatus::adding(), $read['from'], $read['to']],
-        );
-        foreach ($counted as $row) {
-            if (isset($sum[(string) $row->metric])) {
-                $sum[(string) $row->metric] += (int) $row->total;
-            }
-        }
-
-        return $sum;
     }
 }

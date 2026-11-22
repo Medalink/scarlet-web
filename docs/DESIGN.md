@@ -491,6 +491,13 @@ after that.
   figures show a dash and the modules that have no rows are not drawn. The note that Scarlet has recorded too little
   does not show beside a table of numbers. A new player's history in an addon is part of the totals from the first
   upload, public pages (under the `scarlet.min_characters` rule above), the account's own page and the character page.
+- The account page. `/account/characters` shows, for the signed-in account only, each account-scope `life` claim once per
+  origin, store, kind and dims, at its latest read, under a heading such as "Mastercraft lifetime fishing": the addon's
+  casts, catches and fish, its `from_at` and `to_at`, and under it what Scarlet's rows plus the counted claims of the
+  characters of the account that carry the read add up to inside `[from, to]`, the sum of rule 7 and of the audit
+  (`SumScarletAndClaims`). A sum more than 2.5% above a figure is written under the table as a note. A read is left out
+  while a character that carries it has a null reconcile version, and the flag above switches it off with the other
+  reads. The public API and the public pages never read it.
 - The character page. The Fish caught tile adds the claims' `landed` and says "From addons" with their count, to the
   character's owner, and to a visitor only where `scarlet.min_characters` is 1. A character whose only records are
   those catches shows the Records strip with that tile alone. Most caught, the feats and the standings stay Scarlet's.

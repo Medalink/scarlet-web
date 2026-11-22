@@ -20,6 +20,7 @@
  * It needs the app's database settings, which boot.mjs hands to its command. It is not part of the default lane.
  *
  * With both installs linked it also reads the public and the account's own fishing page and the character's page.
+ * The account's characters page shows each lifetime read once, with what Scarlet and the counted addons add up to inside its window and the ceiling note of rule 7.
  * By default they show Scarlet, what the addons added and the total, which equal the database's; run with
  * ADDON_COUNTS_PAGES=false (boot.mjs passes it on) they show Scarlet's own numbers and nothing from addons. ADDON_PAGES_DIR=<folder> keeps the pages read, for a before and after comparison.
  */
@@ -569,6 +570,46 @@ async function linked() {
   const audited = artisan("addons:audit");
   check("addons:audit passes after the link", audited.status === 0, audited.stdout + audited.stderr);
   await pages(after);
+  await accountReferences(jar, after);
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const shownDay = (epoch) => {
+  const d = new Date(epoch * 1000);
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+};
+
+async function accountReferences(jar, state) {
+  const read = async () => plain(expectStatus(await http.page("/account/characters", { jar }), 200, "GET /account/characters signed in").text);
+  const heading = "Mastercraft lifetime fishing";
+  let shown = await read();
+  if (!PAGES_ON) {
+    check("with the flag off the characters page reads no account claim", !shown.includes(heading));
+    return;
+  }
+  for (let i = 0; i < 40 && !shown.includes(heading); i += 1) {
+    await sleep(POLL_MS);
+    shown = await read();
+  }
+  const labels = ["Casts", "Catches", "Fish"];
+  const total = state.total.map(count).join(" ");
+  const expected = [];
+  const notes = [];
+  for (const [, , from, to, amounts] of LIFETIME_CLAIMS) {
+    const claimed = amounts.split(";").map((pair) => Number(pair.split("=")[1]));
+    expected.push(`Mastercraft ${shownDay(from)} ${shownDay(to)} ${claimed.map(count).join(" ")} Scarlet and counted addons ${shownDay(from)} ${shownDay(to)} ${total}`);
+    claimed.forEach((value, k) => {
+      if (state.total[k] > value * 1.025) notes.push(`${labels[k]}: ${count(state.total[k])} against ${count(value)} in Mastercraft, ${((state.total[k] / value - 1) * 100).toFixed(1)}% above.`);
+    });
+  }
+  const start = shown.indexOf(heading);
+  const module = start < 0 ? "" : shown.slice(start, start + 1200);
+  console.log(`account characters page: ${module}`);
+  check(`the characters page shows "${heading}" once`, shown.split(heading).length === 2, module);
+  check(`its two reads show what Mastercraft counted beside Scarlet and the counted addons, ${state.total.join("/")}`, expected.every((row) => shown.includes(row)), module);
+  check("each read shows once though two characters carry it", shown.split("2,488").length === 2 && shown.split("2,254").length === 2);
+  check("the ceiling note shows for the read of 17 Nov 2026 and for no other", notes.length === 3 && notes.every((note) => shown.includes(note)), notes.join(" | "));
+  check("the read of 6 Nov 2026 raises no note", !/against 2,/.test(shown));
 }
 
 async function main() {

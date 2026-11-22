@@ -45,6 +45,14 @@
       <x-table style="margin-top:1.1rem" :columns="$d['imported']['columns']" :rows="$d['imported']['rows']" />
     </x-module>
 @endif
+@foreach ($d['references'] as $i => $reference)
+    <x-module span="w12" :first="true" :last="true" id="h-reference-{{ $i }}" :heading="$reference['heading']">
+      <x-table style="margin-top:1.1rem" :columns="$reference['table']['columns']" :rows="$reference['table']['rows']" />
+@foreach ($reference['notes'] as $note)
+      <x-note>{{ $note }}</x-note>
+@endforeach
+    </x-module>
+@endforeach
     <x-module span="w12" :first="true" :last="true" id="h-together" heading="Played together">
 @if ($d['together'])
       <x-table style="margin-top:1.1rem" :columns="$d['together']['columns']" :rows="$d['together']['rows']" />
