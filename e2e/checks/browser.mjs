@@ -1,0 +1,95 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { Browser, browserCommand } from "../cdp.mjs";
+import { NAME, Skip, failOn, pool } from "../support.mjs";
+
+const WIDE = ["/", "/stats", "/map", "/leaderboards", "/search?q=Testa", `/c/${NAME}`];
+const NARROW = ["/", "/stats"];
+const TABS = 4;
+const SUGGEST_MS = 5000;
+const MAP_ART_ABSENT = /map-tiles\/manifest\.json|The map manifest answered 404/;
+
+function browserOf(ctx) {
+  if (!ctx.browser) throw new Skip("no browser is running: the window check did not pass");
+  return ctx.browser;
+}
+
+export async function hasNoWindow(ctx) {
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "scarlet-web-e2e-browser-"));
+  ctx.browser = await Browser.start(scratch, browserCommand(ctx.browserPath), (url) => ctx.http.count(url));
+  if (process.platform !== "win32") {
+    throw new Skip(`the window check reads the Windows window handle; on ${process.platform} the browser starts headless and is not asked`);
+  }
+  const handle = ctx.browser.windowHandle();
+  if (handle !== "0") {
+    ctx.browser.stopNow();
+    ctx.browser = null;
+    throw new Error(`the browser has a window (MainWindowHandle ${handle}); it was stopped at once and no browser check runs`);
+  }
+}
+
+async function withScreenshot(ctx, tab, label, error) {
+  try {
+    fs.mkdirSync(ctx.keepDir, { recursive: true });
+    const file = path.join(ctx.keepDir, `${label.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}.png`);
+    fs.writeFileSync(file, await tab.screenshot());
+    return `${error.message}\n    screenshot: ${file}`;
+  } catch {
+    return error.message;
+  }
+}
+
+async function mapArtInstalled(ctx) {
+  ctx.mapArt ??= (await ctx.http.request("/map-tiles/manifest.json")).status === 200;
+  return ctx.mapArt;
+}
+
+export async function mapArtIsServed(ctx) {
+  if (await mapArtInstalled(ctx)) return;
+  throw new Skip("this server has no map art (storage/app/maps/manifest.json), so the 404 of its manifest and the map script's error about it are not counted against the pages");
+}
+
+function cleanPages(routes, width, strict) {
+  return async (ctx) => {
+    const browser = browserOf(ctx);
+    const mapArt = await mapArtInstalled(ctx);
+    const problems = await pool(routes, TABS, async (route) => {
+      let tab;
+      try {
+        tab = await browser.open(ctx.base + route, { width, height: width > 600 ? 800 : 844 });
+        const found = strict ? tab.problems.filter((problem) => mapArt || !MAP_ART_ABSENT.test(problem)) : [];
+        const overflow = await tab.overflow();
+        if (overflow > 0) found.push(`the page is ${overflow}px wider than the window`);
+        if (found.length === 0) return null;
+        return `${route} at ${width}: ${await withScreenshot(ctx, tab, `${route === "/" ? "home" : route}-${width}`, new Error(found.join(" | ")))}`;
+      } catch (error) {
+        return `${route} at ${width}: ${tab ? await withScreenshot(ctx, tab, `${route === "/" ? "home" : route}-${width}`, error) : error.message}`;
+      } finally {
+        await tab?.close();
+      }
+    });
+    failOn(problems, routes.length, `pages at ${width} wide`);
+  };
+}
+
+export const pagesRunClean = cleanPages(WIDE, 1280, true);
+export const narrowPagesFit = cleanPages(NARROW, 390, false);
+
+export async function searchSuggestsWhileTyping(ctx) {
+  const browser = browserOf(ctx);
+  const tab = await browser.open(ctx.base + "/search", { width: 1280, height: 800 });
+  try {
+    await tab.evaluate(`document.querySelector("#sq").focus()`);
+    await tab.send("Input.insertText", { text: "Testa" });
+    await tab.until(
+      `[...document.querySelectorAll(".find-opt")].some((option) => option.textContent.includes(${JSON.stringify(NAME)}))`,
+      SUGGEST_MS,
+      `typing Testa into the search box never listed ${NAME} in the suggestions (${tab.problems.join(" | ") || "no page errors"})`,
+    );
+  } catch (error) {
+    throw new Error(await withScreenshot(ctx, tab, "search-typing", error));
+  } finally {
+    await tab.close();
+  }
+}
