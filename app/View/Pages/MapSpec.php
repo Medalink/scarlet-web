@@ -36,7 +36,7 @@ final class MapSpec
     }
 
     /**
-     * A map of cells the page already has, on the finest grid: cell_i, cell_j and the counter of each.
+     * A map of cells the page already has, on the finest grid, as one flat list: cell_i, cell_j and the counter of each.
      *
      * @param  list<array{0: int, 1: int, 2: int}>  $cells
      * @param  array{0: float, 1: float, 2: float, 3: float}|null  $fit
@@ -50,7 +50,7 @@ final class MapSpec
             ...$extra,
             'fit' => $fit,
             'zones' => [],
-            'layers' => ['heat' => ['grid' => [WorldLayer::Paths->columns()], 'cells' => $cells], 'marks' => $marks],
+            'layers' => ['heat' => ['grid' => [WorldLayer::Paths->columns()], 'cells' => $cells === [] ? [] : array_merge(...$cells)], 'marks' => $marks],
         ];
     }
 

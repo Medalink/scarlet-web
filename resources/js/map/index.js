@@ -6,7 +6,7 @@
 // options
 //   manifestUrl   the tile manifest (required); tiles are read from the same folder, under the manifest's version
 //   layers        { heat, dots, paths, marks }: heat is { source: { layer, levels, ruleset, creature } } read from
-//                 `densityUrl` a level at a time, or { grid: [columns], cells: [[i, j, counter], ...] } on a grid of
+//                 `densityUrl` a level at a time, or { grid: [columns], cells: [i, j, counter, ...] } on a grid of
 //                 columns by two thirds as many rows; dots [[u, v], ...]; paths [{ points: [[u, v], ...], mode }];
 //                 marks [{ kind: kill|death|quest|level, u, v }]
 //   densityUrl    where a heat source is read (default /api/v1/public/map/density)

@@ -201,7 +201,7 @@ export function decodeCells(columns, pairs) {
 const columnsOf = (level) => BASE_COLUMNS * 2 ** level;
 
 /**
- * The heat of a map: cells the page gave (`{ grid: [columns], cells: [[i, j, counter], ...] }`, one surface, drawn up to a
+ * The heat of a map: cells the page gave (`{ grid: [columns], cells: [i, j, counter, ...] }`, one surface, drawn up to a
  * replay's cell count) or a source (`{ layer, levels, ruleset, creature }`) read from `endpoint` a level at a time, the
  * finest level whose cells are at least `FINER_AT` px wide, keeping the level on screen until the next one is ready.
  */
@@ -217,7 +217,7 @@ export class Heat {
         this.fixed = null;
         if (spec?.cells) {
             const columns = spec.grid[0];
-            const flat = Float32Array.from(spec.cells.flat());
+            const flat = Float32Array.from(spec.cells);
             this.fixed = new Surface(columns, Math.round((columns * 2) / 3), flat, true);
             this.columns = columns;
         }
