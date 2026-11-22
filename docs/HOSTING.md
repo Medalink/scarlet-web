@@ -186,6 +186,38 @@ does (health check, reload, drain), so it also drops no request. Migrations are 
 rollback changes code only; the expand-first rule above is what keeps the older code working. A second `rollback`
 goes forward again.
 
+## Deploy ring
+
+Every ship to `main` deploys by itself. The flow's `live` ring (roster, `flows/scarlet-web.toml`) runs
+`scripts/deploy/ring.sh` on medaware at the shipped commit:
+
+| Stage | What it does | When it fails |
+|---|---|---|
+| `deploy` | Builds the image, pushes its new layers to the droplet's registry and runs `deploy/rollout.sh`, as `bin/deploy` does | The old release keeps serving |
+| `pages` | Reads the release that serves and requests `/up`, `/stats`, `/leaderboards`, `/rulesets`, `/talents`, `/map`, `/search` and the public API with a `v=<release>` parameter no cache has seen, so each answer is rendered by the new release | The ring rolls back |
+| `rollback` | `rollout.sh --rollback`, only when the failed commit is the release that serves | The failure is posted with the log |
+
+The ring uses a key of its own, `~/.config/scarlet-web/ring_ed25519` on medaware. Its line in
+`~ops/.ssh/authorized_keys2` on the droplet forces `/usr/local/sbin/scarlet-deploy-entry` (`deploy/ring-entry.sh`)
+and allows one port forward, to the loopback registry. The entry takes nine verbs (lock, unlock, registry, pull,
+rollout, rollback, release, sums, status) and a release must be 12 hex digits. The key gets no shell, cannot write a
+file, cannot install a deploy folder and is not on the database host. The ops key stays on medaviper.
+
+What the ring cannot do, and `bin/deploy` with the ops key still does:
+
+- **A change under `deploy/`.** The ring compares `deploy/` at the commit with the droplet's (`sums`). When they
+  differ it prints `skip:` and deploys nothing, for that commit and every later one, until `bin/deploy` runs once.
+- Everything else `bin/deploy` lists: the server setup, TLS, DNS, cache rules, backups, maps and the database host.
+
+Set up or rotate the key:
+
+```sh
+ssh medaware 'mkdir -p -m 700 ~/.config/scarlet-web && ssh-keygen -q -t ed25519 -N "" -C scarlet-ring@medaware -f ~/.config/scarlet-web/ring_ed25519 && cat ~/.config/scarlet-web/ring_ed25519.pub' > ring.pub
+bin/deploy ring-key ring.pub      # with the ops key: installs the entry and replaces authorized_keys2
+```
+
+To stop the ring: `flow freeze scarlet-web --ring live`, or empty `~ops/.ssh/authorized_keys2` on the droplet.
+
 ## Logs and shells
 
 ```sh

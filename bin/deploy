@@ -15,6 +15,8 @@
 #   bin/deploy maps <folder>    copy map tiles (a folder with manifest.json) to the droplet's disk, outside the image
 #   bin/deploy bootstrap [ref]  first install: server, DNS, certificate, release, strict TLS, origin pulls
 #   bin/deploy server | tls | dns | strict | aop     the steps of bootstrap, each safe to run again
+#   bin/deploy ring-key <file>  let the flow ring deploy: install deploy/ring-entry.sh on the droplet and allow the public
+#                               key in <file> to run it and nothing else (docs/HOSTING.md, "Deploy ring")
 #   bin/deploy ssh [command]    a shell on the droplet
 #   bin/deploy db-server        install the database host (deploy/server-setup-db.sh)
 #   bin/deploy db-move [rollback|abort|retire|finish]   move the database to the database host, or back; see deploy/db-move.sh
@@ -387,6 +389,22 @@ step_tls() {
   rm -rf "$tmp"
 }
 
+# The ring's key goes in authorized_keys2, a file of its own, so the ops key's line is never rewritten. sshd must read
+# that file (its default does); when it does not, nothing is changed.
+step_ring_key() {
+  local pub
+  pub=$(tr -d '\r\n' < "$1")
+  case $pub in
+    ssh-ed25519\ *) ;;
+    *) echo "deploy: $1 does not hold an ssh-ed25519 public key" >&2; exit 1 ;;
+  esac
+  srv 'sudo sshd -T | grep -i "^authorizedkeysfile" | grep -q "authorized_keys2"' || { echo "deploy: sshd on $host does not read ~/.ssh/authorized_keys2; nothing changed" >&2; exit 1; }
+  srv 'sudo install -o root -g root -m 755 /dev/stdin /usr/local/sbin/scarlet-deploy-entry' < "$here/deploy/ring-entry.sh"
+  printf 'restrict,port-forwarding,permitopen="127.0.0.1:%s",command="/usr/local/sbin/scarlet-deploy-entry" %s\n' "$registry_port" "$pub" \
+    | srv 'umask 077 && cat > ~/.ssh/authorized_keys2.new && mv ~/.ssh/authorized_keys2.new ~/.ssh/authorized_keys2'
+  echo "deploy: the ring key may now run /usr/local/sbin/scarlet-deploy-entry on $host and nothing else"
+}
+
 droplet_address() { srv "ip -$1 route get $2 | grep -o 'src [^ ]*' | cut -d' ' -f2"; }
 
 step_dns() {
@@ -526,6 +544,7 @@ case "${1:-release}" in
     sleep 5
     curl -s -o /dev/null -w 'through Cloudflare (origin pulls): %{http_code}\n' https://scarletweb.io/up
     ;;
+  ring-key) step_ring_key "${2:?the file with the public key of the ring}" ;;
   ssh) shift; srv "$@" ;;
   help | -h | --help) sed -n '2,26p' "$0" ;;
   *) release "$1" ;;
