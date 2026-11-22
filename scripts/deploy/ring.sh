@@ -2,7 +2,8 @@
 # The `live` ring of scarlet-web's flow (roster, flows/scarlet-web.toml). The flow engine runs it on medaware, in a
 # checkout at $FLOW_SHA, after every ship to main:
 #
-#   ring.sh deploy     build the image of $FLOW_SHA, send its new layers to the droplet and roll it out
+#   ring.sh deploy     build the image of $FLOW_SHA, send its new layers to the droplet and roll it out; medaware
+#                      then keeps that image and the $kept_images - 1 newest others, and drops older ones
 #   ring.sh check      the release that serves is $FLOW_SHA and the public pages answer 200 from the origin, uncached
 #   ring.sh rollback   move visitors back to the release before, only when $FLOW_SHA is the one that serves
 #
@@ -21,6 +22,7 @@ sha=${FLOW_SHA:?the flow engine sets FLOW_SHA}
 release=$(printf '%s' "$sha" | cut -c1-12)
 skipped=${TMPDIR:-/tmp}/scarlet-ring-skipped-$release
 rollout_reads='[ *][.]/(rollout[.]sh|dc|compose[.]yaml|compose[.]redis-vpc[.]yaml|nginx/.*)$'
+kept_images=5
 
 ssh_opts="-i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30"
 entry() { ssh $ssh_opts "ops@$host" "$@"; }
@@ -77,6 +79,9 @@ deploy() {
   entry pull "$release"
   entry rollout "$release"
   echo "ring: $release is live"
+  sudo -n docker images scarlet-web-app --format '{{.Tag}}' | grep -vx "$release" | tail -n +"$kept_images" | while read -r tag; do
+    sudo -n docker rmi "scarlet-web-app:$tag" > /dev/null 2>&1 || true
+  done
 }
 
 check() {
