@@ -281,8 +281,8 @@ metadata lets a delete by character and session skip the other sessions' batches
 Measured on 2026-11-22 on throwaway droplets at production sizes in nyc3: `scarlet-load-app` (s-2vcpu-4gb), `scarlet-load-db`
 (s-1vcpu-2gb, 50 GB volume) and `scarlet-load-gen` (s-4vcpu-8gb, runs `tools/loadgen` and `oha` over the VPC). The stack is
 the production compose files with the database on its own host, pgBackRest archiving to R2 under `pgbackrest-load`, and the
-rate limits lifted through `SCARLET_RATE_*`. They ran about 2.8 hours and were destroyed afterwards (`bin/load down`); the
-three droplets and the volume cost about $0.37. `bin/load` pins every command to `scarlet-load-*`, and the generator refuses
+rate limits lifted through `SCARLET_RATE_*`. They ran from 01:32 to 04:14 UTC (2.7 hours) and were destroyed afterwards
+(`bin/load down`); at $89 a month for the three droplets and the volume that is about $0.36. `bin/load` pins every command to `scarlet-load-*`, and the generator refuses
 any host that is not a `scarlet-load-*` name on a private or tailnet address.
 
 **What the generator sends.** `loadgen prepare` builds the parts of three real recordings (characters A, B and C: 145, 1,660
@@ -358,9 +358,9 @@ play per hour, whether they arrive as new installs or as live uploads; that is t
 | `pgbackrest backup --type=full` | 126 s (14 s of it expiring the previous full): 180 MB of database, 33.7 MB in R2 |
 | `pgbackrest --delta restore` into a scratch container, then start and `select count(*)` | 64 s to restore 172 MB, 3 s to start; 10,198 parts and 1,003 sessions, equal to the live database |
 
-Scaled to 1,000 character-weeks that is about 8.8 GB compressed (19.9 GB without), 12 hours of decoding on this database
-size, and a full backup and a restore of a few minutes each for the first 10 GB (the backup and restore of a larger database
-were not timed). The aggregates grow with the characters (rows per character, cell and day), so they, not the fact tables,
+Scaled to 1,000 character-weeks that is about 8.8 GB compressed (19.9 GB without) and 12 hours of decoding. The backup ran
+at 1.6 MB/s of database (180 MB in 112 s) and the restore at 2.7 MB/s, so at 8.8 GB they would take about 1.5 hours and 1
+hour if they scale linearly; they were not timed at that size. The aggregates grow with the characters (rows per character, cell and day), so they, not the fact tables,
 are the number to watch. One recording was re-timed for every character, so all virtual characters walk the same places;
 real characters may make the heat aggregates larger or smaller.
 
@@ -384,8 +384,8 @@ requests a second on the cheapest endpoint and 3 to 17 on the pages.
 - 1,000 character-weeks, and the refresh, backup and restore times at that size (16 were run).
 - Each flip under load (resize, second ingest droplet, replica, PgBouncer): those items had not landed, and the environment
   has one app and one database droplet.
-- Item 5's effect on refresh cost: the load data is dated within three weeks of now, so almost no chunk was old enough for
-  the 3-day refresh window to matter.
+- Item 5's refresh window against a long history: the ramps held at most a week of data, too little for a refresh of the whole
+  table to cost much more than one of the last 3 days. Production's history is what will show it.
 - The volume's own limit. It never wrote more than 15.5 MB/s.
 - A steady mix of live uploads: every virtual install sends its whole history at once, which is the hardest case.
 - Every ingest condition above was one window; differences under 10 percent are noise.

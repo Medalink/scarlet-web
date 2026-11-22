@@ -623,7 +623,8 @@ The database host adds $17 a month. Prices are from DigitalOcean's size list, re
 
 `bin/load up` builds `scarlet-load-app`, `scarlet-load-db` (with its own volume) and `scarlet-load-gen` at production sizes
 from this checkout, with the rate limits lifted and its own R2 prefixes, and `bin/load down` removes them, their volume,
-firewalls and tailnet nodes. Run it only for a test and destroy it after (about $0.13 an hour). Every command pins
+and firewalls (about $0.13 an hour while up). It logs each droplet out of Tailscale before deleting it, but the CLI cannot
+remove the node, so delete `scarlet-load-*` nodes in the Tailscale admin console. Run it only for a test. Every command pins
 `DEPLOY_HOST` and `DEPLOY_DB_HOST` to `scarlet-load-*`, so none of them reaches production. `tools/loadgen` is the traffic
 source; what it measured and how to rerun it is in `docs/MEASUREMENTS.md`, "Load tests".
 

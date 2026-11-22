@@ -7,7 +7,7 @@
 //   node deploy/provision.mjs web --env load  the rehearsal app droplet scarlet-load-app
 //   node deploy/provision.mjs db --env load   the rehearsal database droplet scarlet-load-db
 //   node deploy/provision.mjs gen --env load  the load generator droplet scarlet-load-gen (it alone may reach the rehearsal app on 80 and 443)
-//   node deploy/provision.mjs destroy --env load   delete the rehearsal droplets, volume, firewalls and tags (only resources named scarlet-load*)
+//   node deploy/provision.mjs destroy --env load   delete the rehearsal droplets, volume, firewalls and tags (without --set only scarlet-load-app, -db, -gen, -db-data and their tags)
 //   node deploy/provision.mjs retag           give the app droplet the tag scarlet-app, let 5432 in from that tag only and take
 //                                             scarlet-web off the database droplet
 //   node deploy/provision.mjs web --name scarlet-app-2    a further app droplet (scarlet-app-<x>; in the load environment
@@ -85,21 +85,34 @@ async function api(method, path, body) {
 const mine = (name) => /^scarlet-(web|db|app-[a-z0-9-]+|load-.+)$/.test(name) || name === 'scarlet-web-db';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const loadNames = new Set([`${prefix}app`, `${prefix}db`, `${prefix}gen`]);
+const ownsName = (name) => (set ? name.startsWith(prefix) : loadNames.has(name));
+const ownsTag = (name) => (set ? name === base || name.startsWith(prefix) : name === base || loadNames.has(name));
+
 async function destroy() {
   if (prod) throw new Error('destroy only runs with --env load');
-  const own = set ? prefix : 'scarlet-load-';
-  const droplets = (await api('GET', 'droplets?per_page=200')).droplets.filter((d) => d.name.startsWith(own));
-  const volumes = (await api('GET', 'volumes?per_page=200')).volumes.filter((v) => v.name.startsWith(own));
-  const firewalls = (await api('GET', 'firewalls?per_page=200')).firewalls.filter((f) => f.name.startsWith(own));
-  const tags = (await api('GET', 'tags?per_page=200')).tags.filter((t) => (set ? t.name === base || t.name.startsWith(prefix) : t.name.startsWith('scarlet-load')));
+  const droplets = (await api('GET', 'droplets?per_page=200')).droplets.filter((d) => ownsName(d.name));
+  const volumes = (await api('GET', 'volumes?per_page=200')).volumes.filter((v) => (set ? ownsName(v.name) : v.name === `${prefix}db-data`));
+  const firewalls = (await api('GET', 'firewalls?per_page=200')).firewalls.filter((f) => ownsName(f.name));
+  const tags = (await api('GET', 'tags?per_page=200')).tags.filter((t) => ownsTag(t.name));
   console.log(`destroy: ${droplets.map((d) => d.name).join(', ') || 'no droplets'}; ${volumes.map((v) => v.name).join(', ') || 'no volumes'}; ${firewalls.map((f) => f.name).join(', ') || 'no firewalls'}; ${tags.map((t) => t.name).join(', ') || 'no tags'}`);
   if (plan) return;
   for (const d of droplets) {
     await run('ssh', ['-i', join(secrets, 'ops_ed25519'), '-o', 'IdentitiesOnly=yes', '-o', 'ConnectTimeout=8', `ops@${d.name}`, 'sudo tailscale logout'], { timeout: 20000 }).catch(() => {});
     await api('DELETE', `droplets/${d.id}`);
   }
-  for (let i = 0; i < 40 && (await api('GET', 'droplets?per_page=200')).droplets.some((d) => d.name.startsWith(own)); i++) await sleep(3000);
-  for (const v of volumes) await api('DELETE', `volumes/${v.id}`);
+  for (let i = 0; i < 40 && (await api('GET', 'droplets?per_page=200')).droplets.some((d) => ownsName(d.name)); i++) await sleep(3000);
+  for (const v of volumes) {
+    for (let i = 0; ; i++) {
+      try {
+        await api('DELETE', `volumes/${v.id}`);
+        break;
+      } catch (e) {
+        if (i >= 20 || !String(e.message).includes('attached')) throw e;
+        await sleep(3000);
+      }
+    }
+  }
   for (const f of firewalls) await api('DELETE', `firewalls/${f.id}`);
   for (const t of tags) await api('DELETE', `tags/${t.name}`);
   console.log('destroy: done');
