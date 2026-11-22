@@ -1078,7 +1078,7 @@ comps and is specified here, not in them.
 | `/search` | Characters that are public, creatures, items, objects, zones, quests. An object is a hit when it has a name and a loot window of loot, herbs or ore counted under the character threshold (docs/LOOT.md, phase 3; comp `search.html`): the line is its name, `Object` and how many times it was opened. Its score is the windows. The bobber of a fishing line is not one |
 | `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths, talents (the latest build of each talent group drawn on its tree, or listed by tab while no layout is stored; the order the points were taken in; respecs; talent facts: characters with the same build at the same level, respec count and gold, the least picked talent among the class and spec, the level of the first build with 31 points in one tree, the longest and median wait to spend a point, and picks refunded within ten minutes, each with its n). A Lifetime chapter, shown when a read is stored, gives the client's own totals of quests completed, titles known and zones explored (the latest `QB`, `KT` and `EB`) and the instance locks that still hold with their reset time (`IS`); a character without those lines shows no chapter. The hero map redraws the walked cells in the order they were first walked (a day at a time, from the daily heat aggregate), with the Level figure counting up and each death appearing at its day; a Replay button runs it again, and a viewer who prefers reduced motion gets the finished map. Skills lead with the profession ranks over played time, placed from the hours played; play time is the last 21 days and the hour of the week, drawn in the viewer's time zone from the hourly aggregate and in UTC without script. Public when its owner says so; the owner sees the private parts too |
 | `/c/{name}/battlegrounds` | The scoreboards of a character's ten latest battlegrounds that have `BO` rows (`battleground_scores`): every player the client read, by faction, with killing blows, honorable kills, deaths, honor, damage and healing, under the zone and the result of the match when the `pvp` group holds its `BM` lines (`battleground_matches`). A match is one uploader's rows that share `match_at`; two uploaders of one match each have their own. Visible exactly when the character's page is. Other players' names follow the privacy rule: the owner sees them, a visitor sees a name (linked to its page) only when that player's own character is public, and every other row says "a player". The character page links it when the character has a match with a scoreboard |
-| `/c/{name}/{class}` | Designed, not built (Class pages, below; the comp is `docs/comps/class.html`). A character's page for its class, with the class's slug: a head of the game's own models for what the class is known by, six figures, the chart only that class has, rows by level and by spell, a module for each talent the build has that changes how the class plays, what the class does for other players, the character against others of its class and level bracket, and the feats the catalog holds for its class and its build's talent tree. Visible exactly when the character's page is |
+| `/c/{name}/{class}` | A character's page for its class, with the class's slug (Class pages, above; the comp is `docs/comps/class.html`). Built for the Warlock: a head of the demon models with a callout on each, six figures, the flow of soul shards, Life Tap and the health it traded by level, the demon that was out by level, curses and banes, damage by spell, what finished the kill, a module for each of Nightfall, Shadowburn and Siphon Life the build holds, stones, summons, fear and control, the character against other warlocks of its level bracket once 20 of them are stored (`class_standings`), and the feats of its class and its build's talent tree. A class with no builder, a slug that is not the character's own class, an unknown character and a character private to the viewer answer 404. Visible exactly when the character's page is. The character page links it, and shows a band of five of its figures, when the character has a counted cast |
 | `/talents`, `/talents/{class}/{spec}` | Public. Every spec with the characters that play it, and one spec: pick rate by node (a heat on the real tree when a layout is stored, a table always), the most common order of points, builds by level bracket, and builds and outcomes (the ten most held builds with the level-ups, median time to level, deaths and dungeon runs that happened while each was held, from one snapshot to the next; `?level=10-19` to `60`; `ruleset` and `server` as on `/stats`). Each character counts once, by its latest counted build read inside the bracket, and every figure prints its n. `/stats` carries a Talents block with the most played specs |
 | `/creatures/{id}`, `/items/{id}`, `/zones/{id}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels. An item page also lists the boss encounters that dropped it (`boss_loot`) and the recipes that make or use it (`recipes`, `recipe_reagents`). A creature page, and an object page, add two modules under the drop table (docs/LOOT.md, phase 4; comp `creature.html`): Drop rate by loot rule and Drop rate by group size under the rule the page shows (`?rule=`, else the rule with most corpses). Each is one row for every item with 10 drops or more and one mark for every rule (or size) on a shared 0 to 100% axis: the dot is the rate, the line its 95% range, `k of n` beside it, hollow from 10 to 29 corpses and not drawn under 10. The windows with a corpse key count whole, each corpse once; the windows with no key of a free-for-all arm that two or more characters contributed to count their one reader, and the arm carries `one reader` only then. The first two arms drawn (the most corpses) are compared: the row says `no difference found`, or marks the difference in points with its Newcombe range and the tags of both arms when both arms have 30 corpses and the range stays off zero after 0.05 is divided by the number of items in the chart. A personal-loot arm is drawn and never compared. When fewer than two arms are drawn the module says which rules, or which sizes with their corpses, were recorded. A creature or object page also links `/loot/groups?source=`. An item page adds Rolls in groups (the uploaders' own rolls of the item under the rules that roll: need, greed and pass as a rate with its counts, a bar from 10 rolls, and how many of the rolls everyone passed) and Who received it by class (what other members of a group received by class, from `group_loot` and the class their line named, and what the uploaders received, with each class's share of the receipts from 10 receipts and the rolls of need or greed it made on the item and won; one uploader's view of its group, so a group with several uploaders counts once for each). The two sit side by side under Where it drops, or alone when only one has data; each is left out when fewer than `min_characters` characters contributed (comp `item.html`). A zone page adds Looted here under Creatures met here (docs/LOOT.md, phase 3; comp `zone.html`): the five creatures looted most often in the zone with their corpses looted and most common item, the five items that dropped most often with their best source (each rate with its 95% range, or its counts under 10 corpses), and the link `All loot in {zone}` to `/loot?zone={id}`. It counts every ruleset and every loot rule but personal loot, so the ruleset filter of the page does not narrow it, and fishing is not in it. The module is left out while the zone has no loot |
 | `/items/{id}` loot modules | Public (docs/LOOT.md, phase 3; comps `item.html`, `container.html`). Under the item's drop modules: **By zone** (a third) lists the zones where creatures were looted and held the item: Zone, Dropped (corpses that held it) and Per 100 corpses, the share of the zone's creature corpses looted for the first time that held it, with its 95% range after it, or `k of n` while the zone has under 10 corpses; the ten zones with most drops, by Dropped; every ruleset and every loot rule but personal loot. **Where it was looted** (w8) marks the map with where the character stood at each of the newest 600 windows that held the item, as the creature and object pages do. Both are left out for an item no window held. An item that is a container (windows read as `bag`) adds **What it holds**, the object page's drop table over what the container gave: Item, Drop rate with its range, Range, Opened and Per drop, without the rule control. Gathering sources keep Where it's gathered, and fishing windows are in none of them |
@@ -1559,10 +1559,10 @@ A character has a page for its class, `/c/{name}/{class}` (owner, 2026-11-22: "g
 have metrics/charts/visuals for specific classes and talents", "fun and exciting and for all classes and talents").
 It shows what only that class does: a warlock's soul shards, Life Tap and demons, a shaman's totems, a druid's forms.
 The design is approved: the comp is `docs/comps/class.html` (the Warlock) and the Scarlet app gets the same
-view. What is built so far is the art: the nine heads (`warrior` to `druid` in `resources/js/scene/scenes/` and in the
+view. Built: the art (the nine heads, `warrior` to `druid` in `resources/js/scene/scenes/` and in the
 `SCENES` table of `tools/scene-art`, with `AppSupportScene` and `PlayerClass::scene()` naming them, and `/design/scenes/{class}`
-showing each over invented numbers) and the spell icons (Spell icons). The view layer of the pages is built; the
-route, the controller and the data are not.
+showing each over invented numbers, and the spell icons, Spell icons), the view layer, and the route, the reads, the
+comparison and the Warlock page (below). The other eight classes have no builder yet, so their addresses are 404.
 
 **What is built (the view layer).** `App\Support\ClassPage\ClassPage` is the typed page object every class fills: the
 character line, the links, the callouts, the six figures, rows of modules (each a list of blocks), the talent modules,
@@ -1574,8 +1574,51 @@ every `Icon` on a page so the page resolves them once, items through `ItemIcons`
 class colour is `data-class` plus `--class`. The rules are in
 `resources/css/class.css`, scoped under `.cls-page` and `.cls-band`, loaded only by a page that asks for it, so no other
 page changes. `/design/class`, `/design/class-rogue` and `/design/class-shaman` render the Warlock, Rogue and Shaman
-pages from invented numbers (`App\View\Design\ClassPages`); the band (`<x-class.band>`) is built and not placed on
-`/c/{name}`. The head's scene and callouts come from the art that the nine heads provide.
+pages from invented numbers (`App\View\Design\ClassPages`); the band (`<x-class.band>`) sits on `/c/{name}`. The head's
+scene and callouts come from the art that the nine heads provide.
+
+**What is built (the route, the reads and the Warlock).** `GET /c/{name}/{class}` is `CharacterClassController`, which
+asks `App\Actions\Public\ClassPage\CharacterClassPage` the way the battlegrounds page asks its Action: unknown or private
+to the viewer, a slug that is not the character's own class, or a class with no page is a 404. A character has a class
+page when its class has a builder and its sessions counted at least one cast (`HasClassPage`); the route, the band and the
+navigation ask that one rule, so a link never leads to a 404.
+
+- **Reads.** `App\Support\ClassRows\ClassRows` is the one typed reader over the six class tables (docs/ROWS.md, "The class
+  tables"): one aggregate query for each table over its counted rows, plus the spell names, the descriptions the `SD` lines
+  filled, the kills a party member got, the played time by level and the levels seen. It memoizes, so a builder asks for
+  anything as often as it likes. A builder holds no SQL.
+- **Builders.** `App\Contracts\ClassBuilder::handle(ClassRows, ClassFacts): ClassParts` returns what only the class knows:
+  the head icon, the callouts, the six figures, the five of the band, the sheet, the talent modules, the party rows and
+  the six figures the page is compared on. `ClassFacts` carries the character, its latest build, the talents of that build
+  that have a module (`TalentModules`, at most three) and the stored peers. `ClassBuilders` maps each `PlayerClass` to its
+  builder; a class missing there has no page. The page adds the character line, the links, the comparison and the feats.
+- **Warlock.** `WarlockBuilder` draws its sheet from `App\Support\ClassPage\Warlock\`: `Spells` (the spell sets), `Shards`
+  (the flow of soul shards and the bag), `Taps` (Life Tap by level and the health traded), `Demons` (the stack by level,
+  the callouts and the ranks), `Casting` (curses and banes, damage by spell, what finished the kill), `Talents`
+  (Nightfall, Shadowburn, Siphon Life), `Party` (stones, summons, fear and control) and `Standings`.
+- **Comparison.** `class_standings` holds one row for each character and figure (class, level at the count, ruleset,
+  value). `RefreshCharacterFeats` queues `RefreshClassStandings` for a character whose class has a builder, so a feat
+  recount (after every decode and daily) rewrites its six rows. The page reads the other public characters of its class
+  in its level bracket and draws "More than N% of warlocks" (the share of the others strictly below, rounded down, at most
+  99) only when the bracket holds 20 characters, the character included; under that it draws nothing, and the Life Tap
+  module's drinking comparison goes with it.
+- **Navigation.** `CharacterLinks` builds the line (Character, the class's name, Battlegrounds) for `/c/{name}`, the class
+  page and `/c/{name}/battlegrounds`; `CharacterClassBand` gives `/c/{name}` its band of five above "This week". The
+  sitemap does not list battlegrounds pages, so it does not list class pages either.
+- **Charts of a short range.** A mirror or a stack of twelve levels or fewer names every level on its axis; longer ones
+  name the first and each ten.
+- **Fixture.** `Shard-Keeper` (`e2e/warlock-lines.mjs`) is a warlock of the first e2e install with six hours over levels 50
+  to 52, written so every module has rows. `e2e/warlock-expected.mjs` holds the figures worked out from its lines before
+  the page was read, and `e2e/checks/class-page.mjs` reads the page against them.
+
+**Where the Warlock page differs from the comp.** The rows the decoder writes cannot answer some of the comp's modules,
+so the page leaves them out or says what the rows can. Soul shards: the pair "most held at once, typical pull, pulls with
+none" is replaced by "In the bags now", since no row holds the bag over time. Nightfall: "Seconds to use one" is replaced
+by "Shadow Bolts under it". Shadowburn: "Shards lost to it" is replaced by "Shards spent", and the kill cell reads "Killed
+within 3 seconds". Siphon Life: "Fights with it" is replaced by its shares of the healing and damage meters, which list
+only a fight's top five spells and say so. Summons: "At a dungeon door", the places the summons went and "Most in a day"
+are replaced by "Interrupted". "Deaths undone by your own" reads "Deaths undone by a soulstone". The head has no link to
+a build page.
 
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
@@ -1676,11 +1719,11 @@ Four limits, stated on the page where they bite:
   settles how a taken one is read from the lines after the death before the soulstone and Reincarnation modules
   count anything.
 
-The web needs the lines decoded: today no table holds casts, auras, pet spans or bag changes. The build adds daily
-aggregates by character, level and spell (casts, in-fight casts, channel seconds), by character, level and aura
-(seconds and gains), by character, level and pet, and by character, item and direction, each filled by the decode and
-recounted like the rest. The comparison against other characters of the class needs a rollup of the six figures by
-class and level bracket. The app reads the same lines from the character's own log and needs neither.
+The web reads the lines from the six class tables the decode fills (docs/ROWS.md, "The class tables"): casts by spell and
+level, time under auras and in fights, pet spans, bag changes, damage and healing meters, and the tallies of what
+finished a kill, what a death followed and what a spell was cast under. The comparison against other characters of the
+class reads `class_standings`, the six figures of each character, not a rollup. The app reads the same lines from the
+character's own log and needs neither.
 
 **Class feats.** The first design gave each class six feats of its own (most soul shards held at once, deaths within
 5 seconds of a Life Tap). The class, talent-tree and role feats landed the same day, so the page shows those and the

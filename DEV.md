@@ -54,9 +54,12 @@ any host that is not 127.0.0.1, localhost or [::1], because it deletes what it u
 - api: every endpoint the `/developers` page lists, the uploaded character's facts, search, 404 and 422 answers, and
   the numbers of the six professions the fixture has lines for.
 - pages: every public page shows its own heading, missing pages are 404, `/account` is closed, an app links to the
-  development account, and the twelve profession pages show what the upload recorded.
-- owner: signs in with the development sign-in, links the install, and reads the account's own Fishing, Cooking and camps
-  pages, which show the fixture's numbers under "1 of your 3 characters" and leave out the second install's Tailoring
+  development account, the twelve profession pages show what the upload recorded, and the Warlock's class page
+  (`/c/Shard-Keeper/warlock`) shows the figures worked out from its lines (`e2e/warlock-expected.mjs`), links from
+  its character page with a band, and is a 404 at any other class's address.
+- owner: signs in with the development sign-in, links the install, hides the Warlock with the public switch of its
+  owner bar and checks that a visitor gets a 404 for its class page and its owner does not, and reads the account's own Fishing, Cooking and camps
+  pages, which show the fixture's numbers under "1 of your 4 characters" and leave out the second install's Tailoring
   crafts and campfire visit that the public pages count; after the removal the same account owns no character and its
   pages are the plain state.
 - browser: one headless Edge (chromium on Linux), never a window. Its first check reads the window handle of its
