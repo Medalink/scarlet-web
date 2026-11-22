@@ -6,10 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Support\ItemIcons;
 use App\Support\Scene;
 use App\Support\SceneArt;
+use App\Support\SpellIcons;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/** Serves the game art that tools/scene-art wrote to the `maps` disk: a scene's, and the item icons. Public art, so nothing to authorize. */
+/** Serves the game art that tools/scene-art wrote to the `maps` disk: a scene's, the item icons and the spell icons. Public art, so nothing to authorize. */
 class SceneArtController extends Controller
 {
     private const string ART_CACHE = 'public, max-age=31536000, immutable';
@@ -36,6 +37,12 @@ class SceneArtController extends Controller
     public function itemIcon(int $id): StreamedResponse
     {
         return $this->send(ItemIcons::path("icons/{$id}.png"), 'image/png', self::ART_CACHE);
+    }
+
+    /** The icon file `tools/scene-art/spells.mjs` wrote, named by the file id that `SpellIcons` puts in the address. */
+    public function spellIcon(int $id): StreamedResponse
+    {
+        return $this->send(SpellIcons::path("icons/{$id}.png"), 'image/png', self::ART_CACHE);
     }
 
     private function send(string $path, string $type, string $cache): StreamedResponse

@@ -10,10 +10,10 @@
 //   node scripts/art-published.mjs [store]     the default is $SCARLET_ART_STORE, then medaware's store
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SCENES } from '../tools/scene-art/scenes.mjs';
+import { SCENES, modelDisplay, modelFile } from '../tools/scene-art/scenes.mjs';
 
 const store = process.argv[2] ?? process.env.SCARLET_ART_STORE ?? '/data/medalink/scarlet-web/maps';
-const LISTS = ['manifest.json', 'dungeons/dungeons.json', 'items/items.json'];
+const LISTS = ['manifest.json', 'dungeons/dungeons.json', 'items/items.json', 'spells/spells.json'];
 
 function builtScene(file) {
     try {
@@ -29,8 +29,8 @@ function sceneGaps(name, scene) {
     const built = builtScene(file);
     if (built === null) return [`${file} is missing or is not JSON`];
     const models = Object.entries(scene.models)
-        .filter(([key, id]) => built.models[key]?.fileDataID !== id)
-        .map(([key, id]) => `${file} has no model ${key} built from file ${id}`);
+        .filter(([key, entry]) => built.models[key]?.fileDataID !== modelFile(entry) || (built.models[key].display ?? null) !== modelDisplay(entry))
+        .map(([key, entry]) => `${file} has no model ${key} built from file ${modelFile(entry)}${modelDisplay(entry) === null ? '' : ` with the skin of display ${modelDisplay(entry)}`}`);
     const textures = built.textures
         .filter((id) => !existsSync(join(store, name, 'tex', `${id}.png`)))
         .map((id) => `${name}/tex/${id}.png is missing`);

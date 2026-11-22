@@ -19,3 +19,4 @@ Route::get('/scene-art/{scene}/models.json', [SceneArtController::class, 'models
 Route::get('/scene-art/{scene}/tex/{id}.png', [SceneArtController::class, 'texture'])->where('id', '[0-9]{1,10}')->name('scene-art.texture');
 Route::get('/scene-art/{scene}/icons/{id}.png', [SceneArtController::class, 'icon'])->where('id', '[0-9]{1,10}')->name('scene-art.icon');
 Route::get('/item-icons/{id}.png', [SceneArtController::class, 'itemIcon'])->where('id', '[0-9]{1,10}')->name('item-icons.icon');
+Route::get('/spell-icons/{id}.png', [SceneArtController::class, 'spellIcon'])->where('id', '[0-9]{1,10}')->name('spell-icons.icon');

@@ -12,7 +12,7 @@
 #   bin/deploy r2               write the R2 credentials from the secrets folder to /etc/scarlet-web/r2.env on the app droplet and
 #                               the database host (run before `server` and `db-server`)
 #   bin/deploy cache-rules      write Cloudflare's Cache Rules for the public API, the public pages and the map manifest
-#   bin/deploy maps [folder]    add map art (a folder with manifest.json, camp/camp.json or dungeons/dungeons.json) to the
+#   bin/deploy maps [folder]    add map art (a folder with manifest.json, camp/camp.json, dungeons/dungeons.json, items/items.json or spells/spells.json) to the
 #                               art store on the build host, then send the droplet what it lacks of the store; without
 #                               a folder only the second. No ops key: the ring's key carries it (scripts/deploy/art.sh),
 #                               and every ring deploy does the second step again. Another web host, or a host named by
@@ -522,8 +522,8 @@ case "${1:-release}" in
     ;;
   maps)
     folder=${2:-}
-    [ -z "$folder" ] || [ -f "$folder/manifest.json" ] || [ -f "$folder/camp/camp.json" ] || [ -f "$folder/dungeons/dungeons.json" ] || {
-      echo "deploy: no manifest.json, camp/camp.json or dungeons/dungeons.json in $folder" >&2
+    [ -z "$folder" ] || [ -f "$folder/manifest.json" ] || [ -f "$folder/camp/camp.json" ] || [ -f "$folder/dungeons/dungeons.json" ] || [ -f "$folder/items/items.json" ] || [ -f "$folder/spells/spells.json" ] || {
+      echo "deploy: no manifest.json, camp/camp.json, dungeons/dungeons.json, items/items.json or spells/spells.json in $folder" >&2
       exit 1
     }
     by_hand=$(other_app_hosts)
