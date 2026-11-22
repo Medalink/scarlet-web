@@ -23,6 +23,9 @@ enum Profession: string
     case Lockpicking = 'Lockpicking';
     case Poisons = 'Poisons';
 
+    /** The rank every profession stops at. */
+    public const int SKILL_CAP = 300;
+
     /** The path segment of the profession's page and of `/api/v1/public/professions/{slug}`, null when it has none. */
     public function slug(): ?string
     {

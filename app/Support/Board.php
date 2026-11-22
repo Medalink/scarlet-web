@@ -22,6 +22,14 @@ enum Board: string
     case MostHerbsGathered = 'most-herbs-gathered';
     case MostOreMined = 'most-ore-mined';
     case MostCreaturesSkinned = 'most-creatures-skinned';
+    case MostAlchemyCrafts = 'most-alchemy-crafts';
+    case MostBlacksmithingCrafts = 'most-blacksmithing-crafts';
+    case MostEnchantingCrafts = 'most-enchanting-crafts';
+    case MostEngineeringCrafts = 'most-engineering-crafts';
+    case MostLeatherworkingCrafts = 'most-leatherworking-crafts';
+    case MostTailoringCrafts = 'most-tailoring-crafts';
+    case MostCookingCrafts = 'most-cooking-crafts';
+    case MostFirstAidCrafts = 'most-first-aid-crafts';
 
     /** The board of a gathering: its most looted attempts. */
     public static function ofGathering(GatherKind $kind): self
@@ -46,6 +54,38 @@ enum Board: string
         };
     }
 
+    /** The board of a crafting profession: its most crafts. Null for a profession that does not craft. */
+    public static function ofCrafting(Profession $profession): ?self
+    {
+        return match ($profession) {
+            Profession::Alchemy => self::MostAlchemyCrafts,
+            Profession::Blacksmithing => self::MostBlacksmithingCrafts,
+            Profession::Enchanting => self::MostEnchantingCrafts,
+            Profession::Engineering => self::MostEngineeringCrafts,
+            Profession::Leatherworking => self::MostLeatherworkingCrafts,
+            Profession::Tailoring => self::MostTailoringCrafts,
+            Profession::Cooking => self::MostCookingCrafts,
+            Profession::FirstAid => self::MostFirstAidCrafts,
+            default => null,
+        };
+    }
+
+    /** The crafting profession a board counts, null for the others. */
+    public function crafting(): ?Profession
+    {
+        return match ($this) {
+            self::MostAlchemyCrafts => Profession::Alchemy,
+            self::MostBlacksmithingCrafts => Profession::Blacksmithing,
+            self::MostEnchantingCrafts => Profession::Enchanting,
+            self::MostEngineeringCrafts => Profession::Engineering,
+            self::MostLeatherworkingCrafts => Profession::Leatherworking,
+            self::MostTailoringCrafts => Profession::Tailoring,
+            self::MostCookingCrafts => Profession::Cooking,
+            self::MostFirstAidCrafts => Profession::FirstAid,
+            default => null,
+        };
+    }
+
     public function title(): string
     {
         return match ($this) {
@@ -62,6 +102,8 @@ enum Board: string
             self::MostHerbsGathered => 'Most herbs gathered',
             self::MostOreMined => 'Most ore mined',
             self::MostCreaturesSkinned => 'Most creatures skinned',
+            self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
+            self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Most '.$this->crafting()?->value.' crafts',
         };
     }
 
@@ -79,6 +121,8 @@ enum Board: string
             self::MostTimeByTheFire => 'hours',
             self::MostFishCaught => 'fish',
             self::MostHerbsGathered, self::MostOreMined, self::MostCreaturesSkinned => 'gather',
+            self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
+            self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'skills',
         };
     }
 
@@ -98,6 +142,8 @@ enum Board: string
             self::MostHerbsGathered => 'Herbs gathered by public characters, counted from each one\'s first recorded session.',
             self::MostOreMined => 'Veins mined by public characters, counted from each one\'s first recorded session.',
             self::MostCreaturesSkinned => 'Creatures skinned by public characters, counted from each one\'s first recorded session.',
+            self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
+            self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Items crafted with '.$this->crafting()?->value.' by public characters, counted from each one\'s first recorded session.',
         };
     }
 
@@ -129,6 +175,8 @@ enum Board: string
             self::MostHerbsGathered => 'Herbs',
             self::MostOreMined => 'Veins',
             self::MostCreaturesSkinned => 'Creatures',
+            self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
+            self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Crafts',
         };
     }
 

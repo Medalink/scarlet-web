@@ -20,7 +20,7 @@ enum GatherKind: string
     public const int LURE_SECONDS = 600;
 
     /** The rank a gathering skill stops at. */
-    public const int SKILL_CAP = 300;
+    public const int SKILL_CAP = Profession::SKILL_CAP;
 
     /** The skill line the gathering skill's rank is read from; a child line (2943, 2944, 2946, 2947) counts as it. */
     public function skillLine(): int

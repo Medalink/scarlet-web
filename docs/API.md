@@ -382,15 +382,38 @@ Example: `curl https://<host>/api/v1/public/camps`
 
 #### `GET /public/professions/{slug}`
 
-How characters gather with one gathering profession: attempts and catches, the time they take, what they give, the rank characters reach, where and when they gather, and the characters with the most catches. `fishing`, `herbalism`, `mining` and `skinning` answer; every other profession slug, and a slug that names none, answers `404 not_found`.
+How characters work with one profession. The four gatherings, `fishing`, `herbalism`, `mining` and `skinning`, answer with attempts and catches, the time they take, what they give, the rank characters reach, where and when they gather, and the characters with the most catches. The eight crafts, `alchemy`, `blacksmithing`, `enchanting`, `engineering`, `leatherworking`, `tailoring`, `cooking` and `first-aid`, answer with crafts, their sittings, recipes, reagents, the rank characters reach, where and when they craft, and the characters with the most crafts. Every other slug, and a slug that names none, answers `404 not_found`.
 
 | Parameter | In | Type | Meaning |
 | --- | --- | --- | --- |
-| `slug` | path | string | A profession slug: `fishing`, `herbalism`, `mining` or `skinning`. |
+| `slug` | path | string | A profession slug: `fishing`, `herbalism`, `mining`, `skinning`, `alchemy`, `blacksmithing`, `enchanting`, `engineering`, `leatherworking`, `tailoring`, `cooking` or `first-aid`. |
 | `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
 | `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
 
-An attempt is one cast of the gathering spell; it is looted when a loot window followed it. `data`:
+A crafting profession's `data`, counting the crafts whose `profession_id` is the trade's skill line:
+
+- `profession`: the slug.
+- `totals`: `crafts`, `made` (the sum of `quantity`), `characters`, `scope_characters` (characters with any play in the
+  scope), `recipes` (different recipes that enough characters made), `sittings` (crafts with no gap of 120 seconds or less before them),
+  `median_sitting_crafts` and `median_sitting_seconds` (a sitting runs from its first craft to its last; read from the rows
+  of the last 90 days), `median_gap` (seconds between crafts of a sitting), `skill_ups`, `trivial` (crafts of a recipe
+  with difficulty 3), `median_skill` (over characters, of the highest rank each had) and `at_cap` (characters at rank 300).
+- `recipes`: the twelve recipes with the most crafts: `recipe_id`, `name`, `item_id` and `item` (what the crafts made
+  most often), `crafts`, `made`, `skill_ups`, `characters`, `median_skill` (the rank before a craft) and `reagents`
+  (`item_id`, `name`, `quantity`; empty until someone uploads the recipe).
+- `difficulty`: `crafts` and `skill_ups` by the recipe's `difficulty`, 0 optimal to 3 trivial. `per_point`: `crafts`
+  and `skill_ups` by `band` of 25 ranks. `by_level`: `median_skill` and `characters` at each character level.
+  `hours`: crafts by UTC `weekday` (0 is Sunday) and `hour`.
+- `reagents`: the ten items the crafts used most, each recipe's reagents times its crafts (`item_id`, `name`,
+  `quantity`); empty while no recipe is uploaded. `zones`: the ten zones with the most crafts (`zone_id`, `name`,
+  `crafts`, `characters`).
+- `board`: the first ten rows of the profession's board of crafts (`most-alchemy-crafts`, `most-blacksmithing-crafts`,
+  `most-enchanting-crafts`, `most-engineering-crafts`, `most-leatherworking-crafts`, `most-tailoring-crafts`,
+  `most-cooking-crafts` or `most-first-aid-crafts`), shaped like `/leaderboards/{board}`, and `rulesets`.
+
+A trade nobody has recorded answers `200` with zero totals, `characters` `null` and empty lists.
+
+A gathering profession's attempt is one cast of the gathering spell; it is looted when a loot window followed it. Its `data`:
 
 - `kind`: `fish`, `herb`, `ore` or `skin`.
 - `totals`: `attempts`, `looted`, `characters`, `scope_characters` (characters with any play in the scope), `seconds`

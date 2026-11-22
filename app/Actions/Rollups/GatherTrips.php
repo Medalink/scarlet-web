@@ -27,7 +27,7 @@ class GatherTrips
         $ordered = DB::table('gathers')
             ->where('counted', true)
             ->where('kind', $kind->value)
-            ->where('at', '>=', now()->subDays(self::DAYS))
+            ->where('at', '>=', now()->startOfHour()->subDays(self::DAYS))
             ->when(is_int($rulesetId), fn ($query) => $query->where('ruleset_id', $rulesetId))
             ->when(is_array($rulesetId), fn ($query) => $query->whereIn('ruleset_id', $rulesetId))
             ->selectRaw('character_id, session_start, extract(epoch from at) as started, extract(epoch from at) + coalesce(seconds, 0) as ended')

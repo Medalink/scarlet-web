@@ -29,6 +29,10 @@ const SHAPES = [
   ["/map/density", ["level", "columns", "rows", "cells"]],
 ];
 
+const CRAFT_SHAPES = [
+  ["/professions/cooking", ["profession", "totals", "recipes", "difficulty", "per_point", "by_level", "hours", "reagents", "zones", "board", "rulesets"]],
+];
+
 function templateExpression(template) {
   return new RegExp("^" + template.split(/\{[a-z]+\}/).map(escapeRegExp).join("[^/?]+") + "(\\?.*)?$");
 }
@@ -76,7 +80,7 @@ export async function everyEndpointAnswers(ctx) {
   const uncovered = templates.filter((template) => !examples.some((example) => templateExpression(template).test(example)));
   if (uncovered.length > 0) throw new Error(`/developers lists no example for: ${uncovered.join(", ")}`);
 
-  const paths = examples.map(fixtureExample);
+  const paths = [...examples.map(fixtureExample), ...CRAFT_SHAPES.map(([route]) => route)];
   const problems = await pool(paths, CONCURRENCY, async (route) => {
     const answer = await answerOf(ctx, route);
     if (answer.status === 429) expectStatus(answer, 200, route);
@@ -85,7 +89,7 @@ export async function everyEndpointAnswers(ctx) {
       return `${route}: expected {data, meta}, saw ${answer.text.slice(0, 300)}`;
     }
     const template = templates.find((entry) => templateExpression(entry).test(route));
-    const shape = SHAPES.find(([entry]) => entry === template);
+    const shape = CRAFT_SHAPES.find(([entry]) => entry === route) ?? SHAPES.find(([entry]) => entry === template);
     if (!shape) return `${route}: /developers lists ${template}, which this lane has no expected fields for; add it to SHAPES`;
     const missing = missingKeys(answer.json.data, shape[1]);
     return missing.length > 0 ? `${route}: data lacks ${missing.join(", ")}: ${answer.text.slice(0, 300)}` : null;

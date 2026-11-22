@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Actions\Rollups;
+
+use App\Support\Profession;
+use App\Support\Rollup;
+use App\Support\RollupRead;
+
+class CraftHours
+{
+    public function __construct(private readonly RollupRead $read) {}
+
+    /**
+     * Crafts by weekday (0 is Sunday) and hour of the day, in UTC. A cell fewer than `config('scarlet.min_characters')`
+     * characters crafted in is left out.
+     *
+     * @param  int|list<int>|null  $rulesetId
+     * @return list<array{weekday: int, hour: int, crafts: int}>
+     */
+    public function handle(Profession $profession, int|array|null $rulesetId = null): array
+    {
+        $query = $this->read->from(Rollup::CraftsHourlyRuleset, $rulesetId)
+            ->where('profession_id', $profession->skillLine())
+            ->selectRaw("extract(dow from bucket at time zone 'UTC')::int as weekday, extract(hour from bucket at time zone 'UTC')::int as hour, sum(crafts) as crafts")
+            ->groupByRaw('1, 2')
+            ->havingRaw('sum(crafts) > 0')
+            ->orderByRaw('1, 2');
+
+        return array_map(
+            fn (array $row): array => ['weekday' => (int) $row['weekday'], 'hour' => (int) $row['hour'], 'crafts' => (int) $row['crafts']],
+            $this->read->rows($this->read->shown($query)),
+        );
+    }
+}

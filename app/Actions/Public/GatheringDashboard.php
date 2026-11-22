@@ -18,6 +18,7 @@ use App\Actions\Rollups\GatherTotals;
 use App\Actions\Rollups\GatherTrips;
 use App\Actions\Rollups\GatherWaits;
 use App\Actions\Rollups\GatherZones;
+use App\Actions\Rollups\ScopeCharacters;
 use App\Support\Board;
 use App\Support\GatherKind;
 use App\Support\Rollup;
@@ -34,6 +35,7 @@ class GatheringDashboard
         private readonly ListRulesets $rulesets,
         private readonly Leaderboard $leaderboard,
         private readonly RollupRead $read,
+        private readonly ScopeCharacters $scopeCharacters,
         private readonly GatherTotals $totals,
         private readonly GatherTrips $trips,
         private readonly GatherSkill $skill,
@@ -97,8 +99,7 @@ class GatheringDashboard
     private function totalsOf(GatherKind $kind, int|array|null $ids, ?int $lured): array
     {
         $totals = $this->totals->handle($kind, $ids);
-        $scopeCharacters = $this->read->rows($this->read->shown($this->read->from(Rollup::PlayHourlyRuleset, $ids)->selectRaw('distinct_count(rollup(characters)) as characters')))[0]['characters'] ?? null;
-        $scopeCharacters = $scopeCharacters === null ? null : (int) $scopeCharacters;
+        $scopeCharacters = $this->scopeCharacters->handle($ids);
         $played = $scopeCharacters === null ? 0 : $this->read->sum($this->read->from(Rollup::PlayHourlyRuleset, $ids), 'ms') / 1000;
         if ($totals === null) {
             return [
