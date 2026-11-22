@@ -4,6 +4,7 @@ namespace App\Actions\Maps;
 
 use App\Actions\Ingest\MeasureDistance;
 use App\Actions\Rollups\RefreshAggregates;
+use App\Support\DecompressionLimit;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -48,12 +49,16 @@ class PlaceWorldPoints
             $until = max($until ?? $last, $last);
 
             for ($start = $first; $start <= $last; $start += self::WINDOW) {
-                $placed[$table] += DB::update(
-                    "update {$table} t set u = r.u0 + {$x} * (r.u1 - r.u0), v = r.v0 + {$y} * (r.v1 - r.v0)
-                     from map_rects r
-                     where r.ui_map_id = t.{$map} and t.u is null and t.at >= to_timestamp(?) and t.at < to_timestamp(?)",
-                    [$start, $start + self::WINDOW],
-                );
+                $placed[$table] += DB::transaction(function () use ($table, $map, $x, $y, $start): int {
+                    DecompressionLimit::lift();
+
+                    return DB::update(
+                        "update {$table} t set u = r.u0 + {$x} * (r.u1 - r.u0), v = r.v0 + {$y} * (r.v1 - r.v0)
+                         from map_rects r
+                         where r.ui_map_id = t.{$map} and t.u is null and t.at >= to_timestamp(?) and t.at < to_timestamp(?)",
+                        [$start, $start + self::WINDOW],
+                    );
+                });
             }
         }
 

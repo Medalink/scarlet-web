@@ -252,6 +252,7 @@ t_migrate=$(date +%s.%N)
 
 SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools sh -ec '
   php artisan migrate --force --no-interaction
+  php artisan scarlet:storage-policies --no-interaction
   php artisan maps:load-rects --no-interaction
   php artisan app:release-notes:publish --from-file=storage/app/release-notes.json --no-interaction
   php artisan cache:clear --no-interaction'

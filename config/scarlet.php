@@ -80,6 +80,16 @@ return [
         'page_seconds' => 60,
         'api_seconds' => 300,
     ],
+    'storage' => [
+        'chunk_dense' => env('SCARLET_CHUNK_DENSE', '1 day'),
+        'chunk_sparse' => env('SCARLET_CHUNK_SPARSE', '7 days'),
+        'compress_after' => env('SCARLET_COMPRESS_AFTER', '7 days'),
+        'segmentby' => env('SCARLET_COMPRESS_SEGMENTBY', 'character_id'),
+        'orderby' => env('SCARLET_COMPRESS_ORDERBY', 'session_start, at'),
+        'refresh_start_offset' => env('SCARLET_REFRESH_START_OFFSET', '3 days'),
+        'refresh_slice_days' => (int) env('SCARLET_REFRESH_SLICE_DAYS', 7),
+        'retention' => env('SCARLET_STORAGE_RETENTION'),
+    ],
     'rollups' => [
         'timeout' => 900,
         'tries' => 2,

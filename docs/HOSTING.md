@@ -408,6 +408,51 @@ snapshot. After the first deploy with two instances the old cache keys are still
 sessions in its database 0 until they expire (two hours for sessions). `redis-cli -n 1 flushdb` on `redis` clears the
 cache keys; never flush database 0 there, it holds the queue.
 
+## Storage policies
+
+`php artisan scarlet:storage-policies` makes the hypertables follow the `storage` section of `config/scarlet.php`.
+`deploy/rollout.sh` runs it after the migrations of every deploy. A second run changes nothing, and a changed setting
+changes only what differs. It prints one line per change.
+
+| Setting (environment) | Default | Effect |
+| --- | --- | --- |
+| `chunk_dense` (`SCARLET_CHUNK_DENSE`) | 1 day | Chunk interval of `path_points` and `creature_sightings`. Applies to chunks created after the change |
+| `chunk_sparse` (`SCARLET_CHUNK_SPARSE`) | 7 days | Chunk interval of every other hypertable, `character_levels` included |
+| `compress_after` (`SCARLET_COMPRESS_AFTER`) | 7 days | Compression policy of the 18 fact hypertables. `character_levels` is never compressed: ingest deletes and rebuilds all of a character's rows each time |
+| `segmentby`, `orderby` | `character_id`, `session_start, at` | Compression settings. A character's pages read by character, and a re-decode deletes by character and session, which the batch metadata of `session_start` answers without decompressing other sessions |
+| `refresh_start_offset` (`SCARLET_REFRESH_START_OFFSET`) | 3 days | How far back the 15-minute refresh policy of each of the 28 aggregates reaches. At least 2 days (two buckets) and shorter than `compress_after`, so the policy never reads a compressed chunk. The command refuses anything else |
+| `refresh_slice_days` (`SCARLET_REFRESH_SLICE_DAYS`) | 7 | `RefreshAggregates` refreshes a range in slices of this many days |
+| `retention` (`SCARLET_STORAGE_RETENTION`) | unset | Refused when set |
+
+Retention is a one-way door. Dropping chunks of a fact table loses rows that only decoding every session again brings
+back, and an aggregate whose policy still read back to the start would then delete its own history. The command
+sets no retention policy and removes none; it stops, before changing anything, when `storage.retention` is set or a
+`policy_retention` job exists on any table.
+
+What changed in the code around it:
+
+- A refresh policy reaches 3 days back. Older ranges are refreshed by the writer that changed them: every writer
+  of fact rows already calls `RefreshRollups` or `RefreshAggregates` over its own range (decode, group and character
+  removal, `maps:place-points`, `rulesets:merge`, `levels:rebuild`). A policy that no longer reaches back is why they
+  must; a writer added later has to do the same.
+- `RefreshAggregates` cuts a range to the days that have chunks and refreshes it in slices, so `rulesets:merge`'s
+  range from 1970 to 2100 costs the days that hold rows. A refresh still recomputes only what the invalidation log
+  marks, and reads the compressed chunks of those days.
+- TimescaleDB stops a transaction that updates more than 100,000 rows of compressed chunks. `rulesets:merge` and
+  `maps:place-points` lift that limit for their own transactions (`DecompressionLimit`). A re-decode deletes by
+  character and session and inserts new rows; both work on a compressed chunk, which becomes partly compressed and
+  is compressed again by the next run of its compression policy.
+
+Check what is applied:
+
+```sh
+bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec -T app-blue php artisan scarlet:storage-policies'   # the slot `status` names
+psql -c "select job_id, hypertable_name, config from timescaledb_information.jobs where proc_name in ('policy_compression', 'policy_refresh_continuous_aggregate') order by 1"
+psql -c "select * from hypertable_compression_stats('path_points')"
+```
+
+Sizes, ratios and the re-decode check are in [MEASUREMENTS.md](MEASUREMENTS.md#storage-policies).
+
 ## Map art
 
 The map tiles are not in git or in the image. They live on the droplet at `/srv/scarlet-web/maps` (mounted read-only
