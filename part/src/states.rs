@@ -2,7 +2,7 @@
 //! totems and fights. Each line opens or ends spans of the ledger; the ledger credits the time.
 
 use crate::auras::Inst;
-use crate::class::{Now, seconds_ms};
+use crate::class::{Now, id_or_zero, seconds_ms};
 use crate::decode::{field, num};
 use crate::spans::{Begin, Ledger, SpanId};
 use std::collections::BTreeMap;
@@ -107,13 +107,15 @@ impl States {
     }
 
     fn on_auto(&mut self, f: &[&str]) {
-        let spell = num(f, 1).unwrap_or(0);
         if field(f, 0) != "1" {
             if let Some((_, span)) = self.auto.take() {
                 self.ledger.end(span, None);
             }
             return;
         }
+        let Some(spell) = id_or_zero(f, 1) else {
+            return;
+        };
         if self.auto.is_some_and(|(open, _)| open == spell) {
             return;
         }
@@ -130,7 +132,10 @@ impl States {
         if field(f, 0) != "1" {
             return;
         }
-        let mut begin = Begin::new('m', num(f, 1).unwrap_or(0));
+        let Some(spell) = id_or_zero(f, 1) else {
+            return;
+        };
+        let mut begin = Begin::new('m', spell);
         if field(f, 4) == BASELINE {
             begin = begin.uncounted().since(now.start);
         }
@@ -232,7 +237,7 @@ impl States {
             Some(OFF_HAND) => (1, 'o'),
             _ => return,
         };
-        let item = num(f, 1).unwrap_or(0);
+        let item = id_or_zero(f, 1).unwrap_or(0);
         if item > 0 && self.gear[slot].is_some_and(|(held, _)| held == item) {
             return;
         }
@@ -252,12 +257,12 @@ impl States {
         if let Some(span) = self.totems[slot].take() {
             self.ledger.end(span, None);
         }
-        let spell = num(f, 1).unwrap_or(0);
+        let spell = id_or_zero(f, 1).unwrap_or(0);
         if spell <= 0 {
             return;
         }
         let mut begin = Begin::new('t', spell).extra(&(slot + 1).to_string());
-        let duration = seconds_ms(f, 2);
+        let duration = seconds_ms(now, f, 2);
         if duration > 0 {
             begin = begin.until(now.at + duration);
         }

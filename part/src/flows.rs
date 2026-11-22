@@ -2,7 +2,7 @@
 //! `I` and `DI` lines.
 
 use crate::auras::Recent;
-use crate::class::Now;
+use crate::class::{Now, id};
 use crate::decode::{field, num, prefix};
 use crate::rows::Rows;
 use std::collections::BTreeMap;
@@ -46,12 +46,13 @@ fn place_of(where_: &str) -> char {
 impl Flows {
     /// An `I` line. `auto` is the spell of the auto repeat that is running, if any.
     pub fn on_item(&mut self, now: &Now, f: &[&str], recent: &Recent, auto: Option<i64>) {
-        let (Some(item), Some(delta)) = (num(f, 0), num(f, 1)) else {
+        let (Some(item), Some(delta)) = (id(f, 0), num(f, 1)) else {
             return;
         };
-        if item <= 0 || delta == 0 {
+        if item == 0 || delta == 0 {
             return;
         }
+        let quantity = delta.saturating_abs();
         let place = place_of(field(f, 2));
         if delta < 0 && place == OTHER {
             self.deleted
@@ -59,7 +60,7 @@ impl Flows {
             if let Some(i) = self
                 .deleted
                 .iter()
-                .position(|d| d.0 == item && d.1 == -delta)
+                .position(|d| d.0 == item && d.1 == quantity)
             {
                 self.deleted.remove(i);
                 return;
@@ -73,15 +74,20 @@ impl Flows {
         } else {
             None
         };
-        self.add(now, item, delta.signum(), place, spell, delta.abs());
+        self.add(now, item, delta.signum(), place, spell, quantity);
     }
 
-    /// A `DI` line: the units are counted here, and the `I` line that follows them is not counted again.
+    /// A `DI` line: the units are counted here, and the `I` line that follows them is not counted again. A count
+    /// that is not above 0 writes nothing; a missing one is a single unit.
     pub fn on_delete(&mut self, now: &Now, f: &[&str]) {
-        let Some(item) = num(f, 0).filter(|i| *i > 0) else {
+        let Some(item) = id(f, 0).filter(|i| *i > 0) else {
             return;
         };
-        let count = num(f, 1).filter(|c| *c > 0).unwrap_or(1);
+        let count = match num(f, 1) {
+            None => 1,
+            Some(count) if count > 0 => count,
+            Some(_) => return,
+        };
         self.add(now, item, -1, DESTROYED, None, count);
         self.deleted.push((item, count, now.at));
     }
@@ -109,7 +115,7 @@ impl Flows {
             quantity: 0,
         });
         row.events += 1;
-        row.quantity += quantity;
+        row.quantity = row.quantity.saturating_add(quantity);
     }
 
     pub fn finish(&self, session: i64, w: &mut Rows) {

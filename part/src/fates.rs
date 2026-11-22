@@ -2,7 +2,7 @@
 //! totems stood in a fight, and whether a death with a self-resurrect on offer ended in using it.
 
 use crate::auras::{Inst, Recent};
-use crate::class::{Now, seconds_ms};
+use crate::class::{Now, id_or_zero, seconds_ms};
 use crate::decode::num;
 use crate::sets::Set;
 use crate::tallies::Book;
@@ -184,7 +184,7 @@ impl Totems {
         let Some(number) = num(f, 0).filter(|s| (1..=TOTEM_SLOTS as i64).contains(s)) else {
             return;
         };
-        let spell = num(f, 1).unwrap_or(0);
+        let spell = id_or_zero(f, 1).unwrap_or(0);
         let slot = &mut self.slots[(number - 1) as usize];
         if let Some(drop) = slot.drop.take() {
             let stood = drop.duration_ms > 0
@@ -201,7 +201,7 @@ impl Totems {
             slot.touched |= fight.is_some();
             slot.drop = Some(Drop {
                 now: *now,
-                duration_ms: seconds_ms(f, 2),
+                duration_ms: seconds_ms(now, f, 2),
                 fight,
             });
         }

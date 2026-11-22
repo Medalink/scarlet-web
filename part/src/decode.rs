@@ -183,6 +183,7 @@ struct Dec<'o> {
     ended: bool,
     start_ms: i64,
     end_ms: i64,
+    len_ms: i64,
     // context
     level: i64,
     level_start: i64,
@@ -272,6 +273,7 @@ impl Dec<'_> {
         Now {
             at,
             start: self.start_ms,
+            len: self.len_ms,
             level: self.lvl(),
             zone_id: self.zone_id,
             place: self.place,
@@ -1446,6 +1448,12 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
     };
     lines.sort_unstable_by_key(|l| (l.t, l.rank, l.seq));
     let first_t = lines.first().map_or(session * 1000, |l| l.t);
+    let began = lines
+        .iter()
+        .find(|l| l.code == "S")
+        .map_or(first_t, |l| l.t);
+    let last = lines.iter().find(|l| l.code == "ES").or(lines.last());
+    let len_ms = last.map_or(0, |l| (l.t - began).max(0));
     let has_group = |k: &str| groups.index(k).is_some_and(|i| keys.contains(&i));
     let mut d = Dec {
         w: Rows::new(out),
@@ -1463,6 +1471,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         ended: false,
         start_ms: first_t,
         end_ms: first_t,
+        len_ms,
         level: 0,
         level_start: 0,
         zone: String::new(),

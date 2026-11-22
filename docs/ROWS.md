@@ -149,6 +149,20 @@ The spell id sets that `class_tallies` matches (`form`, `stance`, `aspect`, `pal
 patterns of `tools/class-spells/sets.mjs`, every rank of a name. Edit the patterns and run the tool again; never edit
 `sets.rs`.
 
+**Values a line may carry.** The six tables read lines that an addon or a hand-made part can fill with anything, so a
+value is held to what its column stores:
+
+- A line's seconds read from 0 to the session's length (the time from the `S` line to the `ES` line, or to the last
+  line without one): a negative figure reads as 0 and a longer one as the whole session. The line still counts. A
+  span's time is held to the same length.
+- An id (`spell_id`, `item_id`, `ref_id`, and the `a` and `b` of a tally) outside 0 to 2147483647 writes no row. A `C`,
+  `CH`, `CI`, `DS`, `I`, `DI`, `A` or `SR` line with such an id is not read by any other machine either; a state with
+  such an id (an `AR`, `MO`, `TW`, `G` or a numeric `MP` type) is not recorded, and a `TW` or `G` line that carries one
+  ends the slot's span and starts none.
+- A `name` or `extra` is cut to its first 255 characters.
+- Sums stop at 9223372036854775807 and do not wrap. A negative total, amount or count (`DM` and `DP` totals, `DS`
+  amounts, a `DI` count) makes the line write nothing; an `I` line's quantity is its delta without the sign.
+
 ### `spell_casts` (combat: `C`, `CH`, `CI`, `F`)
 
 Key `spell_id`, `level`. One row per spell and level the session cast, at the first line of the spell at that level.

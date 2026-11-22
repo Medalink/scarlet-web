@@ -9,11 +9,12 @@ use crate::rows::Rows;
 use crate::states::States;
 use crate::tallies::Tallies;
 
-/// Where and when a line was read.
+/// Where and when a line was read. `len` is the session's length: no time a line reports is longer.
 #[derive(Clone, Copy)]
 pub struct Now {
     pub at: i64,
     pub start: i64,
+    pub len: i64,
     pub level: Option<i64>,
     pub zone_id: Option<i64>,
     pub place: char,
@@ -31,14 +32,47 @@ pub fn place_of(instance_type: &str) -> char {
     }
 }
 
-/// A seconds field in milliseconds; 0 when it is empty, secret or not a number.
-pub fn seconds_ms(f: &[&str], i: usize) -> i64 {
-    f.get(i)
+/// A seconds field in milliseconds, from 0 to the session's length; 0 when it is empty, secret or not a number.
+pub fn seconds_ms(now: &Now, f: &[&str], i: usize) -> i64 {
+    let ms = f
+        .get(i)
         .and_then(|v| v.trim().parse::<f64>().ok())
         .filter(|s| s.is_finite())
-        .map_or(0, |s| (s * 1000.0).round() as i64)
+        .map_or(0, |s| (s * 1000.0).round() as i64);
+    ms.max(0).min(now.len.max(0))
 }
 
+/// The largest id a column holds.
+pub const MAX_ID: i64 = i32::MAX as i64;
+
+pub fn is_id(v: i64) -> bool {
+    (0..=MAX_ID).contains(&v)
+}
+
+/// An id field; none when it is missing, not a number or outside what an id column holds.
+pub fn id(f: &[&str], i: usize) -> Option<i64> {
+    num(f, i).filter(|v| is_id(*v))
+}
+
+/// An id that may be empty, which reads as 0; none when the field holds a number no id column holds.
+pub fn id_or_zero(f: &[&str], i: usize) -> Option<i64> {
+    match num(f, i) {
+        None => Some(0),
+        Some(v) => is_id(v).then_some(v),
+    }
+}
+
+/// A total, amount or quantity field; none when it is missing, not a number or negative.
+pub fn amount(f: &[&str], i: usize) -> Option<i64> {
+    num(f, i).filter(|v| *v >= 0)
+}
+
+/// The text of a name column: its first 255 characters.
+pub fn clip(text: &str) -> String {
+    text.chars().take(NAME_CHARS).collect()
+}
+
+const NAME_CHARS: usize = 255;
 const MINE: &str = "1";
 const HELPFUL: &str = "1";
 const HARMFUL: &str = "0";
@@ -72,7 +106,7 @@ impl Class {
             "C" => self.on_cast(now, f),
             "CH" => {
                 self.combat.on_channel(now, f);
-                if let Some(spell) = num(f, 0) {
+                if let Some(spell) = id(f, 0) {
                     self.recent.push(now.at, spell, true);
                 }
             }
@@ -107,16 +141,16 @@ impl Class {
     }
 
     fn on_cast(&mut self, now: &Now, f: &[&str]) {
-        let Some(spell) = num(f, 0) else { return };
+        let Some(spell) = id(f, 0) else { return };
         self.combat.on_cast(now, self.states.fighting(), f);
         self.tallies.on_cast(now, spell, &mut self.auras);
         self.recent.push(now.at, spell, false);
     }
 
     fn on_aura(&mut self, now: &Now, f: &[&str]) {
-        let Some(spell) = num(f, 1) else { return };
+        let Some(spell) = id(f, 1) else { return };
         if field(f, 0) != MINE {
-            self.on_aura_end(now, spell, seconds_ms(f, 2));
+            self.on_aura_end(now, spell, seconds_ms(now, f, 2));
             return;
         }
         let helpful = match field(f, 2) {
@@ -128,7 +162,7 @@ impl Class {
         let initial = field(f, 5) == INITIAL;
         let Some(id) = self
             .auras
-            .gain(now, spell, (helpful, mine), seconds_ms(f, 3), initial)
+            .gain(now, spell, (helpful, mine), seconds_ms(now, f, 3), initial)
         else {
             return;
         };

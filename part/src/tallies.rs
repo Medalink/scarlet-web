@@ -4,7 +4,7 @@
 //! settled it.
 
 use crate::auras::{Auras, Inst, Recent};
-use crate::class::Now;
+use crate::class::{Now, is_id};
 use crate::decode::{num, prefix};
 use crate::fates::{Resurrections, Seals, Totems};
 use crate::rows::Rows;
@@ -54,8 +54,11 @@ pub struct Book {
 
 impl Book {
     /// One more of `key` with `a` and `b`, filed under the level and place of `now`. `sum` is the measure some keys
-    /// add up, in milliseconds.
+    /// add up, in milliseconds. Nothing is written for an `a` or `b` that no id column holds.
     pub fn add(&mut self, now: &Now, key: &'static str, a: i64, b: i64, sum: Option<i64>) {
+        if !is_id(a) || !is_id(b) {
+            return;
+        }
         let key = Key {
             key,
             a,
@@ -70,8 +73,8 @@ impl Book {
             best: 0,
         });
         row.n += 1;
-        let sum = sum.unwrap_or(0);
-        row.sum += sum;
+        let sum = sum.unwrap_or(0).max(0);
+        row.sum = row.sum.saturating_add(sum);
         row.best = row.best.max(sum);
     }
 

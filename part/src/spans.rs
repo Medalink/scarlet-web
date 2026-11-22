@@ -2,13 +2,17 @@
 //! inside fights. Machines open a span when a state starts and end it when it stops; the ledger credits the time and
 //! splits every open span at a level-up.
 
-use crate::class::Now;
+use crate::class::{Now, clip, is_id};
 use crate::rows::Rows;
 use std::collections::BTreeMap;
 
 pub type SpanId = u64;
 
 const KINDS_WITH_KNOWN_FIGHT_MS: &str = "abxrtf";
+
+fn within(value: i64, most: i64) -> i64 {
+    value.max(0).min(most.max(0))
+}
 
 /// The time of the session's fights, to ask how much of any stretch lay inside one.
 #[derive(Default)]
@@ -111,12 +115,12 @@ impl Begin {
     }
 
     pub fn name(mut self, name: &str) -> Self {
-        self.name = name.to_string();
+        self.name = clip(name);
         self
     }
 
     pub fn extra(mut self, extra: &str) -> Self {
-        self.extra = extra.to_string();
+        self.extra = clip(extra);
         self
     }
 
@@ -142,6 +146,7 @@ pub struct Ledger {
     open: BTreeMap<SpanId, Open>,
     next: SpanId,
     at: i64,
+    len: i64,
     level: Option<i64>,
     zone_id: Option<i64>,
     pub clock: FightClock,
@@ -150,6 +155,7 @@ pub struct Ledger {
 impl Ledger {
     pub fn sync(&mut self, now: &Now) {
         self.at = now.at;
+        self.len = now.len;
         self.level = now.level;
         self.zone_id = now.zone_id;
     }
@@ -176,11 +182,15 @@ impl Ledger {
         row
     }
 
+    /// Start a span. A state whose id no column holds is not recorded: its span is never open and credits nothing.
     pub fn begin(&mut self, b: Begin) -> SpanId {
-        let row = self.touch(b.kind, b.ref_id, &b.name, &b.extra);
-        row.starts += i64::from(b.counted);
         self.next += 1;
         let id = self.next;
+        if !is_id(b.ref_id) {
+            return id;
+        }
+        let row = self.touch(b.kind, b.ref_id, &b.name, &b.extra);
+        row.starts += i64::from(b.counted);
         self.open.insert(
             id,
             Open {
@@ -197,7 +207,7 @@ impl Ledger {
     }
 
     pub fn fill_extra(&mut self, kind: char, ref_id: i64, name: &str, extra: &str) {
-        self.touch(kind, ref_id, name, extra);
+        self.touch(kind, ref_id, &clip(name), &clip(extra));
     }
 
     /// End a span now. `exact` is the total time the line itself reports, which replaces the measured time.
@@ -208,10 +218,14 @@ impl Ledger {
 
     /// Time that a line reports for a state whose start was not seen.
     pub fn add_unseen(&mut self, kind: char, ref_id: i64, ms: i64) {
-        let fight = self.clock.at(self.at) - self.clock.at(self.at - ms);
+        if !is_id(ref_id) {
+            return;
+        }
+        let ms = within(ms, self.len);
+        let fight = within(self.clock.at(self.at) - self.clock.at(self.at - ms), ms);
         let row = self.touch(kind, ref_id, "", "");
-        row.ms += ms;
-        row.fight_ms += fight.clamp(0, ms);
+        row.ms = row.ms.saturating_add(ms);
+        row.fight_ms = row.fight_ms.saturating_add(fight);
     }
 
     fn credit(&mut self, id: SpanId, t: i64, exact: Option<i64>) {
@@ -220,11 +234,12 @@ impl Ledger {
         };
         let end = open.deadline.map_or(t, |d| d.min(t)).max(open.since);
         let ms = match exact {
-            Some(total) => (total - open.credited).max(0),
+            Some(total) => total.saturating_sub(open.credited),
             None => end - open.since,
         };
-        let fight = (self.clock.at(end) - self.clock.at(open.since)).clamp(0, ms);
-        open.credited += ms;
+        let ms = within(ms, self.len);
+        let fight = within(self.clock.at(end) - self.clock.at(open.since), ms);
+        open.credited = open.credited.saturating_add(ms);
         open.since = open.since.max(t);
         let key = Key {
             kind: open.kind,
@@ -241,8 +256,8 @@ impl Ledger {
             ms: 0,
             fight_ms: 0,
         });
-        row.ms += ms;
-        row.fight_ms += fight;
+        row.ms = row.ms.saturating_add(ms);
+        row.fight_ms = row.fight_ms.saturating_add(fight);
     }
 
     /// The level changes now: every open span is credited to the old level up to here and goes on at the new one.

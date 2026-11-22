@@ -1,8 +1,8 @@
 //! The spell casts, damage-meter totals and top spells of a session (docs/ROWS.md, `spell_casts`, `meter_totals` and
 //! `meter_spells`), read from the `C`, `CH`, `CI`, `DM`, `DP` and `DS` lines.
 
-use crate::class::{Now, seconds_ms};
-use crate::decode::{field, num, prefix};
+use crate::class::{Now, amount, id, seconds_ms};
+use crate::decode::{field, prefix};
 use crate::rows::Rows;
 use std::collections::BTreeMap;
 
@@ -97,7 +97,7 @@ impl Combat {
     }
 
     pub fn on_cast(&mut self, now: &Now, fighting: bool, f: &[&str]) {
-        let Some(spell) = num(f, 0) else { return };
+        let Some(spell) = id(f, 0) else { return };
         self.run = if self.last_cast == Some(spell) {
             self.run + 1
         } else {
@@ -107,18 +107,19 @@ impl Combat {
         let run = self.run;
         let cast = self.cast_row(now, spell);
         cast.casts += 1;
-        cast.cast_ms += seconds_ms(f, 1);
+        cast.cast_ms = cast.cast_ms.saturating_add(seconds_ms(now, f, 1));
         cast.fight_casts += i64::from(fighting);
         cast.streak = cast.streak.max(run);
     }
 
     pub fn on_channel(&mut self, now: &Now, f: &[&str]) {
-        let Some(spell) = num(f, 0) else { return };
-        self.cast_row(now, spell).channel_ms += seconds_ms(f, 1);
+        let Some(spell) = id(f, 0) else { return };
+        let row = self.cast_row(now, spell);
+        row.channel_ms = row.channel_ms.saturating_add(seconds_ms(now, f, 1));
     }
 
     pub fn on_interrupt(&mut self, now: &Now, f: &[&str]) {
-        let Some(spell) = num(f, 0) else { return };
+        let Some(spell) = id(f, 0) else { return };
         self.cast_row(now, spell).interrupts += 1;
     }
 
@@ -166,21 +167,23 @@ impl Combat {
         }
         let own = report.own.unwrap_or(0);
         let row = self.meter_row(meter, &report.now);
-        row.group_total += own + report.others;
-        row.group_own += own;
+        row.group_total = row
+            .group_total
+            .saturating_add(own.saturating_add(report.others));
+        row.group_own = row.group_own.saturating_add(own);
         row.group_fights += 1;
     }
 
-    /// A line with an unknown meter letter or a total that is not a number writes nothing.
+    /// A line with an unknown meter letter, or a total that is not a number or is negative, writes nothing.
     pub fn on_meter(&mut self, now: &Now, f: &[&str]) {
-        let (Some(meter), Some(total)) = (meter_letter(field(f, 0)), num(f, 1)) else {
+        let (Some(meter), Some(total)) = (meter_letter(field(f, 0)), amount(f, 1)) else {
             return;
         };
         let row = self.meter_row(meter, now);
-        row.total += total;
+        row.total = row.total.saturating_add(total);
         row.best = row.best.max(total);
         row.fights += 1;
-        row.fight_ms += seconds_ms(f, 3);
+        row.fight_ms = row.fight_ms.saturating_add(seconds_ms(now, f, 3));
         let report = self.report(meter, now, true);
         report.own = Some(total);
         report.now = *now;
@@ -188,17 +191,17 @@ impl Combat {
 
     /// A group member's total. The addon writes the uploader's own total as `DM`, never as `DP`.
     pub fn on_peer(&mut self, now: &Now, f: &[&str]) {
-        let (Some(meter), Some(total)) = (meter_letter(field(f, 0)), num(f, 3)) else {
+        let (Some(meter), Some(total)) = (meter_letter(field(f, 0)), amount(f, 3)) else {
             return;
         };
         let report = self.report(meter, now, false);
-        report.others += total;
+        report.others = report.others.saturating_add(total);
         report.peers += 1;
     }
 
     pub fn on_top_spell(&mut self, now: &Now, f: &[&str]) {
-        let (Some(meter), Some(spell), Some(amount)) =
-            (meter_letter(field(f, 0)), num(f, 1), num(f, 2))
+        let (Some(meter), Some(spell), Some(added)) =
+            (meter_letter(field(f, 0)), id(f, 1), amount(f, 2))
         else {
             return;
         };
@@ -210,7 +213,7 @@ impl Combat {
                 amount: 0,
                 fights: 0,
             });
-        top.amount += amount;
+        top.amount = top.amount.saturating_add(added);
         top.fights += 1;
     }
 
