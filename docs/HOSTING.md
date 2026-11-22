@@ -114,10 +114,12 @@ that host's `.env` on each release: `SCARLET_INGEST_PROCESSES` (default 2, the s
 supervisors of the host's roles (`SCARLET_ROLES`, which `rollout.sh` keeps in `release.env`); a host that sets none runs all
 three roles, which is the one-droplet stack.
 
-Backfill work (`rulesets:refile`, `ingest:redecode`, `talents:backfill`) queues `IngestSession` on `backfill`. The ingest
-supervisor takes `ingest` before `backfill`, so a backlog of re-decodes waits behind live uploads. A job in the backfill
-queue has its own identity, so a live upload of the same session is queued as well and a lock on the session
-(`IngestSession::handle`, kept in the queue's Redis) makes two decodes of one session wait for each other on any host.
+Backfill work (`rulesets:refile`, `ingest:redecode`, `talents:backfill`) queues `IngestSession` on `backfill`. The
+scheduler runs `ingest:redecode --outdated` every ten minutes, which queues the next 1000 sessions an older decoder
+wrote whenever the backfill queue is empty, so a decoder that changed its rows rebuilds every stored session by itself. The ingest supervisor takes `ingest` before `backfill`, so a backlog of re-decodes
+waits behind live uploads. A job in the backfill queue has its own identity, so a live upload of the same session is
+queued as well and a lock on the session (`IngestSession::handle`, kept in the queue's Redis) makes two decodes of one
+session wait for each other on any host.
 
 ### Add a host
 
@@ -494,7 +496,7 @@ Two Redis instances run on the app droplet, so a full cache cannot stop the queu
 
 | Instance | Holds | Memory cap and policy |
 | --- | --- | --- |
-| `redis` | The queues, Horizon's records (failed jobs, metrics, supervisors), job and scheduler locks, and the `durable` cache store: the pending rollup range and the replay check of upload signatures. Connection `default`, database 0, key prefix `scarlet_` | 256 MB, `noeviction`. A full instance refuses writes and says so, it never drops a job |
+| `redis` | The queues, Horizon's records (failed jobs, metrics, supervisors), job and scheduler locks, and the `durable` cache store: the pending rollup range, the replay check of upload signatures and the re-decode cursor (`QueueOutdatedSessions`). Connection `default`, database 0, key prefix `scarlet_` | 256 MB, `noeviction`. A full instance refuses writes and says so, it never drops a job |
 | `redis-cache` | The cache and the sessions of visitors. Connection `cache` (database 1) and connection `session` (database 2), the same host. Settings `REDIS_CACHE_HOST`, `REDIS_CACHE_DB`, `REDIS_SESSION_DB`; compose sets the host for every app container, and without it both fall back to `REDIS_HOST`, which is how a development checkout runs on one instance | 192 MB, `allkeys-lru`. A full instance drops the least recently used keys: an evicted cache entry is built again, an evicted session signs one visitor out |
 
 Both save a snapshot after 60 seconds with one change and keep it in their own volume (`redisdata`, `rediscachedata`),

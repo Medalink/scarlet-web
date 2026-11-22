@@ -10,7 +10,7 @@ class SessionRows
     /** The decoder's `sessions` keys that have a column; the rest go to `extra`. */
     private const array COLUMNS = [
         'played_ms', 'lines', 'has_start', 'ended', 'class', 'race', 'faction', 'level_start', 'level_end', 'xp_total', 'kills',
-        'deaths', 'quests_done', 'copper_earned', 'copper_spent', 'money_start', 'money_end', 'zones', 'dungeon_runs', 'tp_total_s', 'counter_start_ms', 'counter_end_ms', 'xp_off',
+        'deaths', 'quests_done', 'copper_earned', 'copper_spent', 'money_start', 'money_end', 'zones', 'dungeon_runs', 'tp_total_s', 'counter_start_ms', 'counter_end_ms', 'xp_off', 'decoder_version',
     ];
 
     /** The keys that are bookkeeping of the row itself, not facts about the session. */

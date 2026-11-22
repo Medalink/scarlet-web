@@ -21,6 +21,7 @@ const USAGE: &str = "usage:
   scarlet-part inflate < <zstd frame> > <bytes>
   scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin [--imports]
   scarlet-part check-overview --parts-dir <dir> --overview <overview.json>
+  scarlet-part decoder-version
   scarlet-part measure --root <out dir> --folders a,b,c [--runs 5] [--dump-text <dir>]
   scarlet-part parse-bench <text file> [--runs 7]";
 
@@ -98,6 +99,11 @@ fn run(mut args: Vec<OsString>) -> Result<(), String> {
         "unbatch" => unbatch(args),
         "inflate" => inflate(),
         "decode" => decode(args),
+        "decoder-version" => {
+            flags(args, &[], &[])?;
+            println!("{}", scarlet_part::decode::DECODER_VERSION);
+            Ok(())
+        }
         "check-overview" => check_overview(args),
         "measure" => {
             let (f, _) = flags(args, &["root", "folders", "runs", "dump-text"], &[])?;

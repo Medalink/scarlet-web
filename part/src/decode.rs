@@ -13,6 +13,14 @@ use std::collections::{BTreeMap, BTreeSet};
 
 /// A dungeon left less than this long ago is the same run when it is entered again.
 pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
+/// The rule version of the decoded rows: bumped on any change to the rows the
+/// decoder writes, so the stored rows are decoded again (`scarlet-part
+/// decoder-version`).
+pub const DECODER_VERSION: u32 = 2;
+
+const HOUR_MS: i64 = 3_600_000;
+const MAX_HOUR_CUTS: usize = 24 * 7;
+
 /// XP a level needs to reach the next one, level 1 first (docs/OVERVIEW.md).
 const NEED: [i64; 59] = [
     400, 900, 1400, 2100, 2800, 3600, 4500, 5400, 6500, 7600, 8800, 10100, 11400, 12900, 14400,
@@ -73,7 +81,7 @@ struct SpanKey {
 struct Span {
     key: SpanKey,
     start: i64,
-    afk_ms: i64,
+    afk: Vec<(i64, i64)>,
     afk_since: Option<i64>,
 }
 
@@ -134,6 +142,7 @@ struct Dec<'o> {
     w: Rows<'o>,
     has: Has,
     session: i64,
+    hour_cuts: usize,
     started: bool,
     ended: bool,
     start_ms: i64,
@@ -245,7 +254,7 @@ impl Dec<'_> {
             self.span = Some(Span {
                 key,
                 start: now,
-                afk_ms: 0,
+                afk: Vec::new(),
                 afk_since: None,
             });
             return;
@@ -254,7 +263,7 @@ impl Dec<'_> {
             return;
         }
         if let Some(since) = span.afk_since {
-            span.afk_ms += (now - since).max(0);
+            span.afk.push((since, now));
             span.afk_since = Some(now);
         }
         let done = std::mem::replace(
@@ -262,29 +271,48 @@ impl Dec<'_> {
             Span {
                 key: key.clone(),
                 start: now,
-                afk_ms: 0,
+                afk: Vec::new(),
                 afk_since: span.afk_since,
             },
         );
-        let ms = now - done.start;
-        if ms > 0 {
+        self.write_spans(&done, now);
+    }
+
+    fn write_spans(&mut self, done: &Span, end: i64) {
+        let mut a = done.start;
+        while a < end {
+            let next = (a.div_euclid(HOUR_MS) + 1)
+                .checked_mul(HOUR_MS)
+                .unwrap_or(i64::MAX);
+            let b = if next < end && self.hour_cuts < MAX_HOUR_CUTS {
+                self.hour_cuts += 1;
+                next
+            } else {
+                end
+            };
+            let afk: i64 = done
+                .afk
+                .iter()
+                .map(|&(since, until)| (until.min(b) - since.max(a)).max(0))
+                .sum();
             let s = self.session;
             prefix(
                 &mut self.w,
                 "play_spans",
                 s,
-                done.start,
+                a,
                 done.key.level,
                 done.key.zone_id,
             );
             self.w
-                .int("end", now)
-                .int("ms", ms)
-                .opt("afk_ms", self.has.xp.then_some(done.afk_ms))
+                .int("end", b)
+                .int("ms", b - a)
+                .opt("afk_ms", self.has.xp.then_some(afk))
                 .text("zone", &done.key.zone)
                 .text("instance_type", &done.key.inst_type)
                 .opt("instance_id", done.key.inst_id);
             self.w.end();
+            a = b;
         }
     }
 
@@ -329,7 +357,7 @@ impl Dec<'_> {
                     if field(&f, 0) == "1" {
                         span.afk_since.get_or_insert(t);
                     } else if let Some(since) = span.afk_since.take() {
-                        span.afk_ms += (t - since).max(0);
+                        span.afk.push((since, t));
                     }
                 }
             }
@@ -1036,6 +1064,7 @@ impl Dec<'_> {
             .int("played_ms", played_ms)
             .int("played_s", round_s(played_ms))
             .int("lines", lines as i64)
+            .int("decoder_version", i64::from(DECODER_VERSION))
             .strs("groups", groups)
             .text("build", &sf[0])
             .text("class", &sf[1])
@@ -1157,6 +1186,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
             economy: has_group("economy"),
         },
         session,
+        hour_cuts: 0,
         started: false,
         ended: false,
         start_ms: first_t,

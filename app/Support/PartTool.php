@@ -117,6 +117,17 @@ class PartTool
         return json_decode($run->output(), associative: true, flags: JSON_THROW_ON_ERROR);
     }
 
+    /** The rule version of the decoded rows (`DECODER_VERSION` in part/src/decode.rs). */
+    public function decoderVersion(): int
+    {
+        $run = Process::timeout(30)->run([$this->binary(), 'decoder-version']);
+        if (! $run->successful()) {
+            throw new RuntimeException('scarlet-part decoder-version failed: '.$this->message($run->errorOutput()));
+        }
+
+        return (int) trim($run->output());
+    }
+
     private function binary(): string
     {
         return $this->binary ??= (string) config('scarlet.part_bin');

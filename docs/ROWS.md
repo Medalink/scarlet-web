@@ -49,7 +49,10 @@ Keys after the common ones, in order. "From" is the line code; groups are those 
 ### `play_spans` (core: `S`, `ES`, `L`, `Z`, `AFK`)
 
 A stretch with one level, zone and instance. A new span starts when the level, the zone name, the zone id, the
-instance type or the instance id changes; zero-length spans are not written. `at` is the span start.
+instance type or the instance id changes, and at every UTC hour boundary, so a row lies inside one UTC clock hour
+and `afk_ms` is the AFK time inside that row. A session is cut at 168 hour boundaries at most (a week, beyond the
+24 hours that flag it `session_over_24h`); the rest of its last span stays one row. Zero-length spans are not
+written. `at` is the span start.
 
 | Key | Type | |
 | --- | --- | --- |
@@ -318,6 +321,7 @@ One per decode, last. Keys in order:
 | `has_start`, `ended` | bool | an `S` line exists; an `ES` line exists |
 | `played_ms`, `played_s` | int | `end - start`; seconds rounded half up. This is OVERVIEW.md's played time before the reload credit, which needs the session before and is applied across sessions (`counter_*`, below) |
 | `lines` | int | lines in all parts of the session, `pn` lines and addon lines included |
+| `decoder_version` | int | `DECODER_VERSION` of the decoder that wrote the rows; bumped whenever the rows it writes change |
 | `groups` | string[] | the group keys that had a part |
 | `build`, `class`, `race`, `faction`, `addon_version` | string or null | `S` fields 1, 2, 3, 5, 6 |
 | `level_start`, `level_end` | int or null | the level at `S`; the level after the last `L` |

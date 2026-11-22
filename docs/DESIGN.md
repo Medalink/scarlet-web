@@ -277,7 +277,11 @@ two, and an observed number says "since <first seen date>" wherever a lifetime t
   character is first seen at is never complete. Every figure carries the number of characters it rests on.
 - **Talents.** Order and unspent-point facts use picks seen live between two seen dings. Talents held at the first
   snapshot have no order and no level.
-- **Re-decode.** `php artisan ingest:redecode` queues every session for a fresh decode (decoder version change), then
+- **Re-decode.** Each session row keeps the `decoder_version` that wrote its rows. Every ten minutes the scheduler
+  runs `ingest:redecode --outdated`, which queues the next 1000 sessions with an older or no version once the
+  backfill queue is empty, so production rebuilds its stored rows by itself after a decoder change. A cursor in the
+  durable cache walks the sessions in key order, so a session that keeps failing cannot hold the rest back.
+  `php artisan ingest:redecode` without the option queues every session regardless, then
   `php artisan levels:rebuild` recomputes joins, summaries, levels and the money rows' `level_complete` flags and
   refreshes the aggregates.
 - **Dungeon runs across sessions.** The decoder's rows are stored as written. A run that carries on the last run of the
