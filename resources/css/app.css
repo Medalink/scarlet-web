@@ -409,7 +409,7 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 /* The head of the character page: figures under the name, and the map legend in a corner of the map. */
 .ch-rich .stage::after { background: linear-gradient(90deg, var(--bg) 0, rgba(20, 20, 22, 0.86) 26%, rgba(20, 20, 22, 0) 56%), linear-gradient(0deg, rgba(20, 20, 22, 0.88) 0, rgba(20, 20, 22, 0.55) 22%, rgba(20, 20, 22, 0) 46%); pointer-events: none; }
 .ch-rich .ch-id { grid-template-columns: minmax(0, 1fr); }
-.ch-figs { display: grid; grid-template-columns: repeat(6, max-content); justify-content: start; gap: 1rem 2.6rem; margin-top: 1.5rem; }
+.ch-figs { display: flex; flex-wrap: wrap; gap: 1rem 2.6rem; margin-top: 1.5rem; }
 .ch-figs > div { display: flex; flex-direction: column-reverse; gap: 0.35rem; }
 .ch-figs dt { font-size: 0.86rem; color: var(--text); }
 .ch-figs dd { font: 750 clamp(2.1rem, 3.4vw, 3rem)/0.95 var(--display); color: var(--fg); white-space: nowrap; }
@@ -423,7 +423,7 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
   .ch-head.ch-rich { padding-top: 0; }
   .ch-head.ch-bare { padding-top: 4.75rem; }
   .ch-rich .ch-sub { font-size: 1rem; }
-  .ch-figs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem 1rem; }
+  .ch-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem 1rem; }
   .ch-figs dd { font-size: 2.2rem; }
   .ch-legend { top: 0.8rem; right: 1rem; bottom: auto; }
 }
