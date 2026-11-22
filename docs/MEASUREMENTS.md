@@ -227,3 +227,51 @@ are compressed alone at level 19 with and without the dictionary. Not adopted.
 A dictionary saves 8.6 to 9.5 percent of the storage. It costs a versioned dictionary file that every stored part
 depends on forever, for under 10 percent, so it is not worth it. Changing what is stored (for example not storing
 `movement` as text) matters more.
+
+## Storage policies
+
+`php artisan scarlet:storage-policies` (docs/HOSTING.md, "Storage policies") compresses the 18 fact hypertables after 7
+days by `character_id`, ordered by `session_start, at`. Measured on production (`scarlet-db`, TimescaleDB 2.32,
+PostgreSQL 18) on 2026-11-22 at 02:15 UTC, minutes after the deploy that ran it and after each table's compression
+policy ran once. Compression was not enabled before the deploy, so `hypertable_compression_stats` returns nothing for
+that side; the "before" below is `hypertable_detailed_size` on 2026-11-22 at 01:58 UTC.
+
+| Hypertable | Chunks compressed | Total before | Total after | Compressed chunks, before and after | Ratio |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `path_points` | 10 of 18 | 54 MB | 20 MB | 37 MB to 3,488 kB | 10.9 |
+| `creature_sightings` | 10 of 18 | 3,216 kB | 2,808 kB | 1,408 kB to 616 kB | 2.3 |
+| `xp_gains` | 2 of 4 | 2,424 kB | 1,488 kB | 1,344 kB to 168 kB | 8.0 |
+| `money_changes` | 2 of 4 | 2,136 kB | 1,856 kB | 1,080 kB to 160 kB | 6.8 |
+| `kills` | 2 of 4 | 2,008 kB | 1,416 kB | 1,096 kB to 152 kB | 7.2 |
+| `loot_drops` | 2 of 4 | 1,232 kB | 1,128 kB | 400 kB to 104 kB | 3.9 |
+| other 13 hypertables | 0 to 2 | 4,288 kB | 4,136 kB | | 1.0 to 3.6 |
+| All 19 hypertables | 40 of 86 | 69.4 MB (72,785,920 bytes) | 32.8 MB (34,365,440 bytes) | | |
+
+The database, with its other tables, went from 140 MB to 105 MB. The ratio of `path_points` is high because
+production's heap carried free space the compression removed (the same table on a restored copy compresses 5.1 to
+5.9 times, depending on which chunks are compressed). Chunks of the last 7 days are not compressed yet, and `character_levels` never is, so the
+totals fall less than the ratios. Tables with a few thousand rows (`deaths`, `dungeon_runs`, the talent tables) do not
+gain until they hold more.
+
+Re-decode of a session whose rows are all in compressed chunks (character 2, session 1794067982, 7 November: 12,073
+`path_points`, 175 `creature_sightings`, 63 `play_spans`, 217 `xp_gains`, 127 `money_changes`, 178 `kills`, 49
+`loot_drops`, 1 `level_ups`, 1 `sessions` row). Count and `bit_xor(hashtextextended(row::text, 0))` per table, the
+`sessions` row without `updated_at`, `decoded_at` and `created_at`:
+
+| Step | Result |
+| --- | --- |
+| Decoded through the queue job with the chunks uncompressed (A) | `path_points` 12,073, bit_xor -4945772434354599251; the other 8 tables recorded |
+| After the compression policy compressed the chunks of all five tables above | Identical to A in every table |
+| Decoded again through the queue job, rows deleted and inserted in the compressed chunks (B) | Identical to A in every table; chunk status 9 (partly compressed); invalidation log empty after the refresh |
+| After the compression policy ran again | Chunk status 1; identical to A |
+
+A re-decode on the restored copy logged the session's own span in the invalidation log (16:13 to 21:42 on 7 November
+for `path_points`), not the chunk's. `RefreshAggregates` over that range took 0.33 s and over 1970 to 2100 (what
+`rulesets:merge` asks for) 0.44 s, 28 aggregates each, and left `heat_daily_ruleset`, `xp_daily_character` and
+`play_hourly_ruleset` unchanged (count, sum and `bit_xor`). `rulesets:merge` refiled 177,655 compressed `path_points`
+rows of one character in one transaction; without `DecompressionLimit` TimescaleDB stops at 100,000.
+
+The orderby and segmentby choices were compared on the restored copy, `path_points` total bytes after compression:
+`character_id` by `session_start, at` 5,406,720; `character_id` by `at` 5,373,952; `character_id, session_start` by
+`at` 5,480,448; no segmentby, ordered by `character_id, session_start, at` 5,988,352. The first is the one whose batch
+metadata lets a delete by character and session skip the other sessions' batches (a delete of one session scanned the metadata of 285 batches and decompressed none).
