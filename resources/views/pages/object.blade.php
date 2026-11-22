@@ -1,0 +1,29 @@
+<x-layouts.app :title="$d['name'].': what it gives and how often'" :description="$d['sub'].' What '.$d['name'].' gives in WoW Forever and how often.'">
+<div class="wrap">
+  <x-page-head :title="$d['name']" :single="true">
+    <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
+  </x-page-head>
+  <x-figures :items="$d['figures']" />
+  <x-sheet>
+    <x-module span="w7" :first="true" id="h-g" heading="What it gives">
+      @if ($d['rules'])
+      <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
+      @endif
+      @if ($d['drops'])
+      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Opened', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true]]" style="margin-top:1.1rem" />
+      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach A drop rate is times opened that held the item over times opened for the first time. The band is the 95% range; from 10 to 29 openings it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.@if ($d['unread']) {{ $d['unread'] }}@endif</p>
+      @else
+      <x-note>No drops recorded for this object yet.@if ($d['unread']) {{ $d['unread'] }}@endif</x-note>
+      @endif
+    </x-module>
+    <x-module span="w5" :last="true" id="h-w" heading="Where it was opened">
+      @if ($d['hasMap'])
+      <div class="mapbox" style="aspect-ratio:1 / 1"><x-world-canvas id="map" label="Where players stood when they opened this object. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
+      <p class="note">Marks show where the player stood, not where the object was.</p>
+      @else
+      <x-note>No openings are placed on the world map yet.</x-note>
+      @endif
+    </x-module>
+  </x-sheet>
+</div>
+</x-layouts.app>

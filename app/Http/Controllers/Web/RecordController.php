@@ -5,17 +5,22 @@ namespace App\Http\Controllers\Web;
 use App\Actions\Public\CreatureRecord;
 use App\Actions\Public\EncounterRecord;
 use App\Actions\Public\ItemRecord;
+use App\Actions\Public\ObjectRecord;
 use App\Actions\Public\QuestRecord;
 use App\Actions\Public\SpellRecord;
 use App\Actions\Public\ZoneRecord;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\RecordRequest;
+use App\Support\GameObjects;
+use App\Support\Profession;
 use App\View\Pages\EncounterPage;
+use App\View\Pages\ObjectPage;
 use App\View\Pages\RecordPages;
 use App\View\Pages\SpellPage;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
-/** The pages of one creature, item, spell, boss encounter, zone or quest. Public. */
+/** The pages of one creature, object, item, spell, boss encounter, zone or quest. Public. */
 class RecordController extends Controller
 {
     public function creature(RecordRequest $request, CreatureRecord $record, int $id): View
@@ -24,6 +29,17 @@ class RecordController extends Controller
         abort_if($answer === null, 404);
 
         return view('pages.creature', ['d' => RecordPages::creature($answer)]);
+    }
+
+    public function object(RecordRequest $request, ObjectRecord $record, int $id): View|RedirectResponse
+    {
+        if ($id === GameObjects::FISHING_BOBBER) {
+            return redirect('/professions/'.Profession::Fishing->slug());
+        }
+        $answer = $record->handle($id, $request->lootRule());
+        abort_if($answer === null, 404);
+
+        return view('pages.object', ['d' => ObjectPage::from($answer)]);
     }
 
     public function item(RecordRequest $request, ItemRecord $record, int $id): View

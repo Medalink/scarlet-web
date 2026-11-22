@@ -35,6 +35,7 @@ Route::get('/c/{name}', CharacterController::class)->where('name', '[^/]+');
 Route::get('/c/{name}/battlegrounds', CharacterBattlegroundsController::class)->where('name', '[^/]+');
 Route::get('/c/{name}/heat', CharacterHeatController::class)->where('name', '[^/]+');
 Route::get('/creatures/{id}', [RecordController::class, 'creature'])->whereNumber('id');
+Route::get('/objects/{id}', [RecordController::class, 'object'])->whereNumber('id');
 Route::get('/items/{id}', [RecordController::class, 'item'])->whereNumber('id');
 Route::get('/spells/{id}', [RecordController::class, 'spell'])->whereNumber('id');
 Route::get('/encounters/{id}', [RecordController::class, 'encounter'])->whereNumber('id');

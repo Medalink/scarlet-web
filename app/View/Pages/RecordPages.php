@@ -395,7 +395,7 @@ final class RecordPages
 
         return match (LootSourceKind::tryFrom((string) $row['source_kind'])) {
             LootSourceKind::Creature => ['text' => $name ?? 'Creature '.$id, 'href' => '/creatures/'.$id],
-            LootSourceKind::Object => ['text' => $name ?? 'Object '.$id],
+            LootSourceKind::Object => ['text' => $name ?? 'Object '.$id, 'href' => '/objects/'.$id],
             LootSourceKind::Bag => ['text' => $name ?? 'Item '.$id, 'href' => '/items/'.$id],
             default => ['text' => 'Source '.$id],
         };
