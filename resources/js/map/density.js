@@ -2,8 +2,9 @@
 // of cells is blurred, put through a log scale that tops out at the 98th percentile, coloured by the ramp and kept as one
 // texture; a frame draws the visible part of it, scaled with bilinear filtering.
 
-const RADIUS = 2;
 const SIGMA = 0.6;
+const CHUNK = 64;
+const MAX_CHUNKS = 48;
 const PERCENTILE = 0.98;
 const BINS = 2048;
 const FLOOR = 0.02;
@@ -19,14 +20,26 @@ const RAMP = [
     [1, 255, 143, 166, 0.96],
 ];
 
-const KERNEL = (() => {
+/** Past `from` px per cell the finest level is drawn from the cells again, `scale` texels to a cell and blurred by `sigma` cells. */
+const DETAIL = [
+    { from: 6, scale: 3, sigma: 0.5 },
+    { from: 10, scale: 5, sigma: 0.3 },
+    { from: 18, scale: 7, sigma: 0.18 },
+    { from: 30, scale: 9, sigma: 0.12 },
+];
+
+function gaussian(sigma) {
+    const radius = Math.ceil(sigma * 2.5);
     const weights = [];
-    for (let k = -RADIUS; k <= RADIUS; k++) {
-        weights.push(Math.exp(-(k * k) / (2 * SIGMA * SIGMA)));
+    for (let k = -radius; k <= radius; k++) {
+        weights.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
     }
     const total = weights.reduce((a, b) => a + b, 0);
     return Float32Array.from(weights, (w) => w / total);
-})();
+}
+
+const KERNEL = gaussian(SIGMA);
+const RADIUS = (KERNEL.length - 1) / 2;
 
 const LUT = (() => {
     const lut = new Uint8ClampedArray(256 * 4);
@@ -45,16 +58,17 @@ const LUT = (() => {
     return lut;
 })();
 
-function blur(field, width, height) {
+function blur(field, width, height, kernel = KERNEL) {
+    const radius = (kernel.length - 1) / 2;
     const out = new Float32Array(field.length);
     for (let y = 0; y < height; y++) {
         const row = y * width;
         for (let x = 0; x < width; x++) {
             let sum = 0;
-            for (let k = -RADIUS; k <= RADIUS; k++) {
+            for (let k = -radius; k <= radius; k++) {
                 const xx = x + k;
                 if (xx >= 0 && xx < width) {
-                    sum += field[row + xx] * KERNEL[k + RADIUS];
+                    sum += field[row + xx] * kernel[k + radius];
                 }
             }
             out[row + x] = sum;
@@ -64,10 +78,10 @@ function blur(field, width, height) {
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             let sum = 0;
-            for (let k = -RADIUS; k <= RADIUS; k++) {
+            for (let k = -radius; k <= radius; k++) {
                 const yy = y + k;
                 if (yy >= 0 && yy < height) {
-                    sum += out[yy * width + x] * KERNEL[k + RADIUS];
+                    sum += out[yy * width + x] * kernel[k + radius];
                 }
             }
             result[y * width + x] = sum;
@@ -76,12 +90,20 @@ function blur(field, width, height) {
     return result;
 }
 
-/** The texture of one level: cells is a flat [i, j, counter, ...] list on a grid of `columns` by `rows`. */
+const tierAt = (px) => DETAIL.findLast((tier) => px >= tier.from) ?? null;
+
+/**
+ * The texture of one level: cells is a flat [i, j, counter, ...] list on a grid of `columns` by `rows`. The finest level
+ * (`fine`) also redraws the cells it has in view at a higher resolution once a cell is `DETAIL[0].from` px wide.
+ */
 export class Surface {
-    constructor(columns, rows, cells, ordered = false) {
+    constructor(columns, rows, cells, { ordered = false, fine = false } = {}) {
         this.columns = columns;
         this.rows = rows;
         this.cells = cells;
+        this.fine = fine;
+        this.buckets = null;
+        this.chunks = new Map();
         let i0 = columns;
         let j0 = rows;
         let i1 = 0;
@@ -122,6 +144,7 @@ export class Surface {
             count += histogram[bin];
         }
         const reference = Math.max(top * FLOOR, (bin / BINS) * top);
+        this.reference = reference;
         this.rgba = new Uint8ClampedArray(soft.length * 4);
         for (let p = 0; p < soft.length; p++) {
             const level = Math.min(255, Math.round((soft[p] / reference) * 255));
@@ -135,6 +158,101 @@ export class Surface {
         this.context.putImageData(this.image, 0, 0);
         this.order = ordered ? this.arrival(cells) : null;
         this.shown = -1;
+    }
+
+    /** The cells of each chunk of the grid, as indices into `cells`. */
+    index() {
+        if (!this.buckets) {
+            this.buckets = new Map();
+            const across = Math.ceil(this.columns / CHUNK);
+            for (let n = 0; n < this.cells.length; n += 3) {
+                const key = Math.floor(this.cells[n + 1] / CHUNK) * across + Math.floor(this.cells[n] / CHUNK);
+                const list = this.buckets.get(key);
+                if (list) {
+                    list.push(n);
+                } else {
+                    this.buckets.set(key, [n]);
+                }
+            }
+        }
+        return this.buckets;
+    }
+
+    /** One chunk of the grid drawn from its cells at `tier.scale` texels to a cell, with a margin of cells that overlap its neighbours. */
+    chunk(cx, cy, tier) {
+        const key = `${tier.scale}:${cx}:${cy}`;
+        const cached = this.chunks.get(key);
+        if (cached) {
+            this.chunks.delete(key);
+            this.chunks.set(key, cached);
+            return cached;
+        }
+        const buckets = this.index();
+        const across = Math.ceil(this.columns / CHUNK);
+        const scale = tier.scale;
+        const kernel = gaussian(tier.sigma * scale);
+        const margin = Math.ceil((kernel.length - 1) / 2 / scale) + 1;
+        const span = CHUNK + 2 * margin;
+        const size = span * scale;
+        const x0 = cx * CHUNK - margin;
+        const y0 = cy * CHUNK - margin;
+        const middle = (scale - 1) / 2;
+        const field = new Float32Array(size * size);
+        let any = false;
+        for (let by = cy - 1; by <= cy + 1; by++) {
+            for (let bx = cx - 1; bx <= cx + 1; bx++) {
+                for (const n of buckets.get(by * across + bx) ?? []) {
+                    const i = this.cells[n] - x0;
+                    const j = this.cells[n + 1] - y0;
+                    if (i >= 0 && j >= 0 && i < span && j < span) {
+                        field[(j * scale + middle) * size + i * scale + middle] += Math.log1p(this.cells[n + 2]) * scale * scale;
+                        any = true;
+                    }
+                }
+            }
+        }
+        let made = null;
+        if (any) {
+            const soft = blur(field, size, size, kernel);
+            const rgba = new Uint8ClampedArray(soft.length * 4);
+            const gain = (tier.sigma / SIGMA) * (255 / this.reference);
+            for (let p = 0; p < soft.length; p++) {
+                const level = Math.min(255, Math.round(soft[p] * gain));
+                rgba.set(LUT.subarray(level * 4, level * 4 + 4), p * 4);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            canvas.getContext('2d').putImageData(new ImageData(rgba, size, size), 0, 0);
+            made = { canvas, inset: margin * scale, side: CHUNK * scale };
+        }
+        this.chunks.set(key, made);
+        if (this.chunks.size > MAX_CHUNKS) {
+            this.chunks.delete(this.chunks.keys().next().value);
+        }
+        return made;
+    }
+
+    /** Draws the chunks in view from the cells; false when the level on screen is too coarse for that or a replay is still revealing. */
+    drawDetail(ctx, view, px) {
+        const tier = this.fine ? tierAt(px) : null;
+        if (!tier || (this.order && this.shown >= 0 && this.shown < this.cells.length / 3)) {
+            return false;
+        }
+        const [x0, y0] = view.toScreen(0, 0);
+        const width = CHUNK * px;
+        const height = CHUNK * (view.H / this.rows) * view.s;
+        const right = Math.min(Math.ceil(this.columns / CHUNK) - 1, Math.floor((view.width - x0) / width));
+        const below = Math.min(Math.ceil(this.rows / CHUNK) - 1, Math.floor((view.height - y0) / height));
+        for (let cy = Math.max(0, Math.floor(-y0 / height)); cy <= below; cy++) {
+            for (let cx = Math.max(0, Math.floor(-x0 / width)); cx <= right; cx++) {
+                const chunk = this.chunk(cx, cy, tier);
+                if (chunk) {
+                    ctx.drawImage(chunk.canvas, chunk.inset, chunk.inset, chunk.side, chunk.side, x0 + cx * width, y0 + cy * height, width, height);
+                }
+            }
+        }
+        return true;
     }
 
     arrival(cells) {
@@ -174,6 +292,9 @@ export class Surface {
         const [x0, y0] = view.toScreen((this.ox / this.columns), (this.oy / this.rows));
         const sx = cellW * view.s;
         const sy = cellH * view.s;
+        if (this.drawDetail(ctx, view, sx)) {
+            return;
+        }
         const from = Math.max(0, Math.floor(-x0 / sx) - 1);
         const to = Math.min(this.width, Math.ceil((view.width - x0) / sx) + 1);
         const top = Math.max(0, Math.floor(-y0 / sy) - 1);
@@ -202,7 +323,8 @@ const columnsOf = (level) => BASE_COLUMNS * 2 ** level;
 
 /**
  * The heat of a map: cells the page gave (`{ grid: [columns], cells: [i, j, counter, ...] }`, one surface, drawn up to a
- * replay's cell count) or a source (`{ layer, levels, ruleset, creature }`) read from `endpoint` a level at a time, the
+ * replay's cell count), the same read after the first paint from a `remote` URL whose answer is `{ data: { grid, cells } }`,
+ * or a source (`{ layer, levels, ruleset, creature }`) read from `endpoint` a level at a time, the
  * finest level whose cells are at least `FINER_AT` px wide, keeping the level on screen until the next one is ready.
  */
 export class Heat {
@@ -215,12 +337,30 @@ export class Heat {
         this.alive = true;
         this.source = spec?.source ?? null;
         this.fixed = null;
+        this.loading = 0;
         if (spec?.cells) {
-            const columns = spec.grid[0];
-            const flat = Float32Array.from(spec.cells);
-            this.fixed = new Surface(columns, Math.round((columns * 2) / 3), flat, true);
-            this.columns = columns;
+            this.fix(spec.grid[0], spec.cells);
+        } else if (spec?.remote) {
+            this.loading = 1;
+            fetch(spec.remote, { headers: { Accept: 'application/json' } })
+                .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`cells ${response.status}`))))
+                .then(({ data }) => {
+                    if (this.alive) {
+                        this.fix(data.grid[0], data.cells);
+                    }
+                })
+                .catch(() => {})
+                .finally(() => {
+                    this.loading = 0;
+                    if (this.alive) {
+                        this.redraw();
+                    }
+                });
         }
+    }
+
+    fix(columns, cells) {
+        this.fixed = new Surface(columns, Math.round((columns * 2) / 3), Float32Array.from(cells), { ordered: true, fine: true });
     }
 
     get count() {
@@ -264,7 +404,7 @@ export class Heat {
             .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`density ${response.status}`))))
             .then(({ data }) => {
                 if (this.alive) {
-                    this.surfaces.set(level, new Surface(data.columns, data.rows, decodeCells(data.columns, data.cells)));
+                    this.surfaces.set(level, new Surface(data.columns, data.rows, decodeCells(data.columns, data.cells), { fine: level === this.source.levels - 1 }));
                     this.redraw();
                 }
             })

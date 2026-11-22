@@ -55,6 +55,24 @@ final class MapSpec
     }
 
     /**
+     * A map whose cells on the finest grid the viewer reads from `$url` after the first paint, in the order the page's replay needs.
+     *
+     * @param  array{0: float, 1: float, 2: float, 3: float}|null  $fit
+     * @param  array<string, mixed>  $extra
+     * @param  list<array{kind: string, u: float, v: float}>  $marks  crosses and dots on the map, in world coordinates
+     * @return array<string, mixed>
+     */
+    public static function remote(string $url, ?array $fit = null, array $extra = [], array $marks = []): array
+    {
+        return [
+            ...$extra,
+            'fit' => $fit,
+            'zones' => [],
+            'layers' => ['heat' => ['grid' => [WorldLayer::Paths->columns()], 'remote' => $url], 'marks' => $marks],
+        ];
+    }
+
+    /**
      * The zone rectangles with the sentence the pointer readout shows for each.
      *
      * @param  list<array<string, mixed>>  $zones

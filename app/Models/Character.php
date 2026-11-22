@@ -46,6 +46,12 @@ class Character extends Model
         ];
     }
 
+    /** A public character shows to everyone, a private one only to the account that owns it. */
+    public function visibleTo(?int $accountId): bool
+    {
+        return $this->is_public || ($accountId !== null && $this->account_id === $accountId);
+    }
+
     /** The key two spellings of one name share. */
     public static function keyFor(string $name): string
     {
