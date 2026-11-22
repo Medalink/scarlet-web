@@ -93,12 +93,6 @@
           <div><dt data-cap="leftOut">1,898</dt><dd>reviewed and left out, each with a written reason</dd></div>
           <div><dt data-cap="recorded">624</dt><dd>recorded by Scarlet, which is every one that remains</dd></div>
         </dl>
-        <p class="intro more">Reasons on the map for leaving a data point out include:</p>
-        <ul class="reasons">
-          <li>Voice chat plumbing; voice is not recorded.</li>
-          <li>Spectator and commentator tooling for esports events; not a player action.</li>
-          <li>In-game shop and account store; purchases are not recorded and the shop is not play.</li>
-        </ul>
       </div>
       <div id="matrix">
         <p class="matrix-key"><span><i></i>recorded</span><span><i class="out"></i>left out, with a reason</span></p>

@@ -211,14 +211,11 @@ figure figcaption { margin-top: 0.8rem; font-size: 0.9rem; color: var(--muted); 
 /* Capture map -------------------------------------------------------------------- */
 .capture { display: grid; grid-template-columns: minmax(0, 23rem) minmax(0, 1fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: start; margin-top: 2rem; }
 .capture .intro { margin-top: 0; }
-.capture .intro.more { margin-top: 1.4rem; }
 .funnel { margin-top: 1.5rem; border-top: 1px solid var(--line2); }
 .funnel div { display: grid; grid-template-columns: 5.6rem minmax(0, 1fr); gap: 1rem; align-items: baseline; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
 .funnel dt { font: 750 2.1rem/1 var(--display); color: var(--fg); text-align: right; }
 .funnel div:last-child dt { color: var(--accent); }
 .funnel dd { font-size: 0.98rem; }
-.reasons { margin-top: 1.4rem; font-size: 0.95rem; }
-.reasons li { padding-left: 1rem; border-left: 1px solid var(--line2); margin-top: 0.55rem; color: var(--text); }
 .matrix-key { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; font-size: 0.9rem; color: var(--muted); padding-bottom: 0.7rem; }
 .matrix-key i { display: inline-block; width: 0.6rem; height: 0.6rem; margin-right: 0.45rem; background: var(--accent); }
 .matrix-key i.out { background: rgba(255, 255, 255, 0.16); }
