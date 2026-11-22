@@ -3,7 +3,7 @@
 <div class="cls-page" data-class="{{ $page->class->value }}">
 <x-class.head :page="$page" :icons="$icons" :scene="$scene" :art="$art" />
 <div class="wrap">
-  <nav class="trades" aria-label="Pages of {{ $page->character->name }}"><a href="{{ $page->links->character }}">Character</a><a href="{{ $page->links->classPage }}" aria-current="page">{{ $page->name() }}</a>@if ($page->links->battlegrounds)<a href="{{ $page->links->battlegrounds }}">Battlegrounds</a>@endif</nav>
+  <x-class.nav :links="$page->links" :name="$page->character->name" :class-name="$page->name()" current="class" />
   @if ($art && $scene)<p class="credit">{{ $scene->credit() }}</p>@endif
   @if ($page->figures !== [])<x-class.tally :items="$page->figures" :icons="$icons" />@endif
 

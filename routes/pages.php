@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\CampsController;
 use App\Http\Controllers\Web\CharacterBattlegroundsController;
+use App\Http\Controllers\Web\CharacterClassController;
 use App\Http\Controllers\Web\CharacterController;
 use App\Http\Controllers\Web\CharacterHeatController;
 use App\Http\Controllers\Web\DevelopersController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Web\SearchSuggestController;
 use App\Http\Controllers\Web\SitemapController;
 use App\Http\Controllers\Web\StatsController;
 use App\Http\Controllers\Web\TalentsController;
+use App\Support\PlayerClass;
 use App\Support\RecordId;
 use App\Support\SearchKind;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +40,7 @@ Route::get('/release-notes', ReleaseNotesController::class);
 Route::get('/download', DownloadController::class);
 Route::get('/c/{name}', CharacterController::class)->where('name', '[^/]+');
 Route::get('/c/{name}/battlegrounds', CharacterBattlegroundsController::class)->where('name', '[^/]+');
+Route::get('/c/{name}/{class}', CharacterClassController::class)->where(['name' => '[^/]+', 'class' => implode('|', array_map(fn (PlayerClass $class): string => $class->slug(), PlayerClass::cases()))]);
 Route::get('/c/{name}/heat', CharacterHeatController::class)->where('name', '[^/]+');
 Route::get('/creatures/{id}', [RecordController::class, 'creature'])->where('id', RecordId::pattern());
 Route::get('/objects/{id}', [RecordController::class, 'object'])->where('id', RecordId::pattern());

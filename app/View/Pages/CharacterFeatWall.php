@@ -60,7 +60,7 @@ final class CharacterFeatWall
      * @param  Row  $feat
      * @return Card
      */
-    private static function card(array $feat): array
+    public static function card(array $feat): array
     {
         return [
             'key' => $feat['key'], 'pinned' => $feat['pinned'], 'tier' => $feat['tier'], 'icon' => Feat::from($feat['key'])->icon(), 'name' => $feat['name'], 'tier_name' => $feat['tier_name'],
