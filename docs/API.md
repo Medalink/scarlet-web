@@ -561,7 +561,7 @@ One creature: its level range and kind, kills, deaths to it, drops under each lo
 | `ruleset` | query | string | A ruleset slug from `/rulesets`. Leave out for all rulesets. |
 | `server` | query | string | `all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given. |
 
-`data`: `facts`, `kills`, `deaths`, `deaths_by_level`, `drops` (item, loot rule, drops, opens, rate, `estimate` (`k` drops of `n` corpses looted for the first time, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 corpses, `hollow` from 10 and `solid` from 30, and `flags` from `one_character`, `skins_counted` and `quest_item`; `rate`, `low` and `high` are `null` under 10 corpses)) and `cells`. Drop rates cover every ruleset.
+`data`: `facts`, `kills`, `deaths`, `deaths_by_level`, `drops` (item, loot rule, drops, opens, rate, `estimate` (`k` drops of `n` corpses looted for the first time, counting only windows read for loot, not for skinning; `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 corpses, `hollow` from 10 and `solid` from 30, and `flags` from `one_character` and `quest_item`; `rate`, `low` and `high` are `null` under 10 corpses)) and `cells`. Drop rates cover every ruleset.
 
 Example: `curl https://<host>/api/v1/public/creatures/257926`
 

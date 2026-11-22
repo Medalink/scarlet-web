@@ -490,7 +490,7 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
         <tbody>
           ${ranked([dropRow("Stalker Hide", "item.html", 52, 126, "1.0"), dropRow("Cracked Tooth", "item.html", 36, 126, "1.0"), dropRow("Saltmarsh Cleaver", "item.html", 2, 126, "1.0", "q2"), dropRow("Marshwalker Greaves", "item.html", 1, 126, "1.0", "q3")])}
         </tbody></table></div>
-      <p class="note"><span class="tag">skins counted</span> A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset. Skinning is counted as looting here, so these rates are off until it is counted apart.</p>
+      <p class="note">A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.</p>
     </section>
     <section class="mod w5 last" aria-labelledby="h-w">
       <h2 id="h-w">Where it was met</h2>

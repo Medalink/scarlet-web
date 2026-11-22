@@ -37,7 +37,7 @@ final class RecordPages
         $kills = $r['kills'];
         /** @var array{deaths: int|null, characters: int|null} $deaths */
         $deaths = $r['deaths'];
-        /** @var array{rule: string|null, windows: int, characters: int, skins_counted: bool, rules: list<array{rule: string, windows: int}>, rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $table */
+        /** @var array{rule: string|null, windows: int, characters: int, unread: int, rules: list<array{rule: string, windows: int}>, rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $table */
         $table = $r['drop_table'];
         /** @var list<array{id: int, name: string}> $zones */
         $zones = $facts['zones'];
@@ -66,7 +66,7 @@ final class RecordPages
                 ], $table['rules']),
             ],
             'tags' => $table['rows'] === [] ? [] : array_map(fn (RateFlag $flag): string => $flag->label(), array_values(array_filter($table['rows'][0]['estimate']->flags, fn (RateFlag $flag): bool => $flag !== RateFlag::QuestItem))),
-            'skins' => $table['skins_counted'],
+            'unread' => $table['unread'] === 0 ? null : 'Left out: '.Format::count($table['unread'], 'corpse').' from sessions that do not record what a corpse was read for.',
             'drops' => array_map(fn (array $row): array => ['cells' => [
                 ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id'], 'tag' => in_array(RateFlag::QuestItem, $row['estimate']->flags, true) ? RateFlag::QuestItem->label() : null],
                 ['rate' => $row['estimate']],

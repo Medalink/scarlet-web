@@ -90,7 +90,9 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
   sizes seen: `Group loot recorded at size 2 only.`
 - **Corpses looted of kills** (phase 2): a figure, solo play only.
 - The note under Drops is one line: `A drop rate is corpses that held the item over corpses looted for the first
-  time. The range is 95%.` Until phase 2 a source with leather or hide rows carries the tag `skins counted`.
+  time. The range is 95%.` Drops counts windows read for loot only (`read = 'loot'`); windows read for skinning are
+  in Skinning. When windows were left out because their session has no `read`, the note adds `Left out: N corpses
+  from sessions that do not record what a corpse was read for.`
 
 ### Object, `/objects/{id}`
 
@@ -186,9 +188,9 @@ receipt      loot_drops where counted and via = 'receipt'
 member kill  kills where counted and not player
 ```
 
-From phase 2 a window also carries `read`. A drop table reads `read = 'loot'`, a skinning table `read = 'skin'`,
-and fishing, herbs and ore are `fish`, `herb`, `ore`. Until then every creature window is counted as loot and a
-source with leather or hide rows carries the tag `skins counted`.
+A window also carries `read`. A drop table reads `read = 'loot'`, a skinning table `read = 'skin'`, and fishing,
+herbs and ore are `fish`, `herb`, `ore`. Before phase 2 every creature window was counted as loot and a source
+with leather or hide rows carried the tag `skins counted`; the tag is no longer set.
 
 **A window with no `read`** is from a session not decoded at version 10 yet, or from one with no `combat` part: the
 casts that name a gathering window are `combat` lines, so such a session never gets a `read`. Such a window may be
@@ -280,7 +282,7 @@ tag of the estimate. The enum holds the tags of the phases built so far.
 | Tag | API value | Set when | From |
 | --- | --- | --- | --- |
 | `1 character` | `one_character` | every window of the row or arm is from one character | phase 1 |
-| `skins counted` | `skins_counted` | before phase 2: the source has leather or hide rows | phase 1 |
+| `skins counted` | `skins_counted` | the source has leather or hide rows. Phase 2 reads skinning apart from looting, so a row is never mixed and the tag stops being set; the case goes with the old aggregates | phase 1 |
 | `quest item` | `quest_item` | the item binds as a quest item | phase 1 |
 | `one reader` | `one_reader` | a free-for-all arm that two or more characters contributed to | phase 4 |
 | `different characters` | `different_characters` | the two arms of a comparison share no character | phase 4 |

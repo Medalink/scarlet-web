@@ -15,9 +15,9 @@
       @endif
       @if ($d['drops'])
       <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true]]" style="margin-top:1.1rem" />
-      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.@if ($d['skins']) Skinning is counted as looting here, so these rates are off until it is counted apart.@endif</p>
+      <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach A drop rate is corpses that held the item over corpses looted for the first time. The band is the 95% range; from 10 to 29 corpses it is hollow, and under 10 the row shows its counts only. Drop rates cover every ruleset.@if ($d['unread']) {{ $d['unread'] }}@endif</p>
       @else
-      <x-note>No drops recorded for this creature yet.</x-note>
+      <x-note>No drops recorded for this creature yet.@if ($d['unread']) {{ $d['unread'] }}@endif</x-note>
       @endif
     </x-module>
     <x-module span="w5" :last="true" id="h-w" heading="Where it was met">
