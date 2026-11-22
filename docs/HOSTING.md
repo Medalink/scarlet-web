@@ -198,7 +198,7 @@ Every ship to `main` deploys by itself. The flow's `live` ring (roster, `flows/s
 | `rollback` | `rollout.sh --rollback`, only when the failed commit is the release that serves | The failure is posted with the log |
 
 The ring uses a key of its own, `~/.config/scarlet-web/ring_ed25519` on medaware. Its line in
-`~ops/.ssh/authorized_keys2` on the droplet forces `/usr/local/sbin/scarlet-deploy-entry` (`deploy/ring-entry.sh`)
+`~ops/.ssh/authorized_keys2` on the droplet forces `/usr/local/sbin/scarlet-deploy-entry` (`scripts/deploy/ring-entry.sh`)
 and allows one port forward, to the loopback registry. The entry takes nine verbs (lock, unlock, registry, pull,
 rollout, rollback, release, sums, status) and a release must be 12 hex digits. The key gets no shell, cannot write a
 file, cannot install a deploy folder and is not on the database host. The ops key stays on medaviper.

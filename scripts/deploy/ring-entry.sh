@@ -1,6 +1,6 @@
 #!/bin/sh
 # The only thing the flow ring's key may run on the app droplet. `bin/deploy ring-key` installs this file as
-# /usr/local/sbin/scarlet-deploy-entry (owned by root, outside the deploy folder a release replaces) and makes it the
+# /usr/local/sbin/scarlet-deploy-entry (owned by root; it is not in deploy/, the folder a release replaces) and makes it the
 # forced command of the ring's line in ~ops/.ssh/authorized_keys2, so that key gets no shell. It takes one of the
 # verbs below and nothing else: the key can roll out an image, roll back and read status. It cannot change a file,
 # install a deploy folder or reach the database host.

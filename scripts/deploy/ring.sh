@@ -6,7 +6,7 @@
 #   ring.sh check      the release that serves is $FLOW_SHA and the public pages answer 200 from the origin, uncached
 #   ring.sh rollback   move visitors back to the release before, only when $FLOW_SHA is the one that serves
 #
-# It reaches the droplet with the ring's own key, which may run deploy/ring-entry.sh there and nothing else
+# It reaches the droplet with the ring's own key, which may run scripts/deploy/ring-entry.sh there and nothing else
 # (docs/HOSTING.md, "Deploy ring"). That key cannot install a deploy folder, so when deploy/ at $FLOW_SHA differs
 # from the one on the droplet the ring prints `skip:` and deploys nothing until `bin/deploy` runs once with the ops key.
 set -eu
