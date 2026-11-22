@@ -2,7 +2,11 @@
 # Runs on the build host (medaware), piped in by bin/deploy: `bash -s -- <repo> <ref>`.
 # Clones the full history, checks out the ref and builds the app image through `fleet slot`, so the compile waits its
 # turn. Prints `built <sha>` as its last line. Checkouts live under /data/<user>/scratch, never on the 4 GB droplet.
+# The image copies the checkout with its file modes and php-fpm reads it as www-data, so every file and folder is made
+# readable by others whatever umask the caller has: the flow engine runs with 077, which left the files a checkout
+# rewrote readable by their owner only.
 set -euo pipefail
+umask 022
 repo=$1
 ref=$2
 export PATH="$HOME/Dev/roster/bin:$PATH"
@@ -20,6 +24,7 @@ git fetch --quiet origin "$ref" 2>/dev/null || true
 sha=$(git rev-parse --verify "origin/$ref^{commit}" 2>/dev/null || git rev-parse --verify "$ref^{commit}")
 git checkout --quiet --force --detach "$sha"
 git clean -ffdxq
+find . -path ./.git -prune -o -exec chmod go+rX {} +
 tag=${sha:0:12}
 
 now() { date +%s.%N; }
