@@ -31,24 +31,24 @@ final class CharacterRecords
         $tiles = [];
         if ($records['blow'] !== null) {
             $blow = $records['blow'];
-            $tiles[] = self::tile(Format::number($blow['damage']), 'Biggest killing blow from a creature', implode(', ', array_filter([
+            $tiles[] = self::tile('deaths', Format::number($blow['damage']), 'Biggest killing blow from a creature', implode(', ', array_filter([
                 'Killed by '.$blow['killer'], $blow['level'] === null ? null : 'level '.$blow['level'], $blow['zone'],
             ])));
         }
         if ($totals['longest'] !== null) {
-            $tiles[] = self::tile(Format::duration($totals['longest']['seconds']), 'Longest session', self::day($totals['longest']['at']));
+            $tiles[] = self::tile('clock', Format::duration($totals['longest']['seconds']), 'Longest session', self::day($totals['longest']['at']));
         }
         if ($totals['busiest'] !== null) {
-            $tiles[] = self::tile(Format::number($totals['busiest']['kills']), 'Most kills in one session', self::day($totals['busiest']['at']));
+            $tiles[] = self::tile('kills', Format::number($totals['busiest']['kills']), 'Most kills in one session', self::day($totals['busiest']['at']));
         }
         if ($totals['questiest'] !== null) {
-            $tiles[] = self::tile(Format::number($totals['questiest']['quests']), 'Most quests in one session', self::day($totals['questiest']['at']));
+            $tiles[] = self::tile('quests', Format::number($totals['questiest']['quests']), 'Most quests in one session', self::day($totals['questiest']['at']));
         }
         if ($records['nodes'] > 0) {
-            $tiles[] = self::tile(Format::number($records['nodes']), 'Nodes gathered', $since, self::taken('Most gathered', $records['topNode']));
+            $tiles[] = self::tile('gather', Format::number($records['nodes']), 'Nodes gathered', $since, self::taken('Most gathered', $records['topNode']));
         }
         if ($records['fish'] > 0) {
-            $tiles[] = self::tile(Format::number($records['fish']), 'Fish caught', $since, self::taken('Most caught', $records['topFish']));
+            $tiles[] = self::tile('fish', Format::number($records['fish']), 'Fish caught', $since, self::taken('Most caught', $records['topFish']));
         }
         if (count($tiles) < self::LEAST) {
             return null;
@@ -90,9 +90,9 @@ final class CharacterRecords
     }
 
     /** @return array<string, string|null> */
-    private static function tile(string $value, string $label, ?string $detail = null, ?string $extra = null): array
+    private static function tile(string $icon, string $value, string $label, ?string $detail = null, ?string $extra = null): array
     {
-        return ['value' => $value, 'label' => $label, 'detail' => $detail === '' ? null : $detail, 'extra' => $extra, 'span' => null];
+        return ['icon' => $icon, 'value' => $value, 'label' => $label, 'detail' => $detail === '' ? null : $detail, 'extra' => $extra, 'span' => null];
     }
 
     private static function day(string $at): string

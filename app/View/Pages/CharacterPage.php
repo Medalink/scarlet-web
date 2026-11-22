@@ -2,6 +2,7 @@
 
 namespace App\View\Pages;
 
+use App\Actions\Rollups\RulesetSummaries;
 use App\Http\Requests\Web\CharacterRequest;
 use App\Models\Character;
 use App\View\Charts;
@@ -58,16 +59,18 @@ final class CharacterPage
                 $character->whole_life || $character->first_level === null ? null : ['text' => 'First recorded at level '.$character->first_level, 'href' => null],
             ], fn (?array $fact): bool => $fact !== null && (string) $fact['text'] !== '')),
             'figures' => array_values(array_filter([
-                ['label' => 'Level', 'value' => (string) $character->level, 'count' => $character->level],
+                ['label' => 'Level', 'value' => (string) $character->level, 'count' => $character->level, 'icon' => 'level'],
                 $character->played_known
-                    ? ['label' => 'Played', 'value' => Format::duration($character->played_seconds)]
-                    : ['label' => 'Recorded'.$since, 'value' => Format::duration($character->recorded_seconds)],
-                $cap === null ? null : ['label' => 'Time at level '.$cap['level'].($cap['observed'] ? $since : ''), 'value' => Format::duration($cap['seconds_at_cap'])],
-                ['label' => 'Kills'.$since, 'value' => Format::number($totals['kills'])],
-                ['label' => 'Deaths'.$since, 'value' => Format::number($totals['deaths'])],
-                ['label' => 'Quests'.$since, 'value' => Format::number($totals['quests'])],
-                round($totals['distance'], 1) > 0 ? ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1)] : null,
+                    ? ['label' => 'Played', 'value' => Format::duration($character->played_seconds), 'icon' => 'hours']
+                    : ['label' => 'Recorded'.$since, 'value' => Format::duration($character->recorded_seconds), 'icon' => 'hours'],
+                $cap === null ? null : ['label' => 'Time at level '.$cap['level'].($cap['observed'] ? $since : ''), 'value' => Format::duration($cap['seconds_at_cap']), 'icon' => null],
+                ['label' => 'Kills'.$since, 'value' => Format::number($totals['kills']), 'icon' => 'kills'],
+                ['label' => 'Deaths'.$since, 'value' => Format::number($totals['deaths']), 'icon' => 'deaths'],
+                ['label' => 'Quests'.$since, 'value' => Format::number($totals['quests']), 'icon' => 'quests'],
+                round($totals['distance'], 1) > 0 ? ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1), 'icon' => 'distance'] : null,
             ])),
+            'classKey' => strtoupper((string) $character->class),
+            'levelRule' => self::levelRule($character->level),
             'chapters' => CharacterLayout::chapters($cap !== null, $r['gold'] !== null, $quests !== null, $creatures !== null, $steps !== null, $r['talents'] !== null, $levels !== null),
             'map' => CharacterReplay::map($r['heat'], $r['marks'], '/c/'.rawurlencode($character->name).'/heat'),
             'hasMap' => $r['heat']['cells'] !== [],
@@ -76,6 +79,7 @@ final class CharacterPage
             'levels' => $levels,
             'records' => CharacterRecords::tiles($r['records'], $totals, $since),
             'feats' => CharacterFeats::section($r['feats'], $character),
+            'standings' => CharacterStandings::rows($r['standings']),
             'gold' => $r['gold'] === null ? null : self::gold($r['gold']),
             'quests' => $quests,
             'creatures' => $creatures,
@@ -100,6 +104,26 @@ final class CharacterPage
     }
 
     /**
+     * The rule from level 1 to the level cap with the character's level on it, or no row for a character with no level.
+     *
+     * @return list<array{icon: string, label: string, value: string, at: string, left: string, target: string}>
+     */
+    private static function levelRule(?int $level): array
+    {
+        if ($level === null || $level < 1) {
+            return [];
+        }
+        $cap = RulesetSummaries::TARGET_LEVEL;
+        $share = min(1.0, ($level - 1) / ($cap - 1));
+
+        return [[
+            'icon' => 'level', 'label' => 'Level', 'value' => (string) $level,
+            'at' => number_format($share * 100, 1, '.', ''),
+            'left' => $level >= $cap ? 'At the level cap' : ($cap - $level).' to go', 'target' => (string) $cap,
+        ]];
+    }
+
+    /**
      * @param  array<string, mixed>  $week
      * @return array<string, mixed>
      */
@@ -108,14 +132,14 @@ final class CharacterPage
         $from = Carbon::parse((string) $week['from']);
         $to = Carbon::parse((string) $week['to']);
         $figures = [
-            ['label' => 'Played', 'value' => Format::duration($week['seconds'])],
-            ['label' => 'Dungeons', 'value' => Format::number($week['runs'])],
-            ['label' => 'Quests', 'value' => Format::number($week['quests'])],
+            ['label' => 'Played', 'value' => Format::duration($week['seconds']), 'icon' => 'hours'],
+            ['label' => 'Dungeons', 'value' => Format::number($week['runs']), 'icon' => 'dungeons'],
+            ['label' => 'Quests', 'value' => Format::number($week['quests']), 'icon' => 'quests'],
         ];
         if ($economy && $week['gold'] !== null) {
-            $figures[] = ['label' => 'Gold', 'value' => Format::moneyText($week['gold'], true)];
+            $figures[] = ['label' => 'Gold', 'value' => Format::moneyText($week['gold'], true), 'icon' => 'gold'];
         }
-        $figures[] = ['label' => 'Zones', 'value' => Format::number($week['zones'])];
+        $figures[] = ['label' => 'Zones', 'value' => Format::number($week['zones']), 'icon' => 'zones'];
 
         return ['range' => $from->format('D j').' to '.$to->format('D j M'), 'figures' => $figures];
     }

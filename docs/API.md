@@ -385,13 +385,13 @@ Example: `curl https://<host>/api/v1/public/search?q=ash&kind=zones`
 
 #### `GET /public/characters/{name}`
 
-A public character: race, class, level, ruleset, time played, this week, distance walked and feats. A character that is not public answers 404.
+A public character: race, class, level, ruleset, time played, this week, distance walked, feats and standings. A character that is not public answers 404.
 
 | Parameter | In | Type | Meaning |
 | --- | --- | --- | --- |
 | `name` | path | string | The character name, `Name-Surname`. |
 
-`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (a list, highest tier first: `key`, `name`, `value`, `tier` from 0 for none to 4 for scarlet, `tier_name`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top). `meta.economy` says whether the owner shows money.
+`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (a list, highest tier first: `key`, `name`, `value`, `tier` from 0 for none to 4 for scarlet, `tier_name`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.
 
 Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane`
 

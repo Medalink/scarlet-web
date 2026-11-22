@@ -17,6 +17,7 @@ use App\Actions\Public\Character\Records;
 use App\Actions\Public\Character\SessionTotals;
 use App\Actions\Public\Character\SkillHistory;
 use App\Actions\Public\Character\SkillRanks;
+use App\Actions\Public\Character\Standings;
 use App\Actions\Public\Character\Talents;
 use App\Actions\Public\Character\ZoneHours;
 use App\Actions\Rollups\LevellingCurve;
@@ -63,6 +64,7 @@ class CharacterOverview
         private readonly CreaturesMet $creaturesMet,
         private readonly SkillHistory $skillHistory,
         private readonly Feats $feats,
+        private readonly Standings $standings,
     ) {}
 
     /**
@@ -112,6 +114,7 @@ class CharacterOverview
             'talents' => $this->talents->handle($id),
             'records' => $records,
             'feats' => $last === null ? [] : $this->feats->handle($character, $totals, $records, $skills, $dungeons),
+            'standings' => $this->standings->handle($character),
             'killed' => $this->mostKilled->handle($id),
             'crafted' => $this->mostCrafted->handle($id),
             'dungeonRuns' => $this->dungeonRuns->handle($id),

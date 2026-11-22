@@ -11,8 +11,9 @@
   @endif
   <div class="ch-id wrap">
     <div><h1 class="ch-name" id="h1">{{ $d['name'] }}</h1>
-      <p class="ch-sub"><i class="dot" aria-hidden="true"></i>@foreach ($d['facts'] as $fact)<span>@if ($fact['href'])<a href="{{ $fact['href'] }}">{{ $fact['text'] }}</a>@else{{ $fact['text'] }}@endif</span>@endforeach</p>
-      <dl class="ch-figs">@foreach ($d['figures'] as $figure)<div><dt>{{ $figure['label'] }}</dt><dd @if (isset($figure['count'])) data-count="{{ $figure['count'] }}" @endif>{{ $figure['value'] }}</dd></div>@endforeach</dl></div>
+      <p class="ch-sub" @if ($d['classKey'] !== '') data-class="{{ $d['classKey'] }}" @endif><i class="dot" aria-hidden="true"></i>@foreach ($d['facts'] as $fact)<span>@if ($fact['href'])<a href="{{ $fact['href'] }}">{{ $fact['text'] }}</a>@else{{ $fact['text'] }}@endif</span>@endforeach</p>
+      <dl class="ch-figs">@foreach ($d['figures'] as $figure)<div><dt>@if ($figure['icon'])<x-icon :name="$figure['icon']" />@endif {{ $figure['label'] }}</dt><dd @if (isset($figure['count'])) data-count="{{ $figure['count'] }}" @endif>{{ $figure['value'] }}</dd></div>@endforeach</dl>
+      @if ($d['levelRule'])<x-rules :rows="$d['levelRule']" />@endif</div>
   </div>
 </section>
 <div class="wrap">
@@ -21,6 +22,7 @@
   <section class="recs" aria-labelledby="h-records">
     <h2 id="h-records">Records</h2>
     <ul class="rec-grid">@foreach ([$d['records']['lead'], ...$d['records']['tiles']] as $tile)<li @class(['rec-lead' => $loop->first, ...array_fill_keys(explode(' ', (string) $tile['span']), true)])>
+      <x-icon :name="$tile['icon']" class="rec-ico" />
       <b class="rec-v">{{ $tile['value'] }}</b>
       <span class="rec-l">{{ $tile['label'] }}</span>
       @if ($tile['detail'])<span class="rec-d">{{ $tile['detail'] }}</span>@endif
@@ -36,10 +38,17 @@
     <ul class="feats">@foreach ($d['feats']['items'] as $feat)<li class="feat t{{ $feat['tier'] }}"><span class="seal"><x-icon :name="$feat['icon']" /></span><div><p class="feat-n">{{ $feat['name'] }}@if ($feat['tier_name'])<small>{{ $feat['tier_name'] }}</small>@endif</p><p class="feat-d">{{ $feat['detail'] }}</p>@if ($feat['at'] !== null)<span class="feat-to" style="--at:{{ $feat['at'] }}%"><i></i></span>@endif</div></li>@endforeach</ul>
   </section>
   @endif
+  @if ($d['standings'])
+  <section class="recs" aria-labelledby="h-stands">
+    <h2 id="h-stands">Standings</h2>
+    <p class="note">Among public characters of every ruleset.</p>
+    <ol class="stands">@foreach ($d['standings'] as $stand)<li @if ($stand['medal']) class="{{ $stand['medal'] }}" @endif><span class="place"><span class="vh">Place </span>{{ $stand['place'] }}</span><a class="board" href="{{ $stand['href'] }}">{{ $stand['title'] }}</a><span class="val">{{ $stand['value'] }}</span><span class="of">of {{ $stand['of'] }}</span></li>@endforeach</ol>
+  </section>
+  @endif
   @if ($d['week'])
   <section class="week" aria-labelledby="h-week">
     <div><h2 id="h-week">This week</h2><p>{{ $d['week']['range'] }}</p></div>
-    @foreach ($d['week']['figures'] as $figure)<dl><dt>{{ $figure['label'] }}</dt><dd @if (isset($figure['count'])) data-count="{{ $figure['count'] }}" @endif>{{ $figure['value'] }}</dd></dl>@endforeach
+    @foreach ($d['week']['figures'] as $figure)<dl><dt>@if ($figure['icon'])<x-icon :name="$figure['icon']" />@endif {{ $figure['label'] }}</dt><dd @if (isset($figure['count'])) data-count="{{ $figure['count'] }}" @endif>{{ $figure['value'] }}</dd></dl>@endforeach
   </section>
   @endif
   <x-sheet class="chapters">
