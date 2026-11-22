@@ -233,7 +233,7 @@ included.
 
 **A window with no `read`** is from a session not decoded at version 10 yet, or from one with no `combat` part: the
 casts that name a gathering window are `combat` lines, so such a session never gets a `read`. Such a window may be
-a loot window or a skin window, so it counts in no table. `loot_windows_daily` and `loot_items_daily` keep it in
+a loot window or a skin window, so it counts in no table. the aggregates keep it in
 their null `read` bucket and the readers leave it out through `App\Support\LootRead`; nothing counts it as loot
 while the re-decode runs, so a page shows only decoded windows until the re-decode has finished, and there is no
 switch on `sessions.decoder_version`. The rows that hold the null bucket stay in the aggregates, so the readers can
@@ -482,12 +482,12 @@ object is labelled by what it gives.
 - **One Action per question**, as the house rules say: `LootSources`, `LootItems`, `SourceDrops`,
   `SourceRuleArms`, `LootRuleEffects`, `ObjectRecord`. `DropRates` and `ItemSources` stay until their callers
   move, then go (three ships).
-- **Two new aggregates beside the old two**: `loot_windows_daily` (source, `read`, rule, size, zone; windows, item
+- **Two aggregates**: `loot_windows_daily` (source, `read`, rule, size, zone; windows, item
   rows, characters) and `loot_items_daily` (the same keys and item; windows with the item, quantity). The old
-  `opens_daily` and `drops_daily` are dropped. Phase 4 adds three beside them: `loot_windows_character_daily` (windows
+  `opens_daily` and `drops_daily` are dropped, and so is `loot_windows_daily`, which the counted views of phase 7 replaced. Phase 4 adds three beside them: `loot_windows_character_daily` (windows
   by source, read, rule, size and character, with the sum and the sum of squares of item rows),
-  `loot_freeforall_items_daily` (the same by item, free for all only, for the one reader) and `loot_receipts_daily`
-  (receipts that came from a corpse). These count one character's first reads, which is what the pages that pair a
+  `loot_freeforall_items_daily` (the same by item, free for all only, for the one reader; dropped in phase 7 for its unkeyed twin)
+  and `loot_receipts_daily` (receipts that came from a corpse). These count one character's first reads, which is what the pages that pair a
   character's windows with its own receipts read (What the looter kept, Your share of group loot).
 - **Corpses counted once (phase 7).** Windows without a key are the same aggregates over `corpse_key is null`:
   `loot_windows_unkeyed_daily`, `loot_items_unkeyed_daily`, `loot_windows_character_unkeyed_daily`,
