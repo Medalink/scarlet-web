@@ -1,20 +1,34 @@
 <x-layouts.app :title="'Scarlet stats: '.$d['title']" current="stats" description="How characters level in WoW Forever: time to each level, deaths, dungeons, skills and where people play.">
+<section class="pg-hero">
+  <div class="stage" inert><x-world-canvas id="hero-map" label="" :spec="$map" /></div>
+  <div class="wrap">
+    <x-page-head :title="$d['title']">
+      <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
+      <x-slot:filters><x-scope-filters :filters="$filters" /></x-slot:filters>
+    </x-page-head>
+    <x-tally :items="$d['game']['tally']" />
+  </div>
+</section>
 <div class="wrap">
-  <x-page-head :title="$d['title']">
-    <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
-    <x-slot:filters><x-scope-filters :filters="$filters" /></x-slot:filters>
-  </x-page-head>
-
-  <x-figures :items="$d['figures']" />
-
   <x-sheet>
-    <x-module span="w12" :first="true" :last="true" id="h-cap" :heading="$d['cap']['heading']">
-      @if ($d['cap']['rows'])
-      <x-table :columns="[['label' => 'Measure'], ['label' => 'Total', 'numeric' => true], ['label' => 'Based on', 'numeric' => true]]" :rows="$d['cap']['rows']" />
-      @else
-      <x-note>{{ $d['cap']['note'] }}</x-note>
-      @endif
+    @if ($d['game']['records'])
+    <x-module span="w12" :first="true" :last="true" id="h-records" heading="Records across every character">
+      <x-rec-grid :items="$d['game']['records']" />
     </x-module>
+    @endif
+    @if ($d['game']['rules'])
+    <x-module span="w12" :first="true" :last="true" id="h-rules" heading="The next round numbers">
+      <x-rules :rows="$d['game']['rules']" />
+    </x-module>
+    @endif
+
+    <h2 class="sect" id="levelling">Levelling</h2>
+    @if ($d['game']['ascent'])
+    <x-module span="w12" :first="true" :last="true" class="plate" id="h-climb" :heading="'Where every character stands on the way to '.$d['game']['cap']">
+      <x-ascent :spec="$d['game']['ascent']" />
+      <p class="note">The ridge is the median played time to reach each level. A flag marks a level where characters are now, with how many.</p>
+    </x-module>
+    @endif
 
     <x-module span="w8" :first="true" id="h-curve" heading="Played time to reach each level">
       @if ($d['curve'])
@@ -50,6 +64,15 @@
       @endif
     </x-module>
 
+    <x-module span="w12" :first="true" :last="true" id="h-cap" :heading="$d['cap']['heading']">
+      @if ($d['cap']['rows'])
+      <x-table :columns="[['label' => 'Measure'], ['label' => 'Total', 'numeric' => true], ['label' => 'Based on', 'numeric' => true]]" :rows="$d['cap']['rows']" />
+      @else
+      <x-note>{{ $d['cap']['note'] }}</x-note>
+      @endif
+    </x-module>
+
+    <h2 class="sect" id="danger">Danger</h2>
     <x-module :first="true" id="h-deaths" heading="Deaths per hour, by level">
       @if ($d['dph'])
       <x-plot id="dph" label="Deaths per played hour at each level" :spec="$d['dph']['chart']" />
@@ -65,6 +88,7 @@
       @if ($d['deathZones'])<x-rank :rows="$d['deathZones']" plain />@else<x-note>No deaths with a known place yet.</x-note>@endif
     </x-module>
 
+    <h2 class="sect" id="dungeons-skills">Dungeons and skills</h2>
     <x-module span="w7" :first="true" id="h-dung" heading="Dungeons">
       @if ($d['dungeons'])
       <x-table style="margin-top:1.1rem" :columns="[['label' => 'Dungeon'], ['label' => 'Runs', 'numeric' => true], ['label' => 'Median time', 'numeric' => true], ['label' => 'Deaths a run', 'numeric' => true], ['label' => 'Bosses a run', 'numeric' => true]]" :rows="$d['dungeons']" />
@@ -76,6 +100,32 @@
       @if ($d['professions'])<x-rank :rows="$d['professions']" />@else<x-note>No skill-ups recorded yet.</x-note>@endif
     </x-module>
 
+    <h2 class="sect" id="who-plays">Who plays</h2>
+    <x-module span="w7" :first="true" id="h-classes" heading="Classes played">
+      @if ($d['game']['classes'])
+      <ol class="rank">@foreach ($d['game']['classes'] as $row)<li data-class="{{ $row['class'] }}"><span class="who">{{ $row['name'] }}</span><span class="val">{{ $row['value'] }}</span><span class="track"><i class="cl" style="width:{{ $row['share'] }}%"></i></span></li>@endforeach</ol>
+      @else
+      <x-note>{{ \App\View\Format::TOO_FEW }}.</x-note>
+      @endif
+    </x-module>
+    <x-module span="w5" :last="true" id="h-factions" heading="Horde and Alliance">
+      @if ($d['game']['split'])
+      <x-split :split="$d['game']['split']" />
+      @else
+      <x-note>{{ \App\View\Format::TOO_FEW }}.</x-note>
+      @endif
+    </x-module>
+
+    <x-module span="w12" :first="true" :last="true" id="h-talents" heading="Talents">
+      @if ($talents['rows'])
+      <x-table :columns="$talents['columns']" :rows="$talents['rows']" />
+      <p class="note">n = {{ number_format($talents['total']) }} characters with a talent build. <a href="/talents">All specs</a></p>
+      @else
+      <x-note>No talent builds recorded yet.</x-note>
+      @endif
+    </x-module>
+
+    <h2 class="sect" id="gold-time">Gold and time</h2>
     <x-module span="w5" :first="true" id="h-gold" heading="Gold earned and spent, by level">
       @if ($d['gold'])
       <x-plot id="gold" label="Gold a character earned and spent at each level" :spec="$d['gold']" />
@@ -95,15 +145,7 @@
       @endif
     </x-module>
 
-    <x-module span="w12" :first="true" :last="true" id="h-talents" heading="Talents">
-      @if ($talents['rows'])
-      <x-table :columns="$talents['columns']" :rows="$talents['rows']" />
-      <p class="note">n = {{ number_format($talents['total']) }} characters with a talent build. <a href="/talents">All specs</a></p>
-      @else
-      <x-note>No talent builds recorded yet.</x-note>
-      @endif
-    </x-module>
-
+    <h2 class="sect" id="world">The world</h2>
     <x-module span="w12" :first="true" :last="true" id="h-map" heading="Where characters go">
       @if ($d['zones'])
       <x-slot:controls><x-pick label="Zone" fit="map" :options="array_merge([['All zones', '']], array_map(fn ($zone) => [$zone['name'], $zone['id']], $d['zones']))" /></x-slot:controls>

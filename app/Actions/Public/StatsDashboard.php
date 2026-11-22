@@ -14,6 +14,7 @@ use App\Actions\Rollups\PlayTimeByLevel;
 use App\Actions\Rollups\PlayTimeByWeekday;
 use App\Actions\Rollups\Professions;
 use App\Actions\Rollups\ReachedLevels;
+use App\Actions\Rollups\Roster;
 use App\Actions\Rollups\RulesetSummaries;
 use App\Actions\Rollups\TimePerLevel;
 use App\Actions\Rollups\TopKillers;
@@ -41,6 +42,7 @@ class StatsDashboard
         private readonly GoldByLevel $gold,
         private readonly PlayTimeByWeekday $weekdays,
         private readonly BusiestZones $zones,
+        private readonly Roster $roster,
         private readonly Coverage $coverage,
         private readonly ResolveScope $resolveScope,
         private readonly ListRulesets $rulesets,
@@ -80,6 +82,7 @@ class StatsDashboard
             'gold' => $this->gold->handle($ids),
             'weekdays' => $this->weekdays->handle($ids),
             'zones' => $this->zones->handle($ids, 12),
+            'roster' => $this->roster->handle($ids),
             'coverage' => $this->coverage->handle(),
             'heat' => $this->heat->handle(WorldLayer::Paths, $ids, level: 0),
             'map_zones' => $this->mapZones->handle($ids),

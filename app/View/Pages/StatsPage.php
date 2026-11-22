@@ -33,7 +33,7 @@ final class StatsPage
         return [
             'title' => $scope->ruleset?->label() ?? ($scope->server->warMode() === null ? 'All characters' : 'All characters, '.$scope->server->label()),
             'sub' => self::sub($totals, $r['coverage']),
-            'figures' => self::figures($r, $reached, $target),
+            'game' => StatsGame::data($r, $levels, $reached, $target),
             'cap' => self::cap($r, $reached, $target),
             'curve' => self::curve($levels, $top),
             'reach' => self::reach($reached, $top),
@@ -53,7 +53,7 @@ final class StatsPage
     /**
      * @return list<array<string, mixed>>
      */
-    private static function rows(mixed $rows): array
+    public static function rows(mixed $rows): array
     {
         return is_array($rows) ? array_values($rows) : [];
     }
@@ -61,7 +61,7 @@ final class StatsPage
     /**
      * @return array<string, int|float|null>
      */
-    private static function totals(mixed $totals): array
+    public static function totals(mixed $totals): array
     {
         /** @var array<string, int|float|null> $totals */
         $totals = is_array($totals) ? $totals : [];
@@ -103,31 +103,6 @@ final class StatsPage
         }
 
         return max([2, ...$levels]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $r
-     * @param  list<array<string, mixed>>  $reached
-     * @return list<array<string, string>>
-     */
-    private static function figures(array $r, array $reached, int $target): array
-    {
-        $totals = self::totals($r['totals']);
-        $number = fn (int|float|null $value): array => $value === null ? ['value' => '–', 'unit' => Format::TOO_FEW] : ['value' => Format::number($value)];
-        $byLevel = array_column($reached, 'characters', 'level');
-        $highest = $reached === [] ? null : (int) $reached[count($reached) - 1]['level'];
-        $characters = $totals['characters'];
-        $runs = array_sum(array_map(fn (array $row): int => (int) $row['runs'], self::rows($r['dungeons'])));
-
-        return [
-            ['label' => 'Characters', ...$number($characters)],
-            ['label' => 'At level '.$target, ...($characters === null ? $number(null) : ['value' => Format::number((int) ($byLevel[$target] ?? 0)), 'unit' => 'of '.Format::number($characters)])],
-            ['label' => 'Highest level', ...($highest === null ? ['value' => '–', 'unit' => 'none yet'] : ['value' => (string) $highest, 'unit' => Format::count((int) $byLevel[$highest], 'character')])],
-            ['label' => 'Hours recorded', ...($totals['played_seconds'] === null ? $number(null) : ['value' => Format::number(round((float) $totals['played_seconds'] / 3600))])],
-            ['label' => 'Deaths', ...$number($totals['deaths'] ?? null)],
-            ['label' => 'Quests turned in', ...$number($totals['quests'] ?? null)],
-            ['label' => 'Dungeon runs', ...$number($runs)],
-        ];
     }
 
     /**
@@ -261,11 +236,10 @@ final class StatsPage
             return null;
         }
         $data = $say = [];
-        $slowest = $rows[0];
+        $slowest = self::slowest($rows) ?? $rows[0];
         foreach ($rows as $row) {
             $data[] = [(int) $row['level'], (float) $row['median'] / 3600];
             $say[] = Format::line('Level '.$row['level'], ': '.Format::duration((float) $row['median']).' median, from '.Format::count((int) $row['completed'], 'character'));
-            $slowest = (float) $row['median'] > (float) $slowest['median'] ? $row : $slowest;
         }
         $axis = Axis::nice((float) max(array_column($data, 1)), 3);
 
@@ -276,34 +250,82 @@ final class StatsPage
     }
 
     /**
+     * The row of the level with the highest median time to reach it (the first of equals).
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return array<string, mixed>|null
+     */
+    public static function slowest(array $rows): ?array
+    {
+        $slowest = null;
+        foreach ($rows as $row) {
+            $slowest = $slowest === null || (float) $row['median'] > (float) $slowest['median'] ? $row : $slowest;
+        }
+
+        return $slowest;
+    }
+
+    /**
+     * Deaths an hour at each level that has enough played time to rate.
+     *
+     * @param  list<array<string, mixed>>  $deaths
+     * @param  list<array<string, mixed>>  $played
+     * @return list<array{level: int, rate: float, characters: int}>
+     */
+    public static function deathRates(array $deaths, array $played): array
+    {
+        $seconds = array_column($played, 'seconds', 'level');
+        $characters = array_column($played, 'characters', 'level');
+        $rates = [];
+        foreach ($deaths as $row) {
+            $time = (float) ($seconds[$row['level']] ?? 0);
+            if ($time < self::MIN_RATE_SECONDS) {
+                continue;
+            }
+            $rates[] = ['level' => (int) $row['level'], 'rate' => (int) $row['deaths'] / ($time / 3600), 'characters' => (int) $characters[$row['level']]];
+        }
+
+        return $rates;
+    }
+
+    /**
+     * The level with the highest deaths an hour (the first of equals).
+     *
+     * @param  list<array{level: int, rate: float, characters: int}>  $rates
+     * @return array{level: int, rate: float, characters: int}|null
+     */
+    public static function mostDangerous(array $rates): ?array
+    {
+        $worst = null;
+        foreach ($rates as $rate) {
+            $worst = $worst === null || $rate['rate'] > $worst['rate'] ? $rate : $worst;
+        }
+
+        return $worst;
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $deaths
      * @param  list<array<string, mixed>>  $played
      * @return array{chart: array<string, mixed>, note: string}|null
      */
     private static function deathsPerHour(array $deaths, array $played, int $top): ?array
     {
-        $seconds = array_column($played, 'seconds', 'level');
-        $characters = array_column($played, 'characters', 'level');
-        $pts = $say = [];
-        $worst = null;
-        foreach ($deaths as $row) {
-            $time = (float) ($seconds[$row['level']] ?? 0);
-            if ($time < self::MIN_RATE_SECONDS) {
-                continue;
-            }
-            $rate = (int) $row['deaths'] / ($time / 3600);
-            $pts[] = [(int) $row['level'], $rate];
-            $say[] = Format::line('Level '.$row['level'], ': '.Format::number($rate, 2).' deaths an hour, from '.Format::count((int) $characters[$row['level']], 'character'));
-            $worst = $worst === null || $rate > $worst[1] ? [(int) $row['level'], $rate, (int) $characters[$row['level']]] : $worst;
-        }
-        if (count($pts) < 2 || $worst === null) {
+        $rates = self::deathRates($deaths, $played);
+        $worst = self::mostDangerous($rates);
+        if (count($rates) < 2 || $worst === null) {
             return null;
+        }
+        $pts = $say = [];
+        foreach ($rates as $rate) {
+            $pts[] = [$rate['level'], $rate['rate']];
+            $say[] = Format::line('Level '.$rate['level'], ': '.Format::number($rate['rate'], 2).' deaths an hour, from '.Format::count($rate['characters'], 'character'));
         }
         $axis = Axis::nice(max(array_column($pts, 1)), 3);
 
         return [
             'chart' => Charts::line(['w' => 380, 'h' => 250, 'x0' => 1, 'x1' => $top, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks']), 'xt' => Charts::ticks(Axis::spread(1, $top, 3))], [['cls' => 'a', 'pts' => $pts]], $say, count($pts) - 1, 'dph-out'),
-            'note' => 'Most dangerous: level '.$worst[0].', at '.Format::number($worst[1], 2).' deaths an hour, from '.Format::count($worst[2], 'character').'.',
+            'note' => 'Most dangerous: level '.$worst['level'].', at '.Format::number($worst['rate'], 2).' deaths an hour, from '.Format::count($worst['characters'], 'character').'.',
         ];
     }
 
@@ -358,14 +380,26 @@ final class StatsPage
     }
 
     /**
+     * The named skills, the one most characters trained first.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    public static function trainedSkills(array $rows): array
+    {
+        $rows = array_values(array_filter($rows, fn (array $row): bool => $row['kind'] === self::SKILL_KIND && $row['skill'] !== null));
+        usort($rows, fn (array $a, array $b): int => (int) $b['characters'] <=> (int) $a['characters']);
+
+        return $rows;
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $rows
      * @return list<array<string, mixed>>
      */
     private static function professions(array $rows, int|float|null $characters): array
     {
-        $rows = array_values(array_filter($rows, fn (array $row): bool => $row['kind'] === self::SKILL_KIND && $row['skill'] !== null));
-        usort($rows, fn (array $a, array $b): int => (int) $b['characters'] <=> (int) $a['characters']);
-        $rows = array_slice($rows, 0, 8);
+        $rows = array_slice(self::trainedSkills($rows), 0, 8);
         $total = max(1, (int) $characters);
 
         return array_map(function (array $row, int $i) use ($total): array {
@@ -400,6 +434,29 @@ final class StatsPage
     }
 
     /**
+     * The hour of the week with the most played time, first of equals from Monday 00:00.
+     *
+     * @param  list<array<string, mixed>>  $rows  weekday (0 is Sunday), hour, seconds
+     * @return array{day: int, hour: int, seconds: float}|null day 0 is Monday
+     */
+    public static function busiest(array $rows): ?array
+    {
+        $cell = [];
+        foreach ($rows as $row) {
+            $cell[(int) $row['weekday']][(int) $row['hour']] = (float) $row['seconds'];
+        }
+        $best = null;
+        for ($day = 0; $day < 7; $day++) {
+            for ($hour = 0; $hour < 24; $hour++) {
+                $seconds = $cell[($day + 1) % 7][$hour] ?? 0.0;
+                $best = $seconds > 0 && $seconds > ($best['seconds'] ?? 0.0) ? ['day' => $day, 'hour' => $hour, 'seconds' => $seconds] : $best;
+            }
+        }
+
+        return $best;
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $rows  weekday (0 is Sunday), hour, seconds
      * @return array<string, mixed>|null
      */
@@ -416,11 +473,11 @@ final class StatsPage
         $names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         $words = ['Quiet', 'Light', 'Moderate', 'Busy', 'Busiest'];
         $levels = $say = [];
-        $busiest = null;
+        $peak = self::busiest($rows);
+        $busiest = $peak === null ? null : $peak['day'] * 24 + $peak['hour'];
         foreach ($names as $d => $name) {
             for ($h = 0; $h < 24; $h++) {
                 $value = $cell[($d + 1) % 7][$h] ?? 0.0;
-                $busiest ??= $value > 0 && $value === $top ? $d * 24 + $h : null;
                 $level = $value <= 0 ? 0 : max(1, (int) ceil($value / $top * 4));
                 $levels[$d][] = $level;
                 $say[] = Format::line($name.' '.str_pad((string) $h, 2, '0', STR_PAD_LEFT).':00', ', '.$words[$level].($value > 0 ? ', '.Format::duration($value).' played' : ''));
