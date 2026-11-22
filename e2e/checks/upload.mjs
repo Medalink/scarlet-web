@@ -1,5 +1,5 @@
 import { xorDigest } from "../client.mjs";
-import { ECHO, NAME, PROBE, STRANGER, expectError, expectJson, expectStatus, loadFixture, rollupsRefreshed, sleep } from "../support.mjs";
+import { ECHO, LEDGER, NAME, PROBE, STRANGER, expectError, expectJson, expectStatus, loadFixture, rollupsRefreshed, sleep } from "../support.mjs";
 
 const DECODE_WAIT_MS = 20_000;
 const DECODE_POLL_MS = 250;
@@ -72,7 +72,7 @@ export function uploads(name, install = "client") {
 }
 
 export async function bothUpload(ctx) {
-  await Promise.all([uploads(NAME)(ctx), uploads(PROBE)(ctx), uploads(ECHO)(ctx), uploads(STRANGER, "stranger")(ctx)]);
+  await Promise.all([uploads(NAME)(ctx), uploads(PROBE)(ctx), uploads(ECHO)(ctx), uploads(STRANGER, "stranger")(ctx), uploads(LEDGER, "stranger")(ctx)]);
 }
 
 export async function sameManifestNeedsNothing(ctx) {
@@ -86,7 +86,7 @@ export async function sameManifestNeedsNothing(ctx) {
 }
 
 export async function decoded(ctx) {
-  const wanted = [[loadFixture(NAME), "client"], [loadFixture(PROBE), "client"], [loadFixture(ECHO), "client"], [loadFixture(STRANGER), "stranger"]];
+  const wanted = [[loadFixture(NAME), "client"], [loadFixture(PROBE), "client"], [loadFixture(ECHO), "client"], [loadFixture(STRANGER), "stranger"], [loadFixture(LEDGER), "stranger"]];
   const deadline = Date.now() + DECODE_WAIT_MS;
   for (;;) {
     const answers = {};

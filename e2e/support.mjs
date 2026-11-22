@@ -16,6 +16,8 @@ export const PROBE = "Probe-Lane";
 export const ECHO = "Echo-Witness";
 /** A character of a second install that no account is linked to, with tailoring crafts the other characters have none of. */
 export const STRANGER = "Tailor-Stranger";
+/** A second character of the stranger install, with the lines of the class tables (docs/ROWS.md) and no crafts or camps. */
+export const LEDGER = "Spell-Ledger";
 export const LOCAL_HOSTS = ["127.0.0.1", "localhost", "[::1]"];
 /** A remember cookie makes EdgeCacheable treat the reader as signed in, so a page read reaches the origin, not the 60 s page cache. */
 export const ORIGIN_COOKIE = { name: "remember_web_e2e", value: "lane" };

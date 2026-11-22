@@ -3,7 +3,8 @@
  * session of fishing, mining, herbalism, skinning, cooking and blacksmithing, a 90 second visit to a campfire, a few
  * spell casts and two fights of damage-meter lines, as the recorder would write it, and the session of Tailor-Stranger
  * (e2e/fixture/Tailor-Stranger), a character of another install that no account of the lane is linked to, with two
- * tailoring crafts and a 90 second visit to a campfire. Each line is
+ * tailoring crafts and a 90 second visit to a campfire, and the session of Spell-Ledger (e2e/fixture/Spell-Ledger, lines in
+ * e2e/ledger-lines.mjs), a second character of that install with the lines of the class tables. Each line is
  * `[milliseconds since the session began, code, ...fields]`; the builder splits the lines into the parts of
  * their sharing groups (docs/groups.tsv), writes each part under the SHA-256 of its text and rewrites the manifest.
  * Parts of the character's other sessions are kept as they are, so running it twice changes nothing.
@@ -16,6 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { xorDigest } from "./client.mjs";
+import { LEDGER_LINES } from "./ledger-lines.mjs";
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
 
@@ -65,8 +67,12 @@ const SINISTER_STRIKE = 1752;
 const EVISCERATE = 2098;
 
 const GROUP_OF = {
-  S: "core", Z: "core", ES: "core",
-  P: "movement", G: "build", TG: "build", C: "combat", CH: "combat", A: "combat", DM: "combat", LO: "loot",
+  S: "core", Z: "core", ES: "core", L: "core",
+  P: "movement", MO: "movement", MP: "movement",
+  G: "build", TG: "build", PT: "build", PD: "build",
+  C: "combat", CH: "combat", CI: "combat", A: "combat", AR: "combat", TW: "combat", F: "combat", K: "combat", D: "combat",
+  R: "combat", U: "combat", SH: "combat", SR: "combat", DM: "combat", DP: "combat", DS: "combat",
+  LO: "loot", I: "loot", DI: "loot",
   SL: "professions", TS: "professions", CB: "professions", RD: "professions", CR: "professions", CS: "professions",
   IN: "names", SN: "names", TY: "names",
 };
@@ -227,6 +233,7 @@ const STRANGER_LINES = [
 const BUILDS = [
   { character: "Echo-Witness", session: 1795270000, lines: ECHO_LINES },
   { character: "Tailor-Stranger", session: 1795360000, lines: STRANGER_LINES },
+  { character: "Spell-Ledger", session: 1795450000, lines: LEDGER_LINES },
 ];
 
 function partsOf(character, session, lines) {

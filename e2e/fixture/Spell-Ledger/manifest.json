@@ -1,0 +1,41 @@
+{
+  "character": "Spell-Ledger",
+  "parts": [
+    {
+      "group": "core",
+      "id": "749cf802c63fb6b8a0c9b0db91ec9703b6769dfee14f90fda4dddbfbfca2096d",
+      "lines": 6,
+      "raw_bytes": 282,
+      "session": 1795450000
+    },
+    {
+      "group": "movement",
+      "id": "89d43511bb9d7baa6ed2c8ee537e1085438dea7ffb138607c525e353c1cb5546",
+      "lines": 8,
+      "raw_bytes": 210,
+      "session": 1795450000
+    },
+    {
+      "group": "build",
+      "id": "4ab7a8706804f92be82a9e7431688e8074c91f9032583fcb53248afc8a14fa2c",
+      "lines": 10,
+      "raw_bytes": 316,
+      "session": 1795450000
+    },
+    {
+      "group": "combat",
+      "id": "7375d19111564c46c64823bedc7567d5b73164e97b48a99ae0e8771eed6f6ffd",
+      "lines": 133,
+      "raw_bytes": 2248,
+      "session": 1795450000
+    },
+    {
+      "group": "loot",
+      "id": "c1892745ebea294a133a46a3df4c831840eb259c7c54559ca6420eccc2ebec5f",
+      "lines": 13,
+      "raw_bytes": 265,
+      "session": 1795450000
+    }
+  ],
+  "set_digest": "050393b7ef1a5135f343835cf0c3edcb76e829642f18d5377476cb8698f925a5"
+}

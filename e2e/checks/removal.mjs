@@ -1,4 +1,4 @@
-import { ECHO, NAME, PROBE, STRANGER, expectJson, expectStatus, loadFixture } from "../support.mjs";
+import { ECHO, LEDGER, NAME, PROBE, STRANGER, expectJson, expectStatus, loadFixture } from "../support.mjs";
 
 export async function removalAnswersAndEmptiesStatus(ctx) {
   const answer = expectStatus(await ctx.client.remove(), 200, "DELETE /api/v1/upload");
@@ -15,9 +15,9 @@ export async function removalAnswersAndEmptiesStatus(ctx) {
 export async function strangerIsRemoved(ctx) {
   const answer = expectStatus(await ctx.stranger.remove(), 200, "DELETE /api/v1/upload of the stranger install");
   const removed = expectJson(answer, "DELETE /api/v1/upload of the stranger install");
-  const parts = loadFixture(STRANGER).ids.length;
-  if (removed.characters_removed !== 1 || removed.parts_removed !== parts) {
-    throw new Error(`the removal of the stranger install should report 1 character and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
+  const parts = loadFixture(STRANGER).ids.length + loadFixture(LEDGER).ids.length;
+  if (removed.characters_removed !== 2 || removed.parts_removed !== parts) {
+    throw new Error(`the removal of the stranger install should report 2 characters and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
   }
 }
 

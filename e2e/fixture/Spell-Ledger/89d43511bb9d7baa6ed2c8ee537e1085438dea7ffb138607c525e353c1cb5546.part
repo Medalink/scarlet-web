@@ -1,0 +1,9 @@
+scarlet-part	1	Spell-Ledger	1795450000	movement
+2000	MO	1	458	1	0	s
+1000	MP	1494	s
+5000	MO	0	458	1	6
+472000	MO	1	458	1	0	
+10000	MO	0	458	1	10
+90000	MP	1494,Find Minerals	c
+20000	MP	Find Minerals	c
+150000	MP		c
