@@ -8,7 +8,7 @@
  *
  * Then small invented characters each hold one case a verdict can get wrong: a cast 0.8 s and one 1.0 s after the
  * stop of the claim before it, and one that was not looted (rule 3, seams), a session uploaded in two halves, a claim a catch started whose
- * neighbour's rows were not looted, a claim an `ff` count covers in part (rule 5), a claim whose casts were all
+ * neighbour's rows were not looted, a claim an `ff` count covers in part and one that only ends inside it (rule 5), a claim whose casts were all
  * cancelled inside a Scarlet session, two characters that hold one record (rule 4) with the lower id uploaded first,
  * with the rows on the higher id, and linked by an account afterwards. Each case names the totals the history has.
  * A lane that waits only for the server to stop changing would read the last case's state, so it waits until no
@@ -427,6 +427,18 @@ async function covered() {
   check("the audit passes with a residual that overlaps the claim above it", audited.status === 0, audited.stdout);
 }
 
+async function straddled() {
+  const parts = known(countsPartsOf([claimIn(0, 3601, "casts=300;landed=270;items=280", { origin: "fl" }), claimIn(3540, 7200, "casts=500;landed=450;items=470", { origin: "ff" })]));
+  await fresh(client);
+  await upload(parts);
+  const state = await settleOne(NAME, (s) => s.claims === 2, "the straddled claim");
+  const [ff, fl] = claimsOf(NAME).sort((a, b) => a.origin.localeCompare(b.origin));
+  check("an fl session that ends 61 s into an ff session: only 61 s of 3600 are shared, so 795/715/745 and not 500/450/470", sum(state.total) === "795/715/745", sum(state.counted));
+  check("ff is residual 495/445/465 by rule 5 and fl is counted 300/270/280", ff.status === "residual" && ff.rule === "5" && ff.counted === "495/445/465" && fl.status === "counted" && fl.counted === "300/270/280", JSON.stringify([ff, fl]));
+  const audited = audit();
+  check("the audit passes with a residual that shares 61 s with the claim above it", audited.status === 0, audited.stdout);
+}
+
 async function cancelled() {
   const session = sessionOf([looted(780), looted(800), looted(1460), looted(1480)]);
   const none = "casts=3;landed=0;items=0;unknown=3";
@@ -580,6 +592,7 @@ async function main() {
   await halves();
   await catchStarted();
   await covered();
+  await straddled();
   await cancelled();
   await twinFirst();
   await linked();

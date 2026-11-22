@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 
 /// The version of the rules below. The scheduled pass reconciles a character again when its claims carry an
 /// older one.
-pub const RECONCILE_VERSION: u32 = 3;
+pub const RECONCILE_VERSION: u32 = 4;
 
 const EPOCH_FLOOR: i64 = 1_566_777_600;
 const FUTURE_SLACK: i64 = 86_400;
@@ -321,10 +321,12 @@ impl Dated<'_> {
     fn covered(&self, c: &Claim, higher: &[(usize, i64)]) -> Decision {
         let whole = c.whole().unwrap_or_default();
         let mut minus: BTreeMap<String, i64> = BTreeMap::new();
-        for (j, _) in higher {
-            for (metric, amount) in self.claims()[*j].whole().unwrap_or_default() {
+        for (j, overlap) in higher {
+            let above = &self.claims()[*j];
+            let span = rules::span(above);
+            for (metric, amount) in above.whole().unwrap_or_default() {
                 if whole.contains_key(&metric) {
-                    *minus.entry(metric).or_insert(0) += amount;
+                    *minus.entry(metric).or_insert(0) += rules::part_of(amount, *overlap, span);
                 }
             }
         }

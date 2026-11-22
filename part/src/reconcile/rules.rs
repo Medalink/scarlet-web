@@ -108,6 +108,17 @@ fn start(c: &Claim) -> i64 {
     c.from.unwrap_or(c.to)
 }
 
+pub(super) fn span(c: &Claim) -> i64 {
+    c.to - start(c)
+}
+
+pub(super) fn part_of(amount: i64, overlap: i64, span: i64) -> i64 {
+    if span <= 0 || overlap >= span {
+        return amount;
+    }
+    half_up(i128::from(amount) * i128::from(overlap), i128::from(span))
+}
+
 pub(super) fn overlap(a: &Claim, b: &Claim) -> i64 {
     a.to.min(b.to) - start(a).max(start(b))
 }

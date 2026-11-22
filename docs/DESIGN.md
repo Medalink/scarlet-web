@@ -339,7 +339,7 @@ window's end (else the nearest session in time), and the `level` and `zone_id` o
 `diff`, the claimed minus the counted amount per metric, so that claimed = counted + diff for every metric. It adds
 what the rule used: `rows` (`n`, `first` and `last` in epoch milliseconds, `looted`, `items`), `with` (the key of the
 claim it lost to, and for rule 4 the name of its character; for rule 5 across origins the keys of the higher
-claims in a list, with `minus`, what they claim per metric), `same_origin`, `origin`, `catch_started`, `row`,
+claims in a list, with `minus`, their share of it per metric), `same_origin`, `origin`, `catch_started`, `row`,
 `overlap`, `offset_ms` and `why`.
 
 | Status | Counted | When |
@@ -403,10 +403,12 @@ Rules, in order:
    removal that adds or removes such a claim or the rows beside it reconciles the other characters too, locked lowest
    id first.
 5. **Between origins.** A fixed rank per kind (fishing: `fl` above `ff`). A claim whose window overlaps counted or
-   residual claims of a higher rank by more than 60 s counts what it claims minus what they claim, per metric,
-   floored at 0; it is `superseded` when they reach 97.5% of it in every metric (provisional until an `ff` overlap is
-   measured). A claim that overlaps only the last minutes of a long one keeps the rest, which a whole supersession
-   would lose. An origin that stamps with the server's clock goes through rule 1 when it is not covered. Two claims
+   residual claims of a higher rank by more than 60 s counts what it claims minus what they claim in the time they
+   share with it, per metric, floored at 0: each higher claim gives its amount times the overlap over its own length,
+   rounded half up, so a higher claim that reaches far past this one takes only the share it covers. It is
+   `superseded` when that reaches 97.5% of it in every metric (provisional until an `ff` overlap is measured). A claim
+   that overlaps only the last minutes of a long one keeps the rest, which a whole supersession would lose, and a
+   short claim that straddles two long ones takes a share from each. An origin that stamps with the server's clock goes through rule 1 when it is not covered. Two claims
    of one origin and one character whose windows overlap, or whose ends are equal, are one, whatever their stores: the
    later end wins, then the later start, then the store that sorts last. The others are `superseded` with its id.
 6. **Lifetime.** No mapped origin has a character-scope lifetime. A `life` claim with scope `c` is `held` until an
