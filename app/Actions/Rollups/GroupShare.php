@@ -4,22 +4,30 @@ namespace App\Actions\Rollups;
 
 use App\Support\GroupLootKind;
 use App\Support\LootRule;
+use App\Support\LootSourceKind;
+use App\Support\LootVia;
 use App\Support\RateEstimate;
-use App\Support\Rollup;
+use App\Support\RollOutcome;
 use App\Support\RollupRead;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class GroupShare
 {
+    private const int RECEIPT_BEFORE_ROLL_ROW_SECONDS = 5;
+
+    private const int RECEIPT_AFTER_ROLL_ROW_SECONDS = 90;
+
     public function __construct(private readonly RollupRead $read) {}
 
     /**
      * Your share of group loot (docs/LOOT.md, Metrics: Share of group loot): under each rule that owes every member an
-     * equal share and at each group size of 2 or more, every item the uploaders received while grouped under the rule
-     * (`loot_received_daily`, whether or not a loot window is known for it, since a roll win and a skin read have none)
-     * against every item their group mates received by the rule, a roll win or a master looter's pick (`group_loot`, kind
-     * looted; an item the client pushed to a mate is left out, while an uploader's own list cannot tell a push or a
-     * created item from a loot). It needs no dedupe: both sides are one uploader's view of its own group, so pooling
+     * equal share and at each group size of 2 or more, the items the uploaders received while grouped under the rule
+     * that were looted (a receipt whose source window is a corpse or an object, which includes a skin read, or a receipt
+     * that an own roll won, since a roll win lands after the window closed) against every item their group mates received
+     * by the rule, a roll win or a master looter's pick (`group_loot`, kind looted; an item the client pushed to a mate is
+     * left out). A quest reward, a created item and an item the client pushed to the uploader have neither a source nor a
+     * roll and are left out of "yours". It needs no dedupe: both sides are one uploader's view of its own group, so pooling
      * uploaders gives the mean share of a member. A rule and size under `scarlet.min_characters` uploaders on either side
      * are left out, the smallest group first.
      *
@@ -27,9 +35,16 @@ class GroupShare
      */
     public function handle(): array
     {
-        $yours = $this->read->rows($this->read->shown(DB::table(Rollup::LootReceivedDaily->value)
-            ->whereIn('loot_rule', LootRule::equalShare())
-            ->selectRaw('loot_rule, group_size, sum(receipts) as received')->groupBy('loot_rule', 'group_size')));
+        $yours = $this->read->rows(DB::table('loot_drops as d')
+            ->where('d.counted', true)->where('d.via', LootVia::Receipt->value)->where('d.group_size', '>=', 2)->whereIn('d.loot_rule', LootRule::equalShare())
+            ->where(fn (Builder $looted): Builder => $looted
+                ->whereIn('d.source_kind', [LootSourceKind::Creature->value, LootSourceKind::Object->value])
+                ->orWhereExists(fn (Builder $won): Builder => $won->selectRaw('1')->from('loot_rolls as r')
+                    ->whereColumn('r.character_id', 'd.character_id')->whereColumn('r.session_start', 'd.session_start')->whereColumn('r.item_id', 'd.item_id')
+                    ->where('r.counted', true)->where('r.mine', true)->where('r.outcome', RollOutcome::Won->value)
+                    ->whereRaw('r.at between d.at - make_interval(secs => ?) and d.at + make_interval(secs => ?)', [self::RECEIPT_AFTER_ROLL_ROW_SECONDS, self::RECEIPT_BEFORE_ROLL_ROW_SECONDS])))
+            ->selectRaw('d.loot_rule, d.group_size, count(*) as received')->groupBy('d.loot_rule', 'd.group_size')
+            ->havingRaw('count(distinct d.character_id) >= ?', [$this->read->threshold(null)]));
         $others = $this->read->rows(DB::table('group_loot')
             ->where('counted', true)->where('kind', GroupLootKind::Looted->value)->whereIn('loot_rule', LootRule::equalShare())->where('group_size', '>=', 2)
             ->selectRaw('loot_rule, group_size, count(*) as received')->groupBy('loot_rule', 'group_size')

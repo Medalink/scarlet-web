@@ -278,7 +278,7 @@ say how many windows were left out.
 | Corpses looted of kills | corpses of the creature with a loot window, and solo loot windows with no key | kill corpses with a key, and solo member kills with no key | kill | phase 2, phase 7 |
 | Drop rate a kill | windows that list the item, of those corpses | the same kills | kill | phase 2, phase 7 |
 | Kills an hour by size | member kills while grouped at the size | member seconds grouped at the size / 3600 | member kill | phase 2 |
-| Share of group loot | every own receipt while grouped, sourced or not | own receipts + `group_loot` rows, same spans | receipt | phase 5 |
+| Share of group loot | own receipts while grouped that came from a corpse or an object, or that an own roll won | the same + `group_loot` rows of kind looted, same spans | receipt | phase 5 |
 | Need share | rolls of type need | rolls of type need, greed or pass | roll | phase 5 |
 | Rolled per 100 corpses | 100 x window items at or above `threshold` | windows in a group | window | phase 5 |
 | Need share by class | need rolls by a class | rolls by that class on items of that armour type | roll | phase 6 |
@@ -309,11 +309,14 @@ Notes on the definitions:
   since a window lists a stack of one item as one row and the looter's client writes an `O` line for each stack it picks
   up, so counting rows would put 2 receipts over 1 window item and pass 100%.
 - **Share of group loot** needs no dedupe either: it is one uploader's view of its own group, and pooling
-  uploaders gives the mean share per member. Both sides mean everything received: the uploader's side counts every `O`
-  line made while grouped under the rule, with or without a source window (a roll win arrives after the window, a skin
-  read has no first-read window), as the `LT` rows of the mates are not tied to a source either. An `O` line cannot tell
-  a looted item from a created or pushed one, so the uploader's side may hold a few more than the mates' (`LT` kind `p`
-  is left out).
+  uploaders gives the mean share per member. Both sides mean what the rule handed out: the uploader's side counts the `O`
+  lines made while grouped under the rule that came from a corpse or an object (the receipt has a source window of
+  kind `c` or `g`, which includes a skin read's second opening) and those that an own roll won (`loot_rolls` with
+  `mine` and outcome `won`, the same item, a row time from 90 s before the receipt to 5 s after it, since a roll win
+  arrives after the window closed), as the `LT` rows of the mates are the looted ones (`LT` kind `p` is left out). An
+  `O` line from a quest reward, a created item, an item the client pushed, a container opened from the bags or a
+  purchase has neither and is not counted. The sourced half is read from `loot_drops` directly: 1.3 s at 600,000
+  receipts, held by the read cache.
 - **Quest items** (`items.bind_type = 4`) keep their rate and carry the tag `quest item`: the denominator includes
   readers who were not on the quest.
 
@@ -520,7 +523,8 @@ object is labelled by what it gives.
   `loot_freeforall_items_daily` (the same by item, free for all only, for the one reader; dropped in phase 7 for its unkeyed twin)
   and `loot_receipts_daily` (receipts that came from a corpse). These count one character's first reads, which is what the pages that pair a
   character's windows with its own receipts read (What the looter kept). `loot_received_daily` (every receipt in a
-  group of 2 or more, by rule and size, with no source) is what Your share of group loot reads.
+  group of 2 or more, by rule and size, with no source) counted quest rewards and pushed items, so Your share of
+  group loot reads `loot_drops` itself and nothing reads the aggregate.
 - **Corpses counted once (phase 7).** Windows without a key are the same aggregates over `corpse_key is null`:
   `loot_windows_unkeyed_daily`, `loot_items_unkeyed_daily`, `loot_windows_character_unkeyed_daily`,
   `loot_freeforall_items_unkeyed_daily` and `kills_solo_attributed_daily`. Windows with a key cannot be a sum of daily
