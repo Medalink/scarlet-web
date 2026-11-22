@@ -10,6 +10,7 @@ export default defineConfig({
             input: [
                 'resources/css/site.css',
                 'resources/css/app.css',
+                'resources/css/game.css',
                 'resources/css/landing.css',
                 'resources/css/tailwind.css',
                 'resources/js/app.js',

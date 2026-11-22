@@ -476,7 +476,8 @@ The signed-in pages read the same Actions as the public API, with the owner's pr
 
 Every page keeps the look of the Scarlet site: the dark survey sheet, scarlet, Sofia Sans Extra Condensed for
 headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figures and the map style. Comps are in
-`docs/comps/`; a page is built from its comp and reviewed against it.
+`docs/comps/`; a page is built from its comp and reviewed against it. The art and game layer below came after the
+comps and is specified here, not in them.
 
 | Path | Page |
 | --- | --- |
@@ -498,6 +499,58 @@ headings, Sofia Sans for text, Martian Mono for numbers, hairlines, large figure
 | `/account/characters` | Private, signed in only. The account's characters side by side: totals, a table of the characters, play time by day stacked by character (last 30 days), gold with copper moved between your own characters kept apart, time two characters were online together (sessions overlapping by 60 s or more), time in each level against the median of the character's ruleset, and profession ranks. Alts exist only here and in the owner bar of `/c/{name}`, which links the account's other characters. No public page, board, rollup or API response groups, dedupes or weights by account: each character is its own player there, and `characters.account_id` and `first_install_id` are hidden from the model's serialization |
 
 A dungeon is `/zones/{id}` with the negative instance id (`/zones/-90`).
+
+### Art and game layer
+
+The stats pages show the same numbers as art and as a game (owner, 2026-11-21: "more fun, more gamified and more
+visual", "better art and better backgrounds"). The look is still the survey sheet; this layer adds what a survey
+sheet has and the pages lacked. `resources/css/game.css` holds it and loads after `app.css` on every app page.
+
+- **Contour sheet.** `tools/art/contours.mjs` draws `public/art/contours.svg`: isolines of a seeded noise field at the
+  sheet's two line alphas, every fifth line heavier, crosses on the summits. The same seed writes the same bytes. It
+  sits behind the head of every app page (`body.art`) under a scarlet glow and fades into the plain sheet, and it
+  fills a `.plate` band and the podium plinths.
+- **The map as the hero.** `/stats` and `/rulesets/{slug}` open on the world map with path heat behind the title
+  (`.pg-hero`), the way a zone and a character page do. The map there is decoration: it takes no pointer and is
+  hidden from assistive technology. The interactive map stays in "Where characters go".
+- **Icons.** `<x-icon name>` is one authored set on a 24-unit grid with one round stroke, coloured by its text.
+  No emoji and no icon font.
+- **Metals and class colours.** Rank and tier use copper, silver, gold and, above gold, scarlet. A character's
+  name carries its class in the game's class colour (`data-class` sets `--class`). Horde and Alliance have one
+  colour each. Colour never carries a fact alone: a tier is also named, a class also written.
+- **Motion.** The tally counts up once when a page opens. Bars on a rule, rank tracks, plinths and flags grow in as
+  they scroll into view, with CSS view timelines only, so a browser without them and a viewer who prefers reduced
+  motion get the finished page.
+
+What the layer adds to each page:
+
+| Page | Addition |
+| --- | --- |
+| `/stats`, `/rulesets/{slug}` | The hero and a tally of seven figures with glyphs (characters, highest level, hours, kills, deaths, quests, dungeon runs). **Records across every character**: the deadliest creature, where most characters die, the most dangerous level, the slowest level, the busiest hour, the most run dungeon, the most trained profession and the share of experience from quests at the highest level, each from a figure the page already reads, each left out when its figure is missing. **The next round numbers**: kills, hours, quests, deaths, dungeon runs and gold earned read off a rule whose right end is the next of 10, 25, 50, 100, 250, 500 and so on. **The climb**: the median played time to each level as a ridge from level 1 to the cap, with a flag at each level where characters stand now (the published reach counts, level by level: reached L less reached L + 1) and a dotted line from the highest level anyone holds to the cap. The dotted line is not data and says so. **Classes played** and **Horde and Alliance**: characters by class and by faction (`Rollups\Roster`), a class under the character threshold left out. The modules sit in chapters: Levelling, Danger, Dungeons and skills, Gold and time, The world |
+| `/leaderboards` | The hall: every board with the character that leads it now and how many characters are on it. It replaces the redirect to one board |
+| `/leaderboards/{board}` | The first three rows of the first page stand on a podium of gold, silver and copper plinths; the table lists the rest. A new board, `most-kills` |
+| `/c/{name}` | **Marks earned**, eleven marks in four tiers (below). A mark not yet earned shows what it takes; an earned one shows what the next tier takes. `GET /public/characters/{name}` carries the same list as `marks` |
+
+Marks read numbers the character page already shows, so a mark never reveals more than its page. An observed count
+(DESIGN "Mid-life characters") starts when Scarlet first saw the character, and the module says "since" that date
+for a character not recorded from level 1.
+
+| Mark | Counts | Copper | Silver | Gold | Scarlet |
+| --- | --- | --- | --- | --- | --- |
+| Summit | level reached | 15 | 30 | 45 | 60 |
+| Slayer | kills | 250 | 2,500 | 10,000 | 50,000 |
+| Questing | quests turned in | 50 | 250 | 750 | 1,500 |
+| Delver | dungeon runs | 5 | 25 | 75 | 200 |
+| Explorer | zones entered | 10 | 20 | 35 | 50 |
+| Veteran | hours played: the game's /played when known, else recorded time | 10 | 50 | 150 | 500 |
+| Wayfarer | distance in world widths | 10 | 50 | 150 | 500 |
+| Unbroken | level reached before the first death, for a character recorded from level 1 only; left out for any other | 10 | 20 | 40 | 60 |
+| Artisan | highest profession rank | 75 | 150 | 225 | 300 |
+| Angler | fish caught | 50 | 250 | 1,000 | 5,000 |
+| Gatherer | nodes gathered | 50 | 250 | 1,000 | 5,000 |
+
+The marks and their thresholds are one table in code (`App\Support\Mark`). Nothing is stored: a mark is computed
+from the character's totals on each read, so a re-decode or a removal changes it with no migration.
 
 ### Versions and release notes
 
@@ -528,6 +581,9 @@ least 7 days old) turns git history into a version and release notes.
   on show. Hardcore is not out yet, so the filters and /rulesets show it as "Hardcore (not out yet)", greyed out and
   without a link, until a hardcore ruleset has data. The address of a ruleset is its kind (`/rulesets/normal`); an
   address from before kinds redirects to the ruleset that took it over. Rows with no sessions are not listed.
+- **Art and game layer**: the contour sheet, the map hero, the tally, records, rules, the climb, the roster, the hall,
+  the podium and marks are not in the comps. "Art and game layer" above is their design, and the gallery
+  (`/design/*`) shows them on invented data.
 - **Class filter**: leaderboards filter by class (`characters.class`). The dashboards and result pages do not: no
   aggregate carries the class.
 - **Reach**: "Characters that reached each level" in place of the comp's wording; the chart counts characters.

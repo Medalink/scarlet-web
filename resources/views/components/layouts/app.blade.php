@@ -8,9 +8,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/site.css', 'resources/css/app.css', 'resources/js/app.js']" />
+<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/site.css', 'resources/css/app.css', 'resources/css/game.css', 'resources/js/app.js']" />
 </head>
-<body>
+<body class="art">
 <header class="top solid">
   <div class="top-in wrap">
     <a class="brand" href="{{ $base ?: '/' }}" aria-label="Scarlet, home"><x-mark />Scarlet</a>
