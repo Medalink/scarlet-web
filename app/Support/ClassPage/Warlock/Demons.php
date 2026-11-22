@@ -39,7 +39,7 @@ final readonly class Demons
 
     private const float RUN_SHARE = 0.5;
 
-    private const int RUN_LEVELS = 3;
+    private const int RUN_LEVELS = 2;
 
     /**
      * @param  array<string, StateTotals>  $families  by the pet's family
