@@ -26,4 +26,20 @@ enum PlayerClass: string
     {
         return Scene::from($this->slug());
     }
+
+    /** The bit of the class in the client's `SkillRaceClassInfo` and `TalentTab` ClassMask columns. */
+    public function bit(): int
+    {
+        return match ($this) {
+            self::Warrior => 1,
+            self::Paladin => 2,
+            self::Hunter => 4,
+            self::Rogue => 8,
+            self::Priest => 16,
+            self::Shaman => 64,
+            self::Mage => 128,
+            self::Warlock => 256,
+            self::Druid => 1024,
+        };
+    }
 }

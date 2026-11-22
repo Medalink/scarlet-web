@@ -1275,7 +1275,9 @@ tab with the most points (Druid Feral is both Tank and Melee). Class and tree ca
 class, whichever spec that session played. The role feats count only the sessions whose tree plays that role, and
 their hours, meters, runs and kills come from those sessions alone. Casts match spells by their English name in the
 `names` table; `feats:spells` lists, per cast rule, the spell names that table does not hold, so a spell the server
-renamed shows up.
+renamed shows up. `feats:proof <tables>` checks every rule against the client's own spell tables: which spells the
+client lets each class learn and cast, and the fastest the legend tier could be earned from them. [FEAT-PROOF.md](FEAT-PROOF.md)
+is its output.
 
 | Feat | For | Counts | Copper | Silver | Gold | Scarlet | Legend |
 | --- | --- | --- | --- | --- | --- | --- | --- |
