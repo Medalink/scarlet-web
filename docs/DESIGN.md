@@ -582,8 +582,8 @@ least 7 days old) turns git history into a version and release notes.
   without a link, until a hardcore ruleset has data. The address of a ruleset is its kind (`/rulesets/normal`); an
   address from before kinds redirects to the ruleset that took it over. Rows with no sessions are not listed.
 - **Art and game layer**: the contour sheet, the map hero, the tally, records, rules, the climb, the roster, the hall,
-  the podium and marks are not in the comps. "Art and game layer" above is their design, and the gallery
-  (`/design/*`) shows them on invented data.
+  the podium and marks are not in the comps or in the gallery that rebuilds them (`/design/*`). "Art and game
+  layer" above is their design.
 - **Class filter**: leaderboards filter by class (`characters.class`). The dashboards and result pages do not: no
   aggregate carries the class.
 - **Reach**: "Characters that reached each level" in place of the comp's wording; the chart counts characters.
