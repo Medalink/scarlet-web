@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public;
 
+use App\Support\LootCounted;
 use App\Support\LootListing;
 use App\Support\LootRead;
 use App\Support\LootRule;
@@ -218,7 +219,7 @@ class Search
         foreach (DB::table('items')->whereIn('item_id', $ids)->get(['item_id', 'item_level', 'quality', 'equip_loc', 'class_id', 'subclass_id']) as $item) {
             $found[(int) $item->item_id] = ['item_level' => $item->item_level, 'quality' => $item->quality, 'equip_loc' => $item->equip_loc, 'class_id' => $item->class_id, 'subclass_id' => $item->subclass_id];
         }
-        $sources = LootRead::known(DB::table(Rollup::LootItemsDaily->value))->whereIn('item_id', $ids)->groupBy('item_id')
+        $sources = LootRead::known(DB::table(LootCounted::Items->value))->whereIn('item_id', $ids)->groupBy('item_id')
             ->selectRaw('item_id, count(distinct (source_kind, source_id)) as sources')
             ->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')])->pluck('sources', 'item_id');
         foreach ($ids as $id) {
@@ -234,7 +235,7 @@ class Search
      */
     private function objects(array $ids): array
     {
-        return $this->keyed($this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->from(Rollup::LootWindowsDaily, null)), 'loot_rule', null)
+        return $this->keyed($this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->table(LootCounted::Windows->value, null)), 'loot_rule', null)
             ->selectRaw('source_id, sum(windows) as opened, distinct_count(rollup(characters)) as characters')
             ->where('source_kind', LootSourceKind::Object->value)->whereIn('source_id', $ids)->groupBy('source_id'))), 'source_id', ['opened']);
     }

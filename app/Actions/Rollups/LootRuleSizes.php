@@ -2,8 +2,8 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\LootCounted;
 use App\Support\LootListing;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 
 class LootRuleSizes
@@ -19,7 +19,7 @@ class LootRuleSizes
      */
     public function handle(int $limit = 8): array
     {
-        $rows = $this->read->rows($this->read->shown(LootListing::ofSources($this->read->table(Rollup::LootWindowsDaily->value, null))
+        $rows = $this->read->rows($this->read->shown(LootListing::ofSources($this->read->table(LootCounted::Windows->value, null))
             ->selectRaw('loot_rule, group_size, sum(windows) as windows')
             ->groupBy('loot_rule', 'group_size')->orderByRaw('sum(windows) desc')->orderBy('loot_rule')->orderBy('group_size')->limit($limit)));
 

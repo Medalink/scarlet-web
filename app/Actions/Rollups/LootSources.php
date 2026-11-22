@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\LootCounted;
 use App\Support\LootFilter;
 use App\Support\LootListing;
 use App\Support\LootRead;
@@ -11,7 +12,6 @@ use App\Support\LootSourceKind;
 use App\Support\LootView;
 use App\Support\NameKind;
 use App\Support\RateEstimate;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
@@ -64,16 +64,16 @@ class LootSources
 
     private function page(LootFilter $filter, LootSourceKind $kind, int $offset, int $take): Builder
     {
-        $items = $this->within(DB::table(Rollup::LootItemsDaily->value.' as d'), 'd', $filter, $kind)
+        $items = $this->within(DB::table(LootCounted::Items->value.' as d'), 'd', $filter, $kind)
             ->selectRaw('d.source_id, count(distinct d.item_id) as items')->groupBy('d.source_id');
-        $query = $this->within($this->read->table(Rollup::LootWindowsDaily->value.' as w', null), 'w', $filter, $kind)
+        $query = $this->within($this->read->table(LootCounted::Windows->value.' as w', null), 'w', $filter, $kind)
             ->leftJoinSub($items, 'i', fn (JoinClause $join) => $join->on('i.source_id', '=', 'w.source_id'))
             ->leftJoinSub($this->levels($kind), 'l', fn (JoinClause $join) => $join->on('l.source_id', '=', 'w.source_id'))
             ->selectRaw('w.source_id, (select n.name from names n where n.kind = ? and n.id = w.source_id order by n.votes desc, n.name limit 1) as name', [$filter->view->nameKind()->value])
             ->selectRaw('sum(w.windows) as windows, distinct_count(rollup(w.characters)) as characters, coalesce(i.items, 0) as items, l.lo, l.hi')
             ->when($filter->levelMin !== null, fn (Builder $query): Builder => $query->where('l.hi', '>=', $filter->levelMin))
             ->when($filter->levelMax !== null, fn (Builder $query): Builder => $query->where('l.lo', '<=', $filter->levelMax))
-            ->when($filter->quality !== null, fn (Builder $query): Builder => $query->whereExists(fn (Builder $gave) => $gave->selectRaw('1')->from('loot_items_daily as qd')
+            ->when($filter->quality !== null, fn (Builder $query): Builder => $query->whereExists(fn (Builder $gave) => $gave->selectRaw('1')->from(LootCounted::Items->value.' as qd')
                 ->join('items as qi', 'qi.item_id', '=', 'qd.item_id')
                 ->whereColumn('qd.source_kind', 'w.source_kind')->whereColumn('qd.source_id', 'w.source_id')->where('qi.quality', '>=', $filter->quality)))
             ->groupBy('w.source_id', 'i.items', 'l.lo', 'l.hi')
@@ -125,7 +125,7 @@ class LootSources
         return $query->where(function (Builder $any) use ($filter, $like): void {
             $any->whereExists(fn (Builder $own) => $own->selectRaw('1')->from('names as n')
                 ->where('n.kind', $filter->view->nameKind()->value)->whereColumn('n.id', 'w.source_id')->where('n.name', 'ilike', $like))
-                ->orWhereExists(fn (Builder $gave) => $gave->selectRaw('1')->from('loot_items_daily as qd')
+                ->orWhereExists(fn (Builder $gave) => $gave->selectRaw('1')->from(LootCounted::Items->value.' as qd')
                     ->join('names as qn', fn (JoinClause $join) => $join->on('qn.id', '=', 'qd.item_id')->where('qn.kind', '=', NameKind::Item->value))
                     ->whereColumn('qd.source_kind', 'w.source_kind')->whereColumn('qd.source_id', 'w.source_id')->where('qn.name', 'ilike', $like));
             if ($filter->id() !== null) {
@@ -142,7 +142,7 @@ class LootSources
      */
     private function zones(LootFilter $filter, LootSourceKind $kind, array $ids): array
     {
-        $rows = $this->read->rows($this->within($this->read->table(Rollup::LootWindowsDaily->value.' as w', null), 'w', $filter, $kind)
+        $rows = $this->read->rows($this->within($this->read->table(LootCounted::Windows->value.' as w', null), 'w', $filter, $kind)
             ->selectRaw('w.source_id, w.zone_id, (select z.name from zones z where z.id = w.zone_id) as zone, sum(w.windows) as windows')
             ->whereIn('w.source_id', $ids)->whereNotNull('w.zone_id')->groupBy('w.source_id', 'w.zone_id')
             ->orderByRaw('sum(w.windows) desc')->orderBy('w.zone_id'));
@@ -162,7 +162,7 @@ class LootSources
      */
     private function tops(LootFilter $filter, LootSourceKind $kind, array $ids): array
     {
-        $rows = $this->read->rows($this->within($this->read->table(Rollup::LootItemsDaily->value.' as d', null), 'd', $filter, $kind)
+        $rows = $this->read->rows($this->within($this->read->table(LootCounted::Items->value.' as d', null), 'd', $filter, $kind)
             ->selectRaw('d.source_id, d.item_id, (select n.name from names n where n.kind = ? and n.id = d.item_id order by n.votes desc, n.name limit 1) as item, sum(d.windows) as drops', [NameKind::Item->value])
             ->whereIn('d.source_id', $ids)->groupBy('d.source_id', 'd.item_id')
             ->orderByRaw('sum(d.windows) desc')->orderBy('d.item_id'));

@@ -3,11 +3,11 @@
 namespace App\Actions\Rollups;
 
 use App\Support\ItemQuality;
+use App\Support\LootCounted;
 use App\Support\LootListing;
 use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\LootSourceKind;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Database\Query\Builder;
 
@@ -26,11 +26,11 @@ class LootFigures
      */
     public function handle(?int $zone): array
     {
-        $windows = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofSources($this->read->table(Rollup::LootWindowsDaily->value, null)), 'loot_rule', null)
+        $windows = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofSources($this->read->table(LootCounted::Windows->value, null)), 'loot_rule', null)
             ->when($zone !== null, fn (Builder $query): Builder => $query->where('zone_id', $zone))
             ->selectRaw('sum(windows) filter (where source_kind = ? and read = ?) as corpses, sum(windows) filter (where source_kind = ? and read = ?) as skinned', [LootSourceKind::Creature->value, LootRead::Loot->value, LootSourceKind::Creature->value, LootRead::Skin->value])
             ->selectRaw('count(distinct (source_kind, source_id)) as sources, distinct_count(rollup(characters)) as characters, min(bucket) as first_at, max(bucket) as last_at')))[0] ?? null;
-        $items = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofSources($this->read->table(Rollup::LootItemsDaily->value.' as d', null), 'd.read', 'd.source_kind', 'd.source_id'), 'd.loot_rule', null)
+        $items = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofSources($this->read->table(LootCounted::Items->value.' as d', null), 'd.read', 'd.source_kind', 'd.source_id'), 'd.loot_rule', null)
             ->leftJoin('items as i', 'i.item_id', '=', 'd.item_id')
             ->when($zone !== null, fn (Builder $query): Builder => $query->where('d.zone_id', $zone))
             ->selectRaw('count(distinct d.item_id) as items, count(distinct d.item_id) filter (where i.quality >= ?) as uncommon', [ItemQuality::Uncommon->value])))[0] ?? null;
@@ -46,7 +46,7 @@ class LootFigures
 
     private function fishing(): int
     {
-        $row = $this->read->rows($this->read->shown(LootRule::within(LootRead::Fish->within($this->read->table(Rollup::LootWindowsDaily->value, null)), 'loot_rule', null)
+        $row = $this->read->rows($this->read->shown(LootRule::within(LootRead::Fish->within($this->read->table(LootCounted::Windows->value, null)), 'loot_rule', null)
             ->selectRaw('sum(windows) as windows')))[0] ?? null;
 
         return (int) ($row['windows'] ?? 0);

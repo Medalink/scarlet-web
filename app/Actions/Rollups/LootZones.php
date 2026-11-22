@@ -2,9 +2,9 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\LootCounted;
 use App\Support\LootListing;
 use App\Support\LootRule;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 
 class LootZones
@@ -19,7 +19,7 @@ class LootZones
      */
     public function handle(int $limit = 60): array
     {
-        $rows = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofSources($this->read->table(Rollup::LootWindowsDaily->value, null)), 'loot_rule', null)
+        $rows = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofSources($this->read->table(LootCounted::Windows->value, null)), 'loot_rule', null)
             ->selectRaw('zone_id, (select z.name from zones z where z.id = zone_id) as zone, sum(windows) as windows')
             ->whereNotNull('zone_id')->groupBy('zone_id')->orderByRaw('sum(windows) desc')->orderBy('zone_id')->limit($limit)));
 

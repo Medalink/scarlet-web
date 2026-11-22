@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\LootCounted;
 use App\Support\LootListing;
 use App\Support\LootRead;
 use App\Support\LootRule;
@@ -51,14 +52,14 @@ class RefillSearchScores
 
     private function objects(): Builder
     {
-        return $this->read->shown(LootRule::within(LootListing::ofObjects($this->read->from(Rollup::LootWindowsDaily, null)), 'loot_rule', null)
+        return $this->read->shown(LootRule::within(LootListing::ofObjects($this->read->table(LootCounted::Windows->value, null)), 'loot_rule', null)
             ->selectRaw('?, source_id, sum(windows)', [SearchKind::Objects->value])
             ->where('source_kind', LootSourceKind::Object->value)->groupBy('source_id'));
     }
 
     private function items(): Builder
     {
-        return LootRead::known(DB::table(Rollup::LootItemsDaily->value))
+        return LootRead::known(DB::table(LootCounted::Items->value))
             ->selectRaw('?, item_id, count(distinct (source_kind, source_id))', [SearchKind::Items->value])
             ->groupBy('item_id')
             ->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')]);
