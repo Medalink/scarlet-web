@@ -1,0 +1,3 @@
+{{-- The mark of a stated drop rate: a band from the low to the high end of the 95% range and a dot at the rate; 10 to 29 windows draw hollow. estimate: App\Support\RateEstimate with stated() true. --}}
+@props(['estimate'])
+<span @class(['rb', 'hollow' => $estimate->sample === \App\Support\RateSample::Hollow]) role="img" aria-label="{{ $estimate->percent() }}, range {{ $estimate->range() }} percent"><i class="rng" style="left:{{ round($estimate->low * 100, 1) }}%;width:{{ round(($estimate->high - $estimate->low) * 100, 1) }}%"></i><i class="pt" style="left:{{ round($estimate->rate * 100, 1) }}%"></i></span>

@@ -42,6 +42,16 @@
       <p class="note">A share is skins that held the item over skins of this creature read for the first time. The band is the 95% range. Skinning does not depend on the loot rule.</p>
     </x-module>
     @endif
+    @if ($d['ruleArms'])
+    <x-module span="w12" :first="true" :last="true" id="h-r" :heading="$d['ruleArms']['heading']">
+      <x-arms :chart="$d['ruleArms']" />
+    </x-module>
+    @endif
+    @if ($d['sizeArms'])
+    <x-module span="w12" :first="true" :last="true" id="h-z" :heading="$d['sizeArms']['heading']">
+      <x-arms :chart="$d['sizeArms']" />
+    </x-module>
+    @endif
   </x-sheet>
 </div>
 </x-layouts.app>

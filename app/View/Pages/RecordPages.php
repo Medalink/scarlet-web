@@ -86,6 +86,8 @@ final class RecordPages
                 ...($ofKills ? [($soloItems[$row['item_id']] ?? RateEstimate::of(0, $solo['kills'], unit: RateEstimate::UNIT_KILL))->counts()] : []),
             ]], $table['rows']),
             'ofKills' => $ofKills,
+            'ruleArms' => ArmChart::rules($r['rule_arms']),
+            'sizeArms' => ArmChart::sizes($r['size_arms']),
             'skinning' => array_map(fn (array $row): array => ['cells' => [
                 ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id']],
                 ['rate' => $row['estimate']],
