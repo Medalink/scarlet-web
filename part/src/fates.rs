@@ -2,7 +2,7 @@
 //! totems stood in a fight, and whether a death with a self-resurrect on offer ended in using it.
 
 use crate::auras::{Inst, Recent};
-use crate::class::{Now, id_or_zero, seconds_ms};
+use crate::class::{Now, TRACKED_MAX, id_or_zero, seconds_ms};
 use crate::decode::num;
 use crate::sets::Set;
 use crate::tallies::Book;
@@ -244,7 +244,9 @@ impl Resurrections {
         let (Some(kind), Some(id)) = (num(f, 0), num(f, 1)) else {
             return;
         };
-        if self.offers.iter().any(|(_, k, i)| *k == kind && *i == id) {
+        if self.offers.len() >= TRACKED_MAX
+            || self.offers.iter().any(|(_, k, i)| *k == kind && *i == id)
+        {
             return;
         }
         self.awaiting = true;

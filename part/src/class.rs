@@ -42,6 +42,10 @@ pub fn seconds_ms(now: &Now, f: &[&str], i: usize) -> i64 {
     ms.max(0).min(now.len.max(0))
 }
 
+/// How many auras, and how many states of each other kind, are followed at once, and how long the lists are that
+/// the machines look back at. A gain past it is ignored.
+pub const TRACKED_MAX: usize = 512;
+
 /// The largest id a column holds.
 pub const MAX_ID: i64 = i32::MAX as i64;
 

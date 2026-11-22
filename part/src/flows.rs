@@ -2,7 +2,7 @@
 //! `I` and `DI` lines.
 
 use crate::auras::Recent;
-use crate::class::{Now, id};
+use crate::class::{Now, TRACKED_MAX, id};
 use crate::decode::{field, num, prefix};
 use crate::rows::Rows;
 use std::collections::BTreeMap;
@@ -89,6 +89,9 @@ impl Flows {
             Some(_) => return,
         };
         self.add(now, item, -1, DESTROYED, None, count);
+        if self.deleted.len() >= TRACKED_MAX {
+            self.deleted.remove(0);
+        }
         self.deleted.push((item, count, now.at));
     }
 

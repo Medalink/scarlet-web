@@ -2,7 +2,7 @@
 //! inside fights. Machines open a span when a state starts and end it when it stops; the ledger credits the time and
 //! splits every open span at a level-up.
 
-use crate::class::{Now, clip, is_id};
+use crate::class::{Now, TRACKED_MAX, clip, is_id};
 use crate::rows::Rows;
 use std::collections::BTreeMap;
 
@@ -144,6 +144,7 @@ impl Begin {
 pub struct Ledger {
     rows: BTreeMap<Key, Row>,
     open: BTreeMap<SpanId, Open>,
+    open_of_kind: BTreeMap<char, usize>,
     next: SpanId,
     at: i64,
     len: i64,
@@ -182,13 +183,16 @@ impl Ledger {
         row
     }
 
-    /// Start a span. A state whose id no column holds is not recorded: its span is never open and credits nothing.
+    /// Start a span. A state whose id no column holds, or that would be the 513th open of its kind, is not recorded:
+    /// its span is never open and credits nothing.
     pub fn begin(&mut self, b: Begin) -> SpanId {
         self.next += 1;
         let id = self.next;
-        if !is_id(b.ref_id) {
+        let open_now = self.open_of_kind.get(&b.kind).copied().unwrap_or(0);
+        if !is_id(b.ref_id) || open_now >= TRACKED_MAX {
             return id;
         }
+        self.open_of_kind.insert(b.kind, open_now + 1);
         let row = self.touch(b.kind, b.ref_id, &b.name, &b.extra);
         row.starts += i64::from(b.counted);
         self.open.insert(
@@ -213,7 +217,11 @@ impl Ledger {
     /// End a span now. `exact` is the total time the line itself reports, which replaces the measured time.
     pub fn end(&mut self, id: SpanId, exact: Option<i64>) {
         self.credit(id, self.at, exact);
-        self.open.remove(&id);
+        if let Some(open) = self.open.remove(&id)
+            && let Some(count) = self.open_of_kind.get_mut(&open.kind)
+        {
+            *count = count.saturating_sub(1);
+        }
     }
 
     /// Time that a line reports for a state whose start was not seen.
@@ -262,6 +270,9 @@ impl Ledger {
 
     /// The level changes now: every open span is credited to the old level up to here and goes on at the new one.
     pub fn level_up(&mut self, new: Option<i64>) {
+        if new == self.level {
+            return;
+        }
         let ids: Vec<SpanId> = self.open.keys().copied().collect();
         for id in &ids {
             self.credit(*id, self.at, None);

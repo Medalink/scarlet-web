@@ -2,10 +2,10 @@
 //! totems and fights. Each line opens or ends spans of the ledger; the ledger credits the time.
 
 use crate::auras::Inst;
-use crate::class::{Now, id_or_zero, seconds_ms};
+use crate::class::{Now, TRACKED_MAX, id_or_zero, seconds_ms};
 use crate::decode::{field, num};
 use crate::spans::{Begin, Ledger, SpanId};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 const TOTEM_SLOTS: i64 = 4;
 const MAIN_HAND: i64 = 16;
@@ -202,15 +202,16 @@ impl States {
 
     fn on_tracking(&mut self, f: &[&str]) {
         let baseline = field(f, 1) == BASELINE;
-        let now_on: Vec<&str> = field(f, 0)
+        let listed: Vec<&str> = field(f, 0)
             .split(',')
             .map(str::trim)
             .filter(|t| !t.is_empty())
             .collect();
+        let now_on: BTreeSet<&str> = listed.iter().copied().collect();
         let gone: Vec<String> = self
             .tracking
             .keys()
-            .filter(|t| !now_on.contains(&t.as_str()))
+            .filter(|t| !now_on.contains(t.as_str()))
             .cloned()
             .collect();
         for track in gone {
@@ -218,8 +219,8 @@ impl States {
                 self.ledger.end(span, None);
             }
         }
-        for track in now_on {
-            if self.tracking.contains_key(track) {
+        for track in listed {
+            if self.tracking.contains_key(track) || self.tracking.len() >= TRACKED_MAX {
                 continue;
             }
             let mut begin = Begin::new('k', track.parse::<i64>().unwrap_or(0)).name(track);

@@ -162,6 +162,12 @@ value is held to what its column stores:
 - A `name` or `extra` is cut to its first 255 characters.
 - Sums stop at 9223372036854775807 and do not wrap. A negative total, amount or count (`DM` and `DP` totals, `DS`
   amounts, a `DI` count) makes the line write nothing; an `I` line's quantity is its delta without the sign.
+- At most 512 auras are followed at once, and at most 512 open states of each other kind (tracked types, for one).
+  A gain past the limit is ignored: it writes no start and opens nothing, and the aura's later `A 0` reads as an `A 0`
+  with no gain in the session, so its seconds still reach `state_times` with no start. The lists the machines look
+  back at (casts of the last 10 s, ended auras, seals waiting for a fate, deleted items, fights waiting for a first
+  cast, self-resurrect offers) also hold 512 entries. A level-up credits only the spans open at that moment, and an `L`
+  line for the level the character already has changes nothing.
 
 ### `spell_casts` (combat: `C`, `CH`, `CI`, `F`)
 

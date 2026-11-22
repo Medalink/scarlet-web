@@ -1,12 +1,12 @@
 //! The auras on the character and the casts of the last seconds: what the class tallies and item flows look back at.
 
-use crate::class::Now;
+use crate::class::{Now, TRACKED_MAX};
 use crate::sets::Set;
 use crate::spans::SpanId;
 use std::collections::{BTreeMap, VecDeque};
 
 const RECENT_KEPT_MS: i64 = 10_000;
-const KEEP_MAX: usize = 512;
+const KEEP_MAX: usize = TRACKED_MAX;
 const A0_AFTER_A1_REPLACES_MS: i64 = 2_000;
 
 pub struct Inst {
@@ -54,8 +54,8 @@ pub struct Auras {
 }
 
 impl Auras {
-    /// A new instance, or `None` when the spell is already on: the client lists every aura again after a loading
-    /// screen and on a refresh, and that carries on the aura already open.
+    /// A new instance, or `None` when the spell is already on (the client lists every aura again after a loading
+    /// screen and on a refresh, and that carries on the aura already open) or when `TRACKED_MAX` auras are on.
     pub fn gain(
         &mut self,
         now: &Now,
@@ -67,6 +67,9 @@ impl Auras {
         self.kinds.insert(spell, (helpful, mine));
         if let Some(open) = self.on.iter_mut().find(|i| i.spell == spell) {
             open.refreshed_at = Some(now.at);
+            return None;
+        }
+        if self.on.len() >= TRACKED_MAX {
             return None;
         }
         self.next += 1;
@@ -114,7 +117,7 @@ impl Auras {
             .is_some_and(|r| now.at - r <= A0_AFTER_A1_REPLACES_MS)
         {
             open.refreshed_at = None;
-            open.carried_ms += ms;
+            open.carried_ms = open.carried_ms.saturating_add(ms);
             return Loss::Carried;
         }
         let inst = self.on.remove(at);
@@ -126,7 +129,7 @@ impl Auras {
             gain_at: inst.gain_at,
             opened: inst.opened,
         });
-        let total = inst.carried_ms + ms;
+        let total = inst.carried_ms.saturating_add(ms);
         Loss::Ended { inst, ms: total }
     }
 

@@ -4,7 +4,7 @@
 //! settled it.
 
 use crate::auras::{Auras, Inst, Recent};
-use crate::class::{Now, is_id};
+use crate::class::{Now, TRACKED_MAX, is_id};
 use crate::decode::{num, prefix};
 use crate::fates::{Resurrections, Seals, Totems};
 use crate::rows::Rows;
@@ -139,7 +139,13 @@ impl Tallies {
             .map(|c| c.spell);
         match first {
             Some(spell) => self.book.add(now, "fight_first", spell, 0, None),
-            None => self.firsts.push((*now, now.at + FIRST_AFTER_MS)),
+            None => {
+                if self.firsts.len() >= TRACKED_MAX {
+                    let (oldest, _) = self.firsts.remove(0);
+                    self.book.add(&oldest, "fight_first", 0, 0, None);
+                }
+                self.firsts.push((*now, now.at + FIRST_AFTER_MS));
+            }
         }
         self.totems.fight_start();
         self.fight = Some(Fight {
