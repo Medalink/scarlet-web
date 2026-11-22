@@ -3,11 +3,11 @@
 namespace App\Actions\Rollups;
 
 use App\Support\ItemBind;
+use App\Support\LootCounted;
 use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\RateEstimate;
 use App\Support\RateFlag;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -52,7 +52,7 @@ class SourceDrops
         if ($read !== LootRead::Loot) {
             return [];
         }
-        $rows = $this->read->rows($read->within(DB::table(Rollup::LootWindowsDaily->value))
+        $rows = $this->read->rows($read->within(DB::table(LootCounted::Windows->value))
             ->selectRaw('loot_rule, sum(windows) as windows')
             ->where('source_kind', $sourceKind)->where('source_id', $sourceId)
             ->groupBy('loot_rule')
@@ -67,7 +67,7 @@ class SourceDrops
      */
     private function windows(string $sourceKind, int $sourceId, ?string $rule, LootRead $read): ?array
     {
-        $query = $read->within(DB::table(Rollup::LootWindowsDaily->value))
+        $query = $read->within(DB::table(LootCounted::Windows->value))
             ->selectRaw('sum(windows) as windows, distinct_count(rollup(characters)) as characters')
             ->where('source_kind', $sourceKind)->where('source_id', $sourceId);
         $row = $this->read->rows($this->ruled($query, 'loot_rule', $rule, $read)
@@ -78,7 +78,7 @@ class SourceDrops
 
     private function unread(string $sourceKind, int $sourceId, ?string $rule): int
     {
-        $query = DB::table(Rollup::LootWindowsDaily->value)
+        $query = DB::table(LootCounted::Windows->value)
             ->selectRaw('sum(windows) as windows')
             ->whereNull('read')->where('source_kind', $sourceKind)->where('source_id', $sourceId);
         $row = $this->read->rows(LootRule::within($query, 'loot_rule', $rule)
@@ -92,7 +92,7 @@ class SourceDrops
      */
     private function items(string $sourceKind, int $sourceId, ?string $rule, LootRead $read): array
     {
-        $query = $read->within(DB::table(Rollup::LootItemsDaily->value.' as d'), 'd.read')
+        $query = $read->within(DB::table(LootCounted::Items->value.' as d'), 'd.read')
             ->leftJoin('items as i', 'i.item_id', '=', 'd.item_id')
             ->selectRaw("d.item_id, (select n.name from names n where n.kind = 'item' and n.id = d.item_id order by n.votes desc, n.name limit 1) as item")
             ->selectRaw('sum(d.windows) as drops, sum(d.quantity) as quantity, i.bind_type')

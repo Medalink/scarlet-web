@@ -3,10 +3,10 @@
 namespace App\Actions\Rollups;
 
 use App\Support\ItemBind;
+use App\Support\LootCounted;
 use App\Support\LootRead;
 use App\Support\RateEstimate;
 use App\Support\RateFlag;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Support\Facades\DB;
 
@@ -24,13 +24,13 @@ class DropRates
      */
     public function handle(string $sourceKind, int $sourceId): array
     {
-        $opens = LootRead::Loot->within(DB::table(Rollup::LootWindowsDaily->value))
+        $opens = LootRead::Loot->within(DB::table(LootCounted::Windows->value))
             ->selectRaw('loot_rule, sum(windows) as opens, distinct_count(rollup(characters)) as window_characters')
             ->where('source_kind', $sourceKind)
             ->where('source_id', $sourceId)
             ->groupBy('loot_rule');
 
-        $query = LootRead::Loot->within(DB::table(Rollup::LootItemsDaily->value.' as d'), 'd.read')
+        $query = LootRead::Loot->within(DB::table(LootCounted::Items->value.' as d'), 'd.read')
             ->joinSub($opens, 'o', 'o.loot_rule', '=', 'd.loot_rule')
             ->leftJoin('items as i', 'i.item_id', '=', 'd.item_id')
             ->selectRaw("d.item_id, (select n.name from names n where n.kind = 'item' and n.id = d.item_id order by n.votes desc, n.name limit 1) as item")

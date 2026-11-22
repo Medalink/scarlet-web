@@ -3,11 +3,11 @@
 namespace App\Actions\Rollups;
 
 use App\Support\ItemBind;
+use App\Support\LootCounted;
 use App\Support\LootRead;
 use App\Support\LootSourceKind;
 use App\Support\RateEstimate;
 use App\Support\RateFlag;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Support\Facades\DB;
 
@@ -24,11 +24,11 @@ class ItemSources
      */
     public function handle(int $itemId, int $limit = 25): array
     {
-        $opens = LootRead::known(DB::table(Rollup::LootWindowsDaily->value))
+        $opens = LootRead::known(DB::table(LootCounted::Windows->value))
             ->selectRaw('source_kind, source_id, read, loot_rule, sum(windows) as opens, distinct_count(rollup(characters)) as window_characters')
             ->groupBy('source_kind', 'source_id', 'read', 'loot_rule');
 
-        $query = LootSourceKind::withName(LootRead::known(DB::table(Rollup::LootItemsDaily->value.' as d'), 'd.read')
+        $query = LootSourceKind::withName(LootRead::known(DB::table(LootCounted::Items->value.' as d'), 'd.read')
             ->joinSub($opens, 'o', fn ($join) => $join
                 ->on('o.source_kind', '=', 'd.source_kind')
                 ->on('o.source_id', '=', 'd.source_id')

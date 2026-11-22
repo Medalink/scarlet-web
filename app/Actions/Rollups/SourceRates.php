@@ -3,12 +3,12 @@
 namespace App\Actions\Rollups;
 
 use App\Support\ItemBind;
+use App\Support\LootCounted;
 use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\LootSourceKind;
 use App\Support\RateEstimate;
 use App\Support\RateFlag;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Support\Facades\DB;
 
@@ -31,10 +31,10 @@ class SourceRates
         $rule = in_array($rule, $rules, true) ? $rule : null;
         $quest = (int) DB::table('items')->where('item_id', $itemId)->value('bind_type') === ItemBind::Quest->value;
 
-        $windows = LootRule::within(LootRead::known(DB::table(Rollup::LootWindowsDaily->value))
+        $windows = LootRule::within(LootRead::known(DB::table(LootCounted::Windows->value))
             ->selectRaw('source_kind, source_id, read, sum(windows) as windows, distinct_count(rollup(characters)) as window_characters'), 'loot_rule', $rule)
             ->groupBy('source_kind', 'source_id', 'read');
-        $query = LootSourceKind::withName(LootRead::known(DB::table(Rollup::LootItemsDaily->value.' as d'), 'd.read')
+        $query = LootSourceKind::withName(LootRead::known(DB::table(LootCounted::Items->value.' as d'), 'd.read')
             ->joinSub($windows, 'o', fn ($join) => $join->on('o.source_kind', '=', 'd.source_kind')->on('o.source_id', '=', 'd.source_id')->on('o.read', '=', 'd.read'))
             ->select('d.source_kind', 'd.source_id', 'd.read'))
             ->selectRaw('sum(d.windows) as drops, sum(d.quantity) as quantity, o.windows as opens, o.window_characters')
@@ -60,7 +60,7 @@ class SourceRates
      */
     private function rules(int $itemId): array
     {
-        $rows = $this->read->rows(LootRead::known(DB::table(Rollup::LootItemsDaily->value))
+        $rows = $this->read->rows(LootRead::known(DB::table(LootCounted::Items->value))
             ->selectRaw('loot_rule')
             ->where('item_id', $itemId)
             ->groupBy('loot_rule')

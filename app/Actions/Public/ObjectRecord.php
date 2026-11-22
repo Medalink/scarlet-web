@@ -3,12 +3,12 @@
 namespace App\Actions\Public;
 
 use App\Actions\Rollups\SourceDrops;
+use App\Support\LootCounted;
 use App\Support\LootListing;
 use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\LootSourceKind;
 use App\Support\NameKind;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Support\Facades\DB;
 
@@ -62,7 +62,7 @@ class ObjectRecord
     private function seen(string $kind, int $id): ?array
     {
         $row = $this->read->rows($this->read->shown(
-            $this->read->from(Rollup::LootWindowsDaily, null)
+            $this->read->table(LootCounted::Windows->value, null)
                 ->selectRaw('sum(windows) as windows, distinct_count(rollup(characters)) as characters')
                 ->where('source_kind', $kind)->where('source_id', $id),
         ))[0] ?? null;
@@ -77,7 +77,7 @@ class ObjectRecord
      */
     private function reads(string $kind, int $id): array
     {
-        $rows = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->from(Rollup::LootWindowsDaily, null)), 'loot_rule', null)
+        $rows = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->table(LootCounted::Windows->value, null)), 'loot_rule', null)
             ->selectRaw('read, sum(windows) as windows')->where('source_kind', $kind)->where('source_id', $id)
             ->groupBy('read')->orderByRaw('sum(windows) desc')->orderBy('read')));
 
@@ -86,7 +86,7 @@ class ObjectRecord
 
     private function items(string $kind, int $id): int
     {
-        $row = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->from(Rollup::LootItemsDaily, null)), 'loot_rule', null)
+        $row = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->table(LootCounted::Items->value, null)), 'loot_rule', null)
             ->selectRaw('count(distinct item_id) as items')->where('source_kind', $kind)->where('source_id', $id)))[0] ?? null;
 
         return $row === null ? 0 : (int) $row['items'];
@@ -97,7 +97,7 @@ class ObjectRecord
      */
     private function zonesOf(string $kind, int $id): array
     {
-        $rows = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->from(Rollup::LootWindowsDaily, null)), 'loot_rule', null)
+        $rows = $this->read->rows($this->read->shown(LootRule::within(LootListing::ofObjects($this->read->table(LootCounted::Windows->value, null)), 'loot_rule', null)
             ->selectRaw('zone_id, (select z.name from zones z where z.id = zone_id) as zone, sum(windows) as windows')
             ->where('source_kind', $kind)->where('source_id', $id)->whereNotNull('zone_id')
             ->groupBy('zone_id')->orderByRaw('sum(windows) desc')->orderBy('zone_id')->limit(20)));

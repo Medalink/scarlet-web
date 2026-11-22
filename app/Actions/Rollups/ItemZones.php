@@ -2,11 +2,11 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\LootCounted;
 use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\LootSourceKind;
 use App\Support\RateEstimate;
-use App\Support\Rollup;
 use App\Support\RollupRead;
 use Illuminate\Database\Query\Builder;
 
@@ -24,7 +24,7 @@ class ItemZones
      */
     public function handle(int $itemId, int $limit = 10): array
     {
-        $held = $this->read->rows($this->creatures($this->read->table(Rollup::LootItemsDaily->value, null))
+        $held = $this->read->rows($this->creatures($this->read->table(LootCounted::Items->value, null))
             ->selectRaw('zone_id, (select z.name from zones z where z.id = zone_id) as zone, sum(windows) as dropped')
             ->where('item_id', $itemId)->whereNotNull('zone_id')->groupBy('zone_id')
             ->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')])
@@ -32,7 +32,7 @@ class ItemZones
         if ($held === []) {
             return [];
         }
-        $looted = array_column($this->read->rows($this->creatures($this->read->table(Rollup::LootWindowsDaily->value, null))
+        $looted = array_column($this->read->rows($this->creatures($this->read->table(LootCounted::Windows->value, null))
             ->selectRaw('zone_id, sum(windows) as windows')
             ->whereIn('zone_id', array_column($held, 'zone_id'))->groupBy('zone_id')), 'windows', 'zone_id');
 

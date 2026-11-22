@@ -5,9 +5,9 @@ namespace App\Actions\Public;
 use App\Actions\Rollups\ItemGathers;
 use App\Actions\Rollups\ItemSources;
 use App\Actions\Rollups\SourceRates;
+use App\Support\LootCounted;
 use App\Support\LootRead;
 use App\Support\NameKind;
-use App\Support\Rollup;
 use Illuminate\Support\Facades\DB;
 
 class ItemRecord
@@ -43,7 +43,7 @@ class ItemRecord
         }
         $sources = $this->sources->handle($id, 50);
         $gathered = $this->gathers->handle($id);
-        $totals = LootRead::known(DB::table(Rollup::LootItemsDaily->value))
+        $totals = LootRead::known(DB::table(LootCounted::Items->value))
             ->selectRaw('sum(windows) as dropped, min(bucket) as first_at, count(distinct (source_kind, source_id)) as sources, distinct_count(rollup(characters)) as characters')
             ->where('item_id', $id)
             ->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')])
