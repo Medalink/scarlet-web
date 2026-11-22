@@ -429,6 +429,13 @@ install per day, 50 characters per install, and the zstd window is capped so a s
 bound. Requests are rate limited per install and per IP with Laravel's limiter. Revoking an install on the account
 page stops its key at once.
 
+**Public pages.** The pages run the same reads as the public API, so a client looping over them would reach the
+database through php-fpm's few workers. They carry their own protection: 240 requests a minute per address bucket
+(`App\Support\ClientAddress::bucket` — an IPv4 address as it is, an IPv6 address by its /64), counted by Laravel's
+limiter on every route of `routes/pages.php`; `statement_timeout` 10 s on every statement a page request runs; and
+the answer to an anonymous visitor kept in the cache for the edge TTL under a key that keeps only the query
+parameters the pages read, so a junk parameter such as `?x=1` cannot bypass the edge cache and reach the origin.
+
 **Accounts.** Sign-in is Laravel Socialite with Google and Battle.net, authorization code with PKCE and a `state`
 check. Stored per identity: provider and the provider's subject id. Not stored: email, name, picture, BattleTag. No
 feature needs an email address, so the scopes ask for none (`openid` only). An account can hold both providers.

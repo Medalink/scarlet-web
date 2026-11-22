@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\MapViewerDesignController;
+use App\Http\Middleware\RateLimitRequests;
 use App\View\Design\Gallery;
 use Illuminate\Support\Facades\Route;
 
@@ -17,4 +18,4 @@ if (app()->environment('local')) {
 
 require __DIR__.'/maps.php';
 require __DIR__.'/accounts.php';
-Route::middleware('scarlet.edge')->group(__DIR__.'/pages.php');
+Route::middleware(['scarlet.rate:'.RateLimitRequests::PAGE, 'scarlet.timeout', 'scarlet.edge'])->group(__DIR__.'/pages.php');

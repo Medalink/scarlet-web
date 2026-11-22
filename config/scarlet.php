@@ -44,6 +44,12 @@ return [
         ],
     ],
 
+    'page' => [
+        'per_address' => (int) env('SCARLET_RATE_PAGE_PER_ADDRESS', 240),
+        'seconds' => 60,
+        'statement_seconds' => 10,
+    ],
+
     // The newest desktop app build, read from the GitHub releases of Medalink/scarlet-app (App\Actions\Release\ShowAppDownload).
     // An answer is reused for `fresh_seconds`; after a failed read GitHub is not asked again for `retry_seconds`.
     'app_download' => [

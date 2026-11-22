@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Install;
+use App\Support\ClientAddress;
 use App\Support\Exceptions\ApiException;
 use Closure;
 use Illuminate\Cache\RateLimiter;
@@ -11,7 +12,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Laravel's rate limiter with the budgets of config('scarlet.rate'): `registration` and `ip` count per
- * client address, `install` per signed install (so it runs after VerifyInstallSignature).
+ * client address, `install` per signed install (so it runs after VerifyInstallSignature), and `page` per
+ * address bucket (App\Support\ClientAddress) — the pages answer with a plain refusal instead of an API error.
  */
 class RateLimitRequests
 {
@@ -21,6 +23,8 @@ class RateLimitRequests
 
     public const string INSTALL = 'install';
 
+    public const string PAGE = 'page';
+
     public function __construct(private readonly RateLimiter $limiter) {}
 
     public function handle(Request $request, Closure $next, string $bucket): Response
@@ -28,7 +32,12 @@ class RateLimitRequests
         [$key, $max, $seconds] = $this->budget($request, $bucket);
 
         if ($this->limiter->tooManyAttempts($key, $max)) {
-            throw ApiException::rateLimited($this->limiter->availableIn($key));
+            $wait = $this->limiter->availableIn($key);
+            if ($bucket === self::PAGE) {
+                return response("Too many requests from your address. Try again in {$wait} seconds.", Response::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => (string) $wait]);
+            }
+
+            throw ApiException::rateLimited($wait);
         }
         $this->limiter->hit($key, $seconds);
 
@@ -40,6 +49,10 @@ class RateLimitRequests
     {
         if ($bucket === self::REGISTRATION) {
             return ['api-registration:'.$request->ip(), (int) config('scarlet.rate.registration.per_ip'), (int) config('scarlet.rate.registration.seconds')];
+        }
+
+        if ($bucket === self::PAGE) {
+            return ['page:'.ClientAddress::bucket($request), (int) config('scarlet.rate.page.per_address'), (int) config('scarlet.rate.page.seconds')];
         }
 
         $seconds = (int) config('scarlet.rate.upload.seconds');

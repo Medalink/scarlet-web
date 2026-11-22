@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EdgeCacheable;
+use App\Http\Middleware\PageStatementTimeout;
 use App\Http\Middleware\RateLimitRequests;
 use App\Http\Middleware\VerifyInstallSignature;
 use App\Support\Exceptions\ApiException;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'scarlet.signed' => VerifyInstallSignature::class,
             'scarlet.rate' => RateLimitRequests::class,
+            'scarlet.timeout' => PageStatementTimeout::class,
             'scarlet.edge' => EdgeCacheable::class,
         ]);
         $middleware->prependToPriorityList(before: StartSession::class, prepend: EdgeCacheable::class);
