@@ -8,7 +8,7 @@
 use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::build::{at_in_range, parse_header};
 use crate::camp::{Camp, Known};
-use crate::combat::Combat;
+use crate::class::{Class, Now, OPEN_WORLD, place_of};
 use crate::death::Hit;
 use crate::group::{GroupBook, Rule};
 use crate::peer::Peers;
@@ -18,6 +18,7 @@ use crate::rows::Rows;
 use crate::social::Social;
 use crate::tables::{Groups, NameRefs, leading_id};
 use crate::talents::{Ctx, Talents};
+use crate::tallies::SAME_DEATH_MS;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A dungeon left less than this long ago is the same run when it is entered again.
@@ -189,6 +190,7 @@ struct Dec<'o> {
     zone_id: Option<i64>,
     inst_id: Option<i64>,
     inst_type: String,
+    place: char,
     dungeon: bool,
     group_size: Option<i64>,
     method: String,
@@ -239,7 +241,7 @@ struct Dec<'o> {
     pn: BTreeMap<String, String>,
     talents: Talents,
     camp: Camp,
-    combat: Combat,
+    class: Class,
     prof: Professions,
     social: Social,
     group: GroupBook,
@@ -264,6 +266,16 @@ pub(crate) fn prefix(
 impl Dec<'_> {
     fn lvl(&self) -> Option<i64> {
         (self.level > 0).then_some(self.level)
+    }
+
+    fn now(&self, at: i64) -> Now {
+        Now {
+            at,
+            start: self.start_ms,
+            level: self.lvl(),
+            zone_id: self.zone_id,
+            place: self.place,
+        }
     }
 
     fn fact(&mut self, table: &str, at: i64) {
@@ -425,6 +437,10 @@ impl Dec<'_> {
         {
             return;
         }
+        if self.started {
+            let now = self.now(t);
+            self.class.on_line(&now, code, &f);
+        }
         let here = Here {
             level: self.lvl(),
             zone_id: self.zone_id,
@@ -465,7 +481,11 @@ impl Dec<'_> {
                 self.w.end();
             }
             "D" => {
-                if self.death_list.last().is_some_and(|d| t - d.t <= 3_000) {
+                if self
+                    .death_list
+                    .last()
+                    .is_some_and(|d| t - d.t <= SAME_DEATH_MS)
+                {
                     return;
                 }
                 self.deaths += 1;
@@ -610,11 +630,7 @@ impl Dec<'_> {
                 let (level, zone_id) = (self.lvl(), self.zone_id);
                 self.camp.on_aura(t, &f, level, zone_id);
             }
-            "C" => {
-                self.camp.on_cast(t, &f);
-                self.combat.on_cast(t, self.lvl(), self.zone_id, &f);
-            }
-            "DM" => self.combat.on_meter(t, self.lvl(), self.zone_id, &f),
+            "C" => self.camp.on_cast(t, &f),
             "QB" => {
                 let ctx = self.baseline_ctx(t);
                 self.baselines.on_qb(ctx, &mut self.w, &f);
@@ -883,6 +899,7 @@ impl Dec<'_> {
         self.dungeon = party;
         self.inst_id = num(f, 1);
         self.inst_type = field(f, 2).to_string();
+        self.place = place_of(&self.inst_type);
         // Instances have no uiMapID: their zone id is the instance map id, negated.
         let map = map.or(num(f, 1).map(|i| -i));
         if !name.is_empty() {
@@ -1116,7 +1133,8 @@ impl Dec<'_> {
         self.talents.finish(s, &mut self.w);
         self.group
             .finish(s, self.end_ms, &self.pn, &self.peers, &mut self.w);
-        self.combat.finish(s, &mut self.w);
+        let end = self.now(self.end_ms);
+        self.class.finish(s, &end, self.has.combat, &mut self.w);
         let known = Known {
             afk: self.has.xp,
             crafts: self.has.professions,
@@ -1451,6 +1469,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         zone_id: None,
         inst_id: None,
         inst_type: String::new(),
+        place: OPEN_WORLD,
         dungeon: false,
         group_size: None,
         method: "unknown".into(),
@@ -1496,7 +1515,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         pn: BTreeMap::new(),
         talents: Talents::default(),
         camp: Camp::default(),
-        combat: Combat::default(),
+        class: Class::default(),
         prof: Professions::default(),
         social: Social::default(),
         group: GroupBook::new(character, has_group("professions")),

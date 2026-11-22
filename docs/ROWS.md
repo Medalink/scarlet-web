@@ -132,30 +132,173 @@ docs/player-fields.tsv, on every pos.
 | `absorbed`, `resisted`, `blocked` | int or null | fields 19 to 21 |
 | `flags` | string or null | field 22: `a` avoidable, `d` deadly, `h` caster hidden |
 
-### `spell_casts` (combat: `C`)
+### The class tables
 
-One row per spell the session cast, at its first cast. A `C` line is a cast that succeeded; a channel end (`CH`)
-and an interrupted cast (`CI`) write no row. `cast_ms` is 0 when every cast of the spell was instant.
+`spell_casts`, `meter_totals`, `meter_spells`, `state_times`, `item_flows` and `class_tallies` hold what the class
+pages read, as aggregates of one session: a page sums them with `SUM ... GROUP BY`. Their rows have a key, and a
+session writes one row per key, in key order, at the end. The row's `at` and `zone_id` are those of the first line that
+touched the key, and `level` is the level when the line was read. A `state_times` span that crosses a level-up is
+split at the `L` line. A **fight** is the time from `F 1` to `F 0`; an `F 1` while a fight is open and an `F 0` with
+none open are ignored, and a fight still open at the session end closes there. These tables came with decoder version
+14 (`spell_casts` and `meter_totals` with 13); the sessions already stored fill them when the scheduler decodes them
+again.
+
+The spell id sets that `class_tallies` matches (`form`, `stance`, `aspect`, `pal_aura`, `seal`, `judge`, `opener`,
+`finisher`, `stealth`, `watch`) are ids, because the decoder cannot rely on a session's name lines.
+`tools/class-spells/build.mjs` writes them to `part/src/sets.rs` from the client's `SpellName` table and the name
+patterns of `tools/class-spells/sets.mjs`, every rank of a name. Edit the patterns and run the tool again; never edit
+`sets.rs`.
+
+### `spell_casts` (combat: `C`, `CH`, `CI`, `F`)
+
+Key `spell_id`, `level`. One row per spell and level the session cast, at the first line of the spell at that level.
+A `C` line is a cast that succeeded, a `CH` line a channel that ended and a `CI` line a cast that was interrupted. A
+spell with only `CH` or `CI` lines at a level still gets a row, with `casts` 0. `cast_ms` is 0 when every cast of the
+spell was instant.
 
 | Key | Type | |
 | --- | --- | --- |
 | `spell_id` | int | |
-| `casts` | int | the session's `C` lines of the spell |
+| `casts` | int | the `C` lines of the spell |
 | `cast_ms` | int | those lines' cast seconds, in milliseconds |
+| `fight_casts` | int | the `C` lines read while a fight was open |
+| `channel_ms` | int | the `CH` seconds of the spell, in milliseconds |
+| `interrupts` | int | the `CI` lines of the spell |
+| `streak` | int | the longest run of `C` lines of this spell with no `C` of another spell between them. `CH` and `CI` lines do not break a run, and a run goes on across a level-up: the row holds the longest run that reached a cast at its level (decoder version 14) |
 
-### `meter_totals` (combat: `DM`)
+A page that wants a spell's casts in the session sums `casts` over the spell's rows, and takes the largest `streak`.
 
-One row per meter the session reported, at its first `DM` line: what the client's damage meter wrote after each
-fight, summed over the session's fights. A `DM` line with an unknown meter letter or a total that is not a number
-writes nothing.
+### `meter_totals` (combat: `DM`, `DP`)
+
+Key `meter`, `level`, `place`. One row per meter, level and place the session reported, at its first `DM` line: what
+the client's damage meter wrote after each fight, summed over the fights. A `DM` line with an unknown meter letter or a
+total that is not a number writes nothing.
 
 | Key | Type | |
 | --- | --- | --- |
 | `meter` | string | `d` damage, `h` healing, `t` damage taken, `a` absorbs, `i` interrupts, `x` dispels |
+| `place` | string | the instance type in force at the `DM` line: `w` open world (`none`, or no `Z` line yet), `d` dungeon (`party`, `scenario`), `r` raid, `b` battleground or arena (`pvp`, `arena`). The column is null on a row stored before decoder version 14 |
 | `total` | int | the fights' totals summed |
 | `best` | int | the largest single fight total |
 | `fights` | int | the meter's `DM` lines |
 | `fight_ms` | int | the fights' seconds, in milliseconds |
+| `group_total` | int | over the fights of this key that had `DP` lines for the meter: the group's total with the uploader counted once. 0 without any |
+| `group_own` | int | the uploader's own total in those fights, 0 for a fight with no `DM` line |
+| `group_fights` | int | how many such fights |
+
+The addon writes the uploader's own total as `DM` and the other members as `DP` lines, up to 10 for a fight, and never
+the uploader as a `DP`. The decoder reads one **report** for each meter: the `DM` line and the `DP` lines of that meter
+that come within 1 s of the report's first line. A second `DM` line of the meter starts the next report. A report with
+at least one `DP` line is a group fight: `group_fights` goes up by 1, `group_own` by the report's `DM` total (0 when it
+has none) and `group_total` by that total plus the `DP` totals. The report counts for the level and place of its `DM`
+line. A session without `DP` lines has all three at 0 (decoder version 14).
+
+### `meter_spells` (combat: `DS`)
+
+Key `meter`, `spell_id`, `level`. The spells that the client's damage meter listed among the top 5 of a fight, summed:
+one row per meter, spell and level, at the first line.
+
+| Key | Type | |
+| --- | --- | --- |
+| `meter` | string | as `meter_totals` |
+| `spell_id` | int | |
+| `amount` | int | the lines' amounts summed |
+| `fights` | int | the `DS` lines |
+
+### `state_times` (combat, movement, build: see the kinds)
+
+Key `kind`, `ref_id`, `name`, `level`. The time the character spent in a state, and how much of it lay inside fights.
+A row is written when it has a start or time; a split at a level-up that left a row with neither writes none.
+
+| Key | Type | |
+| --- | --- | --- |
+| `kind` | string | the state, below |
+| `ref_id` | int | a spell, an item, a happiness, 0 when the state has none |
+| `name` | string or null | |
+| `extra` | string or null | |
+| `starts` | int | how many times the state began |
+| `ms` | int | the time in the state, in milliseconds |
+| `fight_ms` | int or null | the part of `ms` inside fights. Null for the kinds of `movement` and `build` in a session with no `combat` part, which cannot tell fights |
+
+| Kind | From | `ref_id` | `name`, `extra` | Rules |
+| --- | --- | --- | --- | --- |
+| `a` | `A`, helpful, by `1` | spell | | An aura you cast. `ms` is the `A 0` seconds (the whole time, not the time since the last level-up). An aura on at the session end closes there. An `A 1` with initial `s` starts at the session start and is not a start. An `A 0` with no gain in the session adds its seconds, to the kind an earlier `A 1` of the spell showed, and writes nothing when there was none |
+| `b` | `A`, helpful, by `0` or empty | spell | | A buff from others. As `a` |
+| `x` | `A`, not helpful | spell | | A debuff on you. As `a` |
+| `r` | `AR` | spell, 0 when empty | | Auto Shot and wand time, from the `AR 1` line to the `AR 0` line (measured from the lines' times, not the seconds the end line gives). An `AR 1` for another spell ends the one running. One running at the session end closes there |
+| `m` | `MO` | the mount spell, 0 when empty | | A mount from `MO 1` to `MO 0`, by the lines' times. One with baseline `s` starts at the session start and is not a start. One on at the session end closes there |
+| `p` | `PT`, `PD` | 0 | `name` the pet, `extra` its family | From the `PT` line to the next `PT` or the session end. An empty name ends it. A `PD` with baseline `s` for a pet that `PT` has not named starts the span with no family, and a later `PT` fills it |
+| `h` | `PD` | happiness, 1 to 3 | `name` the pet | The time the pet that is out spent at that happiness. A `PD` line with another happiness ends the span, and one with none starts nothing |
+| `t` | `TW` | the totem spell | `extra` the slot, `1` to `4` | `starts` are drops. A drop runs to the slot's next `TW` line, capped at its duration and at the session end. A drop with no duration runs to the next line |
+| `w` | `G`, slot 16 | the item | | The main hand, from the `G` line to the slot's next `G` or the session end. The addon writes no `G` line at the session start, so the time before the first one is unknown and not counted. An item 0 ends the span and starts none; the same item again changes nothing |
+| `o` | `G`, slot 17 | the item | | The off hand. As `w` |
+| `k` | `MP` | the spell id when the type is a number, else 0 | `name` the type as written | One row per type that is on, from the `MP` line that shows it to the first one that does not, or the session end. A type in the login line (why `s`) is not a start |
+| `f` | `F` | 0 | | `starts` fights, `ms` and `fight_ms` their time |
+
+An aura that the client lists again (an `A 1` of a spell that is on) after a loading screen or a refresh is not a new
+start and does not move the gain. An `A 0` within 2 s after such a line ends the instance that the line replaced, not
+the aura: its seconds are added to the seconds of the `A 0` that does end it.
+
+### `item_flows` (loot: `I`, `DI`; combat: `C`, `CH`, `AR`)
+
+Key `item_id`, `dir`, `place`, `spell_id`, `level`. What went into and out of the bags, summed.
+
+| Key | Type | |
+| --- | --- | --- |
+| `item_id` | int | |
+| `dir` | int | `1` into the bags, `-1` out |
+| `place` | string | the `I` line's `where` (`v` vendor, `b` bank, `m` mail, `t` trade, `l` loot, `a` auction house, `c` profession window, `g` guild bank), `o` when it is empty or anything else, and `x` for an item destroyed (`DI`) |
+| `spell_id` | int or null | for `place` `o` only: the spell of the last `C` or `CH` line in the 1.5 s before the `I` line, else the spell of the `AR` that is running, else null. A soul shard reads as Drain Soul or a summon, conjured water as the conjure or a drink, ammo as Auto Shot. Null without a `combat` part, and a removed `combat` nulls it |
+| `events` | int | the lines |
+| `quantity` | int | the units, always positive |
+
+An `I` line with no item or a delta of 0 writes nothing. A `DI` line counts its units as `x`, and the `I` line for the
+same item and count (empty `where`, a negative delta) within 5 s after it is not counted again. The items of a trade
+arrive as `I` lines with `where` `t`, so `TR` adds nothing here.
+
+### `class_tallies` (combat: see the keys)
+
+Key `key`, `a`, `b`, `level`. Counts of sequences, one small machine for each key. A row is filed under the `at`,
+`level` and `zone_id` of the line it settled on, or, for a fight, of the `F 1` line, for a seal of its gain line and for
+a totem drop of its drop line. A tally that waits for an outcome keeps a deadline in line time, so a row never depends
+on which line settled it.
+
+| Key | Type | |
+| --- | --- | --- |
+| `key` | string | the tally, below |
+| `a`, `b` | int | what the tally keys on; 0 when it has none |
+| `n` | int | how many of what the tally counts |
+| `sum` | int | milliseconds some keys add up, else 0 |
+| `best` | int | the largest `sum` of one |
+
+| `key` | `a` | `b` | Counts (`n`) |
+| --- | --- | --- | --- |
+| `kill_blow` | the spell of the last `C` in the 3 s before a `K` with `by` 1; 0 when none | 0 | kills |
+| `fight_kills` | the `K` lines with `by` 1 in one fight, at most 20 | 0 | fights |
+| `fight_first` | the first `C` from 1.5 s before `F 1` to 3 s after it; 0 when none | 0 | fights |
+| `death_after` | a spell cast in the 10 s before a `D`, each spell once at its latest cast | the whole seconds from that cast to the death | deaths |
+| `death_after_aura` | a helpful aura that ended in the 10 s before a `D`, each spell once at its latest end | the whole seconds from its end to the death | deaths |
+| `cast_under` | an aura of the `watch` set that was on at a `C`, or ended up to 0.3 s before it | the spell cast | casts |
+| `shift_form`, `shift_stance`, `shift_aspect`, `shift_pal_aura`, `shift_seal` | the aura of the set that the character left: the one still on, or one that ended in the 2 s before; 0 when none | the aura of the set gained | gains. Leaving a form and entering the same one inside 2 s gives `a` equal to `b` |
+| `open_finish` | the first `C` of the `opener` set in a fight, counted from 1.5 s before `F 1`; 0 when none | the first `C` of the `finisher` set after it in that fight, or the first in the fight when there was no opener; 0 when none | fights |
+| `stealth_open` | the first `C` of the `opener` set while an aura of the `stealth` set is on, or up to 1 s after it ended. An instance of the aura is used once | 0 | openers; `sum` the time from the aura's gain to that cast |
+| `seal_fate` | a `seal` aura that was gained | its fate, the first that happens, below | seals; `sum` the time from its gain to the fate |
+| `totem_fate` | the slot, 1 to 4 | the fate of one drop, below | drops |
+| `fight_totems` | how many of the four slots held a totem at any time in a fight, 0 to 4 | 0 | fights |
+| `res_offer` | the `SR` option type | the `SR` id | deaths that offered it |
+| `res_taken` | the `SR` option type | the `SR` id | of those, the deaths followed by a `U` with no `R` and no `SH` between |
+
+Fates of a seal: `1` judged (a `C` of the `judge` set in the 0.5 s before it ended), `2` replaced (another seal gained
+within 0.5 s of its end), `3` ran out (it ended within 1 s of its duration), `5` the fight it was gained in ended with
+it on, `4` anything else. A seal gained outside a fight and still on at the session end has no fate and writes
+nothing. Fates of a totem drop: `1` stood its full time (the slot's next line came at least the duration, less 1 s,
+after the drop), `2` replaced by another totem in the slot, `3` gone before its time, `5` the fight it was dropped in
+ended with it standing. A drop outside a fight with no later line has no fate. A totem counts as held until its slot's
+next `TW` line, so one that ran out in the fight counts. A `D` within 3 s of the one before is the same death, as
+for `deaths`. A `SR` pair repeated for one death counts once. An `A 1` with initial `s` is not a gain for `shift_*`,
+`seal_fate`, and for `stealth_open` its gain time is the session start.
+
+Rows with `n` 0 are not written.
 
 ### `dungeon_runs` (combat: `Z`, `B`, `D`, using core's `Z`)
 
@@ -790,8 +933,14 @@ and `loot_drops` from the loot part, so a removed group deletes it with its rows
 one; a removed `social` deletes the spans and nulls `group_at`, and nulls `class_file` of `group_loot` and
 `loot_rolls`, which are written with a `loot` part and deleted with it. `group_spans.skinners` is null without a
 `professions` part and a removed `professions` nulls it.
-`spell_casts` and `meter_totals` are written only with a `combat` part: without one the session has no `C` or `DM`
-lines, and a removed `combat` deletes the rows it holds.
+`spell_casts`, `meter_totals`, `meter_spells` and `class_tallies` are written only with a `combat` part: without one the
+session has no `C`, `DM`, `DS` or `K` lines, and a removed `combat` deletes the rows it holds. `state_times` reads the
+lines of three groups, and each kind is written with its group: `a`, `b`, `x`, `r`, `t` and `f` with `combat`, `m` and
+`k` with `movement`, `p`, `h`, `w` and `o` with `build`. A removed group deletes the rows of its own kinds
+(`StateKind`, `FactTable::kindsOf`) and a removed `combat` nulls `fight_ms` on the rows that stay, as does a session with
+no `combat` part. `item_flows` is read from `I` and `DI` lines, so it is written with a `loot` part and
+deleted with it; its `spell_id` is null without a `combat` part and a removed `combat` nulls it, so a removed group
+reads as one never sent.
 
 ## Counting rules
 
