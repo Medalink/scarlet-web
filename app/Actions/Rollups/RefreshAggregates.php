@@ -24,6 +24,8 @@ class RefreshAggregates
 
     private const int LOCK_TTL_EXTRA = 30;
 
+    public function __construct(private readonly RebuildKeyedLoot $keyedLoot) {}
+
     /**
      * Bring the continuous aggregates up to date over a time range (epoch seconds): the range is widened to whole days,
      * cut to the days the fact hypertables have chunks for, and refreshed in slices of `storage.refresh_slice_days`.
@@ -33,7 +35,8 @@ class RefreshAggregates
      * at once: the callers here (several `RefreshRollups` instances can process together, and commands call this
      * directly) wait for the refresh running on a lock instead of failing with `SQLSTATE 55P03`. A slice that stays
      * locked fails the refresh; `RefreshRollups` keeps its range pending and the job retries.
-     * CALL cannot run inside a transaction, so this must not be called from one.
+     * The keyed loot tables are rebuilt whole after the aggregates, under the same lock (`RebuildKeyedLoot`). CALL cannot
+     * run inside a transaction, so this must not be called from one.
      */
     public function handle(int $from, int $until): void
     {
@@ -52,6 +55,7 @@ class RefreshAggregates
                     $this->slice($rollup->value, $sliceStart, min($sliceStart + $slice, $end));
                 }
             }
+            $this->keyedLoot->handle();
         });
     }
 

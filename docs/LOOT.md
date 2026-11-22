@@ -190,16 +190,20 @@ Rules the design follows:
    `BossDrops` takes the uploader who saw most, and the arm carries the tag `one reader`. It loses up to half the
    sample and cannot double count. 37% of free-for-all windows have another uploader's window on the same source
    inside 300 s, past the 5% that triggers it.
-7. **The corpse key (phase 7, write side done in decoder version 12).** `K`, `LO` and `LW` carry a key that is the
-   same on every client for one corpse, and `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops` store
-   it as `corpse_key`. From here a corpse counts once by `count(distinct corpse_key)` when the key is present, and
-   falls back to first reads (rules 3 to 6) when it is null: a line from before 2026-11-22, or a session not yet
-   decoded again. The windows counted are `loot_opens` and `peer_opens`. The key is 40 bits and FORMAT.md says it is
-   never read alone, so the distinct is over `(source_kind, source_id, corpse_key)`, and an object that respawns can
-   keep its key, so the same key more than 5 minutes apart is a second read of an object. A kill is not a window:
+7. **The corpse key (phase 7, decoder version 12).** `K`, `LO` and `LW` carry a key that is the same on every client
+   for one corpse, stored as `corpse_key` on `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops`. A
+   window with a key counts once per corpse, however many characters read it or were sent it. A window without one (a
+   line from before 2026-11-22, or a session not yet decoded again) keeps the first-read rule (rules 3 to 6). The
+   unit is `(source_kind, source_id, corpse_key, read)`: the key is 40 bits and FORMAT.md says it is never read
+   alone; a loot window and a skin window of one corpse are two rows of two tables; an object that respawns can keep
+   its key, so for an object the same key more than 5 minutes after the last read is a second opening. Of the first
+   reads of one corpse across `loot_opens` and `peer_opens`, one window is kept: a character's own before one a
+   member sent, then the earliest read (`peer_opens.at` less `late_s`), and the items are that window's. A window a
+   member sent says nothing of what it was read for: a creature's counts as `loot`, an object's takes the read its
+   own windows have most (`loot`, `herb` or `ore`), and an object nobody opened for itself counts nowhere. An unkeyed
+   window a member sent counts nowhere, since it cannot be told from the uploader's own. A kill is not a window:
    `kills` joins the windows by key, and a keyed kill with no window is a corpse nobody looted or that held nothing,
-   so kills never go into the count of looted corpses. The tag goes away with the read side of phase 7, when the pages
-   count by key.
+   so kills never go into the count of looted corpses. Where the counts live is under Developer and agent experience.
 8. Kills are never summed across characters as corpses. Kill-based figures are solo only, or per member (member
    kills over member hours), where two uploaders in one group add to both sides of the ratio.
 9. A partial window is not a sample of the table. A second reader sees what is left. Quest items are per player,
@@ -473,8 +477,22 @@ object is labelled by what it gives.
   `opens_daily` and `drops_daily` are dropped. Phase 4 adds three beside them: `loot_windows_character_daily` (windows
   by source, read, rule, size and character, with the sum and the sum of squares of item rows),
   `loot_freeforall_items_daily` (the same by item, free for all only, for the one reader) and `loot_receipts_daily`
-  (receipts that came from a corpse). The group tables (`group_spans`, `group_loot`, `loot_rolls`) are read directly,
-  through `RollupRead` and its cache.
+  (receipts that came from a corpse). These count one character's first reads, which is what the pages that pair a
+  character's windows with its own receipts read (What the looter kept, Your share of group loot).
+- **Corpses counted once (phase 7).** Windows without a key are the same aggregates over `corpse_key is null`:
+  `loot_windows_unkeyed_daily`, `loot_items_unkeyed_daily`, `loot_windows_character_unkeyed_daily`,
+  `loot_freeforall_items_unkeyed_daily` and `kills_solo_unkeyed_daily`. Windows with a key cannot be a sum of daily
+  buckets, since one corpse is in the days of every character that read it, so `RebuildKeyedLoot` fills five plain
+  tables whole (`loot_windows_keyed_daily`, `loot_items_keyed_daily`, `loot_windows_character_keyed_daily`,
+  `loot_kills_keyed_daily`, `loot_kill_items_keyed_daily`) in one transaction at the end of every aggregate refresh,
+  under the same lock, so every ingest, re-decode and removal reaches them. The views `loot_windows_counted`,
+  `loot_items_counted` and `loot_windows_character_counted` put a keyed table under its unkeyed twin with a `keyed`
+  column, in the shape of the aggregate they replace, so a read changes one table name. The keyed rows are aggregated
+  like the others (a day, a source, a read, a rule, a size, a zone), so a page reads rows in proportion to what was
+  recorded, never a row for each window. Rebuilt whole, 260,000 keyed windows, 780,000 window items, 20,000 windows
+  from members and 260,000 kills (about 100 times the production rows of 2026-11-22, spread over 300 sources) take
+  4.8 s on the development machine and leave 2,101 window rows and 6,302 item rows.
+- The group tables (`group_spans`, `group_loot`, `loot_rolls`) are read directly, through `RollupRead` and its cache.
 - **Enums own the strings**: `LootRead`, `RateFlag`, `LootRule` (the eight methods), so `scarlet.identityLiteral`
   holds.
 - **API**: `/public/loot/sources`, `/public/loot/items`, `/public/loot/groups`, `/public/objects/{id}`, and a

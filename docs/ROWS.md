@@ -259,7 +259,7 @@ uploader was not where the corpse was.
 | `item_rows` | `peer_opens` | int or null | the item entries kept, as on `loot_opens`. Null when the line lists nothing |
 | `item_id`, `quantity` | `peer_drops` | int | an entry with an item id or quantity past 2147483647 is not a row |
 | `loot_rule`, `threshold`, `group_size` | both | | the rule in force when the line was written, as on `loot_opens` |
-| `read` | both | string or null | `fish` for the fishing bobber (object 35591), else null: the window does not say what the sender read it for, and the uploader's casts are not theirs. A query for `loot` or `skin` reads no peer row |
+| `read` | both | string or null | `fish` for the fishing bobber (object 35591), else null: the window does not say what the sender read it for, and the uploader's casts are not theirs. A query for `loot` or `skin` reads no peer row. The keyed loot tables give a peer window a read when they count it: `loot` for a creature, and for an object the read its own windows have most (docs/LOOT.md, Units of counting, rule 7) |
 | `group_at` | `peer_opens` | int or null | as on `kills`; null while solo and without a `social` part, and a removed `social` nulls it |
 | `who` | both | string | the sender as uploaded: a pseudonym. A line whose sender is longer than 64 characters is not a row |
 | `late_s` | both | int or null | seconds between their read and the send. Null outside 0 to 86400 |
