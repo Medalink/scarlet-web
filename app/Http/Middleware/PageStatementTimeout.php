@@ -19,7 +19,6 @@ class PageStatementTimeout
         DB::statement('select set_config(?, ?, false)', [
             'statement_timeout',
             (string) ((int) config('scarlet.page.statement_seconds') * 1000),
-            false,
         ]);
 
         return $next($request);

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -31,8 +32,8 @@ class EdgeCacheable
         }
 
         $key = self::CACHE_KEY.md5($request->getHost().' '.$request->getPathInfo().'?'.http_build_query(self::kept($request)));
-        $kept = Cache::get($key);
-        if ($kept instanceof Response) {
+        $kept = self::restored(Cache::get($key));
+        if ($kept) {
             return $kept;
         }
 
@@ -48,10 +49,32 @@ class EdgeCacheable
         if ($response->getStatusCode() === Response::HTTP_OK && $response->headers->getCookies() === []) {
             $seconds = (int) config('scarlet.edge.page_seconds');
             $response->headers->set('Cache-Control', 'public, max-age=0, s-maxage='.$seconds);
-            Cache::put($key, $response, $seconds);
+            self::keep($key, $response, $seconds);
         }
 
         return $response;
+    }
+
+    /** Keeps the body and headers of an answer, which serialise; the response object holds the view and its closures and does not. */
+    private static function keep(string $key, Response $response, int $seconds): void
+    {
+        $content = $response->getContent();
+        if (! is_string($content)) {
+            return;
+        }
+        $headers = $response->headers->allPreserveCaseWithoutCookies();
+        unset($headers['Date']);
+        Cache::put($key, ['content' => $content, 'headers' => $headers], $seconds);
+    }
+
+    /** The answer `keep()` stored, or null when the cache holds none. */
+    private static function restored(mixed $kept): ?Response
+    {
+        if (! is_array($kept) || ! is_string($kept['content'] ?? null) || ! is_array($kept['headers'] ?? null)) {
+            return null;
+        }
+
+        return new HttpResponse($kept['content'], Response::HTTP_OK, $kept['headers']);
     }
 
     /**
