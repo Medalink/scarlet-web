@@ -297,9 +297,18 @@ about the game. It lists the tags of both arms and it goes to a developer list (
 API), because the likeliest cause is counting. Ivory Boar Tusk is the proof: +24.9 points, range 9.8 to 40.6,
 caused by skin windows.
 
+**Which arms are compared.** A chart compares the two arms with the most windows that are drawn (10 or more).
+`personal` is drawn and never compared. A free-for-all arm of two or more characters is counted by its one reader
+before any ladder step or comparison, so its `n` is that character's windows. The items compared are the rows of
+the chart; a mark needs 0.05 divided by that number to keep the range off zero, with the Newcombe range rebuilt
+from Wilson ranges at the matching quantile. `different characters` is set on a mark whose two arms share no
+character.
+
 **Pooled across sources.** On `/loot/groups`, items per corpse by rule is a per-source difference averaged with
 Mantel-Haenszel weights (n1 x n2 / (n1 + n2)) over sources with 10 or more windows in both arms. The module prints
-how many sources and windows it rests on.
+how many sources and windows it rests on, and a 95% range of the pooled difference from the variance of the items
+in each window (`loot_windows_character_daily` keeps the sum and the sum of squares of item rows). The two rules
+compared are `?a=` and `?b=`, else the two rules with the most windows on sources seen under both.
 
 **Tags.** Short, fixed, enumerated in one PHP enum (`App\Support\RateFlag`) and in the API as `flags`. A tag sits
 beside the n it qualifies. A page draws a tag only when it changes how to read the number; the API carries every
@@ -447,7 +456,11 @@ then an object is labelled by what it gives.
   move, then go (three ships).
 - **Two new aggregates beside the old two**: `loot_windows_daily` (source, `read`, rule, size, zone; windows, item
   rows, characters) and `loot_items_daily` (the same keys and item; windows with the item, quantity). The old
-  `opens_daily` and `drops_daily` are dropped.
+  `opens_daily` and `drops_daily` are dropped. Phase 4 adds three beside them: `loot_windows_character_daily` (windows
+  by source, read, rule, size and character, with the sum and the sum of squares of item rows),
+  `loot_freeforall_items_daily` (the same by item, free for all only, for the one reader) and `loot_receipts_daily`
+  (receipts that came from a corpse). The group tables (`group_spans`, `group_loot`, `loot_rolls`) are read directly,
+  through `RollupRead` and its cache.
 - **Enums own the strings**: `LootRead`, `RateFlag`, `LootRule` (the eight methods), so `scarlet.identityLiteral`
   holds.
 - **API**: `/public/loot/sources`, `/public/loot/items`, `/public/loot/groups`, `/public/objects/{id}`, and a

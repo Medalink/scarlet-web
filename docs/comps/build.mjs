@@ -455,12 +455,33 @@ page("search.html", "Search Scarlet", "search", `
 </div>`);
 
 // ------------------------------------------------------------------------------- creature
-const wilson = (k, n) => {
-  const z2 = 1.959964 ** 2, p = k / n, centre = (p + z2 / (2 * n)) / (1 + z2 / n);
-  const spread = 1.959964 * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / (1 + z2 / n);
+const Z95 = 1.959964;
+const wilson = (k, n, z = Z95) => {
+  const z2 = z ** 2, p = k / n, centre = (p + z2 / (2 * n)) / (1 + z2 / n);
+  const spread = z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / (1 + z2 / n);
   return { p, low: Math.max(0, centre - spread), high: Math.min(1, centre + spread) };
 };
+const newcombe = (first, second, z = Z95) => {
+  const a = wilson(first[0], first[1], z), b = wilson(second[0], second[1], z), d = b.p - a.p;
+  return { d, low: d - Math.sqrt((b.p - b.low) ** 2 + (a.high - a.p) ** 2), high: d + Math.sqrt((b.high - b.p) ** 2 + (a.p - a.low) ** 2) };
+};
 const pct = (share) => (share * 100).toFixed(share > 0 && share < 0.01 ? 2 : 1);
+const points = (share) => `${share < 0 ? "-" : "+"}${Math.abs(share * 100).toFixed(1)}`;
+const armMark = (k, n) => {
+  const { p, low, high } = wilson(k, n);
+  return `<span class="rb${n < 30 ? " hollow" : ""}" role="img" aria-label="${pct(p)}, range ${pct(low)} to ${pct(high)} percent"><i class="rng" style="left:${(low * 100).toFixed(1)}%;width:${((high - low) * 100).toFixed(1)}%"></i><i class="pt" style="left:${(p * 100).toFixed(1)}%"></i></span>`;
+};
+const armsScale = `<div class="arms-scale" aria-hidden="true"><div class="arms-ticks"><i></i><div><span>0</span><span>50</span><span>100%</span></div><i></i></div></div>`;
+const armRow = (name, href, arms, z, cls = "") => {
+  const cells = arms.map(([label, k, n, tags = []]) => `<div class="arm"><span class="al">${label}${tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}</span>${armMark(k, n)}<span class="kn">${k} of ${n}</span></div>`).join("");
+  const [a, b] = arms, wide = newcombe([a[1], a[2]], [b[1], b[2]]), adjusted = newcombe([a[1], a[2]], [b[1], b[2]], z);
+  const marked = a[2] >= 30 && b[2] >= 30 && (adjusted.low > 0 || adjusted.high < 0);
+  const tagsOf = (arm) => arm[3] ?? [];
+  const verdict = marked
+    ? `<p class="arm-verdict"><b class="mark">${b[0]} ${points(wide.d)} points, ${pct(wide.low)} to ${pct(wide.high)}</b>${[a, b].map((arm) => tagsOf(arm).length ? `<span class="mut">${arm[0]}</span>${tagsOf(arm).map((tag) => `<span class="tag">${tag}</span>`).join("")}` : "").join("")}<span class="tag">different characters</span></p>`
+    : `<p class="arm-verdict mut">no difference found</p>`;
+  return `<div class="arm-row"><a class="arm-item${cls ? ` ${cls}` : ""}" href="${href}">${name}</a><div class="arm-set">${cells}${verdict}</div></div>`;
+};
 const dropRow = (name, href, k, n, per, cls = "", how = null, ofKills = null) => {
   const { p, low, high } = wilson(k, n), tag = cls === "quest" ? `<span class="tag hc">quest item</span>` : "";
   const link = `<a href="${href}"${cls && cls !== "quest" ? ` class="${cls}"` : ""}>${name}</a>${tag}`;
@@ -511,6 +532,24 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
         </tbody></table></div>
       <p class="note">A share is skins that held the item over skins of this creature read for the first time. The band is the 95% range. Skinning does not depend on the loot rule.</p>
     </section>
+    <section class="mod w12 first last" aria-labelledby="h-r">
+      <h2 id="h-r">Drop rate by loot rule</h2>
+      <div class="arms">
+        ${armsScale}
+        ${armRow("Stalker Hide", "item.html", [["Group loot", 41, 71], ["Free for all", 8, 42, ["one reader"]]], 2.2414)}
+        ${armRow("Cracked Tooth", "item.html", [["Group loot", 22, 71], ["Free for all", 8, 42, ["one reader"]]], 2.2414)}
+      </div>
+      <p class="note">Items with 10 drops or more. A mark is 10 to 29 corpses hollow and 30 or more solid; a rule under 10 corpses is not drawn: solo 8 and round robin 5. A difference is marked only when both rules have 30 corpses and the 95% range of the difference stays off zero after the number of items shown is taken into account. Free for all counts the one character who read most of its corpses, since two players of a group open the same corpse. <a href="groups.html">Loot rules and group size</a> for this creature.</p>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-z">
+      <h2 id="h-z">Drop rate by group size under group loot</h2>
+      <div class="arms">
+        ${armsScale}
+        ${armRow("Stalker Hide", "item.html", [["Size 2", 31, 52], ["Size 3", 8, 14]], 2.2414)}
+        ${armRow("Cracked Tooth", "item.html", [["Size 2", 16, 52], ["Size 3", 5, 14]], 2.2414)}
+      </div>
+      <p class="note">Size 5 has 5 corpses and is not drawn.</p>
+    </section>
     <section class="mod w7 first last" aria-labelledby="h-h">
       <h2 id="h-h">How it kills</h2>
       <ol class="rank"><li><span class="who">Melee</span><span class="val">71% of killing blows</span><span class="track"><i style="width:71%"></i></span></li><li><span class="who">Rending Bite</span><span class="val">24%</span><span class="track"><i style="width:24%"></i></span></li><li><span class="who">Thrash</span><span class="val">5%</span><span class="track"><i style="width:5%"></i></span></li></ol>
@@ -546,7 +585,20 @@ page("item.html", "Marshwalker Greaves: where it drops", "search", `
       <p class="note">A drop rate is corpses of the source that held the item over corpses of the source read the same way for the first time, one row for each source and way it was read. Sources read 10 times or more rank by the low end of the 95% range; below the line, sources read fewer times show their counts only. Drop rates cover every ruleset.</p>
     </section>
     <section class="mod last" aria-labelledby="h-r"><h2 id="h-r">Rolls in groups</h2>
-      <ol class="rank"><li><span class="who">Need</span><span class="val">61% of wins</span><span class="track"><i style="width:61%"></i></span></li><li><span class="who">Greed</span><span class="val">33%</span><span class="track"><i style="width:33%"></i></span></li><li><span class="who">Everyone passed</span><span class="val">6%</span><span class="track"><i style="width:6%"></i></span></li></ol>
+      <ol class="rank"><li><span class="who">Need</span><span class="val">61% · 14 of 23</span><span class="track"><i style="width:61%"></i></span></li><li><span class="who">Greed</span><span class="val">30% · 7 of 23</span><span class="track"><i style="width:30%"></i></span></li><li><span class="who">Pass</span><span class="val">9% · 2 of 23</span><span class="track"><i style="width:9%"></i></span></li></ol>
+      <p class="note">Rolls of the characters that uploaded, 23 of them in 9 groups. 3 of 9 rolls were passed by everyone.</p>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-c">
+      <h2 id="h-c">Who received it</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Class</th><th class="n">Received</th><th class="n">Share</th><th class="n">Won by roll</th></tr></thead>
+        <tbody>
+          <tr><td data-class="WARRIOR"><i class="dotc" aria-hidden="true"></i>Warrior</td><td class="n">9</td><td class="n">39.1%</td><td class="n">6 of 8</td></tr>
+          <tr><td data-class="ROGUE"><i class="dotc" aria-hidden="true"></i>Rogue</td><td class="n">6</td><td class="n">26.1%</td><td class="n">2 of 5</td></tr>
+          <tr><td data-class="PALADIN"><i class="dotc" aria-hidden="true"></i>Paladin</td><td class="n">5</td><td class="n">21.7%</td><td class="n">3 of 4</td></tr>
+          <tr><td data-class="HUNTER"><i class="dotc" aria-hidden="true"></i>Hunter</td><td class="n">3</td><td class="n">13.0%</td><td class="n">0 of 2</td></tr>
+        </tbody></table></div>
+      <p class="note">What other members of a group received (their class, never their name) and what the uploader received. A member whose class is not recorded is left out.</p>
     </section>
   </div>
 </div>`);
@@ -624,6 +676,107 @@ page("loot.html", "Scarlet loot: what creatures and objects give and how often",
     <section class="mod w5 last" aria-labelledby="h-r">
       <h2 id="h-r">Loot rule and group size</h2>
       <ol class="rank plain"><li><a class="who" href="loot.html">Solo</a><span class="val">311</span><span class="track"><i style="width:60%"></i></span></li><li><a class="who" href="loot.html">Group loot, 2 players</a><span class="val">520</span><span class="track"><i style="width:100%"></i></span></li><li><a class="who" href="loot.html">Free for all, 2 players</a><span class="val">210</span><span class="track"><i style="width:40%"></i></span></li><li><a class="who" href="loot.html">Group loot, 5 players</a><span class="val">78</span><span class="track"><i style="width:15%"></i></span></li></ol>
+    </section>
+  </div>
+</div>`);
+
+const rateTd = (k, n) => {
+  const { p, low, high } = wilson(k, n);
+  return n < 10
+    ? `<td class="n"><span class="mut">–</span></td>`
+    : `<td class="n"><span class="rb${n < 30 ? " hollow" : ""}" role="img" aria-label="${pct(p)}, range ${pct(low)} to ${pct(high)} percent"><i class="rng" style="left:${(low * 100).toFixed(1)}%;width:${((high - low) * 100).toFixed(1)}%"></i><i class="pt" style="left:${(p * 100).toFixed(1)}%"></i></span>${pct(p)}%</td>`;
+};
+const classTd = (token, label) => `<td data-class="${token}"><i class="dotc" aria-hidden="true"></i>${label}</td>`;
+const rollRow = (rule, quality, need, greed, pass) => `<tr><td>${rule}</td><td>${quality}</td><td class="n">${need + greed + pass}</td>${rateTd(need, need + greed + pass)}${rateTd(greed, need + greed + pass)}${rateTd(pass, need + greed + pass)}</tr>`;
+page("groups.html", "Loot rules and group size", "search", `
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Loot rules and group size</h1><p class="sub">874 corpses looted under 4 loot rules at group sizes 1 to 5.</p></div>
+  </section>
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Corpses looted</dt><dd>874</dd></div><div><dt>Loot rules seen</dt><dd>4</dd></div><div><dt>Largest group</dt><dd>5</dd></div>
+    <div><dt>Creatures under two rules</dt><dd>9</dd></div><div><dt>Rolls</dt><dd>46</dd></div><div><dt>Groups recorded</dt><dd>112</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w5 first" aria-labelledby="h-h">
+      <h2 id="h-h">What a corpse held, by loot rule</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Rule</th><th class="n">Items per corpse</th><th class="n">Corpses</th><th class="n">Creatures</th></tr></thead>
+        <tbody><tr><td>Group loot</td><td class="n">1.13</td><td class="n">40</td><td class="n">1</td></tr><tr><td>Free for all</td><td class="n">1.34</td><td class="n">59</td><td class="n">1</td></tr></tbody></table></div>
+      <p class="note">Free for all holds 0.21 items more per corpse than group loot, range -0.18 to 0.60. This rests on 1 creature with 10 corpses or more under both rules, 99 corpses, and counts each creature by the corpses it has under both. 8 more creatures were seen under both rules with fewer corpses.</p>
+    </section>
+    <section class="mod w7 last" aria-labelledby="h-k">
+      <h2 id="h-k">What the looter kept</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Rule</th><th class="n">Size</th><th class="n">Corpses</th><th class="n">Received</th><th class="n">Items</th></tr></thead>
+        <tbody>
+          <tr><td>Group loot</td><td class="n">2</td><td class="n">493</td><td class="n">97%</td><td class="n">421 of 434</td></tr>
+          <tr><td>Free for all</td><td class="n">2</td><td class="n">360</td><td class="n">102%</td><td class="n">386 of 378</td></tr>
+          <tr><td>Group loot</td><td class="n">3</td><td class="n">31</td><td class="n">96%</td><td class="n">24 of 25</td></tr>
+          <tr><td>Free for all</td><td class="n">3</td><td class="n">20</td><td class="n">81%</td><td class="n">17 of 21</td></tr>
+          <tr><td>Group loot<span class="tag">other creatures</span></td><td class="n">5</td><td class="n">78</td><td class="n">74%</td><td class="n">43 of 58</td></tr>
+          <tr><td>Solo</td><td class="n">1</td><td class="n">21</td><td class="n">100%</td><td class="n">17 of 17</td></tr>
+        </tbody></table></div>
+      <p class="note">Items the uploader received from a corpse over the items the corpse held, by the rule and size in force when it was looted. Under 100% means other members took items.</p>
+    </section>
+    <section class="mod w7 first" aria-labelledby="h-s">
+      <h2 id="h-s">Your share of group loot</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Rule</th><th class="n">Size</th><th class="n">Yours</th><th class="n">Others</th><th class="n">Your share</th><th class="n">Equal share</th></tr></thead>
+        <tbody>
+          <tr><td>Group loot</td><td class="n">2</td><td class="n">31</td><td class="n">29</td>${rateTd(31, 60)}<td class="n">50.0%</td></tr>
+          <tr><td>Group loot</td><td class="n">3</td><td class="n">9</td><td class="n">14</td>${rateTd(9, 23)}<td class="n">33.3%</td></tr>
+          <tr><td>Group loot</td><td class="n">5</td><td class="n">4</td><td class="n">11</td>${rateTd(4, 15)}<td class="n">20.0%</td></tr>
+        </tbody></table></div>
+      <p class="note">Yours is what the uploaders received from corpses. Others is what the uploaders' group mates received from corpses, as the client reported it; an item pushed to a mate is left out. Pooled over uploaders, so each member's mean share is the figure.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-z">
+      <h2 id="h-z">Kills an hour by group size</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th class="n">Size</th><th class="n">Kills</th><th class="n">Hours</th><th class="n">Kills an hour</th></tr></thead>
+        <tbody>
+          <tr><td class="n">2</td><td class="n">1,204</td><td class="n">31.4</td><td class="n">38.3</td></tr>
+          <tr><td class="n">3</td><td class="n">212</td><td class="n">5.9</td><td class="n">35.9</td></tr>
+          <tr><td class="n">5</td><td class="n">96</td><td class="n">3.1</td><td class="n">31.0</td></tr>
+        </tbody></table></div>
+      <p class="note">Kills a member of a group got credit for, over the hours that member spent in a group of that size. Time alone is not counted.</p>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-r">
+      <h2 id="h-r">Rolls</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Rule</th><th>Item quality</th><th class="n">Rolls</th><th class="n">Need</th><th class="n">Greed</th><th class="n">Pass</th></tr></thead>
+        <tbody>${rollRow("Group loot", "Uncommon", 14, 7, 2)}${rollRow("Group loot", "Rare", 5, 3, 1)}${rollRow("Need before greed", "Uncommon", 6, 9, 3)}</tbody></table></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.4rem">
+        <thead><tr><th>Rule</th><th class="n">Threshold</th><th class="n">Corpses in groups</th><th class="n">Items rolled for per 100 corpses</th></tr></thead>
+        <tbody><tr><td>Group loot</td><td class="n">Uncommon</td><td class="n">604</td><td class="n">5.1</td></tr><tr><td>Need before greed</td><td class="n">Uncommon</td><td class="n">88</td><td class="n">6.8</td></tr></tbody></table></div>
+      <p class="note">Rolls of the characters that uploaded. A roll another member made reaches every uploader in the group, so it is counted by none of them.</p>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-g">
+      <h2 id="h-g">Group composition</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Class</th><th>Armour</th><th class="n">Rolls</th><th class="n">Need</th></tr></thead>
+        <tbody>
+          <tr>${classTd("WARRIOR", "Warrior")}<td>Plate</td><td class="n">12</td>${rateTd(9, 12)}</tr>
+          <tr>${classTd("ROGUE", "Rogue")}<td>Leather</td><td class="n">11</td>${rateTd(5, 11)}</tr>
+          <tr>${classTd("PRIEST", "Priest")}<td>Cloth</td><td class="n">4</td><td class="n"><span class="mut">–</span></td></tr>
+        </tbody></table></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.4rem">
+        <thead><tr><th>Skinner in the group</th><th class="n">Corpses looted</th><th class="n">Corpses skinned</th><th class="n">Skins per corpse</th></tr></thead>
+        <tbody><tr><td>Yes</td><td class="n">96</td><td class="n">71</td><td class="n">0.74</td></tr><tr><td>No</td><td class="n">311</td><td class="n">0</td><td class="n">0.00</td></tr></tbody></table></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.4rem">
+        <thead><tr><th>Tank</th><th>Healer</th><th class="n">Kills</th><th class="n">Hours</th><th class="n">Kills an hour</th></tr></thead>
+        <tbody>
+          <tr><td>Yes</td><td>Yes</td><td class="n">96</td><td class="n">3.1</td><td class="n">31.0</td></tr>
+          <tr><td>No</td><td>No</td><td class="n">1,416</td><td class="n">37.3</td><td class="n">38.0</td></tr>
+        </tbody></table></div>
+      <p class="note">Classes, roles and levels of the members a group's uploader could see, with no names. Need is the share of rolls of the characters that uploaded and that class. A character with the social group off adds nothing here.</p>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-m">
+      <h2 id="h-m">Marked differences</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Source</th><th>Item</th><th>Compared</th><th class="n">Difference</th><th>Tags</th></tr></thead>
+        <tbody><tr><td><a href="creature.html">Marsh Stalker</a></td><td><a href="item.html">Stalker Hide</a></td><td>Group loot 41 of 71, Free for all 8 of 42</td><td class="n">-38.7 points, -52.8 to -20.3</td><td><span class="tag">one reader</span><span class="tag">different characters</span></td></tr></tbody></table></div>
+      <p class="note">A difference between loot rules or group sizes is a counting fault until shown otherwise: the game's drop table does not depend on either.</p>
     </section>
   </div>
 </div>`);

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loot rules and group size</title>
+<meta name="theme-color" content="#141416">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&family=Sofia+Sans:ital,wght@0,400..800;1,400..800&family=Sofia+Sans+Extra+Condensed:wght@500..900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top solid">
+  <div class="top-in wrap">
+    <a class="brand" href="stats.html" aria-label="Scarlet, home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19c5 0 3.4-7 8-7s3.4-6.4 8-6.4" fill="none" stroke="#ff2d55" stroke-width="2.6" stroke-linecap="round"/><circle cx="19.6" cy="5.4" r="2.8" fill="#ff2d55"/></svg>Scarlet</a>
+    <nav class="nav" aria-label="Site"><a href="stats.html">Stats</a><a href="world.html">Map</a><a href="loot.html">Loot</a><a href="camps.html">Camps</a><a href="fishing.html">Professions</a><a href="rulesets.html">Rulesets</a><a href="leaderboards.html">Leaderboards</a><a href="search.html" aria-current="page">Search</a><a href="developers.html">API</a></nav>
+    <form class="top-find" role="search" action="search.html"><label class="vh" for="q">Search</label><input id="q" name="q" type="search" placeholder="Character, creature, item, zone, quest"></form>
+    <a class="acct" href="login.html">Sign in</a>
+  </div>
+</header>
+<main>
+
+<div class="wrap">
+  <section class="pg-head" aria-labelledby="h1">
+    <div><h1 id="h1">Loot rules and group size</h1><p class="sub">874 corpses looted under 4 loot rules at group sizes 1 to 5.</p></div>
+  </section>
+  <section class="week n6" aria-label="Totals">
+    <div><dt>Corpses looted</dt><dd>874</dd></div><div><dt>Loot rules seen</dt><dd>4</dd></div><div><dt>Largest group</dt><dd>5</dd></div>
+    <div><dt>Creatures under two rules</dt><dd>9</dd></div><div><dt>Rolls</dt><dd>46</dd></div><div><dt>Groups recorded</dt><dd>112</dd></div>
+  </section>
+  <div class="sheet">
+    <section class="mod w5 first" aria-labelledby="h-h">
+      <h2 id="h-h">What a corpse held, by loot rule</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Rule</th><th class="n">Items per corpse</th><th class="n">Corpses</th><th class="n">Creatures</th></tr></thead>
+        <tbody><tr><td>Group loot</td><td class="n">1.13</td><td class="n">40</td><td class="n">1</td></tr><tr><td>Free for all</td><td class="n">1.34</td><td class="n">59</td><td class="n">1</td></tr></tbody></table></div>
+      <p class="note">Free for all holds 0.21 items more per corpse than group loot, range -0.18 to 0.60. This rests on 1 creature with 10 corpses or more under both rules, 99 corpses, and counts each creature by the corpses it has under both. 8 more creatures were seen under both rules with fewer corpses.</p>
+    </section>
+    <section class="mod w7 last" aria-labelledby="h-k">
+      <h2 id="h-k">What the looter kept</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Rule</th><th class="n">Size</th><th class="n">Corpses</th><th class="n">Received</th><th class="n">Items</th></tr></thead>
+        <tbody>
+          <tr><td>Group loot</td><td class="n">2</td><td class="n">493</td><td class="n">97%</td><td class="n">421 of 434</td></tr>
+          <tr><td>Free for all</td><td class="n">2</td><td class="n">360</td><td class="n">102%</td><td class="n">386 of 378</td></tr>
+          <tr><td>Group loot</td><td class="n">3</td><td class="n">31</td><td class="n">96%</td><td class="n">24 of 25</td></tr>
+          <tr><td>Free for all</td><td class="n">3</td><td class="n">20</td><td class="n">81%</td><td class="n">17 of 21</td></tr>
+          <tr><td>Group loot<span class="tag">other creatures</span></td><td class="n">5</td><td class="n">78</td><td class="n">74%</td><td class="n">43 of 58</td></tr>
+          <tr><td>Solo</td><td class="n">1</td><td class="n">21</td><td class="n">100%</td><td class="n">17 of 17</td></tr>
+        </tbody></table></div>
+      <p class="note">Items the uploader received from a corpse over the items the corpse held, by the rule and size in force when it was looted. Under 100% means other members took items.</p>
+    </section>
+    <section class="mod w7 first" aria-labelledby="h-s">
+      <h2 id="h-s">Your share of group loot</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Rule</th><th class="n">Size</th><th class="n">Yours</th><th class="n">Others</th><th class="n">Your share</th><th class="n">Equal share</th></tr></thead>
+        <tbody>
+          <tr><td>Group loot</td><td class="n">2</td><td class="n">31</td><td class="n">29</td><td class="n"><span class="rb" role="img" aria-label="51.7, range 39.3 to 63.8 percent"><i class="rng" style="left:39.3%;width:24.5%"></i><i class="pt" style="left:51.7%"></i></span>51.7%</td><td class="n">50.0%</td></tr>
+          <tr><td>Group loot</td><td class="n">3</td><td class="n">9</td><td class="n">14</td><td class="n"><span class="rb hollow" role="img" aria-label="39.1, range 22.2 to 59.2 percent"><i class="rng" style="left:22.2%;width:37.1%"></i><i class="pt" style="left:39.1%"></i></span>39.1%</td><td class="n">33.3%</td></tr>
+          <tr><td>Group loot</td><td class="n">5</td><td class="n">4</td><td class="n">11</td><td class="n"><span class="rb hollow" role="img" aria-label="26.7, range 10.9 to 52.0 percent"><i class="rng" style="left:10.9%;width:41.1%"></i><i class="pt" style="left:26.7%"></i></span>26.7%</td><td class="n">20.0%</td></tr>
+        </tbody></table></div>
+      <p class="note">Yours is what the uploaders received from corpses. Others is what the uploaders' group mates received from corpses, as the client reported it; an item pushed to a mate is left out. Pooled over uploaders, so each member's mean share is the figure.</p>
+    </section>
+    <section class="mod w5 last" aria-labelledby="h-z">
+      <h2 id="h-z">Kills an hour by group size</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th class="n">Size</th><th class="n">Kills</th><th class="n">Hours</th><th class="n">Kills an hour</th></tr></thead>
+        <tbody>
+          <tr><td class="n">2</td><td class="n">1,204</td><td class="n">31.4</td><td class="n">38.3</td></tr>
+          <tr><td class="n">3</td><td class="n">212</td><td class="n">5.9</td><td class="n">35.9</td></tr>
+          <tr><td class="n">5</td><td class="n">96</td><td class="n">3.1</td><td class="n">31.0</td></tr>
+        </tbody></table></div>
+      <p class="note">Kills a member of a group got credit for, over the hours that member spent in a group of that size. Time alone is not counted.</p>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-r">
+      <h2 id="h-r">Rolls</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Rule</th><th>Item quality</th><th class="n">Rolls</th><th class="n">Need</th><th class="n">Greed</th><th class="n">Pass</th></tr></thead>
+        <tbody><tr><td>Group loot</td><td>Uncommon</td><td class="n">23</td><td class="n"><span class="rb hollow" role="img" aria-label="60.9, range 40.8 to 77.8 percent"><i class="rng" style="left:40.8%;width:37.1%"></i><i class="pt" style="left:60.9%"></i></span>60.9%</td><td class="n"><span class="rb hollow" role="img" aria-label="30.4, range 15.6 to 50.9 percent"><i class="rng" style="left:15.6%;width:35.3%"></i><i class="pt" style="left:30.4%"></i></span>30.4%</td><td class="n"><span class="rb hollow" role="img" aria-label="8.7, range 2.4 to 26.8 percent"><i class="rng" style="left:2.4%;width:24.4%"></i><i class="pt" style="left:8.7%"></i></span>8.7%</td></tr><tr><td>Group loot</td><td>Rare</td><td class="n">9</td><td class="n"><span class="mut">–</span></td><td class="n"><span class="mut">–</span></td><td class="n"><span class="mut">–</span></td></tr><tr><td>Need before greed</td><td>Uncommon</td><td class="n">18</td><td class="n"><span class="rb hollow" role="img" aria-label="33.3, range 16.3 to 56.3 percent"><i class="rng" style="left:16.3%;width:40.0%"></i><i class="pt" style="left:33.3%"></i></span>33.3%</td><td class="n"><span class="rb hollow" role="img" aria-label="50.0, range 29.0 to 71.0 percent"><i class="rng" style="left:29.0%;width:41.9%"></i><i class="pt" style="left:50.0%"></i></span>50.0%</td><td class="n"><span class="rb hollow" role="img" aria-label="16.7, range 5.8 to 39.2 percent"><i class="rng" style="left:5.8%;width:33.4%"></i><i class="pt" style="left:16.7%"></i></span>16.7%</td></tr></tbody></table></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.4rem">
+        <thead><tr><th>Rule</th><th class="n">Threshold</th><th class="n">Corpses in groups</th><th class="n">Items rolled for per 100 corpses</th></tr></thead>
+        <tbody><tr><td>Group loot</td><td class="n">Uncommon</td><td class="n">604</td><td class="n">5.1</td></tr><tr><td>Need before greed</td><td class="n">Uncommon</td><td class="n">88</td><td class="n">6.8</td></tr></tbody></table></div>
+      <p class="note">Rolls of the characters that uploaded. A roll another member made reaches every uploader in the group, so it is counted by none of them.</p>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-g">
+      <h2 id="h-g">Group composition</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Class</th><th>Armour</th><th class="n">Rolls</th><th class="n">Need</th></tr></thead>
+        <tbody>
+          <tr><td data-class="WARRIOR"><i class="dotc" aria-hidden="true"></i>Warrior</td><td>Plate</td><td class="n">12</td><td class="n"><span class="rb hollow" role="img" aria-label="75.0, range 46.8 to 91.1 percent"><i class="rng" style="left:46.8%;width:44.3%"></i><i class="pt" style="left:75.0%"></i></span>75.0%</td></tr>
+          <tr><td data-class="ROGUE"><i class="dotc" aria-hidden="true"></i>Rogue</td><td>Leather</td><td class="n">11</td><td class="n"><span class="rb hollow" role="img" aria-label="45.5, range 21.3 to 72.0 percent"><i class="rng" style="left:21.3%;width:50.7%"></i><i class="pt" style="left:45.5%"></i></span>45.5%</td></tr>
+          <tr><td data-class="PRIEST"><i class="dotc" aria-hidden="true"></i>Priest</td><td>Cloth</td><td class="n">4</td><td class="n"><span class="mut">–</span></td></tr>
+        </tbody></table></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.4rem">
+        <thead><tr><th>Skinner in the group</th><th class="n">Corpses looted</th><th class="n">Corpses skinned</th><th class="n">Skins per corpse</th></tr></thead>
+        <tbody><tr><td>Yes</td><td class="n">96</td><td class="n">71</td><td class="n">0.74</td></tr><tr><td>No</td><td class="n">311</td><td class="n">0</td><td class="n">0.00</td></tr></tbody></table></div>
+      <div class="scroll-x"><table class="data" style="margin-top:1.4rem">
+        <thead><tr><th>Tank</th><th>Healer</th><th class="n">Kills</th><th class="n">Hours</th><th class="n">Kills an hour</th></tr></thead>
+        <tbody>
+          <tr><td>Yes</td><td>Yes</td><td class="n">96</td><td class="n">3.1</td><td class="n">31.0</td></tr>
+          <tr><td>No</td><td>No</td><td class="n">1,416</td><td class="n">37.3</td><td class="n">38.0</td></tr>
+        </tbody></table></div>
+      <p class="note">Classes, roles and levels of the members a group's uploader could see, with no names. Need is the share of rolls of the characters that uploaded and that class. A character with the social group off adds nothing here.</p>
+    </section>
+    <section class="mod w12 first last" aria-labelledby="h-m">
+      <h2 id="h-m">Marked differences</h2>
+      <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
+        <thead><tr><th>Source</th><th>Item</th><th>Compared</th><th class="n">Difference</th><th>Tags</th></tr></thead>
+        <tbody><tr><td><a href="creature.html">Marsh Stalker</a></td><td><a href="item.html">Stalker Hide</a></td><td>Group loot 41 of 71, Free for all 8 of 42</td><td class="n">-38.7 points, -52.8 to -20.3</td><td><span class="tag">one reader</span><span class="tag">different characters</span></td></tr></tbody></table></div>
+      <p class="note">A difference between loot rules or group sizes is a counting fault until shown otherwise: the game's drop table does not depend on either.</p>
+    </section>
+  </div>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+</footer>
+<script src="assets/map.js"></script>
+<script src="assets/comp.js"></script>
+<script></script>
+</body>
+</html>
