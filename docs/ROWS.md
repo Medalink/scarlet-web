@@ -208,6 +208,60 @@ A stretch of movement ended: one row per `W` line. `mode` (string or null) is `f
 
 One row per emote use. `token` (string or null) is the emote the way the addon writes it (`LOL`, `WAVE`).
 
+### `hardcore_deaths` (social: `HD`)
+
+The server's notice that a hardcore character died. The same notice reaches every uploader online, so each of them
+writes a row and the pages count a death once: by `who` (the notice when it names nobody), `died_level` and the minute.
+`level` and `zone_id` are the uploader's, as on every fact row.
+
+| Key | Type | |
+| --- | --- | --- |
+| `who` | string or null | the Name-Surname in the notice |
+| `died_level` | int or null | the level the notice ends with |
+| `notice` | string or null | the notice text, 200 characters at most |
+
+### `who_results` (social: `WH`)
+
+One row of a /who result: `name`, `player_level` (int or null), `class_file`, `race`, `zone_name`, `guild`
+(strings or null).
+
+### `inspected_gear` (social: `IG`)
+
+`name` and `items` (string or null): the `slot:itemID:enchantID:suffixID` list, joined by commas.
+
+### `battleground_matches` (pvp: `BM`)
+
+One row for each `BM 0`, a match that ended, at its end. The zone name, `rated` and `arena` come from the `BM 1` of the
+same instance when the session has it (`arena` from the end line first).
+
+| Key | Type | |
+| --- | --- | --- |
+| `instance_id` | int or null | `instanceMapID` |
+| `zone_name` | string or null | |
+| `rated`, `arena`, `affects_rating` | bool or null | |
+| `team` | int or null | the uploader's side: `0` Horde, `1` Alliance |
+| `winner` | int or null | the winning side as the client reports it |
+| `duration` | int or null | the client's number |
+| `result` | string or null | `w` won, `l` lost, `d` drawn |
+
+### `battleground_scores` (social: `BO`)
+
+Another player's scoreboard row. `match_at` (ms) is the end of the match: the `BM 0` of the session within the 10
+minutes before the row. When the session has none, the first row of a run of rows less than 2 minutes apart gives
+`match_at`, and `instance_id` is null. One uploader's rows of one match share `match_at`.
+
+| Key | Type | |
+| --- | --- | --- |
+| `match_at` | int | ms |
+| `instance_id` | int or null | |
+| `name` | string or null | Name-Surname, in clear (social group) |
+| `faction` | int or null | `0` Horde, `1` Alliance |
+| `class_file` | string or null | |
+| `killing_blows`, `honorable_kills`, `deaths`, `honor_gained`, `damage_done`, `healing_done` | int or null | `?` is null |
+| `stats` | string or null | the mode's objective numbers, `id:value` joined by commas |
+
+`BS`, the uploader's own row, is not decoded.
+
 ### `camp_stays` (combat: `A`, `C`, `D`; xp: `AFK`; professions: `CR`; movement: `P`)
 
 One row per stay by a campfire: the span the character holds the aura Campfire Nearby (1283391), which the client

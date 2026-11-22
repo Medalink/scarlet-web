@@ -20,7 +20,7 @@ pub struct Ctx {
 }
 
 impl Ctx {
-    fn begin(&self, w: &mut Rows, table: &str) {
+    pub(crate) fn begin(&self, w: &mut Rows, table: &str) {
         w.begin(table);
         w.int("session", self.session).int("at", self.at);
         w.opt("level", self.level).opt("zone_id", self.zone_id);

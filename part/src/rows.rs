@@ -42,6 +42,13 @@ impl<'a> Rows<'a> {
         self
     }
 
+    pub fn opt_bool(&mut self, key: &str, v: Option<bool>) -> &mut Self {
+        match v {
+            Some(v) => self.bool(key, v),
+            None => self.null(key),
+        }
+    }
+
     pub fn str(&mut self, key: &str, v: &str) -> &mut Self {
         let _ = write!(self.out, ",\"{key}\":");
         self.quoted(v);

@@ -8,6 +8,7 @@
 use crate::build::parse_header;
 use crate::camp::{Camp, Known};
 use crate::rows::Rows;
+use crate::social::Social;
 use crate::tables::{Groups, NameRefs, leading_id};
 use crate::talents::{Ctx, Talents};
 use std::collections::{BTreeMap, BTreeSet};
@@ -17,7 +18,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 3;
+pub const DECODER_VERSION: u32 = 4;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -62,7 +63,7 @@ pub fn num(f: &[&str], i: usize) -> Option<i64> {
         .or_else(|| s.parse::<f64>().ok().map(|x| x.round() as i64))
 }
 
-fn field<'a>(f: &[&'a str], i: usize) -> &'a str {
+pub(crate) fn field<'a>(f: &[&'a str], i: usize) -> &'a str {
     f.get(i).copied().unwrap_or("")
 }
 
@@ -206,6 +207,7 @@ struct Dec<'o> {
     pn: BTreeMap<String, String>,
     talents: Talents,
     camp: Camp,
+    social: Social,
 }
 
 pub(crate) fn prefix(
@@ -537,6 +539,21 @@ impl Dec<'_> {
                 self.fact("emotes", t);
                 self.w.text("token", field(&f, 0));
                 self.w.end();
+            }
+            "HD" | "WH" | "IG" | "BM" | "BO" => {
+                let ctx = Ctx {
+                    session: self.session,
+                    at: t,
+                    level: self.lvl(),
+                    zone_id: self.zone_id,
+                };
+                match code {
+                    "HD" => Social::on_hd(&ctx, &mut self.w, &f),
+                    "WH" => Social::on_wh(&ctx, &mut self.w, &f),
+                    "IG" => Social::on_ig(&ctx, &mut self.w, &f),
+                    "BM" => self.social.on_bm(&ctx, &mut self.w, &f),
+                    _ => self.social.on_bo(&ctx, &mut self.w, &f),
+                }
             }
             "NS" => {
                 self.fact("creature_sightings", t);
@@ -1260,6 +1277,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         pn: BTreeMap::new(),
         talents: Talents::default(),
         camp: Camp::default(),
+        social: Social::default(),
     };
     for l in &lines {
         d.line(l);
