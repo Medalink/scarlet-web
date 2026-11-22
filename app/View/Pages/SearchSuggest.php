@@ -34,9 +34,11 @@ final class SearchSuggest
     {
         $groups = [];
         $total = count(array_slice($pages, 0, SearchPage::PER_KIND));
+        $capped = false;
         foreach (SearchKind::cases() as $kind) {
             $group = $answer[$kind->value] ?? ['count' => 0, 'hits' => []];
             $total += $group['count'];
+            $capped = $capped || $group['count'] >= self::PER_KIND;
             $groups[] = array_map(fn (array $hit): array => ['rank' => self::rank($hit['match'] ?? null), 'line' => self::line($kind, $hit, $term)], array_slice($group['hits'], 0, self::PER_KIND));
         }
         $groups[] = array_map(fn (array $page): array => ['rank' => self::rank($page['match']), 'line' => self::pageLine($page, $term)], array_slice($pages, 0, self::PAGES_SHOWN));
@@ -49,6 +51,8 @@ final class SearchSuggest
                 'label' => match (true) {
                     $term === '' => 'Search',
                     $total === 0 => 'No results for "'.$term.'"',
+                    $capped => 'See all results',
+                    $total === 1 => 'See 1 result',
                     default => 'See all '.Format::count($total, 'result'),
                 },
             ],

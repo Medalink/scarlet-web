@@ -74,7 +74,7 @@
           <tr><td>Guild notes, the message of the day and rank names</td><td>Your rank number, and whether you are an officer or the leader.</td></tr>
           <tr><td>Calendar titles, friend notes and group finder comments</td><td>Counts: invites waiting, list sizes, listings found.</td></tr>
           <tr><td>Other players' GUIDs, account names and account friend tags</td><td>Character names only: players you group, trade, mail or roll against, players you inspect and the gear they wear, players a /who search lists, other rows of a battleground scoreboard, and the character a hardcore death notice names.</td></tr>
-          <tr><td>Screenshots</td><td>The file name and the time. Scarlet takes none and never reads one.</td></tr>
+          <tr><td>Screenshots</td><td>The file name and the time. Scarlet never reads a screenshot, and takes them only if you turn on "Take screenshots at key moments" in Settings.</td></tr>
         </tbody>
       </table>
       <p class="aside-fact">Your own chat is kept as counts too. Scarlet counts each <code>lol</code> and <code>rip</code> you type and stores the number, not the sentence.</p>
@@ -103,7 +103,7 @@
   <section class="band" id="app" aria-labelledby="h-app">
     <div class="wrap">
       <h2 id="h-app">The desktop app draws the log as a timeline, a heatmap, maps and loot tables</h2>
-      <p class="intro">The app has eight views: Overview, Activity, Timeline, Sessions, Map, Charts, Compress and Settings. The figures here are drawn from the demo session and the demo character on this site.</p>
+      <p class="intro">The app has fourteen views: Overview (or Characters), Feats, Stats, Activity, Timeline, Sessions, Map, Charts, Loot, Talents, Items, Addons, Compress and Settings. The figures here are drawn from the demo session and the demo character on this site.</p>
       <div class="figs">
         <figure>
           <h3>Timeline: the state you were in at each moment</h3>
@@ -152,7 +152,7 @@
       <ol class="pipe">
         <li><h3>The addon writes compressed chunks</h3><p>In game, lines collect in a buffer and are sealed into compressed chunks in the addon's SavedVariables file. The game rewrites that file on <code>/reload</code>, logout or disconnect.</p></li>
         <li><h3>The companion exports them</h3><p><code>scarlet export</code> reads every account folder and writes a readable <code>scarlet.txt</code>, compressed payloads and CSV tables under <code>out/Name-Surname/</code>.</p></li>
-        <li><h3>The app reads the folder</h3><p>The desktop app opens <code>out/</code> and can run the export itself. It keeps its settings next to the exe.</p></li>
+        <li><h3>The app reads the folder</h3><p>The desktop app opens your data folder and can run the export itself. A portable copy with a <code>settings.json</code> beside the exe keeps its settings there.</p></li>
       </ol>
       <div class="store">
         <ul class="tree" aria-label="The folder the companion writes">
@@ -204,5 +204,4 @@
       </p>
     </div>
   </section>
-</main>
 </x-layouts.site>

@@ -31,7 +31,7 @@ final class SpellPage
                 ['label' => 'Cast time', 'value' => self::cast($facts['cast_ms'])],
                 ['label' => 'Range', 'value' => self::range($facts['min_range'], $facts['max_range'])],
                 ['label' => 'Cost', 'value' => self::costs((string) ($facts['costs'] ?? ''))],
-                ['label' => 'Kind', 'value' => $facts['passive'] === null ? '–' : ($facts['passive'] ? 'Passive' : 'Active'), 'unit' => $facts['icon_id'] === null ? null : 'icon '.$facts['icon_id']],
+                ['label' => 'Kind', 'value' => $facts['passive'] === null ? '–' : ($facts['passive'] ? 'Passive' : 'Active')],
             ],
             'makes' => $made === null ? null : CraftingRows::makes($made),
             'makesHref' => ($made['item_id'] ?? null) === null ? null : '/items/'.$made['item_id'],

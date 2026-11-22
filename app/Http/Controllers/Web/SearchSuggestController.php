@@ -15,7 +15,7 @@ class SearchSuggestController extends Controller
     public function __invoke(SearchRequest $request, Search $search, SearchPages $pages): JsonResponse
     {
         $term = $request->term();
-        $answer = $term === '' ? [] : $search->handle($term, null, 0, SearchSuggest::PER_KIND);
+        $answer = $term === '' ? [] : $search->handle($term, null, 0, SearchSuggest::PER_KIND, withCounts: false);
         $found = $term === '' ? [] : $pages->handle($term);
 
         return response()->json(SearchSuggest::data($answer, $found, $term))->header('X-Robots-Tag', 'noindex');

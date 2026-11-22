@@ -17,7 +17,7 @@ final class GatheringWords
                 'description' => 'What players catch with Fishing in WoW Forever, how long a bite takes, where they fish and when, and the characters with the most catches.',
                 'attempt' => 'cast', 'result' => 'catch', 'results' => 'catches', 'doing' => 'fish',
                 'who' => 'Characters who fish', 'item' => 'Catch', 'lands' => 'Casts that catch', 'median' => 'Median wait for a bite', 'wait' => 'bite',
-                'gave' => 'Something on the line', 'none' => 'No bite, or the fish got away', 'trip' => 'A fishing trip', 'at' => 'hours at the water',
+                'gave' => 'Something on the line', 'none' => 'No bite, or the fish got away', 'trip' => 'A fishing trip', 'at' => 'at the water',
             ],
             GatherKind::Herb => [
                 'description' => 'What players pick with Herbalism in WoW Forever, how long a pick takes, where they pick and when, and the characters with the most picks.',

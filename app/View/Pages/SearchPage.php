@@ -36,12 +36,15 @@ final class SearchPage
         $link = fn (?SearchKind $to, ?string $cursor = null): string => '/search?'.http_build_query(array_filter(['q' => $term, 'kind' => $to?->value, 'cursor' => $cursor]));
 
         $groups = [];
+        $prev = null;
         $next = null;
         foreach ($answer as $name => $group) {
             $each = SearchKind::from($name);
             $hits = $group['hits'];
             if ($kind !== null) {
                 [$hits, $cursor] = Cursor::page($hits, $offset, self::PAGE);
+                $prevOffset = max(0, $offset - self::PAGE);
+                $prev = $offset > 0 ? $link($each, $prevOffset > 0 ? Cursor::encode($prevOffset) : null) : null;
                 $next = $cursor === null ? null : $link($each, $cursor);
             }
             $groups[$name] = [
@@ -49,7 +52,7 @@ final class SearchPage
                 'icon' => self::icon($each),
                 'count' => Format::number($group['count']),
                 'hits' => array_map(fn (array $hit): array => self::hit($each, $hit, $term), $hits),
-                'more' => $kind === null && $group['count'] > count($hits) ? ['href' => $link($each), 'label' => Format::number($group['count'] - count($hits)).' more '.strtolower($each->label())] : null,
+                'more' => $kind === null && $group['count'] > count($hits) ? ['href' => $link($each), 'label' => self::moreLabel($each, $group['count'] - count($hits))] : null,
             ];
         }
         if ($pages !== []) {
@@ -70,6 +73,7 @@ final class SearchPage
             'best' => $kind === null ? self::best($answer, $pages, $term) : null,
             'close' => $shown !== [] && array_all($shown, fn (array $hit): bool => $hit['fuzzy']) ? 'No name contains "'.$term.'". Close spellings:' : null,
             'groups' => $groups,
+            'prev' => $prev,
             'next' => $next,
             'empty' => $total === 0,
         ];
@@ -197,6 +201,11 @@ final class SearchPage
     private static function tier(array $hit): SearchMatch
     {
         return SearchMatch::tryFrom((string) ($hit['match'] ?? '')) ?? SearchMatch::Contains;
+    }
+
+    private static function moreLabel(SearchKind $kind, int $rest): string
+    {
+        return Format::number($rest).' more '.strtolower($rest === 1 ? self::noun($kind) : $kind->label());
     }
 
     private static function noun(SearchKind $kind): string

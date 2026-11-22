@@ -26,7 +26,7 @@ final class CraftingCallouts
         $stock = $reagents === [] ? self::skillPoint($t, $crafts) : self::material($reagents);
 
         return ProfessionPage::callouts([
-            ['station', $recipe === null ? null : (string) ($recipe['name'] ?? 'Recipe '.$recipe['recipe_id']), 'The most made recipe', $recipe === null ? null : ProfessionPage::shareOf($recipe['crafts'], $crafts, 'of crafts')],
+            ['station', $recipe === null ? null : (string) ($recipe['name'] ?? 'Recipe '.$recipe['recipe_id']), 'The most crafted recipe', $recipe === null ? null : ProfessionPage::shareOf($recipe['crafts'], $crafts, 'of crafts')],
             ['work', 'A sitting', $sitting, $apart],
             $stock,
         ]);

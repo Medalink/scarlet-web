@@ -140,10 +140,10 @@ enum Board: string
             self::MostTimeByTheFire => 'Time spent near a campfire by public characters, counted from each one\'s first recorded session.',
             self::MostFishCaught => 'Casts that caught something, by public characters, counted from each one\'s first recorded session.',
             self::MostHerbsGathered => 'Herbs gathered by public characters, counted from each one\'s first recorded session.',
-            self::MostOreMined => 'Veins mined by public characters, counted from each one\'s first recorded session.',
+            self::MostOreMined => 'Ore strikes by public characters, counted from each one\'s first recorded session.',
             self::MostCreaturesSkinned => 'Creatures skinned by public characters, counted from each one\'s first recorded session.',
             self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
-            self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Items crafted with '.$this->crafting()?->value.' by public characters, counted from each one\'s first recorded session.',
+            self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Crafts made with '.$this->crafting()?->value.' by public characters, counted from each one\'s first recorded session.',
         };
     }
 
@@ -173,7 +173,7 @@ enum Board: string
             self::MostTimeByTheFire => 'Time by the fire',
             self::MostFishCaught => 'Fish',
             self::MostHerbsGathered => 'Herbs',
-            self::MostOreMined => 'Veins',
+            self::MostOreMined => 'Strikes',
             self::MostCreaturesSkinned => 'Creatures',
             self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
             self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Crafts',

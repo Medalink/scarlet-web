@@ -10,7 +10,7 @@
 @foreach ($toasts as $feat)
   <div class="feat-toast feat t{{ $feat['tier'] }}" id="feat-toast-{{ $feat['key'] }}" popover="manual" role="status" data-shown='@json([$feat['key'] => $feat['tier']])'>
     <span class="seal-slot">@if ($feat['from'])<span class="seal was f{{ $feat['from'] }}" aria-hidden="true"><x-icon :name="$feat['icon']" /></span>@endif<span class="seal"><x-icon :name="$feat['icon']" /></span></span>
-    <div class="feat-toast-say"><p class="feat-toast-l">{{ $feat['from'] ? 'Upgraded from '.$feat['from_name'] : 'Feat earned' }}</p><p class="feat-n">{{ $feat['name'] }}<small>{{ $feat['tier_name'] }}</small></p></div>
+    <div class="feat-toast-say"><p class="feat-toast-l">{{ $feat['from'] ? 'Upgraded from '.$feat['from_name'] : 'Feat earned' }}</p><p class="feat-n">{{ $feat['name'] }} <small>{{ $feat['tier_name'] }}</small></p></div>
     <button type="button" class="feat-toast-x" popovertarget="feat-toast-{{ $feat['key'] }}" popovertargetaction="hide" aria-label="Close">&times;</button>
   </div>
 @endforeach

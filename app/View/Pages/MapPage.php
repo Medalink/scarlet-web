@@ -67,7 +67,11 @@ final class MapPage
             ], $listed, array_keys($listed)),
             'world' => ['sheet' => self::WORLD_SHEET, 'href' => $query($slug, $layer, null), 'on' => $opened === null],
             'zonePage' => $opened === null || $opened['seconds'] === null ? null : ['href' => '/zones/'.$opened['id'], 'label' => $opened['name'].' zone page'],
-            'layerWord' => strtolower($layer->label()),
+            'layerWord' => match ($layer) {
+                WorldLayer::Paths => 'paths',
+                WorldLayer::Deaths => 'deaths',
+                WorldLayer::Creatures => 'creature sightings',
+            },
         ];
     }
 }

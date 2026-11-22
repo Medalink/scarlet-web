@@ -2,8 +2,7 @@
 @props(['title', 'description', 'demo' => false, 'canonical' => null, 'index' => true, 'brand' => true])
 @php
     $jump = $demo ? '/' : '';
-    // Stats and Map stay in the header on a phone; the other pages drop out first (site.css, landing.css).
-    $items = ['stats' => ['Stats', '/stats', ''], 'world' => ['Map', '/map', ''], 'camps' => ['Camps', '/camps', 'jump app'], 'professions' => ['Professions', '/professions/fishing', 'jump app'], 'rulesets' => ['Rulesets', '/rulesets', 'jump app'], 'leaderboards' => ['Leaderboards', '/leaderboards', 'jump app'], 'search' => ['Search', '/search', 'jump app'], 'developers' => ['API', '/developers', 'jump app']];
+    $explore = [['Camps', '/camps'], ['Professions', '/professions/fishing'], ['Rulesets', '/rulesets'], ['Talents', '/talents'], ['Leaderboards', '/leaderboards'], ['Search', '/search'], ['API', '/developers']];
 @endphp
 <!doctype html>
 <html lang="en">
@@ -12,6 +11,7 @@
 @isset($head){{ $head }}@endisset
 </head>
 <body>
+<a class="skip" href="#main">Skip to main content</a>
 
 <header class="top">
   <div class="top-in wrap">
@@ -24,21 +24,21 @@
       <a class="jump" href="{{ $jump }}#never">Never recorded</a>
       <a class="jump" href="{{ $jump }}#capture">Capture map</a>
       <a class="demo" href="/demo"@if ($demo) aria-current="page"@endif>Character overview</a>
-      @foreach ($items as [$label, $path, $class])
-      <a @if ($class) class="{{ $class }}" @endif href="{{ $path }}">{{ $label }}</a>
-      @endforeach
+      <a href="/stats">Stats</a>
+      <a href="/map">Map</a>
+      <details class="nav-more app"><summary>Explore</summary><div class="nav-menu">@foreach ($explore as [$label, $path])<a href="{{ $path }}">{{ $label }}</a>@endforeach</div></details>
       <a class="get" href="/download">Get the app</a>
     </nav>
     <a class="acct" href="{{ auth()->check() ? '/account' : '/login' }}">{{ auth()->check() ? 'Account' : 'Sign in' }}</a>
   </div>
 </header>
 
-<main>
+<main id="main">
 {{ $slot }}
 </main>
 
 <footer class="foot">
-  <div class="wrap"><span>Scarlet</span><span>The character, places, creatures and numbers on this site are invented demo data. <x-version /></span></div>
+  <div class="wrap"><span>Scarlet</span><span>The character, places, creatures and numbers on this page are invented demo data. <x-version /></span></div>
 </footer>
 </body>
 </html>

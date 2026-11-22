@@ -10,7 +10,7 @@
     </form>
     <p class="note">Linking puts the characters this app uploads under your account. You can revoke the app at any time. The code works once and expires in 10 minutes.</p>
 @else
-    <p role="alert">{{ $message }}</p>
+    <p @if ($code !== null) role="alert"@endif>{{ $message }}</p>
     <form method="get" action="/link" style="margin-top:1.6rem;display:flex;gap:.8rem;flex-wrap:wrap;align-items:center">
       <label class="vh" for="code">Code from the app</label>
       <input id="code" class="field" name="code" type="text" value="{{ $code }}" maxlength="9" placeholder="XXXX-XXXX" autocomplete="off" autocapitalize="characters" style="flex:1 1 9rem;min-width:0">

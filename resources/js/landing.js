@@ -3,3 +3,4 @@ import './site/format-data.js';
 import './site/map.js';
 import './site/demo.js';
 import './site/landing.js';
+import './site/nav.js';

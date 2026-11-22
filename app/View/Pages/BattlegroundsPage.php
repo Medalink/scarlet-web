@@ -45,7 +45,7 @@ final class BattlegroundsPage
 
         return [
             'heading' => $place.($result === null ? '' : ', '.$result),
-            'at' => $match['at']->format('M j, Y H:i').' UTC',
+            'at' => $match['at']->format('j M Y H:i').' UTC',
             'instant' => $match['at']->toIso8601String(),
             'rows' => array_values(array_map(self::row(...), $match['rows'])),
         ];

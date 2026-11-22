@@ -97,10 +97,14 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
     setting.attach?.(placed);
 
     let redraw = () => {};
+    let stageW = 0, stageH = 0;
     const offset = opts.offset ?? ((width) => (width > WIDE ? spec.view.offset.wide : spec.view.offset.narrow));
     const view = { yaw: yaw0, turned: 0, pitch: spec.view.pitch, dist: spec.view.dist, shift: 0, target: new THREE.Vector3(), drag: null };
     const size = () => {
         const w = stage.clientWidth, h = stage.clientHeight;
+        if (w <= 0 || h <= 0) return;
+        stageW = w;
+        stageH = h;
         renderer.setSize(w, h, false);
         composer.setSize(w, h);
         camera.aspect = w / h;
@@ -156,12 +160,11 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
         setting.step(clock, camera.position, ripple, shot);
         composer.render();
 
-        if (opts.onFrame) {
-            const w = stage.clientWidth, h = stage.clientHeight;
+        if (opts.onFrame && stageW > 0 && stageH > 0) {
             opts.onFrame(anchors.map((a) => {
                 projected.copy(a.at).project(camera);
-                return { key: a.key, x: (projected.x * 0.5 + 0.5) * w, y: (-projected.y * 0.5 + 0.5) * h, shown: projected.z < 1 };
-            }));
+                return { key: a.key, x: (projected.x * 0.5 + 0.5) * stageW, y: (-projected.y * 0.5 + 0.5) * stageH, shown: projected.z < 1 };
+            }), stageW, stageH);
         }
     };
     const frame = (now) => {

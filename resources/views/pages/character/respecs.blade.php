@@ -2,6 +2,6 @@
   @if ($d['talents']['respecs']['rows'])
   <x-table :rows="$d['talents']['respecs']['rows']" :columns="$d['talents']['respecs']['columns']" />
   @else
-  <x-note>No respec recorded.</x-note>
+  <x-note>No respecs recorded.</x-note>
   @endif
 </x-module>

@@ -6,6 +6,7 @@ use App\Actions\Account\RemoveGroupFromServer;
 use App\Actions\Account\SetGroupShared;
 use App\Actions\Account\ShowSharing;
 use App\Livewire\Concerns\ActsForAccount;
+use App\View\Format;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -25,7 +26,7 @@ class Sharing extends Component
     public function remove(string $group, RemoveGroupFromServer $remove): void
     {
         $removed = $remove->handle($this->account(), $group);
-        $this->notice = "Removed {$removed['parts_removed']} parts from the server.";
+        $this->notice = 'Removed '.Format::count($removed['parts_removed'], 'part').' from the server.';
         $this->dispatch('account-changed');
     }
 

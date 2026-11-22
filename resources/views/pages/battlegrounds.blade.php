@@ -6,12 +6,12 @@
   <x-sheet>
     @forelse ($d['matches'] as $match)
     <x-module :first="$loop->first" :last="$loop->last" :id="'m-'.$loop->index" :heading="$match['heading']">
-      <p class="note"><time datetime="{{ $match['instant'] }}">{{ $match['at'] }}</time></p>
+      <p class="note"><time datetime="{{ $match['instant'] }}" data-local="j M Y H:i">{{ $match['at'] }}</time></p>
       <x-table :columns="$columns" :rows="$match['rows']" />
     </x-module>
     @empty
     <x-module :first="true" :last="true" id="m-none" heading="No scoreboards">
-      <x-note>No battleground scoreboard recorded for this character yet.</x-note>
+      <x-note>No battleground scoreboards recorded for this character yet.</x-note>
     </x-module>
     @endforelse
   </x-sheet>

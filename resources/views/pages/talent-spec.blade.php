@@ -7,13 +7,13 @@
     </x-slot:filters>
   </x-page-head>
   <x-sheet>
-    <x-module span="w12" :first="true" :last="true" id="h-pick" heading="Pick rate by node">
+    <x-module span="w12" :first="true" :last="true" id="h-pick" heading="Pick rate by talent">
       <x-slot:controls><x-seg label="Level" :items="$d['brackets']" /></x-slot:controls>
       @if ($d['n'] === 0)
       <x-note>No character has a build at these levels yet.</x-note>
       @else
       @if ($d['tree'])
-      <x-talent-tree :tree="$d['tree']" :label="'Pick rate of each talent of '.$d['title'].' among '.$d['n'].' characters'" id="spec-tree" />
+      <x-talent-tree :tree="$d['tree']" :label="'Pick rate of each talent of '.$d['title'].' among '.\App\View\Format::count($d['n'], 'character')" id="spec-tree" />
       <x-heat-key low="Few took it" high="Most took it" />
       @endif
       <x-table :rows="$d['nodes']['rows']" :columns="$d['nodes']['columns']" style="margin-top:1rem" />

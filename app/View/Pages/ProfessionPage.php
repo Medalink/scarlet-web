@@ -66,7 +66,7 @@ final class ProfessionPage
     {
         return $own
             ? 'Scarlet records this once a character of yours has recorded '.$what.'.'
-            : 'The numbers show once more characters have recorded '.$what.'.';
+            : 'Numbers appear once more characters have recorded '.$what.'.';
     }
 
     /**

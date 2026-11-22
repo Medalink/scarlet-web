@@ -51,14 +51,16 @@ final class CharacterSections
             self::killer($row),
             $row['damage'] === null ? '' : Format::number($row['damage']),
         ], 'detail' => self::recap($row)], $log['rows']);
-        $zones = array_map(fn (array $row): string => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']).' '.$row['deaths'], array_slice($deaths['zones'], 0, self::DEATH_ZONES));
+        $zones = array_map(fn (array $row): string => (string) ($row['zone'] ?? 'Zone '.$row['zone_id']).' ('.Format::number($row['deaths']).')', array_slice($deaths['zones'], 0, self::DEATH_ZONES));
         $shown = count($log['rows']);
 
         return [
             ...self::deathMarks($log['rows'], $level),
             'columns' => [['label' => 'Level', 'numeric' => true], ['label' => 'Zone'], ['label' => 'Killer'], ['label' => 'Killing blow', 'numeric' => true]],
             'rows' => $rows,
-            'all' => $shown < $deaths['total'] ? 'Latest '.$shown.' of '.Format::number($deaths['total']).' deaths' : 'All '.Format::count($deaths['total'], 'death'),
+            'all' => $shown < $deaths['total']
+                ? 'Latest '.$shown.' of '.Format::number($deaths['total']).' deaths'
+                : ($deaths['total'] === 1 ? '1 death' : 'All '.Format::count($deaths['total'], 'death')),
             'total' => ($deaths['total'] === 0 ? 'No deaths recorded.' : Format::count($deaths['total'], 'death').' recorded.')
                 .($zones === [] ? '' : ' Most in '.implode(', ', $zones).'.'),
         ];
@@ -101,7 +103,7 @@ final class CharacterSections
 
         return [
             'summary' => Format::count(count($hits), 'hit').$held.($span === null || count($hits) === 1 ? '' : ' over '.Format::number($span, 1).' s'),
-            'columns' => [['label' => 'Before death', 'numeric' => true], ['label' => 'Hit by'], ['label' => 'With'], ['label' => 'Damage', 'numeric' => true], ['label' => 'Not landed']],
+            'columns' => [['label' => 'Before death', 'numeric' => true], ['label' => 'Hit by'], ['label' => 'With'], ['label' => 'Damage', 'numeric' => true], ['label' => 'Mitigated']],
             'rows' => array_values(array_map(fn (array $hit): array => ['cells' => [
                 $hit['seconds_before'] === null ? '' : Format::number($hit['seconds_before'], 1).' s',
                 $hit['source'] === null ? '' : Format::killerName($hit['source']),
@@ -192,7 +194,7 @@ final class CharacterSections
             'looted' => $found === 0 ? null : [
                 'segments' => $segments,
                 'key' => $key,
-                'say' => Format::number($found).' items looted: '.implode(', ', array_column($segments, 'say')).'.',
+                'say' => Format::count($found, 'item').' looted: '.implode(', ', array_column($segments, 'say')).'.',
             ],
             'best' => array_map(fn (array $row): array => [
                 'label' => (string) $row['name'], 'href' => '/items/'.$row['item_id'], 'quality' => ItemTypes::quality($row['quality']),
@@ -226,7 +228,7 @@ final class CharacterSections
 
         return [
             'segments' => $segments, 'key' => $key,
-            'say' => 'Distance by how you moved'.($since === '' ? '' : ' '.$since).': '.implode(', ', array_column($segments, 'say')).'.',
+            'say' => 'Distance by travel mode'.$since.': '.implode(', ', array_column($segments, 'say')).'.',
         ];
     }
 

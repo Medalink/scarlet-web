@@ -2,3 +2,4 @@
 import './site/map.js';
 import './site/demo.js';
 import './site/character.js';
+import './site/nav.js';

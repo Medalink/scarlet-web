@@ -70,7 +70,9 @@ final class TalentSpecPage
             'title' => $a['spec'].' '.Format::className((string) $a['class']),
             'classKey' => strtoupper((string) $a['class']),
             'className' => Format::className((string) $a['class']),
-            'sub' => $n === 0 ? 'No character has a build read at '.mb_strtolower($bracket->label()).'.' : 'n = '.Format::count($n, 'character').', each counted by its latest build at '.mb_strtolower($bracket->label()).'.',
+            'sub' => $n === 0
+                ? ($bracket === LevelBracket::All ? 'No character has a talent build recorded yet.' : 'No character has a build recorded at '.mb_strtolower($bracket->label()).'.')
+                : Format::count($n, 'character').', each counted by its latest build'.($bracket === LevelBracket::All ? '.' : ' at '.mb_strtolower($bracket->label()).'.'),
             'n' => $n,
             'brackets' => self::control($bracket, $path, $scope),
             'tree' => $a['layout'] === null || $n === 0 ? null : self::tree($a['layout'], $nodes, $n, $names),
@@ -126,7 +128,7 @@ final class TalentSpecPage
         /** @var array<int, array{id: int, entries: list<array{entry: int, spell: int|null}>, tab: int|null}> $layoutNodes */
         $layoutNodes = $layout['nodes'];
         foreach ($layoutNodes as $id => $node) {
-            $name = implode(' or ', array_map(fn (array $entry): string => ($entry['spell'] === null ? null : ($names['spell'][$entry['spell']] ?? null)) ?? 'Talent '.$entry['entry'], $node['entries'])) ?: 'Node '.$id;
+            $name = implode(' or ', array_map(fn (array $entry): string => ($entry['spell'] === null ? null : ($names['spell'][$entry['spell']] ?? null)) ?? 'Talent '.$entry['entry'], $node['entries'])) ?: 'Talent '.$id;
             $rate = $taken[$id]['rate'] ?? 0.0;
             $marks[$id] = [
                 'title' => $name.': '.Format::percent($rate).' of '.Format::count($n, 'character').' ('.Format::number($taken[$id]['taken'] ?? 0).')',
@@ -169,7 +171,7 @@ final class TalentSpecPage
         return [
             'columns' => [['label' => 'Talent'], ['label' => 'Characters', 'numeric' => true], ['label' => 'Pick rate', 'numeric' => true], ['label' => 'Average rank', 'numeric' => true]],
             'rows' => array_map(fn (array $node): array => ['cells' => [
-                self::spell($node['name'] ?? 'Node '.$node['node'], $node['spell']), Format::number($node['taken']).' of '.Format::number($n), Format::percent($node['rate']), Format::number($node['rank'], 1),
+                self::spell($node['name'] ?? 'Talent '.$node['node'], $node['spell']), Format::number($node['taken']).' of '.Format::number($n), Format::percent($node['rate']), Format::number($node['rank'], 1),
             ]], $nodes),
         ];
     }

@@ -27,7 +27,7 @@ final class ImportedHistoryPage
             $rows[] = ['cells' => [
                 ['text' => Format::characterName($c['name']), 'href' => '/c/'.rawurlencode($c['name'])],
                 implode(', ', $h['sources']),
-                self::day($h['first']).' to '.self::day($h['last']),
+                self::range($h['first'], $h['last']),
                 Format::number($h['sales']),
                 Format::moneyText($h['sales_copper']),
                 Format::number($h['buys']),
@@ -57,7 +57,7 @@ final class ImportedHistoryPage
 
         return [
             'source' => $source,
-            'range' => self::day($h['first']).' to '.self::day($h['last']),
+            'range' => self::range($h['first'], $h['last']),
             'figures' => [
                 ['label' => 'Sales', 'value' => Format::number($h['sales'])],
                 ['label' => 'Received', 'value' => Format::moneyText($h['sales_copper'])],
@@ -111,6 +111,14 @@ final class ImportedHistoryPage
         $axis = Axis::nice(max([0.0, ...array_column($points, 1)]));
 
         return Charts::line(['x0' => 0, 'x1' => $last, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'g'), 'xt' => $ticks], [['cls' => 'g', 'pts' => $points, 'mark' => $last]], $say, $last, 'gold-out');
+    }
+
+    private static function range(int $first, int $last): string
+    {
+        $from = self::day($first);
+        $to = self::day($last);
+
+        return $from === $to ? $from : $from.' to '.$to;
     }
 
     private static function day(int $epoch): string

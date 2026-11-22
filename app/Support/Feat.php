@@ -188,7 +188,7 @@ enum Feat: string
             self::Thorough => ['quests', 'quest in one zone', 'quests in one zone', [10, 30, 60, 90, 110]],
             self::Delver => ['dungeons', 'dungeon run', 'dungeon runs', [1, 20, 75, 200, 500]],
             self::Vanquisher => ['crown', 'dungeon boss killed', 'dungeon bosses killed', [1, 50, 250, 1000, 2500]],
-            self::Spelunker => ['dungeons', 'dungeon or raid entered', 'dungeons and raids entered', [1, 5, 12, 18, 22]],
+            self::Spelunker => ['dungeons', 'dungeon or raid entered', 'dungeons or raids entered', [1, 5, 12, 18, 22]],
             self::Raider => ['crown', 'raid run', 'raid runs', [1, 10, 40, 100, 250]],
             self::Conqueror => ['crown', 'raid boss killed', 'raid bosses killed', [1, 25, 100, 300, 800]],
             self::DeepDweller => ['dungeons', 'hour inside dungeons', 'hours inside dungeons', [1, 20, 75, 200, 600]],

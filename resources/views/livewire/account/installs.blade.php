@@ -4,7 +4,7 @@
 @else
   <x-rows>
 @foreach ($installs as $install)
-    <x-row :title="($install->name ?? 'Scarlet app').', linked '.($install->linked_at ?? $install->created_at)->format('j M Y')" :body="($install->last_seen_at ? 'Last upload '.$install->last_seen_at->diffForHumans() : 'Nothing uploaded yet').' · '.$install->characters_count.' '.\Illuminate\Support\Str::plural('character', $install->characters_count)" wire:key="i-{{ $install->id }}">
+    <x-row :title="($install->name ?? 'Scarlet app').', linked '.($install->linked_at ?? $install->created_at)->format('j M Y')" :body="($install->last_seen_at ? 'Last upload '.$install->last_seen_at->diffForHumans() : 'Nothing uploaded yet').' · '.\App\View\Format::count($install->characters_count, 'character')" wire:key="i-{{ $install->id }}">
 @if ($install->isRevoked())
       <x-state>Revoked</x-state>
 @else

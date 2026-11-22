@@ -3,7 +3,7 @@
 @props(['feats', 'pin' => false])
 <section class="recs" aria-labelledby="h-feats">
   <h2 id="h-feats">Feats</h2>
-  <p class="feats-sum"><span><b>{{ $feats['held'] }}</b>of {{ $feats['total'] }} feats</span>@foreach ($feats['tiers'] as $tier)<span><b>{{ $tier['count'] }}</b>{{ $tier['name'] }}</span>@endforeach</p>
+  <p class="feats-sum"><span><b>{{ $feats['held'] }}</b> of {{ $feats['total'] }} feats</span>@foreach ($feats['tiers'] as $tier)<span><b>{{ $tier['count'] }}</b> {{ $tier['name'] }}</span>@endforeach</p>
   @if ($feats['since'])<p class="note">Counted since {{ $feats['since'] }}.</p>@endif
   @if ($feats['pinned'])<ul class="feats feats-top feats-pinned">@foreach ($feats['pinned'] as $feat)<x-feat :feat="$feat" wire:key="pinned-{{ $feat['key'] }}" />@endforeach</ul>@endif
   <ul class="feats feats-top">@foreach ($feats['top'] as $feat)<x-feat :feat="$feat" wire:key="top-{{ $feat['key'] }}" />@endforeach</ul>

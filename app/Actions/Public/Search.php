@@ -31,7 +31,7 @@ class Search
      *
      * @return array<string, array{count: int, hits: list<array<string, mixed>>}>
      */
-    public function handle(string $term, ?SearchKind $kind, int $offset, int $limit): array
+    public function handle(string $term, ?SearchKind $kind, int $offset, int $limit, bool $withCounts = true): array
     {
         $take = $kind === null ? $limit : $limit + 1;
         $kinds = $kind === null ? SearchKind::cases() : [$kind];
@@ -45,13 +45,13 @@ class Search
         }
 
         foreach ($kinds as $each) {
-            $answer[$each->value] = $this->found($each, $this->strict($each, $term), $offset, $take);
+            $answer[$each->value] = $this->found($each, $this->strict($each, $term), $offset, $take, withCounts: $withCounts);
         }
         if (array_sum(array_column($answer, 'count')) > 0 || mb_strlen(trim($term)) < self::FUZZY_MIN_LENGTH) {
             return $answer;
         }
         foreach ($kinds as $each) {
-            $answer[$each->value] = $this->found($each, $this->close($each, $term), $offset, $take, SearchMatch::Fuzzy);
+            $answer[$each->value] = $this->found($each, $this->close($each, $term), $offset, $take, SearchMatch::Fuzzy, withCounts: $withCounts);
         }
 
         return $answer;
@@ -62,15 +62,15 @@ class Search
      *
      * @return array{count: int, hits: list<array<string, mixed>>}
      */
-    private function found(SearchKind $kind, Builder $query, int $offset, int $take, ?SearchMatch $as = null): array
+    private function found(SearchKind $kind, Builder $query, int $offset, int $take, ?SearchMatch $as = null, bool $withCounts = true): array
     {
-        $count = $query->getCountForPagination();
+        $count = $withCounts ? $query->getCountForPagination() : null;
         $rows = $count === 0 ? [] : $this->fetch($query, $offset, $take);
         if ($as !== null) {
             $rows = array_map(fn (array $row): array => [...$row, 'tier' => $as->rank()], $rows);
         }
 
-        return ['count' => $count, 'hits' => $this->enrich($kind, $rows)];
+        return ['count' => $count ?? count($rows), 'hits' => $this->enrich($kind, $rows)];
     }
 
     /**

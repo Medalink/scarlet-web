@@ -110,7 +110,7 @@ final class AccountCharactersPage
             $when = Carbon::parse($day);
             $top = max($top, array_sum($stack));
             $data[] = [$i, $stack];
-            $say[] = Format::line($when->format('D j M'), ': '.Format::duration(array_sum($seconds)).' played'.($spoken === [] ? '' : ': '.implode(', ', $spoken)).'.');
+            $say[] = Format::line($when->format('D j M'), ': '.Format::duration(array_sum($seconds)).' played'.($spoken === [] ? '' : ' ('.implode(', ', $spoken).')').'.');
             if ($i === $last || $i % 7 === 0) {
                 $ticks[] = [$i, $when->format('j M')];
             }
@@ -144,7 +144,7 @@ final class AccountCharactersPage
         $rows[] = ['class' => 'me', 'cells' => ['All characters', Format::moneyText($sum['balance']), Format::moneyText($sum['earned']), Format::moneyText($sum['spent']), Format::moneyText($sum['earned'] - $sum['spent'], true), Format::moneyText($sum['transfer'], true)]];
 
         return [
-            'columns' => [['label' => 'Character'], ['label' => 'Balance', 'numeric' => true], ['label' => 'Earned', 'numeric' => true], ['label' => 'Spent', 'numeric' => true], ['label' => 'Net', 'numeric' => true], ['label' => 'Moved between yours', 'numeric' => true]],
+            'columns' => [['label' => 'Character'], ['label' => 'Balance', 'numeric' => true], ['label' => 'Earned', 'numeric' => true], ['label' => 'Spent', 'numeric' => true], ['label' => 'Net', 'numeric' => true], ['label' => 'Transfers', 'numeric' => true]],
             'rows' => $rows,
             'spec' => self::goldLine($gold['balances']),
         ];

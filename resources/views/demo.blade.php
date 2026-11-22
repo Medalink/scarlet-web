@@ -22,11 +22,11 @@
   <div class="wrap">
     <section class="week" aria-labelledby="h-week">
       <div><h2 id="h-week">This week</h2><p>Mon 16 to Sun 22 Nov</p></div>
-      <div><dt>Played</dt><dd id="w-p">8h 48m</dd></div>
-      <div><dt>Dungeons</dt><dd id="w-r">1</dd></div>
-      <div><dt>Quests</dt><dd id="w-q">26</dd></div>
-      <div><dt>Gold</dt><dd id="w-g">+9g 52s</dd></div>
-      <div><dt>Zones</dt><dd id="w-z">4</dd></div>
+      <dl><dt>Played</dt><dd id="w-p">8h 48m</dd></dl>
+      <dl><dt>Dungeons</dt><dd id="w-r">1</dd></dl>
+      <dl><dt>Quests</dt><dd id="w-q">26</dd></dl>
+      <dl><dt>Gold</dt><dd id="w-g">+9g 52s</dd></dl>
+      <dl><dt>Zones</dt><dd id="w-z">4</dd></dl>
     </section>
 
     <div class="sheet">

@@ -39,7 +39,32 @@ final class CharacterStandings
         if ($board === Board::HighestWithoutDying) {
             return 'level '.$board->format($value);
         }
+        if ($board === Board::MostTimeByTheFire) {
+            return $board->format($value).' by the fire';
+        }
+        if ($board === Board::MostDistance) {
+            $shown = $board->format($value);
 
-        return $board->format($value).' '.strtolower($board->column());
+            return $shown.' '.($shown === '1.0' ? 'world width' : 'world widths');
+        }
+        if ($board === Board::MostFishCaught) {
+            return $board->format($value).' fish';
+        }
+        if ($board === Board::MostQuestsCompleted) {
+            return Format::count($value, 'quest').' completed';
+        }
+
+        $noun = match ($board) {
+            Board::MostQuests => 'quest',
+            Board::MostKills => 'kill',
+            Board::MostJumps => 'jump',
+            Board::MostDungeonRuns => 'run',
+            Board::MostHerbsGathered => 'herb',
+            Board::MostOreMined => 'strike',
+            Board::MostCreaturesSkinned => 'creature',
+            default => 'craft',
+        };
+
+        return Format::count($value, $noun);
     }
 }

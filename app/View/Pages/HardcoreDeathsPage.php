@@ -63,10 +63,10 @@ final class HardcoreDeathsPage
         for ($day = $first->copy(); $day->lte($last); $day->addDay()) {
             $count = $days[$day->toDateString()] ?? 0;
             $data[] = [count($data), $count];
-            $say[] = Format::line($day->format('M j'), ': '.Format::count($count, 'death'));
+            $say[] = Format::line($day->format('j M'), ': '.Format::count($count, 'death'));
         }
         $axis = Axis::nice((float) max([0, ...array_column($data, 1)]), 3);
-        $ticks = array_map(fn (int $index): array => [$index, $first->copy()->addDays($index)->format('M j')], Axis::spread(0, count($data) - 1, 4));
+        $ticks = array_map(fn (int $index): array => [$index, $first->copy()->addDays($index)->format('j M')], Axis::spread(0, count($data) - 1, 4));
 
         return Charts::bars(['w' => 760, 'h' => 250, 'x0' => -1, 'x1' => count($data), 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks']), 'xt' => $ticks], $data, 't', $say, null, 'days-out');
     }

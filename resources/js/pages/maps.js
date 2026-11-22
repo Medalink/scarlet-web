@@ -81,15 +81,50 @@ function showZone(canvasId, config, zone) {
 }
 
 function showLayer(canvasId, layer, button) {
-    const entry = maps.get(canvasId);
+    const entry = ensureMounted(canvasId);
     if (!entry) {
         return;
     }
     entry.map.setLayers({ heat: { source: { layer, levels: entry.config.layerLevels[layer], ruleset: entry.config.ruleset } } });
     button.parentElement.querySelectorAll('button').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
+    const url = new URL(window.location.href);
+    layer === 'paths' ? url.searchParams.delete('layer') : url.searchParams.set('layer', layer);
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash);
 }
 
-document.querySelectorAll('canvas[data-world-map]').forEach(mount);
+const pendingCanvases = new Map();
+
+function ensureMounted(canvasId) {
+    const existing = maps.get(canvasId);
+    if (existing) {
+        return existing;
+    }
+    const canvas = pendingCanvases.get(canvasId);
+    if (!canvas) {
+        return null;
+    }
+    pendingCanvases.delete(canvasId);
+    mount(canvas);
+    return maps.get(canvasId) ?? null;
+}
+
+const lazyObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        lazyObserver.unobserve(entry.target);
+        ensureMounted(entry.target.id);
+    }
+}, { rootMargin: '300px' });
+
+for (const canvas of document.querySelectorAll('canvas[data-world-map]')) {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 300) {
+        mount(canvas);
+    } else {
+        pendingCanvases.set(canvas.id, canvas);
+        lazyObserver.observe(canvas);
+    }
+}
 
 document.querySelectorAll('button[data-map-layer]').forEach((button) => {
     button.addEventListener('click', () => showLayer(button.dataset.mapFor, button.dataset.mapLayer, button));
@@ -97,7 +132,7 @@ document.querySelectorAll('button[data-map-layer]').forEach((button) => {
 
 document.querySelectorAll('a[data-map-sheet]').forEach((link) => {
     link.addEventListener('click', (event) => {
-        const entry = maps.get(link.dataset.mapFor);
+        const entry = ensureMounted(link.dataset.mapFor);
         const id = Number(link.dataset.mapSheet);
         if (entry && link.dataset.mapWorld !== undefined) {
             event.preventDefault();
@@ -111,7 +146,7 @@ document.querySelectorAll('a[data-map-sheet]').forEach((link) => {
 
 document.querySelectorAll('select[data-fit-map]').forEach((select) => {
     select.addEventListener('change', () => {
-        const entry = maps.get(select.dataset.fitMap);
+        const entry = ensureMounted(select.dataset.fitMap);
         if (!entry) {
             return;
         }

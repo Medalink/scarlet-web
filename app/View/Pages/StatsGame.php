@@ -246,7 +246,7 @@ final class StatsGame
     {
         $row = $rows[0] ?? null;
 
-        return $row === null ? null : self::record('emote', (string) $row['token'], null, 'Most used emote', Format::count((int) $row['uses'], 'use'));
+        return $row === null ? null : self::record('emote', '/'.strtolower((string) $row['token']), null, 'Most used emote', Format::count((int) $row['uses'], 'use'));
     }
 
     /**

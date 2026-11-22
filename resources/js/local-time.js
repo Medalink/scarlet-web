@@ -29,6 +29,7 @@ export function duration(seconds) {
 }
 
 const TOKENS = {
+    D: (d) => WEEKDAYS[(d.getDay() + 6) % 7],
     j: (d) => String(d.getDate()),
     M: (d) => MONTHS[d.getMonth()],
     Y: (d) => String(d.getFullYear()),
@@ -36,7 +37,7 @@ const TOKENS = {
     i: (d) => pad(d.getMinutes()),
 };
 
-const format = (date, tokens) => tokens.replace(/[jMYHi]/g, (token) => TOKENS[token](date));
+const format = (date, tokens) => tokens.replace(/[DjMYHi]/g, (token) => TOKENS[token](date));
 
 /** The 168 cells of a week summed in UTC, Monday 00:00 UTC first, moved to the viewer's hours of the week. */
 export const localWeek = (utcCells) => Array.from({ length: WEEK }, (_, n) => utcCells[wrap(n - wholeHoursEastOfUtc)] ?? 0);

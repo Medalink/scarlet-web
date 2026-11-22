@@ -14,7 +14,7 @@ class AuthRedirectController extends Controller
     public function __invoke(Request $request, IdentityProvider $provider, SignInDriver $drivers): Response
     {
         abort_unless($provider->isOAuth(), 404);
-        abort_unless($provider->isConfigured(), 503, "Sign in with {$provider->label()} is not set up on this server.");
+        abort_unless($provider->isConfigured(), 503, "{$provider->label()} sign-in is not set up on this server.");
 
         return $drivers->make($provider)->redirect();
     }

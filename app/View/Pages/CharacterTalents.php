@@ -71,13 +71,13 @@ final class CharacterTalents
             $rows[] = ['Gold spent on respecs', Format::moneyText((int) array_sum($costs)), 'from '.Format::count(count($costs), 'respec').' with a recorded cost'];
         }
         if ($least !== null) {
-            $rows[] = ['Least picked talent taken', ($least['spell'] === null ? null : ($spells[$least['spell']] ?? null)) ?? 'Node '.$least['node'], 'held by '.Format::number($least['taken']).' of '.Format::count($least['total'], 'other character').' of the same class and spec'];
+            $rows[] = ['Least picked talent taken', ($least['spell'] === null ? null : ($spells[$least['spell']] ?? null)) ?? 'Talent '.$least['node'], 'held by '.Format::number($least['taken']).' of '.Format::count($least['total'], 'other character').' of the same class and spec'];
         }
         if ($deep !== null) {
             $rows[] = ['First build with '.TalentFacts::DEEP_POINTS.' points in one tree', $deep['level'] === null ? '' : 'Level '.$deep['level'], $deep['first_read'] ? 'already held when the build was first read' : 'when that build was read'];
         }
         if ($unspent !== null) {
-            $rows[] = ['Longest a point sat unspent', Format::duration($unspent['longest_s']), 'of '.Format::count($unspent['points'], 'point').' seen being taken after their level-up'];
+            $rows[] = ['Longest a point sat unspent', Format::duration($unspent['longest_s']), 'of '.Format::count($unspent['points'], 'point').' spent after a level-up'];
             $rows[] = ['Median wait to spend a point', Format::duration($unspent['median_s']), 'of '.Format::count($unspent['points'], 'point')];
         }
         $rows[] = ['Picks refunded within '.TalentFacts::TAKEN_BACK_MINUTES.' minutes', Format::number($takenBack['refunded']), 'of '.Format::count($takenBack['picks'], 'pick').' seen'];
@@ -107,7 +107,7 @@ final class CharacterTalents
         $nodes = $group['nodes'];
         foreach ($nodes as $node) {
             $byTab[$node['tab'] !== null && isset($known[$node['tab']]) ? $node['tab'] : 0][] = [
-                'cells' => [self::spellCell($node['name'] ?? ($node['spell'] === null ? 'Node '.$node['node'] : 'Spell '.$node['spell']), $node['spell']), (string) $node['rank']],
+                'cells' => [self::spellCell($node['name'] ?? ($node['spell'] === null ? 'Talent '.$node['node'] : 'Spell '.$node['spell']), $node['spell']), (string) $node['rank']],
             ];
         }
         $sections = [];
@@ -154,7 +154,7 @@ final class CharacterTalents
                 $entry ??= isset($ranks[$id]) && $candidate['entry'] === $ranks[$id]['entry'] ? $candidate : null;
             }
             $names = array_map(fn (array $candidate): string => ($candidate['spell'] === null ? null : ($spells[$candidate['spell']] ?? null)) ?? 'Talent '.$candidate['entry'], $entry === null ? $node['entries'] : [$entry]);
-            $name = implode(' or ', $names) ?: 'Node '.$id;
+            $name = implode(' or ', $names) ?: 'Talent '.$id;
             $max = $node['max'] ?? 0;
             $marks[$id] = [
                 'title' => $rank === 0 ? $name.', not taken' : $name.', rank '.$rank.($max > 0 ? ' of '.$max : ''),
@@ -184,13 +184,13 @@ final class CharacterTalents
                 ? (string) ($row['level'] ?? '')
                 : $row['from'].' to '.$row['level'];
 
-            return ['cells' => [$level, $row['point'] === null ? '' : (string) $row['point'], $row['name'] ?? 'Node '.$row['node'], (string) $row['rank'], $row['exact'] ? 'Seen in game' : 'Between sessions']];
+            return ['cells' => [$level, $row['point'] === null ? '' : (string) $row['point'], $row['name'] ?? 'Talent '.$row['node'], (string) $row['rank'], $row['exact'] ? 'Seen in game' : 'Between sessions']];
         }, $order);
 
         return [
             'columns' => [['label' => 'Level', 'numeric' => true], ['label' => 'Point', 'numeric' => true], ['label' => 'Talent'], ['label' => 'Rank', 'numeric' => true], ['label' => 'Recorded']],
             'rows' => $rows,
-            'total' => $rows === [] ? 'No point was taken after the first time the build was read.' : Format::count(count($rows), 'point').' taken after the first time the build was read.',
+            'total' => $rows === [] ? 'No points spent after the build was first read.' : Format::count(count($rows), 'point').' spent after the build was first read.',
         ];
     }
 

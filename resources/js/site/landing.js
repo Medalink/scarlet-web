@@ -13,9 +13,21 @@
   const BOX = { x0: 2050, x1: 7950, y0: 1950, y1: 7050 }, CLEAR = { x: 3700, y: 4500 };
 
   const hero = $(".hero"), stage = $(".stage", hero), canvas = $("canvas", stage), ctx = canvas.getContext("2d");
-  const base = document.createElement("canvas"), tape = $("#tape"), clock = $("#clock"), scrub = $("#scrub"), play = $("#play");
+  const base = document.createElement("canvas"), bandsBase = document.createElement("canvas"), tape = $("#tape"), clock = $("#clock"), scrub = $("#scrub"), play = $("#play");
   const bands = $("#bands"), bctx = bands.getContext("2d");
-  let view, W = 0, H = 0, dpr = 1, t = still ? D.END : 1430, playing = !still, shown = -1, hold = 0, last = 0, visible = true;
+  let view, W = 0, H = 0, dpr = 1, t = still ? D.END : 1430, playing = !still, shown = -1, hold = 0, last = 0, visible = true, raf = 0, lastAriaSec = -1;
+
+  function renderBandsBase() {
+    const bw = bands.width, bh = bands.height;
+    bandsBase.width = bw; bandsBase.height = bh;
+    const tctx = bandsBase.getContext("2d");
+    tctx.clearRect(0, 0, bw, bh);
+    for (const l of lines) {
+      const hot = l.code === "K" || l.code === "D" || l.code === "L";
+      tctx.fillStyle = hot ? "#ff2d55" : l.code === "P" ? "rgba(240,241,243,0.16)" : "rgba(240,241,243,0.36)";
+      tctx.fillRect(Math.round((l.t / D.END) * (bw - dpr)), hot ? 0 : bh * 0.3, dpr, hot ? bh : bh * 0.4);
+    }
+  }
 
   function layout() {
     const r = stage.getBoundingClientRect();
@@ -38,6 +50,7 @@
     dpr = base.width / W;
     const b = bands.getBoundingClientRect();
     bands.width = Math.round(b.width * dpr); bands.height = Math.round(b.height * dpr);
+    renderBandsBase();
     draw(performance.now());
   }
 
@@ -62,11 +75,7 @@
     bctx.clearRect(0, 0, bw, bh);
     bctx.fillStyle = "rgba(255,45,85,0.14)";
     bctx.fillRect(0, 0, (t / D.END) * bw, bh);
-    for (const l of lines) {
-      const hot = l.code === "K" || l.code === "D" || l.code === "L";
-      bctx.fillStyle = hot ? "#ff2d55" : l.code === "P" ? "rgba(240,241,243,0.16)" : "rgba(240,241,243,0.36)";
-      bctx.fillRect(Math.round((l.t / D.END) * (bw - dpr)), hot ? 0 : bh * 0.3, dpr, hot ? bh : bh * 0.4);
-    }
+    if (bandsBase.width && bandsBase.height) bctx.drawImage(bandsBase, 0, 0);
 
     let i = shown;
     if (i >= lines.length || (i >= 0 && lines[i].t > t)) i = -1;
@@ -75,20 +84,37 @@
       shown = i;
       tape.innerHTML = lines.slice(Math.max(0, i - 8), i + 1).map((l) => `<li><span>${D.stamp(l.t)}</span><b>${l.code}</b><span>${esc(l.text)}</span></li>`).join("");
     }
-    clock.textContent = D.stamp(t);
-    scrub.value = Math.round(t);
-    scrub.setAttribute("aria-valuetext", D.stamp(t).slice(0, 8));
+    const stamp = D.stamp(t);
+    clock.textContent = stamp;
+    const sec = Math.round(t);
+    scrub.value = sec;
+    if (sec !== lastAriaSec) {
+      lastAriaSec = sec;
+      scrub.setAttribute("aria-valuetext", stamp.slice(0, 8));
+    }
   }
 
   function frame(now) {
-    if (playing && visible) {
-      const dt = Math.min(0.1, (now - last) / 1000);
-      if (t >= D.END) { hold += dt; if (hold > 2.4) { t = 0; hold = 0; } }
-      else t = Math.min(D.END, t + dt * (D.END / 74));
-      draw(now);
-    }
+    raf = 0;
+    if (!playing || !visible || document.hidden) return;
+    const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
-    requestAnimationFrame(frame);
+    if (t >= D.END) { hold += dt; if (hold > 2.4) { t = 0; hold = 0; } }
+    else t = Math.min(D.END, t + dt * (D.END / 74));
+    draw(now);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function startLoop() {
+    if (raf || !playing || !visible || document.hidden) return;
+    last = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+
+  function stopLoop() {
+    if (!raf) return;
+    cancelAnimationFrame(raf);
+    raf = 0;
   }
 
   function setPlaying(on) {
@@ -98,15 +124,16 @@
       ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" fill="currentColor"/></svg>'
       : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.2v11.6L13.5 8z" fill="currentColor"/></svg>';
     draw(performance.now());
+    if (on) startLoop(); else stopLoop();
   }
   play.addEventListener("click", () => { if (!playing && t >= D.END) t = 0; setPlaying(!playing); });
   scrub.max = D.END;
   scrub.addEventListener("input", () => { t = +scrub.value; hold = 0; if (playing) setPlaying(false); else draw(performance.now()); });
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(hero);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) startLoop(); else stopLoop(); }).observe(hero);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stopLoop(); else startLoop(); });
   new ResizeObserver(layout).observe(stage);
   document.fonts.ready.then(layout);
   setPlaying(playing);
-  requestAnimationFrame(frame);
 
   // Every event code ----------------------------------------------------------------------
   const groups = $("#groups"), byCode = new Map();
@@ -137,7 +164,7 @@
       b.classList.toggle("dim", !hit);
       n += hit;
     }
-    $("#find-n").textContent = q ? `${n} of ${F.count} codes match` : "Search the codes";
+    $("#find-n").textContent = q ? `${n} of ${F.count} codes ${n === 1 ? "matches" : "match"}` : "Search the codes";
   });
   pick(picked);
 

@@ -21,12 +21,12 @@ final class CampsPage
 
     /** The visit length ranges as the first and last step each covers, with the label and its axis tick. */
     private const array RANGES = [
-        [0, 0, 'Under 30 s', '<30s'],
-        [1, 1, '30 to 59 s', '30s'],
-        [2, 3, '1 to 2 min', '1m'],
-        [4, 9, '2 to 5 min', '2m'],
-        [10, 19, '5 to 10 min', '5m'],
-        [20, 40, '10 min and over', '10m+'],
+        [0, 0, 'Under 30 seconds', '<30s'],
+        [1, 1, '30 to 59 seconds', '30s'],
+        [2, 3, '1 to 2 minutes', '1m'],
+        [4, 9, '2 to 5 minutes', '2m'],
+        [10, 19, '5 to 10 minutes', '5m'],
+        [20, 40, '10 minutes and over', '10m+'],
     ];
 
     /** The most cells drawn on the camp map. */
@@ -343,9 +343,9 @@ final class CampsPage
             $rows[] = ['Crafting', (int) $t['crafted'], (int) $t['crafts_known'], ' of visits'];
         }
 
-        return array_map(fn (array $row, int $i): array => [
-            'label' => $row[0], 'value' => Format::percent($row[1] / $row[2]).($i === 0 ? $row[3] : ''), 'share' => $row[1] / $row[2] * 100,
-        ], $rows, array_keys($rows));
+        return array_map(fn (array $row): array => [
+            'label' => $row[0], 'value' => Format::percent($row[1] / $row[2]).$row[3], 'share' => $row[1] / $row[2] * 100,
+        ], $rows);
     }
 
     /**
@@ -356,7 +356,7 @@ final class CampsPage
     {
         $out = (int) $t['logged_out'];
         $died = (int) $t['died_after'];
-        $rows = [['Walks away', max(0, $visits - $out - $died)], ['Logs out by the fire', $out], ['Dies within five minutes', $died]];
+        $rows = [['Walked away', max(0, $visits - $out - $died)], ['Logged out by the fire', $out], ['Died within five minutes', $died]];
 
         return array_map(fn (array $row): array => ['label' => $row[0], 'value' => Format::percent($row[1] / $visits), 'share' => $row[1] / $visits * 100], $rows);
     }

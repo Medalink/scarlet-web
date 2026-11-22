@@ -119,7 +119,7 @@
     <x-module span="w12" :first="true" :last="true" id="h-talents" heading="Talents">
       @if ($talents['rows'])
       <x-table :columns="$talents['columns']" :rows="$talents['rows']" />
-      <p class="note">n = {{ number_format($talents['total']) }} characters with a talent build. <a href="/talents">All specs</a></p>
+      <p class="note">{{ \App\View\Format::count($talents['total'], 'character') }} with a talent build. <a href="/talents">All specs</a></p>
       @else
       <x-note>No talent builds recorded yet.</x-note>
       @endif

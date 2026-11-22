@@ -62,7 +62,7 @@
   <x-sheet>
     <x-module span="w12" :first="true" :last="true" id="h-imported">
       <h2 id="h-imported">Imported from {{ $d['imported']['source'] }} <span class="priv">Only you</span></h2>
-      <p class="sub">{{ $d['imported']['range'] }}. Scarlet did not record these itself, so no board or other page counts them.</p>
+      <p class="sub">{{ $d['imported']['range'] }}. Scarlet did not record this history itself, so no board or other page counts it.</p>
       <x-figures :items="$d['imported']['figures']" />
       @if ($d['imported']['gold'])<x-plot id="imported-gold" label="Gold at the end of each imported day" :spec="$d['imported']['gold']" />@endif
       @if ($d['imported']['days'])<h3 class="chart-name">Sales and purchases by day</h3><x-table :columns="$d['imported']['days']['columns']" :rows="$d['imported']['days']['rows']" />@endif

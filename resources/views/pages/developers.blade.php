@@ -1,4 +1,4 @@
-<x-layouts.app title="Scarlet public API" current="developers" description="Everything public on Scarlet as read-only JSON: statistics, rulesets, leaderboards, search, characters, creatures, items, zones, quests and map heat." :brand="false">
+<x-layouts.app title="Scarlet public API" current="developers" description="Everything public on Scarlet as read-only JSON: statistics, camps, professions, rulesets, leaderboards, search, characters, records and map heat." :brand="false">
 <div class="wrap">
   <x-page-head title="Public API" :single="true">
     <x-slot:sub>Everything public on this site is readable as JSON. Read-only, no sign-up, version 1.</x-slot:sub>
@@ -7,7 +7,7 @@
     <x-api-nav :groups="$d['nav']" />
     <div>
       <section class="ep" id="use"><h2>Using the API</h2>
-        <p>The base is <code>{{ $d['host'] }}/api/v1/public</code>. Answers are JSON in UTF-8, wrapped as <code>{"data": ..., "meta": {...}}</code>. Times are ISO 8601 in UTC, durations are seconds, money is copper. Any origin may call it from a browser. Answers can be cached for {{ $d['maxAge'] / 60 }} minutes, those that name characters (leaderboards, search and characters) for {{ $d['namedMaxAge'] }} seconds, and carry an <code>ETag</code>: send it back as <code>If-None-Match</code> and an unchanged answer is <code>304</code>.</p>
+        <p>The base is <code>{{ $d['host'] }}/api/v1/public</code>. Answers are JSON in UTF-8, wrapped as <code>{"data": ..., "meta": {...}}</code>. Times are ISO 8601 in UTC, durations are seconds, money is copper. Any origin may call it from a browser. Answers can be cached for {{ $d['maxAge'] / 60 }} minutes, those that name characters (leaderboards, camps, professions, search and characters) for {{ $d['namedMaxAge'] }} seconds, and carry an <code>ETag</code>: send it back as <code>If-None-Match</code> and an unchanged answer is <code>304</code>.</p>
         <x-json>curl {{ $d['host'] }}/api/v1/public/stats</x-json></section>
       <section class="ep" id="limits"><h2>Limits and keys</h2>
         <p>{{ $d['anonymous'] }} requests a minute per IP address without a key; IPv6 addresses count by their /64. A key from your account page raises that to {{ $d['token'] }} for your account, shared by all its keys: any personal access token with the <code>{{ $d['ability'] }}</code> ability, sent as <code>Authorization: Bearer &lt;key&gt;</code>. Over the limit the answer is <code>429</code> with <code>Retry-After</code> in seconds. A key that is unknown, expired or lacks the ability is <code>401 invalid_token</code>, and after {{ $d['badTokens'] }} of those in a minute an address gets <code>429</code>.</p></section>

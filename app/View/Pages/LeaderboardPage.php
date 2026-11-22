@@ -58,7 +58,7 @@ final class LeaderboardPage
             'classes' => [['Every class', $link(['class' => null])], ...array_map(fn (string $name): array => [Format::className($name), $link(['class' => $name])], $r['classes'])],
             'classSelected' => $class === null ? 'Every class' : Format::className($class),
             'columns' => [
-                ['label' => '', 'class' => 'rk'], ['label' => 'Character'], ['label' => 'Class'], ['label' => $board->column(), 'numeric' => true],
+                ['label' => '#', 'class' => 'rk'], ['label' => 'Character'], ['label' => 'Class'], ['label' => $board->column(), 'numeric' => true],
                 ['label' => 'Ruleset'], ['label' => 'Deaths', 'numeric' => true], ['label' => $board->dateColumn(), 'numeric' => true],
             ],
             'podium' => array_map(fn (array $row): array => self::place($board, $row, $day), $podium),

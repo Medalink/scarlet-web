@@ -34,7 +34,7 @@
         <div class="rel-area-head"><h3>{{ $area['title'] }}</h3>@if ($area['about'] !== '')<span>{{ $area['about'] }}</span>@endif</div>
         <ul>
 @foreach ($area['rows'] as $row)
-          <li><span class="rn-tag {{ $row['kind'] }}">{{ strtoupper(substr(\App\View\Pages\ReleaseNotesPage::KINDS[$row['kind']], 0, 3)) }}</span><p>{{ $row['text'] }}</p></li>
+          <li><span class="rn-tag {{ $row['kind'] }}" title="{{ \App\View\Pages\ReleaseNotesPage::KINDS[$row['kind']] }}" aria-label="{{ \App\View\Pages\ReleaseNotesPage::KINDS[$row['kind']] }}">{{ strtoupper(substr(\App\View\Pages\ReleaseNotesPage::KINDS[$row['kind']], 0, 3)) }}</span><p>{{ $row['text'] }}</p></li>
 @endforeach
         </ul>
       </section>

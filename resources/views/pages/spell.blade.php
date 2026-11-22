@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['name'].': what it does and needs'" :description="trim($d['sub'].' What '.$d['name'].' does in WoW Forever and what it needs.')">
+<x-layouts.app :title="$d['name'].($d['makes'] !== null ? ': what it makes and needs' : ': cast time, range and cost')" :description="trim($d['sub'].' '.($d['makes'] !== null ? 'What '.$d['name'].' makes and needs in WoW Forever.' : 'Cast time, range and cost of '.$d['name'].' in WoW Forever.'))">
 <div class="wrap">
   <x-page-head :title="$d['name']" :single="true">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>

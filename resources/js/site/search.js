@@ -175,13 +175,13 @@ function attach(input) {
             close();
             return;
         }
-        show(terms.map(recentOf), 'Recent searches', `${terms.length} recent searches`, '');
+        show(terms.map(recentOf), 'Recent searches', `${terms.length} recent ${terms.length === 1 ? 'search' : 'searches'}`, '');
     }
 
     function showAnswer(answer) {
         const nodes = answer.lines.map(optionOf);
         nodes.push(allOf(answer.all));
-        show(nodes, '', answer.lines.length === 0 ? 'No results' : `${answer.lines.length} results`, key());
+        show(nodes, '', answer.lines.length === 0 ? 'No results' : `${answer.lines.length} ${answer.lines.length === 1 ? 'result' : 'results'}`, key());
     }
 
     async function ask(text, wanted) {

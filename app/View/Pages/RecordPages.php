@@ -2,6 +2,7 @@
 
 namespace App\View\Pages;
 
+use App\Support\CreatureClass;
 use App\Support\KillerKind;
 use App\Support\PageScope;
 use App\Support\WorldLayer;
@@ -248,7 +249,7 @@ final class RecordPages
         $high = $facts['level_max'];
         $level = Format::creatureLevel($low, $high) ?: 'Creature';
         $kind = trim(strtolower(implode(' ', array_filter([(string) ($facts['type'] ?? ''), $facts['family'] ? '('.strtolower((string) $facts['family']).')' : '']))));
-        $class = $facts['classification'] && $facts['classification'] !== 'normal' ? ', '.strtolower((string) $facts['classification']) : '';
+        $class = $facts['classification'] && $facts['classification'] !== 'normal' ? ', '.(CreatureClass::tryFrom((string) $facts['classification'])?->label() ?? strtolower((string) $facts['classification'])) : '';
 
         return $level.($kind === '' ? '' : ' '.$kind).$class.'.'.($zones === [] ? '' : ' Seen in '.implode(', ', array_map(fn (array $zone): string => $zone['name'], array_slice($zones, 0, 2))).'.');
     }
@@ -299,7 +300,7 @@ final class RecordPages
     private static function otherSource(array $row): array
     {
         return ['text' => match ($row['source_kind']) {
-            'g' => 'Game object '.$row['source_id'],
+            'g' => 'Object '.$row['source_id'],
             'i' => 'Item '.$row['source_id'],
             default => 'Source '.$row['source_id'],
         }];

@@ -7,8 +7,8 @@ use App\Actions\Account\SetCharacterSwitch;
 use App\Actions\Account\ShowOtherCharacters;
 use App\Actions\Account\ShowOwnedCharacter;
 use App\Livewire\Concerns\ActsForAccount;
+use App\View\Format;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -41,7 +41,7 @@ class OwnerBar extends Component
         $facts = [$character->show_economy ? 'Gold and trades shown to visitors' : 'Gold and trades hidden from visitors'];
         $facts[] = $character->last_seen_at === null
             ? 'Nothing uploaded yet'
-            : 'Last upload '.$character->last_seen_at->diffForHumans().', '.$character->sessions_decoded.' '.Str::plural('session', $character->sessions_decoded);
+            : 'Last upload '.$character->last_seen_at->diffForHumans().', '.Format::count($character->sessions_decoded, 'session');
 
         $visitor = $character->is_public ? '/c/'.rawurlencode($character->name).'?as=visitor' : null;
 

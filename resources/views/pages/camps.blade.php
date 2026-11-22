@@ -86,10 +86,10 @@
     </x-module>
     <x-module :last="true" id="h-buffed" heading="Play with Camp Benefits">
       @if ($d['buffed'])
-      <dl class="pair" style="grid-template-columns:minmax(0,1fr)">
+      <dl class="pair one">
         <div><dt>{{ $d['buffed'][0]['label'] }}</dt><dd @class(['up' => $d['buffed'][0]['tone'] === 'up'])>{{ $d['buffed'][0]['value'] }}<small>against the same levels across all play</small></dd></div>
       </dl>
-      <dl class="pair" style="grid-template-columns:minmax(0,1fr);margin-top:0.9rem">
+      <dl class="pair one" style="margin-top:0.9rem">
         @foreach (array_slice($d['buffed'], 1) as $row)
         <div><dt>{{ $row['label'] }}</dt><dd @class(['up' => $row['tone'] === 'up'])>{{ $row['value'] }}</dd></div>
         @endforeach

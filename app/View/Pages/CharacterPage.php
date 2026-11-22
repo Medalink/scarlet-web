@@ -119,7 +119,11 @@ final class CharacterPage
             fn (array $figure): string => lcfirst($since === '' ? (string) $figure['label'] : str_replace($since, '', (string) $figure['label'])).' '.$figure['value'],
             $figures,
         ))).($since === '' ? '' : ', counted'.$since);
-        $lead = implode(', ', array_map(fn (array $fact): string => (string) $fact['text'], $facts));
+        $lead = implode(', ', array_map(
+            fn (array $fact, int $i): string => $i === 0 ? (string) $fact['text'] : (str_starts_with((string) $fact['text'], 'First recorded') ? lcfirst((string) $fact['text']) : (string) $fact['text']),
+            $facts,
+            array_keys($facts),
+        ));
 
         return [
             'title' => $character->level === null || $raceAndClass === ''
@@ -173,7 +177,7 @@ final class CharacterPage
         }
         $figures[] = ['label' => 'Zones', 'value' => Format::number($week['zones']), 'icon' => 'zones'];
 
-        return ['range' => $from->format('D j').' to '.$to->format('D j M'), 'figures' => $figures];
+        return ['range' => $from->format($from->month === $to->month ? 'D j' : 'D j M').' to '.$to->format('D j M'), 'figures' => $figures];
     }
 
     /**
@@ -193,7 +197,7 @@ final class CharacterPage
 
         return [
             'balance' => Format::money($gold[$last]['balance'] ?? 0),
-            'change' => $last < 1 ? 'One session recorded.' : Format::moneyText($change, true).' over the last '.Format::count($last + 1, 'session'),
+            'change' => $last < 1 ? 'One session recorded' : Format::moneyText($change, true).' over the last '.Format::count($last + 1, 'session'),
             'spec' => $last < 1 ? null : Charts::line(['x0' => 0, 'x1' => $last, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'g'), 'xt' => []], [['cls' => 'g', 'pts' => $points, 'mark' => $last]], $say, $last, 'gold-out'),
         ];
     }

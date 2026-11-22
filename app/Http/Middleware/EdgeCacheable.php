@@ -48,7 +48,8 @@ class EdgeCacheable
         }
         if ($request->isMethod(Request::METHOD_GET) && $response->getStatusCode() === Response::HTTP_OK && $response->headers->getCookies() === []) {
             $seconds = (int) config('scarlet.edge.page_seconds');
-            $response->headers->set('Cache-Control', 'public, max-age=0, s-maxage='.$seconds);
+            $stale = (int) config('scarlet.rollups.read_stale_seconds');
+            $response->headers->set('Cache-Control', 'public, max-age=0, s-maxage='.$seconds.', stale-while-revalidate='.$stale);
             self::keep($key, $response, $seconds);
         }
 

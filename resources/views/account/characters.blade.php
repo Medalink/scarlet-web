@@ -1,4 +1,4 @@
-<x-layouts.app title="Your characters" current="" :signed-in="true" :index="false" :brand="false">
+<x-layouts.app title="Your characters" current="" :signed-in="true" :index="false">
 <div class="wrap">
   <x-page-head title="Your characters">
     <x-slot:filters><x-btn kind="quiet" href="/account/professions">Your professions</x-btn> <x-btn kind="quiet" href="/account/camps">Your camps</x-btn> <x-btn kind="quiet" href="/account">Account</x-btn></x-slot:filters>
@@ -55,10 +55,10 @@
     <x-module span="w12" :first="true" :last="true" id="h-levels" heading="Time in each level">
 @forelse ($d['levels'] as $chart)
       <h3 class="chart-name">{{ $chart['name'] }}</h3>
-      <x-plot :id="$chart['id']" label="Hours {{ $chart['name'] }} spent in each level it has left, with the median of its ruleset as a tick where at least two characters completed the level." :spec="$chart['spec']" />
+      <x-plot :id="$chart['id']" label="Hours {{ $chart['name'] }} spent in each completed level, with the ruleset median as a tick where at least two characters completed it." :spec="$chart['spec']" />
       <x-key :items="$chart['key']" />
 @empty
-      <x-note>No character has left two levels yet.</x-note>
+      <x-note>No character has completed two levels yet.</x-note>
 @endforelse
     </x-module>
     <x-module span="w12" :first="true" :last="true" id="h-professions" heading="Professions">

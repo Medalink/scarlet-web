@@ -3,7 +3,7 @@
   <div class="wrap">
     <x-page-head title="Search" :single="true">
       <x-slot:body><x-search-box :value="$term" /></x-slot:body>
-      <x-slot:sub>{{ $d['sub'] ?? ($term === '' ? 'Find a character, creature, item, zone, quest or page by name. Characters appear only when their owner made them public.' : 'Type at least two characters.') }}</x-slot:sub>
+      <x-slot:sub>{{ $d['sub'] ?? ($term === '' ? 'Find a character, creature, item, zone, quest or page by name. Characters appear only when their owner made them public.' : 'Type at least two letters or digits.') }}</x-slot:sub>
     </x-page-head>
   </div>
 </section>
@@ -19,7 +19,7 @@
     @php($group = $d['groups'][$d['kind']->value])
     <x-module span="w12" :first="true" :last="true">
       <x-search-group :title="$group['title']" :icon="$group['icon']" :count="$group['count']" :hits="$group['hits']" />
-      @if ($d['next'])<p class="note"><a href="{{ $d['next'] }}">Next {{ \App\View\Pages\SearchPage::PAGE }}</a></p>@endif
+      @if ($d['prev'] || $d['next'])<p class="pager">@if ($d['prev'])<a href="{{ $d['prev'] }}">Previous {{ \App\View\Pages\SearchPage::PAGE }}</a>@endif @if ($d['next'])<a href="{{ $d['next'] }}">Next {{ \App\View\Pages\SearchPage::PAGE }}</a>@endif</p>@endif
     </x-module>
     @else
     @php($left = array_filter([$d['groups']['characters'], $d['groups']['zones'], $d['groups']['pages'] ?? null], fn ($g) => $g && $g['hits']))

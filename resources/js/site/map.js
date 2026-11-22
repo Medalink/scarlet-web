@@ -218,16 +218,16 @@
       ctx.lineJoin = ctx.lineCap = "round";
       ctx.globalAlpha = alpha == null ? 1 : alpha;
       if (st.glow && alpha == null) {
-        ctx.strokeStyle = "rgba(255,45,85,0.16)";
-        ctx.lineWidth = 9;
+        ctx.strokeStyle = "rgba(255,45,85,0.12)";
+        ctx.lineWidth = 11;
         ctx.stroke();
-        ctx.shadowColor = C.accent;
-        ctx.shadowBlur = st.glow;
+        ctx.strokeStyle = "rgba(255,45,85,0.28)";
+        ctx.lineWidth = 5.5;
+        ctx.stroke();
       }
       ctx.strokeStyle = st.color;
       ctx.lineWidth = st.w;
       ctx.stroke();
-      ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
     }
     ctx.setLineDash([]);

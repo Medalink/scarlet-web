@@ -27,6 +27,6 @@ class LinkConfirmController extends Controller
             return redirect('/link?code='.$code);
         }
 
-        return redirect('/account')->with('notice', 'The app is linked to your account. It sees the link the next time it checks.');
+        return redirect('/account')->with('notice', 'The app is linked to your account. It will pick up the link the next time it checks.');
     }
 }

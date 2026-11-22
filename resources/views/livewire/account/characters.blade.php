@@ -6,7 +6,7 @@
 @foreach ($characters as $character)
     @php
         $detail = \App\View\Format::character($character->level ?: null, $character->race, $character->class);
-        $line = collect([$detail ?: null, $character->sessions_decoded.' '.\Illuminate\Support\Str::plural('session', $character->sessions_decoded), $character->last_seen_at ? 'last upload '.$character->last_seen_at->diffForHumans() : 'nothing uploaded yet'])->filter()->implode(' · ');
+        $line = collect([$detail ?: null, \App\View\Format::count($character->sessions_decoded, 'session'), $character->last_seen_at ? 'last upload '.$character->last_seen_at->diffForHumans() : 'nothing uploaded yet'])->filter()->implode(' · ');
     @endphp
     <x-row :title="\App\View\Format::characterName($character->name)" :href="'/c/'.rawurlencode($character->name)" :body="$line" wire:key="c-{{ $character->id }}">
       <x-state :on="$character->is_public">{{ $character->is_public ? 'Public' : 'Private' }}</x-state>

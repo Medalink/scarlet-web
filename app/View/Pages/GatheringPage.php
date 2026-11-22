@@ -103,8 +103,9 @@ final class GatheringPage
             return [ProfessionPage::withoutNumbers($t, $own)];
         }
         $facts = [Format::count((int) $t['attempts'], $w['attempt']), ProfessionPage::by($t, $own)];
-        if ($w['at'] !== '') {
-            $facts[] = Format::number(round((int) $t['seconds'] / 3600)).' '.$w['at'];
+        if ($w['at'] !== '' && (int) $t['seconds'] > 0) {
+            $hours = (int) round((int) $t['seconds'] / 3600);
+            $facts[] = ($hours > 0 ? Format::count($hours, 'hour') : Format::duration((int) $t['seconds'])).' '.$w['at'];
         }
 
         return $facts;
