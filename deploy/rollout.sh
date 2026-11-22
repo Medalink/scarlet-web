@@ -1,7 +1,12 @@
 #!/bin/sh
-# Runs on the droplet as ops (bin/deploy pipes the image in first):
+# Runs on the droplet as ops, once the image is there, started by bin/deploy or by the live ring's entry
+# (scripts/deploy/ring-entry.sh):
 #   rollout.sh <release>     migrate, then start <release> beside the running one and move visitors to it
 #   rollout.sh --rollback    move visitors back to the release before the current one (code only)
+#
+# This file, deploy/dc, the compose files and deploy/nginx/ are the files a rollout reads. A ship that changes one can
+# reach the droplet after the release it ships with has rolled out, so that release must also run on the copy before it
+# (docs/HOSTING.md, "Files a rollout reads").
 #
 # Blue/green with no failed request: the new release starts as app-blue or app-green next to the active slot, answers
 # /up (which queries Postgres) five times in a row and renders /release-notes once, through nginx's own configuration
