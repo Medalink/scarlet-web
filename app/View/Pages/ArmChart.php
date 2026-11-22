@@ -7,6 +7,7 @@ use App\Support\LootRule;
 use App\Support\RateDifference;
 use App\Support\RateEstimate;
 use App\Support\RateFlag;
+use App\Support\RateSample;
 
 /**
  * The chart of drop rate by loot rule and by group size on a creature or object page (docs/comps/creature.html), from the
@@ -79,8 +80,12 @@ final class ArmChart
         if ($empty === null && $source === []) {
             $empty = 'No item has 10 drops yet.';
         }
+        $hollow = array_filter($arms, fn (LootArm $arm): bool => $arm->drawn() && $arm->windows < RateSample::SOLID_FROM) === []
+            ? null
+            : 'Hollow: '.RateSample::HOLLOW_FROM.' to '.(RateSample::SOLID_FROM - 1).' corpses.';
+        $key = implode(' ', array_filter([$hollow, $undrawn]));
 
-        return ['empty' => $empty, 'rows' => array_map(fn (array $row): array => self::row($row, $pair, $drawn), $source), 'note' => $source === [] ? null : $undrawn, 'groups' => null];
+        return ['empty' => $empty, 'rows' => array_map(fn (array $row): array => self::row($row, $pair, $drawn), $source), 'note' => $source === [] || $key === '' ? null : $key, 'groups' => null];
     }
 
     /**

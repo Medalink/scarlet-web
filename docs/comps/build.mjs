@@ -549,7 +549,7 @@ page("creature.html", "Marsh Stalker: kills, deaths and drops", "search", `
         ${armRow("Stalker Hide", "item.html", [["Size 2", 31, 52], ["Size 3", 8, 14]], 2.2414)}
         ${armRow("Cracked Tooth", "item.html", [["Size 2", 16, 52], ["Size 3", 5, 14]], 2.2414)}
       </div>
-      <p class="note">Not drawn, under 10 corpses: size 5 with 5.</p>
+      <p class="note">Hollow: 10 to 29 corpses. Not drawn, under 10 corpses: size 5 with 5.</p>
     </section>
     <section class="mod w7 first last" aria-labelledby="h-h">
       <h2 id="h-h">How it kills</h2>
@@ -805,7 +805,7 @@ page("groups.html", "Loot rules and group size", "search", `
       <p class="note">Classes, roles and levels of the members a group's uploader could see, with no names. Need is the share of rolls of the characters that uploaded and that class. A character with the social group off adds nothing here.</p>
     </section>
     <section class="mod w12 first last" aria-labelledby="h-m">
-      <h2 id="h-m">Marked differences</h2>
+      <h2 id="h-m">Differences that may be counting faults</h2>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
         <thead><tr><th>Source</th><th>Item</th><th>Compared</th><th class="n">Difference</th><th>Tags</th></tr></thead>
         <tbody><tr><td><a href="creature.html">Marsh Stalker</a></td><td><a href="item.html">Stalker Hide</a></td><td>Group loot 41 of 71, Free for all 8 of 42</td><td class="n">-38.7 points, -52.8 to -20.3</td><td><span class="tag">one reader</span><span class="tag">different characters</span></td></tr></tbody></table></div>

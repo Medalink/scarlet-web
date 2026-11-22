@@ -60,7 +60,7 @@
       @endif
     </x-module>
     @if ($d['marks'])
-    <x-module span="w12" :first="true" :last="true" id="h-m" heading="Marked differences">
+    <x-module span="w12" :first="true" :last="true" id="h-m" heading="Differences that may be counting faults">
       @if ($d['marks']['empty'])
       <x-note>{{ $d['marks']['empty'] }}</x-note>
       @else

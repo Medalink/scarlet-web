@@ -10,7 +10,7 @@ use App\Support\RateDifference;
 use App\Support\RateEstimate;
 use App\Support\RateFlag;
 
-/** The Marked differences module of the loot rules and group size page, shown at `?marks=1` (docs/LOOT.md, What a mark means). */
+/** The Differences that may be counting faults module of the loot rules and group size page, shown at `?marks=1` (docs/LOOT.md, What a mark means). */
 final class GroupMarks
 {
     /**

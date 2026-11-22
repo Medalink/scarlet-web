@@ -111,7 +111,11 @@ Answers: what this creature drops, how sure the number is, and whether rule or g
   skinning are in Skinning, which has no note.
 - A module of the loot pages explains itself in its heading and column headings (**Per 100 corpses in the zone**,
   **Hours in a group**, **Kept**, **Uploader rolls**), not in a line under it. The lines that remain state a count
-  or name what a chart left out (`Not drawn, under 10 corpses: ...`). A map says nothing under it.
+  or name what a chart left out (`Not drawn, under 10 corpses: ...`). A chart's key is not an explanation: under a rule
+  or size chart that draws an arm of 10 to 29 corpses, the line starts with `Hollow: 10 to 29 corpses.`, then the
+  arms not drawn. The list of marks at `?marks=1` is headed **Differences that may be counting faults**: the game's
+  table does not depend on the rule or the size, so a mark is a counting fault until shown otherwise. A map says
+  nothing under it.
 
 ### Object, `/objects/{id}`
 
