@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rulesets;
 
+use App\Actions\Ingest\InvalidateReconciles;
 use App\Actions\Ingest\RebuildCharacterLevels;
 use App\Actions\Rollups\RefreshAggregates;
 use App\Jobs\ReconcileCharacterClaims;
@@ -22,6 +23,7 @@ class MergeRulesets
         private readonly ResolveCharacterKind $kinds,
         private readonly RebuildCharacterLevels $levels,
         private readonly RefreshAggregates $refresh,
+        private readonly InvalidateReconciles $reconciles,
     ) {}
 
     /**
@@ -55,7 +57,10 @@ class MergeRulesets
         ];
     }
 
-    /** The rulesets of the sessions moved, so every claim takes the ruleset of its session again. */
+    /**
+     * The rulesets of the sessions moved, so every claim takes the ruleset of its session again. The addon days were
+     * marked as not reconciled with each character's sessions; this queues the reconcile itself.
+     */
     private function reconcileClaims(): void
     {
         foreach (DB::table('addon_claims')->distinct()->orderBy('character_id')->pluck('character_id') as $characterId) {
@@ -106,6 +111,7 @@ class MergeRulesets
             DB::transaction(function () use ($characterId, $tables): void {
                 DecompressionLimit::lift();
                 $this->lock((int) $characterId);
+                $this->reconciles->handle([(int) $characterId]);
                 DB::table('sessions')->where('character_id', $characterId)->whereNotNull('original_ruleset_id')
                     ->update(['ruleset_id' => DB::raw('original_ruleset_id'), 'original_ruleset_id' => null]);
                 $this->follow((int) $characterId, $tables);
@@ -127,6 +133,7 @@ class MergeRulesets
     {
         DecompressionLimit::lift();
         $this->lock($characterId);
+        $this->reconciles->handle([$characterId]);
         $sessions = DB::table('sessions as s')
             ->join('rulesets as o', 'o.id', '=', DB::raw('coalesce(s.original_ruleset_id, s.ruleset_id)'))
             ->where('s.character_id', $characterId)

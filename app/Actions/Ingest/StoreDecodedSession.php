@@ -25,6 +25,7 @@ class StoreDecodedSession
         private readonly SessionRows $sessionRows,
         private readonly MeasureDistance $distance,
         private readonly MarkPartsDecoded $markDecoded,
+        private readonly InvalidateReconciles $reconciles,
     ) {}
 
     /**
@@ -32,7 +33,9 @@ class StoreDecodedSession
      * insert the new ones, write the session row and the dictionaries, then bring the character's levels,
      * dungeon runs and summary up to date. The parts the decode read are marked decoded, also when they hold nothing
      * to store, so the sweep does not queue them again. A character is locked while this runs, so sessions of one
-     * character are stored one at a time. Safe to run twice.
+     * character are stored one at a time. The addon days of the character and of the characters linked to it are marked
+     * as not reconciled in the same transaction, since the rows its claims are checked against changed. Safe to run
+     * twice.
      *
      * @param  list<string>  $partIds  lower-case hex ids of the parts `$decoded` came from
      * @return array{from: int, until: int}|null epoch seconds the rollups must look at again
@@ -45,6 +48,7 @@ class StoreDecodedSession
             if (! DB::table('characters')->where('id', $characterId)->lockForUpdate()->exists()) {
                 return null;
             }
+            $this->reconciles->handle([$characterId]);
 
             $old = $this->sessionRows->range($characterId, $sessionStart);
             $namesCounted = $this->sessionRows->namesCounted($characterId, $sessionStart);

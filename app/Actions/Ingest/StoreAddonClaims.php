@@ -18,14 +18,18 @@ class StoreAddonClaims
 
     private const string LIFETIME = 'life';
 
-    public function __construct(private readonly MarkPartsDecoded $markDecoded) {}
+    public function __construct(
+        private readonly MarkPartsDecoded $markDecoded,
+        private readonly InvalidateReconciles $reconciles,
+    ) {}
 
     /**
      * Replace what one UTC day of `counts` parts says about the claims of one character. The parts' rows in
      * `addon_claim_parts` are rewritten, a claim whose key is new for the character is inserted, a claim takes the
      * amounts of the carrying part whose id sorts highest, and a claim no part carries any more is deleted. Nothing
      * but the addon tables is read or written, so Scarlet's own rows cannot move. With no rows the day is forgotten.
-     * A character is locked while this runs, as for a session. Safe to run twice.
+     * A character is locked while this runs, as for a session, and its addon days and those of the characters linked
+     * to it are marked as not reconciled before anything is written. Safe to run twice.
      *
      * @param  list<array<string, mixed>>  $rows  `claim` rows and the closing `day` row of `scarlet-part decode --counts`
      * @param  list<string>  $partIds  lower-case hex ids of the `counts` parts `$rows` came from, marked decoded
@@ -38,6 +42,7 @@ class StoreAddonClaims
             if (! DB::table('characters')->where('id', $characterId)->lockForUpdate()->exists()) {
                 return;
             }
+            $this->reconciles->handle([$characterId]);
 
             $this->forgetPartRows($partIds);
             $this->carryClaims($characterId, $rows);

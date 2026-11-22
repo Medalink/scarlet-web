@@ -317,12 +317,21 @@ The order of the work is fixed, and each step sees only the claims the steps bef
 
 The server runs it kind by kind in the queued job `ReconcileCharacterClaims`, or by hand with `php artisan
 addons:reconcile {character?}`, after any decode of the character (its sessions and its `counts` parts), any removal of
-a group or of everything, a ruleset merge and a plausibility change. A plausibility change happens only inside a
-decode, which writes `sessions.counted`. The job reads its inputs, runs `scarlet-part` outside any transaction, then
-takes the locks of the characters it read, lowest id first, reads the inputs again and writes only when they are the
-ones it decided on; otherwise it decides again, three times at most. A claim row is written only where a column
-differs, so a second run changes no row. The scheduled outdated pass queues a reconcile on its own, without a decode,
-for a character whose `addon_days.reconcile_version` is older than the rules.
+a group or of everything, a ruleset merge, the link of an install to an account and a plausibility change. A
+plausibility change happens only inside a decode, which writes `sessions.counted`. The job reads its inputs, runs
+`scarlet-part` outside any transaction, then takes the locks of the characters it read, lowest id first, reads the
+inputs again and writes only when they are the ones it decided on; otherwise it decides again, three times at most. A
+claim row is written only where a column differs, so a second run changes no row. The scheduled outdated pass queues a
+reconcile on its own, without a decode, for a character whose `addon_days.reconcile_version` is older than the rules
+or null.
+
+Every write that can change a verdict nulls `addon_days.reconcile_version` of the character and of the characters
+linked to it in its own transaction: the store of a decoded session or of a day of `counts` parts, `RemoveGroup`,
+`RemoveEverything` (for the characters linked to the removed ones), the link of an install and a ruleset merge. The
+dispatch after the commit is the fast path and the outdated pass the guarantee, so a worker or request that dies
+between the commit and the dispatch leaves the version null and the next pass decides again. The reconcile stamps the
+version under the same locks that it writes the verdicts with. A page reads a claim only while its character has no
+null version.
 
 Each claim stores `status`, `counted` and `evidence`, the `ruleset_id` and `counted_ok` of the session that holds the
 window's end (else the nearest session in time), and the `level` and `zone_id` of the last Scarlet row assigned to it

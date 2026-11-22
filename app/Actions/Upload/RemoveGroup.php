@@ -4,6 +4,7 @@ namespace App\Actions\Upload;
 
 use App\Actions\Ingest\AddonClaimSiblings;
 use App\Actions\Ingest\DeleteFactRows;
+use App\Actions\Ingest\InvalidateReconciles;
 use App\Jobs\ReconcileCharacterClaims;
 use App\Jobs\RefreshRollups;
 use App\Models\Character;
@@ -24,6 +25,7 @@ class RemoveGroup
         private readonly GroupRefusals $refusals,
         private readonly DeleteFactRows $deleteRows,
         private readonly AddonClaimSiblings $siblings,
+        private readonly InvalidateReconciles $reconciles,
     ) {}
 
     /**
@@ -31,7 +33,8 @@ class RemoveGroup
      * decoded rows go, the sessions forget the group and null its counters (and the columns other tables keep for it,
      * FactTable::groupColumns), the rollups are refreshed over the time
      * the characters played, and the group is refused until the app puts it back (PUT /upload/groups/{key}). The addon
-     * claims of the characters are reconciled again, since the rows they were checked against may be gone.
+     * claims of the characters and of the characters linked to them are marked as not reconciled in the same transaction
+     * and reconciled again, since the rows they were checked against may be gone.
      *
      * @return array{group: string, refused: bool, parts_removed: int, rows_removed: int}
      */
@@ -47,6 +50,7 @@ class RemoveGroup
             DecompressionLimit::lift();
             // Wait for a running decode of these characters first; both take the row lock before the fact rows.
             Character::query()->whereIn('id', $characterIds)->lockedInOrder()->pluck('id');
+            $this->reconciles->handle($characterIds);
             $parts = Part::query()->whereIn('character_id', $characterIds)->where('group_key', $group)->delete();
             $rows = $this->deleteRows->handle($characterIds, $group);
             $this->forgetInSessions($characterIds, $group);
