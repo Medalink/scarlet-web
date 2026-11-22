@@ -299,17 +299,56 @@ impl Dated<'_> {
         &self.input.character.claims
     }
 
-    fn higher(&self, c: &Claim) -> Option<(usize, i64)> {
-        let mine = rules::rank(&self.input.kind, &c.origin)?;
-        self.claims().iter().enumerate().find_map(|(j, other)| {
-            let counts = matches!(
-                self.decided[j].as_ref().map(|d| d.status),
-                Some(Status::Counted | Status::Residual)
-            );
-            let above = rules::rank(&self.input.kind, &other.origin).is_some_and(|r| r < mine);
-            let overlap = rules::overlap(c, other);
-            (counts && above && overlap > rules::OVERLAP_SLACK).then_some((j, overlap))
-        })
+    fn higher(&self, c: &Claim) -> Vec<(usize, i64)> {
+        let Some(mine) = rules::rank(&self.input.kind, &c.origin) else {
+            return Vec::new();
+        };
+        self.claims()
+            .iter()
+            .enumerate()
+            .filter_map(|(j, other)| {
+                let counts = matches!(
+                    self.decided[j].as_ref().map(|d| d.status),
+                    Some(Status::Counted | Status::Residual)
+                );
+                let above = rules::rank(&self.input.kind, &other.origin).is_some_and(|r| r < mine);
+                let overlap = rules::overlap(c, other);
+                (counts && above && overlap > rules::OVERLAP_SLACK).then_some((j, overlap))
+            })
+            .collect()
+    }
+
+    fn covered(&self, c: &Claim, higher: &[(usize, i64)]) -> Decision {
+        let whole = c.whole().unwrap_or_default();
+        let mut minus: BTreeMap<String, i64> = BTreeMap::new();
+        for (j, _) in higher {
+            for (metric, amount) in self.claims()[*j].whole().unwrap_or_default() {
+                if whole.contains_key(&metric) {
+                    *minus.entry(metric).or_insert(0) += amount;
+                }
+            }
+        }
+        let reach = |metric: &str| minus.get(metric).copied().unwrap_or(0);
+        let evidence = json!({
+            "rule": 5,
+            "origin": true,
+            "overlap": higher.iter().map(|(_, overlap)| overlap).sum::<i64>(),
+            "with": higher.iter().map(|(j, _)| self.claims()[*j].natural()).collect::<Vec<_>>(),
+            "minus": minus,
+        });
+        let covered = whole
+            .iter()
+            .filter(|(metric, _)| metric.as_str() != "unknown")
+            .all(|(metric, claimed)| rules::covers(reach(metric), *claimed));
+        if covered {
+            return nothing(c, Status::Superseded, evidence);
+        }
+        let counted = whole
+            .iter()
+            .filter(|(metric, _)| metric.as_str() != "unknown")
+            .map(|(metric, claimed)| (metric.clone(), (claimed - reach(metric)).max(0)))
+            .collect();
+        decide(c, Status::Residual, counted, evidence)
     }
 
     fn decide(
@@ -320,13 +359,10 @@ impl Dated<'_> {
         prev: Option<&Claim>,
     ) -> Decision {
         let rows = rows_of(self.rows, assigned);
-        if let Some((j, overlap)) = self.higher(c) {
-            let d = nothing(
-                c,
-                Status::Superseded,
-                json!({"rule": 5, "origin": true, "overlap": overlap, "with": self.claims()[j].natural()}),
-            );
-            return with_rows(d, &rows);
+        let higher = self.higher(c);
+        let covered = (!higher.is_empty()).then(|| self.covered(c, &higher));
+        if let Some(d) = covered.as_ref().filter(|d| d.status == Status::Superseded) {
+            return with_rows(d.clone(), &rows);
         }
         if rules::server_clock(&c.origin) && rules::near(self.rows, c) {
             let d = if rows.is_empty() {
@@ -342,6 +378,9 @@ impl Dated<'_> {
                     json!({"rule": 1, "rows": rules::rows_json(&rows)}),
                 )
             };
+            return with_rows(d, &rows);
+        }
+        if let Some(d) = covered {
             return with_rows(d, &rows);
         }
         let whole = c.whole().unwrap_or_default();

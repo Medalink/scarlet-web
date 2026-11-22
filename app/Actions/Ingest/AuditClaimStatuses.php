@@ -23,7 +23,8 @@ class AuditClaimStatuses
      * columns and never by running reconcile again: 1 every claim has a status and its amounts are its counted amounts
      * plus its stored difference, 2 counted stays between 0 and claimed and is 0 where the status says so, 3 a
      * superseded or residual claim names its evidence, 4 no Scarlet row is assigned to two claims of one origin, 5 no
-     * two counted or residual dated claims of a character overlap, and 11 no dated claim counts on two characters of
+     * two counted or residual dated claims of a character overlap (but a residual of rule 5 may overlap the claims
+     * above it), and 11 no dated claim counts on two characters of
      * one account, nor on the one without Scarlet rows beside it while the other has them (rule 4). With no
      * character, every character is checked.
      *
@@ -158,12 +159,13 @@ class AuditClaimStatuses
                 and (?::bigint is null or a.character_id = ?)
                 and (
                     (a.origin = b.origin and (a.to_at = b.to_at or (coalesce(a.from_at, a.to_at) < b.to_at and coalesce(b.from_at, b.to_at) < a.to_at)))
-                    or (a.origin <> b.origin and least(a.to_at, b.to_at) - greatest(coalesce(a.from_at, a.to_at), coalesce(b.from_at, b.to_at)) > ?)
+                    or (a.origin <> b.origin and least(a.to_at, b.to_at) - greatest(coalesce(a.from_at, a.to_at), coalesce(b.from_at, b.to_at)) > ?
+                        and not (a.status = ? and a.evidence ->> 'rule' = '5') and not (b.status = ? and b.evidence ->> 'rule' = '5'))
                 )
             order by a.id, b.id
             limit 20
             SQL,
-            [...$adding, ...$adding, ...self::DATED, ...self::DATED, $characterId, $characterId, self::WINDOW_SLACK],
+            [...$adding, ...$adding, ...self::DATED, ...self::DATED, $characterId, $characterId, self::WINDOW_SLACK, ClaimStatus::Residual->value, ClaimStatus::Residual->value],
         ) as $row) {
             $lines[] = "claims {$row->first_id} ({$row->first_origin}) and {$row->second_id} ({$row->second_origin}) of {$row->character_name} both count and overlap";
         }

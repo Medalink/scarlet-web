@@ -96,6 +96,10 @@ pub(super) fn holds_rows(mut rows: impl Iterator<Item = i64>, from: i64, until: 
     rows.any(|at| at >= from && at <= until)
 }
 
+pub(super) fn covers(claimed_above: i64, claimed: i64) -> bool {
+    i128::from(claimed_above) * 40 >= i128::from(claimed) * 39
+}
+
 fn overlaps(a: &Claim, b: &Claim) -> bool {
     a.to == b.to || (start(a) < b.to && start(b) < a.to)
 }

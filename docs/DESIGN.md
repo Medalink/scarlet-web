@@ -310,9 +310,9 @@ The order of the work is fixed, and each step sees only the claims the steps bef
    start, store and dims, latest first, and each one overlapping a winner already taken loses to it.
 5. Per origin, highest rank first, Scarlet's rows are assigned to the claims left and settled across the seams between
    neighbouring claims (rule 3). Then each claim in turn: a
-   claim that overlaps a counted or residual claim of a higher rank by more than 60 s is `superseded` (rule 5); an
-   origin that stamps with the server's clock goes through rule 1; every other claim goes through the arithmetic of
-   rule 3.
+   claim that overlaps counted or residual claims of a higher rank by more than 60 s and is covered by them is
+   `superseded` (rule 5); an origin that stamps with the server's clock goes through rule 1; a claim they cover in part
+   counts the rest (rule 5); every other claim goes through the arithmetic of rule 3.
 6. Events are matched last (rule 2).
 
 The server runs it kind by kind in the queued job `ReconcileCharacterClaims`, or by hand with `php artisan
@@ -329,13 +329,14 @@ window's end (else the nearest session in time), and the `level` and `zone_id` o
 (null when none is). The evidence is a JSON object that always holds `rule` (1 to 7, `bounds` or `unmapped`) and
 `diff`, the claimed minus the counted amount per metric, so that claimed = counted + diff for every metric. It adds
 what the rule used: `rows` (`n`, `first` and `last` in epoch milliseconds, `looted`, `items`), `with` (the key of the
-claim it lost to, and for rule 4 the name of its character), `same_origin`, `origin`, `catch_started`, `row`,
+claim it lost to, and for rule 4 the name of its character; for rule 5 across origins the keys of the higher
+claims in a list, with `minus`, what they claim per metric), `same_origin`, `origin`, `catch_started`, `row`,
 `overlap`, `offset_ms` and `why`.
 
 | Status | Counted | When |
 | --- | --- | --- |
 | `counted` | whole | no Scarlet row and no higher-ranked claim falls in its window |
-| `residual` | part | Scarlet's rows cover part of its window |
+| `residual` | part | Scarlet's rows, or the claims of a higher-ranked origin, cover part of its window |
 | `superseded` | 0 | Scarlet's rows, a higher-ranked origin, the same claim on another character, or another claim of its origin cover it; the evidence names which |
 | `held` | 0 | an event with no matching Scarlet row inside a Scarlet session that recorded rows of its kind; a claim no rule maps (a kind with no row source, an origin outside the rank list, an unknown metric); a lifetime of one character (rule 6); an `ff` claim with Scarlet rows near it and none assigned (rule 1) |
 | `rejected` | 0 | it fails its bounds: an amount that is not a whole number from 0 to 9e15, a window that ends before it starts or starts before 2019-08-26 (before the addons existed), a window that ends more than a day after the clock, landed above casts, `casts - unknown` above the window's seconds / 2 + 1 |
@@ -387,10 +388,13 @@ Rules, in order:
    or an install that uploaded both, and so on transitively among the characters that hold claims. A decode or
    removal that adds or removes such a claim or the rows beside it reconciles the other characters too, locked lowest
    id first.
-5. **Between origins.** A fixed rank per kind (fishing: `fl` above `ff`). A claim whose window overlaps a counted or
-   residual claim of a higher rank by more than 60 s is `superseded` whole. Two claims of one origin and one
-   character whose windows overlap, or whose ends are equal, are one, whatever their stores: the later end wins, then
-   the later start, then the store that sorts last. The others are `superseded` with its id.
+5. **Between origins.** A fixed rank per kind (fishing: `fl` above `ff`). A claim whose window overlaps counted or
+   residual claims of a higher rank by more than 60 s counts what it claims minus what they claim, per metric,
+   floored at 0; it is `superseded` when they reach 97.5% of it in every metric (provisional until an `ff` overlap is
+   measured). A claim that overlaps only the last minutes of a long one keeps the rest, which a whole supersession
+   would lose. An origin that stamps with the server's clock goes through rule 1 when it is not covered. Two claims
+   of one origin and one character whose windows overlap, or whose ends are equal, are one, whatever their stores: the
+   later end wins, then the later start, then the store that sorts last. The others are `superseded` with its id.
 6. **Lifetime.** No mapped origin has a character-scope lifetime. A `life` claim with scope `c` is `held` until an
    origin maps one and this rule is written with its measurement. The undated term is empty until then.
 7. **Account scope** is `reference`. Per store, the audit compares its latest read with Scarlet's rows plus the
@@ -447,8 +451,8 @@ character (check 9).
 4. No Scarlet row is assigned to two claims of one origin: the assigned ranges of a character and origin are disjoint,
    they name no more rows than Scarlet holds, each range holds at least the rows it names, and a range lies within 60 s
    of its window.
-5. No two counted or residual dated claims of one character overlap by more than 60 s across origins, or at all
-   within one origin.
+5. No two counted or residual dated claims of one character overlap by more than 60 s across origins, except a
+   residual of rule 5, which counts only what the higher claims do not cover, or at all within one origin.
 6. Every page total equals Scarlet + addon dated + addon undated, and every breakdown sums to it with the unknown
    bucket.
 7. Scarlet's row counts and rollup sums are the same before and after each ship of this work.
