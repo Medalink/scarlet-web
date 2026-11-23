@@ -259,9 +259,7 @@ impl Talents {
         let now = self.current(group);
         let total = points(&now);
         let index = match kind {
-            "refund" => {
-                Some(self.open_or_join_respec(c, group, old - rank, hash_before, points_before))
-            }
+            "refund" => self.open_or_join_respec(c, group, old - rank, hash_before, points_before),
             _ => self.respec_being_rebuilt(c, group, kind == "pick", total, &now, &hash_before),
         };
         let point_no = (kind == "pick" && self.baselined.contains(&group))
@@ -297,14 +295,17 @@ impl Talents {
         moved: i64,
         before: String,
         before_points: i64,
-    ) -> i64 {
+    ) -> Option<i64> {
         if let Some(open) = self.open.get_mut(&group)
             && open.at == c.at
         {
-            open.moved += moved;
-            return open.index;
+            open.moved = open.moved.saturating_add(moved);
+            return Some(open.index);
         }
         self.close(group, Some(before.clone()));
+        if self.next_index > MAX_SMALLINT {
+            return None;
+        }
         let kind = match self.reset {
             Some((at, kind)) if c.at - at <= RESET_TO_REFUND_MS && c.at >= at => kind,
             _ => "refund",
@@ -331,7 +332,7 @@ impl Talents {
                 after: None,
             },
         );
-        index
+        Some(index)
     }
 
     fn respec_being_rebuilt(

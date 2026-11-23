@@ -440,7 +440,7 @@ pub fn scan(text: &str) -> Scan {
             continue;
         };
         lines += 1;
-        sum_dt += dt;
+        sum_dt = sum_dt.saturating_add(dt);
         fields += f.len() as u64;
         *codes.entry(f.get(1).copied().unwrap_or("")).or_default() += 1;
     }

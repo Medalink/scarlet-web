@@ -10,8 +10,8 @@ class StoreImportedRecords
 {
     private const int ROWS_PER_INSERT = 500;
 
-    /** The widest value an unsigned integer column of the table keeps. */
-    private const int MAX_UNSIGNED = 4294967295;
+    /** The widest value an integer (signed 32-bit) column of the table keeps. */
+    private const int MAX_INTEGER = 2147483647;
 
     public function __construct(private readonly MarkPartsDecoded $markDecoded) {}
 
@@ -62,7 +62,7 @@ class StoreImportedRecords
     private function insert(array $chunk): void
     {
         try {
-            DB::table('imported_records')->insert($chunk);
+            DB::transaction(fn (): bool => DB::table('imported_records')->insert($chunk));
         } catch (QueryException) {
             foreach ($chunk as $record) {
                 try {
@@ -74,9 +74,9 @@ class StoreImportedRecords
         }
     }
 
-    /** The value inside what an unsigned integer column keeps. */
+    /** The value inside what the table's integer columns keep. */
     private static function unsigned(int $value): int
     {
-        return max(0, min($value, self::MAX_UNSIGNED));
+        return max(0, min($value, self::MAX_INTEGER));
     }
 }

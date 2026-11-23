@@ -85,16 +85,17 @@ class InsertFactRows
     }
 
     /**
-     * Insert the batch in one statement; when that fails, insert the rows one by one inside a
-     * savepoint each, so a row its columns cannot keep is skipped with a note in the log and the
-     * rest of the batch, and the session's transaction, carries on.
+     * Insert the batch in one statement inside a savepoint; when that fails, PostgreSQL rolls back to
+     * the savepoint (an unprotected failure would leave the session's transaction aborted, 25P02),
+     * and the rows go in one by one inside a savepoint each, so a row its columns cannot keep is
+     * skipped with a note in the log and the rest of the batch, and the session's transaction, carries on.
      *
      * @param  list<array<string, mixed>>  $batch
      */
     private function flush(FactTable $table, array $batch): int
     {
         try {
-            DB::table($table->value)->insert($batch);
+            DB::transaction(fn (): bool => DB::table($table->value)->insert($batch));
 
             return count($batch);
         } catch (QueryException) {

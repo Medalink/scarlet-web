@@ -60,8 +60,8 @@ pub fn build_parts(character: &str, mut events: Vec<Ev>, opts: &Options) -> Vec<
 /// per line: `kind`, `at` (epoch ms), `source`, `via`, `item_id`, `quantity`, `copper`. A `YU` line
 /// is kind `expired` or `cancel`, with the stack size in `via` and no copper; one whose kind is
 /// neither `e` nor `x` is skipped. A line whose time leaves the window the columns keep, whose code
-/// is none of the group's, or whose id or count is wider than its column holds is skipped, never
-/// fatal: one bad line costs its row, not the day.
+/// is none of the group's is skipped before its row starts, and an id or count wider than the
+/// signed 32-bit column holds is written as null, never fatal: one bad line costs its row, not the day.
 /// Returns the number of rows.
 pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String> {
     let mut rows = Rows::new(out);
@@ -82,9 +82,12 @@ pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String>
             };
             t = next;
             let code = f.next().unwrap_or("");
+            if !CODES.contains(&code) {
+                continue;
+            }
             let f: Vec<&str> = f.collect();
             let int = |i: usize| f.get(i).and_then(|v| v.parse::<i64>().ok());
-            let count = |i: usize| int(i).filter(|v| (0..=i64::from(u32::MAX)).contains(v));
+            let count = |i: usize| int(i).filter(|v| (0..=i64::from(i32::MAX)).contains(v));
             let clip = |i: usize, max: usize| {
                 f.get(i)
                     .map_or(String::new(), |s| s.chars().take(max).collect())
@@ -139,7 +142,7 @@ pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String>
                         .opt("quantity", count(3))
                         .int("copper", 0);
                 }
-                _ => continue,
+                _ => {}
             }
             rows.end();
         }
