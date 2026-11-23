@@ -21,6 +21,7 @@ enum FactTable: string
     case ItemFlows = 'item_flows';
     case ClassTallies = 'class_tallies';
     case DungeonRuns = 'dungeon_runs';
+    case BossKills = 'boss_kills';
     case QuestEvents = 'quest_events';
     case MoneyChanges = 'money_changes';
     case LootOpens = 'loot_opens';
@@ -73,7 +74,7 @@ enum FactTable: string
             self::XpGains => SharingGroup::XP,
             self::Kills, self::Deaths, self::DeathHits, self::SpellCasts, self::MeterTotals, self::MeterSpells,
             self::StateTimes, self::ClassTallies,
-            self::DungeonRuns, self::CampStays, self::CampBenefits, self::InstanceLocks => SharingGroup::COMBAT,
+            self::DungeonRuns, self::BossKills, self::CampStays, self::CampBenefits, self::InstanceLocks => SharingGroup::COMBAT,
             self::QuestEvents, self::QuestBaselines => SharingGroup::QUESTS,
             self::TitleBaselines => SharingGroup::COLLECTIONS,
             self::ExploredBaselines => SharingGroup::WORLD,

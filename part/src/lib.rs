@@ -4,6 +4,7 @@
 
 pub mod auras;
 pub mod baselines;
+pub mod bosses;
 pub mod build;
 pub mod camp;
 pub mod class;

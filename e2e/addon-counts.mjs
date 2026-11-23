@@ -25,6 +25,8 @@
  * that the character page's Kills, Quests and Dungeon runs equal Scarlet plus the counted amounts read from the database, with "From addons" to the owner and
  * to a visitor where `E2E_MIN_CHARACTERS` (boot.mjs, default 1) is 1. `node e2e/addon-counts.mjs readers` runs only those two, for
  * `E2E_MIN_CHARACTERS=2 node e2e/boot.mjs -- node e2e/addon-counts.mjs readers`.
+ * `node e2e/addon-counts.mjs bosses` runs only the boss kill cases: five invented characters whose sessions hold `B` lines and `E` ends,
+ * checked against the `boss_kills` rows and the bosses of their dungeon run, and the removal and restore of the combat group.
  * By default they show Scarlet, what the addons added and the total, which equal the database's; run with
  * ADDON_COUNTS_PAGES=false (boot.mjs passes it on) they show Scarlet's own numbers and nothing from addons. ADDON_PAGES_DIR=<folder> keeps the pages read, for a before and after comparison.
  */
@@ -56,7 +58,7 @@ const FISHING_SKILL_LINE = 356;
 const STONETUSK_BOAR = 113;
 const TRIPS_WITHOUT_LOOT = [0, 1];
 const LOOT_DELAY = 0.6;
-const GROUP_OF = { S: "core", Z: "core", L: "core", ES: "core", X: "xp", Q: "quests", K: "combat", C: "combat", CH: "combat", LO: "loot", SL: "professions" };
+const GROUP_OF = { S: "core", Z: "core", L: "core", ES: "core", X: "xp", Q: "quests", K: "combat", E: "combat", B: "combat", C: "combat", CH: "combat", LO: "loot", SL: "professions" };
 const GROUP_ORDER = ["core", "xp", "quests", "combat", "loot", "professions", "counts"];
 const SETTLE_MS = 120_000;
 const STEADY_POLLS = 6;
@@ -901,6 +903,59 @@ async function levels() {
   check("addons:audit passes after the claims were decided again", last.status === 0, last.stdout + last.stderr);
 }
 
+const BOSS_DAY = Date.parse("2026-10-20T12:00:00Z") / 1000;
+const ARMORY = 189;
+const bossSlot = (k) => BOSS_DAY + k * 86400;
+const bossStart = (k, name, { stay = [60, 600], events }) => {
+  const lines = [
+    [0, "S", "1.15.8", "WARRIOR", "Human", 20, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
+    [100, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
+    [stay[0] * 1000, "Z", "", ARMORY, "party", 1, "Scarlet Monastery", "Armory"],
+    [stay[1] * 1000, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
+    ...events.map(([seconds, ...line]) => [Math.round(seconds * 1000), ...line]),
+  ];
+  lines.push([Math.max(...lines.map(([at]) => at)) + 50, "ES"]);
+  return partsOf(bossSlot(k), lines, {}, name);
+};
+const ended = (seconds, id, won) => [seconds, "E", 0, id, won ? 1 : 0, 60];
+const killed = (seconds, id, name = "Boss") => [seconds, "B", id, name];
+
+function bossCases() {
+  const one = (k, name, events, kills, bosses) => ({ k, name, parts: bossStart(k, name, { events }), kills, bosses });
+  return [
+    one(1, "Quill-Ada", [ended(300, 3001, true), killed(300.4, 3001)], [[300, 3001, "B", ARMORY]], 1),
+    one(2, "Quill-Bea", [ended(300, 3002, true)], [[300, 3002, "E", ARMORY]], 1),
+    one(3, "Quill-Cyd", [ended(200, 3003, false), killed(200, 3003), [430, "E", 1, 3003, 1, 5, "Boss"], ended(440, 3003, true), killed(440, 3003)], [[440, 3003, "B", ARMORY]], 1),
+    one(4, "Quill-Dov", [ended(300, 3004, true), killed(301, "", "Delta")], [[301, 3004, "B", ARMORY]], 1),
+    one(5, "Quill-Eli", [killed(300, 3005), killed(303, 3005), ended(500, 3006, true), killed(540, 3005), killed(700, 3007)], [[300, 3005, "B", ARMORY], [500, 3006, "E", ARMORY], [540, 3005, "B", ARMORY], [700, 3007, "B", null]], 2),
+  ];
+}
+
+const bossRows = (c) => JSON.parse(db(`
+  select coalesce(json_agg(json_build_array(floor(extract(epoch from at))::bigint - ${bossSlot(c.k)}, encounter_id, source, instance_id) order by at, encounter_id), '[]'::json)
+  from boss_kills where ${own(c.name)}`));
+const bossCount = (c) => Number(db(`select coalesce(sum(bosses), 0) from dungeon_runs where ${own(c.name)}`));
+const decodedAt15 = (c) => Number(db(`select count(*) from sessions where ${own(c.name)} and decoder_version = 15`));
+
+async function bosses() {
+  await fresh(client, second);
+  const cases = bossCases();
+  for (const c of cases) await upload(known(c.parts), c.name);
+  const stored = () => cases.every((c) => decodedAt15(c) === 1);
+  await settle(cases.map((c) => c.name), (...now) => now.every((s) => s.sessions === 1) && stored(), "the boss kill cases");
+  for (const c of cases) {
+    check(`${c.name}: boss_kills holds ${JSON.stringify(c.kills)}`, JSON.stringify(bossRows(c)) === JSON.stringify(c.kills), JSON.stringify(bossRows(c)));
+    check(`${c.name}: the run's bosses is ${c.bosses}`, bossCount(c) === c.bosses, `${bossCount(c)}`);
+  }
+  expectStatus(await client.request("DELETE", "/api/v1/upload/groups/combat"), 200, "DELETE groups/combat");
+  await settle(cases.map((c) => c.name), (...now) => now.every((s) => s.sessions === 1) && cases.every((c) => bossRows(c).length === 0), "the combat group removal");
+  check("combat group removed: no boss_kills row of any case is left and the sessions stay", cases.every((c) => bossRows(c).length === 0));
+  expectStatus(await client.request("PUT", "/api/v1/upload/groups/combat"), 200, "PUT groups/combat");
+  for (const c of cases) await upload(known(c.parts), c.name);
+  await settle(cases.map((c) => c.name), (...now) => now.every((s) => s.sessions === 1) && cases.every((c) => bossRows(c).length === c.kills.length), "the combat group restore");
+  check("combat group restored: every case holds its boss_kills rows again", cases.every((c) => JSON.stringify(bossRows(c)) === JSON.stringify(c.kills)));
+}
+
 const MIN_CHARACTERS = Number(process.env.E2E_MIN_CHARACTERS ?? 1);
 
 function readerCases() {
@@ -985,6 +1040,11 @@ async function main() {
   }
   if (process.argv[2] === "readers") {
     await readers();
+    await fresh(client, second);
+    return;
+  }
+  if (process.argv[2] === "bosses") {
+    await bosses();
     await fresh(client, second);
     return;
   }
@@ -1097,6 +1157,7 @@ async function main() {
   await gatheredAndReturned();
   await levels();
   await readers();
+  await bosses();
 
   await fresh(client, second);
 }

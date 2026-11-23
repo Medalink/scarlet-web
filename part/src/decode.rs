@@ -6,6 +6,7 @@
 //! ROWS.md.
 
 use crate::baselines::{Baselines, Ctx as BaselineCtx};
+use crate::bosses::{Bosses, Seen};
 use crate::build::{at_in_range, parse_header};
 use crate::camp::{Camp, Known};
 use crate::class::{Class, Now, OPEN_WORLD, place_of};
@@ -26,7 +27,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 14;
+pub const DECODER_VERSION: u32 = 15;
 
 const HOUR_MS: i64 = 3_600_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
@@ -236,6 +237,7 @@ struct Dec<'o> {
     run_last: Option<i64>,
     run_left: Option<i64>,
     run_count: i64,
+    bosses: Bosses,
     zone_rows: BTreeMap<(i64, String), ZoneInfo>,
     names: BTreeMap<(u8, u64), String>,
     items: BTreeMap<u64, ItemAcc>,
@@ -283,6 +285,15 @@ impl Dec<'_> {
     fn fact(&mut self, table: &str, at: i64) {
         let (s, l, z) = (self.session, self.lvl(), self.zone_id);
         prefix(&mut self.w, table, s, at, l, z);
+    }
+
+    fn seen(&self, at: i64) -> Seen {
+        Seen {
+            at,
+            level: self.lvl(),
+            zone_id: self.zone_id,
+            run: self.run_inside,
+        }
     }
 
     fn baseline_ctx(&self, at: i64) -> BaselineCtx {
@@ -728,12 +739,12 @@ impl Dec<'_> {
                 self.w.end();
             }
             "B" => {
-                if let Some(r) = self.run_inside.and_then(|i| self.runs.get_mut(i)) {
-                    r.bosses.insert(match num(&f, 0) {
-                        Some(id) => (Some(id), String::new()),
-                        None => (None, field(&f, 1).to_string()),
-                    });
-                }
+                let seen = self.seen(t);
+                self.bosses.on_b(seen, &f);
+            }
+            "E" => {
+                let seen = self.seen(t);
+                self.bosses.on_e(seen, &f);
             }
             "TA" | "TG" | "TQ" | "TV" | "TD" => self.on_talent(code, t, &f),
             "TP" => {
@@ -1188,6 +1199,12 @@ impl Dec<'_> {
                 hit.write(&mut self.w, s, d.t, d.level, d.zone_id);
             }
         }
+        let kills = std::mem::take(&mut self.bosses).finish();
+        for k in &kills {
+            if let Some(r) = k.run().and_then(|i| self.runs.get_mut(i)) {
+                r.bosses.insert(k.boss());
+            }
+        }
         let runs = std::mem::take(&mut self.runs);
         // Without combat parts the bosses and deaths of a run are unknown: no rows.
         let runs = if self.has.combat { runs } else { Vec::new() };
@@ -1216,6 +1233,11 @@ impl Dec<'_> {
                 .int("deaths", r.deaths)
                 .opt("group_size", r.group_size);
             self.w.end();
+        }
+        if self.has.combat {
+            for k in &kills {
+                k.write(s, k.run().map(|i| runs[i].inst), &mut self.w);
+            }
         }
         let zones = std::mem::take(&mut self.zone_rows);
         let start = self.start_ms;
@@ -1518,6 +1540,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         run_last: None,
         run_left: None,
         run_count: 0,
+        bosses: Bosses::default(),
         zone_rows: BTreeMap::new(),
         names: BTreeMap::new(),
         items: BTreeMap::new(),

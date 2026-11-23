@@ -347,7 +347,7 @@ character's own for these two machines and no others (`state_times` still reads 
 
 Rows with `n` 0 are not written.
 
-### `dungeon_runs` (combat: `Z`, `B`, `D`, using core's `Z`)
+### `dungeon_runs` (combat: `Z`, `E`, `B`, `D`, using core's `Z`)
 
 The runs of this session by the rule of OVERVIEW.md: a `Z` whose instanceType is `party` or `raid` starts a run of its
 `instanceMapID`, unless the last run started was the same instance and was left less than 30 minutes ago (then it is
@@ -364,7 +364,7 @@ the same run: `entries` counts the stays). `at` is the first entry; level and zo
 | `left_by_session_end` | bool | the session ended inside; `left_at` is then the session end |
 | `inside_ms` | int | time spent inside, all stays |
 | `entries` | int | stays |
-| `bosses` | int | distinct bosses among the `B` lines while inside, by the line's id or, when it has none, its name |
+| `bosses` | int | distinct bosses among the `boss_kills` rows of the run, by the kill's encounter id or, when it has none, its name. A run whose kills came only as `E` ends counts them (decoder version 15) |
 | `deaths` | int | `D` lines while inside |
 | `group_size` | int or null | group size at the first entry (`GP`, `LM`) |
 
@@ -374,6 +374,32 @@ had a run. For the first run of the next session: if its `instance_id` equals th
 `left_at` is not null and `at - left_at < 1_800_000` ms, it is the same run, not a new one (it is not counted as
 started, and its time and bosses are added to the earlier run). Runs after the first are as the decoder wrote them.
 The run count of OVERVIEW.md (`r`) is the number of rows left after this.
+
+### `boss_kills` (combat: `E`, `B`, using core's `Z`)
+
+One row per boss kill of the session, written only with a `combat` part like `dungeon_runs` (decoder version 15). The
+addon writes a `B` line and an `E` end with success `1` for one kill, an older build only the `E` end, and another
+recorder's backport only the `B`, so the list is built from both lines and holds each kill once. `at` is the line's
+time; level and zone are those at that time. An `E` start line and an `E` end with no encounter id are not read. An
+encounter id outside 1 to 2,147,483,647 is no id, and a name keeps its first 128 characters.
+
+1. A `B` less than 1 s after an `E` end with success `0` of its encounter, with no `E` end with success `1` of it less
+   than 5 s from the `B`, is a wipe that a client wrote as a kill: it is dropped.
+2. A `B` with no encounter id takes the id of the nearest `E` end with success `1` less than 5 s from it. With none it
+   keeps no id and its name.
+3. A `B` of the same encounter (the same name, when it has no id) less than 5 s after the last `B` kept is the addon's
+   own guard repeated: it is dropped.
+4. An `E` end with success `1` is a kill of its own when no `B` of its encounter is less than 5 s from it.
+
+| Key | Type | |
+| --- | --- | --- |
+| `encounter_id` | int or null | the kill's encounter id; null for a `B` with none and no end to take one from |
+| `name` | string or null | the `B` line's name; null for a kill that has only an `E` end |
+| `instance_id` | int or null | the `instanceMapID` of the dungeon run the kill fell in; null outside one |
+| `source` | string | `B` when the kill is a `B` line, `E` when it is an end with success `1` |
+
+A run's `bosses` counts the distinct encounter ids (or names) of its kills. The same boss killed twice in a run is two
+rows and one boss. Removing the `combat` group deletes these rows with the others of the group.
 
 ### `quest_events` (quests: `Q`)
 
@@ -960,8 +986,8 @@ flags stop; thresholds are the decoder's):
 A session with no part for a group (the player switched it off, or the session had no line of it) cannot be told from
 a session where the thing did not happen, except by `groups` on the `sessions` row. The decoder therefore writes
 nothing it cannot know: the `sessions` counters of a missing group are null, not 0; `play_spans.afk_ms` is null
-without an `xp` part; no `dungeon_runs` row and no `money_changes` row of `src` `S` is written without a `combat`
-or an `economy` part. A job that sums counters treats null as "not sent", never as 0.
+without an `xp` part; no `dungeon_runs` row, no `boss_kills` row and no `money_changes` row of `src` `S` is written
+without a `combat` or an `economy` part. A job that sums counters treats null as "not sent", never as 0.
 Removing a group from the server nulls the same counters (`SessionRows::GROUP_COUNTERS`, `distance` for `movement`
 included) and `play_spans.afk_ms` for `xp` (`FactTable::groupColumns`), so a removed group reads as one never sent.
 The same holds for `camp_stays`: `afk_seconds` is null without `xp`, `crafts` without `professions`, and `map`, `x`, `y`,
