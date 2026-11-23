@@ -14,7 +14,7 @@ class DownloadController extends Controller
 {
     public function __invoke(ReleaseNotesRequest $request, ShowAppDownload $download, ShowReleaseNotes $releases): View
     {
-        return view('pages.pitch', [
+        return view('pages.download', [
             'app' => $download->handle(),
             'notes' => ReleaseNotesPage::data($releases->handle(), $request->version(), $request->kind()),
         ]);
