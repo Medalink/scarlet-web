@@ -2,6 +2,8 @@
 
 namespace App\Actions\Upload;
 
+use App\Actions\Feats\ForgetClassStandings;
+use App\Actions\Feats\QueueClassStandings;
 use App\Actions\Ingest\AddonClaimSiblings;
 use App\Actions\Ingest\DeleteFactRows;
 use App\Actions\Ingest\InvalidateReconciles;
@@ -26,6 +28,8 @@ class RemoveGroup
         private readonly DeleteFactRows $deleteRows,
         private readonly AddonClaimSiblings $siblings,
         private readonly InvalidateReconciles $reconciles,
+        private readonly ForgetClassStandings $standings,
+        private readonly QueueClassStandings $queueStandings,
     ) {}
 
     /**
@@ -34,7 +38,8 @@ class RemoveGroup
      * FactTable::groupColumns), the rollups are refreshed over the time
      * the characters played, and the group is refused until the app puts it back (PUT /upload/groups/{key}). The addon
      * claims of the characters and of the characters linked to them are marked as not reconciled in the same transaction
-     * and reconciled again, since the rows they were checked against may be gone.
+     * and reconciled again, since the rows they were checked against may be gone. The characters' stored class
+     * standings and bands go in the same transaction and are stored again from the rows that are left.
      *
      * @return array{group: string, refused: bool, parts_removed: int, rows_removed: int}
      */
@@ -53,6 +58,7 @@ class RemoveGroup
             $this->reconciles->handle($characterIds);
             $parts = Part::query()->whereIn('character_id', $characterIds)->where('group_key', $group)->delete();
             $rows = $this->deleteRows->handle($characterIds, $group);
+            $this->standings->handle($characterIds);
             $this->forgetInSessions($characterIds, $group);
             $this->refusals->add($install, $group);
 
@@ -63,6 +69,7 @@ class RemoveGroup
             RefreshRollups::dispatch($window['from'], $window['until']);
         }
         foreach ($characterIds as $characterId) {
+            $this->queueStandings->handle($characterId);
             if ($this->siblings->handle($characterId) !== []) {
                 ReconcileCharacterClaims::dispatch($characterId);
             }

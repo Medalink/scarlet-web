@@ -1,4 +1,4 @@
-import { Jar, LEDGER, WARLOCK, expectJson, expectStatus } from "../support.mjs";
+import { Jar, LEDGER, NAME, PROBE, WARLOCK, expectJson, expectStatus, sleep } from "../support.mjs";
 import { BAND, CALLOUTS, CASTING, DEMONS, HEAD, PARTY, SHARDS, TALENTS, TAPS } from "../warlock-expected.mjs";
 import { browserFor } from "./owner.mjs";
 import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
@@ -6,6 +6,9 @@ import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
 const SWITCH = `.own input[type="checkbox"]`;
 const SWITCH_MS = 5000;
 const ROGUE = "rogue";
+const CLASS_SLUGS = ["druid", "hunter", "mage", "paladin", "priest", "rogue", "shaman", "warlock", "warrior"];
+const BAND_WAIT_MS = 60_000;
+const BAND_POLL_MS = 500;
 
 function tokensOf(html) {
   return html
@@ -31,6 +34,16 @@ function missing(tokens, pairs) {
   return pairs.filter((pair) => !shows(tokens, pair)).map(([label, value]) => `${label} ${value}`);
 }
 
+async function pageOnceStoredBandShows(ctx, route) {
+  const deadline = Date.now() + BAND_WAIT_MS;
+  let page = expectStatus(await ctx.http.page(route), 200, route);
+  while (!page.text.includes('id="h-band"') && Date.now() < deadline) {
+    await sleep(BAND_POLL_MS);
+    page = expectStatus(await ctx.http.page(route), 200, route);
+  }
+  return page;
+}
+
 export async function warlockPageShowsItsFigures(ctx) {
   const route = `/c/${WARLOCK}/warlock`;
   const page = expectStatus(await ctx.http.page(route), 200, route);
@@ -51,7 +64,7 @@ export async function warlockPageShowsItsFigures(ctx) {
 
 export async function characterPageLinksItsClassPage(ctx) {
   const route = `/c/${WARLOCK}`;
-  const page = expectStatus(await ctx.http.page(route), 200, route);
+  const page = await pageOnceStoredBandShows(ctx, route);
   const problems = [];
   if (!page.text.includes(`<a href="${route}/warlock">Warlock</a>`)) problems.push("the Warlock link in the line of pages under the head");
   if (!page.text.includes(`<a href="${route}/warlock">All warlock numbers</a>`)) problems.push("the band's link All warlock numbers");
@@ -61,13 +74,25 @@ export async function characterPageLinksItsClassPage(ctx) {
   if (problems.length > 0) throw new Error(`${route} should have ${problems.join(", ")}`);
 
   const ledger = `/c/${LEDGER}`;
-  const other = expectStatus(await ctx.http.page(ledger), 200, ledger);
-  const linked = other.text.includes(`<a href="${ledger}/${ROGUE}">`);
   const answer = await ctx.http.page(`${ledger}/${ROGUE}`);
+  const other = answer.status === 200 ? await pageOnceStoredBandShows(ctx, ledger) : expectStatus(await ctx.http.page(ledger), 200, ledger);
+  const linked = other.text.includes(`<a href="${ledger}/${ROGUE}">`);
   if (linked !== (answer.status === 200) || (answer.status !== 200 && answer.status !== 404)) {
     throw new Error(`${ledger} ${linked ? "links" : "does not link"} its class page, which answers ${answer.status}: a link must lead to a page and a page with no link must be a 404`);
   }
   if (!linked && other.text.includes('id="h-band"')) throw new Error(`${ledger} has a class band though its class page is a 404`);
+}
+
+export async function characterWithNoClassRowsHasNoBand(ctx) {
+  const problems = [];
+  for (const name of [NAME, PROBE]) {
+    const route = `/c/${name}`;
+    const page = expectStatus(await ctx.http.page(route), 200, route);
+    if (page.text.includes('id="h-band"')) problems.push(`${route} draws a class band`);
+    const linked = CLASS_SLUGS.filter((slug) => page.text.includes(`<a href="${route}/${slug}"`));
+    if (linked.length > 0) problems.push(`${route} links its class page ${linked.join(", ")}`);
+  }
+  if (problems.length > 0) throw new Error(`a character whose sessions counted no cast has no class page, so no band and no link to one: ${problems.join(", ")}`);
 }
 
 export async function otherAddressesAre404(ctx) {

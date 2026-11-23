@@ -39,7 +39,7 @@ class CharacterClassPage
         $page = new ClassPage(
             $class,
             new CharacterLine(Format::characterName($character->name), (int) $character->level, $read->facts->hours, $read->facts->build, $parts->icon),
-            $this->links->handle($character),
+            $this->links->handle($character, true),
             $parts->callouts,
             $parts->figures,
             $parts->sheet,

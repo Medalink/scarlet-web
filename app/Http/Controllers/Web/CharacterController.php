@@ -29,9 +29,9 @@ class CharacterController extends Controller
 
         $d = CharacterPage::data($answer);
         $d['ownerSeesVisitorView'] = $request->asVisitor() && $viewer !== null && $character->account_id === $viewer;
-        $d['links'] = $links->handle($character);
-        $d['className'] = Format::className($character->class);
         $d['classBand'] = $classBand->handle($character);
+        $d['links'] = $links->handle($character, $d['classBand'] !== null);
+        $d['className'] = Format::className($character->class);
         $d['classIcons'] = $d['classBand'] === null ? null : ClassIcons::of($d['classBand']);
         $history = $answer['owner'] ? ($imported->handle([$character->id])[$character->id] ?? null) : null;
         $d['imported'] = $history === null ? null : ImportedHistoryPage::character($history);
