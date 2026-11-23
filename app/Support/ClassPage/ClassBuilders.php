@@ -2,6 +2,7 @@
 
 namespace App\Support\ClassPage;
 
+use App\Actions\Public\ClassPage\MageBuilder;
 use App\Actions\Public\ClassPage\WarlockBuilder;
 use App\Contracts\ClassBuilder;
 use App\Support\PlayerClass;
@@ -17,6 +18,7 @@ final class ClassBuilders
     {
         return match ($class) {
             PlayerClass::Warlock => WarlockBuilder::class,
+            PlayerClass::Mage => MageBuilder::class,
             default => null,
         };
     }

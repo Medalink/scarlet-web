@@ -22,7 +22,7 @@ final class TalentModules
         PlayerClass::Rogue->value => ['Blade Flurry', 'Adrenaline Rush', 'Riposte'],
         PlayerClass::Priest->value => ['Inner Focus', 'Spirit of Redemption', 'Lightwell'],
         PlayerClass::Shaman->value => ['Stormstrike', 'Elemental Focus', 'Flurry'],
-        PlayerClass::Mage->value => ['Ice Barrier', 'Cold Snap', 'Ice Block'],
+        PlayerClass::Mage->value => ['Ice Barrier', 'Cold Snap', 'Ice Block', 'Presence of Mind', 'Arcane Power', 'Pyroblast', 'Combustion'],
         PlayerClass::Warlock->value => ['Nightfall', 'Shadowburn', 'Siphon Life'],
         PlayerClass::Druid->value => ['Feral Charge (Bear)', 'Omen of Clarity', 'Leader of the Pack'],
     ];
