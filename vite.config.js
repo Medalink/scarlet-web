@@ -6,7 +6,6 @@ export default defineConfig({
     plugins: [
         laravel({
             // site.css and app.css are the Scarlet site's two stylesheets and load in that order on every page.
-            // tailwind.css is for utility-styled fragments and is loaded by no page yet.
             input: [
                 'resources/css/site.css',
                 'resources/css/app.css',
