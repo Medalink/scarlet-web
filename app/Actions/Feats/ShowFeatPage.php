@@ -18,7 +18,7 @@ class ShowFeatPage
 
     /**
      * @param  string|null  $as  the name of the owner's character to mark on the ladder, their most recently seen one with a count when null or not theirs
-     * @return array{feat: array<string, mixed>, collection: list<array<string, mixed>>, mine: array{character: string, value: int|float, tier: int}|null, account: array<string, mixed>|null}|null null for a key that is not a feat
+     * @return array{feat: array<string, mixed>, collection: list<array<string, mixed>>, mine: array{character: string, value: int|float, tier: int}|null, held: array<string, array{tier: int, progress: float}>, account: array<string, mixed>|null}|null null for a key that is not a feat
      */
     public function handle(string $key, ?int $accountId, ?string $as): ?array
     {
@@ -27,10 +27,12 @@ class ShowFeatPage
             return null;
         }
         $collection = array_values(array_filter($this->catalog->handle()['feats'], fn (array $other): bool => $other['collection'] === $feat['collection'] && $other['key'] !== $feat['key']));
+        $mine = $accountId === null ? null : $this->mine(Feat::from($key), $accountId, $as);
 
         return [
             'feat' => $feat, 'collection' => $collection,
-            'mine' => $accountId === null ? null : $this->mine(Feat::from($key), $accountId, $as),
+            'mine' => $mine,
+            'held' => $mine === null ? [] : $this->held($accountId, $mine['character'], array_column($collection, 'key')),
             'account' => $accountId === null || $feat['account'] === AccountRule::None->value ? null : $this->ofAccount($key, $accountId),
         ];
     }
@@ -41,6 +43,33 @@ class ShowFeatPage
         $cards = array_column($this->account->handle($this->owned->handle($accountId))['cards'] ?? [], null, 'key');
 
         return $cards[$key] ?? null;
+    }
+
+    /**
+     * The tier and the progress to the next tier of each of `$keys` that the account's character `$name` holds a count of.
+     *
+     * @param  list<string>  $keys
+     * @return array<string, array{tier: int, progress: float}>
+     */
+    private function held(int $accountId, string $name, array $keys): array
+    {
+        $rows = DB::table('character_feats as cf')->join('characters as c', 'c.id', '=', 'cf.character_id')
+            ->where('c.account_id', $accountId)->where('c.name', $name)->whereIn('cf.feat', $keys)->get(['cf.feat', 'cf.value']);
+        $held = [];
+        foreach ($rows as $row) {
+            $feat = Feat::tryFrom((string) $row->feat);
+            if ($feat === null) {
+                continue;
+            }
+            $value = (float) $row->value;
+            $tier = $feat->tier($value);
+            $thresholds = $feat->thresholds();
+            $from = $tier > 0 ? $thresholds[$tier - 1] : 0;
+            $next = $thresholds[$tier] ?? null;
+            $held[$feat->value] = ['tier' => $tier, 'progress' => $next === null ? 1.0 : round(max(0, min(1, ($value - $from) / ($next - $from))), 3)];
+        }
+
+        return $held;
     }
 
     /** @return array{character: string, value: int|float, tier: int}|null */

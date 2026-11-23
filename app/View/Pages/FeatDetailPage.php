@@ -11,7 +11,7 @@ use App\View\Sc\Crest;
 final class FeatDetailPage
 {
     /**
-     * @param  array{feat: array<string, mixed>, collection: list<array<string, mixed>>, mine: array{character: string, value: int|float, tier: int}|null, account: array<string, mixed>|null}  $answer
+     * @param  array{feat: array<string, mixed>, collection: list<array<string, mixed>>, mine: array{character: string, value: int|float, tier: int}|null, held: array<string, array{tier: int, progress: float}>, account: array<string, mixed>|null}  $answer
      * @return array<string, mixed>
      */
     public static function data(array $answer): array
@@ -36,7 +36,7 @@ final class FeatDetailPage
                 'tierName' => Crest::TIER_NAMES[$row['tier']], 'at' => $row['at'], 'day' => gmdate('j M Y', (int) strtotime($row['at'])),
             ], $feat['recent']),
             'others' => array_map(fn (array $other): array => [
-                'key' => $other['key'], 'name' => $other['name'], 'glyph' => $other['glyph'], 'family' => $other['family'], 'tier' => 0, 'progress' => 0,
+                'key' => $other['key'], 'name' => $other['name'], 'glyph' => $other['glyph'], 'family' => $other['family'], 'tier' => $answer['held'][$other['key']]['tier'] ?? 0, 'progress' => $answer['held'][$other['key']]['progress'] ?? 0,
                 'share' => FeatsPage::percent($other['shares'][0] ?? null), 'href' => '/feats/'.$other['key'],
             ], $answer['collection']),
             'mine' => $mine === null ? null : ['name' => Format::characterName($mine['character']), 'count' => FeatText::counted($kind, $mine['value'])],
