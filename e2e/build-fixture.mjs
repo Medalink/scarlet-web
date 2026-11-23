@@ -23,6 +23,7 @@ import { LEDGER_LINES } from "./ledger-lines.mjs";
 import { HUNTER_LINES } from "./hunter-lines.mjs";
 import { MAGE_LINES } from "./mage-lines.mjs";
 import { PALADIN_LINES } from "./paladin-lines.mjs";
+import { PRIEST_LINES } from "./priest-lines.mjs";
 import { ROGUE_LINES } from "./rogue-lines.mjs";
 import { WARLOCK_LINES } from "./warlock-lines.mjs";
 import { WARRIOR_LINES } from "./warrior-lines.mjs";
@@ -249,6 +250,7 @@ const BUILDS = [
   { character: "Oath-Bearer", session: 1795720000, lines: PALADIN_LINES },
   { character: "Pack-Warden", session: 1795810000, lines: HUNTER_LINES },
   { character: "Pocket-Shade", session: 1795630000, lines: ROGUE_LINES },
+  { character: "Candle-Warden", session: 1795720000, lines: PRIEST_LINES },
 ];
 
 function partsOf(character, session, lines) {

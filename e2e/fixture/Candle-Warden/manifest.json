@@ -1,0 +1,41 @@
+{
+  "character": "Candle-Warden",
+  "parts": [
+    {
+      "group": "core",
+      "id": "36a8036465eb4b2ae225fbb7afc5eb6cd8826928da0d6b9bf63b4a83112ff8d3",
+      "lines": 7,
+      "raw_bytes": 279,
+      "session": 1795720000
+    },
+    {
+      "group": "build",
+      "id": "6f31178db0d39dd5cc990e76bac59e54468b9e4abed06f5be2f7806d1acfefaa",
+      "lines": 8,
+      "raw_bytes": 383,
+      "session": 1795720000
+    },
+    {
+      "group": "combat",
+      "id": "6e7eedad1141be9322a826df164be773bbec4592da4bb9e48e40f943b283d2a8",
+      "lines": 755,
+      "raw_bytes": 12036,
+      "session": 1795720000
+    },
+    {
+      "group": "loot",
+      "id": "9d47476ca37a4a75dea3d0f69c5d05478082f8fb2aa9503c8384e763c07d3475",
+      "lines": 8,
+      "raw_bytes": 190,
+      "session": 1795720000
+    },
+    {
+      "group": "names",
+      "id": "4aebdb32708957e70489ffcd3e0f917ffdb78615f1689429e584df7e523b02a4",
+      "lines": 37,
+      "raw_bytes": 880,
+      "session": 1795720000
+    }
+  ],
+  "set_digest": "e04b651a178a75fed63efc25a119067358d0cc1e65577931fc8c0bb02b25f300"
+}

@@ -1901,6 +1901,20 @@ it, so that module reads "Times it came up" and "Time up" and nothing about what
 comparison are the share of fights opened from stealth, the share of played time in stealth, pockets and locks a played
 hour, the share of Kicks that landed and the share of fights with a Vanish.
 
+**Where the Priest page differs from the comp.** Built by `PriestBuilder` and the classes in
+`App\Support\ClassPage\Priest`. The healing, damage and absorbs come from the client's meters after each fight, so a
+fight's figures are the client's own, and the by-spell rank lists only the top five spells of a fight and says so.
+Players raised are the casts of Resurrection: the rows hold no zone for a cast, so "Raised from the dead" reads "Players
+raised", "A played hour" and "Most in a row" where the comp has a rank by dungeon, and the head's altar callout drops "1
+in 3 dungeon runs". The comparison reads "Players raised a played hour" for the same reason. Overhealing and who was
+healed are not recorded, so the page shows neither. Control shows casts only: the channel time of Mind Control is not
+read. The wand module shows hours and the share of fight time, and the comparison puts it beside other priests. Inner
+Focus reads "Casts", "Time up" and "Casts under it" instead of the heal that followed it. Spirit of Redemption reads
+"Times it came up", "Time up" and "Heals cast as one". Lightwell, Power Infusion and Vampiric Embrace read casts, the
+share cast in a fight and the most in a row, and Shadowform reads casts, time up and casts under it. The six figures kept
+for the comparison are healing a fight, shields a fight, players raised a played hour, the share of played time in
+Shadowform, the share of fight time with the wand firing and deaths a played hour.
+
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
 the character's page is. `/c/{name}`, the class page and `/c/{name}/battlegrounds` share one line of navigation under

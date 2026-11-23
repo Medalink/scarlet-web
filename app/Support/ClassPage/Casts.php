@@ -108,6 +108,12 @@ final class Casts
         return $whole > 0 ? min(100, $part / $whole * 100) : 0.0;
     }
 
+    /** A number a fight, 0 when there was none. */
+    public static function perFight(int|float $total, int $fights): float
+    {
+        return $fights > 0 ? $total / $fights : 0.0;
+    }
+
     /** A number a played hour, 0 when no time was played. */
     public static function perHour(int|float $count, int $playedMs): float
     {

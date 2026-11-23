@@ -8,6 +8,8 @@
  * e2e/rogue-expected.mjs, written from the plan below before the page was read.
  */
 
+import { STEP, Track, cast, ms } from "./track.mjs";
+
 const ELWYNN = 1429;
 
 const STEALTH = 1784;
@@ -60,36 +62,8 @@ const SUBTLETY = 183;
 const HOUR = 3_600_000;
 const SESSION_END = 6 * HOUR;
 const GAP = 4;
-const STEP = 2;
 const LONG_STEALTH = 1800;
 const BUFF_SECONDS = 15;
-
-const ms = (seconds) => Math.round(seconds * 1000);
-
-class Track {
-  lines = [];
-  creature = 990200;
-
-  constructor(start) {
-    this.t = start;
-  }
-
-  at(seconds, ...line) {
-    this.t += ms(seconds);
-    this.lines.push([this.t, ...line]);
-  }
-
-  wait(seconds) {
-    this.t += ms(seconds);
-  }
-
-  npc() {
-    this.creature += 1;
-    return this.creature;
-  }
-}
-
-const cast = (k, spell, seconds = "") => k.at(STEP, "C", spell, seconds);
 
 const POOL = {
   SS: (c) => (k) => cast(k, SINISTER[c]),
