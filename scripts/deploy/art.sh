@@ -11,7 +11,8 @@
 #                          store. It fails when the droplet's art still differs afterwards
 #
 # Neither deletes a file: a release that serves, or one a rollback returns to, may still read older art. sync reaches the
-# droplet with the ring's key, whose entry (scripts/deploy/ring-entry.sh) has the verbs `mapsums` and `maps`, and sends
+# droplet with the ring's key over the connection pool ring.sh shares (the same ControlMaster options), whose entry
+# (scripts/deploy/ring-entry.sh) has the verbs `mapsums` and `maps`, and sends
 # at most $batch_bytes or $batch_files files in one archive, which stays under the entry's limit. publish refuses what
 # sync could not send later: a path over $path_limit characters or a file over $batch_bytes. `bin/deploy maps` pipes this file to `sh -s`, so every ssh here names its
 # own stdin. The names an archive may hold are the ones ring-entry.sh takes; change both together.
@@ -27,7 +28,8 @@ art_file='^[.](/[A-Za-z0-9][A-Za-z0-9._-]*)+[.](json|png|webp)$'
 art_folder='^[.]/$|^[.](/[A-Za-z0-9][A-Za-z0-9._-]*)+/$'
 
 ssh_opts="-i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30"
-entry() { ssh $ssh_opts "ops@$host" "$@"; }
+mux_opts="-o ControlMaster=auto -o ControlPath=$HOME/.ssh/scarlet-ring-cm-%C -o ControlPersist=600"
+entry() { ssh $ssh_opts $mux_opts "ops@$host" "$@"; }
 fail() {
   echo "art: $1" >&2
   exit 1

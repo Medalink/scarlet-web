@@ -18,6 +18,12 @@
 #
 # A deploy lock someone else holds is waited for, $lock_wait seconds at most: the droplet clears a lock older than 40
 # minutes, so the wait ends with the lock. Any other answer to the lock request fails the ring at once.
+#
+# The ssh calls share one connection (ControlMaster, $mux_opts): a fresh connection to the droplet costs about 2 s and a
+# deploy makes seven or more, so every call but the first rides the master the first one leaves behind (2026-11-23:
+# 2.1 s fresh, 0.2 s over the master). The master dies on its own after ten idle minutes; a socket a killed master left
+# behind is retried as a fresh connection. The tunnel keeps its own connection. The page check asks its eight pages at
+# once, not one after another; per-page timeouts, the 200 rule and the output lines stay as they were.
 set -eu
 
 key=${SCARLET_RING_KEY:-$HOME/.config/scarlet-web/ring_ed25519}
@@ -34,7 +40,8 @@ lock_held=75
 kept_images=5
 
 ssh_opts="-i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30"
-entry() { ssh $ssh_opts "ops@$host" "$@"; }
+mux_opts="-o ControlMaster=auto -o ControlPath=$HOME/.ssh/scarlet-ring-cm-%C -o ControlPersist=600"
+entry() { ssh $ssh_opts $mux_opts "ops@$host" "$@"; }
 
 another_ring_runs() {
   pids=$(mktemp)
@@ -144,11 +151,19 @@ check() {
   serving=$(entry release)
   [ "$serving" = "$release" ] || { echo "ring: $serving serves, not $release" >&2; exit 1; }
   bad=0
+  answers=$(mktemp)
+  trap 'rm -f "$answers"' EXIT
   for path in /up "/stats?v=$release" "/leaderboards?v=$release" "/rulesets?v=$release" "/talents?v=$release" "/map?v=$release" "/search?q=wolf&v=$release" /api/v1/public/stats; do
-    code=$(curl -s -o /dev/null --max-time 30 -w '%{http_code}' "$site$path" || true)
+    {
+      code=$(curl -s -o /dev/null --max-time 30 -w '%{http_code}' "$site$path" || true)
+      printf '%s %s\n' "$code" "$path"
+    } >>"$answers" &
+  done
+  wait
+  while read -r code path; do
     echo "ring: $code $path"
     [ "$code" = 200 ] || bad=1
-  done
+  done <"$answers"
   [ "$bad" = 0 ] || { echo "ring: a public page did not answer 200 on $release" >&2; exit 1; }
 }
 
