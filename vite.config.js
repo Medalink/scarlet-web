@@ -5,18 +5,11 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            // site.css and app.css are the Scarlet site's two stylesheets and load in that order on every page.
-            // tailwind.css is for utility-styled fragments and is loaded by no page yet.
             input: [
-                'resources/css/site.css',
-                'resources/css/app.css',
-                'resources/css/game.css',
                 'resources/css/class.css',
-                'resources/css/landing.css',
+                'resources/css/class-section.css',
                 'resources/css/tailwind.css',
-                'resources/js/app.js',
-                'resources/js/landing.js',
-                'resources/js/demo.js',
+                'resources/js/sc.js',
                 'resources/js/map/design.js',
                 'resources/js/scene.js',
             ],

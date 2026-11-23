@@ -13,7 +13,7 @@ final class CharacterStandings
 
     /**
      * @param  list<array{board: string, title: string, place: int, total: int, value: int|float}>  $standings
-     * @return list<array{place: int, medal: string|null, title: string, href: string, value: string, of: string}>
+     * @return list<array{place: int, total: int, medal: string|null, title: string, href: string, value: string, of: string}>
      */
     public static function rows(array $standings): array
     {
@@ -22,6 +22,7 @@ final class CharacterStandings
 
             return [
                 'place' => $row['place'],
+                'total' => $row['total'],
                 'medal' => $row['place'] <= self::MEDALS ? 'p'.$row['place'] : null,
                 'title' => $row['title'],
                 'href' => LeaderboardPage::link($board),
@@ -49,6 +50,9 @@ final class CharacterStandings
         }
         if ($board === Board::MostFishCaught) {
             return $board->format($value).' fish';
+        }
+        if ($board === Board::FeatScore) {
+            return Format::count($value, 'point');
         }
         if ($board === Board::MostQuestsCompleted) {
             return Format::count($value, 'quest').' completed';

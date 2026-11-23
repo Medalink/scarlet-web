@@ -11,11 +11,14 @@ class ShowInstallFeats
     public function __construct(
         private readonly ShowCharacterFeats $feats,
         private readonly ShowNewFeats $new,
+        private readonly ShowFeatCardFields $fields,
+        private readonly ShowFeatBasis $basis,
     ) {}
 
     /**
      * The feats of every character the install owns that has stored feats, most recently seen first, as the desktop app
-     * shows them: the feat wall with the economy shown, and the feats its owner has not been shown yet.
+     * shows them: the feat wall with the economy shown, the feat score, the spec and the newest session counted, a card
+     * with the fields of `ShowFeatCardFields`, and the feats its owner has not been shown yet.
      *
      * @return list<array<string, mixed>>
      */
@@ -28,10 +31,23 @@ class ShowInstallFeats
 
         $entries = [];
         foreach ($characters as $character) {
-            $section = CharacterFeatWall::section($this->feats->handle($character, true), $character);
-            if ($section !== null) {
-                $entries[] = ['name' => $character->name] + $section + ['new' => $this->new->handle($character)];
+            $rows = $this->feats->handle($character, true);
+            $section = CharacterFeatWall::section($rows, $character);
+            if ($section === null) {
+                continue;
             }
+            $fields = $this->fields->handle($character, $rows);
+            $with = fn (array $cards): array => array_map(fn (array $card): array => $card + $fields[$card['key']], $cards);
+            $entries[] = [
+                'name' => $character->name,
+                'held' => $section['held'], 'total' => $section['total'], 'tiers' => $section['tiers'],
+                'since' => $section['since'], 'limit' => $section['limit'],
+                'score' => (int) $character->feat_score,
+                ...$this->basis->handle($character),
+                'pinned' => $with($section['pinned']), 'top' => $with($section['top']),
+                'earned' => $with($section['earned']), 'unearned' => $with($section['unearned']),
+                'new' => $this->new->handle($character),
+            ];
         }
 
         return $entries;

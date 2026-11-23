@@ -21,6 +21,10 @@ const SHAPES = [
   ["/search", ["characters", "creatures", "items", "objects", "zones", "quests", "pages"]],
   ["/characters/{name}", ["name", "race", "class", "faction", "level", "recorded_seconds", "ruleset", "week", "feats", "standings"]],
   ["/characters/{name}/series/{series}", ["pace"]],
+  ["/feats", ["catalog", "feats"]],
+  ["/feats/{key}", ["catalog", "key", "name", "family", "collection", "scope", "thresholds", "shares", "top", "recent"]],
+  ["/characters/{name}/sessions", ["sessions", "next"]],
+  ["/characters/{name}/sessions/{start}", ["v", "character", "title", "xp", "counters", "buckets", "zones", "route", "feats", "top", "compare", "links"]],
   ["/creatures/{id}", ["id", "name", "facts", "kills", "drops", "cells"]],
   ["/items/{id}", ["id", "name", "sources", "by_source", "gathered", "gathered_count", "dropped", "source_count", "best_rate"]],
   ["/objects/{id}", ["id", "name", "windows", "characters", "zones", "drop_table"]],
@@ -47,10 +51,11 @@ export async function listedEndpoints(ctx) {
   return { templates, examples };
 }
 
-function fixtureExample(example) {
+function fixtureExample(example, session) {
   const [pathname, query] = example.split("?");
   const parts = pathname.split("/");
   if (parts[1] in RECORDS) parts[2] = RECORDS[parts[1]];
+  if (parts[1] === "characters" && parts[3] === "sessions" && parts[4] !== undefined) parts[4] = String(session);
   if (parts[1] === "rulesets" && parts[2] !== "all" && parts.length === 3) parts[2] = RULESET;
   return parts.join("/") + (query ? "?" + query : "");
 }
@@ -61,6 +66,11 @@ function missingKeys(data, keys) {
   return keys.filter((key) => !(key in row));
 }
 
+export async function sessionList(ctx, query = "") {
+  const route = `/characters/${NAME}/sessions${query}`;
+  return expectJson(expectStatus(await ctx.http.api("/api/v1/public" + route), 200, `GET /api/v1/public${route}`), route).data;
+}
+
 export async function everyEndpointAnswers(ctx) {
   const { templates, examples } = await listedEndpoints(ctx);
   if (templates.length < SHAPES.length) {
@@ -69,7 +79,8 @@ export async function everyEndpointAnswers(ctx) {
   const uncovered = templates.filter((template) => !examples.some((example) => templateExpression(template).test(example)));
   if (uncovered.length > 0) throw new Error(`/developers lists no example for: ${uncovered.join(", ")}`);
 
-  const paths = examples.map(fixtureExample).filter((route) => !route.startsWith(READ_AFTER_REFRESH));
+  const session = (await sessionList(ctx)).sessions.at(-1).start;
+  const paths = examples.map((example) => fixtureExample(example, session)).filter((route) => !route.startsWith(READ_AFTER_REFRESH));
   const problems = await pool(paths, CONCURRENCY, async (route) => {
     const answer = await answerOf(ctx, route);
     if (answer.status === 429) expectStatus(answer, 200, route);
@@ -149,4 +160,40 @@ export async function badParameterIs422(ctx) {
   const answer = await ctx.http.api("/api/v1/public/search?q=T");
   expectError(answer, 422, "invalid_request", "a search text of one letter");
   if (!answer.json.error.fields?.q) throw new Error(`the 422 should name the field q, saw ${answer.text.slice(0, 300)}`);
+}
+
+export async function sessionEndpointsAreServed(ctx) {
+  const list = await sessionList(ctx);
+  if (list.sessions.length !== 2 || list.next !== null || list.sessions[0].start <= list.sessions[1].start) {
+    throw new Error(`${NAME} should list its two sessions newest first with no next page, saw ${JSON.stringify(list)}`);
+  }
+  const first = list.sessions[1];
+  const wanted = { end: first.start + 130, played: 130, level: [5, 6], kills: 2, quests: 1, xp: 1605 };
+  const wrong = Object.entries(wanted).filter(([key, value]) => JSON.stringify(first[key]) !== JSON.stringify(value));
+  if (wrong.length > 0 || first.title.rule !== "level" || first.title.text !== "Level 5 to 6 in Elwynn Forest") {
+    throw new Error(`the first session of ${NAME} should be Level 5 to 6 in Elwynn Forest with ${JSON.stringify(wanted)}, saw ${JSON.stringify(first)}`);
+  }
+  const older = await sessionList(ctx, `?after=${list.sessions[0].start}`);
+  if (older.sessions.length !== 1 || older.sessions[0].start !== first.start) throw new Error(`?after= the newest start should list only the first session, saw ${JSON.stringify(older)}`);
+  const none = await sessionList(ctx, `?after=${first.start}`);
+  if (none.sessions.length !== 0) throw new Error(`?after= the oldest start should list nothing, saw ${JSON.stringify(none)}`);
+
+  const route = `/api/v1/public/characters/${NAME}/sessions/${first.start}`;
+  const recap = expectJson(expectStatus(await ctx.http.api(route), 200, `GET ${route}`), route).data;
+  const facts = [
+    [recap.v === 1 && recap.character === NAME && recap.start === first.start, "v, character and start"],
+    [recap.xp.quests === 1400 && recap.xp.kills === 205, "xp by source"],
+    [recap.counters.kills === 2 && recap.counters.quests === 1 && recap.counters.loot === 7 && recap.counters.foot === 620, "counters"],
+    [recap.zones.length === 1 && recap.zones[0].name === "Elwynn Forest", "zones"],
+    [recap.levels.length === 1 && recap.levels[0].level === 6, "levels"],
+    [recap.route?.sheet?.points.length === 24 && Array.isArray(recap.route.sheet.air) && recap.route.sheet.breaks.length === 0, "the route sheet"],
+    [recap.top.killed.length === 2 && recap.top.looted[0].name === "Linen Cloth", "the top lists"],
+    [recap.compare === null && recap.own === null, "no comparison under 20 sessions in the bracket and 5 earlier ones"],
+    [!("earned" in recap.counters) && !recap.bests.includes("earned"), "no gold while the economy is private"],
+  ];
+  const missing = facts.filter(([holds]) => !holds).map(([, what]) => what);
+  if (missing.length > 0) throw new Error(`${route} is wrong in: ${missing.join(", ")}: ${JSON.stringify(recap).slice(0, 600)}`);
+  for (const gone of [`/api/v1/public/characters/${NAME}/sessions/${first.start + 1}`, "/api/v1/public/characters/Nobody-Here/sessions", `/api/v1/public/characters/Nobody-Here/sessions/${first.start}`]) {
+    expectError(await ctx.http.api(gone), 404, "not_found", `GET ${gone}`);
+  }
 }

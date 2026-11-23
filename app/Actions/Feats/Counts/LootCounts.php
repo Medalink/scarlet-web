@@ -41,7 +41,6 @@ class LootCounts
 
         return [
             Feat::Looter->value => (int) ($opens->looter ?? 0),
-            Feat::Scavenger->value => (int) ($qualities[ItemQuality::Poor->value] ?? 0),
             Feat::Lucky->value => (int) ($qualities[ItemQuality::Uncommon->value] ?? 0),
             Feat::Collector->value => (int) ($qualities[ItemQuality::Rare->value] ?? 0),
             Feat::Jackpot->value => (int) ($qualities[ItemQuality::Epic->value] ?? 0),

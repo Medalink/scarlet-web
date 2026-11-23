@@ -21,10 +21,9 @@ final class PersonalMap
     public static function data(array $r, ?int $zone = null): array
     {
         $name = $r['name'];
-        $path = $name === null ? '/account/map' : '/map';
-        $href = fn (?int $id): string => $path.(($query = array_filter(['character' => $name, 'zone' => $id])) === [] ? '' : '?'.http_build_query($query));
+        $href = fn (?int $id): string => '/map?'.http_build_query(array_filter(['character' => $name, 'scope' => $name === null ? 'mine' : null, 'zone' => $id]));
         $list = MapPage::zoneList($r['zones'], $zone, $href);
-        $trails = $name === null ? '/account/map/trails' : '/c/'.rawurlencode($name).'/trails';
+        $trails = '/map/trails?'.http_build_query($name === null ? ['scope' => 'mine'] : ['character' => $name]);
         $whose = $name === null ? 'your characters' : Format::characterName($name);
 
         return [

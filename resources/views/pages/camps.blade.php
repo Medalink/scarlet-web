@@ -1,32 +1,28 @@
-<x-layouts.app :title="$own ? 'Your camps: how you use the campsite in WoW Forever' : 'Camps: how players use the campsite in WoW Forever'" :description="$own ? null : 'How long players stay at a campfire in WoW Forever, which Camp Benefits they leave with, what they set up and where they camp.'" current="camps" :canonical="$canonical" :index="! $own">
+<x-layouts.sc :styles="$art ? ['resources/css/class-section.css'] : []" :title="$own ? 'Your camps: how you use the campsite in WoW Forever' : 'Camps: how players use the campsite in WoW Forever'" :description="$own ? null : 'How long players stay at a campfire in WoW Forever, which Camp Benefits they leave with, what they set up and where they camp.'" current="camps" :canonical="$canonical" :index="! $own">
 @if ($art)
 @vite('resources/js/scene.js')
 @endif
-<section @class(['ch-head', 'camp-head', 'ch-bare' => ! $art]) aria-labelledby="h1">
+<div class="wrap">
+  <x-page-head title="Camps">
+    <x-slot:sub>@if ($own){{ $d['whose'] }}. <a href="/camps">Everyone's camps</a>@endif</x-slot:sub>
+    <x-slot:filters><x-scope-switch :choice="$scope['choice']" path="/camps" :names="$scope['names']" :as="$scope['as']" :query="$scope['query']" /><x-scope-filters :filters="$filters" /></x-slot:filters>
+  </x-page-head>
   @if ($art)
-  <div class="stage" data-scene="{{ $art['scene'] }}" data-models="{{ $art['models'] }}" data-texture="{{ $art['texture'] }}" data-state="loading" role="img" aria-label="{{ $scene->label() }}">
-    <div class="callouts" aria-hidden="true">@foreach ($d['callouts'] as $callout)
-      <p @class(['callout', 'left' => $callout['key'] !== 'fire']) @if ($callout['key'] !== 'fire') data-side="left" @endif data-key="{{ $callout['key'] }}" hidden><b>{{ $callout['title'] }}</b><span>{{ $callout['text'] }}</span>@if ($callout['share'])<em>{{ $callout['share'] }}</em>@endif</p>@endforeach
+  <div class="cls-page">
+    <div class="sc-scene sc-panel mt-6">
+      <div class="stage" data-scene="{{ $art['scene'] }}" data-models="{{ $art['models'] }}" data-texture="{{ $art['texture'] }}" data-state="loading" role="img" aria-label="{{ $scene->label() }}"></div>
+      <div class="callouts" aria-hidden="true">@foreach ($d['callouts'] as $callout)
+        <p @class(['callout', 'left' => $callout['key'] !== 'fire']) data-side="{{ $callout['key'] !== 'fire' ? 'left' : 'right' }}" data-key="{{ $callout['key'] }}"><b>{{ $callout['title'] }}</b><span>{{ $callout['text'] }}</span>@if ($callout['share'])<em>{{ $callout['share'] }}</em>@endif</p>@endforeach
+      </div>
     </div>
   </div>
   @endif
-  <div class="ch-id wrap">
-    <div><h1 class="ch-name" id="h1">Camps</h1>
-      @if ($own)<p class="ch-sub"><span>{{ $d['whose'] }}</span><span><a href="/camps">Everyone's camps</a></span></p>@endif</div>
-    <div class="filters"><x-scope-filters :filters="$filters" /></div>
-  </div>
-</section>
-<div class="wrap">
   @if ($own)
   <x-trades :items="$trades" />
   @endif
-  @if ($art)
-  @if (array_filter(array_column($d['callouts'], 'share')))
-  <ul class="camp-shares">@foreach ($d['callouts'] as $callout)@if ($callout['share'])<li><b>{{ $callout['title'] }}</b> {{ $callout['share'] }}</li>@endif @endforeach</ul>
-  @endif
-  <p class="credit">{{ $scene->credit() }}</p>
-  @endif
+  @if ($art)<p class="sc-note mt-2">{{ $scene->credit() }}</p>@endif
   <x-figures :items="$d['figures']" />
+  @if ($scope['versus'])<x-scope-compare :compare="$scope['versus']" />@endif
   @if ($d['note'])<x-note>{{ $d['note'] }}</x-note>@endif
   <x-sheet>
     <x-module span="w7" :first="true" class="camp-mod" id="h-ben" :heading="'Camp Benefits '.$d['who'].' leave with'">
@@ -127,4 +123,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

@@ -1,7 +1,7 @@
-<x-layouts.app title="Loot rules and group size: what they change in loot" description="What loot rules and group size change in what a corpse holds, how much of it the looter keeps and how fast a group kills in WoW Forever, with the counts behind every figure." current="loot">
+<x-layouts.sc title="Loot rules and group size: what they change in loot" description="What loot rules and group size change in what a corpse holds, how much of it the looter keeps and how fast a group kills in WoW Forever, with the counts behind every figure." current="loot">
 <div class="wrap">
   <x-page-head title="Loot rules and group size" :single="true">
-    <x-slot:sub>@if ($d['source'])<a href="{{ $d['source']['href'] }}">{{ $d['source']['name'] }}</a> only. @endif{{ $d['sub'] }}@if ($d['source']) <a href="/loot/groups">All creatures</a>@endif</x-slot:sub>
+    <x-slot:sub>@if ($d['source'])<a href="{{ $d['source']['href'] }}">{{ $d['source']['name'] }}</a> only. @endif{{ $d['sub'] }}@if ($d['source']) <a href="/loot?view=groups">All creatures</a>@endif</x-slot:sub>
   </x-page-head>
   <x-figures :items="$d['figures']" />
   <x-sheet>
@@ -70,4 +70,4 @@
     @endif
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

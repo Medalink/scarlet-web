@@ -16,13 +16,12 @@ final class Trades
      */
     public static function of(string $current, string $query, bool $own): array
     {
-        $prefix = $own ? '/account' : '';
         $trades = array_map(
-            fn (Profession $profession): array => ['label' => $profession->value, 'href' => $prefix.'/professions/'.$profession->slug().$query, 'current' => $profession->slug() === $current],
+            fn (Profession $profession): array => ['label' => $profession->value, 'href' => '/professions/'.$profession->slug().$query, 'current' => $profession->slug() === $current],
             Profession::withPages(),
         );
         if ($own) {
-            $trades[] = ['label' => 'Camps', 'href' => '/account/camps'.$query, 'current' => $current === self::CAMPS];
+            $trades[] = ['label' => 'Camps', 'href' => '/camps'.$query, 'current' => $current === self::CAMPS];
         }
 
         return $trades;

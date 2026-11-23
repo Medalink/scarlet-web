@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d ? 'Search: '.$term : 'Search characters, creatures, items, zones, quests and pages'" current="search" description="Find a character, creature, item, zone, quest or page by name." :index="! $d">
+<x-layouts.sc :title="$d ? 'Search: '.$term : 'Search characters, creatures, items, zones, quests and pages'" current="search" description="Find a character, creature, item, zone, quest or page by name." :index="! $d">
 <section class="srch-head">
   <div class="wrap">
     <x-page-head title="Search" :single="true">
@@ -39,4 +39,4 @@
   @endif
   @if ($start)<x-search-start :groups="$start" />@endif
 </div>
-</x-layouts.app>
+</x-layouts.sc>

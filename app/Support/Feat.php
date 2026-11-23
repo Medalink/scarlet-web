@@ -2,8 +2,6 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Str;
-
 /** The feats of a character page: what each counts, its icon and the five thresholds of its tiers (docs/DESIGN.md "Art and game layer"). */
 enum Feat: string
 {
@@ -12,15 +10,14 @@ enum Feat: string
     case Devoted = 'devoted';
     case Steadfast = 'steadfast';
     case Seasoned = 'seasoned';
-    case Regular = 'regular';
     case LongHaul = 'long-haul';
-    case Longstanding = 'longstanding';
     case Unbroken = 'unbroken';
     case Slayer = 'slayer';
     case Bestiary = 'bestiary';
     case Finisher = 'finisher';
     case Gladiator = 'gladiator';
     case Rampage = 'rampage';
+    case Streak = 'streak';
     case Fallen = 'fallen';
     case Flattened = 'flattened';
     case Nemesis = 'nemesis';
@@ -41,23 +38,21 @@ enum Feat: string
     case Flawless = 'flawless';
     case Familiar = 'familiar';
     case Soloist = 'soloist';
-    case FullHouse = 'full-house';
     case Explorer = 'explorer';
     case Globetrotter = 'globetrotter';
     case Local = 'local';
     case Wayfarer = 'wayfarer';
+    case Trailblazer = 'trailblazer';
     case Jumper = 'jumper';
+    case FrequentFlyer = 'frequent-flyer';
     case Swimmer = 'swimmer';
     case Runner = 'runner';
     case Rider = 'rider';
     case Stroller = 'stroller';
     case Tracker = 'tracker';
-    case Scout = 'scout';
-    case Witness = 'witness';
     case Naturalist = 'naturalist';
     case Skullseer = 'skullseer';
     case Looter = 'looter';
-    case Scavenger = 'scavenger';
     case Lucky = 'lucky';
     case Collector = 'collector';
     case Jackpot = 'jackpot';
@@ -70,7 +65,6 @@ enum Feat: string
     case Forager = 'forager';
     case Artisan = 'artisan';
     case Master = 'master';
-    case Practised = 'practised';
     case Crafter = 'crafter';
     case Repertoire = 'repertoire';
     case Earner = 'earner';
@@ -81,6 +75,8 @@ enum Feat: string
     case Mime = 'mime';
     case Signature = 'signature';
     case Indecisive = 'indecisive';
+    case Companion = 'companion';
+    case Fireside = 'fireside';
     case BattleCry = 'battle-cry';
     case Charger = 'charger';
     case Executioner = 'executioner';
@@ -234,7 +230,6 @@ enum Feat: string
     case GuardianAngel = 'guardian-angel';
     case Resurrector = 'resurrector';
     case Cleanser = 'cleanser';
-    case BattleMedic = 'battle-medic';
     case Stalwart = 'stalwart';
     case DamageSponge = 'damage-sponge';
     case Unbreakable = 'unbreakable';
@@ -243,35 +238,32 @@ enum Feat: string
     case Juggernaut = 'juggernaut';
     case Immovable = 'immovable';
     case Provoker = 'provoker';
-    case Frontliner = 'frontliner';
-    case FirstToFall = 'first-to-fall';
     case Brawler = 'brawler';
     case Bruiser = 'bruiser';
     case Onslaught = 'onslaught';
-    case Skirmisher = 'skirmisher';
-    case Headhunter = 'headhunter';
-    case Warbringer = 'warbringer';
-    case Untouched = 'untouched';
     case Silencer = 'silencer';
-    case Cleaver = 'cleaver';
-    case Duelist = 'duelist';
     case Longshot = 'longshot';
     case Artillery = 'artillery';
     case Barrage = 'barrage';
-    case Backliner = 'backliner';
-    case Spellslinger = 'spellslinger';
-    case Siegebreaker = 'siegebreaker';
-    case OutOfReach = 'out-of-reach';
     case Warden = 'warden';
-    case Sniper = 'sniper';
-    case Bombardier = 'bombardier';
 
-    /** The tiers in order, copper first: tier `n` of a feat is `TIERS[n - 1]`, and 0 is no tier. */
-    public const array TIERS = ['Copper', 'Silver', 'Gold', 'Scarlet', 'Legend'];
+    /** The tiers in order, uncommon first: tier `n` of a feat is `TIERS[n - 1]`, and 0 is no tier. */
+    public const array TIERS = ['Uncommon', 'Rare', 'Epic', 'Legendary', 'Scarlet'];
 
     private const array ECONOMY = [self::Earner, self::Spender, self::Tycoon, self::Windfall];
 
-    /** The tier a count reaches: 0 for none, 1 copper to 5 legend. */
+    private const array ACCOUNT_SUM = [
+        self::Summit, self::Veteran, self::LongHaul, self::Slayer, self::Finisher, self::Gladiator, self::Fallen, self::Questing,
+        self::Fickle, self::Delver, self::Vanquisher, self::Raider, self::Conqueror, self::DeepDweller, self::Flawless,
+        self::Soloist, self::Wayfarer, self::Jumper, self::FrequentFlyer, self::Swimmer, self::Runner, self::Rider,
+        self::Stroller, self::Looter, self::Lucky, self::Collector, self::Jackpot, self::Unboxer, self::Angler, self::Gatherer,
+        self::Artisan, self::Master, self::Crafter, self::Earner, self::Spender, self::Expressive, self::Indecisive,
+        self::Companion, self::Fireside,
+    ];
+
+    private const array ACCOUNT_SUMMIT = [20, 60, 120, 180, 300];
+
+    /** The tier a count reaches: 0 for none, 1 uncommon to 5 scarlet. */
     public function tier(int|float $value): int
     {
         $tier = 0;
@@ -292,7 +284,7 @@ enum Feat: string
         return $this->tier($decimals === 0 ? floor($stored) : round($stored, $decimals));
     }
 
-    /** @return array{0: int, 1: int, 2: int, 3: int, 4: int} the counts that earn copper, silver, gold, scarlet and legend */
+    /** @return array{0: int, 1: int, 2: int, 3: int, 4: int} the counts that earn uncommon, rare, epic, legendary and scarlet */
     public function thresholds(): array
     {
         return $this->row()[3];
@@ -304,10 +296,10 @@ enum Feat: string
         return $this->row()[0];
     }
 
-    /** The name a card shows: "Long Haul", "Errand Runner". */
+    /** The name a card shows: "Long Haul", "Repeat Visitor". */
     public function label(): string
     {
-        return Str::headline($this->name);
+        return $this->meta()[0];
     }
 
     /** Decimal places of a value: 1 for Wayfarer, 0 for every other feat. */
@@ -326,18 +318,86 @@ enum Feat: string
         };
     }
 
-    /** What the count is of, after the number: "6,969 kills", or "1 kill" when `$one`. */
+    /** What the count is of, after the number: "6,969 kills", or "1 kill" when `$one`. A feat with a unit is counted in yards. */
     public function noun(bool $one = false): string
     {
         $row = $this->row();
+        $noun = $one ? $row[1] : $row[2];
 
-        return $one ? $row[1] : $row[2];
+        return $this->unit() === null ? $noun : str_replace('mile', 'yard', $noun);
+    }
+
+    /** "mi" for the feats whose thresholds are yards and which are shown in miles; null for the rest. */
+    public function unit(): ?string
+    {
+        return match ($this) {
+            self::Trailblazer, self::Swimmer, self::Runner, self::Rider, self::Stroller => 'mi',
+            default => null,
+        };
+    }
+
+    /** The family of the wall it sits in: journey, combat, quests, dungeons, world, trade, class or role. */
+    public function family(): string
+    {
+        return $this->meta()[1];
+    }
+
+    /** The collection of its family: "Travel", "Warrior, Arms", "Healer". */
+    public function collection(): string
+    {
+        return $this->meta()[2];
+    }
+
+    /** @return array{kind: string, keys?: list<string>, per?: int, once_at?: int, gate?: string, note?: string}|null how the addon counts it while a character plays, null when only the website can */
+    public function live(): ?array
+    {
+        return $this->meta()[3];
+    }
+
+    /** "spell" or "tree" when the card engraves the icon of the most-cast matching spell or of the tree. */
+    public function engraves(): ?string
+    {
+        return $this->meta()[4];
     }
 
     /** True for the feats a character page shows only when the owner chose to show the economy. */
     public function economy(): bool
     {
         return in_array($this, self::ECONOMY, true);
+    }
+
+    /** True for the general feats that are not gold feats: each tier held on one is a point of the feat score. */
+    public function scores(): bool
+    {
+        return ! array_key_exists($this->value, FeatRules::RULES) && ! $this->economy();
+    }
+
+    /** The shield its crest wears: class, talent-tree and role feats wear the class shield. */
+    public function crest(): CrestScope
+    {
+        return array_key_exists($this->value, FeatRules::RULES) ? CrestScope::ClassBased : CrestScope::Character;
+    }
+
+    /** How the account counts it: `sum` or `max` for a general feat, `none` for a class, talent-tree or role feat. */
+    public function account(): AccountRule
+    {
+        return match (true) {
+            array_key_exists($this->value, FeatRules::RULES) => AccountRule::None,
+            in_array($this, self::ACCOUNT_SUM, true) => AccountRule::Sum,
+            default => AccountRule::Max,
+        };
+    }
+
+    /** @return array{0: int, 1: int, 2: int, 3: int, 4: int}|null the counts that earn uncommon to scarlet on the account, null without an account crest */
+    public function accountThresholds(): ?array
+    {
+        return $this === self::Summit ? self::ACCOUNT_SUMMIT : $this->account()->thresholds($this->thresholds());
+    }
+
+    /** @return array{0: string, 1: string, 2: string, 3: array{kind: string, keys?: list<string>, per?: int, once_at?: int, gate?: string, note?: string}|null, 4: string|null} */
+    private function meta(): array
+    {
+        return FeatMeta::row($this);
     }
 
     /** The feat's card: icon, singular and plural noun, thresholds (App\Support\FeatRows).

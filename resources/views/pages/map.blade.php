@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['personal'] ? $d['title'].' on the WoW Forever world map' : 'WoW Forever world map: where characters go and die'" current="world" :description="$d['personal'] ? null : 'Paths, deaths and creatures met on one world map, from what players chose to upload.'" :index="! $d['personal']">
+<x-layouts.sc :title="$d['personal'] ? $d['title'].' on the WoW Forever world map' : 'WoW Forever world map: where characters go and die'" current="map" :description="$d['personal'] ? null : 'Paths, deaths and creatures met on one world map, from what players chose to upload.'" :index="! $d['personal']">
 <x-world>
   <x-slot:map>
     <div class="world-map">
@@ -20,7 +20,7 @@
       @else
       <x-seg label="Layer" :buttons="true" :items="$d['layers']" />
       @endif
-      <div class="seg" id="map-look"></div>
+      <div class="sc-seg" id="map-look"></div>
       @if ($d['rulesetPick'])<x-pick label="Ruleset" :options="$d['rulesetPick']" :selected="$d['rulesetSelected']" />@elseif ($d['rulesets'])<x-seg label="Ruleset" :items="$d['rulesets']" />@endif
     </div>
     @if ($d['personal'])<x-density-key low="Once" high="Often walked" />@else<x-density-key low="Few" high="Many characters" />@endif
@@ -36,4 +36,4 @@
     @else<x-note>No play time recorded yet.</x-note>@endif
   </aside>
 </x-world>
-</x-layouts.app>
+</x-layouts.sc>

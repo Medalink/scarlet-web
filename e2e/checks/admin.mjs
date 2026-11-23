@@ -38,7 +38,7 @@ export async function adminSeesTheApiCalls(ctx) {
     if (!(answer.headers.get("x-robots-tag") ?? "").includes("noindex")) throw new Error(`${route}: expected X-Robots-Tag noindex`);
     if (route === "/admin/clients" && !answer.text.includes(`<code>${AGENT}</code>`)) throw new Error(`/admin/clients: expected the lane's installs to show the client they signed with, ${AGENT}`);
     if (route !== "/admin/api") continue;
-    const uploads = Number((answer.text.match(/Upload requests<\/dt><dd>([\d,]+)/)?.[1] ?? "0").replaceAll(",", ""));
+    const uploads = Number((answer.text.match(/Upload requests<\/span>\s*<span[^>]*>([\d,]+)/)?.[1] ?? "0").replaceAll(",", ""));
     if (uploads === 0) throw new Error("/admin/api: expected the upload requests of the lane to be counted, saw none");
     if (!answer.text.includes(`>${NAME}</a>`)) throw new Error(`/admin/api: expected it to list ${NAME} among the characters looked up`);
   }

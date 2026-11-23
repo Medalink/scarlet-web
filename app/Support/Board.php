@@ -30,6 +30,7 @@ enum Board: string
     case MostTailoringCrafts = 'most-tailoring-crafts';
     case MostCookingCrafts = 'most-cooking-crafts';
     case MostFirstAidCrafts = 'most-first-aid-crafts';
+    case FeatScore = 'feat-score';
 
     /** The board of a gathering: its most looted attempts. */
     public static function ofGathering(GatherKind $kind): self
@@ -86,6 +87,17 @@ enum Board: string
         };
     }
 
+    public function group(): string
+    {
+        return match ($this) {
+            self::FastestTo60, self::FastestTo40, self::FastestTo20, self::HighestWithoutDying, self::MostQuests, self::MostQuestsCompleted => 'Levelling',
+            self::MostKills, self::MostDungeonRuns => 'Combat',
+            self::MostJumps, self::MostDistance, self::MostTimeByTheFire => 'Travel',
+            self::FeatScore => 'Feats',
+            default => 'Professions',
+        };
+    }
+
     public function title(): string
     {
         return match ($this) {
@@ -104,6 +116,7 @@ enum Board: string
             self::MostCreaturesSkinned => 'Most creatures skinned',
             self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
             self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Most '.$this->crafting()?->value.' crafts',
+            self::FeatScore => 'Highest feat score',
         };
     }
 
@@ -123,6 +136,7 @@ enum Board: string
             self::MostHerbsGathered, self::MostOreMined, self::MostCreaturesSkinned => 'gather',
             self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
             self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'skills',
+            self::FeatScore => 'crown',
         };
     }
 
@@ -144,6 +158,7 @@ enum Board: string
             self::MostCreaturesSkinned => 'Creatures skinned by public characters, counted from each one\'s first recorded session.',
             self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
             self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Crafts made with '.$this->crafting()?->value.' by public characters, counted from each one\'s first recorded session.',
+            self::FeatScore => 'One point for each tier a public character holds on the 68 general feats that are not gold feats, 340 at most. Class and role feats are left out, so a class that can hold more feats does not start ahead.',
         };
     }
 
@@ -177,6 +192,7 @@ enum Board: string
             self::MostCreaturesSkinned => 'Creatures',
             self::MostAlchemyCrafts, self::MostBlacksmithingCrafts, self::MostEnchantingCrafts, self::MostEngineeringCrafts,
             self::MostLeatherworkingCrafts, self::MostTailoringCrafts, self::MostCookingCrafts, self::MostFirstAidCrafts => 'Crafts',
+            self::FeatScore => 'Feat score',
         };
     }
 

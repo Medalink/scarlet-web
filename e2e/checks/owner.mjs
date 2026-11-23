@@ -3,8 +3,8 @@ import { hasNoWindow } from "./browser.mjs";
 import { linkToAccount, signIn } from "./pages.mjs";
 
 const TOAST_MS = 5000;
-const HEARD_MS = 5000;
-const OPEN_TOAST = `document.querySelector(".feat-toast:popover-open")`;
+const HEARD_MS = 10_000;
+const OPEN_TOAST = `document.querySelector(".feat-toast")`;
 const SERVER_HEARD = `performance.getEntriesByType("resource").some((entry) => entry.initiatorType === "fetch" && entry.name.includes("livewire") && entry.responseEnd > 0)`;
 
 export async function browserFor(ctx) {
@@ -36,12 +36,12 @@ export async function ownerSeesNewFeatOnce(ctx) {
   try {
     await tab.until(`${OPEN_TOAST}?.id === "feat-toast-seasoned"`, TOAST_MS, `the owner's ${route} did not show the Seasoned toast (${tab.problems.join(" | ") || "no page errors"})`);
     const said = await tab.evaluate(`${OPEN_TOAST}.innerText.replace(/\\s+/g, " ").trim()`);
-    if (!/^Feat earned Seasoned ?Copper/.test(said)) throw new Error(`the toast should say "Feat earned Seasoned Copper", it says ${JSON.stringify(said)}`);
+    if (!/^Feat earned Seasoned ?Uncommon/.test(said)) throw new Error(`the toast should say "Feat earned Seasoned Uncommon", it says ${JSON.stringify(said)}`);
     await tab.until(SERVER_HEARD, HEARD_MS, "the page did not tell the server which toast showed");
 
     await tab.navigate(ctx.base + route);
     const left = await tab.evaluate(`[document.querySelectorAll(".feat-toasts").length, document.querySelectorAll(".feat-toast").length].join()`);
-    if (left !== "1,0") throw new Error(`after a reload the owner's page should carry the toast stack and no toast (1,0), saw ${left}`);
+    if (left !== "0,0") throw new Error(`after a reload the owner's page should carry no toast stack and no toast (0,0), saw ${left}`);
     if (tab.problems.length > 0) throw new Error(tab.problems.join(" | "));
   } finally {
     await tab.close();

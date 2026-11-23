@@ -29,7 +29,6 @@ final class Gallery
         'item' => 'item.html',
         'zone' => 'zone.html',
         'quest' => 'quest.html',
-        'character' => 'character.html',
         'account' => 'account.html',
         'login' => 'login.html',
         'link' => 'link.html',
@@ -37,6 +36,8 @@ final class Gallery
         'class' => 'class.html',
         'class-rogue' => 'the Rogue mock',
         'class-shaman' => 'the Shaman mock',
+        'system' => 'system.html',
+        'feats' => 'feats-web.html',
     ];
 
     /** Gallery page → its view. */
@@ -50,7 +51,6 @@ final class Gallery
         'item' => 'design.item',
         'zone' => 'design.zone',
         'quest' => 'design.quest',
-        'character' => 'design.character',
         'account' => 'design.account',
         'login' => 'design.login',
         'link' => 'design.link',
@@ -58,6 +58,8 @@ final class Gallery
         'class' => 'design.class',
         'class-rogue' => 'design.class',
         'class-shaman' => 'design.class',
+        'system' => 'design.system',
+        'feats' => 'design.feats',
     ];
 
     /** Where a gallery page lives. */
@@ -78,9 +80,10 @@ final class Gallery
             'world' => WorldPage::data(),
             'rulesets', 'leaderboards', 'search' => ListPages::data($page),
             'creature', 'item', 'zone', 'quest' => ResultPages::data($page),
-            'character' => CharacterPage::data(),
             'account', 'login', 'link' => AccountPages::data($page),
             'developers' => DevelopersPage::data(),
+            'system' => SystemPage::data(),
+            'feats' => FeatsDemo::data(),
             'class', 'class-rogue', 'class-shaman' => ClassGallery::data($page),
             default => [],
         };

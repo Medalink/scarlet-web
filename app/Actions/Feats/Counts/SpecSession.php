@@ -13,9 +13,6 @@ final readonly class SpecSession
     public function __construct(
         public readonly ?TalentTree $tree,
         public readonly int $playedMs,
-        public readonly int $kills,
-        public readonly int $deaths,
-        public readonly int $playerKills,
         public readonly int $dungeonRuns,
         public readonly int $dungeonBosses,
         public readonly int $raidBosses,

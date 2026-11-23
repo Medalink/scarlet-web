@@ -1,0 +1,39 @@
+
+<section id="feats" class="sc-sec">
+  <div class="sc-sec-head"><h2>Feats</h2><p class="ml-auto pb-1 text-[14px] text-muted">{{ $f['summary']['held'] }} of {{ $f['summary']['total'] }} held @if ($f['hidden'])· {{ $f['hidden'] }}@endif · <a href="/feats">All feats</a></p></div>
+  @if ($f['pinned'] !== [])
+    <div class="mt-7 grid max-w-[720px] grid-cols-3 gap-4 text-center">
+      @foreach ($f['pinned'] as $feat)
+        <a href="{{ $feat['href'] }}" class="no-underline">
+          <x-crest :glyph="$feat['glyph']" :feat-key="$feat['key']" :tier="$feat['tier']" :progress="$feat['progress']" :size="104" :spell="$feat['spell']" :label="$feat['name']" />
+          <p class="sc-feat-n mt-3 justify-center">{{ $feat['name'] }} <span class="sc-chip t{{ $feat['tier'] }}">{{ $feat['tierName'] }}</span></p>
+          <p class="sc-sub mt-2">{{ $feat['counted'] }}</p>
+        </a>
+      @endforeach
+    </div>
+  @endif
+  @if ($f['closest'] !== [])
+    <h3 class="sc-h mt-9" style="font-size:24px">Closest to the next tier</h3>
+    <div class="mt-4 grid gap-4 md:grid-cols-3">
+      @foreach ($f['closest'] as $card)
+        <a href="{{ $card['href'] }}" class="sc-panel flex min-w-0 items-center gap-5 px-5 py-5 no-underline">
+          <x-crest :glyph="$card['glyph']" :feat-key="$card['key']" :tier="$card['tier']" :progress="$card['progress']" :size="64" :spell="$card['spell']" :label="$card['name']" />
+          <span class="min-w-0">
+            <span class="sc-feat-n">{{ $card['name'] }}</span>
+            <span class="sc-num sc-num-md mt-2 block" style="white-space:normal;line-height:1.05">{{ $card['left'] }}</span>
+            <span class="sc-sub mt-1 block" style="color:var(--muted)">{{ $card['counted'] }}</span>
+          </span>
+        </a>
+      @endforeach
+    </div>
+  @endif
+  @php($full = $pin && count(array_filter(array_merge(...array_column($f['wall'], 'feats')), fn (array $feat): bool => $feat['pinned'])) >= App\Models\Character::MAX_PINNED_FEATS)
+  @if ($pin)
+    @error('feat')<p class="sc-note mt-6" role="alert">{{ $message }}</p>@enderror
+  @endif
+  <div class="mt-8">
+    @foreach ($f['wall'] as $collection)
+      <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :pin="$pin" :full="$full" />
+    @endforeach
+  </div>
+</section>

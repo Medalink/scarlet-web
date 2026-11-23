@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Account\ChooseScope;
 use App\Actions\Account\OwnCharacterIds;
 use App\Actions\Public\CampsDashboard;
 use App\Actions\Public\MapZones;
@@ -17,16 +18,16 @@ use App\View\Pages\CampsPage;
 use App\View\Pages\Filters;
 use App\View\Pages\MapSpec;
 use App\View\Pages\Trades;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 
 /**
- * The camps dashboard: how players use the campsite. Public at `/camps`; at `/account/camps` the same page over only the
+ * The camps dashboard: how players use the campsite. Public at `/camps`; with `?scope=mine` the same page over only the
  * signed-in account's characters.
  */
 class CampsController extends Controller
 {
-    public function __invoke(ScopeRequest $request, CampsDashboard $dashboard, MapZones $mapZones, OwnCharacterIds $ownIds): View|RedirectResponse
+    public function __invoke(ScopeRequest $request, CampsDashboard $dashboard, MapZones $mapZones, OwnCharacterIds $ownIds, ChooseScope $chooseScope): Response|RedirectResponse
     {
         $characters = $request->ownCharacters($ownIds);
         $own = $characters !== null;
@@ -45,18 +46,24 @@ class CampsController extends Controller
         $page = CampsPage::data($answer, $rect);
         $map = $page['dots'] === null ? null : MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $mapZones->handle($scope->rollup()), dots: $page['dots']);
 
-        $path = $own ? '/account/camps' : '/camps';
+        $path = '/camps';
         $query = array_filter(['ruleset' => $scope->ruleset?->slug(), 'server' => $scope->server === Server::All ? null : $scope->server->value]);
+        $switch = $chooseScope->handle($request->viewer(), $request->choice(), $request->comparedName(), $own, $query, $page['figures'], function (int $id) use ($dashboard, $asked, $request): ?array {
+            $yours = $dashboard->handle($asked, $request->serverFilter(), [$id]);
 
-        return view('pages.camps', [
+            return $yours === null ? null : CampsPage::data($yours, null)['figures'];
+        }, ['Characters']);
+
+        return response()->view('pages.camps', [
             'd' => $page,
             'own' => $own,
-            'trades' => $own ? Trades::of(Trades::CAMPS, $query === [] ? '' : '?'.http_build_query($query), true) : [],
-            'filters' => Filters::onPage($scope, $rulesets, $path),
+            'trades' => $own ? Trades::of(Trades::CAMPS, '?'.http_build_query($query + ['scope' => 'mine']), true) : [],
+            'filters' => Filters::onPage($scope, $rulesets, $path, $own ? ['scope' => 'mine'] : []),
             'map' => $map,
             'art' => SceneArt::stage(Scene::Camp),
             'scene' => Scene::Camp,
             'canonical' => $path,
-        ]);
+            'scope' => $switch,
+        ], 200, $own ? ['Cache-Control' => ScopeRequest::PRIVATE_CACHE] : []);
     }
 }

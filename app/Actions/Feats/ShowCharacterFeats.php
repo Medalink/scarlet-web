@@ -13,7 +13,7 @@ class ShowCharacterFeats
 
     /**
      * Earned feats first, rarest first: the fewest characters holding the tier this one holds, then the higher tier, then
-     * the order of `Feat`. The feats not yet earned follow, closest to copper first. Rarity orders the list and is not in
+     * the order of `Feat`. The feats not yet earned follow, closest to Uncommon first. Rarity orders the list and is not in
      * a row. The gold feats are left out unless `$economy`. `pinned` marks the feats the owner pinned; pinning does not
      * move a row.
      *

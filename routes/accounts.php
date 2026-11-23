@@ -1,20 +1,15 @@
 <?php
 
-use App\Http\Controllers\Web\AccountCharactersController;
 use App\Http\Controllers\Web\AccountController;
-use App\Http\Controllers\Web\AccountProfessionsController;
+use App\Http\Controllers\Web\AccountSettingsController;
 use App\Http\Controllers\Web\AuthCallbackController;
 use App\Http\Controllers\Web\AuthDevelopmentController;
 use App\Http\Controllers\Web\AuthLoginController;
 use App\Http\Controllers\Web\AuthLogoutController;
 use App\Http\Controllers\Web\AuthRedirectController;
-use App\Http\Controllers\Web\CampsController;
+use App\Http\Controllers\Web\LegacyRedirectController;
 use App\Http\Controllers\Web\LinkConfirmController;
 use App\Http\Controllers\Web\LinkShowController;
-use App\Http\Controllers\Web\MapController;
-use App\Http\Controllers\Web\MapTrailsController;
-use App\Http\Controllers\Web\ProfessionController;
-use App\Http\Requests\Web\ScopeRequest;
 use App\Models\IdentityProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -26,17 +21,19 @@ Route::post('/logout', AuthLogoutController::class);
 
 // The development sign-in exists only where the environment is `local` and the switch is on.
 if (IdentityProvider::developmentAllowed()) {
-    Route::post('/auth/development', AuthDevelopmentController::class)->middleware('throttle:30,1');
+    Route::post('/auth/development', AuthDevelopmentController::class)->middleware('throttle:120,1');
 }
+
+Route::get('/account/characters', LegacyRedirectController::class)->defaults('to', '/account');
+Route::get('/account/professions', LegacyRedirectController::class)->defaults('to', '/professions')->defaults('with', ['scope' => 'mine']);
+Route::get('/account/professions/{slug}', LegacyRedirectController::class)->where('slug', '[a-z-]+')->defaults('to', '/professions/{slug}')->defaults('with', ['scope' => 'mine']);
+Route::get('/account/camps', LegacyRedirectController::class)->defaults('to', '/camps')->defaults('with', ['scope' => 'mine']);
+Route::get('/account/map', LegacyRedirectController::class)->defaults('to', '/map')->defaults('with', ['scope' => 'mine']);
+Route::get('/account/map/trails', LegacyRedirectController::class)->defaults('to', '/map/trails')->defaults('with', ['scope' => 'mine']);
 
 Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account', AccountController::class);
-    Route::get('/account/characters', AccountCharactersController::class);
-    Route::get('/account/professions', AccountProfessionsController::class);
-    Route::get('/account/camps', CampsController::class)->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
-    Route::get('/account/professions/{slug}', ProfessionController::class)->where('slug', '[a-z-]+')->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
-    Route::get('/account/map', MapController::class)->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
-    Route::get('/account/map/trails', MapTrailsController::class)->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
+    Route::get('/account/settings', AccountSettingsController::class);
     Route::get('/link', LinkShowController::class);
     Route::post('/link', LinkConfirmController::class)->middleware('throttle:20,1,link-confirm');
 });

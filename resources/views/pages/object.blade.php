@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['name'].': what it gives and how often'" :description="$d['sub'].' What '.$d['name'].' gives in WoW Forever and how often.'">
+<x-layouts.sc :title="$d['name'].': what it gives and how often'" :description="$d['sub'].' What '.$d['name'].' gives in WoW Forever and how often.'">
 <div class="wrap">
   <x-page-head :title="$d['name']" :single="true">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
@@ -31,4 +31,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

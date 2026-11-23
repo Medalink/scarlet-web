@@ -25,8 +25,7 @@ const comps = path.join(repo, "docs", "comps");
 const site = path.join(repo, "static-site");
 const PAGES = [
   ["landing", "/", path.join(site, "index.html")],
-  ["demo", "/demo", path.join(site, "character.html")],
-  ...["stats", "world", "rulesets", "leaderboards", "search", "creature", "item", "zone", "quest", "character", "account", "login", "link", "developers"]
+  ...["stats", "world", "rulesets", "leaderboards", "search", "creature", "item", "zone", "quest", "account", "login", "link", "developers"]
     .map((name) => [name, "/design/" + name, path.join(comps, name + ".html")]),
 ].filter(([name]) => !only || only.includes(name));
 const WIDTHS = [1280, 390];
@@ -82,7 +81,7 @@ async function realPages() {
   const board = (await get("/leaderboards/most-quests?limit=1")).data?.[0]?.name;
   const zone = (await get("/rulesets/all/series/deaths")).data?.zones?.[0]?.zone_id;
   const pages = [
-    ["stats", "/stats"], ["rulesets", "/rulesets"], ["map", "/map"], ["camps", "/camps"], ["fishing", "/professions/fishing"], ["cooking", "/professions/cooking"], ["tailoring", "/professions/tailoring"], ["developers", "/developers"], ["landing", "/"], ["demo", "/demo"],
+    ["stats", "/stats"], ["rulesets", "/stats/compare"], ["map", "/map"], ["camps", "/camps"], ["fishing", "/professions/fishing"], ["cooking", "/professions/cooking"], ["tailoring", "/professions/tailoring"], ["developers", "/developers"], ["landing", "/"],
     ["leaderboards", "/leaderboards/most-quests"], ["leaderboards-fastest", "/leaderboards/fastest-to-60"], ["leaderboards-class", "/leaderboards/most-quests?class=WARLOCK"],
     ["search", "/search?q=th"], ["search-items", "/search?q=th&kind=items"],
   ];
@@ -100,7 +99,7 @@ async function realPages() {
 
 // Plain link clicks with motion allowed: a cross-page transition only starts on a click, never on goto, so this is the
 // pass that shows whether a transition throws. Prints the page errors and console errors of each click.
-const CLICKS = [["/", "a.btn[href='/demo']"], ["/demo", "a.brand"], ["/", ".nav a[href='/stats']"], ["/stats", "a.brand"], ["/stats", ".nav a[href='/map']"], ["/map", "a.brand"]];
+const CLICKS = [["/", ".nav a[href='/stats']"], ["/stats", "a.brand"], ["/stats", ".nav a[href='/map']"], ["/map", "a.brand"]];
 async function clickPass() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "no-preference" });
   let failures = 0;

@@ -39,7 +39,7 @@ final class Filters
      * @param  string  $statsPath  the page for every ruleset, with the server as a query
      * @return array{rulesets: list<array<string, mixed>>, rulesetsPick: list<array{0: string, 1: string|null, 2?: bool}>|null, rulesetSelected: string|null, servers: list<array<string, mixed>>|null}
      */
-    public static function for(PageScope $scope, array $rulesets, string $statsPath = '/stats', string $rulesetPath = '/rulesets'): array
+    public static function for(PageScope $scope, array $rulesets, string $statsPath = '/stats', string $rulesetPath = '/stats'): array
     {
         $items = self::items($scope, $rulesets, $statsPath, fn (array $ruleset): string => $rulesetPath.'/'.$ruleset['slug']);
 

@@ -4,7 +4,7 @@
     $f = Gallery::filters();
     $dungeons = array_map(fn (array $r): array => ['cells' => [['text' => $r[0], 'href' => Gallery::url('zone')], Format::number($r[1]), Format::duration($r[2]), Format::number($r[3], 1), Format::number($r[4])]], $d['dungeons']);
 @endphp
-<x-layouts.app title="Scarlet stats: how characters level in WoW Forever" current="stats" :base="Gallery::BASE">
+<x-layouts.sc title="Scarlet stats: how characters level in WoW Forever" current="stats" :base="Gallery::BASE">
 <div class="wrap">
   <x-page-head title="All characters">
     <x-slot:sub>1,284 characters, 41,907 hours of play, recorded since 14 Nov 2026. Updated 6 minutes ago.</x-slot:sub>
@@ -68,4 +68,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

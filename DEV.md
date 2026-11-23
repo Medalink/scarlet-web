@@ -38,6 +38,31 @@ by a hash of its folder name; `bin/dev start -Port 8480` picks one). `/up` is th
 | `bin/dev infra up`, `infra down` | the shared PostgreSQL and Redis; `down` keeps their data |
 | `bin/run <command>` | any other command in the tools container |
 
+## Rich local data
+
+`bin/artisan db:seed` fills the database with 198 invented characters (22 of each class, both factions, every ruleset,
+levels 1 to 60) over the last 60 days: Name-Surname names from a fixed pool, recordings of their play, five accounts
+with six linked characters each (the first account is the development sign-in's, so `/account` is full) and unlinked
+installs for the rest. It takes about 7 minutes on a first run and needs Horizon (`bin/dev start`).
+
+The seeder does not write the tables the pages read. It builds the session lines of each character
+(`database/seeders/Population`), packs them with `scarlet-part batch`, sends them through the same actions the upload
+API calls and lets the queue decode them, so rows, rollups and feats are what the decoder makes of them. Layers run in
+order from `DatabaseSeeder::LAYERS`: realms, accounts and installs, recordings, the owners' choices (public, copper,
+pinned feats). Every layer only creates what is missing, so a second run uploads nothing; a stored session is
+skipped by its start, and everything is drawn from fixed keys (`Rng`) and `setseed`, so a rebuilt database gets the
+same people. Characters of the database that are not the seeder's are never touched, and their names are never used.
+
+Recordings name a spell, item or creature only when the shared name dictionary has no name for it, so the seed never
+outvotes what real installs reported.
+
+`bin/run env SCARLET_SEED_PER_CLASS=2 php artisan db:seed` seeds the first 18 of the same people (about a minute); the
+rest join later at the full size. The class pages compare a character with 20 peers of its class in its level bracket,
+so those pages stay empty below 20 per class.
+
+The seeder never uses the character names of `e2e/fixture`, but the development account owns characters now, so run the
+end-to-end lane with `node e2e/boot.mjs` or on an unseeded database.
+
 ## Checks before a ship
 
 ```sh

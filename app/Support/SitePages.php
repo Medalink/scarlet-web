@@ -33,14 +33,14 @@ final class SitePages
             self::page('Loot rules and group size', '/loot/groups', 'What group loot, free for all and group size change in what a corpse holds and who keeps it', ['loot rules', 'group loot', 'free for all', 'need before greed', 'round robin', 'rolls', 'group size']),
             self::page('Camps', '/camps', 'How players use the campsite: visits, Camp Benefits and what gets set up', ['camp', 'campfire', 'tent', 'chair', 'rested', 'benefits']),
             ...array_map(self::profession(...), Profession::withPages()),
-            self::page('Rulesets', '/rulesets', 'The rulesets side by side', ['compare', 'comparison']),
-            self::page('Hardcore deaths', '/hardcore-deaths', 'Hardcore deaths by level and by day', ['hardcore', 'deaths', 'died', 'death']),
+            self::page('Rulesets', '/stats/compare', 'The rulesets side by side', ['compare', 'comparison']),
         ];
         foreach ($rulesets as $ruleset) {
             if ($ruleset['recorded']) {
-                $pages[] = self::page($ruleset['label'], '/rulesets/'.$ruleset['slug'], 'Dashboard of one ruleset', []);
+                $pages[] = self::page($ruleset['label'], '/stats/'.$ruleset['slug'], 'Dashboard of one ruleset', []);
             }
         }
+        $pages[] = self::page('Feats', '/feats', 'Every feat of five tiers and the share of characters that hold each tier', ['feat', 'achievement', 'achievements', 'tier', 'copper', 'silver', 'gold', 'legend']);
         $pages[] = self::page('Leaderboards', '/leaderboards', 'The boards of public characters', ['board', 'ranking', 'rankings', 'top', 'best']);
         foreach (Board::cases() as $board) {
             $pages[] = self::page($board->title(), '/leaderboards/'.$board->value, 'Leaderboard of public characters', []);

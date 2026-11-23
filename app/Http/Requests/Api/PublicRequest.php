@@ -39,6 +39,7 @@ class PublicRequest extends FormRequest
             'creature' => ['nullable', 'integer', 'between:1,'.RecordId::MAX],
             'level' => ['nullable', 'integer', 'min:0', 'max:'.(HeatGrid::LEVELS - 1)],
             'cursor' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'after' => ['nullable', 'integer', 'min:0', 'max:4294967295'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:'.Cursor::MAX_LIMIT],
             'q' => ['nullable', 'string', 'min:2', 'max:80', 'regex:/^\P{Cc}*\z/u'],
             'kind' => ['nullable', 'string', 'max:16'],
@@ -81,6 +82,13 @@ class PublicRequest extends FormRequest
         $class = $this->validated('class');
 
         return is_string($class) ? strtoupper($class) : null;
+    }
+
+    public function afterStart(): ?int
+    {
+        $after = $this->validated('after');
+
+        return is_numeric($after) ? (int) $after : null;
     }
 
     public function layer(): WorldLayer
