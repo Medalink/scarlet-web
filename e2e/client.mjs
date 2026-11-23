@@ -60,6 +60,11 @@ export class InstallClient {
     return this.request("POST", "/api/v1/installs/link-code", options);
   }
 
+  /** The base64 signature of the link code's `redeem` line, which the confirm form carries back to /link. */
+  redeem(message) {
+    return crypto.sign(null, Buffer.from(message, "utf8"), this.#privateKey).toString("base64");
+  }
+
   feats(options) {
     return this.request("GET", "/api/v1/installs/me/feats", options);
   }

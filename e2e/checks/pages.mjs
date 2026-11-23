@@ -176,16 +176,23 @@ export async function signIn(http, jar) {
   }
 }
 
-/** Links the install of `app` to the account `jar` is signed in to, with a link code as the app does it. */
+/** Links the install of `app` to the account `jar` is signed in to, the way the app does it: the code, the
+ *  `redeem` line of the link-code answer signed by the install's key in the address, and both back in the confirm. */
 export async function linkToAccount(http, jar, app) {
-  const code = expectJson(expectStatus(await app.linkCode(), 201, "POST /api/v1/installs/link-code"), "the link code").code;
+  const issued = expectJson(expectStatus(await app.linkCode(), 201, "POST /api/v1/installs/link-code"), "the link code");
+  const code = issued.code;
   if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code ?? "")) throw new Error(`the link code should look like XXXX-XXXX, saw ${JSON.stringify(code)}`);
+  if (typeof issued.redeem !== "string" || issued.redeem === "") throw new Error(`the link code answer should carry a redeem line, saw ${JSON.stringify(issued)}`);
+  const redeem = app.redeem(issued.redeem);
 
-  const shown = expectStatus(await http.request(`/link?code=${code}`, { jar, headers: { Accept: "text/html" } }), 200, "GET /link?code=");
+  const shown = expectStatus(await http.request(`/link?code=${code}&redeem=${encodeURIComponent(redeem)}`, { jar, headers: { Accept: "text/html" } }), 200, "GET /link?code=");
   if (!shown.text.includes("The app is linked to your account.") && !shown.text.includes(code)) {
     throw new Error(`/link?code= should show the code or its state, saw ${shown.text.slice(0, 300)}`);
   }
-  const confirmed = await http.request("/link", { ...form({ _token: tokenIn(shown.text), code }), method: "POST", jar, redirect: "manual" });
+  if (!shown.text.includes('name="redeem" value="' + redeem)) {
+    throw new Error(`/link?code= should carry the redeem signature into its form, saw ${shown.text.slice(shown.text.indexOf("<form"), shown.text.indexOf("</form>"))}`);
+  }
+  const confirmed = await http.request("/link", { ...form({ _token: tokenIn(shown.text), code, redeem }), method: "POST", jar, redirect: "manual" });
   if (confirmed.status !== 302 || !(confirmed.headers.get("location") ?? "").endsWith("/account")) {
     throw new Error(`POST /link: expected a redirect to /account, saw ${confirmed.status} ${confirmed.headers.get("location")}: ${confirmed.text.slice(0, 300)}`);
   }

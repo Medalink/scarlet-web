@@ -41,6 +41,7 @@ class InstallController extends Controller
 
         return response()->json([
             'code' => $result->code,
+            'redeem' => $result->redeemMessage,
             'expires_at' => $result->expiresAt->utc()->format('Y-m-d\TH:i:s\Z'),
             'expires_in' => (int) config('scarlet.upload.link_code_minutes') * 60,
         ], 201);

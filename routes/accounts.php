@@ -38,5 +38,5 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account/map', MapController::class)->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
     Route::get('/account/map/trails', MapTrailsController::class)->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);
     Route::get('/link', LinkShowController::class);
-    Route::post('/link', LinkConfirmController::class);
+    Route::post('/link', LinkConfirmController::class)->middleware('throttle:20,1,link-confirm');
 });

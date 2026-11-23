@@ -22,4 +22,7 @@ enum LinkState
 
     /** The install already belongs to this account. */
     case AlreadyYours;
+
+    /** The redemption carries no signature the install key made. */
+    case Unsigned;
 }

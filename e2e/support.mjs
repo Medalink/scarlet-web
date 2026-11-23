@@ -77,14 +77,15 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * The limiter a path counts against, or null when none applies. Pages are limited per address, the public API per
- * address, registration per address and hour, signed requests per address and install, and the account routes by
- * `throttle:60,1`.
+ * address, registration per address and hour, signed requests per address and install, the account routes by
+ * `throttle:60,1` and the link confirm on top of that by `throttle:20,1` per account.
  */
 export function limiterOf(pathname) {
   if (pathname.startsWith("/api/v1/public")) return "public api";
   if (pathname === "/api/v1/installs") return "registration";
   if (pathname.startsWith("/api/v1/")) return "signed api";
-  if (/^\/(login|auth|account|link)(\/|$)/.test(pathname)) return "throttle:60,1";
+  if (pathname === "/link" || pathname === "/link/") return "throttle:60,1 and throttle:20,1 link-confirm (POST, per account)";
+  if (/^\/(login|auth|account)(\/|$)/.test(pathname)) return "throttle:60,1";
   if (pathname === "/" || pathname === "/demo" || pathname === "/up" || pathname.startsWith("/horizon/") || /\.[a-z0-9]+$/.test(pathname)) return null;
   return "pages";
 }
