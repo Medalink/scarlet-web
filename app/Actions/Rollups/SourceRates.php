@@ -34,7 +34,7 @@ class SourceRates
         $rule = in_array($rule, $rules, true) ? $rule : null;
         $quest = (int) DB::table('items')->where('item_id', $itemId)->value('bind_type') === ItemBind::Quest->value;
 
-        $sources = $this->counted->sourcesOf([$itemId]);
+        $sources = $rule === null ? $this->counted->sourcesListing([$itemId]) : $this->counted->sourcesOf([$itemId]);
         $free = $rule === LootRule::FreeForAll->value ? $this->arms->handle($sources, []) : [];
         $shift = $rule === null || $rule === LootRule::FreeForAll->value ? $this->counted->windowShift($sources) : [];
         $windows = LootRule::within(LootRead::known(DB::table(LootCounted::Windows->value.' as w'))

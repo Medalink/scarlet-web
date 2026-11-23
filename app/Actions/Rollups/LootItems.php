@@ -104,7 +104,7 @@ class LootItems
         $windows = LootListing::ofSources(LootRule::within(DB::table(LootCounted::Windows->value), 'loot_rule', null))
             ->when($filter->zone !== null, fn (Builder $query): Builder => $query->where('zone_id', $filter->zone))
             ->selectRaw('source_kind, source_id, read, sum(windows) as windows')->groupBy('source_kind', 'source_id', 'read');
-        $sources = $this->counted->sourcesOf($ids);
+        $sources = $this->counted->sourcesListing($ids);
         $shift = $this->counted->windowShift($sources, $filter->zone === null ? 'source' : 'source_zone');
         $query = LootSourceKind::withName($this->within($this->counted->items('d', $sources, $ids), $filter)
             ->joinSub($windows, 'o', fn (JoinClause $join) => $join->on('o.source_kind', '=', 'd.source_kind')->on('o.source_id', '=', 'd.source_id')->on('o.read', '=', 'd.read'))

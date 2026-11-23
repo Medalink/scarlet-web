@@ -35,6 +35,21 @@ final class CountedLoot
     }
 
     /**
+     * The sources any loot rule listed any of the items from, so a table that divides those items' drops by the windows of
+     * these sources over every rule asks for their arms: a source whose items dropped under another rule alone still has
+     * free-for-all windows in that divisor.
+     *
+     * @param  list<int>  $itemIds
+     * @return list<LootSourceRef>
+     */
+    public function sourcesListing(array $itemIds): array
+    {
+        $rows = $this->read->rows(LootRead::Loot->within(DB::table(LootCounted::Items->value))->whereIn('item_id', $itemIds)->select('source_kind', 'source_id')->distinct());
+
+        return array_map(fn (array $row): LootSourceRef => new LootSourceRef(LootSourceKind::from((string) $row['source_kind']), (int) $row['source_id']), $rows);
+    }
+
+    /**
      * The creature, object or container sources of `$kind` whose free-for-all windows fall in any of the zones, so a table of
      * those zones asks for the arms of these sources and no others.
      *
