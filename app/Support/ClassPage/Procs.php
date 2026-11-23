@@ -7,6 +7,7 @@ use App\Support\ClassRows\SpellTotals;
 use App\Support\ClassRows\StateTotals;
 use App\Support\ClassRows\Tally;
 use App\Support\StateKind;
+use App\View\Format;
 
 /**
  * The blocks of a talent module for a talent a character sees work: a spell it casts, a buff it gains, or the proc that
@@ -76,7 +77,7 @@ final readonly class Procs
         $buff = $this->aura($aura);
         $blocks = [new Pair([
             new PairRow('Casts', $spell->casts),
-            new PairRow('Hours up', Unit::Hours->say($buff['ms'] / 3_600_000).' h'),
+            new PairRow('Time up', self::time($buff['ms'] / 1000)),
             new PairRow('Casts under it', $this->under($buff['ids'])),
         ])];
         if ($buff['ms'] > 0) {
@@ -123,6 +124,12 @@ final readonly class Procs
             new Pair([new PairRow('Casts', $spell->casts), new PairRow('Cast '.$what, $under), new PairRow('Share', $share, Unit::Percent)]),
             self::split($share, 'Cast '.$what, 'Cast without it'),
         ];
+    }
+
+    /** Seconds as "45 s" up to two minutes, then as the comps write a played time. */
+    private static function time(int|float $seconds): string
+    {
+        return $seconds < 120 ? Unit::Count->say($seconds).' s' : Format::duration($seconds);
     }
 
     public static function split(int|float $share, string $yes, string $no): Split

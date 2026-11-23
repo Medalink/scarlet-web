@@ -20,10 +20,11 @@ import { fileURLToPath } from "node:url";
 import { xorDigest } from "./client.mjs";
 import { DRUID_LINES } from "./druid-lines.mjs";
 import { LEDGER_LINES } from "./ledger-lines.mjs";
-import { MAGE_LINES } from "./mage-lines.mjs";
-import { WARLOCK_LINES } from "./warlock-lines.mjs";
 import { HUNTER_LINES } from "./hunter-lines.mjs";
+import { MAGE_LINES } from "./mage-lines.mjs";
 import { PALADIN_LINES } from "./paladin-lines.mjs";
+import { ROGUE_LINES } from "./rogue-lines.mjs";
+import { WARLOCK_LINES } from "./warlock-lines.mjs";
 import { WARRIOR_LINES } from "./warrior-lines.mjs";
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
@@ -247,6 +248,7 @@ const BUILDS = [
   { character: "Iron-Vanguard", session: 1795630000, lines: WARRIOR_LINES },
   { character: "Oath-Bearer", session: 1795720000, lines: PALADIN_LINES },
   { character: "Pack-Warden", session: 1795810000, lines: HUNTER_LINES },
+  { character: "Pocket-Shade", session: 1795630000, lines: ROGUE_LINES },
 ];
 
 function partsOf(character, session, lines) {

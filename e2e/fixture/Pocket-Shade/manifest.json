@@ -1,0 +1,41 @@
+{
+  "character": "Pocket-Shade",
+  "parts": [
+    {
+      "group": "core",
+      "id": "5d2d529f2e7f1bd54a6b79975f89ed99885a7c077259158e813b4467c1a9bc09",
+      "lines": 5,
+      "raw_bytes": 209,
+      "session": 1795630000
+    },
+    {
+      "group": "build",
+      "id": "f2aed1bc6fa7a1fc8ddbe7b05d8bf5833108be88fdb67598d7dbd07724b16da9",
+      "lines": 8,
+      "raw_bytes": 387,
+      "session": 1795630000
+    },
+    {
+      "group": "combat",
+      "id": "30639d0c8dbaf077ffe2ba4441f88dd57539ca537fa1aae007266e72f031ef7b",
+      "lines": 337,
+      "raw_bytes": 4769,
+      "session": 1795630000
+    },
+    {
+      "group": "loot",
+      "id": "a5c51eba455cd9aab2916bc7d9b7ef2560b64539eb8d53cc88ea64baabade96a",
+      "lines": 56,
+      "raw_bytes": 950,
+      "session": 1795630000
+    },
+    {
+      "group": "names",
+      "id": "e289905970767f0cb1656887cfc9102287207b73234334e5c3c02f8faade8607",
+      "lines": 42,
+      "raw_bytes": 938,
+      "session": 1795630000
+    }
+  ],
+  "set_digest": "d8ac90ccf948ecf83ba6272355846ac82bfd36963880addf1aecb157145a51b6"
+}
