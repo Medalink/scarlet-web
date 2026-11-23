@@ -95,21 +95,51 @@ pub(super) fn quests(
             }
         }
     }
-    for row in rules::hidden_turn_ins(rows) {
-        let fits = open.keys().copied().filter(|&i| {
-            let at = rules::dim_int(&claims[i], "level");
-            row.level
-                .is_none_or(|level| at == Some(level) || at == Some(level - 1))
-        });
-        let largest = fits.max_by_key(|&i| {
+    let hidden = rules::hidden_turn_ins(rows);
+    let mut order: Vec<usize> = open.keys().copied().collect();
+    order.sort_by(|&a, &b| {
+        let key = |i: usize| {
             (
-                claimed(&claims[i], "xp"),
-                Reverse(claims[i].to),
-                Reverse(&claims[i].store),
+                Reverse(claimed(&claims[i], "xp")),
+                claims[i].to,
+                &claims[i].store,
             )
-        });
-        let Some(i) = largest else { continue };
+        };
+        key(a).cmp(&key(b))
+    });
+    let mut holder: Vec<Option<usize>> = vec![None; hidden.len()];
+    for i in order {
+        let mut seen = vec![false; hidden.len()];
+        take_row(claims, &hidden, i, &mut holder, &mut seen);
+    }
+    for (row, held) in hidden.iter().zip(holder) {
+        let Some(i) = held else { continue };
         let evidence = open.remove(&i).unwrap_or_default();
         decided[i] = Some(superseded_by(&claims[i], evidence, row));
     }
+}
+
+fn take_row(
+    claims: &[Claim],
+    hidden: &[&Row],
+    i: usize,
+    holder: &mut [Option<usize>],
+    seen: &mut [bool],
+) -> bool {
+    let level = rules::dim_int(&claims[i], "level");
+    for r in 0..hidden.len() {
+        if seen[r] || !rules::hidden_fits(hidden[r], level) {
+            continue;
+        }
+        seen[r] = true;
+        let free = match holder[r] {
+            None => true,
+            Some(other) => take_row(claims, hidden, other, holder, seen),
+        };
+        if free {
+            holder[r] = Some(i);
+            return true;
+        }
+    }
+    false
 }

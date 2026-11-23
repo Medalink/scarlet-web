@@ -749,6 +749,7 @@ function levelCases() {
     one(14, "Quill-Nova", null, [fdjRun(14, 1, 360, 1858), fdjRun(14, 2, 4318, 6178)], { scarlet: { run: 0 }, total: { run: 2 }, verdicts: ["run instance=189 counted 1 r3", "run instance=189 counted 1 r3"] }),
     one(15, "Quill-Oscar", null, [fdjRun(15, 1, 100, 900)], { scarlet: { run: 0 }, total: { run: 1 }, verdicts: ["run instance=189 counted 1 r3"] }),
     one(17, "Quill-Papa", { level: 30, ups: [[20, 31]], quests: [{ at: 21, id: "", xp: 900 }] }, [rxpQuest(17, 0, 3600, 30, 2001, 500), rxpQuest(17, 0, 3600, 30, 2002, 900)], { scarlet: { xp: 900 }, total: { xp: 1400 }, verdicts: ["xp level=30;quest=2001 counted 500 r2", "xp level=30;quest=2002 superseded 0 r2"] }),
+    one(18, "Quill-Quebec", { level: 8, ups: [[20, 9], [40, 10]], quests: [{ at: 21, id: "", xp: 400 }, { at: 41, id: "", xp: 500 }] }, [rxpQuest(18, 0, 3600, 8, 502, 400), rxpQuest(18, 3600, 7200, 9, 501, 500)], { scarlet: { xp: 900 }, total: { xp: 900 }, verdicts: ["xp level=8;quest=502 superseded 0 r2", "xp level=9;quest=501 superseded 0 r2"] }),
     one(22, "Quill-Tango", { stays: [[60, 560]] }, [fdjRun(22, 1, 2000, 2400, 3000000000)], { scarlet: { run: 1 }, total: { run: 1 }, verdicts: ["run instance=3000000000 held 0 runmapped"] }),
   ];
 }

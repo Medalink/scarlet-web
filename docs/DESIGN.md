@@ -402,9 +402,12 @@ Rules, in order:
    `xp_gains` count (source `q`, the quest as `source_id`). With n claims for the id, the n - m claims with the smallest
    `xp` are `counted` whole (ties: the earlier `to`, then the store that sorts first) and the others are `superseded`,
    each with one Scarlet row as evidence (`rows` with `n` 1, in time order); with m at or above n all are
-   `superseded`. Then each `turned_in` row with no quest id (the client hid it) supersedes the claim with the largest
-   `xp` that would otherwise count, at the row's level or the level below (any level when the row has none): the
-   turn-in that levels a character up is booked at the new level by Scarlet and at the old one by RXP. A repeatable
+   `superseded`. Then the `turned_in` rows with no quest id (the client hid it) supersede as many of the claims that
+   would otherwise count as they can be matched to one to one, a row to a claim at its level or the level below (any
+   level when the row has none), and of the sets that size the one with the most `xp`: the turn-in that levels a
+   character up is booked at the new level by Scarlet and at the old one by RXP, so a row can fit two claims and the
+   match takes the claims by `xp`, largest first, and moves a row to another claim that fits when a later claim needs
+   it. That is the most XP Scarlet's rows can cover, the worst case for what Scarlet already holds. A repeatable
    quest turned in twice, claims of 300 and 500 beside one Scarlet turn-in, counts 300 and Scarlet's 500: 800.
 3. **Dated claims against Scarlet.** Each Scarlet row is assigned, per origin, by its `at` (the cast start) to the
    claim whose window contains it. A row in no window goes to the claim whose nearer edge is closest, within 60 s; at

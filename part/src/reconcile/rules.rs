@@ -288,6 +288,11 @@ pub(super) fn hidden_turn_ins(rows: &[Row]) -> Vec<&Row> {
     hidden
 }
 
+pub(super) fn hidden_fits(row: &Row, level: Option<i64>) -> bool {
+    row.level
+        .is_none_or(|at| level == Some(at) || level == Some(at - 1))
+}
+
 pub(super) fn runs_over<'a>(rows: &'a [Row], c: &Claim) -> Vec<&'a Row> {
     let (from, to) = (start(c) * 1000, c.to * 1000);
     let instance = dim_int(c, INSTANCE);
