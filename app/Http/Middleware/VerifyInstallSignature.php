@@ -15,8 +15,9 @@ use Symfony\Component\HttpFoundation\Response;
  * clock is within the window, the Ed25519 signature over method, path, time and body hash holds, and
  * the signature was not seen before. A signature with a site line names the host it was made for: the
  * request must have reached that host, and the host the install registered on when it has one. A
- * signature without one, from a client predating the site line, carries no host to check. The install
- * goes into the request as the `install` attribute.
+ * signature without one, from a client predating the site line, carries no host to check, and is
+ * refused once the install has sent one with a site line, so a signature cannot be downgraded. The
+ * install goes into the request as the `install` attribute.
  */
 class VerifyInstallSignature
 {
@@ -68,6 +69,9 @@ class VerifyInstallSignature
         if ($claimed !== null && strtolower($claimed) !== $site) {
             throw ApiException::wrongSite();
         }
+        if ($claimed === null && $install->site_bound_at !== null) {
+            throw ApiException::siteRequired();
+        }
         $origin = $install->origin;
         if ($claimed !== null && $origin !== null && $origin !== $site) {
             throw ApiException::wrongSite();
@@ -88,6 +92,9 @@ class VerifyInstallSignature
         }
         if ($origin === null && $claimed !== null) {
             $update['origin'] = $site;
+        }
+        if ($claimed !== null && $install->site_bound_at === null) {
+            $update['site_bound_at'] = now();
         }
         if ($update !== []) {
             $install->forceFill($update)->save();

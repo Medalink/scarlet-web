@@ -1163,7 +1163,8 @@ Scarlet-Site: <host>
 The signature names the host the app dialled (the `Scarlet-Site` line of the message, docs/API.md, Signing), and the
 server refuses a signature whose site differs from the host the request reached or from the host the install
 registered on, so a relay or redirect cannot reuse a signed request against another host. A signature without the
-site line, from a client predating it, carries no host and keeps working.
+site line, from a client predating it, carries no host and keeps working until its install sends a request with one;
+after that the server refuses the install's signatures without it (`site_required`).
 
 The server refuses a time more than 300 seconds off and remembers signatures per host for 600 seconds (a time up to
 300 s ahead is valid for up to 600 s), so a request cannot be replayed. Ed25519 is deterministic: the same request signed in

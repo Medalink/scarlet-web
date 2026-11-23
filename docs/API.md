@@ -15,7 +15,7 @@ Every request except `POST /installs` carries three headers, plus the optional `
 | `Scarlet-Install` | The install id (a UUID) that `POST /installs` returned |
 | `Scarlet-Time` | The client's clock, epoch seconds, as decimal digits |
 | `Scarlet-Signature` | Base64 (standard alphabet, padded) of the 64-byte Ed25519 signature of the message below |
-| `Scarlet-Site` | The host the request is sent to, the same string as the site line of the message below. Without the header the four-line message is signed and the host is not checked |
+| `Scarlet-Site` | The host the request is sent to, the same string as the site line of the message below. Without the header the four-line message is signed and the host is not checked, unless the install has sent the header before |
 
 The message is four lines joined by `\n` (no trailing newline), as bytes:
 
@@ -31,7 +31,9 @@ when it is not the scheme's default (`127.0.0.1:8000`, `scarletweb.io`), sent as
 refuses a signature whose site differs from the host the request reached, or from the host the install registered on
 (the host of its `POST /installs`, which registration refreshes; an install registered before the site line existed
 takes its origin from the first signed request that names one). A signature without the site line keeps the four-line
-form and no host check, so a client predating it keeps working.
+form and no host check, so a client predating it keeps working, until its install sends its first request with a site
+line. From then on the server refuses that install's signatures without one (`site_required`), so a four-line
+signature cannot stand in for the five-line one.
 
 - `METHOD` is upper case. `path` is the request path as sent, from the leading `/`, with no host and no query string
   (`/api/v1/upload/sync`). The routes take no query string.
@@ -98,6 +100,7 @@ messages are for people. Extra fields sit inside `error`.
 | 401 | `bad_signature` | The signature does not match the request | |
 | 401 | `replayed_request` | This exact signature was seen in the last 600 s | |
 | 401 | `wrong_site` | The request reached another host than the site the signature names, or than the install registered on | |
+| 401 | `site_required` | The install has sent a signature with a site line before, and this one has none | |
 | 409 | `name_held` | Another install holds this character name | `character` |
 | 409 | `group_refused` | A group in the request was removed from the server (see "Groups") | `groups` |
 | 409 | `already_linked` | The install already belongs to an account | |
