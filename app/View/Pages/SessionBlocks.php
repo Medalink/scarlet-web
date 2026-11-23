@@ -5,7 +5,7 @@ namespace App\View\Pages;
 use App\Support\Feat;
 use App\Support\FeatText;
 use App\View\Format;
-use App\View\Sc\Seal;
+use App\View\Sc\Crest;
 
 /** The lower blocks of the session page: where the time went, experience by source, the counts and the moments. */
 final class SessionBlocks
@@ -162,7 +162,7 @@ final class SessionBlocks
         usort($rows, fn (array $a, array $b): int => $a['at'] <=> $b['at']);
         foreach ($recap['feats']['earned'] ?? [] as $earned) {
             $feat = Feat::from($earned['key']);
-            $rows[] = ['at' => null, 'glyph' => 'crown', 'text' => $feat->label().', '.Seal::TIER_NAMES[$earned['tier']].': '.FeatText::counted($feat, $earned['value'])];
+            $rows[] = ['at' => null, 'glyph' => 'crown', 'text' => $feat->label().', '.Crest::TIER_NAMES[$earned['tier']].': '.FeatText::counted($feat, $earned['value'])];
         }
 
         return $rows;
@@ -178,7 +178,7 @@ final class SessionBlocks
             'earned' => array_map(function (array $row): array {
                 $feat = Feat::from($row['key']);
 
-                return [...self::card($feat, $row['tier'], $row['value']), 'count' => FeatText::counted($feat, $row['value']), 'to' => $row['from'] > 0 ? 'Earned, up from '.Seal::TIER_NAMES[$row['from']] : 'Earned'];
+                return [...self::card($feat, $row['tier'], $row['value']), 'count' => FeatText::counted($feat, $row['value']), 'to' => $row['from'] > 0 ? 'Earned, up from '.Crest::TIER_NAMES[$row['from']] : 'Earned'];
             }, $feats['earned']),
             'near' => array_map(function (array $row): array {
                 $feat = Feat::from($row['key']);

@@ -8,7 +8,7 @@ use Illuminate\Support\Carbon;
 /** The four tiles of the week on /account: time played, days in a row, levels gained and feats earned since Monday UTC. */
 final class Week
 {
-    private const int SEALS = 4;
+    private const int CRESTS = 4;
 
     /**
      * @param  array<string, mixed>  $b  the bundle of App\Actions\Account\ShowAccountHome
@@ -25,8 +25,8 @@ final class Week
         }
 
         return [
-            ['label' => 'Played since Monday', 'value' => Format::hours(array_sum($spark)), 'sub' => null, 'spark' => $spark, 'seals' => null],
-            ['label' => 'Days in a row', 'value' => (string) self::streak($totals), 'sub' => self::streakNote($totals), 'spark' => null, 'seals' => null],
+            ['label' => 'Played since Monday', 'value' => Format::hours(array_sum($spark)), 'sub' => null, 'spark' => $spark, 'crests' => null],
+            ['label' => 'Days in a row', 'value' => (string) self::streak($totals), 'sub' => self::streakNote($totals), 'spark' => null, 'crests' => null],
             self::levels($b['week']['levels'], $by),
             self::feats($b['week']['feats'], $b['catalog']),
         ];
@@ -75,7 +75,7 @@ final class Week
         arsort($levels);
         $sub = implode(' · ', array_map(fn (int $id, int $gained): string => Format::characterName($by[$id]['name']).' '.$gained, array_keys(array_slice($levels, 0, 3, true)), array_slice($levels, 0, 3)));
 
-        return ['label' => 'Levels since Monday', 'value' => '+'.array_sum($levels), 'sub' => $sub === '' ? null : $sub, 'spark' => null, 'seals' => null];
+        return ['label' => 'Levels since Monday', 'value' => '+'.array_sum($levels), 'sub' => $sub === '' ? null : $sub, 'spark' => null, 'crests' => null];
     }
 
     /**
@@ -86,14 +86,14 @@ final class Week
     private static function feats(array $events, array $catalog): array
     {
         $by = array_column($catalog, null, 'key');
-        $seals = [];
+        $crests = [];
         foreach ($events as $event) {
             $feat = $by[$event['feat']] ?? null;
-            if ($feat !== null && count($seals) < self::SEALS) {
-                $seals[] = ['glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $event['tier'], 'name' => $feat['name']];
+            if ($feat !== null && count($crests) < self::CRESTS) {
+                $crests[] = ['glyph' => $feat['glyph'], 'key' => $feat['key'], 'tier' => $event['tier'], 'name' => $feat['name']];
             }
         }
 
-        return ['label' => 'Feats since Monday', 'value' => '+'.count($events), 'sub' => null, 'spark' => null, 'seals' => $seals];
+        return ['label' => 'Feats since Monday', 'value' => '+'.count($events), 'sub' => null, 'spark' => null, 'crests' => $crests];
     }
 }

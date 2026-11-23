@@ -21,7 +21,7 @@
       @foreach ($d['week'] as $tile)
         <x-sc.tile :label="$tile['label']" :value="$tile['value']" :sub="$tile['sub']">
           @if ($tile['spark'])<x-sc.spark :values="$tile['spark']" form="cols" :w="120" :h="26" />@endif
-          @if ($tile['seals'])<span class="flex gap-1.5">@foreach ($tile['seals'] as $seal)<x-sc.seal :glyph="$seal['glyph']" :family="$seal['family']" :tier="$seal['tier']" :size="28" :label="$seal['name']" />@endforeach</span>@endif
+          @if ($tile['crests'])<span class="flex gap-1.5">@foreach ($tile['crests'] as $crest)<x-crest :glyph="$crest['glyph']" :feat-key="$crest['key']" :tier="$crest['tier']" :size="28" :label="$crest['name']" />@endforeach</span>@endif
         </x-sc.tile>
       @endforeach
     </div>

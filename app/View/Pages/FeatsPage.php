@@ -6,7 +6,7 @@ use App\Support\Feat;
 use App\Support\FeatCatalog;
 use App\Support\FeatText;
 use App\View\Format;
-use App\View\Sc\Seal;
+use App\View\Sc\Crest;
 
 /** The data of /feats (design/final/feats-web.html) from the answer of App\Actions\Feats\ShowFeatsHub and the query of the page. */
 final class FeatsPage
@@ -123,7 +123,7 @@ final class FeatsPage
         $class = Format::className($character['class']);
         $tiles = [];
         for ($tier = 5; $tier >= 1; $tier--) {
-            $tiles[] = ['tier' => $tier, 'name' => Seal::TIER_NAMES[$tier], 'count' => $character['tiers'][$tier - 1]];
+            $tiles[] = ['tier' => $tier, 'name' => Crest::TIER_NAMES[$tier], 'count' => $character['tiers'][$tier - 1]];
         }
 
         return [
@@ -155,7 +155,7 @@ final class FeatsPage
             return null;
         }
 
-        return ['text' => $rarest['name'].', '.Seal::TIER_NAMES[$rarest['tier']].', by '.Format::characterName($rarest['character']).'. '.self::percent($rarest['share']).' of characters hold it.', 'href' => '/feats/'.$rarest['key']];
+        return ['text' => $rarest['name'].', '.Crest::TIER_NAMES[$rarest['tier']].', by '.Format::characterName($rarest['character']).'. '.self::percent($rarest['share']).' of characters hold it.', 'href' => '/feats/'.$rarest['key']];
     }
 
     /**
@@ -167,9 +167,9 @@ final class FeatsPage
         $kind = Feat::from($feat['key']);
 
         return [
-            'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
+            'key' => $feat['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
             'href' => '/feats/'.$feat['key'],
-            'left' => FeatText::amount($kind, (int) $feat['left']).' '.FeatText::noun($kind, (int) $feat['left']).' to '.Seal::TIER_NAMES[$feat['tier'] + 1],
+            'left' => FeatText::amount($kind, (int) $feat['left']).' '.FeatText::noun($kind, (int) $feat['left']).' to '.Crest::TIER_NAMES[$feat['tier'] + 1],
             'counted' => $feat['counted'],
         ];
     }
@@ -182,7 +182,7 @@ final class FeatsPage
     {
         $current = $query['tier'] ?? null;
         $chips = [['All tiers', null], ['Not earned', '0']];
-        foreach (array_slice(Seal::TIER_NAMES, 1, null, true) as $tier => $name) {
+        foreach (array_slice(Crest::TIER_NAMES, 1, null, true) as $tier => $name) {
             $chips[] = [$name, (string) $tier];
         }
 
@@ -228,7 +228,7 @@ final class FeatsPage
         foreach ($feats as $feat) {
             $groups[(string) $feat['collection']]['family'] = (string) $feat['family'];
             $groups[(string) $feat['collection']]['feats'][] = [
-                'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
+                'key' => $feat['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
                 'share' => self::percent($feat['share']), 'on' => $feat['key'] === $picked, 'href' => self::url($query, ['feat' => $feat['key']]).'#feat',
             ];
         }

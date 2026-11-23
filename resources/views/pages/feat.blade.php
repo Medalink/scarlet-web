@@ -3,7 +3,7 @@
 <div class="wrap pb-20 pt-8">
   <p class="text-[14.5px]"><a href="/feats">Feats</a> <span class="text-muted">· {{ $d['collection'] }}</span></p>
   <div class="mt-4 flex items-center gap-6">
-    <x-sc.seal :glyph="$d['glyph']" :family="$family" :tier="$d['tier']" :size="104" :label="$d['name']" />
+    <x-crest :glyph="$d['glyph']" :feat-key="$d['key']" :tier="$d['tier']" :size="104" :label="$d['name']" />
     <div class="min-w-0">
       <h1 class="sc-title text-[40px] md:text-[60px]">{{ $d['name'] }}</h1>
       <p class="mt-3 text-[15px]">{{ $d['line'] }}@if ($d['mine']) {{ $d['mine']['name'] }} has {{ $d['mine']['count'] }}.@endif</p>
@@ -13,7 +13,7 @@
   <section class="mt-10 grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)]">
     <div class="sc-panel self-start px-5 py-5">
       <h2 class="sc-h text-[24px]">Tiers</h2>
-      <x-sc.ladder class="mt-5" :rows="$d['ladder']" :feat="['glyph' => $d['glyph'], 'family' => $family]" />
+      <x-sc.ladder class="mt-5" :rows="$d['ladder']" :feat="['glyph' => $d['glyph'], 'key' => $d['key'], 'family' => $family]" />
       <p class="sc-label mt-5">{{ $d['shares'] ? 'Share of characters holding each tier or higher' : 'Shares appear once 20 characters are counted' }}</p>
     </div>
     <div class="grid gap-10">

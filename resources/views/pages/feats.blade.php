@@ -27,7 +27,7 @@
       <div class="sc-grid grid-cols-2 md:grid-cols-5">
         @foreach ($head['tiles'] as $tile)
           <div class="sc-tile">
-            <x-sc.seal glyph="crown" family="journey" :tier="$tile['tier']" :size="28" :label="$tile['name']" />
+            <x-crest glyph="crown" :tier="$tile['tier']" :size="28" :label="$tile['name']" />
             <span class="sc-num sc-num-xl">{{ $tile['count'] }}</span>
             <span class="sc-label">{{ $tile['name'] }}</span>
           </div>
@@ -47,9 +47,9 @@
       <div class="mt-5 grid gap-4 md:grid-cols-3">
         @foreach ($d['closest'] as $card)
           <a href="{{ $card['href'] }}" class="sc-panel flex min-w-0 items-center gap-5 px-5 py-5 no-underline">
-            <x-sc.seal :glyph="$card['glyph']" :family="$card['family']" :tier="$card['tier']" :progress="$card['progress']" :size="88" :spell="$card['spell']" :label="$card['name']" />
+            <x-crest :glyph="$card['glyph']" :feat-key="$card['key']" :tier="$card['tier']" :progress="$card['progress']" :size="64" :spell="$card['spell']" :label="$card['name']" />
             <span class="min-w-0">
-              <span class="sc-feat-n">{{ $card['name'] }} @if ($card['tier'])<span class="sc-chip t{{ $card['tier'] }}">{{ App\View\Sc\Seal::TIER_NAMES[$card['tier']] }}</span>@endif</span>
+              <span class="sc-feat-n">{{ $card['name'] }} @if ($card['tier'])<span class="sc-chip t{{ $card['tier'] }}">{{ App\View\Sc\Crest::TIER_NAMES[$card['tier']] }}</span>@endif</span>
               <span class="sc-num sc-num-md mt-2 block">{{ $card['left'] }}</span>
               <span class="sc-sub mt-1 block" style="color:var(--muted)">{{ $card['counted'] }}</span>
             </span>
@@ -83,7 +83,7 @@
 
     @if ($aside)
       <aside id="feat" class="sc-aside sc-panel self-start px-5 py-5 lg:sticky lg:top-6">
-        <x-sc.feat :feat="['glyph' => $aside['glyph'], 'family' => $aside['family'], 'tier' => $aside['tier'], 'progress' => $aside['progress'], 'spell' => $aside['spell'], 'name' => $aside['name'], 'count' => $aside['count'], 'to' => $aside['to']]" :size="64" />
+        <x-sc.feat :feat="['key' => $aside['key'], 'glyph' => $aside['glyph'], 'family' => $aside['family'], 'tier' => $aside['tier'], 'progress' => $aside['progress'], 'spell' => $aside['spell'], 'name' => $aside['name'], 'count' => $aside['count'], 'to' => $aside['to']]" :size="64" />
         <x-sc.ladder class="mt-6" :rows="$aside['ladder']" :feat="$aside" />
         <p class="sc-label mt-5">{{ $aside['shares'] ? 'Share of characters holding each tier or higher' : 'Shares appear once 20 characters are counted' }}</p>
         <hr class="sc-rule my-4">

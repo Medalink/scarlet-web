@@ -4,7 +4,7 @@ namespace App\View\Pages;
 
 use App\Support\Feat;
 use App\Support\FeatText;
-use App\View\Sc\Seal;
+use App\View\Sc\Crest;
 
 /** The ladder of a feat: five rows from Legend to Copper, each with the count it takes and the share of characters at or above it, and a line at the viewer's count. */
 final class FeatLadder
@@ -25,7 +25,7 @@ final class FeatLadder
             }
             $share = $shares[$tier - 1] ?? null;
             $rows[] = [
-                'tier' => $tier, 'name' => Seal::TIER_NAMES[$tier], 'share' => $share === null ? '–' : FeatsPage::percent($share),
+                'tier' => $tier, 'name' => Crest::TIER_NAMES[$tier], 'share' => $share === null ? '–' : FeatsPage::percent($share),
                 'width' => $share === null ? 0 : max(1, (int) round($share)), 'at' => FeatText::counted($feat, $thresholds[$tier - 1]),
             ];
         }

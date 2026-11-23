@@ -5,7 +5,7 @@
     <div class="mt-7 grid max-w-[720px] grid-cols-3 gap-4 text-center">
       @foreach ($f['pinned'] as $feat)
         <a href="{{ $feat['href'] }}" class="no-underline">
-          <x-sc.seal :glyph="$feat['glyph']" :family="$feat['family']" :tier="$feat['tier']" :progress="$feat['progress']" :size="104" :spell="$feat['spell']" :label="$feat['name']" />
+          <x-crest :glyph="$feat['glyph']" :feat-key="$feat['key']" :tier="$feat['tier']" :progress="$feat['progress']" :size="104" :spell="$feat['spell']" :label="$feat['name']" />
           <p class="sc-feat-n mt-3 justify-center">{{ $feat['name'] }} <span class="sc-chip t{{ $feat['tier'] }}">{{ $feat['tierName'] }}</span></p>
           <p class="sc-sub mt-2">{{ $feat['counted'] }}</p>
         </a>
@@ -17,7 +17,7 @@
     <div class="mt-4 grid gap-4 md:grid-cols-3">
       @foreach ($f['closest'] as $card)
         <a href="{{ $card['href'] }}" class="sc-panel flex min-w-0 items-center gap-5 px-5 py-5 no-underline">
-          <x-sc.seal :glyph="$card['glyph']" :family="$card['family']" :tier="$card['tier']" :progress="$card['progress']" :size="72" :spell="$card['spell']" :label="$card['name']" />
+          <x-crest :glyph="$card['glyph']" :feat-key="$card['key']" :tier="$card['tier']" :progress="$card['progress']" :size="64" :spell="$card['spell']" :label="$card['name']" />
           <span class="min-w-0">
             <span class="sc-feat-n">{{ $card['name'] }}</span>
             <span class="sc-num sc-num-md mt-2 block">{{ $card['left'] }}</span>

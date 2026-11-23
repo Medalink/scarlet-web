@@ -1368,8 +1368,8 @@ sheet has and the pages lacked. `resources/css/hubs.css` holds it, on the Scarle
   hidden from assistive technology. The interactive map stays in "Where characters go".
 - **Icons.** `<x-icon name>` is one authored set on a 24-unit grid with one round stroke, coloured by its text.
   No emoji and no icon font.
-- **Metals and class colours.** Rank and tier use copper, silver, gold, scarlet and, above scarlet, legend: a scarlet
-  seal ringed in gold. A character's
+- **Metals and class colours.** Rank and tier use copper, silver, gold, scarlet and, above scarlet, legend: a gold
+  crest with scarlet rays and gem. A character's
   name carries its class in the game's class colour (`data-class` sets `--class`). Horde and Alliance have one
   colour each. Colour never carries a fact alone: a tier is also named, a class also written.
 - **Motion.** The tally counts up once when a page opens. Bars on a rule, rank tracks, plinths and flags grow in as
@@ -1474,9 +1474,11 @@ When more are new, a sixth toast says "N more feats" with a "View all" button th
 toast marks it on the server (`FeatWall::seen`, through `MarkOwnedFeatsSeen`): the toast's feat and tier, or for the
 "more feats" toast every feat beyond the fifth. A toast that never showed is not marked, one that was closed early
 stays marked, and a reload after the sequence shows nothing. A pin toggle re-renders the section but not the stack,
-so it does not restart or repeat the sequence. The seal stamps in (scale 1.35 to 1, a ring in the tier's colour, one
-light sweep; an upgrade starts in the previous tier's colours and changes at the stamp; Legend rings twice). With
-reduced motion there is no movement, scale, ring or sweep, only a 150 ms fade, on the same timings.
+so it does not restart or repeat the sequence. The crest is drawn in the new tier's colours without the
+piece the tier adds. At 120 ms that piece attaches (the shield scales in, the crown drops, the banner rises, the wings,
+spurs or laurels spread, the rays scale up), a burst of light grows behind it (two in gold at Legend, 260 ms apart), a
+white copy of the piece flashes at 400 ms and the ghost of the next piece fades in at 900 ms. With reduced motion there
+is only a 150 ms fade and the crest is drawn complete.
 
 A feat is one tier of one ladder. Copper comes in the first session or two. Each later tier takes several times the
 play of the one before: silver about 50 hours, gold about 200, scarlet about 500 and legend, the top tier, about
@@ -2094,7 +2096,7 @@ on the right, each ribbon as wide as its count (soul shards, ammo, conjured wate
 pool, pairs from a left list to a right list (opener to finisher, the form left to the form entered, a seal to what
 became of it). A *mirror*: two series by level from one axis, one up and one down (health for mana, healing against
 damage). A *stack*: shares of time by level (the demon out, the stance, the form, the aura). A *bag*: the bag's slots
-with the item in the ones that hold it. The rest are the site's `rank`, `pair`, `tally`, `rules` and feat seals.
+with the item in the ones that hold it. The rest are the site's `rank`, `pair`, `tally`, `rules` and feat crests.
 
 **The nine pages.** Spell and item names are the client's own for build 1.60.1.71037, which differ from the old
 game's in places (`Bane of Agony`, `Subjugate Demon`); a page prints the name the client gives for the id.

@@ -66,7 +66,7 @@
       </x-sc.tiles>
       <div class="sc-panel flex items-center gap-5 px-5 py-4">
         <x-sc.ring :value="0.78" :size="112"><b class="sc-num" style="font-size:40px">72</b><span class="sc-label">of 92</span></x-sc.ring>
-        <div><p class="sc-h3">Tick ring</p><p class="sc-label mt-1">36 ticks, lit clockwise from the top. The seal's dial uses the same tick, 20 of them, with a gap at the foot.</p></div>
+        <div><p class="sc-h3">Tick ring</p><p class="sc-label mt-1">36 ticks, lit clockwise from the top.</p></div>
       </div>
     </div>
     <p class="sc-cap">Tiles share one hairline grid and are never separate cards. A tile whose value is zero is left out.</p>
@@ -88,20 +88,19 @@
   </section>
 
   <section class="mt-14">
-    <h2 class="sc-h">Feat seal: the family is the shape, the tier is the metal</h2>
+    <h2 class="sc-h">Feat crest: each tier attaches a piece</h2>
     <x-sc.tiles :cols="6" class="mt-4">
-      @foreach ([[0, 0.3, 'Not earned', 'The dial fills in copper'], [1, 0.9, null, '1 pip · fills in silver'], [2, 0.5, null, '2 pips · fills in gold'], [3, 0.7, null, '3 pips · fills in scarlet'], [4, 0.4, null, '4 pips · fills in gold'], [5, 1, null, '5 gold pips · all lit']] as [$tier, $progress, $name, $note])
-        <div class="px-5 pb-5 pt-[18px] text-center"><x-sc.seal glyph="kills" :tier="$tier" :progress="$progress" :size="104" /><p class="sc-h3 mt-3">@if ($name){{ $name }}@else<span class="sc-chip t{{ $tier }}">{{ App\View\Sc\Seal::TIER_NAMES[$tier] }}</span>@endif</p><p class="sc-label">{{ $note }}</p></div>
+      @foreach ([[0, 0.3, 'Not earned', 'The shield fills in copper'], [1, 0.9, null, 'The crown fills in silver'], [2, 0.5, null, 'The banner fills in gold'], [3, 0.7, null, 'The wings fill in scarlet'], [4, 0.4, null, 'The rays fill in gold'], [5, 1, null, 'Great crown, gem and rays']] as [$tier, $progress, $name, $note])
+        <div class="px-5 pb-5 pt-[18px] text-center"><x-crest glyph="kills" :tier="$tier" :progress="$progress" :size="104" /><p class="sc-h3 mt-3">@if ($name){{ $name }}@else<span class="sc-chip t{{ $tier }}">{{ App\View\Sc\Crest::TIER_NAMES[$tier] }}</span>@endif</p><p class="sc-label">{{ $note }}</p></div>
       @endforeach
     </x-sc.tiles>
     <div class="mt-6 flex flex-wrap items-end gap-7">
-      @foreach ([['hours', 'Journey', null], ['kills', 'Combat', null], ['quests', 'Quests', null], ['dungeons', 'Dungeons', null], ['zones', 'World', null], ['fish', 'Trade', null], ['m-bolt', 'Class', null], ['heal', 'Role', null]] as [$glyph, $name])
-        <div class="text-center"><x-sc.seal :glyph="$glyph" :tier="2" :progress="0.5" :size="64" /><p class="sc-label mt-2">{{ $name }}</p></div>
+      @foreach ([['kills', 'character', 'Character'], ['m-bolt', 'class', 'Class'], ['level', 'account', 'Account']] as [$glyph, $scope, $name])
+        <div class="text-center"><x-crest :glyph="$glyph" :scope="$scope" :tier="3" :progress="0.5" :size="64" /><p class="sc-label mt-2">{{ $name }}</p></div>
       @endforeach
-      <div class="ml-6 text-center"><x-sc.seal glyph="level" :tier="3" :size="28" /><p class="sc-label mt-2">28 · row</p></div>
-      <div class="text-center"><x-sc.seal glyph="level" :tier="3" :size="18" /><p class="sc-label mt-2">18 · inline</p></div>
+      <div class="ml-6 text-center"><x-crest glyph="level" :tier="3" :size="28" /><p class="sc-label mt-2">28 � row</p></div>
+      <div class="text-center"><x-crest glyph="level" :tier="3" :size="18" /><p class="sc-label mt-2">18 � inline</p></div>
     </div>
-    <p class="sc-cap">Web and app: one inline SVG. Addon: a cell of Plates.tga drawn two to five times, 20 Tick.tga placed with SetRotation, a cell of Glyphs.tga or the spell's texture. Under 48 px the dial and pips are dropped.</p>
   </section>
 
   <section class="mt-14">
@@ -117,7 +116,7 @@
     <div class="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
       @foreach ($cards as $card)<x-sc.feat :feat="$card" />@endforeach
     </div>
-    <p class="sc-cap">The card has no bar: the dial on the seal is the progress.</p>
+    <p class="sc-cap">The card has no bar: the dim next piece on the crest fills with the progress.</p>
   </section>
 
   <section class="mt-14">
@@ -141,7 +140,7 @@
         $jumper = ['name' => 'Jumper', 'glyph' => 'jumps', 'tier' => 5, 'progress' => 1, 'count' => '250,000 jumps'];
     @endphp
     <div class="mt-5 grid gap-x-7 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
-      <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" :play="true" /><figcaption class="sc-note mt-2">Plays once when the page opens: the plate rises, the seal is stamped, the pips light, a sweep crosses, the dial runs to full and settles at the real progress.</figcaption></figure>
+      <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" :play="true" /><figcaption class="sc-note mt-2">Plays once when the page opens: the plate rises, the new piece attaches, a white copy of it flashes, the next piece fades in at the real progress.</figcaption></figure>
       <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" /><figcaption class="sc-note mt-2">At rest, 1,200 ms to 5.2 s.</figcaption></figure>
       <figure><x-sc.feat-toast :feat="$jumper" kicker="Upgraded from Scarlet" :play="true" /><figcaption class="sc-note mt-2">A Legend: gold rail, two gold bursts 260 ms apart.</figcaption></figure>
     </div>

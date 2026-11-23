@@ -4,7 +4,7 @@ namespace App\View\Character;
 
 use App\Models\Character;
 use App\View\Pages\FeatsPage;
-use App\View\Sc\Seal;
+use App\View\Sc\Crest;
 
 /** The `#feats` section of /c/{name}: pinned feats at 104, `Closest to the next tier` for the owner, and the wall by collection. */
 final class FeatsSection
@@ -52,7 +52,7 @@ final class FeatsSection
             }
             $toasts[] = [
                 'key' => $item['key'], 'tier' => $item['tier'], 'kicker' => $item['from'] > 0 ? 'Upgraded from '.$item['from_name'] : 'Feat earned',
-                'feat' => ['name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $item['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'], 'count' => $feat['counted']],
+                'feat' => ['key' => $item['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $item['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'], 'count' => $feat['counted']],
             ];
         }
 
@@ -89,7 +89,7 @@ final class FeatsSection
     {
         return [
             'key' => $feat['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
-            'tierName' => Seal::TIER_NAMES[$feat['tier']], 'counted' => $feat['counted'], 'href' => '/feats/'.$feat['key'],
+            'tierName' => Crest::TIER_NAMES[$feat['tier']], 'counted' => $feat['counted'], 'href' => '/feats/'.$feat['key'],
         ];
     }
 
