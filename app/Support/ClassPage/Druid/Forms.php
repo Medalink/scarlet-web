@@ -201,13 +201,23 @@ final readonly class Forms
         if ($this->mounted->ms > 0) {
             $rows[] = new RankRow('Mounted', $this->mounted->hours());
         }
-        $cells = [new PairRow('Travel Form share of travel', $this->ms('travel') / $this->travelMs() * 100, Unit::Percent)];
+        $cells = $this->rides() ? [new PairRow('Travel Form share of travel', $this->ms('travel') / $this->travelMs() * 100, Unit::Percent)] : [];
         $dash = $this->rows->spells()->sum('Dash', 'Dash')->casts;
         if ($dash > 0) {
             $cells[] = new PairRow('Dash casts', $dash);
         }
+        $blocks = [new Rank($rows, Unit::Hours, of: max([0, ...array_map(fn (RankRow $row): float|int => $row->value, $rows)]))];
+        if ($cells !== []) {
+            $blocks[] = new Pair($cells);
+        }
 
-        return new Module('Travelling', [new Rank($rows, Unit::Hours, of: max([0, ...array_map(fn (RankRow $row): float|int => $row->value, $rows)])), new Pair($cells)], $span);
+        return new Module('Travelling', $blocks, $span);
+    }
+
+    /** Whether the character shares mount rows at all; without them a share of travel would leave the mount out, so it is withheld. */
+    public function rides(): bool
+    {
+        return $this->rows->states(StateKind::Mount)->of(StateKind::Mount) !== [];
     }
 
     /** From one form to the next, as a link chart: the form each shapeshift left and the form it entered. */

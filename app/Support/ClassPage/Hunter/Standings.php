@@ -20,13 +20,13 @@ final readonly class Standings
         $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
         $played = $this->rows->playedMs();
 
-        return [
-            new StandingFigure('pet_time', 'Time with a pet out', $this->pets->share(), Unit::Percent),
-            new StandingFigure('pet_happy', 'Pet happy while out', $this->pets->happy(), Unit::Percent),
-            new StandingFigure('shots_fight', 'Shots a fight', $fights === 0 ? 0 : $this->ammo->fired() / $fights, Unit::Decimal),
+        return array_values(array_filter([
+            $this->pets->shared() ? new StandingFigure('pet_time', 'Time with a pet out', $this->pets->share(), Unit::Percent) : null,
+            $this->pets->shared() ? new StandingFigure('pet_happy', 'Pet happy while out', $this->pets->happy(), Unit::Percent) : null,
+            $this->ammo->shared() && $fights > 0 ? new StandingFigure('shots_fight', 'Shots a fight', $this->ammo->fired() / $fights, Unit::Decimal) : null,
             new StandingFigure('autoshot_share', 'Auto Shot of fight time', $this->shooting->autoShotShare(), Unit::Percent),
             new StandingFigure('feign_worked', 'Feign Deaths that worked', $this->field->feignWorked(), Unit::Percent),
             new StandingFigure('deaths_hour', 'Deaths a played hour', $played === 0 ? 0 : $this->rows->deaths() / ($played / self::HOUR_MS), Unit::Decimal),
-        ];
+        ]));
     }
 }

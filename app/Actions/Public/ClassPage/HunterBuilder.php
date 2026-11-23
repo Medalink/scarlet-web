@@ -34,29 +34,29 @@ final class HunterBuilder implements ClassBuilder
         $shooting = new Shooting($rows);
         $field = new Field($rows, $spells);
         $top = $pets->top();
-        $hours = new Figure('Hours with a pet out', $pets->hours(), Unit::Hours);
-        $fired = new Figure('Shots fired', $ammo->fired());
+        $hours = $pets->shared() ? new Figure('Hours with a pet out', $pets->hours(), Unit::Hours) : null;
+        $fired = $ammo->shared() ? new Figure('Shots fired', $ammo->fired()) : null;
         $tamed = new Figure('Tame Beast casts', $spells->tame->casts, icon: Spells::icon($spells->tame));
         $feign = new Figure('Feign Deaths', $spells->feign->casts, icon: Spells::icon($spells->feign));
 
         return new ClassParts(
             Spells::icon($spells->shots),
             $pets->callouts(),
-            [
+            array_values(array_filter([
                 $hours,
                 $tamed,
                 $fired,
                 new Figure('Hours of Auto Shot', $shooting->autoShotHours(), Unit::Hours),
                 new Figure('Traps set', $spells->traps->casts, icon: Spells::icon($spells->traps)),
                 $feign,
-            ],
-            [
-                new Figure('Pet out most', $top === null ? 'None' : ($top->name === '' ? $top->extra : $top->name)),
+            ])),
+            array_values(array_filter([
+                $pets->shared() ? new Figure('Pet out most', $top === null ? 'None' : ($top->name === '' ? $top->extra : $top->name)) : null,
                 $hours,
                 $fired,
                 $tamed,
                 $feign,
-            ],
+            ])),
             Sheet::rows([
                 [$ammo->chart(), $ammo->quiver()],
                 [$pets->stack(), $pets->list()],

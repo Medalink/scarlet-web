@@ -14,6 +14,7 @@ use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Tone;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\FlowDirection;
 use App\Support\ClassRows\FlowPlace;
 use App\Support\ClassRows\ItemFlow;
@@ -51,6 +52,12 @@ final readonly class Ammo
         }
         $names = $rows->spellNames(array_values(array_unique($spells)));
         $this->autoShot = array_keys(array_filter($names, fn (string $name): bool => $name === 'Auto Shot'));
+    }
+
+    /** Whether the character shares item rows at all; without them every ammo figure is withheld, not 0. */
+    public function shared(): bool
+    {
+        return $this->rows->holds(ClassTable::Items);
     }
 
     /** The shots fired: ammo that left the bags while Auto Shot ran. */

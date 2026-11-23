@@ -42,21 +42,21 @@ final class MageBuilder implements ClassBuilder
         return new ClassParts(
             $water ?? Spells::icon($spells->portals) ?? Spells::icon($spells->polymorph),
             $this->callouts($spells, $conjuring, $portals),
-            [
-                new Figure('Water conjured', $conjuring->waterMade(), icon: $water),
+            array_values(array_filter([
+                $conjuring->shared ? new Figure('Water conjured', $conjuring->waterMade(), icon: $water) : null,
                 new Figure('Portals opened', $spells->portals->casts, icon: Spells::icon($spells->portals)),
                 new Figure('Teleports', $spells->teleports->casts, icon: Spells::icon($spells->teleports)),
                 new Figure('Sheep made', $spells->sheep->casts, icon: Spells::icon($spells->sheep)),
                 new Figure('Blinks', $spells->blink->casts, icon: Spells::icon($spells->blink)),
                 new Figure('Frost Novas', $spells->frostNova->casts, icon: Spells::icon($spells->frostNova)),
-            ],
-            [
-                new Figure('Water conjured', $conjuring->waterMade(), icon: $water),
+            ])),
+            array_values(array_filter([
+                $conjuring->shared ? new Figure('Water conjured', $conjuring->waterMade(), icon: $water) : null,
                 new Figure('Portals opened', $spells->portals->casts, icon: Spells::icon($spells->portals)),
                 new Figure('Sheep made', $spells->sheep->casts, icon: Spells::icon($spells->sheep)),
                 new Figure('Kills in one fight, most', $casting->mostKills(), icon: Spells::icon($spells->blizzard)),
                 new Figure('Blinks', $spells->blink->casts, icon: Spells::icon($spells->blink)),
-            ],
+            ])),
             array_values(array_filter([
                 $conjuring->row(),
                 $this->travel($schools, $portals),

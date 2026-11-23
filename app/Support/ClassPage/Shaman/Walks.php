@@ -98,16 +98,19 @@ final readonly class Walks
             return null;
         }
         $wolf = $this->wolfHours();
-        $blocks = [new Pair([
-            new PairRow('Hours as a wolf', $wolf, Unit::Hours),
-            new PairRow('Of travel time', Casts::share($wolf, $wolf + $mounted), Unit::Percent),
-            new PairRow('Astral Recalls', $recalls),
-        ])];
+        $rides = $this->rows->states(StateKind::Mount)->of(StateKind::Mount) !== [];
+        $cells = [new PairRow('Hours as a wolf', $wolf, Unit::Hours)];
+        if ($rides) {
+            $cells[] = new PairRow('Of travel time', Casts::share($wolf, $wolf + $mounted), Unit::Percent);
+        }
+        $cells[] = new PairRow('Astral Recalls', $recalls);
+        $blocks = [new Pair($cells)];
         if ($wolf > 0 || $mounted > 0) {
-            $blocks[] = new Titled('Hours travelling', [new Rank([
-                new RankRow(Spells::WOLF, $wolf, $this->wolfIcon(), Tone::Own),
-                new RankRow('Mounted', $mounted, Icon::item(Spells::MOUNT_ITEM), Tone::Lost),
-            ], Unit::Hours, of: max($wolf, $mounted))]);
+            $travelling = [new RankRow(Spells::WOLF, $wolf, $this->wolfIcon(), Tone::Own)];
+            if ($rides) {
+                $travelling[] = new RankRow('Mounted', $mounted, Icon::item(Spells::MOUNT_ITEM), Tone::Lost);
+            }
+            $blocks[] = new Titled('Hours travelling', [new Rank($travelling, Unit::Hours, of: max($wolf, $mounted))]);
         }
 
         return new Module('Ghost Wolf and Astral Recall', $blocks, icon: $this->wolfIcon());

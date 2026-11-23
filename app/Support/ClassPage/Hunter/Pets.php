@@ -73,6 +73,12 @@ final readonly class Pets
         $this->named = $named;
     }
 
+    /** Whether the character shares any pet rows at all; without them every pet figure is withheld, not 0. */
+    public function shared(): bool
+    {
+        return $this->rows->states(StateKind::Pet)->of(StateKind::Pet) !== [];
+    }
+
     public function ms(): int
     {
         return array_sum(array_map(fn (StateTotals $state): int => $state->ms, $this->out));

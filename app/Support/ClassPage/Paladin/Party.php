@@ -11,6 +11,7 @@ use App\Support\ClassPage\Row;
 use App\Support\ClassPage\Tone;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\Meter;
 use App\Support\ClassRows\SpellTotals;
 
@@ -34,14 +35,15 @@ final readonly class Party
             return null;
         }
         $played = $this->rows->playedMs();
+        $cells = [
+            new PairRow('Blessings a played hour', $played === 0 ? 0 : $all / ($played / 3_600_000), Unit::Decimal),
+            new PairRow('Greater blessings', $this->spells->greater->casts),
+        ];
+        if ($this->rows->holds(ClassTable::Items)) {
+            $cells[] = new PairRow('Symbols of Kings used', $this->blessings->symbols());
+        }
 
-        return new Module('Blessings for the group', [
-            new Pair([
-                new PairRow('Blessings a played hour', $played === 0 ? 0 : $all / ($played / 3_600_000), Unit::Decimal),
-                new PairRow('Greater blessings', $this->spells->greater->casts),
-                new PairRow('Symbols of Kings used', $this->blessings->symbols()),
-            ]),
-        ], note: 'The rows hold no group time, so the rate is over the time played.');
+        return new Module('Blessings for the group', [new Pair($cells)], note: 'The rows hold no group time, so the rate is over the time played.');
     }
 
     private function saves(): ?Module

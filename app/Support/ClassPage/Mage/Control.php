@@ -75,11 +75,15 @@ final readonly class Control
         $evocation = $this->spells->evocation;
         $gems = $this->spells->conjureGem->casts;
         $drinks = $this->drinking($facts);
-        $used = $this->conjuring->gemsUsed();
-        if ($evocation->casts === 0 && $gems === 0 && $used === 0 && $drinks === null) {
+        $used = $this->conjuring->shared ? $this->conjuring->gemsUsed() : null;
+        if ($evocation->casts === 0 && $gems === 0 && ($used ?? 0) === 0 && $drinks === null) {
             return null;
         }
-        $blocks = [new Pair([new PairRow('Evocation channels', $evocation->casts), new PairRow('Mana gems conjured', $gems), new PairRow('Mana gems used', $used)])];
+        $cells = [new PairRow('Evocation channels', $evocation->casts), new PairRow('Mana gems conjured', $gems)];
+        if ($used !== null) {
+            $cells[] = new PairRow('Mana gems used', $used);
+        }
+        $blocks = [new Pair($cells)];
         if ($drinks !== null) {
             $blocks[] = $drinks;
         }
@@ -89,14 +93,15 @@ final readonly class Control
 
     private function drinking(ClassFacts $facts): ?Titled
     {
+        $own = Drinking::measure($this->rows);
         $mages = $facts->peers->mean(Drinking::FIGURE);
         $every = $facts->peers->mean(Drinking::FIGURE, true);
-        if ($mages === null || $every === null) {
+        if ($own === null || $mages === null || $every === null) {
             return null;
         }
 
         return new Titled('Time spent drinking, of played time', [new Rank([
-            new RankRow(Format::characterName($facts->name), Drinking::share($this->rows), tone: Tone::Own),
+            new RankRow(Format::characterName($facts->name), $own, tone: Tone::Own),
             new RankRow('Mages', $mages),
             new RankRow('Every class', $every),
         ], Unit::PercentTenth, true)], Drinking::icon($this->rows));

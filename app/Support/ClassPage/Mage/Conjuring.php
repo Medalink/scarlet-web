@@ -13,6 +13,7 @@ use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Tone;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\FlowDirection;
 use App\Support\ClassRows\FlowPlace;
 use App\Support\ClassRows\ItemFlow;
@@ -33,7 +34,7 @@ final readonly class Conjuring
 
     private const string NOTE = 'The addon records what goes into and out of the bags, not what they hold, so items left in the bags and items gone at logout are one row.';
 
-    private function __construct(private ItemFlow $water, private ItemFlow $food, private ItemFlow $gems, public ?Icon $icon, private ?Icon $foodIcon, private Spells $spells, private int $playedMs) {}
+    private function __construct(private ItemFlow $water, private ItemFlow $food, private ItemFlow $gems, public ?Icon $icon, private ?Icon $foodIcon, private Spells $spells, private int $playedMs, public bool $shared) {}
 
     public static function of(ClassRows $rows, Spells $spells): self
     {
@@ -49,6 +50,7 @@ final readonly class Conjuring
             $food === [] ? null : Icon::item($food[0]),
             $spells,
             $rows->playedMs(),
+            $rows->holds(ClassTable::Items),
         );
     }
 
@@ -138,7 +140,7 @@ final readonly class Conjuring
         $hours = $this->playedMs / 3_600_000;
 
         return new Module('Conjuring', [new Pair([
-            new PairRow('Conjured a played hour', $hours === 0.0 ? 0 : $this->made() / $hours, Unit::Decimal),
+            new PairRow('Conjured a played hour', $this->playedMs === 0 ? 0 : $this->made() / $hours, Unit::Decimal),
             new PairRow('Mana gems conjured', $this->spells->conjureGem->casts),
             new PairRow('Mana gems used', $this->gemsUsed()),
         ])], icon: Spells::icon($this->spells->conjureWater));
