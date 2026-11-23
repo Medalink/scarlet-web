@@ -45,7 +45,7 @@ final readonly class Demons
      * @param  array<string, StateTotals>  $families  by the pet's family
      * @param  array<string, string>  $pets  the name the character gave the demon of each family it kept longest
      */
-    private function __construct(private ClassRows $rows, private array $families, private array $pets, private int $others, private int $first, private Spells $spells, private bool $shared) {}
+    private function __construct(private ClassRows $rows, private array $families, private array $pets, private int $others, private Spells $spells, private bool $shared) {}
 
     public static function of(ClassRows $rows, Spells $spells): self
     {
@@ -73,14 +73,8 @@ final readonly class Demons
             }
             $others += $merged->ms;
         }
-        $first = null;
-        foreach ($spans as $pet) {
-            foreach (array_keys($pet->byLevel) as $level) {
-                $first = $first === null ? $level : min($first, $level);
-            }
-        }
 
-        return new self($rows, $families, $pets, $others, $first ?? 0, $spells, $spans !== []);
+        return new self($rows, $families, $pets, $others, $spells, $spans !== []);
     }
 
     /** Whether the character shares any pet rows at all; without them every demon figure is withheld, not 0. */
@@ -98,6 +92,17 @@ final readonly class Demons
     public function withHours(): float
     {
         return $this->withMs() / 3_600_000;
+    }
+
+    /** Milliseconds played from the first level that has pet rows: the time the rows can say whether a demon was out. */
+    public function playedMs(): int
+    {
+        return $this->rows->playedMs(StateKind::Pet);
+    }
+
+    public function playedHours(): float
+    {
+        return $this->playedMs() / 3_600_000;
     }
 
     /** The family that was out longest, or null when none was. */
@@ -150,7 +155,7 @@ final readonly class Demons
 
     private function stack(): Module
     {
-        $played = $this->rows->playedByLevel();
+        $played = $this->rows->playedByLevel(StateKind::Pet);
         $series = [];
         foreach (self::FAMILIES as $family => [, $hue]) {
             $series[] = new Series($family, new Hue($hue));
@@ -161,7 +166,7 @@ final readonly class Demons
         $series[] = new Series('No demon out', new Hue('#3d3d46'));
         $columns = [];
         $leading = [];
-        foreach ($this->rows->levels($this->first) as $level) {
+        foreach ($this->rows->levels(StateKind::Pet) as $level) {
             $time = $played[$level] ?? 0;
             $shares = [];
             foreach (array_keys(self::FAMILIES) as $family) {
@@ -196,13 +201,7 @@ final readonly class Demons
         if ($this->others > 0) {
             $rows[] = new RankRow('Another demon', $this->others / 3_600_000, tone: new Hue('#8b8b95'));
         }
-        $covered = 0;
-        foreach ($this->rows->playedByLevel() as $level => $ms) {
-            if ($level >= $this->first) {
-                $covered += $ms;
-            }
-        }
-        $none = max(0, $covered - $this->withMs());
+        $none = max(0, $this->playedMs() - $this->withMs());
         $rows[] = new RankRow('No demon out', $none / 3_600_000, tone: new Hue('#5d5d68'));
 
         return new Module('Demons', [

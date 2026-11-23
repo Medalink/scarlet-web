@@ -100,7 +100,7 @@ final readonly class Stances
         $series[] = new Series('No stance', new Hue(self::NONE));
         $columns = [];
         $leading = [];
-        foreach ($this->rows->levels() as $level) {
+        foreach ($this->rows->levels(StateKind::Fight, StateKind::OwnBuff) as $level) {
             $whole = $fights->byLevel[$level]['ms'] ?? 0;
             if ($whole === 0) {
                 continue;

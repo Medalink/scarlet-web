@@ -9,6 +9,7 @@ use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Stack;
 use App\Support\ClassPage\StackColumn;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\Meter;
 
 /** The damage meter's listed spells put under their school, as the share each school took at each level. */
@@ -34,7 +35,7 @@ final readonly class Schools
             'Frost' => $meter->byLevel(Meter::Damage, ...Spells::FROST),
             'Fire' => $meter->byLevel(Meter::Damage, ...Spells::FIRE),
             'Arcane' => $meter->byLevel(Meter::Damage, ...Spells::ARCANE),
-        ], $rows->levels());
+        ], $rows->levels(ClassTable::MeterSpells));
     }
 
     public function module(Span $span = Span::W7): ?Module

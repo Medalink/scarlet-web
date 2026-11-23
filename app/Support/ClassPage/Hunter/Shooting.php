@@ -83,8 +83,10 @@ final readonly class Shooting
         $series[] = new Series('No aspect', new Hue(self::NONE));
         $columns = [];
         $leading = [];
-        foreach ($this->rows->playedByLevel() as $level => $whole) {
-            if ($level === 0 || $whole === 0) {
+        $played = $this->rows->playedByLevel(StateKind::OwnBuff);
+        foreach ($this->rows->levels(StateKind::OwnBuff) as $level) {
+            $whole = $played[$level] ?? 0;
+            if ($whole === 0) {
                 continue;
             }
             $shares = array_map(fn (array $one): int => min($whole, $one[1]->byLevel[$level]['ms'] ?? 0), array_values($states));

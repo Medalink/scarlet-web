@@ -233,7 +233,7 @@ final readonly class Totems
     {
         $slots = array_keys($this->bySlot);
         $columns = [];
-        foreach ($this->rows->levels() as $level) {
+        foreach ($this->rows->levels(StateKind::Totem) as $level) {
             $time = array_map(fn (int $slot): int => array_sum(array_map(fn (array $totem): int => $totem['levels'][$level] ?? 0, $this->bySlot[$slot])), $slots);
             $all = array_sum($time);
             if ($all > 0) {

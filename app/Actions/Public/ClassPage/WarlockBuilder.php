@@ -51,7 +51,7 @@ final class WarlockBuilder implements ClassBuilder
             array_values(array_filter([
                 $made,
                 $lifeTaps,
-                $demons->shared() ? new Figure('Hours with a demon', $demons->withHours(), Unit::Hours, 'of '.Unit::Hours->say($facts->hours), $demons->icon($top)) : null,
+                $demons->shared() ? new Figure('Hours with a demon', $demons->withHours(), Unit::Hours, 'of '.Unit::Hours->say($demons->playedHours()), $demons->icon($top)) : null,
                 $healthstones,
                 new Figure('Soulstones made', $spells->soulstones->casts, icon: Spells::icon($spells->soulstones)),
                 $summoned,

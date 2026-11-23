@@ -37,7 +37,7 @@ final readonly class Auras
                 $states[$label] = $sum;
             }
         }
-        $played = $this->rows->playedByLevel();
+        $played = $this->rows->playedByLevel(StateKind::OwnBuff);
         $series = [];
         foreach (array_keys($states) as $label) {
             $series[] = new Series($label, new Hue(self::GROUPS[$label][1]));
@@ -45,8 +45,9 @@ final readonly class Auras
         $series[] = new Series('No aura', new Hue(self::NONE));
         $columns = [];
         $leading = [];
-        foreach ($played as $level => $whole) {
-            if ($level === 0 || $whole === 0) {
+        foreach ($this->rows->levels(StateKind::OwnBuff) as $level) {
+            $whole = $played[$level] ?? 0;
+            if ($whole === 0) {
                 continue;
             }
             $shares = array_map(fn ($state): int => min($whole, $state->byLevel[$level]['ms'] ?? 0), array_values($states));

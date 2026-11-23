@@ -21,7 +21,7 @@ final class Drinking
     /** Percent of played time, null when no time was played or the character shares no aura rows at all, which is not the same as never drinking. */
     public static function measure(ClassRows $rows): ?float
     {
-        $played = $rows->playedMs();
+        $played = $rows->playedMs(StateKind::OwnBuff, StateKind::OthersBuff);
         $states = $rows->states(StateKind::OwnBuff, StateKind::OthersBuff);
         if ($played === 0 || ($states->of(StateKind::OwnBuff) === [] && $states->of(StateKind::OthersBuff) === [])) {
             return null;

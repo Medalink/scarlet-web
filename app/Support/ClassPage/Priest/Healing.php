@@ -19,6 +19,7 @@ use App\Support\ClassPage\SplitPart;
 use App\Support\ClassPage\Tone;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\Meter;
 use App\Support\ClassRows\MeterPlace;
 use App\Support\ClassRows\SpellTotals;
@@ -76,13 +77,16 @@ final readonly class Healing
         $damage = $meters->byLevel(Meter::Damage);
         $points = [];
         $passed = null;
-        foreach ($this->rows->levels() as $level) {
+        foreach ($this->rows->levels(ClassTable::Meters) as $level) {
             $up = Casts::perFight($healing[$level] ?? 0, $meters->fights(Meter::Healing, $level)['fights']);
             $down = Casts::perFight($damage[$level] ?? 0, $meters->fights(Meter::Damage, $level)['fights']);
             $points[] = new MirrorPoint($level, $up, $down);
             if ($passed === null && $up > $down && $up > 0) {
                 $passed = [$level, $up, $down];
             }
+        }
+        if ($points === []) {
+            return null;
         }
         $note = $passed === null ? null : 'Healing first passed damage at level '.$passed[0].', with '.Unit::Count->say($passed[1]).' against '.Unit::Count->say($passed[2]).'.';
 
@@ -134,7 +138,7 @@ final readonly class Healing
 
     public function stack(): ?Module
     {
-        $stack = Casts::stack($this->spells->heals, $this->rows->levels(), Spells::hues(), 'heals cast');
+        $stack = Casts::stack($this->spells->heals, $this->rows->levels(ClassTable::Casts), Spells::hues(), 'heals cast');
 
         return $stack === null ? null : new Module('The heal cast, by level', [$stack], Span::W7);
     }

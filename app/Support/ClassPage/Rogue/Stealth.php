@@ -32,12 +32,18 @@ final readonly class Stealth
             $openedMs += $row->sum;
         }
 
-        return new self($ms, $states === [] ? null : Icon::spell($states[0]->refId), $opened, $openedMs, $rows->states(StateKind::Fight)->fights()->starts, $rows->playedMs());
+        return new self($ms, $states === [] ? null : Icon::spell($states[0]->refId), $opened, $openedMs, $rows->states(StateKind::Fight)->fights()->starts, $rows->playedMs(StateKind::OwnBuff, StateKind::OthersBuff));
     }
 
     public function hours(): float
     {
         return $this->ms / 3_600_000;
+    }
+
+    /** Hours played from the first level that has aura rows: the time they can say whether the character was stealthed. */
+    public function playedHours(): float
+    {
+        return $this->playedMs / 3_600_000;
     }
 
     /** Percent of played time under the aura. */

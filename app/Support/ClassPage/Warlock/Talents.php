@@ -139,7 +139,7 @@ final readonly class Talents
     private function link(): array
     {
         $up = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, 'Soul Link');
-        $played = $this->rows->playedMs();
+        $played = $this->rows->playedMs(StateKind::OwnBuff);
         $share = $played === 0 ? 0 : min(100, $up->ms / $played * 100);
 
         return [

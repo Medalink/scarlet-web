@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * request that an earlier read already covers is answered from it, and a request with no argument reads everything.
  * Every summed column is held to `CAP`, so adding the rows of a crafted upload cannot pass the integer range. Four
  * small reads beside them answer what the tables cannot: the description of a spell, the kills a party member got,
- * the time played and the level axis of a chart, which starts at the first level with the rows the chart reads.
+ * the time played and the level axis of a chart.
  */
 final class ClassRows
 {
@@ -48,6 +48,9 @@ final class ClassRows
 
     /** @var array<string, bool>|null */
     private ?array $holds = null;
+
+    /** @var array<string, int|null> */
+    private array $firsts = [];
 
     public function __construct(public readonly int $characterId, public readonly int $level, private readonly ResolveNames $names) {}
 
@@ -211,32 +214,84 @@ final class ClassRows
         return $kinds;
     }
 
-    /** The character's played time over the sessions that count, in milliseconds. */
-    public function playedMs(): int
+    /**
+     * The character's played time over the sessions that count, in milliseconds: only the levels from the first one
+     * that has rows of what is read, since time before any such row is time the rows say nothing about. All of it with
+     * nothing named.
+     */
+    public function playedMs(ClassTable|StateKind ...$read): int
     {
-        return array_sum($this->playedByLevel());
+        return array_sum($this->playedByLevel(...$read));
     }
 
-    /** @return array<int, int> played milliseconds by level, 0 for a span with no level */
-    public function playedByLevel(): array
+    /**
+     * Played milliseconds by level, 0 for a span with no level; the levels from the first one that has rows of what is
+     * read, or every level with nothing named.
+     *
+     * @return array<int, int>
+     */
+    public function playedByLevel(ClassTable|StateKind ...$read): array
     {
         if ($this->played === null) {
             $this->played = array_map(fn (mixed $ms): int => (int) $ms, $this->counted('play_spans')->groupBy('level')->selectRaw('coalesce(level, 0) as level, least(coalesce(sum(ms), 0), ?) as ms', [self::CAP])->pluck('ms', 'level')->all());
             ksort($this->played);
         }
+        if ($read === []) {
+            return $this->played;
+        }
+        $first = $this->firstLevel($read);
 
-        return $this->played;
+        return $first === null ? [] : array_filter($this->played, fn (int $level): bool => $level >= $first, ARRAY_FILTER_USE_KEY);
     }
 
-    /** @return list<int> the levels a by-level chart draws: from the first level with the rows the chart reads ($from) to the character's level, up to `TOP_LEVEL` */
-    public function levels(int $from): array
+    /**
+     * The levels a by-level chart draws: from the first level that has rows of what the chart reads to the character's
+     * level, up to `TOP_LEVEL`. The tables and state kinds a chart reads start at different levels when an older
+     * decoder wrote some of them, so a chart names its own; with none named it starts at the first row of the casts,
+     * the state times or the meters.
+     *
+     * @return list<int>
+     */
+    public function levels(ClassTable|StateKind ...$read): array
     {
         $last = min($this->level, self::TOP_LEVEL);
-        if ($last < 1) {
+        $first = $this->firstLevel($read);
+        if ($first === null || $last < 1) {
             return [];
         }
 
-        return range(max(1, min($from, $last)), $last);
+        return range(max(1, min($first, $last)), $last);
+    }
+
+    /** @param  array<ClassTable|StateKind>  $read */
+    private function firstLevel(array $read): ?int
+    {
+        $tables = [];
+        $kinds = [];
+        foreach ($read === [] ? [ClassTable::Casts, ClassTable::States, ClassTable::Meters] : $read as $one) {
+            if ($one instanceof StateKind) {
+                $kinds[$one->value] = $one->value;
+
+                continue;
+            }
+            $tables[$one->value] = $one;
+        }
+        $key = implode(',', [...array_keys($tables), ...array_keys($kinds)]);
+        if (! array_key_exists($key, $this->firsts)) {
+            $levels = fn (ClassTable $table): Builder => $this->counted($table->value)->whereNotNull('level')->selectRaw('min(level) as level');
+            $union = null;
+            foreach ($tables as $table) {
+                $union = $union === null ? $levels($table) : $union->unionAll($levels($table));
+            }
+            if ($kinds !== [] && ! isset($tables[ClassTable::States->value])) {
+                $states = $levels(ClassTable::States)->whereIn('kind', array_values($kinds));
+                $union = $union === null ? $states : $union->unionAll($states);
+            }
+            $first = $union === null ? null : DB::query()->fromSub($union, 'first')->min('level');
+            $this->firsts[$key] = $first === null ? null : (int) $first;
+        }
+
+        return $this->firsts[$key];
     }
 
     /** @param  list<string>  $kinds */

@@ -83,6 +83,12 @@ final readonly class Forms
         return array_sum(array_map(fn (StateTotals $state): int => $state->ms, $this->forms));
     }
 
+    /** Milliseconds played from the first level that has aura rows: the time they can say whether a form was worn. */
+    public function playedMs(): int
+    {
+        return $this->rows->playedMs(StateKind::OwnBuff);
+    }
+
     /** Milliseconds of fighting in a form. */
     public function fightMs(string ...$keys): int
     {
@@ -140,14 +146,14 @@ final readonly class Forms
 
     private function stack(): Module
     {
-        $played = $this->rows->playedByLevel();
+        $played = $this->rows->playedByLevel(StateKind::OwnBuff);
         $series = [new Series('No form', new Hue('#3d3d46'))];
         foreach (array_keys($this->forms) as $key) {
             $series[] = new Series(self::label($key), new Hue(self::ALL[$key][3]));
         }
         $columns = [];
         $leading = [];
-        foreach ($this->rows->levels() as $level) {
+        foreach ($this->rows->levels(StateKind::OwnBuff) as $level) {
             $shares = array_map(fn (StateTotals $state): int => $state->msAt($level), array_values($this->forms));
             $whole = max($played[$level] ?? 0, array_sum($shares));
             if ($whole === 0) {
@@ -168,7 +174,7 @@ final readonly class Forms
         foreach ($this->forms as $key => $state) {
             $rows[] = new RankRow(self::label($key), $state->hours(), self::icon($key), new Hue(self::ALL[$key][3]));
         }
-        $none = max(0, $this->rows->playedMs() - $this->inFormMs());
+        $none = max(0, $this->playedMs() - $this->inFormMs());
         $rows[] = new RankRow('No form', $none / 3_600_000, tone: new Hue('#5d5d68'));
         $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
 

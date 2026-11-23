@@ -45,7 +45,7 @@ final class PriestBuilder implements ClassBuilder
         $done = new Figure('Healing done', $healing->done(), Unit::Short, icon: $icon);
         $shields = new Figure('Shields cast', $spells->shield->casts, icon: Casts::icon($spells->shield));
         $raised = new Figure('Players raised', $spells->resurrection->casts, icon: Casts::icon($spells->resurrection));
-        $form = new Figure('Hours in Shadowform', $shadow->formHours(), Unit::Hours, 'of '.Unit::Hours->say($facts->hours), $shadow->formIcon());
+        $form = new Figure('Hours in Shadowform', $shadow->formHours(), Unit::Hours, 'of '.Unit::Hours->say($shadow->playedHours()), $shadow->formIcon());
 
         return new ClassParts(
             $icon,

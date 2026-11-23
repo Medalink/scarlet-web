@@ -44,7 +44,7 @@ final class ShamanBuilder implements ClassBuilder
         $icon = $top === null ? null : Icon::spell($top['ref']);
         $dropped = new Figure('Totems dropped', $totems->drops(), icon: $icon);
         $shocks = new Figure('Shocks cast', $fighting->shocks(), icon: Casts::icon($spells->earthShock));
-        $wolf = new Figure('Hours as a Ghost Wolf', $walks->wolfHours(), Unit::Hours, 'of '.Unit::Hours->say($facts->hours), $walks->wolfIcon());
+        $wolf = new Figure('Hours as a Ghost Wolf', $walks->wolfHours(), Unit::Hours, 'of '.Unit::Hours->say($walks->playedHours()), $walks->wolfIcon());
         $reincarnations = new Figure('Reincarnations', $spells->reincarnation->casts, icon: Casts::icon($spells->reincarnation));
 
         return new ClassParts(

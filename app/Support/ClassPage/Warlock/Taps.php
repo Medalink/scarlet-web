@@ -19,6 +19,7 @@ use App\Support\ClassPage\Titled;
 use App\Support\ClassPage\Tone;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\SpellTotals;
 use App\Support\ClassRows\Tally;
 use App\View\Format;
@@ -77,7 +78,7 @@ final readonly class Taps
         if ($this->tap->casts === 0) {
             return null;
         }
-        $levels = $this->rows->levels($this->tap->firstLevel() ?? 0);
+        $levels = $this->rows->levels(ClassTable::Casts);
 
         return new Row([$this->chart($levels), $this->life($facts)]);
     }

@@ -42,7 +42,18 @@ final readonly class Walks
 
     public function wolfShare(): float
     {
-        return Casts::share($this->wolf->ms, $this->rows->playedMs());
+        return Casts::share($this->wolf->ms, $this->playedMs());
+    }
+
+    /** Hours played from the first level that has aura rows: the time they can say whether the wolf form was worn. */
+    public function playedHours(): float
+    {
+        return $this->playedMs() / 3_600_000;
+    }
+
+    private function playedMs(): int
+    {
+        return $this->rows->playedMs(StateKind::OwnBuff);
     }
 
     public function wolfIcon(): ?Icon

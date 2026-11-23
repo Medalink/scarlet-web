@@ -30,7 +30,7 @@ final readonly class Standings
         return array_values(array_filter([
             $this->shards->shared && $played > 0 ? new StandingFigure('shards_hour', 'Soul shards a played hour', $made / ($played / self::HOUR_MS), Unit::Decimal, $this->shards->icon) : null,
             $fight > 0 ? new StandingFigure('taps_fight_hour', 'Life Taps an hour in combat', $this->spells->lifeTap->fightCasts / ($fight / self::HOUR_MS), icon: Spells::icon($this->spells->lifeTap)) : null,
-            $this->demons->shared() && $played > 0 ? new StandingFigure('demon_time', 'Time with a demon out', min(100, $this->demons->withMs() / $played * 100), Unit::Percent, $this->demons->icon($demon)) : null,
+            $this->demons->shared() && $this->demons->playedMs() > 0 ? new StandingFigure('demon_time', 'Time with a demon out', min(100, $this->demons->withMs() / $this->demons->playedMs() * 100), Unit::Percent, $this->demons->icon($demon)) : null,
             Drinking::figure($this->rows),
             $this->party->shared() ? new StandingFigure('stones_out', 'Healthstones handed out', $this->party->handedOut(), icon: Spells::icon($this->spells->healthstones)) : null,
             $this->shards->shared && $made > 0 ? new StandingFigure('shards_destroyed', 'Shards destroyed', min(100, $this->shards->destroyed() / $made * 100), Unit::Percent, $this->shards->icon) : null,

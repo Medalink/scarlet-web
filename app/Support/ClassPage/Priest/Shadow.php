@@ -40,7 +40,18 @@ final readonly class Shadow
 
     public function formShare(): float
     {
-        return Casts::share($this->form->ms, $this->rows->playedMs());
+        return Casts::share($this->form->ms, $this->playedMs());
+    }
+
+    /** Hours played from the first level that has aura rows: the time they can say whether the form was up. */
+    public function playedHours(): float
+    {
+        return $this->playedMs() / 3_600_000;
+    }
+
+    private function playedMs(): int
+    {
+        return $this->rows->playedMs(StateKind::OwnBuff);
     }
 
     public function formIcon(): ?Icon

@@ -6,6 +6,7 @@ use App\Support\ClassPage\Casts;
 use App\Support\ClassPage\Module;
 use App\Support\ClassPage\Span;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\SpellTotals;
 
 /** The finisher cast at each level: the five finishers' casts by level, every rank counted as one spell. */
@@ -15,7 +16,7 @@ final readonly class Finishers
 
     public function module(): ?Module
     {
-        $stack = Casts::stack($this->spells->finishers, $this->rows->levels(), array_values(Spells::FINISHERS), 'finishers cast');
+        $stack = Casts::stack($this->spells->finishers, $this->rows->levels(ClassTable::Casts), array_values(Spells::FINISHERS), 'finishers cast');
         if ($stack === null) {
             return null;
         }

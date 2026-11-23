@@ -26,7 +26,7 @@ final readonly class Standings
 
         return [
             new StandingFigure('shifts_fight', 'Shapeshifts a fight', $fights->starts === 0 ? 0 : $this->forms->shifts / $fights->starts, Unit::Decimal, Forms::icon('moonkin')),
-            new StandingFigure('form_share', 'Time in a form of played time', $played === 0 ? 0 : min(100, $this->forms->inFormMs() / $played * 100), Unit::Percent, Forms::icon('bear')),
+            new StandingFigure('form_share', 'Time in a form of played time', $this->forms->playedMs() === 0 ? 0 : min(100, $this->forms->inFormMs() / $this->forms->playedMs() * 100), Unit::Percent, Forms::icon('bear')),
             new StandingFigure('travel_share', 'Time in Travel Form of travel', $travel === 0 ? 0 : $this->forms->ms('travel') / $travel * 100, Unit::Percent, Forms::icon('travel')),
             new StandingFigure('powershifts', 'Shifts back into the form just left', $this->forms->powershiftShare(), Unit::Percent, Forms::icon('aquatic')),
             new StandingFigure('revives_ten_hours', 'Rebirths and Innervates in '.self::TEN_HOURS.' played hours', $played === 0 ? 0 : $revives / ($played / self::HOUR_MS) * self::TEN_HOURS, Unit::Decimal, Spells::icon($this->spells->innervate)),

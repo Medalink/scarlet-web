@@ -49,7 +49,7 @@ final class RogueBuilder implements ClassBuilder
             $this->row([$fighting->attacks(), $hands->locks()]),
             $this->row([$poisons->module(), $fighting->escapes(), $fighting->kick()]),
         ]));
-        $hours = new Figure('Hours in stealth', $stealth->hours(), Unit::Hours, 'of '.Unit::Hours->say($facts->hours), $stealth->icon);
+        $hours = new Figure('Hours in stealth', $stealth->hours(), Unit::Hours, 'of '.Unit::Hours->say($stealth->playedHours()), $stealth->icon);
         $opened = new Figure('Openers from stealth', $stealth->opened, icon: Icon::spell(self::CHEAP_SHOT));
         $pockets = new Figure('Pockets picked', $spells->pickPocket->casts, icon: Casts::icon($spells->pickPocket));
         $locks = new Figure('Locks picked', $spells->pickLock->casts, icon: Casts::icon($spells->pickLock));

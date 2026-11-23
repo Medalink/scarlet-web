@@ -10,6 +10,7 @@ use App\Support\ClassPage\Series;
 use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\Meter;
 
 /** Damage dealt and damage taken in a fight, by level, from the client's damage meter. */
@@ -30,7 +31,7 @@ final readonly class Damage
         $meters = $this->rows->meters();
         $dealt = $meters->byLevel(Meter::Damage);
         $taken = $meters->byLevel(Meter::Taken);
-        $levels = $this->rows->levels();
+        $levels = $this->rows->levels(ClassTable::Meters);
         if ($levels === [] || ($dealt === [] && $taken === [])) {
             return null;
         }

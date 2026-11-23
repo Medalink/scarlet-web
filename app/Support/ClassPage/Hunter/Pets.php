@@ -92,7 +92,7 @@ final readonly class Pets
     /** The share of the time played that a pet was out, 0 to 100. */
     public function share(): float
     {
-        $played = $this->rows->playedMs();
+        $played = $this->rows->playedMs(StateKind::Pet);
 
         return $played === 0 ? 0.0 : min(100.0, $this->ms() / $played * 100);
     }
@@ -132,7 +132,7 @@ final readonly class Pets
         if ($this->ms() === 0) {
             return null;
         }
-        $played = $this->rows->playedByLevel();
+        $played = $this->rows->playedByLevel(StateKind::Pet);
         $series = [];
         foreach (self::FAMILIES as $family => $hue) {
             if (isset($this->families[$family])) {
@@ -145,10 +145,8 @@ final readonly class Pets
         $series[] = new Series('No pet out', new Hue(self::NONE));
         $columns = [];
         $leading = [];
-        foreach ($played as $level => $time) {
-            if ($level === 0) {
-                continue;
-            }
+        foreach ($this->rows->levels(StateKind::Pet) as $level) {
+            $time = $played[$level] ?? 0;
             $shares = [];
             foreach (array_keys($this->families) as $family) {
                 $shares[] = $this->families[$family]->byLevel[$level]['ms'] ?? 0;
