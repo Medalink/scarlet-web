@@ -10,7 +10,7 @@ final class SystemPage
      */
     public static function data(): array
     {
-        return ['heat' => self::heat(5), 'days' => self::days(), 'area' => self::area()];
+        return ['heat' => self::heat(5), 'days' => self::days(), 'area' => self::area(), 'recap' => SystemRecap::recap()];
     }
 
     /**

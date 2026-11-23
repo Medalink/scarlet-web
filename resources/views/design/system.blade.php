@@ -77,6 +77,17 @@
   </section>
 
   <section class="mt-14">
+    <h2 class="sc-h">Session strip, session card, route</h2>
+    <div class="sc-panel mt-4 px-5 py-4"><x-sc.strip :recap="$d['recap']" /></div>
+    <p class="sc-cap">Zones on top, experience in five-minute columns, combat time as a red line, then levels, deaths, feats and quests at their minute. Local clock times along the foot. Hover for the minute, the zone and the nearest event.</p>
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+      <x-sc.session-card :recap="$d['recap']" :chip="['glyph' => 'kills', 'name' => 'Rampage', 'tier' => 2]" />
+      <div class="sc-panel px-3 py-3"><p class="sc-label mb-2 px-2">Route</p><x-sc.route :recap="$d['recap']" /></div>
+    </div>
+    <p class="sc-cap">The compact strip drops the clock row. The route is the session's path fitted to one sheet: scarlet fades in from the oldest part, flight paths are dashed violet, level-ups are diamonds, deaths a skull.</p>
+  </section>
+
+  <section class="mt-14">
     <h2 class="sc-h">Feat seal: the family is the shape, the tier is the metal</h2>
     <x-sc.tiles :cols="6" class="mt-4">
       @foreach ([[0, 0.3, 'Not earned', 'The dial fills in copper'], [1, 0.9, null, '1 pip · fills in silver'], [2, 0.5, null, '2 pips · fills in gold'], [3, 0.7, null, '3 pips · fills in scarlet'], [4, 0.4, null, '4 pips · fills in gold'], [5, 1, null, '5 gold pips · all lit']] as [$tier, $progress, $name, $note])
