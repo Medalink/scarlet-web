@@ -4,7 +4,11 @@
 @import 'tailwindcss/preflight.css' layer(base);
 @import 'tailwindcss/utilities.css' layer(utilities) source(none);
 @import './scarlet.css';
+@import './hubs.css';
 
+@source '../views/components';
+@source '../views/pages';
+@source '../../app/View/Pages';
 @source '../views/components/sc';
 @source '../views/sc';
 @source '../views/components/layouts/sc.blade.php';

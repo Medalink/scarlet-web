@@ -1,5 +1,5 @@
 @php($base = App\View\Design\Gallery::BASE)
-<x-layouts.app title="Scarlet rulesets compared" current="stats" :base="$base">
+<x-layouts.sc title="Scarlet rulesets compared" current="stats" :base="$base">
 <div class="wrap">
   <x-page-head title="Rulesets compared">
     <x-slot:sub>A ruleset is a permanent choice for each character. Each row links to its own dashboard.</x-slot:sub>
@@ -19,4 +19,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

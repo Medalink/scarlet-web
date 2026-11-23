@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Encounter '.$d['id'].': what it drops'" :description="'Items that boss encounter '.$d['id'].' dropped in WoW Forever.'">
+<x-layouts.sc :title="'Encounter '.$d['id'].': what it drops'" :description="'Items that boss encounter '.$d['id'].' dropped in WoW Forever.'">
 <div class="wrap">
   <x-page-head :title="'Encounter '.$d['id']" :single="true">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
@@ -10,4 +10,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

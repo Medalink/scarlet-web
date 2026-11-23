@@ -23,7 +23,15 @@ final class LeaderboardHallPage
         $filters = Filters::onPage($scope, $rulesets, self::PATH);
         $query = self::query($scope);
 
+        $entries = array_map(fn (array $item): array => self::entry($item['board'], $item['lead'], $item['total'], $query), $r['boards']);
+        $groups = [];
+        foreach ($r['boards'] as $i => $item) {
+            $groups[$item['board']->group()][] = $entries[$i];
+        }
+
         return [
+            'title' => count($r['boards']).' boards',
+            'groups' => $groups,
             'sub' => count($r['boards']).' boards of public characters. Each names who leads it now.',
             'filters' => $filters,
             'boards' => array_map(fn (array $item): array => self::entry($item['board'], $item['lead'], $item['total'], $query), $r['boards']),

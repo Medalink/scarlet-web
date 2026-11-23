@@ -1,5 +1,5 @@
 @php($base = App\View\Design\Gallery::BASE)
-<x-layouts.app title="Search Scarlet" current="search" :base="$base">
+<x-layouts.sc title="Search Scarlet" current="search" :base="$base">
 <div class="wrap">
   <x-page-head title="Search" :single="true">
     <x-slot:body><x-search-box value="marsh" :action="$base.'/search'" /></x-slot:body>
@@ -20,4 +20,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['title'].' scene'" :base="$base" :index="false">
+<x-layouts.sc :title="$d['title'].' scene'" :base="$base" :index="false">
 @if ($art)
 @vite('resources/js/scene.js')
 @endif
@@ -21,4 +21,4 @@
   <p class="credit">{{ $d['credit'] }}</p>
   @endif
 </div>
-</x-layouts.app>
+</x-layouts.sc>

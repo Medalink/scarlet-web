@@ -22,6 +22,16 @@ function draw(root = document) {
 
 window.SC = { draw };
 
+import './site/tally.js';
+import './site/floors.js';
+import './site/search.js';
+if (document.querySelector('[data-chart]')) {
+    import('./charts.js');
+}
+if (document.querySelector('canvas[data-world-map]')) {
+    import('./pages/maps.js');
+}
+
 const start = () => {
     controls();
     draw();

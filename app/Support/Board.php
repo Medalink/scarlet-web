@@ -87,6 +87,17 @@ enum Board: string
         };
     }
 
+    public function group(): string
+    {
+        return match ($this) {
+            self::FastestTo60, self::FastestTo40, self::FastestTo20, self::HighestWithoutDying, self::MostQuests, self::MostQuestsCompleted => 'Levelling',
+            self::MostKills, self::MostDungeonRuns => 'Combat',
+            self::MostJumps, self::MostDistance, self::MostTimeByTheFire => 'Travel',
+            self::FeatScore => 'Feats',
+            default => 'Professions',
+        };
+    }
+
     public function title(): string
     {
         return match ($this) {

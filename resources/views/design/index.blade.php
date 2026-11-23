@@ -1,5 +1,5 @@
 @php($base = App\View\Design\Gallery::BASE)
-<x-layouts.app title="Scarlet page gallery" :base="$base">
+<x-layouts.sc title="Scarlet page gallery" :base="$base">
 <div class="wrap">
   <x-page-head title="Page gallery" :single="true">
     <x-slot:sub>Each comp in docs/comps rebuilt from invented data through the layout and the components. Local only.</x-slot:sub>
@@ -15,4 +15,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

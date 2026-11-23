@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['title'].' talents in WoW Forever'" current="talents" :description="'The talents '.$d['title'].' characters take in WoW Forever and how many take each. '.$d['sub']">
+<x-layouts.sc :title="$d['title'].' talents in WoW Forever'" current="talents" :description="'The talents '.$d['title'].' characters take in WoW Forever and how many take each. '.$d['sub']">
 <div class="wrap">
   <x-page-head :title="$d['title']">
     <x-slot:sub><span data-class="{{ $d['classKey'] }}"><i class="dotc" aria-hidden="true"></i>{{ $d['className'] }}</span> · {{ $d['sub'] }}</x-slot:sub>
@@ -39,4 +39,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>
