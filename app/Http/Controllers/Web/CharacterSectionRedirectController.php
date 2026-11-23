@@ -11,6 +11,8 @@ class CharacterSectionRedirectController extends Controller
 {
     public function __invoke(Request $request, string $name): RedirectResponse
     {
-        return redirect('/c/'.rawurlencode($name).'#'.$request->route('anchor'), 301);
+        $query = $request->getQueryString();
+
+        return redirect('/c/'.rawurlencode($name).($query === null ? '' : '?'.$query).'#'.$request->route('anchor'), 301);
     }
 }
