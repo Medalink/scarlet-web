@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\CountedLoot;
 use App\Support\RollupRead;
 use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(RollupRead::class);
+        $this->app->scoped(CountedLoot::class);
     }
 
     /**

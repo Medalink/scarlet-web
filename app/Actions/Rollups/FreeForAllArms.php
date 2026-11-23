@@ -33,6 +33,9 @@ class FreeForAllArms
      */
     public function handle(?array $sources = null, ?array $itemIds = null): array
     {
+        if ($sources === []) {
+            return [];
+        }
         $kept = $this->read->kept('free-for-all-arms', [$sources === null ? null : $this->keys($sources), $itemIds === null ? null : array_values(array_unique($itemIds))], fn (): array => $this->built($sources, $itemIds));
 
         $counts = [];

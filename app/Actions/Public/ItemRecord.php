@@ -5,7 +5,7 @@ namespace App\Actions\Public;
 use App\Actions\Rollups\ItemGathers;
 use App\Actions\Rollups\ItemSources;
 use App\Actions\Rollups\SourceRates;
-use App\Support\LootCounted;
+use App\Support\CountedLoot;
 use App\Support\LootRead;
 use App\Support\NameKind;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +22,7 @@ class ItemRecord
         private readonly ItemPrices $prices,
         private readonly ItemCrafting $crafting,
         private readonly BossDrops $bossDrops,
+        private readonly CountedLoot $counted,
     ) {}
 
     /**
@@ -29,7 +30,8 @@ class ItemRecord
      * loot rule, where it is gathered, and its auction price history for each ruleset and realm. The drop aggregates carry no ruleset, so
      * every drop figure is over all rulesets. `by_source` is the same drops as one row for each source and `read` over
      * every loot rule, or over `$rule` alone, with each rate as its counts and range. `dropped` and `source_count` count
-     * windows with a known `read`, and a source once whatever it was read for. It also lists the recipes that make it or
+     * windows with a known `read`, and a source once whatever it was read for; a free-for-all drop counts only the windows
+     * of its source's arm (`FreeForAllArms`), as the creature page does. It also lists the recipes that make it or
      * use it and the boss encounters that dropped it. Null when nothing is known by this id.
      *
      * @return array<string, mixed>|null
@@ -43,7 +45,7 @@ class ItemRecord
         }
         $sources = $this->sources->handle($id, 50);
         $gathered = $this->gathers->handle($id);
-        $totals = LootRead::known(DB::table(LootCounted::Items->value))
+        $totals = LootRead::known($this->counted->items('d', $this->counted->sourcesOf([$id]), [$id]))
             ->selectRaw('sum(windows) as dropped, min(bucket) as first_at, count(distinct (source_kind, source_id)) as sources, distinct_count(rollup(characters)) as characters')
             ->where('item_id', $id)
             ->havingRaw('distinct_count(rollup(characters)) >= ?', [(int) config('scarlet.min_characters')])

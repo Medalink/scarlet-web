@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CountedLoot;
 use App\Support\ItemBind;
 use App\Support\LootCounted;
 use App\Support\LootRead;
@@ -14,14 +15,16 @@ use Illuminate\Support\Facades\DB;
 
 class SourceRates
 {
-    public function __construct(private readonly RollupRead $read) {}
+    public function __construct(private readonly RollupRead $read, private readonly CountedLoot $counted, private readonly FreeForAllArms $arms) {}
 
     /**
      * Where an item drops from, one row for each source and `read` (a creature looted, the same creature skinned, an
      * object, a container) over every loot rule but personal loot, or over `$rule` alone: the item's rate over the
      * windows of the source with that read, first reads only. Windows with no `read` are in no row. Sources read 10
      * times or more come first, ranked by the low end of the rate's range, then sources read fewer times, which show
-     * counts only. `rules` lists the loot rules the item dropped under, for the page's rule control.
+     * counts only. `rules` lists the loot rules the item dropped under, for the page's rule control. The free-for-all
+     * windows of a source are those of its arm (`FreeForAllArms`), so a row is the creature page's row of the same item
+     * and rule, and under free for all alone its tags are the arm's.
      *
      * @return array{rule: string|null, rules: list<string>, rows: list<array{source_kind: string, source_id: int, source: string|null, read: string, quantity: int, per_drop: float, estimate: RateEstimate}>}
      */
@@ -31,25 +34,35 @@ class SourceRates
         $rule = in_array($rule, $rules, true) ? $rule : null;
         $quest = (int) DB::table('items')->where('item_id', $itemId)->value('bind_type') === ItemBind::Quest->value;
 
-        $windows = LootRule::within(LootRead::known(DB::table(LootCounted::Windows->value))
+        $sources = $this->counted->sourcesOf([$itemId]);
+        $free = $rule === LootRule::FreeForAll->value ? $this->arms->handle($sources, []) : [];
+        $shift = $rule === null || $rule === LootRule::FreeForAll->value ? $this->counted->windowShift($sources) : [];
+        $windows = LootRule::within(LootRead::known(DB::table(LootCounted::Windows->value.' as w'))
             ->selectRaw('source_kind, source_id, read, sum(windows) as windows, distinct_count(rollup(characters)) as window_characters'), 'loot_rule', $rule)
             ->groupBy('source_kind', 'source_id', 'read');
-        $query = LootSourceKind::withName(LootRead::known(DB::table(LootCounted::Items->value.' as d'), 'd.read')
+        $query = LootSourceKind::withName(LootRead::known($this->counted->items('d', $sources, [$itemId]), 'd.read')
             ->joinSub($windows, 'o', fn ($join) => $join->on('o.source_kind', '=', 'd.source_kind')->on('o.source_id', '=', 'd.source_id')->on('o.read', '=', 'd.read'))
             ->select('d.source_kind', 'd.source_id', 'd.read'))
             ->selectRaw('sum(d.windows) as drops, sum(d.quantity) as quantity, o.windows as opens, o.window_characters')
             ->where('d.item_id', $itemId);
         $rows = $this->read->rows(LootRule::within($query, 'd.loot_rule', $rule)
             ->groupBy('d.source_kind', 'd.source_id', 'd.read', 'o.windows', 'o.window_characters')
-            ->havingRaw('distinct_count(rollup(d.characters)) >= ?', [(int) config('scarlet.min_characters')])
+            ->havingRaw('distinct_count(rollup(d.characters)) >= ?', [(int) config('scarlet.min_characters')])->havingRaw('sum(d.windows) > 0')
             ->orderByRaw('sum(d.windows) desc')->orderBy('d.source_id')->orderBy('d.read')->limit($limit));
 
-        $rows = array_map(fn (array $row): array => [
-            'source_kind' => (string) $row['source_kind'], 'source_id' => (int) $row['source_id'], 'source' => $row['source'], 'read' => (string) $row['read'],
-            'quantity' => (int) $row['quantity'],
-            'per_drop' => (int) $row['drops'] === 0 ? 0.0 : (int) $row['quantity'] / (int) $row['drops'],
-            'estimate' => RateEstimate::of((int) $row['drops'], (int) $row['opens'], RateFlag::tags((float) $row['window_characters'], $quest)),
-        ], $rows);
+        $rows = array_map(function (array $row) use ($free, $shift, $quest): array {
+            $arm = $row['read'] === LootRead::Loot->value ? ($free[$row['source_kind'].$row['source_id']] ?? null) : null;
+            $opens = (int) $row['opens'] + ($row['read'] === LootRead::Loot->value ? ($shift[$row['source_kind'].$row['source_id']] ?? 0) : 0);
+
+            return [
+                'source_kind' => (string) $row['source_kind'], 'source_id' => (int) $row['source_id'], 'source' => $row['source'], 'read' => (string) $row['read'],
+                'quantity' => (int) $row['quantity'],
+                'per_drop' => (int) $row['drops'] === 0 ? 0.0 : (int) $row['quantity'] / (int) $row['drops'],
+                'estimate' => RateEstimate::of((int) $row['drops'], $opens, $arm === null
+                    ? RateFlag::tags((float) $row['window_characters'], $quest)
+                    : [...$arm->arm->flags, ...($quest ? [RateFlag::QuestItem] : [])]),
+            ];
+        }, $rows);
         usort($rows, fn (array $a, array $b): int => RateEstimate::compare($a['estimate'], $b['estimate']) ?: [$a['source_kind'], $a['source_id'], $a['read']] <=> [$b['source_kind'], $b['source_id'], $b['read']]);
 
         return ['rule' => $rule, 'rules' => $rules, 'rows' => $rows];
