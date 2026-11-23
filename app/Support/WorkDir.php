@@ -2,12 +2,15 @@
 
 namespace App\Support;
 
+use ErrorException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * The ingest work dir (`scarlet.work_dir`), where decodes write their rows and spool files. A job killed by its
  * timeout or a memory fatal never runs its `finally`, so each host removes decode and imports work files older than
- * an hour, at most once every ten minutes, when it makes a new one.
+ * an hour, at most once every ten minutes, when it makes a new one. A file it cannot remove, such as one another user
+ * owns in a sticky `/tmp`, is logged and passed over.
  */
 final class WorkDir
 {
@@ -34,9 +37,13 @@ final class WorkDir
         $cutoff = time() - self::STALE_SECONDS;
         foreach (self::PREFIXES as $prefix) {
             foreach (glob($dir.DIRECTORY_SEPARATOR.$prefix.'*') ?: [] as $path) {
-                $modified = is_file($path) ? filemtime($path) : false;
-                if ($modified !== false && $modified < $cutoff) {
-                    unlink($path);
+                try {
+                    $modified = is_file($path) ? filemtime($path) : false;
+                    if ($modified !== false && $modified < $cutoff) {
+                        unlink($path);
+                    }
+                } catch (ErrorException $e) {
+                    Log::warning('A stale work file could not be removed.', ['path' => $path, 'error' => $e->getMessage()]);
                 }
             }
         }
