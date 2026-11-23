@@ -43,7 +43,7 @@ class FreeForAllArms
 
         $counts = [];
         foreach ($kept as $key => $parts) {
-            $arm = $this->arm($parts['days'], $parts['joined']);
+            $arm = $this->arm($parts['days'], $parts['joined'] ?? []);
             if ($arm !== null) {
                 $counts[(string) $key] = new FreeForAllCounts($arm, $parts['items'], $parts['raw']);
             }
