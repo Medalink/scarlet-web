@@ -96,7 +96,7 @@ Build the binary first (`cargo build --release` in `part/`) or pass `--bin`. Aft
 
 Public API answers are cached for 30 seconds at the origin, so every read adds a random `limit` to its address and a rerun never reads the last run's answer.
 
-The server needs Horizon running, `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than
+The server needs Horizon running, the zone rectangles (`bin/artisan maps:load-rects`, which `boot.mjs` runs; without them no path point has a world position and the world map checks fail), `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than
 the default rate limits for repeated runs: `SCARLET_RATE_REGISTRATION_PER_IP=100` and
 `SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 3 registrations (the third is the install of a character no account is
 linked to), about 30 public API requests, about 160 page requests and about 40 requests on the `throttle:60,1` routes,

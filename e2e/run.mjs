@@ -25,6 +25,7 @@ import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
 import * as classPageApi from "./checks/class-page-api.mjs";
 import * as owner from "./checks/owner.mjs";
+import * as map from "./checks/map.mjs";
 import * as own from "./checks/own.mjs";
 import * as installs from "./checks/installs.mjs";
 import * as removal from "./checks/removal.mjs";
@@ -69,6 +70,8 @@ const REGISTRY = [
   { lane: "pages", name: "an object id past what the database stores is a 404 page", independent: true, run: pages.missingPageIs404("/objects/3000000000") },
   { lane: "pages", name: "the public profession and camps pages stay public: canonical, indexed, edge cacheable, no cookie, no own-page words", run: pages.publicPagesStayPublic },
   { lane: "pages", name: "the account pages are closed to visitors", independent: true, run: pages.accountIsClosedToVisitors },
+  { lane: "pages", name: "the account's own world map and its trails are closed to visitors", independent: true, run: map.ownMapIsClosedToVisitors },
+  { lane: "pages", name: `${WARLOCK}'s world map shows its walk, its ride and its flight, and the map on its character page links it`, run: map.characterMapShowsItsTrails },
   { lane: "pages", name: "the admin pages are a 404 to visitors", independent: true, run: admin.adminIsHiddenFromVisitors },
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },
   { lane: "pages", name: "the twelve profession pages show what the upload recorded", run: professions.pagesShowTheUpload },
@@ -83,10 +86,11 @@ const REGISTRY = [
   { lane: "browser", name: "search suggests while typing", run: browser.searchSuggestsWhileTyping },
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
   { lane: "owner", name: "the admin opens the admin pages privately, /admin/api counts the upload and a character asked for by name, /admin/clients shows the install clients, and /admin/characters finds the characters", run: admin.adminSeesTheApiCalls },
-  { lane: "owner", name: "a character the owner made private has no class page for a visitor, and has it again once public", run: classPage.hiddenCharacterHidesItsClassPage },
+  { lane: "owner", name: "a character the owner made private has no class page, world map or trails for a visitor, and has them again once public", run: classPage.hiddenCharacterHidesItsClassPage },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },
+  { lane: "owner", name: "the account's own world map shows its characters' rides and flights and stays private", run: map.ownMapShowsTheAccount },
   { lane: "removal", name: `${ECHO} on two installs of one account: a sync of one keeps the other's parts, and a part only one lists goes when it drops it`, run: installs.twoInstallsKeepEachOthersParts },
   { lane: "removal", name: "removal answers and empties the status", run: removal.removalAnswersAndEmptiesStatus },
   { lane: "removal", name: "the stranger install's upload is removed too", run: removal.strangerIsRemoved },

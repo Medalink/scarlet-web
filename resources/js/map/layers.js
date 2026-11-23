@@ -1,16 +1,16 @@
 // What is drawn over the art besides heat: creature dots, paths, marks and zone names. All of it is data given to the viewer, in world u, v.
 
 const ACCENT = '#ff2d55';
-const SOFT = '#ff6b8e';
 const FG = '#f0f1f3';
 const SHEET = '#141416';
+const FLIGHT = '#4da3ff';
 
 // Path styles by mode: run, mount and swim are scarlet lines, taxi a dashed one, ghost a dotted one.
 const PATH = {
-    run: { width: 2.25, color: ACCENT, halo: true },
-    mount: { width: 2.25, color: ACCENT, halo: true },
-    swim: { width: 2.25, color: ACCENT, halo: true },
-    taxi: { width: 1.5, color: SOFT, dash: [7, 6] },
+    run: { width: 2.25, color: ACCENT, halo: 'rgba(255,45,85,0.16)' },
+    mount: { width: 2.25, color: ACCENT, halo: 'rgba(255,45,85,0.16)' },
+    swim: { width: 2.25, color: ACCENT, halo: 'rgba(255,45,85,0.16)' },
+    taxi: { width: 2, color: FLIGHT, dash: [8, 5], halo: 'rgba(77,163,255,0.18)' },
     ghost: { width: 1.5, color: 'rgba(240,241,243,0.6)', dash: [1.5, 5] },
 };
 
@@ -74,7 +74,7 @@ export function drawPaths(ctx, view, paths) {
         ctx.setLineDash(style.dash ?? []);
         if (style.halo) {
             trace();
-            ctx.strokeStyle = 'rgba(255,45,85,0.16)';
+            ctx.strokeStyle = style.halo;
             ctx.lineWidth = 7;
             ctx.stroke();
         }

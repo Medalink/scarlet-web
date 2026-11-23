@@ -2,11 +2,15 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Models\Account;
 use App\Support\WorldLayer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-/** The ruleset, layer and opened zone of the world map page, as query parameters. */
+/**
+ * The ruleset, layer, opened zone and character of the world map page, as query parameters. On `/account/map`, declared
+ * with `->defaults(ScopeRequest::OWN, true)`, the page is the signed-in account's own characters.
+ */
 class MapRequest extends FormRequest
 {
     private const int LARGEST_ZONE = 1000000;
@@ -31,6 +35,7 @@ class MapRequest extends FormRequest
             'ruleset' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9-]+$/'],
             'layer' => ['nullable', Rule::enum(WorldLayer::class)],
             'zone' => ['nullable', 'integer', 'min:1', 'max:'.self::LARGEST_ZONE],
+            'character' => ['nullable', 'string', 'max:64'],
         ];
     }
 
@@ -54,5 +59,27 @@ class MapRequest extends FormRequest
         $layer = $this->validated('layer');
 
         return is_string($layer) ? WorldLayer::from($layer) : WorldLayer::Paths;
+    }
+
+    /** The name of the character whose trails the map shows (`?character=Name-Surname`). */
+    public function character(): ?string
+    {
+        $name = $this->validated('character');
+
+        return is_string($name) && $name !== '' ? $name : null;
+    }
+
+    /** Whether the route is the signed-in account's own map. */
+    public function own(): bool
+    {
+        return ($this->route()?->defaults[ScopeRequest::OWN] ?? false) === true;
+    }
+
+    /** The signed-in account, or null for a visitor. */
+    public function viewer(): ?Account
+    {
+        $user = $this->user();
+
+        return $user instanceof Account ? $user : null;
     }
 }

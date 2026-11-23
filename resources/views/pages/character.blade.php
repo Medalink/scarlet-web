@@ -5,6 +5,7 @@
     <ul class="legend ch-legend" aria-label="Map marks">
       <li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M1 7h22" stroke="#ff2d55" stroke-width="2"/></svg>every path walked</li>
       @if ($d['deathCount'])<li><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M7.5 2.5l9 9M16.5 2.5l-9 9" stroke="#f0f1f3" stroke-width="1.7" stroke-linecap="round"/></svg>death</li>@endif
+      <li><a href="{{ $d['worldMap'] }}">Open on the world map</a></li>
     </ul>
   </div>
   <button type="button" class="ch-replay" hidden>Replay</button>

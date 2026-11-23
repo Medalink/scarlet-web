@@ -22,6 +22,12 @@ enum MovementMode: string
         };
     }
 
+    /** Whether the stretch was on a mount; flying needs one too. */
+    public function mounted(): bool
+    {
+        return $this === self::Mount || $this === self::Fly;
+    }
+
     /** The class that fills a bar segment or a key swatch, the item qualities' palette. */
     public function fill(): string
     {

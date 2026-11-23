@@ -1,6 +1,7 @@
 // Page glue for the world map viewer: mounts every canvas that carries a `data-world-map` spec, wires the pointer
-// readout, the layer buttons (which read the public API), the zone picker and the list that moves the map to a zone
-// (`a[data-map-sheet]`). The drawing is resources/js/map.
+// readout, the layer buttons (which read the public API), the zone picker, the list that moves the map to a zone
+// (`a[data-map-sheet]`) and, on a personal map, the travel and flight path switches over the trails its spec names.
+// The drawing is resources/js/map.
 // Text the readout shows comes in the spec already formatted, so nothing is formatted here.
 
 import { mountMap } from '../map/index.js';
@@ -10,6 +11,72 @@ const MANIFEST = '/map-tiles/manifest.json';
 const SHEETS = '/map-sheets/manifest.json';
 
 const maps = new Map();
+
+const CELL = 5;
+const TRAVEL = { all: [2, 3, 4], foot: [2], mounted: [3] };
+const ROUTE = 5;
+
+function carry(name, value) {
+    const set = (address) => {
+        const url = new URL(address, window.location.href);
+        value === null ? url.searchParams.delete(name) : url.searchParams.set(name, value);
+        return url.pathname + url.search + url.hash;
+    };
+    window.history.replaceState(null, '', set(window.location.href));
+    document.querySelectorAll('.world-ctl a[href]').forEach((link) => link.setAttribute('href', set(link.getAttribute('href'))));
+    document.querySelectorAll('.world-ctl select[data-nav] option[value]').forEach((option) => (option.value = set(option.value)));
+}
+
+function trailChoice() {
+    const query = new URL(window.location.href).searchParams;
+    const travel = query.get('travel');
+    return { travel: Object.hasOwn(TRAVEL, travel ?? '') ? travel : 'all', flights: query.get('flights') !== 'off' };
+}
+
+function drawTrails(entry) {
+    const { data, choice } = entry.trails;
+    document.querySelectorAll(`button[data-map-travel][data-map-for="${entry.canvasId}"]`).forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mapTravel === choice.travel)));
+    document.querySelectorAll(`button[data-map-flights][data-map-for="${entry.canvasId}"]`).forEach((button) => button.setAttribute('aria-pressed', String(choice.flights)));
+    if (!data) {
+        return;
+    }
+    const keep = TRAVEL[choice.travel];
+    const cells = [];
+    for (let n = 0; n < data.cells.length; n += CELL) {
+        const points = keep.reduce((sum, k) => sum + data.cells[n + k], 0);
+        if (points > 0) {
+            cells.push(data.cells[n], data.cells[n + 1], points);
+        }
+    }
+    const paths = [];
+    for (let n = 0; choice.flights && n < data.flights.length; n += ROUTE) {
+        paths.push({ points: [[data.flights[n], data.flights[n + 1]], [data.flights[n + 2], data.flights[n + 3]]], mode: 'taxi' });
+    }
+    entry.map.setLayers({ heat: cells.length > 0 ? { grid: data.grid, cells } : null, paths });
+}
+
+function loadTrails(entry) {
+    entry.trails = { data: null, choice: trailChoice() };
+    drawTrails(entry);
+    fetch(entry.config.trails, { headers: { Accept: 'application/json' } })
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`trails ${response.status}`))))
+        .then(({ data }) => {
+            entry.trails.data = data;
+            drawTrails(entry);
+        })
+        .catch((error) => console.error(error));
+}
+
+function chooseTrails(canvasId, change) {
+    const entry = ensureMounted(canvasId);
+    if (!entry?.trails) {
+        return;
+    }
+    Object.assign(entry.trails.choice, change);
+    carry('travel', entry.trails.choice.travel === 'all' ? null : entry.trails.choice.travel);
+    carry('flights', entry.trails.choice.flights ? null : 'off');
+    drawTrails(entry);
+}
 
 function readout(config) {
     const out = config.readout ? document.getElementById(config.readout) : null;
@@ -50,8 +117,12 @@ function mount(canvas) {
             paint(under, resting);
         },
     });
-    maps.set(canvas.id, { map, config });
+    const entry = { map, config, canvasId: canvas.id };
+    maps.set(canvas.id, entry);
     paint(under, resting);
+    if (config.trails) {
+        loadTrails(entry);
+    }
     if (plan) {
         bindReplay(map, plan, document.querySelector('[data-count]'), document.querySelector('.ch-replay'));
     }
@@ -70,14 +141,7 @@ function showZone(canvasId, config, zone) {
         page.href = zone?.href ?? '';
         page.textContent = zone?.href ? `${zone.name} zone page` : '';
     }
-    const withZone = (address) => {
-        const url = new URL(address, window.location.href);
-        zone ? url.searchParams.set('zone', zone.id) : url.searchParams.delete('zone');
-        return url.pathname + url.search + url.hash;
-    };
-    window.history.replaceState(null, '', withZone(window.location.href));
-    document.querySelectorAll('.world-ctl a[href]').forEach((link) => link.setAttribute('href', withZone(link.getAttribute('href'))));
-    document.querySelectorAll('.world-ctl select[data-nav] option[value]').forEach((option) => (option.value = withZone(option.value)));
+    carry('zone', zone ? String(zone.id) : null);
 }
 
 function showLayer(canvasId, layer, button) {
@@ -128,6 +192,14 @@ for (const canvas of document.querySelectorAll('canvas[data-world-map]')) {
 
 document.querySelectorAll('button[data-map-layer]').forEach((button) => {
     button.addEventListener('click', () => showLayer(button.dataset.mapFor, button.dataset.mapLayer, button));
+});
+
+document.querySelectorAll('button[data-map-travel]').forEach((button) => {
+    button.addEventListener('click', () => chooseTrails(button.dataset.mapFor, { travel: button.dataset.mapTravel }));
+});
+
+document.querySelectorAll('button[data-map-flights]').forEach((button) => {
+    button.addEventListener('click', () => chooseTrails(button.dataset.mapFor, { flights: button.getAttribute('aria-pressed') !== 'true' }));
 });
 
 document.querySelectorAll('a[data-map-sheet]').forEach((link) => {

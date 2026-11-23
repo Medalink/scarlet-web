@@ -79,7 +79,7 @@ const EVISCERATE = 2098;
 
 const GROUP_OF = {
   S: "core", Z: "core", ES: "core", L: "core",
-  P: "movement", MO: "movement", MP: "movement",
+  P: "movement", W: "movement", T: "movement", MO: "movement", MP: "movement",
   G: "build", TG: "build", TA: "build", TV: "build", TD: "build", PT: "build", PD: "build",
   C: "combat", CH: "combat", CI: "combat", A: "combat", AR: "combat", TW: "combat", F: "combat", K: "combat", D: "combat",
   R: "combat", U: "combat", SH: "combat", SR: "combat", DM: "combat", DP: "combat", DS: "combat",
@@ -241,11 +241,25 @@ const STRANGER_LINES = [
   [130000, "ES"],
 ];
 
+const WESTFALL = 1436;
+const step = (start, map, from, to, count, mode, yards) => [
+  ...Array.from({ length: count }, (_, n) => [start + n * 1000, "P", map, Math.round(from[0] + ((to[0] - from[0]) * n) / (count - 1)), Math.round(from[1] + ((to[1] - from[1]) * n) / (count - 1)), 0]),
+  [start + (count - 1) * 1000 + 400, "W", mode, yards, ((count - 1) * 1000 + 400) / 1000, 0, ""],
+];
+
+const WARLOCK_TRAVEL = [
+  ...step(1_000_000, ELWYNN, [4800, 3800], [4700, 4400], 8, "f", 60),
+  ...step(1_020_000, ELWYNN, [4700, 4400], [4300, 6400], 10, "m", 180),
+  [1_040_000, "T", 1, ELWYNN, 4300, 6400],
+  [1_160_000, "T", 0, WESTFALL, 5650, 4760, 120.0],
+  ...step(1_170_000, WESTFALL, [5650, 4760], [5420, 5040], 6, "f", 40),
+];
+
 const BUILDS = [
   { character: "Echo-Witness", session: 1795270000, lines: ECHO_LINES },
   { character: "Tailor-Stranger", session: 1795360000, lines: STRANGER_LINES },
   { character: "Spell-Ledger", session: 1795450000, lines: LEDGER_LINES },
-  { character: "Shard-Keeper", session: 1795540000, lines: WARLOCK_LINES },
+  { character: "Shard-Keeper", session: 1795540000, lines: [...WARLOCK_LINES, ...WARLOCK_TRAVEL] },
   { character: "Frost-Weaver", session: 1795630000, lines: MAGE_LINES },
   { character: "Moon-Walker", session: 1795720000, lines: DRUID_LINES },
   { character: "Iron-Vanguard", session: 1795630000, lines: WARRIOR_LINES },

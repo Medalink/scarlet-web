@@ -312,9 +312,10 @@ async function main() {
     await step("dependencies, assets and the part tool are built", dependencies);
     const url = `http://127.0.0.1:${await freePort()}`;
     const env = appEnvironment(url);
-    await step(`database ${database} is migrated`, async () => {
+    await step(`database ${database} is migrated and holds the zone rectangles`, async () => {
       await psql(`create database ${database}`);
       await command("php", ["artisan", "migrate", "--force", "--no-interaction"], { env });
+      await command("php", ["artisan", "maps:load-rects", "--no-interaction"], { env });
     });
     await step(`the app answers at ${url}`, async () => {
       const serve = start("serve", ["artisan", "serve", "--host=127.0.0.1", `--port=${new URL(url).port}`, "--no-reload"], env);

@@ -70,6 +70,7 @@ final class CharacterPage
             'id' => $character->id,
             'name' => Format::characterName($character->name),
             'path' => '/c/'.rawurlencode($character->name),
+            'worldMap' => '/map?'.http_build_query(['character' => $character->name]),
             'owner' => $r['owner'],
             'economy' => $economy,
             'since' => $since,

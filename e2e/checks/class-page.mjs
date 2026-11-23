@@ -8,6 +8,7 @@ import * as rogue from "../rogue-expected.mjs";
 import * as shaman from "../shaman-expected.mjs";
 import * as warlock from "../warlock-expected.mjs";
 import * as warrior from "../warrior-expected.mjs";
+import { CHARACTER_MAP, CHARACTER_TRAILS } from "./map.mjs";
 import { browserFor } from "./owner.mjs";
 import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
 
@@ -180,12 +181,17 @@ export async function hiddenCharacterHidesItsClassPage(ctx) {
   try {
     await setPublic(false);
     const problems = [];
-    for (const route of [classPage, character]) {
+    for (const route of [classPage, character, CHARACTER_MAP, CHARACTER_TRAILS]) {
       const visitor = await ctx.http.page(route);
       if (visitor.status !== 404) problems.push(`${route} answered a visitor ${visitor.status}`);
     }
-    const own = await owner(classPage);
-    if (own.status !== 200) problems.push(`${classPage} answered its owner ${own.status}`);
+    expectStatus(await ctx.http.request("/map", { headers: { Accept: "text/html" } }), 200, "GET /map as an anonymous visitor");
+    const anonymous = await ctx.http.request(CHARACTER_MAP, { headers: { Accept: "text/html" } });
+    if (anonymous.status !== 404) problems.push(`${CHARACTER_MAP} answered an anonymous visitor ${anonymous.status} after /map was cached`);
+    for (const route of [classPage, CHARACTER_MAP, CHARACTER_TRAILS]) {
+      const own = await owner(route);
+      if (own.status !== 200) problems.push(`${route} answered its owner ${own.status}`);
+    }
     if (problems.length > 0) throw new Error(`a private character should hide its class page from visitors and keep it for its owner: ${problems.join(", ")}`);
   } finally {
     await setPublic(true);

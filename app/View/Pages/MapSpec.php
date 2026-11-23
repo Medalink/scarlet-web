@@ -54,6 +54,26 @@ final class MapSpec
     }
 
     /**
+     * A personal map whose trails the page reads from `$url` after the first paint (`App\Actions\Public\MapTrails`): it
+     * draws the cells of the modes the travel switch keeps and, while the flights switch is on, each flight route.
+     *
+     * @param  array{0: float, 1: float, 2: float, 3: float}|int|null  $fit  a zone id, or the world rectangle to open on
+     * @param  list<array<string, mixed>>  $zones  the answer of App\Actions\Public\MapZones
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    public static function trails(string $url, array $zones, int|array|null $fit, array $extra = []): array
+    {
+        return [
+            ...$extra,
+            'fit' => $fit,
+            'zones' => self::zones($zones),
+            'trails' => $url,
+            'layers' => ['heat' => null, 'dots' => [], 'marks' => []],
+        ];
+    }
+
+    /**
      * The zone rectangles with the sentence the pointer readout shows for each.
      *
      * @param  list<array<string, mixed>>  $zones
