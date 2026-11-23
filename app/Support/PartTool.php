@@ -99,17 +99,6 @@ class PartTool
     }
 
     /**
-     * Decode the stored imports parts of one day into newline-delimited JSON, one `imported` row per line.
-     *
-     * @param  list<string>  $bodies  the `body` column of each part
-     * @return list<array<string, mixed>>
-     */
-    public function decodeImports(array $bodies): array
-    {
-        return $this->decodeRows($bodies, '--imports');
-    }
-
-    /**
      * The imported rows of `decodeImports`, written by the child to a work file and read back a row at a time, so
      * the worker never holds the day's rows. The file goes when the answer is dropped.
      *
