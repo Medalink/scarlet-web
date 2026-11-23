@@ -2,8 +2,10 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CountedLoot;
 use App\Support\LootCounted;
 use App\Support\LootGroupScope;
+use App\Support\LootSourceKind;
 use App\Support\LootSourceRef;
 use App\Support\RollupRead;
 use Illuminate\Database\Query\Builder;
@@ -11,14 +13,15 @@ use Illuminate\Support\Facades\DB;
 
 class GroupFigures
 {
-    public function __construct(private readonly RollupRead $read) {}
+    public function __construct(private readonly RollupRead $read, private readonly CountedLoot $counted) {}
 
     /**
      * What the strip of `/loot/groups` counts: the corpses read for loot on creatures, or on the one source the page is
      * narrowed to, and never personal loot; the loot rules among them that a line has named; the largest group size; the
      * characters; the first and last day; the sources seen under two rules; and the uploaders' own rolls and the groups
      * they were in (a group is a run of spans that follow one another, of 2 or more), which no source narrows. All are 0
-     * and `first_at` is null while fewer than `scarlet.min_characters` characters contributed.
+     * and `first_at` is null while fewer than `scarlet.min_characters` characters contributed. The free-for-all corpses of a
+     * source are those of its arm (`FreeForAllArms`), as its creature page counts them.
      *
      * @return array{corpses: int, rules: int, largest: int, characters: int, first_at: string|null, last_at: string|null, several: int, rolls: int, groups: int}
      */
@@ -32,7 +35,7 @@ class GroupFigures
         }
 
         return [
-            'corpses' => (int) $row['corpses'], 'rules' => (int) $row['rules'], 'largest' => (int) $row['largest'], 'characters' => (int) $row['characters'],
+            'corpses' => (int) $row['corpses'] + array_sum($this->counted->windowShift($source === null ? null : [$source], 'total', $source === null ? LootSourceKind::Creature : null)), 'rules' => (int) $row['rules'], 'largest' => (int) $row['largest'], 'characters' => (int) $row['characters'],
             'first_at' => $row['first_at'], 'last_at' => $row['last_at'], 'several' => $this->several($source), 'rolls' => $this->rolls(), 'groups' => $this->groups(),
         ];
     }

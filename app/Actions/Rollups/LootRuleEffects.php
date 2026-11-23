@@ -2,11 +2,13 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CountedLoot;
 use App\Support\LootArm;
 use App\Support\LootCounted;
 use App\Support\LootDay;
 use App\Support\LootGroupScope;
 use App\Support\LootRule;
+use App\Support\LootSourceKind;
 use App\Support\LootSourceRef;
 use App\Support\RateMath;
 use App\Support\RateSample;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 
 class LootRuleEffects
 {
-    public function __construct(private readonly RollupRead $read) {}
+    public function __construct(private readonly RollupRead $read, private readonly CountedLoot $counted) {}
 
     /**
      * What a corpse held under two loot rules (docs/LOOT.md, Loot rules and group size): the items per corpse under
@@ -62,7 +64,8 @@ class LootRuleEffects
     }
 
     /**
-     * The rules over sources seen under two rules or more, the one with most corpses first.
+     * The rules over sources seen under two rules or more, the one with most corpses first. The free-for-all windows of a
+     * source count as its arm counts them (`FreeForAllArms`).
      *
      * @return list<array{rule: string, windows: int, sources: int}>
      */
@@ -75,7 +78,32 @@ class LootRuleEffects
             ->selectRaw('p.loot_rule, sum(p.windows) as windows, count(*) as sources')->groupBy('p.loot_rule')
             ->orderByRaw('sum(p.windows) desc')->orderBy('p.loot_rule'));
 
-        return array_map(fn (array $row): array => ['rule' => (string) $row['loot_rule'], 'windows' => (int) $row['windows'], 'sources' => (int) $row['sources']], $rows);
+        $shifted = $this->shifted($several, $source);
+        $seen = array_map(fn (array $row): array => [
+            'rule' => (string) $row['loot_rule'], 'sources' => (int) $row['sources'],
+            'windows' => (int) $row['windows'] + ($row['loot_rule'] === LootRule::FreeForAll->value ? $shifted : 0),
+        ], $rows);
+        usort($seen, fn (array $a, array $b): int => [$b['windows'], $a['rule']] <=> [$a['windows'], $b['rule']]);
+
+        return $seen;
+    }
+
+    /**
+     * How many windows the arms add to the free-for-all windows of the sources in $several, the sources seen under two rules or more.
+     */
+    private function shifted(Builder $several, ?LootSourceRef $source): int
+    {
+        $shift = $this->counted->windowShift($source === null ? null : [$source], 'source', $source === null ? LootSourceKind::Creature : null);
+        if ($shift === []) {
+            return 0;
+        }
+        $armed = array_map(fn (string $key): LootSourceRef => new LootSourceRef(LootSourceKind::from(substr($key, 0, 1)), (int) substr($key, 1)), array_keys($shift));
+        $total = 0;
+        foreach ($this->read->rows(LootSourceRef::anyOf(clone $several, $armed, 's.source_kind', 's.source_id')) as $row) {
+            $total += $shift[$row['source_kind'].$row['source_id']] ?? 0;
+        }
+
+        return $total;
     }
 
     /**
