@@ -260,7 +260,7 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .world-ctl { display: grid; gap: 0.6rem; margin-top: 1.3rem; justify-items: start; }
 .world-zone { margin-top: 0.5rem; }
 .world-zones a[aria-current] { color: var(--accent); font-weight: 700; }
-.seg button[data-map-flights]::before { content: ""; display: inline-block; width: 1.1rem; vertical-align: middle; margin-right: 0.45rem; border-top: 2px dashed var(--flight); }
+.seg button[data-map-flights]::before { content: ""; display: inline-block; width: 1.1rem; vertical-align: middle; margin-right: 0.45rem; border-top: 3px solid var(--flight); }
 .credit { margin-top: 0.6rem; font-size: 0.8rem; color: var(--muted); }
 @media (max-width: 900px) {
   .world { grid-template-columns: minmax(0, 1fr); height: auto; }

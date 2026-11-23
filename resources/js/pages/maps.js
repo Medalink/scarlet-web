@@ -50,7 +50,7 @@ function drawTrails(entry) {
     }
     const paths = [];
     for (let n = 0; choice.flights && n < data.flights.length; n += ROUTE) {
-        paths.push({ points: [[data.flights[n], data.flights[n + 1]], [data.flights[n + 2], data.flights[n + 3]]], mode: 'taxi' });
+        paths.push({ points: [[data.flights[n], data.flights[n + 1]], [data.flights[n + 2], data.flights[n + 3]]], mode: 'flight' });
     }
     entry.map.setLayers({ heat: cells.length > 0 ? { grid: data.grid, cells } : null, paths });
 }

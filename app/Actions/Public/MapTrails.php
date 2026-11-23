@@ -17,8 +17,14 @@ class MapTrails
     /** Flight routes read at most, the most flown first. */
     private const int ROUTES = 2000;
 
-    /** Flight ends closer than this share of the world are one end, so one route flown twice is drawn once. */
+    /** Flight ends are read rounded to this many decimals of the world, which keeps one row per route and direction. */
     private const int END_DECIMALS = 4;
+
+    /** Flight ends closer than this share of the world are one flight master, so a route flown twice, either way, is drawn once. */
+    private const float STOP_RADIUS = 0.005;
+
+    /** A flight that took off this soon after its session began was already in the air, so where it began is unknown. */
+    private const int AIRBORNE_SECONDS = 10;
 
     /**
      * What the world map draws for some characters a viewer may see: every cell of the finest world grid they walked
@@ -70,6 +76,7 @@ class MapTrails
             ->whereIn('character_id', $characterIds)
             ->whereNotNull('u')
             ->whereNotNull('to_u')
+            ->whereRaw('extract(epoch from at) - session_start >= ?', [self::AIRBORNE_SECONDS])
             ->groupByRaw('1, 2, 3, 4')
             ->orderByRaw('count(*) desc, 1, 2, 3, 4')
             ->limit(self::ROUTES)
@@ -81,13 +88,55 @@ class MapTrails
             array_push($flat, (int) $cell->i, (int) $cell->j, (int) $cell->foot, (int) $cell->mounted, (int) $cell->unknown);
             $points[] = [((int) $cell->i + 0.5) / $columns, ((int) $cell->j + 0.5) / $rows];
         }
-        $flights = [];
-        foreach ($routes as $route) {
-            array_push($flights, (float) $route->u0, (float) $route->v0, (float) $route->u1, (float) $route->v1, (int) $route->times);
-            array_push($points, [(float) $route->u0, (float) $route->v0], [(float) $route->u1, (float) $route->v1]);
+        $flights = self::merged(array_values($routes->map(fn (object $route): array => [(float) $route->u0, (float) $route->v0, (float) $route->u1, (float) $route->v1, (int) $route->times])->all()));
+        for ($n = 0; $n < count($flights); $n += 5) {
+            array_push($points, [$flights[$n], $flights[$n + 1]], [$flights[$n + 2], $flights[$n + 3]]);
         }
 
         return ['grid' => [$columns], 'cells' => $flat, 'flights' => $flights, 'fit' => WorldGrid::aroundPoints($points)];
+    }
+
+    /**
+     * The routes with every end within `STOP_RADIUS` of another taken as one stop at their mean, weighted by times flown, and the
+     * routes between the same two stops, either way, summed. A route keeps the direction of its most flown row, which comes first.
+     *
+     * @param  list<array{0: float, 1: float, 2: float, 3: float, 4: int}>  $rows
+     * @return list<float|int>
+     */
+    private static function merged(array $rows): array
+    {
+        $stops = [];
+        $stopOf = function (float $u, float $v, int $times) use (&$stops): int {
+            foreach ($stops as $n => [$su, $sv, $weight]) {
+                if (hypot($su / $weight - $u, $sv / $weight - $v) <= self::STOP_RADIUS) {
+                    $stops[$n] = [$su + $u * $times, $sv + $v * $times, $weight + $times];
+
+                    return $n;
+                }
+            }
+            $stops[] = [$u * $times, $v * $times, $times];
+
+            return count($stops) - 1;
+        };
+
+        $routes = [];
+        foreach ($rows as [$u0, $v0, $u1, $v1, $times]) {
+            $from = $stopOf($u0, $v0, $times);
+            $to = $stopOf($u1, $v1, $times);
+            if ($from === $to) {
+                continue;
+            }
+            $key = min($from, $to).'-'.max($from, $to);
+            $routes[$key] ??= [$from, $to, 0];
+            $routes[$key][2] += $times;
+        }
+
+        $flat = [];
+        foreach ($routes as [$from, $to, $times]) {
+            array_push($flat, $stops[$from][0] / $stops[$from][2], $stops[$from][1] / $stops[$from][2], $stops[$to][0] / $stops[$to][2], $stops[$to][1] / $stops[$to][2], $times);
+        }
+
+        return $flat;
     }
 
     /** @param  list<int>  $characterIds */

@@ -11,6 +11,7 @@ const PATH = {
     mount: { width: 2.25, color: ACCENT, halo: 'rgba(255,45,85,0.16)' },
     swim: { width: 2.25, color: ACCENT, halo: 'rgba(255,45,85,0.16)' },
     taxi: { width: 2, color: FLIGHT, dash: [8, 5], halo: 'rgba(77,163,255,0.18)' },
+    flight: { width: 3, color: FLIGHT, casing: { width: 7, color: 'rgba(8,10,14,0.85)' }, halo: 'rgba(77,163,255,0.22)', haloWidth: 12, stop: 4 },
     ghost: { width: 1.5, color: 'rgba(240,241,243,0.6)', dash: [1.5, 5] },
 };
 
@@ -71,19 +72,49 @@ export function drawPaths(ctx, view, paths) {
                 }
             });
         };
-        ctx.setLineDash(style.dash ?? []);
         if (style.halo) {
+            ctx.setLineDash(style.dash ?? []);
             trace();
             ctx.strokeStyle = style.halo;
-            ctx.lineWidth = 7;
+            ctx.lineWidth = style.haloWidth ?? 7;
             ctx.stroke();
         }
+        if (style.casing) {
+            ctx.setLineDash([]);
+            trace();
+            ctx.strokeStyle = style.casing.color;
+            ctx.lineWidth = style.casing.width;
+            ctx.stroke();
+        }
+        ctx.setLineDash(style.dash ?? []);
         trace();
         ctx.strokeStyle = style.color;
         ctx.lineWidth = style.width;
         ctx.stroke();
+        if (style.stop) {
+            drawStops(ctx, view, [path.points[0], path.points[path.points.length - 1]], style);
+        }
     }
     ctx.restore();
+}
+
+function drawStops(ctx, view, points, style) {
+    ctx.setLineDash([]);
+    for (const [u, v] of points) {
+        const [x, y] = view.toScreen(u, v);
+        ctx.beginPath();
+        ctx.arc(x, y, style.stop + 2, 0, Math.PI * 2);
+        ctx.fillStyle = style.casing.color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, y, style.stop, 0, Math.PI * 2);
+        ctx.fillStyle = style.color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, y, style.stop / 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = FG;
+        ctx.fill();
+    }
 }
 
 // One mark vocabulary, as static-site/assets/map.js draws it: kill, death, quest and level.
