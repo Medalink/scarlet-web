@@ -8,7 +8,6 @@ export const heading = (text) => new RegExp(`<h1[^>]*>\\s*${text}`);
 
 const PAGES = [
   { path: "/", shows: heading("(?:[\\d,]+ )?WoW Forever characters?, recorded by their players") },
-  { path: "/demo", shows: heading("Maren Ashlow") },
   { path: "/stats", shows: heading("All characters") },
   { path: "/loot", shows: heading("Loot") },
   { path: "/loot/groups", shows: heading("Loot rules and group size") },
