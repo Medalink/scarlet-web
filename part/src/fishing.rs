@@ -5,7 +5,7 @@
 //! pseudonyms by the rules of player-fields.tsv, and with `social` on each part carries its
 //! pseudonyms as `pn` lines first, as a social part does.
 
-use crate::build::{Options, PART_MAGIC, Part, parse_header, part_id};
+use crate::build::{Options, PART_MAGIC, Part, at_in_range, parse_header, part_id};
 use crate::payload::Ev;
 use crate::pseudo::{keeps_name, pseudonym};
 use crate::rows::Rows;
@@ -425,7 +425,10 @@ pub fn decode_fishing(parts: &[&str], out: &mut String) -> Result<usize, String>
                 .next()
                 .and_then(|d| d.parse().ok())
                 .ok_or("bad line in a fishing or addons part")?;
-            t += dt;
+            let Some(next) = t.checked_add(dt).filter(|t| at_in_range(*t)) else {
+                continue;
+            };
+            t = next;
             let code = if addons {
                 match (f.next(), f.next()) {
                     (Some("fl"), Some("C")) => CATCH_CODE,

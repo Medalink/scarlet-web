@@ -159,7 +159,9 @@ market and scan time beside each price.
 - `prices:pull` runs every 15 minutes on one server. It reads `GET /v1/markets` into `markets`, enabling the Forever
   markets of the regions in `scarlet.ahledger.regions` (US) and disabling any market the list no longer names, then
   asks for each enabled market's price table (`GET /v1/pricetable/{market}`) with the ETag it stored. An unchanged
-  table answers 304. One request at a time, a second apart; a 429, a server error or an unreachable host ends the run
+  table answers 304. One request at a time, a second apart. The market list is tried three times, 3 seconds apart,
+  when the host is unreachable or answers 429 or a server error; a list that still cannot be read is logged with its
+  status or error and the command fails. A 429, a server error or an unreachable host ends the run
   and the next run tries again. That is at most nine requests every 15 minutes against a limit of 300 a minute.
 - A table is read only whole: a header of another version or market, a malformed row or a row count that does not
   match the header stores nothing and sets the market's `status` to `unreadable`. A readable table's rows and the
@@ -218,7 +220,8 @@ All upload requests are JSON or binary over HTTPS under `/api/v1/upload`, signed
    `id, session, group, raw bytes`, zstd-compressed. The server answers with the ids it needs, records that this install
    lists the parts it already holds, and drops this install's claim on the parts the manifest no longer lists (a group
    turned off with removal, a replaced session). A part is deleted when no install claims it. A character played on two
-   PCs keeps what each PC uploaded, and each install's `/sync` compares only the parts it claims.
+   PCs keeps what each PC uploaded, and each install's `/sync` compares only the parts it claims. The answer lists at
+   most 50,000 ids (`need`) and counts the rest in `remaining`; the next manifest lists them once the first page is stored.
 3. **Send.** `POST /parts`, `Content-Type: application/vnd.scarlet.parts+zstd`: one zstd frame (level 19, window up
    to 8 MiB) over the needed parts, each as a 4-byte little-endian length and the part text. At most 4 MiB compressed
    and 64 MiB decompressed per request, 20,000 parts; the app splits larger sets. The server recomputes each id,
@@ -232,10 +235,23 @@ The wire details are in [API.md](API.md). Where the first implementation settled
   inflated with `scarlet-part inflate`, which enforces the same window and size limits as a batch.
 - A batch is opened with `scarlet-part unbatch --stored`, which checks every id against the part text and writes each
   part in its storage form (zstd 19 alone), so PHP stores the bytes it is given and never recompresses.
-- A manifest lists at most 200,000 parts; `sync` and `status` are bounded the same way.
+- A manifest lists at most 200,000 parts; `sync` and `status` are bounded the same way. The server counts the
+  `{` and `[` of the inflated JSON before it parses it and refuses a manifest with more than the parts' limit plus 16,
+  so what it parses is bounded by shape, not only by bytes.
+- A request is billed in the quota for the parts it stores: the inflated bytes, one per line and 8,192 per part
+  (`scarlet.upload.part_row_charge`), so a part that is only a header still costs a row's worth. Parts the server
+  already holds are neither recompressed nor billed, and `scarlet-part unbatch` recompresses nothing when the parts to
+  store cost more than the install has left today.
 - The XOR set digest is computed in PostgreSQL (`bit_xor` over four 64-bit words of the id), not by reading ids.
 - Decoding is one queued job per (character, session) on the `ingest` queue, unique until it starts, so ten parts of
   one session uploaded in two requests decode once. A per-character lock serializes the jobs of one character.
+- The job spends one of its parts' failure attempts (`ingest.sweep_max_failures`) before it decodes, so a run that
+  dies without an exception (a memory fatal, a timeout kill) still counts and the sweep stops queueing the session.
+- The decoder writes a session's rows to a work file. The worker spools fact rows into one file per table and reads
+  them back a row at a time; the dictionary rows (names, items, zones, recipes, spells, pseudonyms, talent layouts)
+  stay in memory, at most `ingest.max_dictionary_rows` (100,000, which a session of crafted item rows takes to about
+  460 MB of the worker's 1 GiB; 300,000 of them is a memory fatal). The imported records of a day are read back from
+  a work file the same way.
 
 What the server already has is known two ways: the app remembers the ids the server acknowledged
 (`out/upload-state.json`), and the set digest catches every case where that memory is wrong.
@@ -838,12 +854,27 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `battleground_matches` | `BM` | pvp | a match that ended: instance, zone name, rated, arena, the uploader's team, the winning side, duration, result, whether it affects rating |
 | `battleground_scores` | `BO` | social | another player's scoreboard row, read after the match: name, faction, class file, killing blows, honorable kills, deaths, honor, damage, healing, the objective stats. `match_at` is the end of the match (the last `BM 0` before the row), so one uploader's rows of one match share it |
 
-Game reference tables, the same for every uploader, keep the newest row per id: `recipes` and `recipe_reagents`
-(`RQ`: what a recipe makes and needs) and `spells` (`SI`, `SD`: icon id, cast time, ranges, costs, passive, description).
+Game reference tables, the same for every uploader: `items`, `zones`, `recipes` and `recipe_reagents` (`RQ`: what a
+recipe makes and needs) and `spells` (`SI`, `SD`: icon id, cast time, ranges, costs, passive, description). Every
+field of a row is a vote (`shared_votes`, written by `VoteSharedRows`). A row is first written as the session that
+reached it read it. After that its served value of a field changes only when another value holds strictly more
+voters than the served one; a tie keeps the served value. A voter is an account, or an install that no account is
+linked to, so one person's installs count once; the voters of a decode are the installs behind its character, each
+with its latest value of a field, and an install may change or add `scarlet.ingest.shared_votes_per_install_day`
+(50000) vote rows a day. A row that had no votes when the first one reached it is backed by one voter that is none of
+the installs, so a single install that disagrees ties it. After a game patch changes a value, the installs that read the new one move their votes to it, and it
+replaces the served one once it holds more voters. Their `seen_at` is the server time of the decode that last changed the
+row, never the line's `at`, and an `items` or `zones` row keeps the row a change displaced in `previous`. A row
+no install has voted on yet is still set by the first session that reaches it, as names are, and a handful of installs
+that no account links agree as easily as a handful of honest ones: the rule keeps one install from deciding what the
+public API serves, not a group of them.
 
 Dictionaries, plain tables: `names(kind, id, name)` from the name lines, `items` from `II`, `zones`, `rulesets`,
-`talent_trees` and `talent_nodes` (the class tree layouts of `TV` and `TD`, one per tree, client build and layout hash;
-`uploads` counts the sessions that sent a layout, and the layout with the most uploads is the one drawn).
+`talent_trees` and `talent_nodes` (the class tree layouts of `TV` and `TD`, one per tree, client build and layout hash,
+the SHA-256 of the lines a layout was learned from; `uploads` counts the sessions that sent a layout and
+`talent_layout_votes` the installs that sent it). The layout drawn is the one the most senders sent, a sender being an
+account or an install that no account is linked to, then the one with the most uploads. A layout stored before senders
+were recorded counts as one sender.
 A name becomes the shown one for an id when most uploads agree on it.
 
 The talent tables are the build group's. Removing the group deletes their rows and clears `characters.spec_tab_id`,
@@ -868,9 +899,10 @@ How the tables are built (decisions the first implementation made):
   "a character that fails stays out of the rollups": the unit is the session, and a replaced session that no longer
   fails counts again on its next decode. The character keeps `plausibility` (`ok` or `flagged`, flagged while any of its
   sessions is) for the leaderboards.
-- **Names.** `names` holds one row per candidate name of an id with `votes`, the number of sessions that reported it;
-  the shown name is the one with most votes. A session adds its votes once (`sessions.names_counted`), so a second decode
-  changes nothing.
+- **Names.** `names` holds one row per candidate name of an id with `votes`, the number of installs behind the
+  sessions that reported it (`name_votes` holds one row per name and install, and an install casts at most a daily
+  budget of votes); the shown name is the one with most votes. A session adds its votes once
+  (`sessions.names_counted`), so a second decode changes nothing.
 - **Time per level.** A level's time spans sessions, so it cannot come from a daily rollup of `play_spans`. Ingest
   rebuilds `character_levels` (a hypertable on the time the character first stood at the level) for the character after
   each session: one row per level whose start Scarlet saw, with `seconds` at that level, `before_seconds` (the game's
@@ -1095,9 +1127,16 @@ ruleset of a character is found outside the recording, in this order:
    (`us`).
 2. **The home realm.** A ruleset is a kind of realm. The realm id inside a character's GUID (`RU` server, kept as
    `characters.home_realm_id` from its latest session that has one) names the realm, and `realms(id, kind, name,
-   source)` says which ruleset it is. Two realms are seeded as Normal, the ones the first uploaders were seen on. A
-   realm learns its kind from the Armory's answer for any character that lives on it, so one answer files every
-   character of that realm, and a disagreement between two answers keeps the first and is logged.
+   source)` says which ruleset it is. Two realms are seeded as Normal, the ones the first uploaders were seen on, and
+   a seed keeps its kind. A realm learns its kind once the Armory's answers for characters of distinct voters
+   (`scarlet.armory.realm_quorum`, 2) agree on it, a voter being an account signed in with Google or Battle.net. An
+   install that no account is linked to does not vote, since anyone can register installs, so a realm whose uploaders
+   are all unlinked stays unlearned until accounts upload from it; and one install, one claimed name, or the installs
+   of one account, cannot decide the fact for every character on the realm. A learned kind that a quorum of voters outruns later is re-decided, and the realm's sessions are filed under
+   the new kind. A disagreement below the quorum is logged. The Armory's answer for one character files that
+   character's sessions only through its realm: the name is claimed by one install, so the page of that name proves
+   nothing about who uploaded it, and a character on a realm no quorum has named stays "Not identified" until
+   one does. The addresses installs registered from are not kept, so the quorum does not ask for distinct addresses.
 
 A character with neither answer is "Not identified". A ruleset is its kind and nothing else: `rulesets` has one row
 for each kind (key and slug `normal`, `pvp`, `roleplay`, `roleplay-pvp`, `hardcore`) and one for characters whose kind
@@ -1157,7 +1196,8 @@ Scarlet-Site: <host>
 The signature names the host the app dialled (the `Scarlet-Site` line of the message, docs/API.md, Signing), and the
 server refuses a signature whose site differs from the host the request reached or from the host the install
 registered on, so a relay or redirect cannot reuse a signed request against another host. A signature without the
-site line, from a client predating it, carries no host and keeps working.
+site line, from a client predating it, carries no host and keeps working until its install sends a request with one;
+after that the server refuses the install's signatures without it (`site_required`).
 
 The server refuses a time more than 300 seconds off and remembers signatures per host for 600 seconds (a time up to
 300 s ahead is valid for up to 600 s), so a request cannot be replayed. Ed25519 is deterministic: the same request signed in
@@ -1197,8 +1237,9 @@ feature needs an email address, so the scopes ask for none (`openid` only). An a
 Sessions are Laravel's own, cookie based. Client ids and secrets come from the environment.
 
 **Linking the app.** In Settings the player presses "Link to my account". The app asks the API for a link code
-(a signed request), shows it and opens `/link?code=XXXX-XXXX` in the browser. The player signs in and confirms; the
-install now belongs to the account. The app polls `GET /api/v1/installs/me` until it sees the link. The code lives 10
+(a signed request), shows it and opens `/link?redeem=<signature>` in the browser. The player signs in and types the
+code the app shows; the install now belongs to the account only when the typed code matches the signature. A link
+someone else sends fills in no code, so it cannot link an app whose code the player has not read. The app polls `GET /api/v1/installs/me` until it sees the link. The code lives 10
 minutes and works once. The app holds no account token: its key stays the only credential.
 
 Uploading works without an account. An account adds the private views, the public switch per character and control

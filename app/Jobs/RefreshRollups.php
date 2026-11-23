@@ -15,11 +15,15 @@ use Throwable;
 
 /**
  * Refresh the continuous aggregates over a time range. The range is widened to whole days and added to the days
- * waiting in `PendingRefresh`. Only one of these jobs waits at a time, a few seconds, and it refreshes everything
- * pending when it runs, so the ingests of an upload, or of many uploads, share one refresh.
+ * waiting in `PendingRefresh`; the refresh takes the pending ranges its own window touches, so one job carries no
+ * other character's wide range unless its own window reaches it. Only one of these jobs waits at a time, a few
+ * seconds, and it refreshes everything pending that fits one span when it runs, so the ingests of an upload, or of
+ * many uploads, share one refresh. One run refreshes at most `scarlet.rollups.job_seconds` worth of slices and queues
+ * a follow-up for a span that is left or ranges still waiting.
  * A refresh elsewhere can hold the rollup lock for minutes, longer than the wait in `RefreshAggregates`: such a run
  * puts its range back and goes back on the queue instead of failing, and only runs out of retries when the lock
- * stays busy for every one of the `scarlet.rollups.tries` tries.
+ * stays busy for every one of the `scarlet.rollups.tries` tries. A range that failed `scarlet.rollups.pending_attempts`
+ * times is not put back; it returns when its data changes again.
  */
 class RefreshRollups implements BoundedJob, ShouldBeUniqueUntilProcessing, ShouldQueue
 {
@@ -61,21 +65,33 @@ class RefreshRollups implements BoundedJob, ShouldBeUniqueUntilProcessing, Shoul
 
     public function handle(RefreshAggregates $refresh): void
     {
-        $pending = PendingRefresh::take();
-        $from = min($this->from, $pending['from'] ?? $this->from);
-        $until = max($this->until, $pending['until'] ?? $this->until);
+        $pending = PendingRefresh::take($this->from, $this->until);
+        $from = $pending === null ? $this->from : $pending['from'];
+        $until = $pending === null ? min($this->until, $this->from + PendingRefresh::spanSeconds()) : $pending['until'];
+        $attempts = $pending === null ? 0 : $pending['attempts'];
 
         try {
-            $refresh->handle($from, $until);
+            $leftover = $refresh->handle($from, $until - 1, (int) config('scarlet.rollups.job_seconds'));
         } catch (LockTimeoutException $busy) {
-            PendingRefresh::add($from, $until);
+            PendingRefresh::add($from, $until, $attempts);
             $this->release(self::RETRY_SECONDS);
 
             return;
         } catch (Throwable $failure) {
-            PendingRefresh::add($from, $until);
+            if ($attempts < (int) config('scarlet.rollups.pending_attempts')) {
+                PendingRefresh::add($from, $until, $attempts + 1);
+            }
 
             throw $failure;
+        }
+
+        $next = $pending['followUp'] ?? null;
+        if ($leftover !== null) {
+            PendingRefresh::add($leftover['from'], $leftover['until'], $attempts);
+            $next ??= ['from' => $leftover['from'], 'until' => min($leftover['until'], $leftover['from'] + PendingRefresh::spanSeconds())];
+        }
+        if ($next !== null) {
+            RefreshRollups::dispatch($next['from'], $next['until'] - 1);
         }
     }
 }

@@ -5,9 +5,11 @@
 use crate::decode::{field, num};
 use crate::rows::Rows;
 use crate::talents::Ctx;
+use std::collections::HashMap;
 
 const MATCH_END_TO_LAST_ROW_MS: i64 = 10 * 60 * 1000;
 const LOOSE_ROWS_MAX_GAP_MS: i64 = 2 * 60 * 1000;
+const SCOREBOARD_ROWS_MAX: usize = 20_000;
 
 struct Open {
     instance: Option<i64>,
@@ -23,6 +25,8 @@ pub struct Social {
     ended: Option<(i64, Option<i64>)>,
     /// The scoreboard of a match without an end line: when its first row came and the time of its latest.
     loose: Option<(i64, i64)>,
+    /// Scoreboard rows already kept, per match of this decode.
+    scores: HashMap<i64, usize>,
 }
 
 fn flag(s: &str) -> Option<bool> {
@@ -99,6 +103,11 @@ impl Social {
 
     pub fn on_bo(&mut self, ctx: &Ctx, w: &mut Rows, f: &[&str]) {
         let (match_at, instance) = self.scoreboard(ctx.at);
+        let kept = self.scores.entry(match_at).or_insert(0);
+        if *kept >= SCOREBOARD_ROWS_MAX {
+            return;
+        }
+        *kept += 1;
         ctx.begin(w, "battleground_scores");
         w.int("match_at", match_at)
             .opt("instance_id", instance)

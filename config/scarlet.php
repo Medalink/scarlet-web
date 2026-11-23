@@ -29,11 +29,12 @@ return [
         'max_inflated_bytes' => 64 << 20,
         'max_parts_per_request' => 20_000,
         'max_bytes_per_install_per_day' => 2 << 30,
+        'part_row_charge' => 8192,
         'max_characters_per_install' => 50,
         'clock_window_seconds' => 300,
         'max_manifest_bytes' => 32 << 20,
-        'max_manifest_values' => 6_000_000,
         'max_manifest_parts' => 200_000,
+        'max_wanted_ids' => (int) env('SCARLET_MAX_WANTED_IDS', 50_000),
         'link_code_minutes' => 10,
     ],
 
@@ -83,6 +84,13 @@ return [
         'max_parts_per_session' => 64,
         'max_session_bytes' => 128 << 20,
         'max_session_lines' => 4_000_000,
+        'max_dictionary_rows' => 100_000,
+        'name_votes_per_install_day' => 20_000,
+        'shared_votes_per_install_day' => 50_000,
+        'sweep_max_failures' => 3,
+        /** The part header `session`, in epoch seconds: the WoW era, at most one year ahead of the server clock. */
+        'session_min' => 946_684_800,
+        'session_future' => 31_536_000,
     ],
     // The Forever Armory names the ruleset of a character (docs/DESIGN.md, Rulesets). One request at a time.
     'armory' => [
@@ -92,6 +100,7 @@ return [
         'pause_ms' => 2000,
         // How long one run of the job looks characters up before the next run takes the rest.
         'job_seconds' => 200,
+        'realm_quorum' => (int) env('SCARLET_ARMORY_REALM_QUORUM', 2),
     ],
     'ahledger' => [
         'base_url' => env('SCARLET_AHLEDGER_URL', 'https://api.ahledger.com'),
@@ -118,6 +127,12 @@ return [
         'timeout' => 900,
         'tries' => 6,
         'memory_mb' => 256,
+        /** How long one run of the job refreshes slices before the next run takes the rest, inside the timeout. */
+        'job_seconds' => 600,
+        /** The widest span of pending days one refresh takes on top of its own window. */
+        'pending_span_days' => 90,
+        /** Failed jobs after which a refresh stops putting a pending range back; it returns when its data changes. */
+        'pending_attempts' => 2,
         // How long a refresh waits so the ingests of one upload share it.
         'debounce_seconds' => 5,
         'read_fresh_seconds' => 60,

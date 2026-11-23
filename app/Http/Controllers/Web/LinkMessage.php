@@ -16,7 +16,7 @@ final class LinkMessage
             LinkState::Expired => 'This code has expired. Ask the app for a new one.',
             LinkState::OtherAccount => 'This app is already linked to another account.',
             LinkState::AlreadyYours => 'This app is already linked to your account.',
-            LinkState::Unsigned => 'This link was not opened by the app. Follow the link the app opens, or ask it for a new code.',
+            LinkState::Unsigned => 'This code does not match the link the app opened. Type the code the app shows, or ask it for a new one.',
         };
     }
 }

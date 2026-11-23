@@ -4,7 +4,7 @@
 
 use crate::decode::{num, prefix, round_s};
 use crate::rows::Rows;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 
 /// What a spell of the campsite is.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -110,16 +110,32 @@ struct StayOverlaps<'a> {
 #[derive(Default)]
 pub struct Camp {
     open: BTreeMap<i64, (Kind, Held)>,
-    replaced: BTreeMap<i64, Vec<i64>>,
+    replaced: BTreeMap<i64, VecDeque<i64>>,
     benefit_gains: Vec<i64>,
     done: Vec<Aura>,
     afk_since: Option<i64>,
     afk: Vec<(i64, i64)>,
-    casts: Vec<(i64, i64, Kind)>,
+    casts: [Vec<(i64, i64)>; 3],
     deaths: Vec<i64>,
     crafts: Vec<i64>,
     xp: Vec<(i64, i64)>,
+    xp_prefix: Vec<i64>,
     pos: Pos,
+}
+
+fn cast_slot(kind: Kind) -> Option<usize> {
+    match kind {
+        Kind::Campfire => Some(0),
+        Kind::PlacedTent => Some(1),
+        Kind::PlacedChair => Some(2),
+        _ => None,
+    }
+}
+
+fn count_in(sorted: &[i64], from: i64, to: i64) -> usize {
+    let lo = sorted.partition_point(|t| *t < from);
+    let hi = sorted.partition_point(|t| *t <= to);
+    hi.saturating_sub(lo)
 }
 
 fn merged(mut spans: Vec<(i64, i64)>) -> Vec<(i64, i64)> {
@@ -135,8 +151,10 @@ fn merged(mut spans: Vec<(i64, i64)>) -> Vec<(i64, i64)> {
 }
 
 fn overlap_ms(spans: &[(i64, i64)], from: i64, to: i64) -> i64 {
-    spans
+    let first = spans.partition_point(|(_, b)| *b <= from);
+    spans[first..]
         .iter()
+        .take_while(|(a, _)| *a < to)
         .map(|(a, b)| (b.min(&to) - a.max(&from)).max(0))
         .sum()
 }
@@ -160,12 +178,17 @@ impl Camp {
             }
             held.refreshed = true;
             held.duration = held.duration.max(num(f, 3));
-            self.replaced.entry(spell).or_default().push(t);
+            self.replaced.entry(spell).or_default().push_back(t);
             return;
         }
         let replaced = self.replaced.entry(spell).or_default();
-        replaced.retain(|at| t - at <= REPLACED_INSTANCE_REMOVAL_MS);
-        if replaced.pop().is_some() {
+        while replaced
+            .front()
+            .is_some_and(|at| t - at > REPLACED_INSTANCE_REMOVAL_MS)
+        {
+            replaced.pop_front();
+        }
+        if replaced.pop_back().is_some() {
             return;
         }
         let Some((kind, held)) = self.open.remove(&spell) else {
@@ -184,9 +207,8 @@ impl Camp {
 
     pub fn on_cast(&mut self, t: i64, f: &[&str]) {
         let Some(spell) = num(f, 0) else { return };
-        if let Some(kind @ (Kind::Campfire | Kind::PlacedTent | Kind::PlacedChair)) = kind_of(spell)
-        {
-            self.casts.push((t, spell, kind));
+        if let Some(slot) = kind_of(spell).and_then(cast_slot) {
+            self.casts[slot].push((t, spell));
         }
     }
 
@@ -230,6 +252,12 @@ impl Camp {
         if let Some(since) = self.afk_since.take() {
             self.afk.push((since, end_ms));
         }
+        self.xp_prefix = std::iter::once(0)
+            .chain(self.xp.iter().scan(0i64, |sum, (_, amount)| {
+                *sum = sum.wrapping_add(*amount);
+                Some(*sum)
+            }))
+            .collect();
         self.done.sort_by_key(|a| (a.held.start, a.spell));
         let away = merged(std::mem::take(&mut self.afk));
         let spans_of = |wanted: Kind| {
@@ -259,10 +287,11 @@ impl Camp {
             .filter(|a| matches!(a.kind, Kind::Benefits | Kind::Benefit))
         {
             let lost = !a.by_session
-                && self
-                    .deaths
-                    .iter()
-                    .any(|d| (d - a.end).abs() <= DEATH_AT_AURA_END_MS);
+                && count_in(
+                    &self.deaths,
+                    a.end - DEATH_AT_AURA_END_MS,
+                    a.end + DEATH_AT_AURA_END_MS,
+                ) > 0;
             prefix(
                 w,
                 "camp_benefits",
@@ -292,17 +321,11 @@ impl Camp {
             to + DEATH_AT_AURA_END_MS
         };
         let xp = known.xp.then(|| {
-            self.xp
-                .iter()
-                .filter(|(t, _)| (from..=to).contains(t))
-                .map(|(_, amount)| amount)
-                .sum()
+            let lo = self.xp.partition_point(|(t, _)| *t < from);
+            let hi = self.xp.partition_point(|(t, _)| *t <= to).max(lo);
+            self.xp_prefix[hi].wrapping_sub(self.xp_prefix[lo])
         });
-        let deaths = self
-            .deaths
-            .iter()
-            .filter(|t| (from..=death_to).contains(t))
-            .count() as i64;
+        let deaths = count_in(&self.deaths, from, death_to) as i64;
         [xp, Some(deaths)]
     }
 
@@ -320,27 +343,23 @@ impl Camp {
         w: &mut Rows,
     ) {
         let (from, to) = (a.held.start, a.end);
-        let benefits = self
-            .benefit_gains
-            .iter()
-            .any(|t| (from..=to).contains(t) && t - session * 1000 > ALREADY_ON_AT_FIRST_SCAN_MS);
+        let first_scan_end = session * 1000 + ALREADY_ON_AT_FIRST_SCAN_MS;
+        let benefits = count_in(&self.benefit_gains, from.max(first_scan_end + 1), to) > 0;
         let placed = |wanted: Kind| {
-            self.casts
-                .iter()
-                .rev()
-                .find(|(t, _, kind)| *kind == wanted && *t >= casts_from && *t <= to)
-                .map(|(_, spell, _)| *spell)
+            let casts = &self.casts[cast_slot(wanted)?];
+            let upto = casts.partition_point(|(t, _)| *t <= to);
+            casts[..upto]
+                .last()
+                .filter(|(t, _)| *t >= casts_from)
+                .map(|(_, spell)| *spell)
         };
-        let crafts = self
-            .crafts
-            .iter()
-            .filter(|t| (from..=to).contains(t))
-            .count() as i64;
+        let crafts = count_in(&self.crafts, from, to) as i64;
         let died_after = !a.by_session
-            && self
-                .deaths
-                .iter()
-                .any(|d| *d >= to - DEATH_AT_AURA_END_MS && *d <= to + DEATH_AFTER_STAY_MS);
+            && count_in(
+                &self.deaths,
+                to - DEATH_AT_AURA_END_MS,
+                to + DEATH_AFTER_STAY_MS,
+            ) > 0;
         let length = seconds(a);
         let within = |spans: &[(i64, i64)]| round_s(overlap_ms(spans, from, to)).min(length);
         prefix(w, "camp_stays", session, from, a.held.level, a.held.zone_id);

@@ -5,7 +5,9 @@ namespace App\Actions\Ingest;
 use App\Support\DecodedSession;
 use App\Support\FactTable;
 use App\Support\WorldPlacement;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InsertFactRows
 {
@@ -29,10 +31,10 @@ class InsertFactRows
         $inserted = 0;
 
         foreach (FactTable::cases() as $table) {
-            $rows = $decoded->facts[$table->value] ?? null;
-            if ($rows === null) {
+            if (! $decoded->hasRows($table)) {
                 continue;
             }
+            $rows = $decoded->rows($table);
             $renames = $table->renames();
             $skip = array_flip([...self::COMMON, ...$table->dropped()]);
             $instants = array_flip($table->instants());
@@ -82,11 +84,32 @@ class InsertFactRows
         return $inserted;
     }
 
-    /** @param  list<array<string, mixed>>  $batch */
+    /**
+     * Insert the batch in one statement inside a savepoint; when that fails, PostgreSQL rolls back to
+     * the savepoint (an unprotected failure would leave the session's transaction aborted, 25P02),
+     * and the rows go in one by one inside a savepoint each, so a row its columns cannot keep is
+     * skipped with a note in the log and the rest of the batch, and the session's transaction, carries on.
+     *
+     * @param  list<array<string, mixed>>  $batch
+     */
     private function flush(FactTable $table, array $batch): int
     {
-        DB::table($table->value)->insert($batch);
+        try {
+            DB::transaction(fn (): bool => DB::table($table->value)->insert($batch));
 
-        return count($batch);
+            return count($batch);
+        } catch (QueryException) {
+            $inserted = 0;
+            foreach ($batch as $row) {
+                try {
+                    DB::transaction(fn (): bool => DB::table($table->value)->insert($row));
+                    $inserted++;
+                } catch (QueryException $e) {
+                    Log::warning('Fact row skipped.', ['table' => $table->value, 'error' => $e->getMessage()]);
+                }
+            }
+
+            return $inserted;
+        }
     }
 }

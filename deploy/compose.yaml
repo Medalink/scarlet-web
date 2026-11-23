@@ -36,7 +36,7 @@ services:
     networks: [backend]
     shm_size: 512mb
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:-${DB_PASSWORD}}
       POSTGRES_DB: ${DB_DATABASE}
       TIMESCALEDB_TELEMETRY: "off"
     command:

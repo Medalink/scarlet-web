@@ -1,7 +1,9 @@
 #!/bin/sh
 # Runs on the database host as root, from /srv/scarlet-db/deploy: `bin/deploy db-server` copies the deploy folder there and
 # calls it with the pgBackRest repository path (default pgbackrest, a folder in the R2 bucket) and the private addresses of
-# the app droplets allowed to connect. It reads `DB_PASSWORD=` and `PGBR_PASS=` lines on stdin and is safe to run again.
+# the app droplets allowed to connect. It reads `DB_PASSWORD=` (the password of the role `scarlet_app`) and `PGBR_PASS=` lines on
+# stdin and is safe to run again. The superuser's password, `DB_ADMIN_PASSWORD`, is made here, kept in /srv/scarlet-db/.env and
+# never sent to an app host.
 #
 # It writes /srv/scarlet-db/.env, the TLS key pair of Postgres, pg_hba.conf, pgbackrest.conf and the systemd units. It does not
 # start Postgres and does not enable the backup timers: deploy/db-host.sh does both once the database exists.
@@ -16,18 +18,22 @@ umask 077
 while IFS='=' read -r key value; do
   case $key in
     DB_PASSWORD) DB_PASSWORD=$value ;;
+    DB_ADMIN_PASSWORD) DB_ADMIN_PASSWORD=$value ;;
     PGBR_PASS) PGBR_PASS=$value ;;
   esac
 done
 [ -f .env ] && [ -z "${DB_PASSWORD:-}" ] && DB_PASSWORD=$(sed -n 's/^DB_PASSWORD=//p' .env)
+[ -f .env ] && [ -z "${DB_ADMIN_PASSWORD:-}" ] && DB_ADMIN_PASSWORD=$(sed -n 's/^DB_ADMIN_PASSWORD=//p' .env)
 [ -n "${DB_PASSWORD:-}" ] || { echo "server-db: no DB_PASSWORD" >&2; exit 1; }
+[ -n "${DB_ADMIN_PASSWORD:-}" ] || DB_ADMIN_PASSWORD=$(openssl rand -hex 24)
+[ "$DB_ADMIN_PASSWORD" != "$DB_PASSWORD" ] || { echo "server-db: DB_ADMIN_PASSWORD must differ from DB_PASSWORD" >&2; exit 1; }
 [ -n "$clients" ] || { echo "server-db: no client address" >&2; exit 1; }
 [ -f /etc/scarlet-web/r2.env ] || { echo "server-db: /etc/scarlet-web/r2.env is missing (bin/deploy r2)" >&2; exit 1; }
 
 private=$(curl -fsS http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address)
 [ -n "$private" ] || { echo "server-db: no VPC address" >&2; exit 1; }
 
-printf 'DB_PASSWORD=%s\nDB_NAME=scarlet\nDB_LISTEN=%s,127.0.0.1\n' "$DB_PASSWORD" "$private" > .env.new
+printf 'DB_PASSWORD=%s\nDB_ADMIN_PASSWORD=%s\nDB_NAME=scarlet\nDB_LISTEN=%s,127.0.0.1\n' "$DB_PASSWORD" "$DB_ADMIN_PASSWORD" "$private" > .env.new
 chown ops:ops .env.new
 mv .env.new .env
 
@@ -43,6 +49,10 @@ chmod 600 etc/tls/server.key
 chmod 644 etc/tls/server.crt
 
 sh deploy/db-hba.sh $clients
+
+if deploy/dc-db ps --status running --services 2>/dev/null | grep -qx postgres; then
+  SCARLET_BASE=/srv/scarlet-db bash deploy/db-app-role.sh deploy/dc-db
+fi
 
 if [ -n "${PGBR_PASS:-}" ]; then
   (

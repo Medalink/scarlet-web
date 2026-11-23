@@ -7,9 +7,11 @@ use Illuminate\Support\Facades\DB;
 class TalentLayout
 {
     /**
-     * The layout of a class talent tree: the one the most sessions sent, and among equals the newest. Players of the
-     * same client build send the same layout, so a layout that a few sessions sent differently is outvoted. Null when no
-     * session sent one.
+     * The layout of a class talent tree: the one the most senders sent, a sender being an account, or an install that no
+     * account is linked to (a layout stored before senders were recorded counts as one), then the one the most sessions
+     * sent, and among equals the newest. Players of the same client build send the same layout, so a layout that a few
+     * senders sent differently is outvoted, and one install cannot outvote the rest by sending more sessions. Null when
+     * no session sent one.
      *
      * Nodes are keyed by node id: raw position, type, maximum rank, tab, the entries as [entry, spell, max] and the
      * edges to other nodes as [target, type]. A position is the client's raw number; the talent frame draws it divided by
@@ -19,7 +21,10 @@ class TalentLayout
      */
     public function handle(int $treeId): ?array
     {
-        $tree = DB::table('talent_trees')->where('tree_id', $treeId)->orderByDesc('uploads')->orderByDesc('created_at')->first(['build', 'layout_hash', 'uploads']);
+        $tree = DB::table('talent_trees as t')->where('t.tree_id', $treeId)
+            ->selectRaw('t.build, t.layout_hash, t.uploads, t.created_at, greatest(1, (select count(distinct coalesce(i.account_id::text, i.id::text)) from talent_layout_votes v join installs i on i.id = v.install_id where v.tree_id = t.tree_id and v.build = t.build and v.layout_hash = t.layout_hash)) as senders')
+            ->orderByDesc('senders')->orderByDesc('t.uploads')->orderByDesc('t.created_at')
+            ->first();
         if ($tree === null) {
             return null;
         }

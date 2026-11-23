@@ -2,6 +2,8 @@
 
 namespace App\Actions\Ingest;
 
+use App\Models\Part;
+use App\Support\Database\PartIds;
 use App\Support\DecodedSession;
 use App\Support\SessionRows;
 use Illuminate\Support\Facades\DB;
@@ -32,10 +34,11 @@ class StoreDecodedSession
      * Replace one session's rows with a fresh decode, in one short transaction: delete the session's rows,
      * insert the new ones, write the session row and the dictionaries, then bring the character's levels,
      * dungeon runs and summary up to date. The parts the decode read are marked decoded, also when they hold nothing
-     * to store, so the sweep does not queue them again. A character is locked while this runs, so sessions of one
-     * character are stored one at a time. The addon days of the character and of the characters linked to it are marked
-     * as not reconciled in the same transaction, since the rows its claims are checked against changed. Safe to run
-     * twice.
+     * to store, so the sweep does not queue them again; a part whose row is gone by the time the character is locked
+     * is dropped instead, so a decode never marks parts it no longer sees. A character is locked while this runs, so
+     * sessions of one character are stored one at a time. The addon days of the character and of the characters linked
+     * to it are marked as not reconciled in the same transaction, since the rows its claims are checked against
+     * changed. Safe to run twice.
      *
      * @param  list<string>  $partIds  lower-case hex ids of the parts `$decoded` came from
      * @return array{from: int, until: int}|null epoch seconds the rollups must look at again
@@ -62,7 +65,7 @@ class StoreDecodedSession
             $this->summaries->handle($characterId);
             $this->talents->handle($characterId);
             $this->baselines->handle($characterId);
-            $this->markDecoded->handle($characterId, $sessionStart, $partIds);
+            $this->markDecoded->handle($characterId, $sessionStart, $this->presentParts($characterId, $sessionStart, $partIds));
 
             return $range;
         });
@@ -86,10 +89,31 @@ class StoreDecodedSession
         $span = $this->sessionRows->write($characterId, $sessionStart, $rulesetId, $counted, $decoded->summary);
         $this->distance->handle($characterId, $sessionStart);
         $this->dictionaries->handle($characterId, $decoded, countVotes: ! $namesCounted);
-        $this->reference->handle($decoded);
-        $this->layouts->handle($decoded, countUpload: ! $namesCounted);
+        $this->reference->handle($characterId, $decoded);
+        $this->layouts->handle($characterId, $decoded, countUpload: ! $namesCounted);
 
         return $span;
+    }
+
+    /**
+     * The ids read for the session whose part rows are still there under the lock: the set the store marks decoded.
+     *
+     * @param  list<string>  $partIds  lower-case hex ids
+     * @return list<string>
+     */
+    private function presentParts(int $characterId, int $sessionStart, array $partIds): array
+    {
+        if ($partIds === []) {
+            return [];
+        }
+
+        $query = Part::query()
+            ->where('character_id', $characterId)
+            ->where('session_start', $sessionStart)
+            ->selectRaw("encode(id, 'hex') as hex");
+
+        /** @var list<string> */
+        return PartIds::whereIn($query, $partIds)->toBase()->pluck('hex')->all();
     }
 
     /**

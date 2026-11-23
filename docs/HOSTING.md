@@ -367,6 +367,7 @@ deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'create extension if n
 deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner < backups/scarlet-<stamp>.dump
 # from R2: bin/deploy ssh 'cd /srv/scarlet-web && deploy/dc exec -T postgres pg_restore -U postgres -d scarlet --no-owner' < scarlet.dump
 deploy/dc exec -T postgres psql -U postgres -d scarlet -c 'select timescaledb_post_restore()'
+# from the checkout, so the app role owns the restored objects again: bin/deploy ssh 'bash -s' < deploy/db-app-role.sh
 deploy/dc up -d web schedule horizon-a
 cat state/active   # then: deploy/dc up -d app-blue (or app-green), the slot named there
 ```
@@ -380,6 +381,47 @@ PostgreSQL runs on its own droplet, `scarlet-db`, with its data on the block vol
 reaches it over the nyc3 VPC (`DB_HOST` is the droplet's private address, `DB_SSLMODE=verify-ca`). Redis stays on the app
 droplet. `deploy/compose.db.yaml` is the stack, `deploy/db-host.sh` runs on the database droplet and
 `deploy/db-cutover.sh` on the app droplet; `bin/deploy` calls both through `deploy/db-move.sh`.
+
+### The database role
+
+The app connects as the role `scarlet_app`, never as the `postgres` superuser: the role owns the `scarlet` database and
+every table, view and sequence in it, and has no `SUPERUSER`, `CREATEDB` or `REPLICATION`, so a compromise through SQL
+stays inside the one database instead of reaching `COPY PROGRAM` or a neighbor database. `deploy/db-app-role.sh` creates
+the role, hands it the database, the extensions and everything the restore and the migrations made, and keeps its
+password on `DB_PASSWORD` of the app's `.env`. It is idempotent, it runs on the machine that holds the Postgres container
+and never connects to another host: `deploy/server-setup-db.sh` runs it on the database host, and `rollout.sh` runs it
+before every migrate only while `DB_HOST` is `postgres` (an app droplet with a local Postgres). It is safe to run by hand there.
+
+`postgres` remains the superuser for the setup, the restore and `pg_dump`, with a password of its own, `DB_ADMIN_PASSWORD`,
+which `deploy/server-setup-db.sh` makes once and keeps in `/srv/scarlet-db/.env` on the database host, never on an app
+droplet. `pg_hba.conf` (`deploy/db-hba.sh`) lets an app host in as `scarlet_app` and `replicator`; `postgres` connects
+through the container's socket only. The database moves (`deploy/db-cutover.sh`, `bin/deploy db-move`) reach `postgres`
+over the VPC: before one, run `sudo SCARLET_HBA_POSTGRES_HOSTS=1 sh /srv/scarlet-db/deploy/db-hba.sh <app addresses>` on the
+database host and put `DB_ADMIN_PASSWORD` of that host's `.env` on the app droplet's `.env`; after it, run `bin/deploy db-server`
+to close the row again and take the line out of the app droplet's `.env`.
+
+An install that shared one password between the two roles separates them once, from the machine with the checkout:
+
+```sh
+bin/deploy db-server           # installs deploy/ on the database host, makes DB_ADMIN_PASSWORD, sets it on `postgres`, writes pg_hba.conf without a remote `postgres` row and reloads
+bin/deploy ssh 'cd /srv/scarlet-web && h=$(sed -n "s/^DB_HOST=//p" .env) && docker run --rm -e PGPASSWORD=x --entrypoint psql "$(deploy/dc config --images | grep timescaledb-ha | head -n 1)" "host=$h user=postgres dbname=scarlet sslmode=require connect_timeout=5" -c "select 1"'   # must fail with: no pg_hba.conf entry
+```
+
+`scarlet_app` keeps its password, so the app never notices. To give it a new one as well, put the new value in the app
+droplet's `.env` as `DB_PASSWORD` and run `bin/deploy db-server` and then `bin/deploy` back to back: the old containers
+cannot open new connections between the two.
+
+An install from before the role existed switches to it once, on the machine with the checkout:
+
+```sh
+bin/deploy ssh 'bash -s' < deploy/db-app-role.sh                       # create the role on the live database
+bin/deploy ssh "cd /srv/scarlet-web && sed -i s/^DB_USERNAME=.*/DB_USERNAME=scarlet_app/ .env"
+```
+
+The next deploy's containers then connect as `scarlet_app`. The droplet keeps its copy of
+`deploy/db-app-role.sh` from the last full `bin/deploy`; until then a rollout skips its own call, and the two commands
+above work from the checkout alone. The restore (above) reassigns every object to `postgres`, so it ends with one more
+line: `deploy/db-app-role.sh`.
 
 ### Install the database host
 

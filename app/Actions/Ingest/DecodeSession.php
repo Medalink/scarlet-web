@@ -11,6 +11,7 @@ use App\Support\Database\BinaryValue;
 use App\Support\DecodedSession;
 use App\Support\PartTool;
 use App\Support\SharingGroup;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
 
@@ -40,13 +41,43 @@ class DecodeSession
      */
     public function handle(int $characterId, int $sessionStart): void
     {
-        $this->decode($characterId, $sessionStart);
+        $window = $this->decode($characterId, $sessionStart);
+        if ($window !== null) {
+            RefreshCharacterFeats::dispatch($characterId);
+            RefreshRollups::dispatch($window['from'], $window['until']);
+        }
         if ($this->siblings->handle($characterId) !== [] || AddonDay::query()->where('character_id', $characterId)->whereNull('reconcile_version')->exists()) {
             ReconcileCharacterClaims::dispatch($characterId);
         }
     }
 
-    private function decode(int $characterId, int $sessionStart): void
+    /**
+     * Run the decode under the character's row lock, from before the parts are read to after the rows are stored:
+     * the lock a removal also takes before it deletes (`Character::lockedInOrder`), so a group removed while the
+     * decode runs waits instead of leaving stored rows that name parts which no longer exist. The lock spans the
+     * decoder run and is bounded by the job's timeout. Null when the character is gone; there is nothing left to
+     * decode for it.
+     *
+     * @return array{from: int, until: int}|null epoch seconds the rollups must look at again
+     */
+    private function decode(int $characterId, int $sessionStart): ?array
+    {
+        return DB::transaction(function () use ($characterId, $sessionStart): ?array {
+            if (! DB::table('characters')->where('id', $characterId)->lockForUpdate()->exists()) {
+                return null;
+            }
+
+            return $this->decodeLocked($characterId, $sessionStart);
+        });
+    }
+
+    /**
+     * The decode itself, under the lock the caller holds: read every part, replace the fishing lines, the imported
+     * rows and the claims of the session's day, decode the session's own parts and store the result.
+     *
+     * @return array{from: int, until: int}|null epoch seconds the rollups must look at again
+     */
+    private function decodeLocked(int $characterId, int $sessionStart): ?array
     {
         $bodies = [];
         $imported = [];
@@ -104,13 +135,13 @@ class DecodeSession
         $this->fishing->handle($characterId, $sessionStart, $fishingInput === [] ? [] : $this->tool->decodeFishing($fishingInput), $fishingIds);
 
         if ($imported !== [] || $parts->isEmpty()) {
-            $this->imports->handle($characterId, $sessionStart, $imported === [] ? [] : $this->tool->decodeImports($imported), $importedIds);
+            $this->imports->handle($characterId, $sessionStart, $imported === [] ? [] : $this->tool->importRows($imported), $importedIds);
         }
         if ($counts !== [] || AddonDay::query()->where('character_id', $characterId)->where('day_key', $sessionStart)->exists()) {
             $this->claims->handle($characterId, $sessionStart, $counts === [] ? [] : $this->tool->decodeCounts($counts), $countsIds);
         }
         if ($bodies === [] && ($imported !== [] || $fishing !== [] || $counts !== [])) {
-            return;
+            return null;
         }
 
         $decoded = DecodedSession::empty();
@@ -124,10 +155,10 @@ class DecodeSession
             }
         }
 
-        $window = $this->store->handle($characterId, $sessionStart, $decoded, $partIds);
-        RefreshCharacterFeats::dispatch($characterId);
-        if ($window !== null) {
-            RefreshRollups::dispatch($window['from'], $window['until']);
+        try {
+            return $this->store->handle($characterId, $sessionStart, $decoded, $partIds);
+        } finally {
+            $decoded->dispose();
         }
     }
 

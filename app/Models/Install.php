@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $linked_at
  * @property string|null $client
  * @property string|null $origin
+ * @property Carbon|null $site_bound_at
  * @property Carbon $created_at
  */
 class Install extends Model
@@ -31,7 +32,7 @@ class Install extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['revoked_at' => 'datetime', 'last_seen_at' => 'datetime', 'linked_at' => 'datetime'];
+        return ['revoked_at' => 'datetime', 'last_seen_at' => 'datetime', 'linked_at' => 'datetime', 'site_bound_at' => 'datetime'];
     }
 
     public function publicKey(): string

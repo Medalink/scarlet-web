@@ -6,9 +6,12 @@ use App\Models\Market;
 use App\Support\PriceTable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PullMarketPrices
 {
@@ -17,11 +20,17 @@ class PullMarketPrices
     /** Stop the run while this few calls are left in AHledger's rate window. */
     private const int RESERVE_CALLS = 5;
 
+    private const int MARKET_LIST_TRIES = 3;
+
+    private const int RETRY_PAUSE_MS = 3000;
+
     /**
      * Bring AHledger's prices up to date, gently: one call for the market list, then one conditional GET of each enabled
      * market's price table, a second apart. An unchanged table answers 304 and costs nothing; a new scan is folded
      * into that day's rows in one transaction with the market's scan time. A market the list no longer names is
-     * disabled. A 429, a server error or an unreachable host ends the run, and the next run tries again.
+     * disabled. The market list is tried three times, 3 seconds apart, when the host is unreachable or answers 429 or a
+     * server error, and a list that still cannot be read is logged with its reason. A 429, a server error or an
+     * unreachable host ends the run, and the next run tries again.
      *
      * @return array<string, string> the status of each market this run asked for, by market id
      */
@@ -55,8 +64,13 @@ class PullMarketPrices
     /** @return list<Market>|null the enabled markets, or null when the market list could not be read */
     private function syncMarkets(): ?array
     {
-        $response = $this->get('/v1/markets', null);
-        if ($response === null || ! $response->successful() || ! is_array($response->json('markets'))) {
+        $response = $this->get('/v1/markets', null, self::MARKET_LIST_TRIES);
+        if ($response === null) {
+            return null;
+        }
+        if (! $response->successful() || ! is_array($response->json('markets'))) {
+            Log::warning('AHledger\'s market list was not usable.', ['status' => $response->status(), 'body' => mb_substr($response->body(), 0, 200)]);
+
             return null;
         }
         $regions = (array) config('scarlet.ahledger.regions');
@@ -75,6 +89,8 @@ class PullMarketPrices
             ];
         }
         if ($rows === []) {
+            Log::warning('AHledger\'s market list named no Forever market.');
+
             return null;
         }
         Market::query()->upsert($rows, ['id'], ['ruleset', 'faction', 'region', 'label', 'enabled']);
@@ -131,11 +147,22 @@ class PullMarketPrices
         return $response->status() === 429 || $response->serverError();
     }
 
-    private function get(string $path, ?string $etag): ?Response
+    private function get(string $path, ?string $etag, int $tries = 1): ?Response
     {
+        $client = $this->client()->withHeaders($etag === null ? [] : ['If-None-Match' => $etag]);
+        if ($tries > 1) {
+            $client = $client->retry(
+                $tries,
+                self::RETRY_PAUSE_MS,
+                fn (Throwable $e): bool => $e instanceof ConnectionException || ($e instanceof RequestException && ($e->response->serverError() || $e->response->status() === 429)),
+                throw: false,
+            );
+        }
         try {
-            return $this->client()->withHeaders($etag === null ? [] : ['If-None-Match' => $etag])->get($path);
-        } catch (ConnectionException) {
+            return $client->get($path);
+        } catch (ConnectionException $e) {
+            Log::warning('AHledger could not be reached.', ['path' => $path, 'error' => $e->getMessage()]);
+
             return null;
         }
     }

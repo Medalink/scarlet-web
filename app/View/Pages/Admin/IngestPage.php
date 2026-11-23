@@ -43,6 +43,7 @@ final class IngestPage
             'figures' => [
                 ['label' => 'Parts uploaded today', 'value' => Format::number(array_sum(array_map(fn (array $g): int => $g['day'] === $today ? $g['parts'] : 0, $groups))), 'icon' => null],
                 ['label' => 'Parts waiting to decode', 'value' => Format::number((int) $p['undecoded']), 'icon' => null],
+                ['label' => 'Parts the sweep gave up on', 'value' => Format::number((int) $p['failed_parts']), 'icon' => null],
                 ['label' => 'Sessions decoded today', 'value' => Format::number($sessions[$today] ?? 0), 'icon' => null],
                 ['label' => 'Median time to decode', 'value' => isset($latency[$today]) ? $seconds(round($latency[$today]['median'], 1)) : '–', 'icon' => null],
                 ['label' => 'Jobs waiting', 'value' => Format::number(array_sum(array_column($queues['queues'], 'length'))), 'icon' => null],

@@ -32,7 +32,7 @@ class AtLevelCap
             ->selectRaw('count(*) as runs'))[0] ?? null;
         $money = $this->read->rows($this->read->table('money_changes', $rulesetId)
             ->where('counted', true)->where('src', 'M')->where('level', $level)
-            ->selectRaw('coalesce(sum(earned), 0)::bigint as earned, coalesce(sum(spent), 0)::bigint as spent, count(distinct character_id) as characters'))[0] ?? null;
+            ->selectRaw('least(coalesce(sum(earned), 0), 9223372036854775807)::bigint as earned, least(coalesce(sum(spent), 0), 9223372036854775807)::bigint as spent, count(distinct character_id) as characters'))[0] ?? null;
 
         $min = (int) config('scarlet.min_characters');
         $playedBy = (int) ($played['characters'] ?? 0);

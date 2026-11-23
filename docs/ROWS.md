@@ -894,7 +894,9 @@ and a row whose group the last one already named writes none.
 
 The layout of a class tree, which is the same for every player of a client build. Like `names`, these rows carry
 `session` only. `build` is the client version of the `S` line (a string such as `1.60.1`, null when the line has none). A `TD` whose tree has no `TV` earlier in the session is
-skipped. `layout_hash` is the `TV` hash.
+skipped. `layout_hash` is the decoder's own, the SHA-256 in 64 hex digits of the `TV` class and node count and every `TD` line as
+they were sent, so a stored layout is keyed by the content it holds and not by the hash the `TV` line claimed, and no
+other content shares its key.
 
 `talent_trees`: `build`, `tree_id`, `class_id`, `node_count`, `layout_hash`.
 `talent_nodes`: `build`, `tree_id`, `layout_hash`, `node_id`, `pos_x`, `pos_y` (the client's raw numbers, drawn at
@@ -917,23 +919,26 @@ One row per distinct (zone id, zone name) in the session. `at` is the session st
 
 `session`, `recipe_spell_id`, `at` (ms of the line), `output_item_id`, `min_quantity`, `max_quantity`, `reagents`
 (string or null: `itemID:count` joined by commas), `optional_slots`, `type` (int or null, the client's recipe type).
-One row per recipe of the session, the last line read. A recipe is the same for every uploader: the app keeps the
-newest row of each id.
+One row per recipe of the session, the last line read. A recipe is the same for every uploader: its fields are voted on
+by the installs that read them and a field changes only when more voters hold another value (docs/DESIGN.md, Decoded
+facts), and `seen_at` is the server time of the decode that last changed the row, not the line's `at`.
 
 ### `spells` (names group: `SI`, `SD`)
 
 `session`, `spell_id`, `at` (ms of the newest line), `icon_id`, `cast_ms`, `min_range`, `max_range` (ints or null),
 `costs` (string or null: `powerType:cost` joined by commas), `passive` (bool or null), `description` (string or null,
 300 characters at most). `SI` fills the first seven keys and `SD` the last; a session with only one of them has nulls
-for the other, and the app keeps the known value. One row per spell of the session. `SI` and `SD` do not write a
+for the other, and the app keeps the known value. One row per spell of the session; the stored spell follows the votes of
+its fields as a recipe does. `SI` and `SD` do not write a
 `names` row.
 
 ### `names` (names group)
 
 `session`, `kind` (`npc`, `spell`, `item`, `quest`, `currency`, `skill`, `statistic`, `achievement`, `faction`,
 `gossip`, `stat`, `flight`, `talenttab`, `object`), `id` (int), `name` (string). One row per distinct (kind, id) of the
-session. A name becomes the shown one for an id when most uploads agree on it (DESIGN.md). `object` names come from the
-`ON` line and are voted like `npc` names: one vote for each session that names the object, none for a decode again.
+session. A name becomes the shown one for an id when most installs agree on it (DESIGN.md): one vote per install
+behind the session, within the install's daily budget. `object` names come from the
+`ON` line and are voted like `npc` names, none for a decode again.
 
 ### `items` (names group: `II`, `IT`, `IQ`)
 

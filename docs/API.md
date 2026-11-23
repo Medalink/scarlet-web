@@ -15,7 +15,7 @@ Every request except `POST /installs` carries three headers, plus the optional `
 | `Scarlet-Install` | The install id (a UUID) that `POST /installs` returned |
 | `Scarlet-Time` | The client's clock, epoch seconds, as decimal digits |
 | `Scarlet-Signature` | Base64 (standard alphabet, padded) of the 64-byte Ed25519 signature of the message below |
-| `Scarlet-Site` | The host the request is sent to, the same string as the site line of the message below. Without the header the four-line message is signed and the host is not checked |
+| `Scarlet-Site` | The host the request is sent to, the same string as the site line of the message below. Without the header the four-line message is signed and the host is not checked, unless the install has sent the header before |
 
 The message is four lines joined by `\n` (no trailing newline), as bytes:
 
@@ -31,7 +31,9 @@ when it is not the scheme's default (`127.0.0.1:8000`, `scarletweb.io`), sent as
 refuses a signature whose site differs from the host the request reached, or from the host the install registered on
 (the host of its `POST /installs`, which registration refreshes; an install registered before the site line existed
 takes its origin from the first signed request that names one). A signature without the site line keeps the four-line
-form and no host check, so a client predating it keeps working.
+form and no host check, so a client predating it keeps working, until its install sends its first request with a site
+line. From then on the server refuses that install's signatures without one (`site_required`), so a four-line
+signature cannot stand in for the five-line one.
 
 - `METHOD` is upper case. `path` is the request path as sent, from the leading `/`, with no host and no query string
   (`/api/v1/upload/sync`). The routes take no query string.
@@ -98,6 +100,7 @@ messages are for people. Extra fields sit inside `error`.
 | 401 | `bad_signature` | The signature does not match the request | |
 | 401 | `replayed_request` | This exact signature was seen in the last 600 s | |
 | 401 | `wrong_site` | The request reached another host than the site the signature names, or than the install registered on | |
+| 401 | `site_required` | The install has sent a signature with a site line before, and this one has none | |
 | 409 | `name_held` | Another install holds this character name | `character` |
 | 409 | `group_refused` | A group in the request was removed from the server (see "Groups") | `groups` |
 | 409 | `already_linked` | The install already belongs to an account | |
@@ -254,10 +257,12 @@ the site's theme (`var(--class)` is the class colour), at most one of the two se
 ### `POST /installs/link-code`
 
 No body. `201` with `{"code": "XXXX-XXXX", "redeem": "scarlet-link-redeem\nXXXX-XXXX", "expires_at": "...", "expires_in": 600}`.
-The app signs the `redeem` line with its own key (docs/API.md, "Signing") and opens
-`/link?code=XXXX-XXXX&redeem=<base64 signature>` in the browser; the confirm there carries the signature back, so only
-the holder of the install's key can complete the link — the code string alone binds nothing. A code works once. An
-install that is already linked gets `409 already_linked`.
+The app builds the line `scarlet-link-redeem\nXXXX-XXXX` from the code itself, signs it with its own key (this is not
+a request signature: no `Scarlet-` headers) and opens `/link?redeem=<base64 signature>` in the browser; a client never
+signs the `redeem` text the server sends. The page asks the person to type the code the app shows, and the confirm
+carries the typed code and the signature back. The link completes only when the signature is the install's over the
+typed code, so only the holder of the install's key can complete it, and a code in the address is ignored. A code works
+once. An install that is already linked gets `409 already_linked`.
 
 ## Upload
 
@@ -295,10 +300,12 @@ install (`name_held` when another install, not of the same account, holds it).
 Answer:
 
 ```json
-{"need": ["<64 hex>", "..."], "present": 1710, "removed": 0}
+{"need": ["<64 hex>", "..."], "remaining": 0, "present": 1710, "removed": 0}
 ```
 
-`need` lists the ids the server does not hold, in manifest order. `present` is how many listed parts it already holds.
+`need` lists the ids the server does not hold, in manifest order, at most 50,000 of them. `remaining` is how many it
+holds back: send the parts of `need`, then send the manifest again for the next page, until `remaining` is 0. A client
+that reads only the first answer stores one page a sync and finishes over the next syncs. `present` is how many listed parts it already holds.
 `removed` is how many parts it deleted: parts in the groups that are on that this install listed before, the manifest no
 longer lists and no other install of the character lists; they and their decoded rows are gone. A part another install
 of the character uploaded stays. Parts of a group that is switched off in `groups` stay until the app removes the group (below).

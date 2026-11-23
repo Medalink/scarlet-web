@@ -10,12 +10,14 @@ class UpsertTalentLayouts
     private const int CHUNK = 2000;
 
     /**
-     * Write the talent tree layouts a session carried. A layout is the same for every player of a client build, so a
-     * hash that is stored already adds its nodes once and one upload to its count.
+     * Write the talent tree layouts a session carried. The decoder keys a layout by the SHA-256 of the lines it was
+     * learned from, so a stored key's nodes are the ones the key was computed over and a later session with the same
+     * layout lands on the same rows; a key that is stored already adds one upload to its count. Each install behind
+     * the character is recorded as a sender of the layout, which is what ranks layouts (`Public\TalentLayout`).
      *
      * @param  bool  $countUpload  false when the session's layouts were counted by an earlier decode
      */
-    public function handle(DecodedSession $decoded, bool $countUpload): void
+    public function handle(int $characterId, DecodedSession $decoded, bool $countUpload): void
     {
         $trees = [];
         foreach ($decoded->talentTrees as $row) {
@@ -33,6 +35,8 @@ class UpsertTalentLayouts
                 'uploads' => DB::raw($countUpload ? 'talent_trees.uploads + 1' : 'talent_trees.uploads'),
             ]);
         }
+
+        $this->senders($characterId, $trees);
 
         $nodes = [];
         foreach ($decoded->talentNodes as $row) {
@@ -52,6 +56,21 @@ class UpsertTalentLayouts
         }
         foreach (array_chunk($nodes, self::CHUNK) as $chunk) {
             DB::table('talent_nodes')->insertOrIgnore($chunk);
+        }
+    }
+
+    /** @param  list<array<string, mixed>>  $trees */
+    private function senders(int $characterId, array $trees): void
+    {
+        $installs = DB::table('install_character')->where('character_id', $characterId)->pluck('install_id');
+        $votes = [];
+        foreach ($trees as $tree) {
+            foreach ($installs as $install) {
+                $votes[] = ['tree_id' => $tree['tree_id'], 'build' => $tree['build'], 'layout_hash' => $tree['layout_hash'], 'install_id' => $install, 'created_at' => now()];
+            }
+        }
+        foreach (array_chunk($votes, self::CHUNK) as $chunk) {
+            DB::table('talent_layout_votes')->insertOrIgnore($chunk);
         }
     }
 }

@@ -30,7 +30,7 @@ DB_CONNECTION=pgsql
 DB_HOST=postgres
 DB_PORT=5432
 DB_DATABASE=scarlet
-DB_USERNAME=postgres
+DB_USERNAME=scarlet_app
 DB_PASSWORD=$(openssl rand -hex 24)
 
 REDIS_CLIENT=phpredis

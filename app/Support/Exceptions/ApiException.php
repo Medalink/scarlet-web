@@ -72,6 +72,11 @@ class ApiException extends RuntimeException
         return new self(401, 'wrong_site', 'The request reached another host than the site the signature names, or than the install registered on.');
     }
 
+    public static function siteRequired(): self
+    {
+        return new self(401, 'site_required', 'This install signs with the site line, so a signature without it is refused.');
+    }
+
     public static function bodyTooLarge(int $limit): self
     {
         return new self(413, 'body_too_large', "The request body is larger than {$limit} bytes.", ['limit' => $limit]);
