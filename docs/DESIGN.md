@@ -838,8 +838,11 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `battleground_matches` | `BM` | pvp | a match that ended: instance, zone name, rated, arena, the uploader's team, the winning side, duration, result, whether it affects rating |
 | `battleground_scores` | `BO` | social | another player's scoreboard row, read after the match: name, faction, class file, killing blows, honorable kills, deaths, honor, damage, healing, the objective stats. `match_at` is the end of the match (the last `BM 0` before the row), so one uploader's rows of one match share it |
 
-Game reference tables, the same for every uploader, keep the newest row per id: `recipes` and `recipe_reagents`
-(`RQ`: what a recipe makes and needs) and `spells` (`SI`, `SD`: icon id, cast time, ranges, costs, passive, description).
+Game reference tables, the same for every uploader, are replaced by every decode that reads them: `recipes` and
+`recipe_reagents` (`RQ`: what a recipe makes and needs) and `spells` (`SI`, `SD`: icon id, cast time, ranges, costs,
+passive, description). Their `seen_at` is the server time of the decode that wrote the row, never the line's `at`,
+so no uploader's clock decides which row survives; a spell keeps a stored value the new row has none for, and an
+`items` or `zones` row keeps the row its write displaced in `previous`.
 
 Dictionaries, plain tables: `names(kind, id, name)` from the name lines, `items` from `II`, `zones`, `rulesets`,
 `talent_trees` and `talent_nodes` (the class tree layouts of `TV` and `TD`, one per tree, client build and layout hash;
@@ -868,9 +871,10 @@ How the tables are built (decisions the first implementation made):
   "a character that fails stays out of the rollups": the unit is the session, and a replaced session that no longer
   fails counts again on its next decode. The character keeps `plausibility` (`ok` or `flagged`, flagged while any of its
   sessions is) for the leaderboards.
-- **Names.** `names` holds one row per candidate name of an id with `votes`, the number of sessions that reported it;
-  the shown name is the one with most votes. A session adds its votes once (`sessions.names_counted`), so a second decode
-  changes nothing.
+- **Names.** `names` holds one row per candidate name of an id with `votes`, the number of installs behind the
+  sessions that reported it (`name_votes` holds one row per name and install, and an install casts at most a daily
+  budget of votes); the shown name is the one with most votes. A session adds its votes once
+  (`sessions.names_counted`), so a second decode changes nothing.
 - **Time per level.** A level's time spans sessions, so it cannot come from a daily rollup of `play_spans`. Ingest
   rebuilds `character_levels` (a hypertable on the time the character first stood at the level) for the character after
   each session: one row per level whose start Scarlet saw, with `seconds` at that level, `before_seconds` (the game's

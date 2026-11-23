@@ -917,8 +917,8 @@ One row per distinct (zone id, zone name) in the session. `at` is the session st
 
 `session`, `recipe_spell_id`, `at` (ms of the line), `output_item_id`, `min_quantity`, `max_quantity`, `reagents`
 (string or null: `itemID:count` joined by commas), `optional_slots`, `type` (int or null, the client's recipe type).
-One row per recipe of the session, the last line read. A recipe is the same for every uploader: the app keeps the
-newest row of each id.
+One row per recipe of the session, the last line read. A recipe is the same for every uploader: the app replaces
+the stored row with each decode that reads it, and `seen_at` is the server time of that decode, not the line's `at`.
 
 ### `spells` (names group: `SI`, `SD`)
 
@@ -932,8 +932,9 @@ for the other, and the app keeps the known value. One row per spell of the sessi
 
 `session`, `kind` (`npc`, `spell`, `item`, `quest`, `currency`, `skill`, `statistic`, `achievement`, `faction`,
 `gossip`, `stat`, `flight`, `talenttab`, `object`), `id` (int), `name` (string). One row per distinct (kind, id) of the
-session. A name becomes the shown one for an id when most uploads agree on it (DESIGN.md). `object` names come from the
-`ON` line and are voted like `npc` names: one vote for each session that names the object, none for a decode again.
+session. A name becomes the shown one for an id when most installs agree on it (DESIGN.md): one vote per install
+behind the session, within the install's daily budget. `object` names come from the
+`ON` line and are voted like `npc` names, none for a decode again.
 
 ### `items` (names group: `II`, `IT`, `IQ`)
 

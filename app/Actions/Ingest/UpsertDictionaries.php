@@ -13,35 +13,95 @@ class UpsertDictionaries
     private const array ITEM_COLUMNS = ['class_id', 'subclass_id', 'equip_loc', 'item_level', 'required_level', 'sell_price', 'bind_type', 'stack', 'quality', 'tooltip'];
 
     /**
-     * Write what the session told about names, items, zones and the players it met.
+     * Write what the session told about names, items, zones and the players it met. A name's votes are one per
+     * install behind the character, so no uploader's session count decides a rank; an `items` or `zones` write
+     * keeps the row it displaces in `previous`.
      *
      * @param  bool  $countVotes  false when the session's names were counted by an earlier decode
      */
     public function handle(int $characterId, DecodedSession $decoded, bool $countVotes): void
     {
-        $this->names($decoded->names, $countVotes);
+        $this->names($characterId, $decoded->names, $countVotes);
         $this->items($decoded->items);
         $this->zones($decoded->zones);
         $this->pseudonyms($characterId, $decoded->pseudonyms);
     }
 
     /** @param  list<array<string, mixed>>  $rows */
-    private function names(array $rows, bool $countVotes): void
+    private function names(int $characterId, array $rows, bool $countVotes): void
     {
         $unique = [];
         foreach ($rows as $row) {
             $name = mb_substr((string) $row['name'], 0, 255);
-            $unique[$row['kind'].'/'.$row['id'].'/'.$name] = ['kind' => $row['kind'], 'id' => $row['id'], 'name' => $name, 'votes' => 1];
+            $unique[$row['kind'].'/'.$row['id'].'/'.$name] = ['kind' => $row['kind'], 'id' => $row['id'], 'name' => $name];
         }
 
-        foreach (array_chunk(array_values($unique), self::CHUNK) as $chunk) {
-            if (! $countVotes) {
-                DB::table('names')->insertOrIgnore($chunk);
-
-                continue;
+        $chunks = array_chunk($unique, self::CHUNK, preserve_keys: true);
+        if (! $countVotes) {
+            foreach ($chunks as $chunk) {
+                DB::table('names')->insertOrIgnore(array_map(fn (array $row): array => $row + ['votes' => 1], $chunk));
             }
-            DB::table('names')->upsert($chunk, ['kind', 'id', 'name'], ['votes' => DB::raw('names.votes + 1')]);
+
+            return;
         }
+
+        $casted = $this->castVotes($characterId, $unique);
+        foreach ($chunks as $chunk) {
+            $candidates = [];
+            foreach ($chunk as $key => $row) {
+                $candidates[] = $row + ['votes' => $casted[$key] ?? 0];
+            }
+            DB::table('names')->upsert($candidates, ['kind', 'id', 'name'], ['votes' => DB::raw('names.votes + excluded.votes')]);
+        }
+    }
+
+    /**
+     * The votes this decode casts per name row, keyed `kind/id/name`: at most one per install of the character,
+     * and per install at most the daily budget. The rows written carry `$window` as `created_at`, and the count
+     * reads back only what landed, so a decode of another character of the same install that wrote the same
+     * (name, install) first casts the vote, not this one.
+     *
+     * @param  array<string, array<string, int|string>>  $unique
+     * @return array<string, int>
+     */
+    private function castVotes(int $characterId, array $unique): array
+    {
+        $installs = DB::table('install_character')->where('character_id', $characterId)->pluck('install_id');
+        if ($installs->isEmpty()) {
+            return [];
+        }
+
+        $budget = (int) config('scarlet.ingest.name_votes_per_install_day');
+        $used = DB::table('name_votes')->whereIn('install_id', $installs)->where('created_at', '>=', today())
+            ->selectRaw('install_id, count(*) as votes')->groupBy('install_id')->pluck('votes', 'install_id');
+        $remaining = [];
+        foreach ($installs as $install) {
+            $remaining[$install] = max(0, $budget - (int) ($used[$install] ?? 0));
+        }
+
+        $window = now();
+        $candidates = [];
+        foreach ($unique as $row) {
+            foreach ($installs as $install) {
+                if ($remaining[$install] === 0) {
+                    continue;
+                }
+                $remaining[$install]--;
+                $candidates[] = ['kind' => $row['kind'], 'id' => $row['id'], 'name' => $row['name'], 'install_id' => $install, 'created_at' => $window];
+            }
+        }
+        foreach (array_chunk($candidates, self::CHUNK) as $chunk) {
+            DB::table('name_votes')->insertOrIgnore($chunk);
+        }
+
+        $casted = [];
+        $written = DB::table('name_votes')->whereIn('install_id', $installs)->where('created_at', $window)
+            ->groupBy('kind', 'id', 'name')->get(['kind', 'id', 'name', DB::raw('count(*) as votes')]);
+        foreach ($written as $row) {
+            $casted[$row->kind.'/'.$row->id.'/'.$row->name] = (int) $row->votes;
+        }
+
+        return $casted;
     }
 
     /** @param  list<array<string, mixed>>  $rows */
@@ -69,6 +129,7 @@ class UpsertDictionaries
                 'stack' => DB::raw('coalesce(excluded.stack, items.stack)'),
                 'quality' => DB::raw('coalesce(excluded.quality, items.quality)'),
                 'tooltip' => DB::raw('coalesce(excluded.tooltip, items.tooltip)'),
+                'previous' => DB::raw("to_jsonb(items) - 'previous'"),
                 'updated_at' => now(),
             ]);
         }
@@ -93,6 +154,7 @@ class UpsertDictionaries
                 'name' => DB::raw("case when excluded.name <> '' then excluded.name else zones.name end"),
                 'instance_type' => DB::raw('coalesce(excluded.instance_type, zones.instance_type)'),
                 'instance_id' => DB::raw('coalesce(excluded.instance_id, zones.instance_id)'),
+                'previous' => DB::raw("to_jsonb(zones) - 'previous'"),
                 'updated_at' => now(),
             ]);
         }
