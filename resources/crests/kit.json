@@ -1,0 +1,320 @@
+{
+  "version": 1,
+  "box": 96,
+  "center": [
+    48,
+    50
+  ],
+  "viewBox": {
+    "full": "6 5 84 84",
+    "compact": "13 8.5 70 70"
+  },
+  "tierNames": [
+    "Not earned",
+    "Uncommon",
+    "Rare",
+    "Epic",
+    "Legendary",
+    "Scarlet"
+  ],
+  "attaches": [
+    null,
+    "shield",
+    "crown",
+    "banner",
+    "side",
+    "rays"
+  ],
+  "scopes": {
+    "character": {
+      "shield": "shield-character",
+      "side": "wings",
+      "glyphY": 45.5
+    },
+    "class": {
+      "shield": "shield-class",
+      "side": "spurs",
+      "glyphY": 47
+    },
+    "account": {
+      "shield": "shield-account",
+      "side": "laurels",
+      "ring": "ring-account",
+      "glyphY": 47
+    }
+  },
+  "quality": [
+    {
+      "name": "Poor",
+      "color": "#9d9d9d",
+      "deep": null,
+      "frame": null,
+      "field": 0,
+      "plain": 0,
+      "glyph": "#9d9d9d",
+      "crown": null,
+      "banner": null,
+      "side": null,
+      "rays": null,
+      "gem": null,
+      "ghost": 0,
+      "near": 0,
+      "on": "#141416"
+    },
+    {
+      "name": "Uncommon",
+      "color": "#1eff00",
+      "deep": "#14b800",
+      "frame": "steel",
+      "field": 0.22,
+      "plain": 0.55,
+      "glyph": "#f0f1f3",
+      "crown": null,
+      "banner": null,
+      "side": null,
+      "rays": null,
+      "gem": null,
+      "ghost": 0.12,
+      "near": 0.3,
+      "on": "#141416"
+    },
+    {
+      "name": "Rare",
+      "color": "#0070dd",
+      "deep": "#004f9e",
+      "frame": "steel",
+      "field": 0.45,
+      "plain": 1,
+      "glyph": "#f0f1f3",
+      "crown": "steel",
+      "banner": null,
+      "side": null,
+      "rays": null,
+      "gem": "#0070dd",
+      "ghost": 0.3,
+      "near": 0.55,
+      "on": "#f0f1f3"
+    },
+    {
+      "name": "Epic",
+      "color": "#a335ee",
+      "deep": "#7220b0",
+      "frame": "steel",
+      "field": 0.45,
+      "plain": 1,
+      "glyph": "#f0f1f3",
+      "crown": "steel",
+      "banner": "parchment",
+      "side": null,
+      "rays": null,
+      "gem": "#a335ee",
+      "ghost": 0.3,
+      "near": 0.55,
+      "on": "#f0f1f3"
+    },
+    {
+      "name": "Legendary",
+      "color": "#ff8000",
+      "deep": "#c75a00",
+      "frame": "steel",
+      "field": 1,
+      "plain": 1,
+      "glyph": "#141416",
+      "crown": "steel",
+      "banner": "parchment",
+      "side": "pewter",
+      "rays": null,
+      "gem": "#ff8000",
+      "ghost": 0.16,
+      "near": 0.36,
+      "on": "#141416"
+    },
+    {
+      "name": "Scarlet",
+      "color": "#ff2d55",
+      "deep": "#c4123a",
+      "frame": "gold",
+      "field": 1,
+      "plain": 1,
+      "glyph": "#141416",
+      "crown": "gold",
+      "banner": "parchment",
+      "side": "pewter",
+      "rays": "gold",
+      "gem": "#ff2d55",
+      "ghost": 0.14,
+      "near": 0.34,
+      "on": "#141416"
+    }
+  ],
+  "material": {
+    "steel": {
+      "top": "#e6e9ef",
+      "bottom": "#767c88",
+      "flat": "#aeb4bf"
+    },
+    "pewter": {
+      "top": "#a9aeb9",
+      "bottom": "#4b4f58",
+      "flat": "#787d89"
+    },
+    "parchment": {
+      "top": "#f3ead6",
+      "bottom": "#c2b391",
+      "flat": "#ddd0b3"
+    },
+    "gold": {
+      "top": "#ffeaa6",
+      "bottom": "#b8872a",
+      "flat": "#e8c060"
+    }
+  },
+  "band": [
+    15,
+    69.9,
+    81,
+    73.1
+  ],
+  "gem": {
+    "at": [
+      48,
+      24.6
+    ],
+    "setting": 1.5
+  },
+  "ink": "#141416",
+  "light": "#f0f1f3",
+  "nearAt": 0.9,
+  "unearned": {
+    "fill": 0.3,
+    "rim": 0.5,
+    "glyph": 0.75
+  },
+  "glyphSize": 28,
+  "pieces": {
+    "shield-character": {
+      "d": "M24 25H72V47C72 61 62 70 48 77C34 70 24 61 24 47Z",
+      "box": [
+        24,
+        25,
+        72,
+        77
+      ],
+      "fill": "up"
+    },
+    "shield-class": {
+      "d": "M33 25H63L72 34V66L63 75H33L24 66V34Z",
+      "box": [
+        24,
+        25,
+        72,
+        75
+      ],
+      "fill": "up"
+    },
+    "shield-account": {
+      "d": "M48 25a25 25 0 1 0 0 50a25 25 0 1 0 0-50Z",
+      "box": [
+        23,
+        25,
+        73,
+        75
+      ],
+      "fill": "up"
+    },
+    "ring-account": {
+      "d": "M48 20.2a29.8 29.8 0 1 0 0 59.6a29.8 29.8 0 1 0 0-59.6ZM48 22.4a27.6 27.6 0 1 1 0 55.2a27.6 27.6 0 1 1 0-55.2Z",
+      "box": [
+        18.2,
+        20.2,
+        77.8,
+        79.8
+      ],
+      "fill": "up"
+    },
+    "crown": {
+      "d": "M34.5 29L32 14.5L41 21L48 11L55 21L64 14.5L61.5 29Z",
+      "box": [
+        32,
+        11,
+        64,
+        29
+      ],
+      "fill": "right",
+      "back": true
+    },
+    "great-crown": {
+      "d": "M32.5 29L28.5 15.5L35 21.5L38.5 10.5L43.5 20L48 8.5L52.5 20L57.5 10.5L61 21.5L67.5 15.5L63.5 29Z",
+      "box": [
+        28.5,
+        8.5,
+        67.5,
+        29
+      ],
+      "fill": "right",
+      "back": true
+    },
+    "gem": {
+      "d": "M48 20.4L51.6 24.6L48 28.8L44.4 24.6Z",
+      "box": [
+        44.4,
+        20.4,
+        51.6,
+        28.8
+      ],
+      "fill": "up"
+    },
+    "banner": {
+      "d": "M15 66H81L76.5 71.5L81 77H15L19.5 71.5Z",
+      "box": [
+        15,
+        66,
+        81,
+        77
+      ],
+      "fill": "right",
+      "back": true
+    },
+    "wings": {
+      "d": "M32.48 34.06L21.36 17.63L11.53 12.36L14.26 23.17L27.52 37.94ZM30.9 39.48L15.9 26.49L5.04 23.95L10.48 33.68L27.1 44.52ZM30.18 45.08L13.86 37.03L3.5 37.7L10.49 45.37L27.82 50.92ZM30.36 51.05L14.8 47.85L6.18 51.08L13.76 56.29L29.64 56.95ZM31.56 57.23L18.99 58.01L13.23 62.97L20.24 65.91L32.44 62.77ZM68.48 37.94L81.74 23.17L84.47 12.36L74.64 17.63L63.52 34.06ZM68.9 44.52L85.52 33.68L90.96 23.95L80.1 26.49L65.1 39.48ZM68.18 50.92L85.51 45.37L92.5 37.7L82.14 37.03L65.82 45.08ZM66.36 56.95L82.24 56.29L89.82 51.08L81.2 47.85L65.64 51.05ZM63.56 62.77L75.76 65.91L82.77 62.97L77.01 58.01L64.44 57.23Z",
+      "box": [
+        7,
+        10,
+        89,
+        66
+      ],
+      "fill": "out"
+    },
+    "laurels": {
+      "d": "M34.68 79.12L28.46 81.4L23.45 88.67L32.26 87.98L37.34 83.73ZM24.74 72.01L18.3 71.77L11.15 76.61L19.36 79.29L25.48 77.28ZM18.19 61.7L12.48 59.1L4.25 60.96L10.65 66.47L16.9 66.86ZM15.98 49.68L11.81 45.24L3.66 44.01L7.34 51.39L12.85 53.98ZM18.43 37.71L16.32 32.18L9.34 28.18L9.88 36.21L13.92 40.52ZM25.19 27.52L25.34 21.79L20.4 15.68L17.85 23.11L19.95 28.45ZM58.66 83.73L63.74 87.98L72.55 88.67L67.54 81.4L61.32 79.12ZM70.52 77.28L76.64 79.29L84.85 76.61L77.7 71.77L71.26 72.01ZM79.1 66.86L85.35 66.47L91.75 60.96L83.52 59.1L77.81 61.7ZM83.15 53.98L88.66 51.39L92.34 44.01L84.19 45.24L80.02 49.68ZM82.08 40.52L86.12 36.21L86.66 28.18L79.68 32.18L77.57 37.71ZM76.05 28.45L78.15 23.11L75.6 15.68L70.66 21.79L70.81 27.52Z",
+      "box": [
+        6,
+        16,
+        90,
+        88
+      ],
+      "fill": "up"
+    },
+    "spurs": {
+      "d": "M36 44.75L25.2 42.5L6 50L25.2 57.5L36 55.25ZM38.35 38.52L30.07 30.76L12.79 26.34L23.36 40.71L33.65 45.48ZM33.65 54.52L23.36 59.29L12.79 73.66L30.07 69.24L38.35 61.48ZM60 55.25L70.8 57.5L90 50L70.8 42.5L60 44.75ZM62.35 45.48L72.64 40.71L83.21 26.34L65.93 30.76L57.65 38.52ZM57.65 61.48L65.93 69.24L83.21 73.66L72.64 59.29L62.35 54.52Z",
+      "box": [
+        6,
+        24,
+        90,
+        76
+      ],
+      "fill": "out"
+    },
+    "rays": {
+      "d": "M36.97 37.97L15.64 26.49L33.15 43.22ZM41.22 35.15L21.55 13.59L35.97 38.97ZM46.15 33.78L35.02 10.06L39.96 35.79ZM51.25 34L48 5L44.75 34ZM56.04 35.79L60.98 10.06L49.85 33.78ZM60.03 38.97L74.45 13.59L54.78 35.15ZM62.85 43.22L80.36 26.49L59.03 37.97Z",
+      "box": [
+        14,
+        5,
+        82,
+        28
+      ],
+      "fill": "up",
+      "back": true
+    }
+  }
+}
