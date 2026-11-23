@@ -15,7 +15,6 @@ use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Tone;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
-use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\FlowDirection;
 use App\Support\ClassRows\ItemFlow;
 use App\Support\ClassRows\SpellTotals;
@@ -23,7 +22,7 @@ use App\Support\ClassRows\SpellTotals;
 /** Where the character's soul shards came from and what they bought, from the Soul Shard's `item_flows` rows tied to the spell of each change. */
 final readonly class Shards
 {
-    /** @param  bool  $shared  whether the character has any item flow rows at all; without them every shard figure is withheld, not 0 */
+    /** @param  bool  $shared  whether the character has item flow rows of the Soul Shard; without them every shard figure is withheld, not 0 */
     public function __construct(public ItemFlow $flow, public ?Icon $icon, private Spells $spells, public bool $shared = true) {}
 
     public static function of(ClassRows $rows, Spells $spells): self
@@ -31,7 +30,7 @@ final readonly class Shards
         $items = $rows->items('Soul Shard');
         $ids = $items->idsNamed('Soul Shard');
 
-        return new self($items->named('Soul Shard'), $ids === [] ? null : Icon::item($ids[0]), $spells, $rows->holds(ClassTable::Items));
+        return new self($items->named('Soul Shard'), $ids === [] ? null : Icon::item($ids[0]), $spells, $ids !== []);
     }
 
     /** Every shard a spell made: what came in at place `o`, never a withdrawal, a trade, loot or mail (`ItemFlow::made()`). */
