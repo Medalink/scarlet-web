@@ -13,6 +13,38 @@ const SHEET = 0x141416;
 const SETTINGS = { water, ground, camp };
 const SHADOWS = { plain: THREE.PCFShadowMap };
 const WIDE = 820;
+const FLAT = 0.25;
+const ADDITIVE_FROM = 3;
+
+function standingCloud(model) {
+    const collect = (keep) => {
+        const found = [];
+        model.traverse((mesh) => {
+            if (mesh.isMesh && keep(mesh)) found.push(mesh);
+        });
+        return found;
+    };
+    let meshes = collect((mesh) => !mesh.userData.billboard && mesh.userData.blend < ADDITIVE_FROM);
+    if (meshes.length === 0) meshes = collect(() => true);
+    const cloud = new Float32Array(meshes.reduce((sum, mesh) => sum + mesh.geometry.attributes.position.array.length, 0));
+    let at = 0;
+    for (const mesh of meshes) {
+        const array = mesh.geometry.attributes.position.array;
+        for (let i = 0; i < array.length; i += 3) {
+            cloud[at + i] = array[i] + mesh.position.x;
+            cloud[at + i + 1] = array[i + 1] + mesh.position.y;
+            cloud[at + i + 2] = array[i + 2] + mesh.position.z;
+        }
+        at += array.length;
+    }
+    const low = [Infinity, Infinity, Infinity], high = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < cloud.length; i++) {
+        low[i % 3] = Math.min(low[i % 3], cloud[i]);
+        high[i % 3] = Math.max(high[i % 3], cloud[i]);
+    }
+    const flat = high[2] - low[2] < Math.max(high[0] - low[0], high[1] - low[1]) * FLAT;
+    return cloud.length === 0 || flat ? null : cloud;
+}
 
 /**
  * Draws one scene of the game's own models into `stage` and returns its handle. `data` is the art tool's output
@@ -25,7 +57,9 @@ const WIDE = 820;
  * `{ lift(point), step(clock, eye, ripple, { camera, dt }), attach?(placed), warm?(dt) }`: `attach` gets the placed props
  * by key as `{ holder, def }` once, and `warm` runs with each step of the warm-up.
  *
- * `opts`: `still`, `offset(width)`, `onFrame(points)` for the callouts, `onLost()` when the browser takes the context.
+ * `opts`: `still`, `offset(width)`, `onFrame(points, stageW, solids)` for the callouts, `onLost()` when the browser takes the
+ * context. `points` are the anchors on the screen, `{ key, x, y, shown }`, and `solids` the screen rectangles of the props
+ * that stand up from the ground, `{ key, left, top, right, bottom }` (a flat prop such as a circle on the ground is not one).
  */
 export async function mountScene(stage, data, spec, opts = {}) {
     const still = opts.still ?? matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -66,7 +100,7 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
     const spot = ([across, away]) => ({ x: Math.cos(yaw0) * across - Math.sin(yaw0) * away, z: -Math.sin(yaw0) * across - Math.cos(yaw0) * away });
     const setting = SETTINGS[spec.setting.name](spec.setting, { scene, rand, spot, sheet: SHEET, bloom });
 
-    const emitters = [], anchors = [], bobbers = [], placed = {};
+    const emitters = [], anchors = [], bobbers = [], solids = [], placed = {};
     for (const p of spec.props) {
         const def = data.models[p.model];
         const at = spot(p.at);
@@ -76,7 +110,10 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
         holder.rotation.z = (p.turn ?? 0) + yaw0;
         if (p.tilt) holder.rotation.y = p.tilt;
         holder.scale.setScalar(p.scale ?? 1);
-        holder.add(buildModel(def, tex));
+        const built = buildModel(def, tex);
+        const standing = standingCloud(built);
+        if (standing) solids.push({ key: p.key, holder, cloud: standing });
+        holder.add(built);
         world.add(holder);
         placed[p.key] = { holder, def };
         const mine = [];
@@ -124,6 +161,24 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
     for (const end of ['pointerup', 'pointercancel']) el.addEventListener(end, () => { view.drag = null; });
 
     const projected = new THREE.Vector3();
+    const clip = new THREE.Matrix4();
+    const screenRect = ({ key, holder, cloud }) => {
+        clip.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).multiply(holder.matrixWorld);
+        const e = clip.elements;
+        let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+        for (let i = 0; i < cloud.length; i += 3) {
+            const x = cloud[i], y = cloud[i + 1], z = cloud[i + 2];
+            const w = e[3] * x + e[7] * y + e[11] * z + e[15];
+            if (w <= 0) continue;
+            const px = ((e[0] * x + e[4] * y + e[8] * z + e[12]) / w * 0.5 + 0.5) * stageW;
+            const py = (0.5 - (e[1] * x + e[5] * y + e[9] * z + e[13]) / w * 0.5) * stageH;
+            if (px < left) left = px;
+            if (px > right) right = px;
+            if (py < top) top = py;
+            if (py > bottom) bottom = py;
+        }
+        return left === Infinity ? [] : [{ key, left, top, right, bottom }];
+    };
     let visible = true, running = false, lost = false, last = performance.now(), clock = 0;
 
     const tick = (dt) => {
@@ -164,7 +219,7 @@ function assemble(stage, data, spec, opts, { renderer, tex, still, rand }) {
             opts.onFrame(anchors.map((a) => {
                 projected.copy(a.at).project(camera);
                 return { key: a.key, x: (projected.x * 0.5 + 0.5) * stageW, y: (-projected.y * 0.5 + 0.5) * stageH, shown: projected.z < 1 };
-            }), stageW, stageH);
+            }), stageW, solids.flatMap((solid) => screenRect(solid)));
         }
     };
     const frame = (now) => {

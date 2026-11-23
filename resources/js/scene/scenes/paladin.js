@@ -14,6 +14,6 @@ export default {
         { key: 'banner', model: 'banner', at: [3.3, 2.8], scale: 0.42, turn: -1.4, anchor: [0, 2.71, 0] },
         { key: 'podium', model: 'podium', at: [-3.2, 3.0], scale: 1.2, turn: -1.2, anchor: [0, 1.77, 0] },
         { key: 'warhorse', model: 'warhorse', at: [-0.7, -0.5], scale: 0.95, turn: -1.05, anchor: [0, 2.37, 0] },
-        { key: 'shieldrack', model: 'shieldrack', at: [1.8, -1.8], scale: 1.4, turn: -1.7, anchor: [0, 1.4, 0] },
+        { key: 'shieldrack', model: 'shieldrack', at: [1.8, -1.8], scale: 1.4, turn: -1.7, anchor: [-0.75, 1.4, 0.4] },
     ],
 };

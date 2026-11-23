@@ -16,6 +16,6 @@ export default {
         { key: 'voidwalker', model: 'voidwalker', at: [-2.0, 1.5], scale: 0.8, turn: -1.3, emit: { all: {} }, anchor: [0, 3.0, 0] },
         { key: 'succubus', model: 'succubus', at: [1.7, 1.9], scale: 1, turn: -1.8, anchor: [0, 2.25, 0] },
         { key: 'imp', model: 'imp', at: [0.15, -1.7], scale: 0.62, turn: -1.4, emit: { all: { gain: 0.3, grow: 0.8 } }, anchor: [0, 1.5, 0] },
-        { key: 'felhunter', model: 'felhunter', at: [2.6, -0.7], scale: 0.7, turn: -2.2, anchor: [0, 2.1, 0] },
+        { key: 'felhunter', model: 'felhunter', at: [2.6, -0.7], scale: 0.7, turn: -2.2, anchor: [0.45, 2.1, -0.25] },
     ],
 };

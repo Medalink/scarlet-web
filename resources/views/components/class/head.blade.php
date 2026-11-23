@@ -5,7 +5,7 @@
 @if ($art && $scene)
   <div class="stage" data-scene="{{ $art['scene'] }}" data-models="{{ $art['models'] }}" data-texture="{{ $art['texture'] }}" data-state="loading" role="img" aria-label="{{ $scene->label() }}">
     <div class="callouts" aria-hidden="true">@foreach ($page->callouts as $callout)
-      <p @class(['callout', 'left' => $callout->left]) @if ($callout->left) data-side="left"@endif data-key="{{ $callout->key }}" hidden><b>{{ $callout->title }}</b><span>{{ $callout->text }}</span>@if ($callout->note)<em>{{ $callout->note }}</em>@endif</p>@endforeach
+      <p @class(['callout', 'left' => $callout->left]) data-side="{{ $callout->left ? 'left' : 'right' }}" data-key="{{ $callout->key }}" hidden><b>{{ $callout->title }}</b><span>{{ $callout->text }}</span>@if ($callout->note)<em>{{ $callout->note }}</em>@endif</p>@endforeach
     </div>
   </div>
 @endif
