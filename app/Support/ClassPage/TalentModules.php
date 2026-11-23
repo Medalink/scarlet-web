@@ -17,7 +17,7 @@ final class TalentModules
     /** @var array<string, list<string>> class value => talent spell names */
     public const array BY_CLASS = [
         PlayerClass::Warrior->value => ['Mortal Strike', 'Sweeping Strikes', 'Enrage', 'Death Wish', 'Flurry', 'Last Stand', 'Shield Slam'],
-        PlayerClass::Paladin->value => ['Seal of Command', 'Repentance', 'Consecration'],
+        PlayerClass::Paladin->value => ['Seal of Command', 'Repentance', 'Consecration', 'Divine Favor', 'Holy Shock', 'Holy Shield', 'Blessing of Kings'],
         PlayerClass::Hunter->value => ['Bestial Wrath', 'Intimidation', 'Aimed Shot'],
         PlayerClass::Rogue->value => ['Blade Flurry', 'Adrenaline Rush', 'Riposte'],
         PlayerClass::Priest->value => ['Inner Focus', 'Spirit of Redemption', 'Lightwell'],

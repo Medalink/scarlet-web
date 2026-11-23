@@ -24,6 +24,9 @@ export function readLines(lines) {
   const top = [];
   const gear = [];
   const gains = new Map();
+  const durations = new Map();
+  const moves = [];
+  const rides = [];
   const spans = new Map();
   let end = 0;
   let open = null;
@@ -41,16 +44,18 @@ export function readLines(lines) {
     if (code === "DM") meters.push({ t, meter: f[0], total: Number(f[1]), level: levels.at(-1)[1] });
     if (code === "DS") top.push({ meter: f[0], spell: Number(f[1]), amount: Number(f[2]) });
     if (code === "G") gear.push({ t, slot: Number(f[0]), item: Number(f[1]) });
+    if (code === "I") moves.push({ t, item: Number(f[0]), delta: Number(f[1]) });
+    if (code === "MO") rides.push({ t, on: Number(f[0]) === 1 });
     if (code === "K") kills.push({ t, by: Number(f[1]), level: levels.at(-1)[1] });
     if (code === "D") deaths.push({ t, level: levels.at(-1)[1] });
-    if (code === "A" && Number(f[0]) === 1 && String(f[4]) === "1" && f[5] !== "s") gains.set(Number(f[1]), t);
+    if (code === "A" && Number(f[0]) === 1 && String(f[4]) === "1" && f[5] !== "s") gains.set(Number(f[1]), t), durations.set(Number(f[1]), Number(f[3]));
     if (code === "A" && Number(f[0]) === 0 && gains.has(Number(f[1]))) {
       const id = Number(f[1]);
-      spans.set(id, [...(spans.get(id) ?? []), { start: gains.get(id), end: t }]);
+      spans.set(id, [...(spans.get(id) ?? []), { start: gains.get(id), end: t, ended: true, duration: durations.get(id) }]);
       gains.delete(id);
     }
   }
-  for (const [id, start] of gains) spans.set(id, [...(spans.get(id) ?? []), { start, end }]);
+  for (const [id, start] of gains) spans.set(id, [...(spans.get(id) ?? []), { start, end, ended: false, duration: durations.get(id) }]);
   const named = casts.map((cast) => ({ ...cast, name: spells.get(cast.id) }));
   const ids = (...names) => [...spells].filter(([, name]) => names.includes(name)).map(([id]) => id);
   const overlap = (a, b) => Math.max(0, Math.min(a.end, b.end) - Math.max(a.start, b.start));
@@ -82,6 +87,36 @@ export function readLines(lines) {
         by.set(one.item, held);
       });
       return by;
+    },
+    itemOut: (item) => -moves.filter((one) => one.item === item && one.delta < 0).reduce((sum, one) => sum + one.delta, 0),
+    rideMs: () => rides.reduce((sum, one, at) => (one.on && rides[at + 1] ? sum + rides[at + 1].t - one.t : sum), 0),
+    fightCasts: (...names) => named.filter((cast) => names.includes(cast.name) && facts.inFight(cast.t)).length,
+    levelWindow: (level) => {
+      const at = levels.findIndex(([, one]) => one === level);
+      return at < 0 ? null : { start: levels[at][0], end: levels[at + 1]?.[0] ?? end };
+    },
+    auraMsInLevel: (name, level) => {
+      const window = facts.levelWindow(level);
+      return facts.auraSpans(name).reduce((sum, span) => sum + overlap(span, window), 0);
+    },
+    deathsAfterAura: (names, seconds) => deaths.filter((death) => facts.auraSpans(...names).some((span) => span.ended && span.end <= death.t && death.t - span.end < seconds * 1000)).length,
+    castsUnderAuras: (auraNames, spellName) => named.filter((cast) => cast.name === spellName && facts.auraSpans(...auraNames).some((span) => cast.t >= span.start && cast.t <= span.end + UNDER_GRACE)).length,
+    sealFates: () => {
+      const sealIds = [...spells].filter(([, name]) => name.startsWith("Seal of")).map(([id]) => id);
+      const judges = named.filter((cast) => cast.name === "Judgement").map((cast) => cast.t);
+      const all = sealIds.flatMap((id) => (spans.get(id) ?? []).map((span) => ({ ...span, id, name: spells.get(id) })));
+      return all.map((span) => {
+        const fight = fights.find((one) => span.start >= one.start && span.start <= one.end);
+        const near = (t) => Math.abs(t - span.end) <= 500;
+        let fate;
+        if (!span.ended) fate = fight ? 5 : null;
+        else if (fight && span.end > fight.end) fate = 5;
+        else if (judges.some(near)) fate = 1;
+        else if (all.some((other) => other !== span && near(other.start))) fate = 2;
+        else if (span.end - span.start >= (span.duration - 1) * 1000) fate = 3;
+        else fate = 4;
+        return { name: span.name, fate, ms: span.end - span.start };
+      }).filter((one) => one.fate !== null);
     },
     castCount: (...names) => named.filter((cast) => names.includes(cast.name)).length,
     castLevels: (name) => named.filter((cast) => cast.name === name).map((cast) => cast.level),

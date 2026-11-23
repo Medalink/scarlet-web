@@ -26,6 +26,9 @@ export const MAGE = "Frost-Weaver";
 export const DRUID = "Moon-Walker";
 /** A Warrior of the first install with six hours played over levels 50 to 52, whose lines make every module of the Warrior class page. */
 export const WARRIOR = "Iron-Vanguard";
+
+/** A Paladin of the first install with six hours played over levels 50 to 52, whose lines make every module of the Paladin class page. */
+export const PALADIN = "Oath-Bearer";
 export const LOCAL_HOSTS = ["127.0.0.1", "localhost", "[::1]"];
 /** A remember cookie makes EdgeCacheable treat the reader as signed in, so a page read reaches the origin, not the 60 s page cache. */
 export const ORIGIN_COOKIE = { name: "remember_web_e2e", value: "lane" };

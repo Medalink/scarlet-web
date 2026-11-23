@@ -1,0 +1,48 @@
+{
+  "character": "Oath-Bearer",
+  "parts": [
+    {
+      "group": "core",
+      "id": "f6c32ce6a4a7bf3dcf6ea0c55bfb1912417e3131eb5f820a9a36ed6b0b63b74c",
+      "lines": 5,
+      "raw_bytes": 210,
+      "session": 1795720000
+    },
+    {
+      "group": "movement",
+      "id": "1eb98882352ad92416b16a71a55d7a6b0f7ea7a1ea96a769931661d2b11cd467",
+      "lines": 6,
+      "raw_bytes": 195,
+      "session": 1795720000
+    },
+    {
+      "group": "build",
+      "id": "7f98f1c1cdb4ec6a6c3616653a4a438e64fdb6ecabaf953843a4a96fcd12bbe8",
+      "lines": 8,
+      "raw_bytes": 392,
+      "session": 1795720000
+    },
+    {
+      "group": "combat",
+      "id": "31094467a0a892a507b4f6949221fa031f7941492338855a3693221e513a5a2d",
+      "lines": 307,
+      "raw_bytes": 5203,
+      "session": 1795720000
+    },
+    {
+      "group": "loot",
+      "id": "5f875f02c0cb954bb67a6a2b54a8e984305ece4d7931272fe5188c1604ce676a",
+      "lines": 4,
+      "raw_bytes": 120,
+      "session": 1795720000
+    },
+    {
+      "group": "names",
+      "id": "9ebc1f6a7b9bbcf89a85b25935c697b9711e8df4486c725ebc74f22176292262",
+      "lines": 43,
+      "raw_bytes": 1161,
+      "session": 1795720000
+    }
+  ],
+  "set_digest": "67d051aa47c131659ea2f23737a3a4c974c4228cb8036070257b79ff54b0c7e6"
+}

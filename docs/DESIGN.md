@@ -1848,6 +1848,24 @@ of fights at levels 50, 51 and 52); `e2e/warrior-expected.mjs` works its figures
 talents, so the Death Wish, Flurry, Last Stand and Shield Slam modules were run against its rows with those talents
 held and not stored as a page check. The comparison with other warriors waits for 20 of them, as for the Warlock.
 
+**Where the Paladin page differs from the comp.** Built by `PaladinBuilder`: a head of the warhorse, a lectern and a
+shield rack with a callout each (the mount's hours and summons, the blessing cast most, the bubbles and how many of
+them had a Hearthstone cast inside); six figures (Judgements, Blessings cast, Lay on Hands, Divine Shields, Hammers of
+Justice, Players raised); the chart from the seal to the judgement (a link of the seal put up to its fate, from
+`seal_fate`, with the fates "ended another way" and "still up when the fight ended" beside the comp's three); the aura
+held, by level, over the time played; blessings; spells for the undead; the bubble; Lay on Hands; heals; control; a
+module for each of Seal of Command, Repentance, Consecration, Divine Favor, Holy Shock, Holy Shield and Blessing of
+Kings that the build holds; and blessings, saves and cleansing for the party. What the rows cannot answer is replaced
+or left out. "Seconds from seal to judgement" is an average to the end of the seal, not a median, since the tally keeps
+a sum. "Against the undead and the rest" is "Spells for the undead": a kill is not stored with the creature type, so the
+share of undead kills is left out and the note says so. Repentance, Consecration and Divine Favor: "in dungeons" and
+"cut short" are replaced by "Used in a fight" and a rate. Blessings in a group: no row holds group time, so the rate is
+over the time played, and "Lay on Hands in the open" is left out of Saves. Hearthstones inside a bubble come from
+`cast_under` and deaths after a bubble from `death_after_aura`, both counting only the shield and protection that
+the character cast. The fixture is Oath-Bearer (`e2e/paladin-lines.mjs`); `e2e/paladin-expected.mjs` works its figures
+out from the lines, including the fate of each seal by the rules of docs/ROWS.md, and `e2e/checks/class-page-paladin.mjs`
+reads the page against them. The Warrior and Paladin checks share `e2e/checks/class-page-kit.mjs`.
+
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
 the character's page is. `/c/{name}`, the class page and `/c/{name}/battlegrounds` share one line of navigation under
