@@ -4,7 +4,6 @@ namespace App\Actions\Public;
 
 use App\Models\Character;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CharacterBattlegrounds
@@ -12,11 +11,12 @@ class CharacterBattlegrounds
     /** Matches the page lists, the newest first. */
     public const int MATCHES = 10;
 
-    private const int NAMES_PER_QUERY = 10_000;
+    /** Rows the page lists per match: the largest battleground holds 80 players, and a forged scoreboard holds up to 20,000. */
+    public const int ROWS_PER_MATCH = 200;
 
     /**
-     * The matches of a character whose scoreboard its client read (`BO` rows), the newest first, each with every
-     * player of the scoreboard. A player's name is in the answer for the character's owner, and for a visitor only
+     * The matches of a character whose scoreboard its client read (`BO` rows), the newest first, each with the first
+     * `ROWS_PER_MATCH` players of the scoreboard (by faction, killing blows, honor). A player's name is in the answer for the character's owner, and for a visitor only
      * when that player's own character is public; any other row has a null name. Null when the character is unknown
      * or private to this viewer.
      *
@@ -33,10 +33,13 @@ class CharacterBattlegrounds
         $stamps = DB::table('battleground_scores')->where('character_id', $character->id)
             ->select('match_at')->distinct()->orderByDesc('match_at')->limit(self::MATCHES)->pluck('match_at')->map(fn (mixed $at): string => (string) $at)->all();
         /** @var array<string, list<array<string, mixed>>> $rows */
-        $rows = DB::table('battleground_scores')->where('character_id', $character->id)->whereIn('match_at', $stamps)
-            ->orderBy('faction')->orderByDesc('killing_blows')->orderByDesc('honor_gained')->orderBy('name')
-            ->get(['match_at', 'name', 'faction', 'class_file', 'killing_blows', 'honorable_kills', 'deaths', 'honor_gained', 'damage_done', 'healing_done'])
-            ->map(fn (object $row): array => (array) $row)->groupBy('match_at')->map(fn (Collection $group): array => $group->all())->all();
+        $rows = [];
+        foreach ($stamps as $stamp) {
+            $rows[$stamp] = DB::table('battleground_scores')->where('character_id', $character->id)->where('match_at', $stamp)
+                ->orderBy('faction')->orderByDesc('killing_blows')->orderByDesc('honor_gained')->orderBy('name')->limit(self::ROWS_PER_MATCH)
+                ->get(['match_at', 'name', 'faction', 'class_file', 'killing_blows', 'honorable_kills', 'deaths', 'honor_gained', 'damage_done', 'healing_done'])
+                ->map(fn (object $row): array => (array) $row)->all();
+        }
         /** @var array<string, array<string, mixed>> $ended */
         $ended = DB::table('battleground_matches')->where('character_id', $character->id)->whereIn('at', $stamps)
             ->get(['at', 'zone_name', 'result', 'arena'])->map(fn (object $row): array => (array) $row)->keyBy('at')->all();
@@ -49,10 +52,8 @@ class CharacterBattlegrounds
         }
         $public = [];
         if (! $owner && $names !== []) {
-            foreach (array_chunk(array_values(array_unique($names)), self::NAMES_PER_QUERY) as $chunk) {
-                $known = Character::query()->whereIn('name_key', $chunk)->where('is_public', true)->pluck('name_key')->all();
-                $public += array_fill_keys($known, 1);
-            }
+            $known = Character::query()->whereIn('name_key', array_values(array_unique($names)))->where('is_public', true)->pluck('name_key')->all();
+            $public = array_fill_keys($known, 1);
         }
 
         $matches = [];
