@@ -67,6 +67,11 @@ class ApiException extends RuntimeException
         return new self(401, 'replayed_request', 'This signed request was already seen.');
     }
 
+    public static function wrongSite(): self
+    {
+        return new self(401, 'wrong_site', 'The request reached another host than the site the signature names, or than the install registered on.');
+    }
+
     public static function bodyTooLarge(int $limit): self
     {
         return new self(413, 'body_too_large', "The request body is larger than {$limit} bytes.", ['limit' => $limit]);

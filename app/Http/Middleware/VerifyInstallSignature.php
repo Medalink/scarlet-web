@@ -13,7 +13,10 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Lets a request through when an install signed it (docs/API.md, Signing): the headers are there, the
  * clock is within the window, the Ed25519 signature over method, path, time and body hash holds, and
- * the signature was not seen before. The install goes into the request as the `install` attribute.
+ * the signature was not seen before. A signature with a site line names the host it was made for: the
+ * request must have reached that host, and the host the install registered on when it has one. A
+ * signature without one, from a client predating the site line, carries no host to check. The install
+ * goes into the request as the `install` attribute.
  */
 class VerifyInstallSignature
 {
@@ -24,6 +27,8 @@ class VerifyInstallSignature
     public const string HEADER_TIME = 'Scarlet-Time';
 
     public const string HEADER_SIGNATURE = 'Scarlet-Signature';
+
+    public const string HEADER_SITE = 'Scarlet-Site';
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -58,17 +63,34 @@ class VerifyInstallSignature
             throw ApiException::bodyTooLarge($limit);
         }
 
-        $message = RequestSignature::message($request->method(), $request->getPathInfo(), (int) $time, $body);
+        $site = RequestSignature::site($request);
+        $claimed = trim((string) $request->header(self::HEADER_SITE)) ?: null;
+        if ($claimed !== null && strtolower($claimed) !== $site) {
+            throw ApiException::wrongSite();
+        }
+        $origin = $install->origin;
+        if ($claimed !== null && $origin !== null && $origin !== $site) {
+            throw ApiException::wrongSite();
+        }
+
+        $message = RequestSignature::message($request->method(), $request->getPathInfo(), (int) $time, $body, $claimed);
         if (! RequestSignature::valid($install->publicKey(), $signature, $message)) {
             throw ApiException::badSignature();
         }
-        if (! RequestSignature::firstSeen($signature)) {
+        if (! RequestSignature::firstSeen($signature, $site)) {
             throw ApiException::replayed();
         }
 
         $client = self::client($request);
+        $update = [];
         if ($install->last_seen_at === null || $install->last_seen_at->lt(now()->subMinutes(5)) || ($install->client === null && $client !== null)) {
-            $install->forceFill(['last_seen_at' => now(), 'client' => $client])->save();
+            $update = ['last_seen_at' => now(), 'client' => $client];
+        }
+        if ($origin === null && $claimed !== null) {
+            $update['origin'] = $site;
+        }
+        if ($update !== []) {
+            $install->forceFill($update)->save();
         }
 
         $request->attributes->set(self::ATTRIBUTE, $install);

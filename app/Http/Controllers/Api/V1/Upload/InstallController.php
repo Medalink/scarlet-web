@@ -8,6 +8,7 @@ use App\Actions\Upload\ShowInstall;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Upload\InstallRequest;
 use App\Http\Requests\Upload\RegisterInstallRequest;
+use App\Support\RequestSignature;
 use Illuminate\Http\JsonResponse;
 
 class InstallController extends Controller
@@ -15,7 +16,7 @@ class InstallController extends Controller
     /** POST /api/v1/installs: register a public key (unsigned, rate limited per address). */
     public function store(RegisterInstallRequest $request, RegisterInstall $register): JsonResponse
     {
-        $result = $register->handle($request->publicKey(), $request->label());
+        $result = $register->handle($request->publicKey(), $request->label(), RequestSignature::site($request));
         $install = $result->install;
 
         return response()->json([

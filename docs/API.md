@@ -8,13 +8,14 @@ or `\`.
 
 ## Signing a request
 
-Every request except `POST /installs` carries three headers:
+Every request except `POST /installs` carries three headers, plus the optional `Scarlet-Site`:
 
 | Header | Value |
 | --- | --- |
 | `Scarlet-Install` | The install id (a UUID) that `POST /installs` returned |
 | `Scarlet-Time` | The client's clock, epoch seconds, as decimal digits |
 | `Scarlet-Signature` | Base64 (standard alphabet, padded) of the 64-byte Ed25519 signature of the message below |
+| `Scarlet-Site` | The host the request is sent to, the same string as the site line of the message below. Without the header the four-line message is signed and the host is not checked |
 
 The message is four lines joined by `\n` (no trailing newline), as bytes:
 
@@ -24,6 +25,13 @@ The message is four lines joined by `\n` (no trailing newline), as bytes:
 <Scarlet-Time>
 <lower-case hex SHA-256 of the exact request body bytes>
 ```
+
+A client binds the signature to the host with a fifth line, the site: the host it dials, lower case, with the port
+when it is not the scheme's default (`127.0.0.1:8000`, `scarletweb.io`), sent as `Scarlet-Site` too. The server then
+refuses a signature whose site differs from the host the request reached, or from the host the install registered on
+(the host of its `POST /installs`, which registration refreshes; an install registered before the site line existed
+takes its origin from the first signed request that names one). A signature without the site line keeps the four-line
+form and no host check, so a client predating it keeps working.
 
 - `METHOD` is upper case. `path` is the request path as sent, from the leading `/`, with no host and no query string
   (`/api/v1/upload/sync`). The routes take no query string.
@@ -51,9 +59,9 @@ public key        11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=      (base64 of t
 
 ```
 body SHA-256      4f8d14bff65a243f4d1f0e8895acd487258887b01e63e919f213df5308acc78a
-message (text)    POST\n/api/v1/upload/sync\n1795000000\n4f8d14bff65a243f4d1f0e8895acd487258887b01e63e919f213df5308acc78a
-message (hex)     504f53540a2f6170692f76312f75706c6f61642f73796e630a313739353030303030300a34663864313462666636356132343366346431663065383839356163643438373235383838376230316536336539313966323133646635333038616363373861
-signature         QmH8q4EUZ2Wq6uLD2+HUPIxtoy9455BNMq5NeXuTuAAJB3yEcF8dDdwUkHdDZ/MNKb2Hg6dDTOxUM2JHEaofDw==
+message (text)    POST\n/api/v1/upload/sync\n1795000000\n4f8d14bff65a243f4d1f0e8895acd487258887b01e63e919f213df5308acc78a\nscarletweb.io
+message (hex)     504f53540a2f6170692f76312f75706c6f61642f73796e630a313739353030303030300a346638643134626666363561323433663464316630653838393561636434383732353838383762303165363365393139663231336466353330386163633738610a736361726c65747765622e696f
+signature         Ktl182KzB6oUL3E+kTlsm6+oNRbOABJQYOb4I++wb1dw1GbermoN0htXo28DTfds4Scl8gHoB7kYkO+b2owjBQ==
 ```
 
 The request is
@@ -63,14 +71,15 @@ POST /api/v1/upload/sync HTTP/1.1
 Content-Type: application/json
 Scarlet-Install: <install id>
 Scarlet-Time: 1795000000
-Scarlet-Signature: QmH8q4EUZ2Wq6uLD2+HUPIxtoy9455BNMq5NeXuTuAAJB3yEcF8dDdwUkHdDZ/MNKb2Hg6dDTOxUM2JHEaofDw==
+Scarlet-Site: scarletweb.io
+Scarlet-Signature: Ktl182KzB6oUL3E+kTlsm6+oNRbOABJQYOb4I++wb1dw1GbermoN0htXo28DTfds4Scl8gHoB7kYkO+b2owjBQ==
 ```
 
 A request with no body, `GET /api/v1/upload/status` at the same time, signs
-`GET\n/api/v1/upload/status\n1795000000\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` and gets
+`GET\n/api/v1/upload/status\n1795000000\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\nscarletweb.io` and gets
 
 ```
-UZdN1au5Ip2O+n8j1IiJEUtREPSm9x7G8svEp12A/zG/OrRe6OacH4w8YxjMYJzjs2YHjWq31cFaOlkatH8XCQ==
+kyGjrVxJVuHN38ECNIKbvlbGKHqE5/8YeGv+CrgV9hCYhhR33Xo/XyD529ZPFyWf+aO53j+huFmKDwIxTS0JCg==
 ```
 
 Both signatures were checked with libsodium (`crypto_sign_verify_detached`) against the public key above.
@@ -88,6 +97,7 @@ messages are for people. Extra fields sit inside `error`.
 | 401 | `clock_skew` | `Scarlet-Time` is more than 300 s off | `server_time` |
 | 401 | `bad_signature` | The signature does not match the request | |
 | 401 | `replayed_request` | This exact signature was seen in the last 600 s | |
+| 401 | `wrong_site` | The request reached another host than the site the signature names, or than the install registered on | |
 | 409 | `name_held` | Another install holds this character name | `character` |
 | 409 | `group_refused` | A group in the request was removed from the server (see "Groups") | `groups` |
 | 409 | `already_linked` | The install already belongs to an account | |

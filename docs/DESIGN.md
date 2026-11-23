@@ -1112,10 +1112,16 @@ credential store. `POST /api/v1/installs` registers the public key. Every upload
 Scarlet-Install: <install id>
 Scarlet-Time: <epoch seconds>
 Scarlet-Signature: base64(Ed25519(method \n path \n time \n SHA-256(body) hex))
+Scarlet-Site: <host>
 ```
 
-The server refuses a time more than 300 seconds off and remembers signatures for 600 seconds (a time up to 300 s
-ahead is valid for up to 600 s), so a request cannot be replayed. Ed25519 is deterministic: the same request signed in
+The signature names the host the app dialled (the `Scarlet-Site` line of the message, docs/API.md, Signing), and the
+server refuses a signature whose site differs from the host the request reached or from the host the install
+registered on, so a relay or redirect cannot reuse a signed request against another host. A signature without the
+site line, from a client predating it, carries no host and keeps working.
+
+The server refuses a time more than 300 seconds off and remembers signatures per host for 600 seconds (a time up to
+300 s ahead is valid for up to 600 s), so a request cannot be replayed. Ed25519 is deterministic: the same request signed in
 the same second repeats its signature and counts as a replay, so a retry signs again with the new time. Bearer tokens were the alternative; a signature never puts a secret on the wire and a database leak yields
 nothing that can upload.
 

@@ -1,9 +1,10 @@
 /**
  * The upload client of the end-to-end lane, written from docs/API.md alone. The install's Ed25519 key is derived
  * from a label and never stored: the seed is the SHA-256 of the label, so one label is one install on every run and a
- * run that crashed is cleaned up by the next one. A signed request carries Scarlet-Install, Scarlet-Time and
- * Scarlet-Signature over `METHOD \n path \n time \n SHA-256(body)`. The server refuses a signature it saw in the last
- * 600 seconds and Ed25519 is deterministic, so the client never signs one request twice in the same second.
+ * run that crashed is cleaned up by the next one. A signed request carries Scarlet-Install, Scarlet-Time,
+ * Scarlet-Site and Scarlet-Signature over `METHOD \n path \n time \n SHA-256(body) \n host`. The server refuses a
+ * signature it saw in the last 600 seconds and Ed25519 is deterministic, so the client never signs one request twice
+ * in the same second.
  */
 
 import crypto from "node:crypto";
@@ -19,6 +20,7 @@ export const AGENT = "scarlet-e2e/1.0 (e2e)";
 
 export class InstallClient {
   #base;
+  #site;
   #label;
   #privateKey;
   #publicKey;
@@ -28,6 +30,7 @@ export class InstallClient {
 
   constructor(base, label, fetchImpl = fetch) {
     this.#base = base.replace(/\/+$/, "");
+    this.#site = new URL(this.#base).host;
     this.#label = label;
     this.#fetch = fetchImpl;
     const seed = crypto.createHash("sha256").update(label, "utf8").digest();
@@ -100,6 +103,7 @@ export class InstallClient {
       const second = corrupt ? Math.floor(Date.now() / 1000) : await this.#secondFor(method, path, body ?? "");
       headers["Scarlet-Install"] = this.#installId;
       headers["Scarlet-Time"] = String(second);
+      headers["Scarlet-Site"] = this.#site;
       headers["Scarlet-Signature"] = this.#sign(method, path, second, body ?? "", corrupt).toString("base64");
     }
     const response = await this.#fetch(this.#base + path, { method, headers, body: body ?? undefined });
@@ -117,7 +121,7 @@ export class InstallClient {
   }
 
   #sign(method, path, second, body, corrupt) {
-    const message = Buffer.from(`${method}\n${path}\n${second}\n${hash(body)}`, "utf8");
+    const message = Buffer.from(`${method}\n${path}\n${second}\n${hash(body)}\n${this.#site}`, "utf8");
     const signature = crypto.sign(null, message, this.#privateKey);
     if (corrupt) signature[0] ^= 0xff;
     return signature;

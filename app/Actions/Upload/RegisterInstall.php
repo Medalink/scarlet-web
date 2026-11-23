@@ -11,17 +11,21 @@ class RegisterInstall
 {
     /**
      * Register an Ed25519 public key (32 bytes). Registering a key again answers the install it has,
-     * so a retry after a lost answer is safe.
+     * refreshes the origin it registered on, and is safe to retry after a lost answer.
      */
-    public function handle(string $publicKey, ?string $name): RegisterInstallResult
+    public function handle(string $publicKey, ?string $name, string $origin): RegisterInstallResult
     {
         $existing = $this->find($publicKey);
         if ($existing !== null) {
+            if ($existing->origin !== $origin) {
+                $existing->forceFill(['origin' => $origin])->save();
+            }
+
             return $this->result($existing, created: false);
         }
 
         try {
-            $install = Install::query()->create(['public_key' => BinaryValue::bind($publicKey), 'name' => $name]);
+            $install = Install::query()->create(['public_key' => BinaryValue::bind($publicKey), 'name' => $name, 'origin' => $origin]);
         } catch (UniqueConstraintViolationException) {
             return $this->result($this->find($publicKey) ?? throw ApiException::unknownInstall(), created: false);
         }
