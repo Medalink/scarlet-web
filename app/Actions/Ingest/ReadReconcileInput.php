@@ -192,8 +192,8 @@ class ReadReconcileInput
 
     /**
      * Scarlet's quest turn-ins from both tables that hold them, because `quests` and `xp` are separate sharing
-     * groups: the `quest_events` rows turned in (the quest id is null when the client hid it) and the `xp_gains`
-     * rows of source quest for the quests the claims name.
+     * groups: the `quest_events` rows turned in and the `xp_gains` rows of source quest, each for the quests the claims
+     * name and with no quest id (null when the client hid it).
      *
      * @param  list<array<string, mixed>>  $claims
      * @return list<array<string, mixed>>
@@ -217,7 +217,7 @@ class ReadReconcileInput
             union all
             select round(extract(epoch from at) * 1000)::bigint as at_ms, source_id as quest, amount as xp, level, zone_id, false as events
             from xp_gains
-            where character_id = ? and source = ? and source_id = any(?::int[])
+            where character_id = ? and source = ? and (source_id is null or source_id = any(?::int[]))
             order by at_ms, events desc, quest nulls first, xp
             SQL,
             [$characterId, QuestRecord::TURNED_IN, $quests, $characterId, XpSource::Quest->value, $quests],

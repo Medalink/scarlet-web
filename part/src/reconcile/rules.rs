@@ -262,11 +262,11 @@ pub(super) fn kills_split(rows: &[Row], level: i64) -> (i64, i64) {
     (held(Some(level)), held(None))
 }
 
-pub(super) fn turn_ins(rows: &[Row], quest: i64) -> Vec<&Row> {
+fn larger_table(rows: &[Row], wanted: impl Fn(&Row) -> bool) -> Vec<&Row> {
     let of = |events: bool| {
         let mut held: Vec<&Row> = rows
             .iter()
-            .filter(|r| r.events == events && r.key == Some(quest))
+            .filter(|r| r.events == events && wanted(r))
             .collect();
         held.sort_by_key(|r| r.at);
         held
@@ -279,13 +279,12 @@ pub(super) fn turn_ins(rows: &[Row], quest: i64) -> Vec<&Row> {
     }
 }
 
+pub(super) fn turn_ins(rows: &[Row], quest: i64) -> Vec<&Row> {
+    larger_table(rows, |r| r.key == Some(quest))
+}
+
 pub(super) fn hidden_turn_ins(rows: &[Row]) -> Vec<&Row> {
-    let mut hidden: Vec<&Row> = rows
-        .iter()
-        .filter(|r| r.events && r.key.is_none())
-        .collect();
-    hidden.sort_by_key(|r| r.at);
-    hidden
+    larger_table(rows, |r| r.key.is_none())
 }
 
 pub(super) fn hidden_fits(row: &Row, level: Option<i64>) -> bool {

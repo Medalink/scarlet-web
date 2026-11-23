@@ -311,7 +311,8 @@ without the ones that came from opening a container). For a `kill` claim a row i
 `player` false at one level, with the time of the last of them, and the count with no level (the decoder writes a null
 level until the session has one). For an `xp` claim a row is a turn-in, from `quest_events` (`event` `turned_in`) or from
 `xp_gains` (source `q`), with its quest id (null when the client hid it), `xp`, `level` and zone; both tables are read
-because their groups (`quests`, `xp`) can be on apart. For a `run` claim a row is a `dungeon_runs` row joined along
+because their groups (`quests`, `xp`) can be on apart, and the turn-ins with no quest id are those of the table that
+holds more of them. For a `run` claim a row is a `dungeon_runs` row joined along
 `continues_previous`: `instance_id`, the first entry and the last leave (`at` plus `inside_ms` when `left_at` is null).
 It gives every claim exactly one status with its counted amounts
 and its evidence. It reads no database and no clock; `now` is an input. Every counted amount is floored at 0 and
@@ -402,8 +403,8 @@ Rules, in order:
    `xp_gains` count (source `q`, the quest as `source_id`). With n claims for the id, the n - m claims with the smallest
    `xp` are `counted` whole (ties: the earlier `to`, then the store that sorts first) and the others are `superseded`,
    each with one Scarlet row as evidence (`rows` with `n` 1, in time order); with m at or above n all are
-   `superseded`. Then the `turned_in` rows with no quest id (the client hid it) supersede as many of the claims that
-   would otherwise count as they can be matched to one to one, a row to a claim at its level or the level below (any
+   `superseded`. Then the turn-ins with no quest id (the client hid it), from `quest_events` or `xp_gains`, whichever
+   holds more, supersede as many of the claims that would otherwise count as they can be matched to one to one, a row to a claim at its level or the level below (any
    level when the row has none), and of the sets that size the one with the most `xp`: the turn-in that levels a
    character up is booked at the new level by Scarlet and at the old one by RXP, so a row can fit two claims and the
    match takes the claims by `xp`, largest first, and moves a row to another claim that fits when a later claim needs
@@ -523,7 +524,7 @@ for the character to have no null `reconcile_version` and the rows and claims it
 after that.
 
 The same lane holds one invented character per case of the kill, quest and run rules, each with a Scarlet session and
-one `counts` part uploaded through the real API (2026-11-22, 41 of the lane's 143 checks; `node e2e/boot.mjs --
+one `counts` part uploaded through the real API (2026-11-22, 49 of the lane's 151 checks; `node e2e/boot.mjs --
 node e2e/addon-counts.mjs levels` runs only these). The totals each history has:
 
 - Levels. 120 kills claimed with no Scarlet row count 120. With 100 Scarlet kills at no level beside a claim of 150, the
@@ -534,7 +535,13 @@ node e2e/addon-counts.mjs levels` runs only these). The totals each history has:
 - Quests. Four claims of one level beside Scarlet's turn-ins of two of them (one booked a level above by the level-up)
   are 3,200: Scarlet's 1,600 and the two others, 700 and 900. The same with the `quests` group withheld, so that only
   `xp_gains` hold the turn-ins, is 3,200. A turn-in with no quest id, 900 at the new level, beside claims of 500 and
-  900 at the old one is 1,400. A repeatable quest claimed at 300 and 500 beside one Scarlet turn-in of 500 is 800.
+  900 at the old one is 1,400, and still 1,400 with the `quests` group withheld, so that the turn-in with no quest id
+  is only an `xp_gains` row. Two such turn-ins, 400 at level 9 and 500 at level 10, beside claims of 400 at level 8 and
+  500 at level 9 are Scarlet's 900. A repeatable quest claimed at 300 and 500 beside one Scarlet turn-in of 500 is 800.
+- Dimensions above 2,147,483,647. A kill claim of level 3,000,000,000 (rejected) and a quest claim of quest
+  3,000,000,000 (held) beside a good kill claim of 30 and a fishing claim of 10, 8 and 8, on an install of their own,
+  count 30 kills, 0 XP and 10, 8 and 8, and the character's addon day carries the reconcile version. A run claim of
+  instance 3,000,000,000 beside a Scarlet run is held, 1 run in all, and the audit runs.
 - Runs. A run whose first kill is 433 s after Scarlet's entry is superseded by Scarlet's run, 1 in all, and so is one
   of an instance Scarlet does not have where Scarlet has another run at the same time. Two claims 41 minutes apart
   under one joined Scarlet run are both superseded, 1. With no Scarlet run, two claims 39 minutes apart are 1 and two
