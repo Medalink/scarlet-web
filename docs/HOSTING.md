@@ -388,10 +388,28 @@ The app connects as the role `scarlet_app`, never as the `postgres` superuser: t
 every table, view and sequence in it, and has no `SUPERUSER`, `CREATEDB` or `REPLICATION`, so a compromise through SQL
 stays inside the one database instead of reaching `COPY PROGRAM` or a neighbor database. `deploy/db-app-role.sh` creates
 the role, hands it the database, the extensions and everything the restore and the migrations made, and keeps its
-password on `DB_PASSWORD` of the app's `.env`. It is idempotent, `rollout.sh` runs it before every migrate,
-`deploy/server-setup-db.sh` runs it on the database host, and it is safe to run by hand. `postgres` remains the
-superuser for the setup, the restore and `pg_dump`, and `pg_hba.conf` names `scarlet_app` in the per-host rows
-(`deploy/db-hba.sh`).
+password on `DB_PASSWORD` of the app's `.env`. It is idempotent, it runs on the machine that holds the Postgres container
+and never connects to another host: `deploy/server-setup-db.sh` runs it on the database host, and `rollout.sh` runs it
+before every migrate only while `DB_HOST` is `postgres` (an app droplet with a local Postgres). It is safe to run by hand there.
+
+`postgres` remains the superuser for the setup, the restore and `pg_dump`, with a password of its own, `DB_ADMIN_PASSWORD`,
+which `deploy/server-setup-db.sh` makes once and keeps in `/srv/scarlet-db/.env` on the database host, never on an app
+droplet. `pg_hba.conf` (`deploy/db-hba.sh`) lets an app host in as `scarlet_app` and `replicator`; `postgres` connects
+through the container's socket only. The database moves (`deploy/db-cutover.sh`, `bin/deploy db-move`) reach `postgres`
+over the VPC: before one, run `sudo SCARLET_HBA_POSTGRES_HOSTS=1 sh /srv/scarlet-db/deploy/db-hba.sh <app addresses>` on the
+database host and put `DB_ADMIN_PASSWORD` of that host's `.env` on the app droplet's `.env`; after it, run `bin/deploy db-server`
+to close the row again and take the line out of the app droplet's `.env`.
+
+An install that shared one password between the two roles separates them once, from the machine with the checkout:
+
+```sh
+bin/deploy db-server           # installs deploy/ on the database host, makes DB_ADMIN_PASSWORD, sets it on `postgres`, writes pg_hba.conf without a remote `postgres` row and reloads
+bin/deploy ssh 'cd /srv/scarlet-web && h=$(sed -n "s/^DB_HOST=//p" .env) && docker run --rm -e PGPASSWORD=x --entrypoint psql "$(deploy/dc config --images | grep timescaledb-ha | head -n 1)" "host=$h user=postgres dbname=scarlet sslmode=require connect_timeout=5" -c "select 1"'   # must fail with: no pg_hba.conf entry
+```
+
+`scarlet_app` keeps its password, so the app never notices. To give it a new one as well, put the new value in the app
+droplet's `.env` as `DB_PASSWORD` and run `bin/deploy db-server` and then `bin/deploy` back to back: the old containers
+cannot open new connections between the two.
 
 An install from before the role existed switches to it once, on the machine with the checkout:
 

@@ -29,7 +29,8 @@ state=state/db-move.env
 umask 077
 
 env_value() { sed -n "s/^$1=//p" .env | tail -n 1; }
-password=$(env_value DB_PASSWORD)
+password=$(env_value DB_ADMIN_PASSWORD)
+password=${password:-$(env_value DB_PASSWORD)}
 local_pg() { $dc exec -T postgres psql -X -U postgres -d scarlet -Atq "$@"; }
 remote_pg() { $dc exec -T -e PGPASSWORD="$password" postgres psql -X "host=$1 port=5432 user=postgres dbname=scarlet sslmode=require connect_timeout=5" -Atq "${@:2}"; }
 image() { $dc config --images | grep "$1" | head -n 1; }

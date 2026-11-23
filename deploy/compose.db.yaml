@@ -1,5 +1,5 @@
 # The database host of scarletweb.io: PostgreSQL with TimescaleDB on its own droplet, data on a block volume. Run it
-# through deploy/dc-db, which adds the env file /srv/scarlet-db/.env (DB_PASSWORD, DB_LISTEN, DB_NAME). deploy/server-setup-db.sh
+# through deploy/dc-db, which adds the env file /srv/scarlet-db/.env (DB_PASSWORD, DB_ADMIN_PASSWORD, DB_LISTEN, DB_NAME). deploy/server-setup-db.sh
 # writes everything this file mounts under /srv/scarlet-db/etc.
 #
 # Postgres runs on the host network and listens on the droplet's VPC address and loopback only, so pg_hba sees the real
@@ -13,7 +13,7 @@ services:
     network_mode: host
     shm_size: 768mb
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:-${DB_PASSWORD}}
       POSTGRES_DB: ${DB_NAME:-scarlet}
       TIMESCALEDB_TELEMETRY: "off"
       PGBACKREST_CONFIG: /etc/scarlet-db/pgbackrest.conf
