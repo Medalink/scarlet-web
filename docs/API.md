@@ -677,7 +677,7 @@ Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/sessions/17
 
 The feat catalog, as `resources/feats/feats.json` holds it, with the share of characters at each tier.
 
-`data`: `catalog` (the version) and `feats`: `key`, `name`, `family`, `collection`, `scope` (`general`, `class`, `tree` or `role`), `class`, `tree` or `role` where the scope has one, `glyph`, `icon` (`spell` or `tree` when the seal engraves one), `one` and `many`, `unit` (`mi`: the thresholds are yards), `thresholds`, `economy` (a gold feat), `measure`, `spells`, `live` and `shares`: five percentages, copper first, of the characters with 20 recorded hours or more that hold the tier or higher, rebuilt daily; `null` until 20 characters are counted for the feat.
+`data`: `catalog` (the version) and `feats`: `key`, `name`, `family`, `collection`, `scope` (`general`, `class`, `tree` or `role`), `class`, `tree` or `role` where the scope has one, `glyph`, `icon` (`spell` or `tree` when the crest engraves one), `one` and `many`, `unit` (`mi`: the thresholds are yards), `thresholds`, `economy` (a gold feat), `measure`, `spells`, `live` and `shares`: five percentages, uncommon first, of the characters with 20 recorded hours or more that hold the tier or higher, rebuilt daily; `null` until 20 characters are counted for the feat.
 
 #### `GET /public/feats/{key}`
 

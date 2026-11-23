@@ -247,7 +247,7 @@ enum Feat: string
     case Barrage = 'barrage';
     case Warden = 'warden';
 
-    /** The tiers in order, copper first: tier `n` of a feat is `TIERS[n - 1]`, and 0 is no tier. */
+    /** The tiers in order, uncommon first: tier `n` of a feat is `TIERS[n - 1]`, and 0 is no tier. */
     public const array TIERS = ['Uncommon', 'Rare', 'Epic', 'Legendary', 'Scarlet'];
 
     private const array ECONOMY = [self::Earner, self::Spender, self::Tycoon, self::Windfall];

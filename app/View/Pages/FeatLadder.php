@@ -11,7 +11,7 @@ final class FeatLadder
 {
     /**
      * @param  list<int>  $thresholds  uncommon to scarlet
-     * @param  list<float>|null  $shares  the percent at each tier or higher, copper first
+     * @param  list<float>|null  $shares  the percent at each tier or higher, uncommon first
      * @param  int|null  $held  the tier the viewer holds, null to draw no line
      * @param  string|null  $you  the words on the line: "Sable, 9,912 kills"
      * @return list<array<string, int|string>>

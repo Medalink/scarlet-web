@@ -11,7 +11,7 @@ class ReadFeatShares
 
     /**
      * @param  list<string>|null  $keys  the feats to read, or every feat
-     * @return array<string, list<float>> by feat key, the five shares copper first; a feat with no share is not in it
+     * @return array<string, list<float>> by feat key, the five shares uncommon first; a feat with no share is not in it
      */
     public function handle(?array $keys = null): array
     {

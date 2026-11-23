@@ -138,7 +138,7 @@ final class PublicApiCatalog
                 'name' => 'feats', 'group' => 'Feats', 'path' => '/feats', 'action' => [FeatController::class, 'index'],
                 'summary' => 'The feat catalog: every feat with its family, collection, scope, thresholds and how the addon counts it, and the share of characters at each tier or higher.',
                 'params' => [],
-                'returns' => '`data`: `catalog` (the catalog version) and `feats`, each with `key`, `name`, `family`, `collection`, `scope` (`general`, `class`, `tree` or `role`), `class`, `tree` or `role` where the scope has one, `glyph`, `icon` (`spell` or `tree` when the seal engraves one), `one` and `many` (what is counted), `unit` (`mi` when the thresholds are yards), `thresholds` (uncommon to scarlet), `economy` (a gold feat), `measure`, `spells`, `live` and `shares`: five percentages, copper first, of the characters with 20 recorded hours or more that hold the tier or a higher one, or `null` until 20 characters are counted for the feat.',
+                'returns' => '`data`: `catalog` (the catalog version) and `feats`, each with `key`, `name`, `family`, `collection`, `scope` (`general`, `class`, `tree` or `role`), `class`, `tree` or `role` where the scope has one, `glyph`, `icon` (`spell` or `tree` when the crest engraves one), `one` and `many` (what is counted), `unit` (`mi` when the thresholds are yards), `thresholds` (uncommon to scarlet), `economy` (a gold feat), `measure`, `spells`, `live` and `shares`: five percentages, uncommon first, of the characters with 20 recorded hours or more that hold the tier or a higher one, or `null` until 20 characters are counted for the feat.',
                 'example' => '/feats', 'where' => [],
             ],
             [

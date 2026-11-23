@@ -90,7 +90,7 @@
   <section class="mt-14">
     <h2 class="sc-h">Feat crest: each tier attaches a piece</h2>
     <x-sc.tiles :cols="6" class="mt-4">
-      @foreach ([[0, 0.3, 'Not earned', 'The shield fills in copper'], [1, 0.9, null, 'The crown fills in silver'], [2, 0.5, null, 'The banner fills in gold'], [3, 0.7, null, 'The wings fill in scarlet'], [4, 0.4, null, 'The rays fill in gold'], [5, 1, null, 'Great crown, gem and rays']] as [$tier, $progress, $name, $note])
+      @foreach ([[0, 0.3, 'Not earned', 'The shield fills in green'], [1, 0.9, null, 'The crown fills in blue'], [2, 0.5, null, 'The banner fills in purple'], [3, 0.7, null, 'The wings fill in orange'], [4, 0.4, null, 'The gold frame fills in scarlet'], [5, 1, null, 'Gold frame, great crown and rays']] as [$tier, $progress, $name, $note])
         <div class="px-5 pb-5 pt-[18px] text-center"><x-crest glyph="kills" :tier="$tier" :progress="$progress" :size="104" /><p class="sc-h3 mt-3">@if ($name){{ $name }}@else<span class="sc-chip t{{ $tier }}">{{ App\View\Sc\Crest::TIER_NAMES[$tier] }}</span>@endif</p><p class="sc-label">{{ $note }}</p></div>
       @endforeach
     </x-sc.tiles>
@@ -98,8 +98,8 @@
       @foreach ([['kills', 'character', 'Character'], ['m-bolt', 'class', 'Class'], ['level', 'account', 'Account']] as [$glyph, $scope, $name])
         <div class="text-center"><x-crest :glyph="$glyph" :scope="$scope" :tier="3" :progress="0.5" :size="64" /><p class="sc-label mt-2">{{ $name }}</p></div>
       @endforeach
-      <div class="ml-6 text-center"><x-crest glyph="level" :tier="3" :size="28" /><p class="sc-label mt-2">28 · row</p></div>
-      <div class="text-center"><x-crest glyph="level" :tier="3" :size="18" /><p class="sc-label mt-2">18 · inline</p></div>
+      <div class="ml-6 text-center"><x-crest glyph="level" :tier="3" :size="28" /><p class="sc-label mt-2">28 Â· row</p></div>
+      <div class="text-center"><x-crest glyph="level" :tier="3" :size="18" /><p class="sc-label mt-2">18 Â· inline</p></div>
     </div>
   </section>
 
