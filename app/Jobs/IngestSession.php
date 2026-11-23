@@ -52,29 +52,38 @@ class IngestSession implements BoundedJob, ShouldBeUniqueUntilProcessing, Should
     public function handle(DecodeSession $decode): void
     {
         try {
-            Cache::lock($this->decodeLockKey(), $this->timeout + 30)
-                ->block(120, fn () => $decode->handle($this->characterId, $this->sessionStart));
+            Cache::lock($this->decodeLockKey(), $this->timeout + 30)->block(120, function () use ($decode): void {
+                $this->spendAttempt();
+                $decode->handle($this->characterId, $this->sessionStart);
+            });
         } catch (Throwable $e) {
-            $this->countFailure($e);
+            $this->keepError($e);
 
             throw $e;
         }
     }
 
     /**
-     * Spend one of the session's parts' failure budget (`config('scarlet.sweep_max_failures')`): the
-     * sweep stops queueing a part whose attempts are spent, with the error kept on the part.
+     * Spend one of the session's parts' failure budget (`config('scarlet.ingest.sweep_max_failures')`) before the
+     * decode starts, so a run that never reaches a catch (a PHP memory fatal, a timeout kill) is counted too: the
+     * sweep stops queueing a part whose attempts are spent.
      */
-    private function countFailure(Throwable $e): void
+    private function spendAttempt(): void
     {
         DB::table('parts')
             ->where('character_id', $this->characterId)
             ->where('session_start', $this->sessionStart)
             ->whereNull('decoded_at')
-            ->update([
-                'failed_attempts' => DB::raw('failed_attempts + 1'),
-                'last_error' => mb_substr($e->getMessage(), 0, 2000),
-            ]);
+            ->update(['failed_attempts' => DB::raw('failed_attempts + 1')]);
+    }
+
+    private function keepError(Throwable $e): void
+    {
+        DB::table('parts')
+            ->where('character_id', $this->characterId)
+            ->where('session_start', $this->sessionStart)
+            ->whereNull('decoded_at')
+            ->update(['last_error' => mb_substr($e->getMessage(), 0, 2000)]);
     }
 
     private function decodeLockKey(): string

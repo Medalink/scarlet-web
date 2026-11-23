@@ -245,6 +245,8 @@ The wire details are in [API.md](API.md). Where the first implementation settled
 - The XOR set digest is computed in PostgreSQL (`bit_xor` over four 64-bit words of the id), not by reading ids.
 - Decoding is one queued job per (character, session) on the `ingest` queue, unique until it starts, so ten parts of
   one session uploaded in two requests decode once. A per-character lock serializes the jobs of one character.
+- The job spends one of its parts' failure attempts (`ingest.sweep_max_failures`) before it decodes, so a run that
+  dies without an exception (a memory fatal, a timeout kill) still counts and the sweep stops queueing the session.
 
 What the server already has is known two ways: the app remembers the ids the server acknowledged
 (`out/upload-state.json`), and the set digest catches every case where that memory is wrong.
