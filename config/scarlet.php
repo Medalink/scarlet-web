@@ -135,4 +135,8 @@ return [
         'memory_mb' => 256,
     ],
 
+    'seed' => [
+        'characters_per_class' => (int) env('SCARLET_SEED_PER_CLASS', 22),
+    ],
+
 ];
