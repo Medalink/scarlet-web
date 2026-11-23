@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * One AHledger auction house: a game, ruleset, faction and region, keyed by its API id (`forever.pvp.horde.us`). The
@@ -23,6 +24,8 @@ use Illuminate\Support\Carbon;
 class Market extends Model
 {
     public const string GAME = 'forever';
+
+    public const string SITE = 'https://ahledger.com';
 
     public const string STATUS_STORED = 'stored';
 
@@ -46,6 +49,12 @@ class Market extends Model
     protected function casts(): array
     {
         return ['enabled' => 'boolean', 'scanned_at' => 'datetime', 'polled_at' => 'datetime'];
+    }
+
+    /** AHledger's page of an item, or of the item on one market: the link its terms ask to carry beside its figures. */
+    public static function itemPage(int $itemId, string $itemName, ?string $marketId = null): string
+    {
+        return self::SITE.'/items/'.$itemId.'-'.Str::slug($itemName).($marketId === null ? '' : '/'.$marketId);
     }
 
     /** The market as the price table's header names it: `forever/pvp/horde/us`. */

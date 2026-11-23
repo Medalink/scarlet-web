@@ -20,6 +20,7 @@ class ItemRecord
         private readonly SourceRates $sourceRates,
         private readonly ItemGathers $gathers,
         private readonly ItemPrices $prices,
+        private readonly ItemMarketPrices $marketPrices,
         private readonly ItemCrafting $crafting,
         private readonly BossDrops $bossDrops,
         private readonly CountedLoot $counted,
@@ -27,7 +28,8 @@ class ItemRecord
 
     /**
      * Everything the item page and `/public/items/{id}` show: what the item is, where it drops, by source, `read` and
-     * loot rule, where it is gathered, and its auction price history for each ruleset and realm. The drop aggregates carry no ruleset, so
+     * loot rule, where it is gathered, its auction price history for each ruleset and realm, and its latest AHledger
+     * price on each auction house. The drop aggregates carry no ruleset, so
      * every drop figure is over all rulesets. `by_source` is the same drops as one row for each source and `read` over
      * every loot rule, or over `$rule` alone, with each rate as its counts and range. `dropped` and `source_count` count
      * windows with a known `read`, and a source once whatever it was read for; a free-for-all drop counts only the windows
@@ -58,6 +60,7 @@ class ItemRecord
             'sources' => $sources,
             'by_source' => $this->sourceRates->handle($id, $rule),
             'prices' => $this->prices->handle($id),
+            'market_prices' => $this->marketPrices->handle($id),
             ...$this->crafting->handle($id),
             'encounters' => $this->bossDrops->handle($id, null, 25),
             'dropped' => $totals === null ? null : (int) $totals->dropped,

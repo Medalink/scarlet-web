@@ -2,6 +2,7 @@
 
 namespace App\View\Pages;
 
+use App\Models\Market;
 use App\View\Charts;
 use App\View\Format;
 use Illuminate\Support\Carbon;
@@ -37,6 +38,25 @@ final class ItemPriceHistory
         }
 
         return $out;
+    }
+
+    /**
+     * One table row for each auction house AHledger priced the item on, its name linking to AHledger's page of the item
+     * on that market, with the scan time beside the figures as its terms ask.
+     *
+     * @param  list<array{market: string, label: string, scanned_at: string, median: int, min_buyout: int, quantity: int, sold_per_day: float|null}>  $prices  the answer of ItemMarketPrices
+     * @return list<array{cells: list<mixed>}>
+     */
+    public static function marketRows(array $prices, int $itemId, string $itemName): array
+    {
+        return array_map(fn (array $p): array => ['cells' => [
+            ['text' => $p['label'], 'href' => Market::itemPage($itemId, $itemName, $p['market'])],
+            Format::money($p['median']),
+            Format::money($p['min_buyout']),
+            Format::number($p['quantity']),
+            $p['sold_per_day'] === null ? '–' : Format::number($p['sold_per_day']),
+            ['text' => Carbon::parse($p['scanned_at'])->format('j M H:i'), 'instant' => $p['scanned_at'], 'format' => 'j M H:i'],
+        ]], $prices);
     }
 
     /**

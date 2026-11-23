@@ -1,4 +1,4 @@
-@php($tail = array_keys(array_filter(['gathered' => $d['gathered'], 'bosses' => $d['bosses'], 'made' => $d['made'], 'uses' => $d['uses'], 'prices' => $d['prices']])))
+@php($tail = array_keys(array_filter(['gathered' => $d['gathered'], 'bosses' => $d['bosses'], 'made' => $d['made'], 'uses' => $d['uses'], 'prices' => $d['prices'], 'market' => $d['market']])))
 @php($recipeColumns = [['label' => 'Recipe'], ['label' => 'Makes'], ['label' => 'Needs']])
 <x-layouts.app :title="$d['name'].': where it drops and how often'" :description="trim($d['sub'].' Where '.$d['name'].' drops in WoW Forever and how often.')">
 <div class="wrap">
@@ -42,7 +42,7 @@
     </x-module>
     @endif
     @if ($d['prices'])
-    <x-module span="w12" :last="true" id="h-p" heading="Auction price">
+    <x-module span="w12" :last="end($tail) === 'prices'" id="h-p" heading="Auction price">
       @foreach ($d['prices'] as $market)
       <h3 id="{{ $market['id'] }}-h">{{ $market['name'] }}</h3>
       @if ($market['spec'])
@@ -51,6 +51,12 @@
       <x-table :rows="$market['rows']" :columns="[['label' => 'Day'], ['label' => 'Lowest price', 'numeric' => true], ['label' => 'Seen in']]" style="margin-top:1.1rem" />
       @endforeach
       <p class="note">The lowest price a player's auction house showed that day, from searches. A browse row stands in on a day with no search. Each ruleset and realm is its own market.</p>
+    </x-module>
+    @endif
+    @if ($d['market'])
+    <x-module span="w12" :last="true" id="h-m" heading="AHledger auction house prices">
+      <x-table :rows="$d['market']" :columns="[['label' => 'Auction house'], ['label' => 'Median', 'numeric' => true], ['label' => 'Lowest buyout', 'numeric' => true], ['label' => 'On sale', 'numeric' => true], ['label' => 'Sold a day', 'numeric' => true], ['label' => 'Scanned', 'numeric' => true, 'local' => 'Scanned']]" style="margin-top:1.1rem" />
+      <p class="note">From the auction house scans players upload with <a href="{{ $d['market_source'] }}" rel="noopener">AHledger</a>'s addon. Each ruleset has one house for each faction.</p>
     </x-module>
     @endif
   </x-sheet>

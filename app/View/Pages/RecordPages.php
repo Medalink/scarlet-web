@@ -2,6 +2,7 @@
 
 namespace App\View\Pages;
 
+use App\Models\Market;
 use App\Support\CreatureClass;
 use App\Support\GatherKind;
 use App\Support\KillerKind;
@@ -141,6 +142,8 @@ final class RecordPages
             }
         }
         $first = $r['first_at'] === null ? null : date('j M', (int) strtotime((string) $r['first_at']));
+        /** @var list<array{market: string, label: string, scanned_at: string, median: int, min_buyout: int, quantity: int, sold_per_day: float|null}> $marketPrices */
+        $marketPrices = $r['market_prices'];
 
         return [
             'name' => $r['name'],
@@ -148,6 +151,8 @@ final class RecordPages
             'sub' => implode(' ', $facts),
             'sell' => ($item['sell_price'] ?? 0) > 0 ? Format::money($item['sell_price']) : null,
             'prices' => ItemPriceHistory::markets($r['prices']),
+            'market' => ItemPriceHistory::marketRows($marketPrices, (int) $r['id'], (string) $r['name']),
+            'market_source' => Market::itemPage((int) $r['id'], (string) $r['name']),
             'figures' => [
                 ['label' => 'Dropped', 'value' => $r['dropped'] === null ? '–' : Format::number($r['dropped']), 'unit' => $r['dropped'] === null ? Format::TOO_FEW : null],
                 ['label' => 'Gathered', 'value' => $r['gathered_count'] === null ? '–' : Format::number($r['gathered_count']), 'icon' => 'gather'],

@@ -169,6 +169,10 @@ market and scan time beside each price.
   keeps `low`, the lowest minimum buyout of the day. Single scans are not kept, since the table already carries the 7
   and 30 day medians. About 6,800 items a market, so 8 US markets add about 20 million rows a year.
 - A market is a ruleset (`normal`, `pvp`, `rp`, `rppvp`), a faction and a region. Hardcore has no market.
+- `ItemMarketPrices` reads each enabled market's newest row of an item from the last 7 days. The item page shows them
+  under "AHledger auction house prices", after our own players' "Auction price", one row per house with its median,
+  lowest buyout, quantity on sale, units sold a day and scan time, the house linking to AHledger's page of the item on
+  it and the note crediting AHledger. `/public/items/{id}` returns them as `market_prices`.
 
 ### The Fishing Log
 
