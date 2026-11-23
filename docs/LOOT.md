@@ -197,17 +197,21 @@ Rules the design follows:
    seconds, so "same source within 5 minutes" merges different corpses, and it drops small windows first, which
    pushes every rate up. The design does not do it.
 6. So: sum first reads across characters, except for a free-for-all arm that holds windows with no corpse key (rule
-   7) and that a second character contributed to: it has windows with no key from two characters, or windows with a
-   key from another character than the one with the most windows with no key. Those use **one reader**: rate and
-   range come from the character with the most windows with no key in the arm, as `BossDrops` takes the uploader who
-   saw most, and the arm carries the tag `one reader`. When the windows with a key are all that character's, they
-   count whole beside its windows with no key (one character never reads a corpse twice). When another character made
-   some of them, one character on an addon without keys and one with keys may have opened the same corpses and
-   nothing tells which, so the arm counts the larger of that character's windows with no key and all the windows
-   with a key, and `characters` are those of the set it counted. It loses up to half the sample and cannot double
-   count. 37% of free-for-all windows have another uploader's window on the same source inside 300 s, past the 5%
-   that triggers it. An arm whose windows all have a key, or whose windows with no key are one character's own, has
-   neither one reader nor the tag.
+   7) and that a second character contributed to: it has windows with no key from two characters, or a day on which
+   the character with the most windows with no key has some and another character has windows with a key. Those use
+   **one reader**: rate and range come from the character with the most windows with no key in the arm, as
+   `BossDrops` takes the uploader who saw most, and the arm carries the tag `one reader`. Windows with a key count
+   whole beside that character's windows with no key (one character never reads a corpse twice). On a day when
+   another character made some of them and the reader has windows with no key, one character on an addon without
+   keys and one with keys may have opened the same corpses and nothing tells which, so that day counts the larger
+   of the reader's windows with no key and all the windows with a key. A day on which only one of the two exists
+   counts it whole: windows with no key from before the keys and windows with a key from after them are all
+   counted. `characters` are those of the sets counted. An overlapping day loses up to half its sample and cannot
+   double count. 37% of free-for-all windows have another uploader's window on the same source inside 300 s, past
+   the 5% that triggers it. An arm whose windows all have a key, or whose windows with no key are one character's
+   own and never share a day with another character's windows with a key, has neither one reader nor the tag.
+   The arms of the rule and size charts, the rows of `/public/creatures/{id}` `drops` and the items per corpse by rule
+   on `/loot/groups` count the arm this way.
 7. **The corpse key (phase 7, decoder version 12).** `K`, `LO` and `LW` carry a key that is the same on every client
    for one corpse, stored as `corpse_key` on `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops`. A
    window with a key counts once per corpse, however many characters read it or were sent it. A window without one (a
@@ -359,8 +363,8 @@ caused by skin windows.
 
 **Which arms are compared.** A chart compares the two arms with the most windows that are drawn (10 or more).
 `personal` is drawn and never compared. A free-for-all arm with windows with no corpse key that a second character
-contributed to is counted by its one reader (rule 6) before any ladder step or comparison, so its `n` is the set the
-reader rule counted. The rows of `/public/creatures/{id}` `drops` follow the same rule. The items compared are the rows of
+contributed to is counted by its one reader (rule 6, by day) before any ladder step or comparison, so its `n` is the
+set the reader rule counted. The rows of `/public/creatures/{id}` `drops` follow the same rule. The items compared are the rows of
 the chart; a mark needs 0.05 divided by that number to keep the range off zero, with the Newcombe range rebuilt
 from Wilson ranges at the matching quantile. `different characters` is set on a mark whose two arms share no
 character.
@@ -379,7 +383,7 @@ tag of the estimate. The enum holds the tags of the phases built so far.
 | --- | --- | --- | --- |
 | `1 character` | `one_character` | every window of the row or arm is from one character | phase 1 |
 | `quest item` | `quest_item` | the item binds as a quest item | phase 1 |
-| `one reader` | `one_reader` | a free-for-all arm that holds windows with no corpse key and that a second character contributed to (windows with no key from two characters, or windows with a key from another one) | phase 4, narrowed and widened in phase 7 |
+| `one reader` | `one_reader` | a free-for-all arm that holds windows with no corpse key and that a second character contributed to (windows with no key from two characters, or a day with the reader's windows with no key and another character's windows with a key) | phase 4, narrowed and widened in phase 7, counted by day after it |
 | `different characters` | `different_characters` | the two arms of a comparison share no character | phase 4 |
 | `rule unknown` | `rule_unknown` | windows from before the first `LM` line of the session | phase 4 |
 | `other creatures` | `other_creatures` | a group-size arm exists only on sources no other size has, so no comparison is drawn | phase 4 |
