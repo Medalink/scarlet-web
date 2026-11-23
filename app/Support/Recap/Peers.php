@@ -46,7 +46,7 @@ final class Peers
     }
 
     /** @param  list<float>  $cuts  the 5th to 95th percentile in steps of five */
-    private static function percent(array $cuts, float $value): int
+    public static function percent(array $cuts, float $value): int
     {
         if ($value < $cuts[0]) {
             return 0;

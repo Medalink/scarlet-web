@@ -2,6 +2,11 @@
 
 namespace App\View\Design;
 
+use App\Actions\Public\Character\CharacterRates;
+use App\Actions\Rollups\RebuildCharacterRates;
+use App\Models\Character;
+use Illuminate\Support\Facades\DB;
+
 /** The invented data of /design/system: one of everything, from the numbers of src/system.html in the design. */
 final class SystemPage
 {
@@ -10,7 +15,29 @@ final class SystemPage
      */
     public static function data(): array
     {
-        return ['heat' => self::heat(5), 'days' => self::days(), 'area' => self::area(), 'recap' => SystemRecap::recap()];
+        return ['heat' => self::heat(5), 'days' => self::days(), 'area' => self::area(), 'recap' => SystemRecap::recap(), 'rates' => self::rates()];
+    }
+
+    /**
+     * The compare strips of a character of the largest band of this database, read the way a character page reads them but drawn from any group size; null on an empty database.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function rates(): ?array
+    {
+        $row = DB::table('character_rates_bracket')->where('metric', RebuildCharacterRates::KILLS)->orderByDesc('n')->first();
+        if ($row === null) {
+            return null;
+        }
+        $characters = Character::query()->where('class', $row->class)->whereBetween('level', [$row->bracket, $row->bracket + 9])->get();
+        foreach ($characters as $character) {
+            $rates = app(CharacterRates::class)->handle($character, 1);
+            if ($rates !== null) {
+                return $rates;
+            }
+        }
+
+        return null;
     }
 
     /**

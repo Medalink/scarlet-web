@@ -166,6 +166,12 @@
           <x-sc.compare :rows="array_slice($compare, 0, 1)" :n="12" />
           <p class="sc-cap">Twelve in the group: the value stays, the strip is not drawn.</p>
         </div>
+        @if ($d['rates'])
+          <div class="mt-6">
+            <x-sc.compare :rows="$d['rates']['rows']" :min="1" />
+            <p class="sc-cap">Read from character_rates_bracket for a character of this database: {{ $d['rates']['class'] }}s at levels {{ $d['rates']['bracket'][0] }} to {{ $d['rates']['bracket'][1] }}, {{ $d['rates']['n'] }} characters. A page draws the strips from 20. @if ($d['rates']['sentence']){{ $d['rates']['sentence'] }}.@endif</p>
+          </div>
+        @endif
       </div>
       <div>
         <x-sc.bars :rows="$bars" />
