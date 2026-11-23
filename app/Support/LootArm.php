@@ -148,6 +148,42 @@ final readonly class LootArm implements JsonSerializable
     }
 
     /**
+     * The character an arm over these days counts as its reader when it counts one: the one with most windows with no key.
+     *
+     * @param  array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>  $days  windows by day, then by character id
+     */
+    public static function readerOf(array $days): ?int
+    {
+        $unkeyed = [];
+        foreach ($days as $parts) {
+            foreach ($parts['unkeyed'] as $character => $windows) {
+                $unkeyed[$character] = ($unkeyed[$character] ?? 0) + $windows;
+            }
+        }
+
+        return self::busiest($unkeyed);
+    }
+
+    /**
+     * The days of a free-for-all arm over these days where the larger-set rule applies, with the days joined to them
+     * (`overDays`): the days every other day can be merged without.
+     *
+     * @param  array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>  $days  windows by day, then by character id
+     * @param  list<string>  $joined
+     * @return list<string>
+     */
+    public static function contestedDays(array $days, array $joined = []): array
+    {
+        $reader = self::readerOf($days);
+        if ($reader === null) {
+            return [];
+        }
+        $groups = array_keys(array_filter(self::groups($days, $joined), fn (array $parts): bool => self::contested($parts, $reader)));
+
+        return array_values(array_filter(array_keys($days), fn (string $day): bool => in_array(self::groupOf($day, $days, $joined), $groups, true)));
+    }
+
+    /**
      * The windows of an arm made by `overDays` that listed one item, from the windows that listed it each day: the ones with
      * a key, the ones with no key of every character and the ones with no key of the one reader. Each day adds the sets
      * the arm counts that day.
