@@ -329,11 +329,19 @@ final class SessionScript
             return;
         }
         $items = Rng::for('loot:'.$creature)->shuffled(array_keys(World::ITEMS));
+        $chances = $boss ? [100, 100, 60, 30, 12, 4] : [70, 38, 18, 7, 3, 1];
         $drops = [];
 
-        foreach (array_slice($items, 0, $boss ? 3 : 2) as $item) {
+        foreach ($chances as $slot => $chance) {
+            if (! $this->rng->chance($chance)) {
+                continue;
+            }
+            $item = $items[$slot];
             $this->book->item($item);
-            $drops[] = $item.'x'.$this->rng->interval(1, $boss ? 3 : 2);
+            $drops[] = $item.'x'.($slot < 2 ? $this->rng->interval(1, $boss ? 3 : 2) : 1);
+        }
+        if ($drops === []) {
+            return;
         }
         $this->book->at($at * 1000, 'LO', 'c', $creature, count($drops), implode(',', $drops), 0);
     }
