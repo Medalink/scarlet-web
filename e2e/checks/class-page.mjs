@@ -101,7 +101,7 @@ export async function pageShowsItsFigures(ctx, page) {
   if (notes.length > 0) problems.push(`notes: ${notes.join(" | ")}`);
   const headings = (page.headings ?? []).filter((one) => !tokens.includes(one));
   if (headings.length > 0) problems.push(`headings: ${headings.join(", ")}`);
-  if (!answer.text.includes(`Not enough ${className}s at these levels yet.`) || answer.text.includes("More than")) problems.push(`a comparison with other ${page.slug}s, which needs 20 of them and the fixture has one`);
+  if (answer.text.includes(`Middle half of`) || answer.text.includes(`% of ${className}s at these levels`)) problems.push(`a comparison with other ${page.slug}s, which needs 20 of them and the fixture has one`);
   if (problems.length > 0) throw new Error(`${route} should show every figure worked out from the fixture, but lacks:\n${problems.join("\n")}`);
 
   const old = await ctx.http.request(`${route}/${page.slug}`, { redirect: "manual", headers: { Accept: "text/html" } });

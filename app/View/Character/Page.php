@@ -44,7 +44,7 @@ final class Page
             'overview' => 'Overview',
             'feats' => $feats === null ? null : 'Feats',
             'sessions' => $sessions === null ? null : 'Sessions',
-            'class' => $className === '' ? null : $className,
+            'class' => $className === '' || $class['page'] === null ? null : $className,
             'levelling' => $levelling === null ? null : 'Levelling',
             'combat' => 'Combat',
             'loot' => 'Loot and professions',

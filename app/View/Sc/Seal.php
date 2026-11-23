@@ -2,6 +2,8 @@
 
 namespace App\View\Sc;
 
+use App\Support\SpellIcons;
+
 /** The feat seal of FEATS.md as one inline SVG: the family is the plate, the tier its metal, pips count the tier, a 20-tick dial shows the way to the next one. */
 final class Seal
 {
@@ -83,8 +85,9 @@ final class Seal
         $dy = (self::SHIFT[$family] ?? 0) * ($full ? 0.9 : 1.2);
         $at = 'translate('.round(32 - 12 * $scale, 3).' '.round(32 - 12 * $scale + $dy, 3).') scale('.round($scale, 3).')';
         $opacity = $tier || $ghost ? 1 : 0.75;
-        if ($spell !== null) {
-            return '<g transform="'.$at.'" opacity="'.$opacity.'"><clipPath id="c'.$spell.'"><rect width="24" height="24" rx="2.6"/></clipPath><g clip-path="url(#c'.$spell.')"><image href="/spell-icons/'.$spell.'.png" width="24" height="24" style="filter:grayscale(1) contrast(1.1)"/><rect width="24" height="24" fill="'.$ink.'" style="mix-blend-mode:multiply"/></g></g>';
+        $icon = $spell === null ? null : SpellIcons::icon($spell);
+        if ($icon !== null) {
+            return '<g transform="'.$at.'" opacity="'.$opacity.'"><clipPath id="c'.$spell.'"><rect width="24" height="24" rx="2.6"/></clipPath><g clip-path="url(#c'.$spell.')"><image href="'.$icon.'" width="24" height="24" style="filter:grayscale(1) contrast(1.1)"/><rect width="24" height="24" fill="'.$ink.'" style="mix-blend-mode:multiply"/></g></g>';
         }
         $frame = $stand ? '<rect x="1.2" y="1.2" width="21.6" height="21.6" rx="2.6" stroke-width="1" opacity="0.5"/>' : '';
 

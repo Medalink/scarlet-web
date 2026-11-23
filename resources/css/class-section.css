@@ -339,7 +339,7 @@
 .cls-page .sheet { column-gap: 16px; }
 @media (max-width: 900px) { .cls-page .sheet { grid-template-columns: minmax(0, 1fr); } .cls-page .mod { grid-column: auto; } }
 .cls-page .mod.w8 { grid-column: span 8; } .cls-page .mod.w7 { grid-column: span 7; } .cls-page .mod.w5 { grid-column: span 5; }
-@media (max-width: 900px) { .cls-page .mod.w8, .cls-page .mod.w7, .cls-page .mod.w5 { grid-column: auto; } }
+@media (max-width: 900px) { .cls-page .mod.w12, .cls-page .mod.w8, .cls-page .mod.w7, .cls-page .mod.w5 { grid-column: auto; } }
 .cls-page .sc-scene .callout { position: static; translate: none; padding: 0; border: 0; white-space: normal; text-shadow: none; }
 .cls-page .sc-scene .callout::after { content: none; }
 .cls-page .sc-scene .callout span { margin-top: 3px; }
