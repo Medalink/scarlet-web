@@ -1,16 +1,12 @@
-<x-layouts.app :title="$d['title'].': WoW Forever levelling stats'" current="stats" description="How characters level in WoW Forever: time to each level, deaths, dungeons, skills and where people play." :canonical="$canonical">
-<section class="pg-hero">
-  <div class="stage" inert><x-world-canvas id="hero-map" label="" :spec="$map" /></div>
-  <div class="wrap">
-    <x-page-head :title="$d['title']">
-      <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
-      <x-slot:filters><x-scope-switch :choice="$scope['choice']" :path="$path" :names="$scope['names']" :as="$scope['as']" :query="$scope['query']" :mine="false" /><x-scope-filters :filters="$filters" /></x-slot:filters>
-    </x-page-head>
-    <x-tally :items="$d['game']['tally']" />
-    @if ($scope['versus'])<x-scope-compare :compare="$scope['versus']" />@endif
-  </div>
-</section>
-<div class="wrap">
+<x-layouts.sc :title="$d['title'].': WoW Forever levelling stats'" current="stats" description="How characters level in WoW Forever: time to each level, deaths, dungeons, skills and where people play." :canonical="$canonical">
+<div class="wrap pb-20">
+  <x-page-head :title="$d['headline'] ?? $d['title']">
+    <x-slot:sub>{{ $d['title'] }}. {{ $d['sub'] }}</x-slot:sub>
+    <x-slot:filters><x-scope-switch :choice="$scope['choice']" :path="$path" :names="$scope['names']" :as="$scope['as']" :query="$scope['query']" :mine="false" /><x-scope-filters :filters="$filters" /><a class="text-[14px]" href="/stats/compare">Compare rulesets</a></x-slot:filters>
+  </x-page-head>
+  <x-tally :items="$d['game']['tally']" />
+  @if ($scope['versus'])<x-scope-compare :compare="$scope['versus']" />@endif
+  <x-sc.section-nav class="mt-8" :sections="array_filter(['levelling' => 'Levelling', 'danger' => 'Danger', 'deaths' => $deaths ? 'Deaths' : null, 'dungeons-skills' => 'Dungeons and skills', 'who-plays' => 'Who plays', 'gold-time' => 'Gold and time', 'world' => 'The world'])" />
   <x-sheet>
     @if ($d['game']['records'])
     <x-module span="w12" :first="true" :last="true" id="h-records" heading="Records across every character">
@@ -175,4 +171,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

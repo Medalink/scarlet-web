@@ -1,4 +1,4 @@
-<x-layouts.app title="WoW Forever talent builds by spec" current="talents" :description="$d['sub']">
+<x-layouts.sc title="WoW Forever talent builds by spec" current="talents" :description="$d['sub']">
 <div class="wrap">
   <x-page-head :title="$d['title']">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
@@ -15,4 +15,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.app>
+</x-layouts.sc>

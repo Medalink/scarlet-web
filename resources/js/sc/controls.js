@@ -3,6 +3,11 @@ document.addEventListener('change', (event) => {
     if (select?.form) select.form.requestSubmit();
 });
 
+document.addEventListener('change', (event) => {
+    const select = event.target.closest?.('select[data-nav]');
+    if (select && select.value) window.location.assign(select.value);
+});
+
 function spy(nav) {
     const links = [...nav.querySelectorAll('a[href^="#"]')];
     const sections = links.map((link) => document.getElementById(link.getAttribute('href').slice(1))).filter(Boolean);

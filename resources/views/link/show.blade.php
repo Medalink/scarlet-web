@@ -1,4 +1,4 @@
-<x-layouts.app title="Link the Scarlet app to your account" current="" :signed-in="true" :index="false" :brand="false">
+<x-layouts.sc title="Link the Scarlet app to your account" current="" :signed-in="true" :index="false" :brand="false">
 <x-gate map-label="An invented survey map" :spec="$map">
     <h1>Link this app</h1>
 @if ($state === \App\Actions\Account\LinkState::Ready)
@@ -25,4 +25,4 @@
     </form>
 @endif
 </x-gate>
-</x-layouts.app>
+</x-layouts.sc>
