@@ -134,9 +134,9 @@ final class World
         299 => ['Diseased Young Wolf', 1, 6], 113 => ['Stonetusk Boar', 1, 8], 80 => ['Kobold Laborer', 1, 8],
         157 => ['Goretusk', 4, 12], 94 => ['Defias Cutpurse', 8, 16], 589 => ['Defias Pillager', 10, 18],
         1128 => ['Young Black Bear', 10, 20], 3098 => ['Mottled Boar', 10, 20], 1130 => ['Bloodsail Sailor', 15, 24],
-        1111 => ['Mountain Cougar', 16, 26], 1152 => ['Elder Mistvale Gorilla', 20, 32],
-        1085 => ['Stranglethorn Raptor', 28, 40], 683 => ['Young Panther', 28, 40], 682 => ['Bloodscalp Warrior', 30, 42],
-        687 => ['Venture Co. Lumberjack', 32, 44], 2504 => ['Boulderfist Ogre', 36, 46],
+        1111 => ['Mountain Cougar', 16, 26], 1152 => ['Snapjaw Crocolisk', 20, 32],
+        1085 => ['Elder Stranglethorn Tiger', 28, 40], 683 => ['Young Panther', 28, 40], 682 => ['Stranglethorn Tiger', 30, 42],
+        687 => ['Jungle Stalker', 32, 44], 2504 => ['Boulderfist Ogre', 36, 46],
         2565 => ['Giant Surf Glider', 38, 48], 5429 => ['Quillfang Ravager', 44, 54], 6502 => ['Un\'Goro Stomper', 48, 58],
         7123 => ['Ashenvale Treant', 52, 60], 8281 => ['Felwood Corruptor', 54, 60], 8955 => ['Bile Spewer', 56, 60],
     ];

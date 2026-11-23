@@ -133,11 +133,11 @@ final class ClassKit
             ],
             PlayerClass::Hunter => [
                 'tree' => 1003, 'classId' => 3, 'spec' => 'Beast Mastery',
-                'tabs' => [[361, 'Beast Mastery'], [363, 'Marksmanship'], [362, 'Survival']],
+                'tabs' => [[11372, 'Beast Mastery'], [11371, 'Marksmanship'], [11370, 'Survival']],
                 'nodes' => [
-                    ['node' => 3001, 'spell' => 19574, 'ranks' => 1, 'tab' => 361],
-                    ['node' => 3002, 'spell' => 19577, 'ranks' => 1, 'tab' => 361],
-                    ['node' => 3003, 'spell' => 19506, 'ranks' => 1, 'tab' => 363],
+                    ['node' => 3001, 'spell' => 19574, 'ranks' => 1, 'tab' => 11372],
+                    ['node' => 3002, 'spell' => 19577, 'ranks' => 1, 'tab' => 11372],
+                    ['node' => 3003, 'spell' => 19506, 'ranks' => 1, 'tab' => 11371],
                 ],
             ],
             PlayerClass::Rogue => [
@@ -160,11 +160,11 @@ final class ClassKit
             ],
             PlayerClass::Shaman => [
                 'tree' => 5301, 'classId' => 7, 'spec' => 'Enhancement',
-                'tabs' => [[261, 'Elemental'], [263, 'Enhancement'], [262, 'Restoration']],
+                'tabs' => [[11326, 'Elemental Combat'], [11363, 'Enhancement'], [11362, 'Restoration']],
                 'nodes' => [
-                    ['node' => 4201, 'spell' => 17364, 'ranks' => 1, 'tab' => 263],
-                    ['node' => 4202, 'spell' => 16164, 'ranks' => 1, 'tab' => 261],
-                    ['node' => 4203, 'spell' => 16256, 'ranks' => 5, 'tab' => 263],
+                    ['node' => 4201, 'spell' => 17364, 'ranks' => 1, 'tab' => 11363],
+                    ['node' => 4202, 'spell' => 16164, 'ranks' => 1, 'tab' => 11326],
+                    ['node' => 4203, 'spell' => 16256, 'ranks' => 5, 'tab' => 11363],
                 ],
             ],
             PlayerClass::Mage => [
@@ -178,11 +178,11 @@ final class ClassKit
             ],
             PlayerClass::Warlock => [
                 'tree' => 1009, 'classId' => 9, 'spec' => 'Affliction',
-                'tabs' => [[201, 'Affliction'], [202, 'Demonology'], [203, 'Destruction']],
+                'tabs' => [[11629, 'Affliction'], [11636, 'Demonology'], [11637, 'Destruction']],
                 'nodes' => [
-                    ['node' => 6001, 'spell' => 18094, 'ranks' => 2, 'tab' => 201],
-                    ['node' => 6002, 'spell' => 18265, 'ranks' => 1, 'tab' => 201],
-                    ['node' => 6003, 'spell' => 17877, 'ranks' => 1, 'tab' => 203],
+                    ['node' => 6001, 'spell' => 18094, 'ranks' => 2, 'tab' => 11629],
+                    ['node' => 6002, 'spell' => 18265, 'ranks' => 1, 'tab' => 11629],
+                    ['node' => 6003, 'spell' => 17877, 'ranks' => 1, 'tab' => 11637],
                 ],
             ],
             PlayerClass::Druid => [
