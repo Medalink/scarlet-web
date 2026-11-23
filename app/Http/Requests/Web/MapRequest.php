@@ -36,6 +36,7 @@ class MapRequest extends FormRequest
             'layer' => ['nullable', Rule::enum(WorldLayer::class)],
             'zone' => ['nullable', 'integer', 'min:1', 'max:'.self::LARGEST_ZONE],
             'character' => ['nullable', 'string', 'max:64'],
+            'scope' => ['nullable', Rule::in(['everyone', 'mine'])],
         ];
     }
 
@@ -69,10 +70,10 @@ class MapRequest extends FormRequest
         return is_string($name) && $name !== '' ? $name : null;
     }
 
-    /** Whether the route is the signed-in account's own map. */
+    /** Whether the map is the signed-in account's own: the route says so, or a signed-in viewer asks for `?scope=mine`. */
     public function own(): bool
     {
-        return ($this->route()?->defaults[ScopeRequest::OWN] ?? false) === true;
+        return ($this->route()?->defaults[ScopeRequest::OWN] ?? false) === true || ($this->viewer() !== null && $this->validated('scope') === 'mine');
     }
 
     /** The signed-in account, or null for a visitor. */

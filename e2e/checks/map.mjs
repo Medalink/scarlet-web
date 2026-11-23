@@ -73,5 +73,5 @@ export async function ownMapShowsTheAccount(ctx) {
   if (own.mounted === 0 || own.routes < 1) throw new Error(`/account/map/trails should hold ${WARLOCK}'s ride and flight, saw ${JSON.stringify(own)}`);
 
   const world = expectStatus(await ctx.http.page("/map", { jar }), 200, "GET /map signed in");
-  if (!offers(world.text, "/account/map")) throw new Error("/map signed in should offer the account's own map");
+  if (!offers(world.text, "/map?scope=mine")) throw new Error("/map signed in should offer the account's own map");
 }
