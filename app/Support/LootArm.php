@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use JsonSerializable;
 
 /**
@@ -41,9 +43,13 @@ final readonly class LootArm implements JsonSerializable
      * character's, where no other has windows with no key), so old windows with no key and new ones with a key that fall
      * on different days are all counted.
      *
+     * A corpse read just before midnight with no key and just after it with one falls on two days, so two days with a
+     * window within 300 s of the midnight between them (`$joined`, by the later day) are one day to that rule.
+     *
      * @param  array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>  $days  windows by day, then by character id
+     * @param  list<string>  $joined  the days whose midnight with the day before has a window within 300 s
      */
-    public static function overDays(string $key, string $label, array $days, bool $freeForAll, bool $personal, bool $ruleUnknown, int $minimumCharacters): ?self
+    public static function overDays(string $key, string $label, array $days, bool $freeForAll, bool $personal, bool $ruleUnknown, int $minimumCharacters, array $joined = []): ?self
     {
         $unkeyed = $keyed = [];
         foreach ($days as $parts) {
@@ -59,8 +65,9 @@ final readonly class LootArm implements JsonSerializable
             return null;
         }
         $reader = self::busiest($unkeyed);
+        $groups = self::groups($days, $joined);
         $contested = $freeForAll && $reader !== null
-            ? array_keys(array_filter($days, fn (array $parts): bool => self::contested($parts, $reader)))
+            ? array_keys(array_filter($groups, fn (array $parts): bool => self::contested($parts, $reader)))
             : [];
         $oneReader = $freeForAll && $reader !== null && (count($unkeyed) >= 2 || $contested !== []);
 
@@ -68,10 +75,12 @@ final readonly class LootArm implements JsonSerializable
         $characters = [];
         $windows = 0;
         foreach ($days as $day => $parts) {
+            $group = self::groupOf($day, $days, $joined);
             $own = $oneReader ? ($parts['unkeyed'][$reader] ?? 0) : array_sum($parts['unkeyed']);
             $whole = array_sum($parts['keyed']);
-            $keyedWins = ! in_array($day, $contested, true) || $whole >= $own;
-            $counted[$day] = ['unkeyed' => ! in_array($day, $contested, true) || ! $keyedWins, 'keyed' => $keyedWins];
+            $isContested = in_array($group, $contested, true);
+            $keyedWins = ! $isContested || array_sum($groups[$group]['keyed']) >= ($oneReader ? ($groups[$group]['unkeyed'][$reader] ?? 0) : array_sum($groups[$group]['unkeyed']));
+            $counted[$day] = ['unkeyed' => ! $isContested || ! $keyedWins, 'keyed' => $keyedWins];
             $windows += ($counted[$day]['unkeyed'] ? $own : 0) + ($counted[$day]['keyed'] ? $whole : 0);
             if ($counted[$day]['unkeyed']) {
                 array_push($characters, ...($oneReader ? ($own > 0 ? [$reader] : []) : array_keys($parts['unkeyed'])));
@@ -98,9 +107,10 @@ final readonly class LootArm implements JsonSerializable
      * reader has no windows with no key: neither can be contested, so `overDays` gives the same arm over the merged days.
      *
      * @param  array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>  $days  windows by day, then by character id
+     * @param  list<string>  $joined  the days whose midnight with the day before has a window within 300 s (`overDays`)
      * @return array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>
      */
-    public static function collapsed(array $days): array
+    public static function collapsed(array $days, array $joined = []): array
     {
         $unkeyed = [];
         foreach ($days as $parts) {
@@ -113,9 +123,10 @@ final readonly class LootArm implements JsonSerializable
             return $days;
         }
         $kept = [];
+        $groups = self::groups($days, $joined);
         $merged = ['reader' => ['unkeyed' => [], 'keyed' => []], 'rest' => ['unkeyed' => [], 'keyed' => []]];
         foreach ($days as $day => $parts) {
-            if (self::contested($parts, $reader)) {
+            if (self::contested($groups[self::groupOf($day, $days, $joined)], $reader)) {
                 $kept[$day] = $parts;
 
                 continue;
@@ -197,6 +208,49 @@ final readonly class LootArm implements JsonSerializable
     private static function contested(array $parts, int $reader): bool
     {
         return ($parts['unkeyed'][$reader] ?? 0) > 0 && array_sum(array_diff_key($parts['keyed'], [$reader => 0])) > 0;
+    }
+
+    /**
+     * The windows of each run of days that are one day to the larger-set rule: the days joined by a midnight with a window
+     * within 300 s, by the first day of the run.
+     *
+     * @param  array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>  $days
+     * @param  list<string>  $joined
+     * @return array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>
+     */
+    private static function groups(array $days, array $joined): array
+    {
+        $groups = [];
+        foreach ($days as $day => $parts) {
+            $into = self::groupOf($day, $days, $joined);
+            $groups[$into] ??= ['unkeyed' => [], 'keyed' => []];
+            foreach (['unkeyed', 'keyed'] as $part) {
+                foreach ($parts[$part] as $character => $windows) {
+                    $groups[$into][$part][$character] = ($groups[$into][$part][$character] ?? 0) + $windows;
+                }
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * The first day of the run of joined days that `$day` is in.
+     *
+     * @param  array<string, mixed>  $days
+     * @param  list<string>  $joined
+     */
+    private static function groupOf(string $day, array $days, array $joined): string
+    {
+        while (in_array($day, $joined, true)) {
+            $before = (new DateTimeImmutable($day, new DateTimeZone('UTC')))->modify('-1 day')->format('Y-m-d');
+            if (! array_key_exists($before, $days)) {
+                break;
+            }
+            $day = $before;
+        }
+
+        return $day;
     }
 
     /**

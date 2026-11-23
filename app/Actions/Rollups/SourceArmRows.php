@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class SourceArmRows
 {
-    public function __construct(private readonly RollupRead $read) {}
+    public function __construct(private readonly RollupRead $read, private readonly MidnightWindows $midnights) {}
 
     /**
      * The rows behind the arms of every source in the list, one read of each table for all of them: the windows by rule, size,
@@ -42,9 +42,10 @@ class SourceArmRows
         $items = $this->items($sources);
         $readers = $this->readers(array_values(array_filter($sources, fn (LootSourceRef $source): bool => $this->mayHaveReader($windows[$source->key()] ?? []))));
 
+        $midnights = $this->midnights->handle($sources);
         $answer = [];
         foreach ($sources as $source) {
-            $answer[$source->key()] = new SourceArmData($windows[$source->key()] ?? [], $items[$source->key()] ?? [], $readers[$source->key()] ?? []);
+            $answer[$source->key()] = new SourceArmData($windows[$source->key()] ?? [], $items[$source->key()] ?? [], $readers[$source->key()] ?? [], $midnights[$source->key()] ?? []);
         }
 
         return $answer;
