@@ -1219,7 +1219,7 @@ comps and is specified here, not in them.
 | `/search` | Characters that are public, creatures, items, objects, zones, quests. An object is a hit when it has a name and a loot window of loot, herbs or ore counted under the character threshold (docs/LOOT.md, phase 3; comp `search.html`): the line is its name, `Object` and how many times it was opened. Its score is the windows. The bobber of a fishing line is not one |
 | `/c/{name}` | A character: overview, levels, sessions, deaths, dungeons, map paths, talents (the latest build of each talent group drawn on its tree, or listed by tab while no layout is stored; the order the points were taken in; respecs; talent facts: characters with the same build at the same level, respec count and gold, the least picked talent among the class and spec, the level of the first build with 31 points in one tree, the longest and median wait to spend a point, and picks refunded within ten minutes, each with its n). A Lifetime chapter, shown when a read is stored, gives the client's own totals of quests completed, titles known and zones explored (the latest `QB`, `KT` and `EB`) and the instance locks that still hold with their reset time (`IS`); a character without those lines shows no chapter. The hero map redraws the walked cells in the order they were first walked (a day at a time, from the daily heat aggregate), with the Level figure counting up and each death appearing at its day; a Replay button runs it again, and a viewer who prefers reduced motion gets the finished map. Skills lead with the profession ranks over played time, placed from the hours played; play time is the last 21 days and the hour of the week, drawn in the viewer's time zone from the hourly aggregate and in UTC without script. Public when its owner says so; the owner sees the private parts too |
 | `/c/{name}/battlegrounds` | The scoreboards of a character's ten latest battlegrounds that have `BO` rows (`battleground_scores`): every player the client read, by faction, with killing blows, honorable kills, deaths, honor, damage and healing, under the zone and the result of the match when the `pvp` group holds its `BM` lines (`battleground_matches`). A match is one uploader's rows that share `match_at`; two uploaders of one match each have their own. Visible exactly when the character's page is. Other players' names follow the privacy rule: the owner sees them, a visitor sees a name (linked to its page) only when that player's own character is public, and every other row says "a player". The character page links it when the character has a match with a scoreboard |
-| `/c/{name}/{class}` | A character's page for its class, with the class's slug (Class pages, above; the comp is `docs/comps/class.html`). Built for the Warlock: a head of the demon models with a callout on each, six figures, the flow of soul shards, Life Tap and the health it traded by level, the demon that was out by level, curses and banes, damage by spell, what finished the kill, a module for each of Nightfall, Shadowburn and Siphon Life the build holds, stones, summons, fear and control, the character against other warlocks of its level bracket once 20 of them are stored (`class_standings`), and the feats of its class and its build's talent tree. A class with no builder, a slug that is not the character's own class, an unknown character and a character private to the viewer answer 404. Visible exactly when the character's page is. The character page links it, and shows a band of up to five of its figures, read from the row the standings job stored (`class_bands`), once the character has a counted cast |
+| `/c/{name}/{class}` | A character's page for its class, with the class's slug (Class pages, above; the comp is `docs/comps/class.html`). Built for all nine classes: a head of the class's own models with a callout on each, six figures, the charts and modules the class is known by (the nine pages, below), a module for each of up to three talents the build holds, what the class does for the party, the character against other characters of its class and level bracket once 20 of them are stored (`class_standings`), and the feats of its class and its build's talent tree. A class with no builder, a slug that is not the character's own class, an unknown character and a character private to the viewer answer 404. Visible exactly when the character's page is. The character page links it, and shows a band of up to five of its figures, read from the row the standings job stored (`class_bands`), once the character has a counted cast |
 | `/talents`, `/talents/{class}/{spec}` | Public. Every spec with the characters that play it, and one spec: pick rate by node (a heat on the real tree when a layout is stored, a table always), the most common order of points, builds by level bracket, and builds and outcomes (the ten most held builds with the level-ups, median time to level, deaths and dungeon runs that happened while each was held, from one snapshot to the next; `?level=10-19` to `60`; `ruleset` and `server` as on `/stats`). Each character counts once, by its latest counted build read inside the bracket, and every figure prints its n. `/stats` carries a Talents block with the most played specs |
 | `/creatures/{id}`, `/items/{id}`, `/zones/{id}`, `/quests/{id}` | Result pages: kills and killers, drop rates by loot rule, where it is, levels. An item page also lists the boss encounters that dropped it (`boss_loot`) and the recipes that make or use it (`recipes`, `recipe_reagents`). A creature page, and an object page, add two modules under the drop table (docs/LOOT.md, phase 4; comp `creature.html`): Drop rate by loot rule and Drop rate by group size under the rule the page shows (`?rule=`, else the rule with most corpses). Each is one row for every item with 10 drops or more and one mark for every rule (or size) on a shared 0 to 100% axis: the dot is the rate, the line its 95% range, `k of n` beside it, hollow from 10 to 29 corpses and not drawn under 10. The windows with a corpse key count whole, each corpse once; the windows with no key of a free-for-all arm that two or more characters contributed to count their one reader, and the arm carries `one reader` only then. The first two arms drawn (the most corpses) are compared: the row says `no difference found`, or marks the difference in points with its Newcombe range and the tags of both arms when both arms have 30 corpses and the range stays off zero after 0.05 is divided by the number of items in the chart. A personal-loot arm is drawn and never compared. When fewer than two arms are drawn the module says which rules, or which sizes with their corpses, were recorded. A creature or object page also links `/loot/groups?source=`. An item page adds Rolls in groups (the uploaders' own rolls of the item under the rules that roll: need, greed and pass as a rate with its counts, a bar from 10 rolls, and how many of the rolls everyone passed) and Who received it by class (what other members of a group received by class, from `group_loot` and the class their line named, and what the uploaders received, with each class's share of the receipts from 10 receipts and the rolls of need or greed it made on the item and won; one uploader's view of its group, so a group with several uploaders counts once for each). The two sit side by side under Where it drops, or alone when only one has data; each is left out when fewer than `min_characters` characters contributed (comp `item.html`). A zone page adds Looted here under Creatures met here (docs/LOOT.md, phase 3; comp `zone.html`): the five creatures looted most often in the zone with their corpses looted and most common item, the five items that dropped most often with their best source (each rate with its 95% range, or its counts under 10 corpses), and the link `All loot in {zone}` to `/loot?zone={id}`. It counts every ruleset and every loot rule but personal loot, so the ruleset filter of the page does not narrow it, and fishing is not in it. The module is left out while the zone has no loot |
 | `/items/{id}` loot modules | Public (docs/LOOT.md, phase 3; comps `item.html`, `container.html`). Under the item's drop modules: **By zone** (a third) lists the zones where creatures were looted and held the item: Zone, Dropped (corpses that held it) and Per 100 corpses, the share of the zone's creature corpses looted for the first time that held it, with its 95% range after it, or `k of n` while the zone has under 10 corpses; the ten zones with most drops, by Dropped; every ruleset and every loot rule but personal loot. **Where it was looted** (w8) marks the map with where the character stood at each of the newest 600 windows that held the item, as the creature and object pages do. Both are left out for an item no window held. An item that is a container (windows read as `bag`) adds **What it holds**, the object page's drop table over what the container gave: Item, Drop rate with its range, Range, Opened and Per drop, without the rule control. Gathering sources keep Where it's gathered, and fishing windows are in none of them |
@@ -1700,10 +1700,11 @@ A character has a page for its class, `/c/{name}/{class}` (owner, 2026-11-22: "g
 have metrics/charts/visuals for specific classes and talents", "fun and exciting and for all classes and talents").
 It shows what only that class does: a warlock's soul shards, Life Tap and demons, a shaman's totems, a druid's forms.
 The design is approved: the comp is `docs/comps/class.html` (the Warlock) and the Scarlet app gets the same
-view. Built: the art (the nine heads, `warrior` to `druid` in `resources/js/scene/scenes/` and in the
-`SCENES` table of `tools/scene-art`, with `AppSupportScene` and `PlayerClass::scene()` naming them, and `/design/scenes/{class}`
-showing each over invented numbers, and the spell icons, Spell icons), the view layer, and the route, the reads, the
-comparison, the Warlock, Mage and Druid pages (below). A class with no builder yet has a 404 address.
+view. Status: all nine pages are built, one for each class. Built: the art (the nine heads, `warrior` to `druid` in
+`resources/js/scene/scenes/` and in the `SCENES` table of `tools/scene-art`, with `AppSupportScene` and
+`PlayerClass::scene()` naming them, and `/design/scenes/{class}` showing each over invented numbers, and the spell icons,
+Spell icons), the view layer, the route, the reads, the comparison and the nine pages (below). Every class has a builder,
+and a character has its page once its sessions counted a cast.
 
 **What is built (the view layer).** `App\Support\ClassPage\ClassPage` is the typed page object every class fills: the
 character line, the links, the callouts, the six figures, rows of modules (each a list of blocks), the talent modules,
@@ -1779,11 +1780,16 @@ stored standing either.
   sitemap does not list battlegrounds pages, so it does not list class pages either.
 - **Charts of a short range.** A mirror or a stack of twelve levels or fewer names every level on its axis; longer ones
   name the first and each ten.
+- **Where a by-level chart starts.** A chart starts at the first level that has a counted row of what it reads, and a
+  share of played time counts only the time from that level: `ClassRows::levels()`, `playedByLevel()` and `playedMs()`
+  take the tables or state kinds the chart reads (a demon chart reads the pet spans, a Life Tap chart the casts). The
+  levels played before the rows existed are not drawn as "No demon out" or "No form"; a fight with no pet still is.
 - **Fixture.** `Shard-Keeper` (`e2e/warlock-lines.mjs`) is a warlock of the first e2e install with six hours over levels 50
   to 52, written so every module has rows. `e2e/warlock-expected.mjs` holds the figures worked out from its lines before
   the page was read, and `e2e/checks/class-page.mjs` reads the page against them.
 
-**Where the Warlock page differs from the comp.** The rows the decoder writes cannot answer some of the comp's modules,
+**Where the Warlock page differs from the comp.** Built by `WarlockBuilder` and the classes in
+`App\Support\ClassPage\Warlock` (above). The rows the decoder writes cannot answer some of the comp's modules,
 so the page leaves them out or says what the rows can. Soul shards: the pair "most held at once, typical pull, pulls with
 none" is replaced by "In the bags now", since no row holds the bag over time. Nightfall: "Seconds to use one" is replaced
 by "Shadow Bolts under it". Shadowburn: "Shards lost to it" is replaced by "Shards spent", and the kill cell reads "Killed
@@ -1792,40 +1798,6 @@ only a fight's top five spells and say so. Summons: "At a dungeon door", the pla
 are replaced by "Interrupted". "Deaths undone by your own" reads "Deaths undone by a soulstone". The head has no link to
 a build page. A killing blow with no cast of yours in the 3 seconds before it is labelled "No cast in the 3 seconds
 before", with the note "a wand, a melee swing, a pet or a damage-over-time spell": the rows cannot tell which.
-
-**Mage.** `MageBuilder` draws its sheet from `App\Support\ClassPage\Mage\` (`Spells`, `Conjuring`, `Schools`, `Portals`,
-`Casting`, `Control`, `Party`, `Talents`, `Standings`) and reads the spells a meter listed by level through
-`MeterSpellLevels`. Its fixture is `Frost-Weaver` (`e2e/mage-lines.mjs`, worked out in `e2e/mage-expected.mjs`), a mage of
-the stranger install, so the first install's character counts do not move. The rows cannot answer some of the comp's
-modules, so the page says what they can. Conjured water and food: the site never receives the bag contents, so "in the
-bags now" is not known, and what is left in the bags and what was gone at logout cannot be told apart; they are one row,
-"In the bags or gone at logout" (conjured less everything that left), and a note says so. The bag chart is left out for the
-same reason. Damage by school by level counts the Frost, Fire and Arcane spells the damage meter listed, which holds the
-five largest spells of a fight, and a note says so. The talent modules are Ice Barrier, Cold Snap, Ice Block,
-Presence of Mind, Arcane Power, Pyroblast and Combustion, in that order, and the page shows the first three the build
-holds. The comparison covers water
-conjured, water handed out, portals opened, kills in the biggest pull, time spent drinking and Blinks, each as a rate a
-played hour or a share.
-
-**Druid.** `DruidBuilder` draws its sheet from `App\Support\ClassPage\Druid\` (`Spells`, `Forms`, `Casting`, `Talents`,
-`Party`, `Standings`). A form is the aura of `state_times` kind `a` under its client name (Bear Form and Dire Bear Form
-are one), and the form chart reads the `shift_form` tally, which counts gains only: the left side has "No form", the
-right side has none. A shift back into the form just left inside 2 seconds is the tally's `a` equal to `b`. Its fixture is
-`Moon-Walker` (`e2e/druid-lines.mjs`, figures in `e2e/druid-expected.mjs`), a druid of the stranger install. The rows
-cannot answer some of the comp's modules, so the page says what they can. "What each form did" lists the spells that need
-a form (Maul, Claw) and the caster's spells, by casts instead of a share, since no row holds the form worn at a cast, and
-a note says so. Left out, since no row says where or in which fight a cast fell: Rebirths by dungeon, Innervates in a
-dungeon run and in boss fights, most shifts in one fight, forms worn in one fight, and "The role played in dungeons",
-which "The form worn in fights" replaces (the form's share of fight time, over every fight). Rebirth and Innervate show
-casts, the share cast in a fight and Rebirth's interrupts or the hours between Innervates; who a spell was cast on is not
-recorded. Prowl shows the hours prowling, the casts of Prowl and the spells cast while it was on (`cast_under`), in
-place of the openers and fights opened. Leader of the Pack shows the hours it was up, its share of the time in Bear or
-Cat Form and the times it went on, since the group is not recorded. Healing by spell reads the healing meter and says it
-lists five spells a fight. The talent modules are Feral Charge (Bear), Omen of Clarity, Leader of the Pack, Nature's
-Grasp, Moonkin Form, Nature's Swiftness and Swiftmend, the first three the build holds shown first. Omen of Clarity is a
-Balance talent in this client, and its procs are the Clearcasting auras. The comparison covers shapeshifts a fight, the
-time in a form of played time, Travel Form of travel, the shifts back into the form just left, Rebirths and Innervates in
-ten played hours, and the fight time in Bear or Cat Form.
 
 **Where the Warrior page differs from the comp.** Built by `WarriorBuilder`: a head of a target dummy, a weapon rack and
 an armour stand with a callout each (the attack cast most, the weapon type held longest in the main hand, the shield);
@@ -1862,7 +1834,8 @@ share of undead kills is left out and the note says so. Repentance, Consecration
 "cut short" are replaced by "Used in a fight" and a rate. Blessings in a group: no row holds group time, so the rate is
 over the time played, and "Lay on Hands in the open" is left out of Saves. Hearthstones inside a bubble come from
 `cast_under` and deaths after a bubble from `death_after_aura`, both counting only the shield and protection that
-the character cast. The fixture is Oath-Bearer (`e2e/paladin-lines.mjs`); `e2e/paladin-expected.mjs` works its figures
+the character cast. The comp's split of the Symbols of Kings between the greater blessings is "Symbols of Kings used":
+the rows hold the symbols that left the bags and not who was blessed, and a note says so. The fixture is Oath-Bearer (`e2e/paladin-lines.mjs`); `e2e/paladin-expected.mjs` works its figures
 out from the lines, including the fate of each seal by the rules of docs/ROWS.md, and `e2e/checks/class-page-paladin.mjs`
 reads the page against them. The Warrior, Paladin and Hunter checks share `e2e/checks/class-page-kit.mjs`.
 
@@ -1879,7 +1852,10 @@ without ammo. The quiver is a bag of stacks of 200 counted from the changes the 
 bag is a quiver. A pet of any other family than the four with a model is "Another pet" in the level chart and keeps its
 name in the list. Tracking comes from `MP`, whose numeric names are resolved by spell id. Auto Shot is found by the
 name of the spell id the `r` rows carry, as they hold no name. "Auras for the group" and the traps are hours up and
-casts: no row holds group time, so "in dungeons" is left out. Shots fired are the ammo item changes that Auto Shot
+casts: no row holds group time, so "in dungeons" is left out. Bestial Wrath and Intimidation read casts, the share
+used in a fight and casts a fight, in place of the boss fights, since no row holds an encounter; Aimed Shot reads its
+casts, its share of the shots and the kills within 3 seconds of one, in place of the fights it opened and the casts a
+resist cut short, since no row says why a cast failed. Shots fired are the ammo item changes that Auto Shot
 caused, read as for the item flows of docs/ROWS.md. Scatter Shot, Deterrence and Counterattack carry the "Used in a
 fight" pair and a rate or deaths within 10 seconds; the fixture holds none of the three, so they were checked once
 against synthetic talents and are not a page check. The fixture is Pack-Warden (`e2e/hunter-lines.mjs`), whose pets,
@@ -1932,6 +1908,48 @@ the most in a row. The six figures kept for the comparison are totems dropped a 
 elements down, shocks a fight, the share of played time as a Ghost Wolf, the share of deaths walked off with
 Reincarnation and Astral Recalls a played hour.
 
+**Where the Mage page differs from the comp.** Built by `MageBuilder` and the classes in `App\Support\ClassPage\Mage`
+(`Spells`, `Conjuring`, `Schools`, `Portals`, `Casting`, `Control`, `Party`, `Talents`, `Standings`); it reads the spells a
+meter listed by level through `MeterSpellLevels`. Its fixture is `Frost-Weaver` (`e2e/mage-lines.mjs`, worked out in
+`e2e/mage-expected.mjs`), a mage of the stranger install, so the first install's character counts do not move. The rows
+cannot answer some of the comp's modules, so the page says what they can. Conjured water and food: the site never receives
+the bag contents, so "in the bags now" is not known, and what is left in the bags and what was gone at logout cannot be
+told apart; they are one row, "In the bags or gone at logout" (conjured less everything that left), and a note says so.
+The bag chart is left out for the same reason, and "Stacks conjured a played hour" reads "Conjured a played hour". Water
+and food handed out leaves out "Most handed out in a day" and the trades, since no row holds a day or who took an item,
+and a note says so. Arcane Intellect reads "Casts a played hour" where the comp has casts a group hour, since no row holds
+group time. Damage by school by level counts the Frost, Fire and Arcane spells the damage meter listed, which holds the
+five largest spells of a fight, and a note says so. Polymorph reads casts, the share cast in a fight and "Interrupted",
+without "Polymorphs in dungeons"; Counterspell says in a note how many interrupts the client's meter landed. "Curses lifted
+and sheep kept" is "Curses lifted", the Remove Curse casts and the client's dispel meter, since no row says how long a
+sheep held. The talent modules are Ice Barrier, Cold Snap, Ice Block, Presence of Mind, Arcane Power, Pyroblast and
+Combustion, in that order, and the page shows the first three the build holds. "Fights with it" reads "In a fight"; Ice
+Barrier adds the damage absorbed, which counts the fights where the meter listed it, and a note says so; Cold Snap reads
+casts, the share in a fight and the hours between casts, without "Near a freeze", since no row says what a Cold Snap
+followed; Ice Block reads casts, in a fight and deaths within 10 seconds of one ending. The comparison covers water
+conjured, water handed out, portals opened, kills in the biggest pull, time spent drinking and Blinks, each as a rate a
+played hour or a share, and waits for 20 mages.
+
+**Where the Druid page differs from the comp.** Built by `DruidBuilder` and the classes in `App\Support\ClassPage\Druid`
+(`Spells`, `Forms`, `Casting`, `Talents`, `Party`, `Standings`). A form is the aura of `state_times` kind `a` under its client name (Bear Form and Dire Bear Form
+are one), and the form chart reads the `shift_form` tally, which counts gains only: the left side has "No form", the
+right side has none. A shift back into the form just left inside 2 seconds is the tally's `a` equal to `b`. Its fixture is
+`Moon-Walker` (`e2e/druid-lines.mjs`, figures in `e2e/druid-expected.mjs`), a druid of the stranger install. The rows
+cannot answer some of the comp's modules, so the page says what they can. "What each form did" lists the spells that need
+a form (Maul, Claw) and the caster's spells, by casts instead of a share, since no row holds the form worn at a cast, and
+a note says so. Left out, since no row says where or in which fight a cast fell: Rebirths by dungeon, Innervates in a
+dungeon run and in boss fights, most shifts in one fight, forms worn in one fight, and "The role played in dungeons",
+which "The form worn in fights" replaces (the form's share of fight time, over every fight). Rebirth and Innervate show
+casts, the share cast in a fight and Rebirth's interrupts or the hours between Innervates; who a spell was cast on is not
+recorded. Prowl shows the hours prowling, the casts of Prowl and the spells cast while it was on (`cast_under`), in
+place of the openers and fights opened. Leader of the Pack shows the hours it was up, its share of the time in Bear or
+Cat Form and the times it went on, since the group is not recorded. Healing by spell reads the healing meter and says it
+lists five spells a fight. The talent modules are Feral Charge (Bear), Omen of Clarity, Leader of the Pack, Nature's
+Grasp, Moonkin Form, Nature's Swiftness and Swiftmend, the first three the build holds shown first. Omen of Clarity is a
+Balance talent in this client, and its procs are the Clearcasting auras. The comparison covers shapeshifts a fight, the
+time in a form of played time, Travel Form of travel, the shifts back into the form just left, Rebirths and Innervates in
+ten played hours, and the fight time in Bear or Cat Form, and waits for 20 druids.
+
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
 the character's page is. `/c/{name}`, the class page and `/c/{name}/battlegrounds` share one line of navigation under
@@ -1942,8 +1960,11 @@ carries a band of up to five of the class's figures above "This week", linking t
 **The skeleton, the same for every class.**
 
 1. A head built like a profession page's (Profession scenes): the game's own models for what the class is known by,
-   in the `ground` setting, with a callout on each model carrying the character's own number for it. The models
-   stand still: the scene module draws no skeleton animation. A creature needs its skin, so `tools/scene-art` reads a
+   in the `ground` setting, with a callout on each model carrying the character's own number for it. A callout
+   stands on its model and takes the side and the pole length at which its text touches no model, no other callout and
+   no edge of the scene, at 1280 and at 390 wide (`resources/js/scene/callouts.js`, from the models' screen rectangles
+   that `mount.js` projects); where a scene leaves no such place, the callout with the least overlap wins, and the nine
+   class scenes' anchors are placed so that one exists. The models stand still: the scene module draws no skeleton animation. A creature needs its skin, so `tools/scene-art` reads a
    creature's display row and puts its texture variations in the model's slots 11 to 13 before it writes the art.
 2. The name line (the class with its icon, the character, level, talent build with points by tree, hours played),
    the navigation line and the credit line.
