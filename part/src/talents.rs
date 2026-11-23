@@ -1,6 +1,8 @@
 //! Talent rows of the decoder (docs/ROWS.md): `talent_changes`, `talent_snapshots`, `talent_respecs`,
 //! `talent_group_spans`, and the layout rows `talent_trees` and `talent_nodes`. The state it keeps is one session's:
-//! the ranks of each talent group as the `TA` lines left them, and the group that is active.
+//! the ranks of each talent group as the `TA` lines left them, and the group that is active. A layout is stored under
+//! the hash of the `TD` fields it was learned from, so the key of a layout is the content it holds and not a value
+//! the client chose.
 
 use crate::decode::num;
 use crate::rows::Rows;
@@ -8,6 +10,7 @@ use std::collections::BTreeMap;
 
 const OFFER_TO_REFUND_MS: i64 = 10 * 60 * 1000;
 const RESET_TO_REFUND_MS: i64 = 60 * 1000;
+const LAYOUT_FIELDS: usize = 9;
 
 const MAX_SMALLINT: i64 = i16::MAX as i64;
 const MAX_INTEGER: i64 = i32::MAX as i64;
@@ -52,6 +55,24 @@ struct Respec {
     after: Option<String>,
 }
 
+struct LayoutNode {
+    node: i64,
+    x: Option<i64>,
+    y: Option<i64>,
+    kind: String,
+    max_ranks: Option<i64>,
+    tab: Option<i64>,
+    entries: String,
+    edges: String,
+}
+
+struct Layout {
+    class_id: i64,
+    node_count: i64,
+    seed: String,
+    nodes: Vec<LayoutNode>,
+}
+
 #[derive(Default)]
 pub struct Talents {
     build: String,
@@ -64,7 +85,7 @@ pub struct Talents {
     open: BTreeMap<i64, Respec>,
     done: Vec<Respec>,
     next_index: i64,
-    trees: BTreeMap<i64, String>,
+    trees: BTreeMap<i64, Layout>,
 }
 
 fn hash(ranks: &Ranks) -> String {
@@ -76,6 +97,14 @@ fn hash(ranks: &Ranks) -> String {
         }
     }
     format!("{h:016x}")
+}
+
+fn layout_hash(seed: &str) -> String {
+    let mut h: u32 = 5381;
+    for b in seed.bytes() {
+        h = h.wrapping_mul(33).wrapping_add(u32::from(b));
+    }
+    format!("{h:08x}")
 }
 
 fn points(ranks: &Ranks) -> i64 {
@@ -123,40 +152,72 @@ impl Talents {
         else {
             return;
         };
-        let Some(layout) = f.get(3).map(|s| s.trim()).filter(|s| !s.is_empty()) else {
+        if f.get(3).is_none_or(|s| s.trim().is_empty()) {
             return;
-        };
-        self.trees.insert(tree, layout.to_string());
-        w.begin("talent_trees");
-        w.int("session", c.session).text("build", &self.build);
-        w.int("tree_id", tree)
-            .int("class_id", class)
-            .int("node_count", count)
-            .str("layout_hash", layout);
-        w.end();
+        }
+        if let Some(open) = self.trees.remove(&tree) {
+            self.emit_layout(c.session, w, tree, open);
+        }
+        self.trees.insert(
+            tree,
+            Layout {
+                class_id: class,
+                node_count: count,
+                seed: String::new(),
+                nodes: Vec::new(),
+            },
+        );
     }
 
-    pub fn on_td(&mut self, c: &Ctx, w: &mut Rows, f: &[&str]) {
+    pub fn on_td(&mut self, f: &[&str]) {
         let (Some(tree), Some(node)) = (integer(f, 0), integer(f, 1)) else {
             return;
         };
-        let Some(layout) = self.trees.get(&tree).cloned() else {
+        let Some(layout) = self.trees.get_mut(&tree) else {
             return;
         };
-        let text = |i: usize| f.get(i).map_or("", |s| s.trim());
-        w.begin("talent_nodes");
-        w.int("session", c.session).text("build", &self.build);
+        for i in 0..LAYOUT_FIELDS {
+            if i > 0 {
+                layout.seed.push('|');
+            }
+            layout.seed.push_str(f.get(i).copied().unwrap_or(""));
+        }
+        layout.nodes.push(LayoutNode {
+            node,
+            x: integer(f, 2),
+            y: integer(f, 3),
+            kind: f.get(4).map_or("", |s| s.trim()).to_string(),
+            max_ranks: smallint(f, 5),
+            tab: integer(f, 6),
+            entries: f.get(7).map_or("", |s| s.trim()).to_string(),
+            edges: f.get(8).map_or("", |s| s.trim()).to_string(),
+        });
+    }
+
+    fn emit_layout(&mut self, session: i64, w: &mut Rows, tree: i64, layout: Layout) {
+        let hash = layout_hash(&layout.seed);
+        w.begin("talent_trees");
+        w.int("session", session).text("build", &self.build);
         w.int("tree_id", tree)
-            .str("layout_hash", &layout)
-            .int("node_id", node)
-            .opt("pos_x", integer(f, 2))
-            .opt("pos_y", integer(f, 3))
-            .text("node_type", text(4))
-            .opt("max_ranks", smallint(f, 5))
-            .opt("tab_id", integer(f, 6))
-            .text("entries", text(7))
-            .text("edges", text(8));
+            .int("class_id", layout.class_id)
+            .int("node_count", layout.node_count)
+            .str("layout_hash", &hash);
         w.end();
+        for node in layout.nodes {
+            w.begin("talent_nodes");
+            w.int("session", session).text("build", &self.build);
+            w.int("tree_id", tree)
+                .str("layout_hash", &hash)
+                .int("node_id", node.node)
+                .opt("pos_x", node.x)
+                .opt("pos_y", node.y)
+                .text("node_type", &node.kind)
+                .opt("max_ranks", node.max_ranks)
+                .opt("tab_id", node.tab)
+                .text("entries", &node.entries)
+                .text("edges", &node.edges);
+            w.end();
+        }
     }
 
     pub fn on_tq(&mut self, c: &Ctx, f: &[&str]) {
@@ -351,6 +412,10 @@ impl Talents {
     }
 
     pub fn finish(&mut self, session: i64, w: &mut Rows) {
+        let trees: Vec<(i64, Layout)> = std::mem::take(&mut self.trees).into_iter().collect();
+        for (tree, layout) in trees {
+            self.emit_layout(session, w, tree, layout);
+        }
         let groups: Vec<i64> = self.open.keys().copied().collect();
         for group in groups {
             let after = hash(&self.current(group));

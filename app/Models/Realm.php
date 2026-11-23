@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * A realm of WoW Forever by the id inside a character's GUID (`Player-<id>-<hex>`), and the ruleset it is. A ruleset
  * is a kind of realm, so a character with no answer of its own takes the kind of its home realm. A row is seeded, or
- * learned from the Armory's answer for a character that lives on it.
+ * learned once enough installs' characters on it were seen playing the same kind (`LearnRealm`).
  *
  * @property int $id
  * @property string|null $kind

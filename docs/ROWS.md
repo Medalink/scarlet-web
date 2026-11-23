@@ -894,7 +894,8 @@ and a row whose group the last one already named writes none.
 
 The layout of a class tree, which is the same for every player of a client build. Like `names`, these rows carry
 `session` only. `build` is the client version of the `S` line (a string such as `1.60.1`, null when the line has none). A `TD` whose tree has no `TV` earlier in the session is
-skipped. `layout_hash` is the `TV` hash.
+skipped. `layout_hash` is the decoder's own over the `TD` fields as they were sent, so a stored layout is keyed by
+the content it holds and not by the hash the `TV` line claimed.
 
 `talent_trees`: `build`, `tree_id`, `class_id`, `node_count`, `layout_hash`.
 `talent_nodes`: `build`, `tree_id`, `layout_hash`, `node_id`, `pos_x`, `pos_y` (the client's raw numbers, drawn at

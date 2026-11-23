@@ -94,6 +94,7 @@ return [
         'pause_ms' => 2000,
         // How long one run of the job looks characters up before the next run takes the rest.
         'job_seconds' => 200,
+        'realm_quorum' => (int) env('SCARLET_ARMORY_REALM_QUORUM', 2),
     ],
     'ahledger' => [
         'base_url' => env('SCARLET_AHLEDGER_URL', 'https://api.ahledger.com'),

@@ -1099,9 +1099,11 @@ ruleset of a character is found outside the recording, in this order:
    (`us`).
 2. **The home realm.** A ruleset is a kind of realm. The realm id inside a character's GUID (`RU` server, kept as
    `characters.home_realm_id` from its latest session that has one) names the realm, and `realms(id, kind, name,
-   source)` says which ruleset it is. Two realms are seeded as Normal, the ones the first uploaders were seen on. A
-   realm learns its kind from the Armory's answer for any character that lives on it, so one answer files every
-   character of that realm, and a disagreement between two answers keeps the first and is logged.
+   source)` says which ruleset it is. Two realms are seeded as Normal, the ones the first uploaders were seen on, and
+   a seed keeps its kind. A realm learns its kind once the Armory's answers for characters of distinct installs
+   (`scarlet.armory.realm_quorum`, 2) agree on it, so one install, or one claimed name, cannot decide the fact for
+   every character on the realm; a learned kind that a quorum of installs outruns later is re-decided, and the
+   realm's sessions are filed under the new kind. A disagreement below the quorum is logged.
 
 A character with neither answer is "Not identified". A ruleset is its kind and nothing else: `rulesets` has one row
 for each kind (key and slug `normal`, `pvp`, `roleplay`, `roleplay-pvp`, `hardcore`) and one for characters whose kind

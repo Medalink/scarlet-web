@@ -10,8 +10,9 @@ class UpsertTalentLayouts
     private const int CHUNK = 2000;
 
     /**
-     * Write the talent tree layouts a session carried. A layout is the same for every player of a client build, so a
-     * hash that is stored already adds its nodes once and one upload to its count.
+     * Write the talent tree layouts a session carried. The decoder keys a layout by the hash of the `TD` fields it
+     * was learned from, so a stored hash's nodes are the ones that hash was computed over and a later session with
+     * the same layout lands on the same rows; a hash that is stored already adds one upload to its count.
      *
      * @param  bool  $countUpload  false when the session's layouts were counted by an earlier decode
      */

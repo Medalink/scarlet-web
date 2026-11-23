@@ -54,7 +54,7 @@ class DetectDueRulesets
         return $done;
     }
 
-    /** @return int realms that got a ruleset */
+    /** @return int realms whose ruleset changed */
     private function learnRealms(): int
     {
         $learned = 0;

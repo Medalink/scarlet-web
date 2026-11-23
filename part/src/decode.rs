@@ -896,7 +896,7 @@ impl Dec<'_> {
             "TG" => self.talents.on_tg(&ctx, &mut self.w, f),
             "TQ" => self.talents.on_tq(&ctx, f),
             "TV" => self.talents.on_tv(&ctx, &mut self.w, f),
-            _ => self.talents.on_td(&ctx, &mut self.w, f),
+            _ => self.talents.on_td(f),
         }
     }
 
