@@ -206,11 +206,9 @@ Rules the design follows:
    keys and one with keys may have opened the same corpses and nothing tells which, so that day counts the larger
    of the reader's windows with no key and all the windows with a key. A day on which only one of the two exists
    counts it whole: windows with no key from before the keys and windows with a key from after them are all
-   counted. Two days with a free-for-all window within 300 s of the midnight between them are one day to this test and
-   to the choice of the larger set, so a corpse that the reader read at 23:59:58 with no key and another character at
-   00:00:03 with a key counts once; a key rollout, where the windows with no key end one day and the windows with a key
-   begin on the next, has none near its midnight and counts both. `characters` are those of the sets counted. An
-   overlapping day loses up to half its sample and cannot double count. 37% of free-for-all windows have another uploader's window on the same source inside 300 s, past
+   counted. Days are UTC days, so a corpse that the reader read seconds before midnight with no key and another
+   character seconds after with a key counts twice. `characters` are those of the sets counted. An
+   overlapping day loses up to half its sample and cannot double count within the day. 37% of free-for-all windows have another uploader's window on the same source inside 300 s, past
    the 5% that triggers it. An arm whose windows all have a key, or whose windows with no key are one character's
    own and never share a day with another character's windows with a key, has neither one reader nor the tag.
    The arms of the rule and size charts, the rows of `/public/creatures/{id}` `drops`, the items per corpse by rule on
@@ -245,9 +243,9 @@ Rules the design follows:
    counts as `skin` when it lists a skin item (a window with no item is `loot`), else as `loot`; an object's takes the
    read its own windows have most (`loot`, `herb` or `ore`), and an object nobody opened for itself counts nowhere. A
    skin item is an item that a `gather_items` row of kind `skin` has and that no loot window of a character lists
-   (`loot_drops` via `window`, read `loot`) nor a window a member sent for a corpse that no character skinned (a member's
-   window is `skin` or `loot` by its items, so its own class cannot say it is loot): `gather_items` holds the whole list
-   of a skinning read, so the meat of a corpse nobody had looted joins it, and a mate's loot window of meat alone is loot. A mate's skin window that still
+   (`loot_drops` via `window`, read `loot`): `gather_items` holds the whole list of a skinning read, so the meat of a
+   corpse nobody had looted joins it until a character loots meat. A member's windows do not take items out of the set:
+   nearly every corpse a member skins is one the uploader did not, so their items cannot mark loot. A mate's skin window that still
    lists meat is skin by its leather. The set is read from every row at each rebuild, so a corpse a member skinned
    counts as loot until some character has skinned that item, and the days outside a range rebuilt keep the set of
    their own rebuild until the next whole one (`loot:rebuild-keyed`, daily). An unkeyed window a member
@@ -559,8 +557,7 @@ object is labelled by what it gives.
   arms into rows of the counted views' shape (`Apportion::split` shares a total over zones and sizes), and
   `CountedLoot` gives each table those rows beside the view (`windows`, `items`), or the sum of them for a table that
   adds every row (`windowShift`, `dropShift`). Tables that aggregate everything read the plain view and add the shift in
-  PHP, since a function scan inside the union stops TimescaleDB's parallel aggregate plan. `MidnightWindows` reads the
-  days whose midnight has a window within 300 s on each side. A read of more than 40 arms turns nested loops off in
+  PHP, since a function scan inside the union stops TimescaleDB's parallel aggregate plan. A read of more than 40 arms turns nested loops off in
   its transaction: with them the planner took 14.5 s for all the arm's items, and 0.54 s without. Cold page times
   (cache cleared, median of 5) before and after, on the 10x seed (300 creature sources) and the 150x seed (2,000):
   `/loot` 0.43 s to 0.49 s and 1.07 s to 1.87 s; its items view 0.47 s to 1.00 s and 1.39 s to 3.61 s; `/loot/groups`
