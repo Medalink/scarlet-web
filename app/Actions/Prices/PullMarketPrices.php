@@ -20,7 +20,8 @@ class PullMarketPrices
     /**
      * Bring AHledger's prices up to date, gently: one call for the market list, then one conditional GET of each enabled
      * market's price table, a second apart. An unchanged table answers 304 and costs nothing; a new scan is folded
-     * into that day's rows. A 429, a server error or an unreachable host ends the run, and the next run tries again.
+     * into that day's rows in one transaction with the market's scan time. A market the list no longer names is
+     * disabled. A 429, a server error or an unreachable host ends the run, and the next run tries again.
      *
      * @return array<string, string> the status of each market this run asked for, by market id
      */
@@ -73,7 +74,11 @@ class PullMarketPrices
                 'enabled' => in_array($m['region'] ?? null, $regions, true),
             ];
         }
+        if ($rows === []) {
+            return null;
+        }
         Market::query()->upsert($rows, ['id'], ['ruleset', 'faction', 'region', 'label', 'enabled']);
+        Market::query()->whereNotIn('id', array_column($rows, 'id'))->update(['enabled' => false]);
 
         return array_values(Market::query()->where('enabled', true)->orderBy('id')->get()->all());
     }
@@ -106,14 +111,17 @@ class PullMarketPrices
 
         $day = $table->scannedAt->toDateString();
         $at = $table->scannedAt->toIso8601String();
-        foreach (array_chunk($table->rows, self::UPSERT_ROWS) as $chunk) {
-            DB::table('market_price_days')->upsert(
-                array_map(fn (array $row): array => ['day' => $day, 'market_id' => $market->id, 'scanned_at' => $at, 'low' => $row['min_buyout'], ...$row], $chunk),
-                ['market_id', 'item_id', 'day'],
-                ['low' => DB::raw('least(market_price_days.low, excluded.low)'), 'scanned_at', 'min_buyout', 'median', 'median_7d', 'median_30d', 'quantity', 'sold_x10'],
-            );
-        }
-        $market->scanned_at = $table->scannedAt;
+        DB::transaction(function () use ($table, $market, $day, $at): void {
+            foreach (array_chunk($table->rows, self::UPSERT_ROWS) as $chunk) {
+                DB::table('market_price_days')->upsert(
+                    array_map(fn (array $row): array => ['day' => $day, 'market_id' => $market->id, 'scanned_at' => $at, 'low' => $row['min_buyout'], ...$row], $chunk),
+                    ['market_id', 'item_id', 'day'],
+                    ['low' => DB::raw('least(market_price_days.low, excluded.low)'), 'scanned_at', 'min_buyout', 'median', 'median_7d', 'median_30d', 'quantity', 'sold_x10'],
+                );
+            }
+            $market->scanned_at = $table->scannedAt;
+            $market->save();
+        });
 
         return Market::STATUS_STORED;
     }

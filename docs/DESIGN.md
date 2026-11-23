@@ -157,12 +157,13 @@ money from them. AHledger asks to be cited by that spelling, with a link to the 
 market and scan time beside each price.
 
 - `prices:pull` runs every 15 minutes on one server. It reads `GET /v1/markets` into `markets`, enabling the Forever
-  markets of the regions in `scarlet.ahledger.regions` (US), then asks for each enabled market's price table
-  (`GET /v1/pricetable/{market}`) with the ETag it stored. An unchanged table answers 304. One request at a time, a
-  second apart; a 429, a server error or an unreachable host ends the run and the next run tries again. That is at
-  most nine requests every 15 minutes against a limit of 300 a minute.
+  markets of the regions in `scarlet.ahledger.regions` (US) and disabling any market the list no longer names, then
+  asks for each enabled market's price table (`GET /v1/pricetable/{market}`) with the ETag it stored. An unchanged
+  table answers 304. One request at a time, a second apart; a 429, a server error or an unreachable host ends the run
+  and the next run tries again. That is at most nine requests every 15 minutes against a limit of 300 a minute.
 - A table is read only whole: a header of another version or market, a malformed row or a row count that does not
-  match the header stores nothing and sets the market's `status` to `unreadable`.
+  match the header stores nothing and sets the market's `status` to `unreadable`. A readable table's rows and the
+  market's scan time are written in one transaction.
 - `market_price_days` (hypertable on `day`) holds one row per market, item and UTC day. Each newer scan of the day
   replaces the row's latest figures (`min_buyout`, `median`, 7 and 30 day medians, `quantity`, `scanned_at` and
   `sold_x10`, the estimated units sold a day times ten, null until AHledger has enough hours of a market's scans) and

@@ -13,6 +13,9 @@ final class ItemPriceHistory
     /** How many of the latest days the table of a market lists. */
     private const int TABLE_DAYS = 14;
 
+    /** Units sold a day from which the table drops the tenth. */
+    private const int WHOLE_SALES = 100;
+
     private const int COPPER_PER_SILVER = 100;
 
     private const int COPPER_PER_GOLD = 10000;
@@ -54,7 +57,7 @@ final class ItemPriceHistory
             Format::money($p['median']),
             Format::money($p['min_buyout']),
             Format::number($p['quantity']),
-            $p['sold_per_day'] === null ? '–' : Format::number($p['sold_per_day']),
+            $p['sold_per_day'] === null ? '–' : Format::number($p['sold_per_day'], $p['sold_per_day'] < self::WHOLE_SALES ? 1 : 0),
             ['text' => Carbon::parse($p['scanned_at'])->format('j M H:i'), 'instant' => $p['scanned_at'], 'format' => 'j M H:i'],
         ]], $prices);
     }
