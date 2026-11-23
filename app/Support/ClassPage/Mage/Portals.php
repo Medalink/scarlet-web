@@ -51,7 +51,7 @@ final readonly class Portals
             }
         }
 
-        return $best === null ? null : ['city' => $best, 'share' => $this->cities[$best]['portals'] / $this->spells->portals->casts * 100];
+        return $best === null || $this->spells->portals->casts === 0 ? null : ['city' => $best, 'share' => $this->cities[$best]['portals'] / $this->spells->portals->casts * 100];
     }
 
     public function module(Span $span = Span::W5): ?Module

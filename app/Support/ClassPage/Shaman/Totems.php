@@ -219,14 +219,26 @@ final readonly class Totems
     /** @param  array<int, int>  $by */
     private function median(array $by): int|float
     {
-        $sorted = [];
-        foreach ($by as $count => $fights) {
-            array_push($sorted, ...array_fill(0, $fights, $count));
+        ksort($by);
+        $total = array_sum($by);
+        if ($total <= 0) {
+            return 0;
         }
-        sort($sorted);
-        $n = count($sorted);
+        $lowAt = intdiv($total - 1, 2);
+        $highAt = intdiv($total, 2);
+        $seen = 0;
+        $low = $high = null;
+        foreach ($by as $count => $fights) {
+            $seen += $fights;
+            $low ??= $seen > $lowAt ? $count : null;
+            if ($seen > $highAt) {
+                $high = $count;
 
-        return $n % 2 === 1 ? $sorted[intdiv($n, 2)] : ($sorted[$n / 2 - 1] + $sorted[$n / 2]) / 2;
+                break;
+            }
+        }
+
+        return $lowAt === $highAt ? $high ?? 0 : (($low ?? 0) + ($high ?? 0)) / 2;
     }
 
     public function byLevel(): ?Module

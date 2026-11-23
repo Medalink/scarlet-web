@@ -55,7 +55,7 @@ final readonly class Party
 
         return new Module('Arcane Intellect', [
             new Rank(array_map(fn (SpellTotals $spell): RankRow => new RankRow($spell->name, $spell->casts, Spells::icon($spell), Tone::Own), $kinds)),
-            new Pair([new PairRow('Casts', $intellect->casts), new PairRow('Casts a played hour', $hours === 0.0 ? 0 : $intellect->casts / $hours, Unit::Decimal)]),
+            new Pair([new PairRow('Casts', $intellect->casts), new PairRow('Casts a played hour', $hours <= 0 ? 0 : $intellect->casts / $hours, Unit::Decimal)]),
         ], icon: Spells::icon($intellect));
     }
 
