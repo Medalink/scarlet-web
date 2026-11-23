@@ -16,10 +16,15 @@ final class WantedParts
 
     private const int ID_BYTES = 32;
 
+    public static function limit(): int
+    {
+        return max(0, (int) config('scarlet.upload.max_wanted_ids'));
+    }
+
     /** @param  list<string>  $ids  lower-case hex */
     public static function remember(string $installId, int $characterId, array $ids): void
     {
-        $ids = array_slice($ids, 0, max(0, (int) config('scarlet.upload.max_wanted_ids')));
+        $ids = array_slice($ids, 0, self::limit());
         Cache::put(self::key($installId, $characterId), hex2bin(implode('', $ids)), now()->addHours(self::HOURS));
     }
 

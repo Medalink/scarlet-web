@@ -14,6 +14,9 @@ class ManifestRequest extends UploadRequest
 {
     public const string CONTENT_TYPE = 'application/vnd.scarlet.manifest+zstd';
 
+    /** The manifest object, its groups list and its parts list, and room for a bracket inside a group name. */
+    private const int ENVELOPE_CONTAINERS = 16;
+
     private ?Manifest $manifest = null;
 
     public function manifest(PartTool $tool): Manifest
@@ -30,12 +33,13 @@ class ManifestRequest extends UploadRequest
         if (strlen($raw) > $maxBytes) {
             throw ApiException::invalidRequest("The manifest is larger than {$maxBytes} bytes inflated.");
         }
-        $maxValues = (int) config('scarlet.upload.max_manifest_values');
-        if (preg_match_all('/[{\[",:0-9]/', $raw) > $maxValues) {
-            throw ApiException::invalidRequest("The manifest carries more than {$maxValues} JSON values.");
+        $maxContainers = (int) config('scarlet.upload.max_manifest_parts') + self::ENVELOPE_CONTAINERS;
+        if (substr_count($raw, '{') + substr_count($raw, '[') > $maxContainers) {
+            throw ApiException::invalidRequest("The manifest carries more than {$maxContainers} JSON objects and lists.");
         }
 
         $data = json_decode($raw, associative: true);
+        unset($raw);
         if (! is_array($data)) {
             throw ApiException::invalidRequest('The manifest is not a JSON object.');
         }

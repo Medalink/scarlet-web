@@ -31,7 +31,10 @@ class ReceiveManifest
      * no longer lists; a part nobody claims any more is deleted. Parts another install of the character claims stay.
      * Parts of a group the app has switched off stay unless the app removed the group (DELETE /upload/groups/{key}).
      *
-     * @return array{need: list<string>, present: int, removed: int}
+     * The answer lists the first `scarlet.upload.max_wanted_ids` of the ids the server lacks; `remaining` counts the
+     * rest, which the next manifest of the install lists once these are stored.
+     *
+     * @return array{need: list<string>, remaining: int, present: int, removed: int}
      */
     public function handle(Install $install, Manifest $manifest): array
     {
@@ -58,7 +61,8 @@ class ReceiveManifest
         $stored = array_flip(PartIds::held($character->id, $manifest->groups));
         $claimed = array_flip(PartIds::held($character->id, $manifest->groups, $install));
         $need = array_values(array_filter(array_keys($manifest->parts), fn (string $id): bool => ! isset($stored[$id])));
-        WantedParts::remember($install->id, $character->id, $need);
+        $asked = array_slice($need, 0, WantedParts::limit());
+        WantedParts::remember($install->id, $character->id, $asked);
 
         $listed = array_values(array_filter(array_keys($manifest->parts), fn (string $id): bool => isset($stored[$id]) && ! isset($claimed[$id])));
         $dropped = array_values(array_filter(array_keys($claimed), fn (string $id): bool => ! isset($manifest->parts[$id])));
@@ -68,7 +72,7 @@ class ReceiveManifest
             IngestSession::dispatch($character->id, $session);
         }
 
-        return ['need' => $need, 'present' => count($manifest->parts) - count($need), 'removed' => $removed];
+        return ['need' => $asked, 'remaining' => count($need) - count($asked), 'present' => count($manifest->parts) - count($need), 'removed' => $removed];
     }
 
     /**

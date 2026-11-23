@@ -263,10 +263,12 @@ install (`name_held` when another install, not of the same account, holds it).
 Answer:
 
 ```json
-{"need": ["<64 hex>", "..."], "present": 1710, "removed": 0}
+{"need": ["<64 hex>", "..."], "remaining": 0, "present": 1710, "removed": 0}
 ```
 
-`need` lists the ids the server does not hold, in manifest order. `present` is how many listed parts it already holds.
+`need` lists the ids the server does not hold, in manifest order, at most 50,000 of them. `remaining` is how many it
+holds back: send the parts of `need`, then send the manifest again for the next page, until `remaining` is 0. A client
+that reads only the first answer stores one page a sync and finishes over the next syncs. `present` is how many listed parts it already holds.
 `removed` is how many parts it deleted: parts in the groups that are on that this install listed before, the manifest no
 longer lists and no other install of the character lists; they and their decoded rows are gone. A part another install
 of the character uploaded stays. Parts of a group that is switched off in `groups` stay until the app removes the group (below).

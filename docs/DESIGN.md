@@ -220,7 +220,8 @@ All upload requests are JSON or binary over HTTPS under `/api/v1/upload`, signed
    `id, session, group, raw bytes`, zstd-compressed. The server answers with the ids it needs, records that this install
    lists the parts it already holds, and drops this install's claim on the parts the manifest no longer lists (a group
    turned off with removal, a replaced session). A part is deleted when no install claims it. A character played on two
-   PCs keeps what each PC uploaded, and each install's `/sync` compares only the parts it claims.
+   PCs keeps what each PC uploaded, and each install's `/sync` compares only the parts it claims. The answer lists at
+   most 50,000 ids (`need`) and counts the rest in `remaining`; the next manifest lists them once the first page is stored.
 3. **Send.** `POST /parts`, `Content-Type: application/vnd.scarlet.parts+zstd`: one zstd frame (level 19, window up
    to 8 MiB) over the needed parts, each as a 4-byte little-endian length and the part text. At most 4 MiB compressed
    and 64 MiB decompressed per request, 20,000 parts; the app splits larger sets. The server recomputes each id,
@@ -234,7 +235,13 @@ The wire details are in [API.md](API.md). Where the first implementation settled
   inflated with `scarlet-part inflate`, which enforces the same window and size limits as a batch.
 - A batch is opened with `scarlet-part unbatch --stored`, which checks every id against the part text and writes each
   part in its storage form (zstd 19 alone), so PHP stores the bytes it is given and never recompresses.
-- A manifest lists at most 200,000 parts; `sync` and `status` are bounded the same way.
+- A manifest lists at most 200,000 parts; `sync` and `status` are bounded the same way. The server counts the
+  `{` and `[` of the inflated JSON before it parses it and refuses a manifest with more than the parts' limit plus 16,
+  so what it parses is bounded by shape, not only by bytes.
+- A request is billed in the quota for the parts it stores: the inflated bytes, one per line and 8,192 per part
+  (`scarlet.upload.part_row_charge`), so a part that is only a header still costs a row's worth. Parts the server
+  already holds are neither recompressed nor billed, and `scarlet-part unbatch` recompresses nothing when the parts to
+  store cost more than the install has left today.
 - The XOR set digest is computed in PostgreSQL (`bit_xor` over four 64-bit words of the id), not by reading ids.
 - Decoding is one queued job per (character, session) on the `ingest` queue, unique until it starts, so ten parts of
   one session uploaded in two requests decode once. A per-character lock serializes the jobs of one character.
