@@ -210,8 +210,10 @@ Rules the design follows:
    double count. 37% of free-for-all windows have another uploader's window on the same source inside 300 s, past
    the 5% that triggers it. An arm whose windows all have a key, or whose windows with no key are one character's
    own and never share a day with another character's windows with a key, has neither one reader nor the tag.
-   The arms of the rule and size charts, the rows of `/public/creatures/{id}` `drops` and the items per corpse by rule
-   on `/loot/groups` count the arm this way.
+   The arms of the rule and size charts, the rows of `/public/creatures/{id}` `drops`, the items per corpse by rule on
+   `/loot/groups` and the Drops tables of the creature and object pages count the arm this way: a table under free
+   for all alone has the arm's windows and tags, and one under every rule adds the arm's windows to those of the
+   other rules.
 7. **The corpse key (phase 7, decoder version 12).** `K`, `LO` and `LW` carry a key that is the same on every client
    for one corpse, stored as `corpse_key` on `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops`. A
    window with a key counts once per corpse, however many characters read it or were sent it. A window without one (a
