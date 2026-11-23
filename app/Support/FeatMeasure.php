@@ -10,9 +10,6 @@ enum FeatMeasure: string
 {
     case Casts = 'casts';
     case Hours = 'hours';
-    case Kills = 'kills';
-    case Deaths = 'deaths';
-    case PlayerKills = 'player-kills';
     case DungeonRuns = 'dungeon-runs';
     case DungeonBosses = 'dungeon-bosses';
     case RaidBosses = 'raid-bosses';

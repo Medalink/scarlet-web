@@ -1584,6 +1584,11 @@ renamed shows up. `feats:proof <tables>` checks every rule against the client's 
 client lets each class learn and cast, and the fastest the legend tier could be earned from them. [FEAT-PROOF.md](FEAT-PROOF.md)
 is its output.
 
+The tables on this page describe catalog version 1, 258 feats. Version 2 has 241: 22 feats are retired into others, five
+are added (Streak, Trailblazer, Frequent Flyer, Companion, Fireside), four are renamed and 195 thresholds are lower. Its
+one source is `Feat`, `FeatRows`, `FeatRules`, `FeatMeta` and `FeatRetired` in `app/Support`; `php artisan feats:export`
+writes it as `resources/feats/feats.json`, the file the app and the addon generate their catalogs from.
+
 | Feat | For | Counts | Copper | Silver | Gold | Scarlet | Legend |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Battle Cry | Warrior | casts of Battle Shout | 10 | 400 | 2,000 | 6,000 | 25,000 |

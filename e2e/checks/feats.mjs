@@ -3,7 +3,7 @@ import { NAME, expectError, expectJson, expectStatus, sleep, uncached } from "..
 
 const SPEC_WAIT_MS = 20_000;
 const SPEC_POLL_MS = 250;
-const SPEC_TOTAL = 95;
+const SPEC_TOTAL = 87;
 
 const READ = "GET /api/v1/installs/me/feats";
 const SEEN = "POST /api/v1/installs/me/feats/seen";
@@ -51,7 +51,7 @@ function specFactsWrong(feats) {
     if (feats.some((feat) => feat.key === key)) wrong.push(`feats.${key}: a feat the rogue must never see is stored`);
   }
   if (feats.length !== SPEC_TOTAL) {
-    wrong.push(`expected ${SPEC_TOTAL} feats listed (73 general, 26 spec, no gold feats, no Unbroken), saw ${feats.length}`);
+    wrong.push(`expected ${SPEC_TOTAL} feats listed (67 general, 20 spec, no gold feats, no Unbroken), saw ${feats.length}`);
   }
   return wrong;
 }
