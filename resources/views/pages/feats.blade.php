@@ -18,7 +18,7 @@
   @if ($head)
     <section class="mt-8 grid gap-4 lg:grid-cols-[330px_minmax(0,1fr)_230px]">
       <div class="sc-panel flex items-center gap-5 px-6 py-5">
-        <x-sc.ring :value="$head['ring']" :size="124"><span class="sc-num sc-num-xl">{{ $head['held'] }}</span><br><span class="sc-label">of {{ $head['total'] }}</span></x-sc.ring>
+        <x-sc.ring :value="$head['ring']" :size="124"><span class="sc-num sc-num-xl">{{ $head['held'] }}</span><span class="sc-label">of {{ $head['total'] }}</span></x-sc.ring>
         <div>
           <p class="sc-h3">{{ $head['first'] }} holds {{ $head['held'] }} {{ $head['held'] === 1 ? 'feat' : 'feats' }}</p>
           <p class="sc-sub mt-1" style="color:var(--muted)">{{ $head['line'] }}</p>

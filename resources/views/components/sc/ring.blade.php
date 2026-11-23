@@ -11,5 +11,5 @@
       <circle class="arc" cx="50" cy="50" r="{{ $r }}" fill="none" stroke="{{ $color }}" stroke-width="{{ $stroke }}" stroke-linecap="round" pathLength="100" stroke-dasharray="{{ $share }} 100" transform="rotate(-90 50 50)"/>
     @endif
   </svg>
-  <span class="absolute inset-0 grid place-items-center text-center leading-[1.1]">{{ $slot }}</span>
+  <span class="absolute inset-0 flex flex-col items-center justify-center text-center leading-[1.1]">{{ $slot }}</span>
 </span>
