@@ -76,7 +76,7 @@ final class LeaderboardHallPage
             'class' => $lead === null ? null : (string) $lead['class'],
             'none' => $level === null ? 'No public character yet' : 'Nobody has a recorded level-up to '.$level.' yet',
             'value' => $lead === null ? null : $board->format($lead['value']),
-            'count' => Format::count($total, 'character'),
+            'count' => ($board === Board::MostDistance ? 'world widths, ' : '').Format::count($total, 'character'),
         ];
     }
 }
