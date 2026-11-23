@@ -3,6 +3,7 @@
 use App\Http\Controllers\Web\AccountCharactersController;
 use App\Http\Controllers\Web\AccountController;
 use App\Http\Controllers\Web\AccountProfessionsController;
+use App\Http\Controllers\Web\AccountSettingsController;
 use App\Http\Controllers\Web\AuthCallbackController;
 use App\Http\Controllers\Web\AuthDevelopmentController;
 use App\Http\Controllers\Web\AuthLoginController;
@@ -31,6 +32,7 @@ if (IdentityProvider::developmentAllowed()) {
 
 Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account', AccountController::class);
+    Route::get('/account/settings', AccountSettingsController::class);
     Route::get('/account/characters', AccountCharactersController::class);
     Route::get('/account/professions', AccountProfessionsController::class);
     Route::get('/account/camps', CampsController::class)->defaults(ScopeRequest::OWN, true)->middleware(['scarlet.timeout', 'cache.headers:private;no_store']);

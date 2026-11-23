@@ -41,7 +41,7 @@ final class PlayTime
      * @param  list<array{0: int, 1: int}>  $buckets
      * @return array{cells: list<array{level: int, tip: string}>, busiest: int|null}
      */
-    private static function grid(array $buckets): array
+    public static function grid(array $buckets): array
     {
         $seconds = array_fill(0, 168, 0);
         foreach ($buckets as [$hour, $played]) {

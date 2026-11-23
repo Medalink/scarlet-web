@@ -1,31 +1,31 @@
 <div>
 @if (session('new-api-key'))
-  <div class="note" role="status" style="color:var(--fg)">
-    <p>Copy this key now. It is not shown again.</p>
-    <p class="code" style="font-size:1rem;letter-spacing:0;word-break:break-all;max-width:100%">{{ session('new-api-key') }}</p>
+  <div class="sc-secret" role="status">
+    <p class="sc-label">Copy this key now. It is not shown again.</p>
+    <code>{{ session('new-api-key') }}</code>
   </div>
 @endif
 @if ($keys === [])
-  <x-note>No keys yet.</x-note>
+  <p class="sc-note mt-4">No keys yet.</p>
 @else
-  <x-rows>
+  <div class="sc-set">
 @foreach ($keys as $key)
-    <x-row :title="$key->name" :body="'Made '.$key->created_at->format('j M Y').' · '.($key->last_used_at ? 'last used '.$key->last_used_at->diffForHumans() : 'never used')" wire:key="k-{{ $key->id }}">
-      <x-btn kind="danger" wire:click="delete({{ $key->id }})" wire:confirm="Delete the key {{ $key->name }}? Anything using it stops working.">Delete</x-btn>
-    </x-row>
+    <x-sc.set-row :title="$key->name" :body="'Made '.$key->created_at->format('j M Y').' · '.($key->last_used_at ? 'last used '.$key->last_used_at->diffForHumans() : 'never used')" wire:key="k-{{ $key->id }}">
+      <button type="button" class="sc-btn danger small" wire:click="delete({{ $key->id }})" wire:confirm="Delete the key {{ $key->name }}? Anything using it stops working.">Delete</button>
+    </x-sc.set-row>
 @endforeach
-  </x-rows>
+  </div>
 @endif
-  <form wire:submit="make" style="margin-top:1rem;display:flex;gap:.8rem;flex-wrap:wrap;align-items:center">
-    <label class="vh" for="key-name">Name of the key</label>
-    <input id="key-name" class="field" type="text" wire:model="name" maxlength="60" placeholder="Name of the key" autocomplete="off" style="flex:1 1 12rem;min-width:0">
-    <x-btn kind="quiet" type="submit">Make a key</x-btn>
+  <form wire:submit="make" class="mt-4 flex flex-wrap items-center gap-3">
+    <label class="sr-only" for="key-name">Name of the key</label>
+    <input id="key-name" class="sc-field min-w-0 flex-1 basis-48" type="text" wire:model="name" maxlength="60" placeholder="Name of the key" autocomplete="off">
+    <button type="submit" class="sc-btn quiet">Make a key</button>
   </form>
 @error('name')
-  <x-note role="alert">Give the key a name.</x-note>
+  <p class="sc-note mt-3" role="alert">Give the key a name.</p>
 @enderror
 @if ($notice)
-  <x-note role="alert">{{ $notice }}</x-note>
+  <p class="sc-note mt-3" role="alert">{{ $notice }}</p>
 @endif
-  <x-note>The <a href="/developers">public API</a> needs no key at 60 requests a minute.</x-note>
+  <p class="sc-note mt-3">The <a href="/developers">public API</a> needs no key at 60 requests a minute.</p>
 </div>
