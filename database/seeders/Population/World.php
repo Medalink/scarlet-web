@@ -109,6 +109,9 @@ final class World
         35 => 'Bent Staff',
     ];
 
+    /** The weapons in `ITEMS`: the rare end of a drop table. */
+    public const array GEAR = [12784, 1728, 2825, 2092, 36, 5210, 35];
+
     /** The herbs, veins and animals the professions cast on, with the id their loot windows carry. */
     public const array NODES = [
         'mine' => [

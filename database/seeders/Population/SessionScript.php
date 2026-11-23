@@ -328,7 +328,9 @@ final class SessionScript
         if (! $boss && ! $this->rng->chance(55)) {
             return;
         }
-        $items = Rng::for('loot:'.$creature)->shuffled(array_keys(World::ITEMS));
+        $table = Rng::for('loot:'.$creature);
+        $gear = $table->shuffled(World::GEAR);
+        $items = [...array_slice($table->shuffled(array_values(array_diff(array_keys(World::ITEMS), World::GEAR))), 0, 4), ...$gear];
         $chances = $boss ? [100, 100, 60, 30, 12, 4] : [70, 38, 18, 7, 3, 1];
         $drops = [];
 
