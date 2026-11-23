@@ -988,12 +988,27 @@ from the browser.
 | Guild names of other players | no | yes, with `social` on | |
 | Raw parts | no | download of their own | |
 | Addresses that called the API | no | no | Kept 30 days for the operator's `/admin/api` page, then deleted (Admin) |
+| The app build and system an install last sent | no | no | The install's User-Agent, for the operator's `/admin/clients` page (Admin) |
 
 ## Admin
 
-`/admin` is the operator's view of the whole site: totals and trends, every character, who calls the API, the database
-and the ingest pipeline. Pages: `/admin` (overview), `/admin/characters`, `/admin/api`, `/admin/database` and
-`/admin/ingest`.
+`/admin` is the operator's view of the whole site: totals and trends, every character, who calls the API, which app
+builds run, who reaches the limits, the database and the ingest pipeline. Pages: `/admin` (overview),
+`/admin/characters`, `/admin/api`, `/admin/clients`, `/admin/limits`, `/admin/database` and `/admin/ingest`.
+
+**Clients.** A signed request saves its User-Agent on the install (`installs.client`, printable ASCII, 96 characters
+at most) with `last_seen_at`, at most once in five minutes, so a client that changes its agent on every request adds no
+writes. The app sends `scarlet-app/<version> (<os>)` and the command line `scarlet (<os>)`, whose crate version is not
+the release; older builds send `scarlet-upload` with no version. `/admin/clients` counts the installs
+seen within 30 days by build and by system against the newest release (`ShowAppDownload`), the 12 largest and the rest as Other, the addon versions of the
+sessions decoded within 30 days by characters and sessions, and lists the 25 installs seen most recently.
+
+**Limits.** `/admin/limits` shows the limits in force (`scarlet.rate`, `scarlet.page`, `scarlet.upload` and
+`PublicApi::BAD_TOKENS_PER_MINUTE`), requests and refusals per day with the `429` answers apart (`api_calls.limited`),
+the busiest addresses today with their average requests a minute from their first request to their last, the addresses
+answered `429` most within 30 days, today's upload bytes per install against the daily cap and the installs with the
+most characters against theirs. It keeps its answer 30 seconds. `limited` counts from 23 Nov 2026; a 429 before that
+day counts only as refused.
 
 **Characters.** `/admin/characters` lists every character, public and private, the most recently seen first, 50 to a
 page (`App\Actions\Admin\ListCharacters`). `?q=` matches part of the name (`name_key`, which the trigram index serves),
@@ -1013,7 +1028,8 @@ refusal loses the session and XSRF cookies. The account page shows each linked s
 **API calls.** `App\Http\Middleware\RecordApiCall` counts every request to `/api/v1` that matched a route, after the
 answer is sent, into `api_calls`: one row per UTC day, surface (`public` or `upload`), endpoint (method and route path),
 address bucket (`ClientAddress::bucket`), account (from the API key, or the install's account) and install. A row holds
-the requests, the refused ones (status 400 and above, except 404) and the first and last time. A `200` or `304` answer
+the requests, the refused ones (status 400 and above, except 404), the limited ones (status 429, counted as refused
+too) and the first and last time. A `200` or `304` answer
 that names a character also counts on that character's row of the day, which has no address, account or install, so
 walking many characters adds one row per character, not one per caller and character. Both writes run in one
 transaction capped at two seconds, and a failed write is reported without touching the answer, which has already gone.

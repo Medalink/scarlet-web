@@ -18,7 +18,7 @@ final class AdminCharts
 
     public const array WIDE = ['w' => 760, 'h' => 250];
 
-    private const array PAGES = [['Overview', '/admin'], ['Characters', '/admin/characters'], ['API', '/admin/api'], ['Database', '/admin/database'], ['Ingest', '/admin/ingest']];
+    private const array PAGES = [['Overview', '/admin'], ['Characters', '/admin/characters'], ['API', '/admin/api'], ['Clients', '/admin/clients'], ['Limits', '/admin/limits'], ['Database', '/admin/database'], ['Ingest', '/admin/ingest']];
 
     /** @return list<array{label: string, href: string, on: bool}> the segmented nav between the admin pages */
     public static function nav(string $current): array

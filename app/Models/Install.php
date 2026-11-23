@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $revoked_at
  * @property Carbon|null $last_seen_at
  * @property Carbon|null $linked_at
+ * @property string|null $client
  * @property Carbon $created_at
  */
 class Install extends Model

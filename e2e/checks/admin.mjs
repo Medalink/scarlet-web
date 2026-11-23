@@ -1,7 +1,8 @@
 import { Jar, NAME, STRANGER, STRICT, Skip, expectStatus } from "../support.mjs";
+import { AGENT } from "../client.mjs";
 import { signIn } from "./pages.mjs";
 
-const PAGES = ["/admin", "/admin/characters", "/admin/api", "/admin/database", "/admin/ingest"];
+const PAGES = ["/admin", "/admin/characters", "/admin/api", "/admin/clients", "/admin/limits", "/admin/database", "/admin/ingest"];
 const ADMIN = "development:development-1";
 
 /** Every admin page answers a visitor like a path that does not exist: 404 and no cookie. */
@@ -16,8 +17,8 @@ export async function adminIsHiddenFromVisitors(ctx) {
 
 /**
  * The development sign-in, listed in SCARLET_ADMINS by e2e/boot.mjs, opens the admin pages privately, and /admin/api
- * counts the upload the lane made and a character it asked for by name, and /admin/characters finds the lane's
- * characters, public or not, by part of the name.
+ * counts the upload the lane made and a character it asked for by name, /admin/clients shows the client an install
+ * signed with, and /admin/characters finds the lane's characters, public or not, by part of the name.
  */
 export async function adminSeesTheApiCalls(ctx) {
   const jar = new Jar();
@@ -35,6 +36,7 @@ export async function adminSeesTheApiCalls(ctx) {
     const cache = answer.headers.get("cache-control") ?? "";
     if (!cache.includes("no-store") || !cache.includes("private")) throw new Error(`${route}: expected Cache-Control private, no-store, saw ${cache}`);
     if (!(answer.headers.get("x-robots-tag") ?? "").includes("noindex")) throw new Error(`${route}: expected X-Robots-Tag noindex`);
+    if (route === "/admin/clients" && !answer.text.includes(`<code>${AGENT}</code>`)) throw new Error(`/admin/clients: expected the lane's installs to show the client they signed with, ${AGENT}`);
     if (route !== "/admin/api") continue;
     const uploads = Number((answer.text.match(/Upload requests<\/dt><dd>([\d,]+)/)?.[1] ?? "0").replaceAll(",", ""));
     if (uploads === 0) throw new Error("/admin/api: expected the upload requests of the lane to be counted, saw none");

@@ -14,6 +14,8 @@ const PKCS8_SEED_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex")
 const MANIFEST_TYPE = "application/vnd.scarlet.manifest+zstd";
 const PARTS_TYPE = "application/vnd.scarlet.parts+zstd";
 const JSON_TYPE = "application/json";
+/** The User-Agent the lane's installs send, which /admin/clients shows (e2e/checks/admin.mjs). */
+export const AGENT = "scarlet-e2e/1.0 (e2e)";
 
 export class InstallClient {
   #base;
@@ -86,7 +88,7 @@ export class InstallClient {
 
   /** One request: `sign: false` sends it unsigned, `corrupt: true` signs it wrong on purpose. */
   async request(method, path, { body = null, type = JSON_TYPE, sign = true, corrupt = false } = {}) {
-    const headers = {};
+    const headers = { "User-Agent": AGENT };
     if (body !== null) headers["Content-Type"] = type;
     if (sign) {
       if (this.#installId === null) throw new Error(`register before signing ${method} ${path}`);

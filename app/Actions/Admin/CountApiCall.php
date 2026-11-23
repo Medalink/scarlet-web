@@ -10,11 +10,12 @@ use Illuminate\Support\Facades\DB;
  * Adds one request to its caller's `api_calls` row of the day and, when it named a character, to that character's row,
  * which has no caller, so a scraper walking many characters adds one row per character and not one per address and
  * character. The increment is raw SQL because an upsert can only add to the stored count through an expression on the
- * conflicting row. Both writes share a two-second statement cap, so a blocked row cannot hold a php-fpm worker.
+ * conflicting row. A 429 counts as refused and as limited. Both writes share a two-second statement cap, so a blocked
+ * row cannot hold a php-fpm worker.
  */
 class CountApiCall
 {
-    public function handle(ApiSurface $surface, string $endpoint, string $address, int $accountId, string $installId, string $characterKey, bool $refused): void
+    public function handle(ApiSurface $surface, string $endpoint, string $address, int $accountId, string $installId, string $characterKey, bool $refused, bool $limited = false): void
     {
         $row = [
             'day' => now()->toDateString(),
@@ -26,6 +27,7 @@ class CountApiCall
             'character_key' => '',
             'requests' => 1,
             'refused' => $refused ? 1 : 0,
+            'limited' => $limited ? 1 : 0,
             'first_at' => now(),
             'last_at' => now(),
         ];
@@ -39,6 +41,7 @@ class CountApiCall
             ApiCall::query()->upsert($rows, ApiCall::KEY, [
                 'requests' => DB::raw('api_calls.requests + 1'),
                 'refused' => DB::raw('api_calls.refused + excluded.refused'),
+                'limited' => DB::raw('api_calls.limited + excluded.limited'),
                 'last_at' => DB::raw('excluded.last_at'),
             ]);
         });

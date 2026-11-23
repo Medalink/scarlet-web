@@ -66,12 +66,21 @@ class VerifyInstallSignature
             throw ApiException::replayed();
         }
 
-        if ($install->last_seen_at === null || $install->last_seen_at->lt(now()->subMinutes(5))) {
-            $install->forceFill(['last_seen_at' => now()])->save();
+        $client = self::client($request);
+        if ($install->last_seen_at === null || $install->last_seen_at->lt(now()->subMinutes(5)) || ($install->client === null && $client !== null)) {
+            $install->forceFill(['last_seen_at' => now(), 'client' => $client])->save();
         }
 
         $request->attributes->set(self::ATTRIBUTE, $install);
 
         return $next($request);
+    }
+
+    /** The User-Agent as `installs.client` keeps it: printable ASCII, at most 96 characters, null when none was sent. */
+    private static function client(Request $request): ?string
+    {
+        $agent = substr(trim((string) preg_replace('/[^\x20-\x7E]/', '', (string) $request->userAgent())), 0, 96);
+
+        return $agent === '' ? null : $agent;
     }
 }
