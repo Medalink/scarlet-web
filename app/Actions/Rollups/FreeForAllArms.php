@@ -11,11 +11,14 @@ use App\Support\LootRule;
 use App\Support\LootSourceRef;
 use App\Support\Rollup;
 use App\Support\RollupRead;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 
 class FreeForAllArms
 {
+    private const int BULK = 40;
+
     public function __construct(private readonly RollupRead $read) {}
 
     /**
@@ -133,32 +136,26 @@ class FreeForAllArms
      */
     private function items(array $arms, ?array $itemIds): array
     {
-        $kinds = $ids = $readers = $flagKinds = $flagIds = $flagDays = $flagUnkeyed = $flagKeyed = [];
+        $sources = $flags = [];
         foreach ($arms as $key => $arm) {
-            $kinds[] = substr($key, 0, 1);
-            $ids[] = (int) substr($key, 1);
-            $readers[] = (int) $arm->reader;
+            $sources[] = substr($key, 0, 1).'|'.(int) substr($key, 1).'|'.(int) $arm->reader;
             foreach ($arm->days as $day => $counted) {
                 if ($counted['unkeyed'] && $counted['keyed']) {
                     continue;
                 }
-                $flagKinds[] = substr($key, 0, 1);
-                $flagIds[] = (int) substr($key, 1);
-                $flagDays[] = $day;
-                $flagUnkeyed[] = $counted['unkeyed'] ? 't' : 'f';
-                $flagKeyed[] = $counted['keyed'] ? 't' : 'f';
+                $flags[] = substr($key, 0, 1).'|'.(int) substr($key, 1).'|'.$day.'|'.($counted['unkeyed'] ? 't' : 'f').'|'.($counted['keyed'] ? 't' : 'f');
             }
         }
         $only = $itemIds === null ? null : '{'.implode(',', array_map('intval', $itemIds)).'}';
         $listed = [LootRead::Loot->value, LootRule::FreeForAll->value, $only, $only];
         $bindings = [
-            $this->literal($kinds), $this->literal($ids), $this->literal($readers),
-            $this->literal($flagKinds), $this->literal($flagIds), $this->literal($flagDays), $this->literal($flagUnkeyed), $this->literal($flagKeyed),
+            $this->literal($sources), $this->literal($flags),
             ...$listed, ...$listed, ...$listed, LootRead::Loot->value, $only, $only,
         ];
 
+        $query = DB::query()->fromRaw('('.$this->itemsSql().') as arm_items', $bindings)->select('*');
         $answer = [];
-        foreach ($this->read->rows(DB::query()->fromRaw('('.$this->itemsSql().') as arm_items', $bindings)->select('*')) as $row) {
+        foreach ($this->inBulk(count($arms) > self::BULK, $query) as $row) {
             $key = $row['source_kind'].$row['source_id'];
             $item = (int) $row['item_id'];
             $answer[$key]['items'] ??= [];
@@ -170,6 +167,24 @@ class FreeForAllArms
         }
 
         return $answer;
+    }
+
+    /**
+     * The rows of `$query`, read once for the seconds `handle` keeps the answer. For many sources the planner takes the list
+     * of sources for one row and joins it by looping over it for each row of the aggregates (170 million tests for 1,500
+     * sources, 15 seconds), so there it joins by hash and merge instead.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function inBulk(bool $bulk, Builder $query): array
+    {
+        return DB::transaction(function () use ($bulk, $query): array {
+            if ($bulk) {
+                DB::statement('set local enable_nestloop = off');
+            }
+
+            return array_values($query->get()->map(fn (object $row): array => (array) $row)->all());
+        });
     }
 
     /**
@@ -206,8 +221,8 @@ class FreeForAllArms
         $nR = self::same('n', 'r');
 
         return <<<SQL
-            with s(source_kind, source_id, reader) as (select * from unnest(?::text[], ?::int[], ?::bigint[])),
-            f(source_kind, source_id, day, unkeyed, keyed) as (select * from unnest(?::text[], ?::int[], ?::text[], ?::bool[], ?::bool[])),
+            with s(source_kind, source_id, reader) as (select split_part(t, '|', 1), split_part(t, '|', 2)::int, split_part(t, '|', 3)::bigint from unnest(?::text[]) as t),
+            f(source_kind, source_id, day, unkeyed, keyed) as (select split_part(t, '|', 1), split_part(t, '|', 2)::int, split_part(t, '|', 3), split_part(t, '|', 4)::bool, split_part(t, '|', 5)::bool from unnest(?::text[]) as t),
             raw as (
                 select v.source_kind, v.source_id, v.item_id, sum(v.windows) as drops, sum(v.quantity) as quantity
                 from loot_items_counted v join s on s.source_kind = v.source_kind and s.source_id = v.source_id

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CountedLoot;
 use App\Support\LootCounted;
 use App\Support\LootFilter;
 use App\Support\LootListing;
@@ -9,6 +10,7 @@ use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\LootSort;
 use App\Support\LootSourceKind;
+use App\Support\LootSourceRef;
 use App\Support\LootView;
 use App\Support\NameKind;
 use App\Support\RateEstimate;
@@ -19,7 +21,7 @@ use Illuminate\Support\Facades\DB;
 
 class LootSources
 {
-    public function __construct(private readonly RollupRead $read) {}
+    public function __construct(private readonly RollupRead $read, private readonly CountedLoot $counted) {}
 
     /**
      * The creatures, objects or containers of `$filter`'s view that were looted, one page: how many windows (first reads,
@@ -28,6 +30,7 @@ class LootSources
      * the quality of an item the source gave, and a text that matches the source's name or id or an item it gave.
      * Ordered by the filter's sort. `more` is true when a next page exists. Sources under `scarlet.min_characters`
      * characters are left out. The levels are the creature's for a creature and the looter's for an object or a container.
+     * The free-for-all windows and drops of a source are those of its arm (`FreeForAllArms`), as its creature page counts them.
      *
      * @return array{rows: list<array<string, mixed>>, more: bool}
      */
@@ -66,7 +69,7 @@ class LootSources
     {
         $items = $this->within(DB::table(LootCounted::Items->value.' as d'), 'd', $filter, $kind)
             ->selectRaw('d.source_id, count(distinct d.item_id) as items')->groupBy('d.source_id');
-        $query = $this->within($this->read->table(LootCounted::Windows->value.' as w', null), 'w', $filter, $kind)
+        $query = $this->within($this->counted->windows('w'), 'w', $filter, $kind)
             ->leftJoinSub($items, 'i', fn (JoinClause $join) => $join->on('i.source_id', '=', 'w.source_id'))
             ->leftJoinSub($this->levels($kind), 'l', fn (JoinClause $join) => $join->on('l.source_id', '=', 'w.source_id'))
             ->selectRaw('w.source_id, (select n.name from names n where n.kind = ? and n.id = w.source_id order by n.votes desc, n.name limit 1) as name', [$filter->view->nameKind()->value])
@@ -142,7 +145,7 @@ class LootSources
      */
     private function zones(LootFilter $filter, LootSourceKind $kind, array $ids): array
     {
-        $rows = $this->read->rows($this->within($this->read->table(LootCounted::Windows->value.' as w', null), 'w', $filter, $kind)
+        $rows = $this->read->rows($this->within($this->counted->windows('w'), 'w', $filter, $kind)
             ->selectRaw('w.source_id, w.zone_id, (select z.name from zones z where z.id = w.zone_id) as zone, sum(w.windows) as windows')
             ->whereIn('w.source_id', $ids)->whereNotNull('w.zone_id')->groupBy('w.source_id', 'w.zone_id')
             ->orderByRaw('sum(w.windows) desc')->orderBy('w.zone_id'));
@@ -162,7 +165,8 @@ class LootSources
      */
     private function tops(LootFilter $filter, LootSourceKind $kind, array $ids): array
     {
-        $rows = $this->read->rows($this->within($this->read->table(LootCounted::Items->value.' as d', null), 'd', $filter, $kind)
+        $refs = array_map(fn (int $id): LootSourceRef => new LootSourceRef($kind, $id), $ids);
+        $rows = $this->read->rows($this->within($this->counted->items('d', $refs), 'd', $filter, $kind)
             ->selectRaw('d.source_id, d.item_id, (select n.name from names n where n.kind = ? and n.id = d.item_id order by n.votes desc, n.name limit 1) as item, sum(d.windows) as drops', [NameKind::Item->value])
             ->whereIn('d.source_id', $ids)->groupBy('d.source_id', 'd.item_id')
             ->orderByRaw('sum(d.windows) desc')->orderBy('d.item_id'));

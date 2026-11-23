@@ -50,18 +50,28 @@ final class CountedLoot
     }
 
     /**
-     * How many windows each source's arm adds to the windows of its free-for-all loot rows in the view, negative when the arm
-     * counts fewer, by `LootSourceRef::key()`. A source whose arm counts every window is not in the list. For a table that
-     * sums the view's windows by source and adds this to the sum it shows, and so keeps the view's plan for the scan.
+     * How many windows the arms add to the windows of the free-for-all loot rows in the view, negative when an arm counts
+     * fewer, summed by `$by`: `source` (`LootSourceRef::key()`), `zone`, group `size` (an empty key for none) or `total`.
+     * A source whose arm counts every window adds nothing. For a table that sums the view's windows itself and adds this to
+     * what it shows, which keeps the view's plan for the scan; `$kind` narrows it to one kind of source.
      *
-     * @param  list<LootSourceRef>  $sources
+     * @param  list<LootSourceRef>|null  $sources
      * @return array<string, int>
      */
-    public function windowShift(array $sources): array
+    public function windowShift(?array $sources, string $by = 'source', ?LootSourceKind $kind = null): array
     {
         $shift = [];
         foreach ($this->rows($sources, [])['windows'] as $row) {
-            $shift[$row[1].$row[2]] = ($shift[$row[1].$row[2]] ?? 0) + $row[5];
+            if ($kind !== null && $row[1] !== $kind->value) {
+                continue;
+            }
+            $key = match ($by) {
+                'zone' => (string) $row[3],
+                'size' => (string) $row[4],
+                'total' => '',
+                default => $row[1].$row[2],
+            };
+            $shift[$key] = ($shift[$key] ?? 0) + $row[5];
         }
 
         return $shift;
