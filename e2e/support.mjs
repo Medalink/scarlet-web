@@ -22,6 +22,8 @@ export const LEDGER = "Spell-Ledger";
 export const WARLOCK = "Shard-Keeper";
 /** A Mage of the stranger install with six hours played over levels 50 to 52, whose lines make every module of the Mage class page. */
 export const MAGE = "Frost-Weaver";
+/** A Druid of the stranger install with six hours played over levels 50 to 52, whose lines make every module of the Druid class page. */
+export const DRUID = "Moon-Walker";
 export const LOCAL_HOSTS = ["127.0.0.1", "localhost", "[::1]"];
 /** A remember cookie makes EdgeCacheable treat the reader as signed in, so a page read reaches the origin, not the 60 s page cache. */
 export const ORIGIN_COOKIE = { name: "remember_web_e2e", value: "lane" };

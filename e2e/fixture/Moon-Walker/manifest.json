@@ -1,0 +1,41 @@
+{
+  "character": "Moon-Walker",
+  "parts": [
+    {
+      "group": "core",
+      "id": "c83fe99172e8c40615ffca4b1e324dbe5a082cc0ce884b9fe0506e953a36c6b5",
+      "lines": 5,
+      "raw_bytes": 200,
+      "session": 1795720000
+    },
+    {
+      "group": "movement",
+      "id": "1ad1ff8a230b75b1ea699efeab98aea0a534511f7fd5d1df7e5387cc1b953061",
+      "lines": 6,
+      "raw_bytes": 179,
+      "session": 1795720000
+    },
+    {
+      "group": "build",
+      "id": "269cdd012ef5f8e870ea445def60ee2848f4680878bd58a42270185bdb476e22",
+      "lines": 8,
+      "raw_bytes": 393,
+      "session": 1795720000
+    },
+    {
+      "group": "combat",
+      "id": "a61788e4566dd80dfc6159cc6ed8dfcd5aa6296cea86895516aca7f8bffa0e49",
+      "lines": 305,
+      "raw_bytes": 4461,
+      "session": 1795720000
+    },
+    {
+      "group": "names",
+      "id": "b56fcd33fc449706a09c09b35c651619a52c2cc1bd2a2370505b4991339edfbc",
+      "lines": 49,
+      "raw_bytes": 1095,
+      "session": 1795720000
+    }
+  ],
+  "set_digest": "e70a8ecdd53f0654d38140976877c4e24842107a9e4c68c1fa841f6b76804903"
+}

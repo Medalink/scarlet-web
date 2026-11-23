@@ -1,4 +1,5 @@
-import { Jar, LEDGER, MAGE, NAME, PROBE, Skip, WARLOCK, expectJson, expectStatus, sleep } from "../support.mjs";
+import { DRUID, Jar, LEDGER, MAGE, NAME, PROBE, Skip, WARLOCK, expectJson, expectStatus, sleep } from "../support.mjs";
+import * as druid from "../druid-expected.mjs";
 import * as mage from "../mage-expected.mjs";
 import { BAND, CALLOUTS, CASTING, DEMONS, HEAD, PARTY, SHARDS, TALENTS, TAPS } from "../warlock-expected.mjs";
 import { browserFor } from "./owner.mjs";
@@ -174,5 +175,18 @@ export async function magePageShowsItsFigures(ctx) {
     band: mage.BAND,
     callouts: mage.CALLOUTS,
     notes: mage.NOTES,
+  });
+}
+
+export async function druidPageShowsItsFigures(ctx) {
+  await classPageShowsItsFigures(ctx, {
+    name: DRUID,
+    slug: "druid",
+    title: "Druid",
+    plural: "druids",
+    groups: { head: druid.HEAD, forms: druid.FORMS, travel: druid.TRAVEL, "what each form did": druid.DID, "control and the wild": druid.WILD, party: druid.PARTY, talents: druid.TALENTS },
+    band: druid.BAND,
+    callouts: druid.CALLOUTS,
+    notes: druid.NOTES,
   });
 }

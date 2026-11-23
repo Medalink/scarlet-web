@@ -58,7 +58,7 @@ final readonly class Casting
         }
         $blocks = count($columns) === 1 ? [$columns[0]] : [new Columns($columns)];
 
-        return new Module('What each form did', $blocks, Span::W8, 'Each spell is listed under the form it is cast in. The addon does not record which form was worn at a cast.');
+        return new Module('What each form did', $blocks, Span::W8, 'Spells are grouped by the form they need. The addon does not record which form was worn at a cast.');
     }
 
     private function healing(): ?Module

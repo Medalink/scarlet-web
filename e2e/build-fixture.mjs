@@ -18,6 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { xorDigest } from "./client.mjs";
+import { DRUID_LINES } from "./druid-lines.mjs";
 import { LEDGER_LINES } from "./ledger-lines.mjs";
 import { MAGE_LINES } from "./mage-lines.mjs";
 import { WARLOCK_LINES } from "./warlock-lines.mjs";
@@ -239,6 +240,7 @@ const BUILDS = [
   { character: "Spell-Ledger", session: 1795450000, lines: LEDGER_LINES },
   { character: "Shard-Keeper", session: 1795540000, lines: WARLOCK_LINES },
   { character: "Frost-Weaver", session: 1795630000, lines: MAGE_LINES },
+  { character: "Moon-Walker", session: 1795720000, lines: DRUID_LINES },
 ];
 
 function partsOf(character, session, lines) {
