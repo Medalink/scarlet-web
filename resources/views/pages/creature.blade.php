@@ -9,7 +9,7 @@
     @if ($d['threat'])
     <x-threat :threat="$d['threat']" />
     @endif
-    <x-module span="w7" :first="true" id="h-d" heading="Drops">
+    <x-module span="w12" :first="true" :last="true" id="h-d" heading="Drops">
       @if ($d['rules'])
       <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
       @endif
@@ -26,6 +26,13 @@
       @endif
       <p class="note"><a href="/loot">All loot</a></p>
     </x-module>
+    <x-module span="w7" :first="true" id="h-l" heading="Deaths to it, by the character's level">
+      @if ($d['byLevel'])
+      <x-plot id="by-level" label="Deaths to this creature at each character level" :spec="$d['byLevel']" />
+      @else
+      <x-note>No character has died to it yet.</x-note>
+      @endif
+    </x-module>
     <x-module span="w5" :last="true" id="h-w" heading="Where it was met">
       @if ($d['hasMap'])
       <div class="mapbox" style="aspect-ratio:1 / 1"><x-world-canvas id="map" label="Where players met this creature. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
@@ -34,15 +41,8 @@
       <x-note>No sightings are placed on the world map yet.</x-note>
       @endif
     </x-module>
-    <x-module span="w7" :first="true" :last="! $d['skinning']" id="h-l" heading="Deaths to it, by the character's level">
-      @if ($d['byLevel'])
-      <x-plot id="by-level" label="Deaths to this creature at each character level" :spec="$d['byLevel']" />
-      @else
-      <x-note>No character has died to it yet.</x-note>
-      @endif
-    </x-module>
     @if ($d['skinning'])
-    <x-module span="w5" :last="true" id="h-k" heading="Skinning">
+    <x-module span="w12" :first="true" :last="true" id="h-k" heading="Skinning">
       <x-table :rows="$d['skinning']" :columns="[['label' => 'Item'], ['label' => 'Share of skins', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Skins', 'numeric' => true], ['label' => 'Value', 'numeric' => true]]" style="margin-top:1.1rem" />
       @if ($d['skinWorth'])
       <x-loot-worth :worth="$d['skinWorth']" noun="skin" />

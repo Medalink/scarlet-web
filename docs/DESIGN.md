@@ -182,7 +182,9 @@ market and scan time beside each price.
   poor or when it binds on pickup; a quest item has no value. The table's worth a corpse, skin or opening is the sum of
   each item's quantity times its value over the table's windows, the same windows its rates use, and is shown only
   from 10 windows, where the rates are stated. Coin is not counted. Each table gets a Value column and a note under it
-  with the worth, the newest scan used and the AHledger credit. The creature API returns `drop_value` and
+  with the worth, the newest scan used and the AHledger credit. A creature page shows the worth a corpse, and an object page
+  the worth an opening, as the last figure under the page head. On both, the drop table spans the full width so its
+  columns fit; the map sits under it, beside the deaths chart on a creature page. The creature API returns `drop_value` and
   `skinning.value`, the object API `drop_table.value`.
 
 ### The Fishing Log

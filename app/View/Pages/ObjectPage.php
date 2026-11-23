@@ -34,6 +34,7 @@ final class ObjectPage
                 ['label' => 'Items', 'value' => Format::number($r['items'])],
                 ['label' => 'Characters', 'value' => Format::number($r['characters'])],
                 ['label' => 'Zones', 'value' => Format::number(count($zones))],
+                LootRows::worthFigure($table, 'an opening'),
             ],
             'rules' => $table['rules'] === [] ? [] : [
                 ['label' => 'All rules', 'href' => $query(null), 'on' => $chosen === null],

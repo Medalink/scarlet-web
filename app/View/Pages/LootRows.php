@@ -121,6 +121,19 @@ final class LootRows
     }
 
     /**
+     * The figure of a priced drop table's worth a window, `–` while it states none.
+     *
+     * @param  array{value: array{per_window: int|null}}  $table
+     * @return array{label: string, value: HtmlString|string, icon: string}
+     */
+    public static function worthFigure(array $table, string $noun): array
+    {
+        $per = $table['value']['per_window'];
+
+        return ['label' => 'Worth '.$noun, 'value' => $per === null ? '–' : Format::money($per), 'icon' => 'gold'];
+    }
+
+    /**
      * A link with its rate and 95% range after it, or its counts while the sample is under 10.
      *
      * @return array<string, mixed>

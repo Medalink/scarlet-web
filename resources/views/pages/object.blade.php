@@ -3,9 +3,9 @@
   <x-page-head :title="$d['name']" :single="true">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
   </x-page-head>
-  <x-figures :items="$d['figures']" />
+  <x-figures :items="$d['figures']" :five="true" />
   <x-sheet>
-    <x-module span="w7" :first="true" id="h-g" heading="What it gives">
+    <x-module span="w12" :first="true" :last="true" id="h-g" heading="What it gives">
       @if ($d['rules'])
       <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
       @endif
@@ -22,9 +22,9 @@
       @endif
       <p class="note"><a href="/loot">All loot</a></p>
     </x-module>
-    <x-module span="w5" :last="true" id="h-w" heading="Where it was opened">
+    <x-module span="w12" :first="true" :last="true" id="h-w" heading="Where it was opened">
       @if ($d['hasMap'])
-      <div class="mapbox" style="aspect-ratio:1 / 1"><x-world-canvas id="map" label="Where players stood when they opened this object. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
+      <div class="mapbox" style="aspect-ratio:16 / 9"><x-world-canvas id="map" label="Where players stood when they opened this object. Drag to move, scroll to zoom." :spec="$d['map']" /></div>
       @else
       <x-note>No openings are placed on the world map yet.</x-note>
       @endif

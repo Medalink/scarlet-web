@@ -67,6 +67,7 @@ final class RecordPages
                 ['label' => 'Deaths per 1,000 kills', 'value' => $kills['kills'] && $deaths['deaths'] !== null ? Format::number($deaths['deaths'] / $kills['kills'] * 1000, 1) : '–'],
                 ['label' => 'Corpses looted', 'value' => $opens === null ? '–' : Format::number($opens), 'unit' => $chosen === null ? null : LootRule::words($chosen)],
                 ...self::lootedOfKills($looted['estimate']),
+                LootRows::worthFigure($table, 'a corpse'),
             ],
             'threat' => RecordThreat::creature($kills['kills'], $deaths['deaths']),
             'rules' => $table['rules'] === [] ? [] : [
