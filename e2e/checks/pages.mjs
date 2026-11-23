@@ -8,7 +8,7 @@ export const heading = (text) => new RegExp(`<h1[^>]*>\\s*${text}`);
 
 const PAGES = [
   { path: "/", shows: heading("(?:[\\d,]+ )?WoW Forever characters?, recorded by their players") },
-  { path: "/stats", shows: heading("All characters") },
+  { path: "/stats", shows: heading("(?:[\\d,]+ hours of WoW Forever|All characters)") },
   { path: "/loot", shows: heading("Loot") },
   { path: "/loot?view=groups", shows: heading("Loot rules and group size") },
   { path: "/map", shows: heading("World map") },
@@ -23,10 +23,10 @@ const PAGES = [
   { path: "/feats/slayer", shows: heading("Slayer") },
   { path: "/talents", shows: heading("Talents") },
   { path: "/stats/compare", shows: heading("Rulesets compared") },
-  { path: "/stats/unidentified", shows: heading("Not identified") },
+  { path: "/stats/unidentified", shows: heading("(?:[\\d,]+ hours of WoW Forever, )?Not identified") },
   { path: "/professions", shows: heading("Twelve professions") },
   { path: "/rulesets", shows: heading("Rulesets compared") },
-  { path: "/rulesets/unidentified", shows: heading("Not identified") },
+  { path: "/rulesets/unidentified", shows: heading("(?:[\\d,]+ hours of WoW Forever, )?Not identified") },
   { path: `/c/${NAME}`, shows: heading(SHOWN) },
   { path: `/c/${NAME}/heat`, shows: /^\{"data":/ },
   { path: "/creatures/113", shows: heading("Stonetusk Boar") },
