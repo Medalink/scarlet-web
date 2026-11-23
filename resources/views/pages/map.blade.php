@@ -1,4 +1,4 @@
-<x-layouts.app :title="$d['personal'] ? $d['title'].' on the WoW Forever world map' : 'WoW Forever world map: where characters go and die'" current="world" :description="$d['personal'] ? null : 'Paths, deaths and creatures met on one world map, from what players chose to upload.'" :index="! $d['personal']">
+<x-layouts.app :title="$d['personal'] ? $d['title'].' on the WoW Forever world map' : 'WoW Forever world map: where characters go and die'" current="map" :description="$d['personal'] ? null : 'Paths, deaths and creatures met on one world map, from what players chose to upload.'" :index="! $d['personal']">
 <x-world>
   <x-slot:map>
     <div class="world-map">

@@ -126,7 +126,7 @@ final class Page
             ['name' => 'Leaderboards', 'href' => '/leaderboards', 'fact' => Format::number($b['boards']).' boards.', 'bold' => $lead === null ? null : 'Fastest to 60: '.$lead['value'].'.', 'aside' => null],
             ['name' => 'Map', 'href' => '/map', 'fact' => 'Every walked path, kill and death on one map.', 'bold' => null, 'aside' => null],
             ['name' => 'Loot', 'href' => '/loot', 'fact' => 'Drop rates for creatures and objects, with 95% ranges and loot rules.', 'bold' => null, 'aside' => null],
-            ['name' => 'Professions', 'href' => '/professions/fishing', 'fact' => 'Fishing, mining, herbalism, cooking and the other crafts, with what each one yields.', 'bold' => null, 'aside' => null],
+            ['name' => 'Professions', 'href' => '/professions', 'fact' => 'Fishing, mining, herbalism, cooking and the other crafts, with what each one yields.', 'bold' => null, 'aside' => null],
             ['name' => 'Talents', 'href' => '/talents', 'fact' => 'Every spec and who plays it.', 'bold' => null, 'aside' => null],
             ['name' => 'Camps', 'href' => '/camps', 'fact' => 'Campfires, tents and chairs, and how deaths split with and without them.', 'bold' => null, 'aside' => null],
         ];

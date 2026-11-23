@@ -1,4 +1,4 @@
-<x-layouts.app title="Hardcore deaths" current="rulesets" description="Hardcore characters that died in WoW Forever, by the level they died at and by day." canonical="/hardcore-deaths">
+<x-layouts.app title="Hardcore deaths" current="stats" description="Hardcore characters that died in WoW Forever, by the level they died at and by day." canonical="/hardcore-deaths">
 <div class="wrap">
   <x-page-head title="Hardcore deaths">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>

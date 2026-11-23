@@ -1,5 +1,5 @@
 @php($base = App\View\Design\Gallery::BASE)
-<x-layouts.app title="Scarlet world map: where characters go and die" current="world" :base="$base">
+<x-layouts.app title="Scarlet world map: where characters go and die" current="map" :base="$base">
 <x-world>
   <x-slot:map>
     <x-world-map :credit="['text' => 'Map art © Blizzard Entertainment. Map by', 'name' => 'OpenMap', 'href' => '#']">
