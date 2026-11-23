@@ -72,7 +72,9 @@ final class DecodedSession
                 $table = self::tableOf($line);
                 if ($table !== null && FactTable::tryFrom($table) !== null) {
                     $spools[$table] ??= self::openSpool($decoded, $file, $table);
-                    fwrite($spools[$table], $line."\n");
+                    if (fwrite($spools[$table], $line."\n") !== strlen($line) + 1) {
+                        throw new RuntimeException("cannot write the {$table} spool of {$file}");
+                    }
 
                     continue;
                 }
