@@ -33,6 +33,9 @@
  * kill with a `B`, with only an `E` end, after a wipe and with a `B` that has no encounter id, inside a session with no kill of the boss, before and after
  * the one kill of a session, 30 and 100 seconds after a session, outside every session, two characters of one install holding one claim (one with the row, one with a
  * combat session only) and claims the rule does not map or bounds. Each names its total, its verdicts and, with the combat group removed and restored, the same hash.
+ * Four of them also read the character page: Quill-Lark (a counted claim beside Scarlet's kill), Quill-Gale (the claim superseded), Quill-Jade (a held claim and no kill) and
+ * Quill-Slate (a counted claim and no row) must show the Boss kills head figure as Scarlet's `boss_kills` rows plus the counted amounts with "From addons N" under it, as Scarlet's
+ * count alone with its since and no line, as no figure, and as the addon's count alone; with the flag off or to a visitor below `E2E_MIN_CHARACTERS` the addon term is absent. The `readers` characters have no boss row and no claim and show no Boss kills figure.
  */
 
 import crypto from "node:crypto";
@@ -988,10 +991,29 @@ function bossClaimCases() {
   ];
 }
 
+async function bossPages(names) {
+  const visitorSees = PAGES_ON && MIN_CHARACTERS <= 1;
+  const mode = PAGES_ON ? `a minimum of ${MIN_CHARACTERS} characters` : "the flag off";
+  for (const name of names) {
+    const { scarlet, counted } = tallyOf(name, "boss");
+    const shown = await pagesRead(name, `${name}-`);
+    for (const [page, sees] of [["character-owner", PAGES_ON], ["character", visitorSees]]) {
+      const added = sees ? counted : 0;
+      const total = scarlet + added;
+      const text = shown[page];
+      const ok = total === 0 ? !text.includes("Boss kills") : figureShown(text, "Boss kills", total, added);
+      const say = total === 0 ? "no Boss kills figure" : `Boss kills ${total} (Scarlet ${scarlet}${added > 0 ? `, From addons ${added}, no since` : ", since and no From addons"})`;
+      check(`${name}, ${page === "character" ? "a visitor" : "the owner"} with ${mode}: ${say}`, ok, text.slice(0, 700));
+    }
+  }
+}
+
 async function bossClaims() {
   await fresh(client, second);
+  await ensureLinked();
   const cases = bossClaimCases();
   await levelsProved(cases);
+  await bossPages(["Quill-Lark", "Quill-Gale", "Quill-Jade", "Quill-Slate"]);
   for (const c of cases.filter((x) => x.bosses !== undefined)) {
     check(`${c.name}: the run's bosses is ${c.bosses}`, bossCount(c) === c.bosses, `${bossCount(c)}`);
   }
@@ -1056,6 +1078,7 @@ function readerFigures(name) {
       'kills', (select coalesce(sum(kills), 0) from sessions where ${own(name)} and counted),
       'quests', (select coalesce(sum(quests_done), 0) from sessions where ${own(name)} and counted),
       'runs', (select count(*) from dungeon_runs where ${own(name)} and counted and not continues_previous),
+      'bosses', (select count(*) from boss_kills where ${own(name)}) + (select count(*) from addon_claims where ${own(name)} and kind = 'boss'),
       'addKills', (select coalesce(sum((c.counted ->> 'kills')::bigint), 0) ${added("kill", "rxp", "'counted', 'residual'")}),
       'addQuests', (select count(*) ${added("xp", "rxp", "'counted'")}),
       'addRuns', (select coalesce(sum((c.counted ->> 'runs')::bigint), 0) ${added("run", "fdj", "'counted', 'residual'")}))`));
@@ -1079,11 +1102,13 @@ async function readers() {
   const [reader, echoed] = cases.map((c) => ({ name: c.name, ...readerFigures(c.name) }));
   check(`${reader.name}: Scarlet holds ${reader.kills} kills, ${reader.quests} quests and ${reader.runs} runs, and the claims count 50 kills, 2 quests and 1 run`, reader.addKills === 50 && reader.addQuests === 2 && reader.addRuns === 1 && reader.kills > 0 && reader.quests > 0 && reader.runs > 0, JSON.stringify(reader));
   check(`${echoed.name}: every claim is superseded, 0 kills, 0 quests and 0 runs added`, echoed.addKills === 0 && echoed.addQuests === 0 && echoed.addRuns === 0 && echoed.kills > 0 && echoed.quests > 0 && echoed.runs > 0, JSON.stringify(echoed));
+  check(`${reader.name} and ${echoed.name} hold no boss row and no boss claim`, reader.bosses === 0 && echoed.bosses === 0, JSON.stringify([reader, echoed]));
   const visitorSees = PAGES_ON && MIN_CHARACTERS <= 1;
   const mode = PAGES_ON ? `a minimum of ${MIN_CHARACTERS} characters` : "the flag off";
   for (const person of [reader, echoed]) {
     const shown = await pagesRead(person.name, `${person.name}-`);
     for (const [page, sees] of [["character-owner", PAGES_ON], ["character", visitorSees]]) {
+      check(`${person.name}, ${page === "character" ? "a visitor" : "the owner"} with ${mode}: no Boss kills figure without a boss row or claim`, !shown[page].includes("Boss kills"), shown[page].slice(0, 700));
       const added = { kills: sees ? person.addKills : 0, quests: sees ? person.addQuests : 0, runs: sees ? person.addRuns : 0 };
       const expected = `${person.kills + added.kills} kills, ${person.quests + added.quests} quests, ${person.runs + added.runs} runs`;
       const text = shown[page];

@@ -16,13 +16,14 @@ class AddonCharacterTerms
     public function __construct(private readonly RollupRead $read) {}
 
     /**
-     * What other addons counted of one character's kills, quests and dungeon runs (docs/DESIGN.md, Addon counts,
-     * Reading), one query for each: the counted `kills` of the `rxp` kill claims that count or count in part, one
-     * for each `rxp` quest claim that counts, and the counted `runs` of the `fdj` run claims that count or count in
-     * part. A claim is read only while no addon day of the character lacks a reconcile version. A quest claim adds a
-     * turn-in, never its XP: the page shows no quest XP total.
+     * What other addons counted of one character's kills, quests, dungeon runs and boss kills (docs/DESIGN.md, Addon
+     * counts, Reading), one query for each: the counted `kills` of the `rxp` kill claims that count or count in part,
+     * one for each `rxp` quest claim that counts, the counted `runs` of the `fdj` run claims that count or count in
+     * part, and the counted `bosses` of the `nf` boss claims that count or count in part. A claim is read only while
+     * no addon day of the character lacks a reconcile version. A quest claim adds a turn-in, never its XP: the page
+     * shows no quest XP total.
      *
-     * @return array{kills: int, quests: int, runs: int}
+     * @return array{kills: int, quests: int, runs: int, bosses: int}
      */
     public function handle(int $characterId): array
     {
@@ -35,6 +36,8 @@ class AddonCharacterTerms
                 ->selectRaw('count(*) as total')),
             'runs' => $this->total($this->claims($scope, AddonKind::Run, AddonOrigin::ForeverDungeonJournal, ClaimStatus::adding())
                 ->selectRaw('coalesce(sum((counted ->> ?)::bigint), 0) as total', ['runs'])),
+            'bosses' => $this->total($this->claims($scope, AddonKind::Boss, AddonOrigin::NaowhForever, ClaimStatus::adding())
+                ->selectRaw('coalesce(sum((counted ->> ?)::bigint), 0) as total', ['bosses'])),
         ];
     }
 

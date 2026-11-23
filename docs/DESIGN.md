@@ -615,7 +615,7 @@ the 15 of the decoder's boss kill cases, equal the ones the lane gave at version
   has no character at all, which gives nothing away; a player's own pages always show the split.
 - The flag. `ADDON_COUNTS_PAGES` (`scarlet.addon_counts_pages`, true unless the environment sets it to false) switches these
   reads on for the fishing page, public at `/professions/fishing` and the player's own at
-  `/account/professions/fishing`, and for the Fish caught tile, the Kills and Quests figures and the Dungeon runs module of a character page. Only the web controllers read it:
+  `/account/professions/fishing`, and for the Fish caught tile, the Kills, Quests and Boss kills figures and the Dungeon runs module of a character page. Only the web controllers read it:
   with it off no page reads `addon_claims`, and the public API never does. On since 2026-11-22, after the owner's 38 Fishing Log claims reconciled in production to the verdicts the design predicts; `ADDON_COUNTS_PAGES=false` turns it off.
 - What a page reads. The terms are the `counted` amounts of character-scope `fishing` claims whose status is `counted`
   or `residual`. Dated are the windows other than `life`, undated the `life` windows, one query each. A claim is read
@@ -653,16 +653,22 @@ the 15 of the decoder's boss kill cases, equal the ones the lane gave at version
 - The character page. The Fish caught tile adds the claims' `landed` and says "From addons" with their count, to the
   character's owner, and to a visitor only where `scarlet.min_characters` is 1. A character whose only records are
   those catches shows the Records strip with that tile alone. Most caught, the feats and the standings stay Scarlet's.
-- Kills, quests and dungeon runs on the character page (`AddonCharacterTerms`, `CharacterOverview`'s `addonCounts`).
-  Three terms, one query each, over the character's character-scope claims, read under the same rules as the fishing
+- Kills, quests, dungeon runs and boss kills on the character page (`AddonCharacterTerms`, `CharacterOverview`'s
+  `addonCounts`). Four terms, one query each, over the character's character-scope claims, read under the same rules as the fishing
   tile (the flag, the null reconcile version, the owner or a threshold of 1; a character-scope read has no other
   threshold). The head figure Kills adds the counted `kills` of the `rxp` `kill` claims that are `counted` or
   `residual`. Quests adds one for each `rxp` `xp` claim that is `counted`: each is a turn-in Scarlet did not record,
   and the claim's XP adds to nothing, since the page shows no quest XP total and no figure here reads
   `quest_events.xp` or `xp_gains`. The Dungeon runs module adds the counted `runs` of the `fdj` `run` claims that are
   `counted` or `residual` to its count, "N dungeon runs in all. From addons M.", and lists only Scarlet's runs, so a
-  character whose only runs are the addon's shows the module with that line and no list. Each figure shows "From
-  addons N" beside it when N is above 0. Everything else stays Scarlet's rows only: the leaderboards, the public stats
+  character whose only runs are the addon's shows the module with that line and no list. The head figure Boss
+  kills sits after Kills and is drawn only when above 0: the character's `boss_kills` rows with `counted` true (one
+  query, `CharacterOverview`'s `bossKills`, read with the flag off too) plus the counted `bosses` of the `nf` `boss`
+  claims that are `counted` or `residual`. Like Kills it says "since <first session>" while nothing is added, and drops
+  it when an addon term adds, since the total then reaches back before that day; a character whose only boss kills are
+  the addon's shows it with no Scarlet term. The per-run "N bosses" of the run list stays Scarlet's distinct count, and
+  the feats that read `sum(bosses)` (Vanquisher and the role boss feats) stay as they are. Each figure shows "From
+  addons N" under it when N is above 0. Everything else stays Scarlet's rows only: the leaderboards, the public stats
   and ruleset pages, the per-level charts (XP by level, time per level), XP per hour, the sessions table, the quest
   and kill lists, the week's figures, rates, and the public API. With the flag off these claims are not read either.
 
@@ -675,7 +681,7 @@ violation. Scarlet's own term is per kind: for fishing its attempts, looted atte
 `kills` rows with `player` false; for `xp` the larger of the `xp` of its `quest_events` turn-ins and of its `xp_gains`
 of source `q`, since the groups of the two can be on apart; for `run` the joined runs. It runs on demand; a schedule that logs breaches comes with the first page that reads statuses. Checks 1
 to 5, 8, 9 and 11 run now. Check 6 runs in `e2e/addon-counts.mjs` with the flag on (its default), which compares the
-terms on the fishing pages and the character page with the totals read from the database. Check 10 is the rule of the
+terms on the fishing pages and the character page (Fish caught, Kills, Quests, Boss kills and Dungeon runs) with the totals read from the database. Check 10 is the rule of the
 read above. Check 7 is the comparison of the same pages with the flag off before and after a change, which
 `ADDON_PAGES_DIR` keeps.
 

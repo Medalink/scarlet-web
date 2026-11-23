@@ -80,7 +80,7 @@ class CharacterOverview
      * for the owner, or when the owner chose to show the economy. Null when the character is unknown or private.
      *
      * With `$addons` the answer also has `addons`, what other addons counted of the character's fishing
-     * (`AddonFishingTerms`), and `addonCounts`, what they counted of its kills, quests and dungeon runs
+     * (`AddonFishingTerms`), and `addonCounts`, what they counted of its kills, quests, dungeon runs and boss kills
      * (`AddonCharacterTerms`): to its owner, and to everyone only where one character is enough to show a bucket
      * (`scarlet.min_characters` of 1). Null otherwise.
      *
@@ -129,6 +129,7 @@ class CharacterOverview
             'killed' => $this->mostKilled->handle($id),
             'crafted' => $this->mostCrafted->handle($id),
             'dungeonRuns' => $this->dungeonRuns->handle($id),
+            'bossKills' => DB::table('boss_kills')->where('character_id', $id)->where('counted', true)->count(),
             'questsDone' => $this->questsDone->handle($id),
             'lifetime' => $this->lifetime->handle($id),
             'creaturesMet' => $this->creaturesMet->handle($id),

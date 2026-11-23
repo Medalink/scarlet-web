@@ -40,8 +40,9 @@ final class CharacterPage
         /** @var array<string, mixed> $totals */
         $totals = $r['totals'];
         $since = self::since($character);
-        /** @var array{kills: int, quests: int, runs: int} $added */
-        $added = $r['addonCounts'] ?? ['kills' => 0, 'quests' => 0, 'runs' => 0];
+        /** @var array{kills: int, quests: int, runs: int, bosses: int} $added */
+        $added = $r['addonCounts'] ?? ['kills' => 0, 'quests' => 0, 'runs' => 0, 'bosses' => 0];
+        $bossKills = (int) $r['bossKills'] + $added['bosses'];
         $levels = CharacterLevels::figure($r['levelTimes'], $r['xp'], $r['deathLevels']);
 
         $quests = CharacterLists::quests($r['questsDone']);
@@ -61,6 +62,7 @@ final class CharacterPage
                 : ['label' => 'Recorded'.$since, 'value' => Format::duration($character->recorded_seconds), 'icon' => 'hours'],
             $cap === null ? null : ['label' => 'Time at level '.$cap['level'].($cap['observed'] ? $since : ''), 'value' => Format::duration($cap['seconds_at_cap']), 'icon' => null],
             ['label' => 'Kills'.($added['kills'] > 0 ? '' : $since), 'value' => Format::number($totals['kills'] + $added['kills']), 'icon' => 'kills', 'addons' => self::fromAddons($added['kills'])],
+            $bossKills > 0 ? ['label' => 'Boss kills'.($added['bosses'] > 0 ? '' : $since), 'value' => Format::number($bossKills), 'icon' => 'crown', 'addons' => self::fromAddons($added['bosses'])] : null,
             ['label' => 'Deaths'.$since, 'value' => Format::number($totals['deaths']), 'icon' => 'deaths'],
             ['label' => 'Quests'.($added['quests'] > 0 ? '' : $since), 'value' => Format::number($totals['quests'] + $added['quests']), 'icon' => 'quests', 'addons' => self::fromAddons($added['quests'])],
             round($totals['distance'], 1) > 0 ? ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1), 'icon' => 'distance'] : null,
