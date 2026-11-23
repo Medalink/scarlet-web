@@ -47,7 +47,7 @@ final class SystemRecap
                 ['at' => 5200, 'kind' => 'feat', 'text' => 'Rampage reached Silver', 'feat' => 'combat.kills', 'tier' => 2],
                 ['at' => 6200, 'kind' => 'boss', 'text' => 'Defeated Bhag\'thera'],
             ],
-            'route' => ['sheet' => ['aspect' => 1.4, 'points' => self::path(), 'breaks' => [0]]],
+            'route' => ['sheet' => ['aspect' => 1.4, 'points' => self::path(), 'breaks' => [], 'air' => []]],
         ];
     }
 

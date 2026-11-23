@@ -66,16 +66,9 @@ final class RecapView
             }
         }
 
-        $breaks = $sheet['breaks'] ?? [];
-        $count = intdiv(count($sheet['points']), 2);
-        $air = isset($recap['route']['legs']) ? array_fill(0, $count, 0) : [];
-        foreach ($recap['route']['legs'] ?? [] as $i => $leg) {
-            $from = $breaks[$i] ?? 0;
-            $to = $breaks[$i + 1] ?? $count;
-            for ($p = $from; $p < $to; $p++) {
-                $air[$p] = $leg['mode'] === 'flight' ? 1 : 0;
-            }
-        }
+        $breaks = array_map(fn (int $first): int => $first - 1, $sheet['breaks'] ?? []);
+        $air = array_map(fn (bool $flown): int => $flown ? 1 : 0, $sheet['air'] ?? []);
+        $air = array_pad($air, intdiv(count($sheet['points']), 2), 0);
 
         return ['aspect' => $sheet['aspect'], 'points' => $sheet['points'], 'breaks' => $breaks, 'air' => $air, 'marks' => $marks];
     }

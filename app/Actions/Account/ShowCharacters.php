@@ -11,7 +11,7 @@ class ShowCharacters
     public function handle(Account $account): array
     {
         return array_values($account->characters()
-            ->select(['id', 'name', 'class', 'race', 'level', 'sessions_decoded', 'last_seen_at', 'is_public', 'show_economy'])
+            ->select(['id', 'name', 'class', 'race', 'level', 'sessions_decoded', 'last_seen_at', 'is_public', 'show_economy', 'show_sessions'])
             ->orderBy('name')
             ->get()
             ->all());
