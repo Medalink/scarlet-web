@@ -1703,7 +1703,7 @@ The design is approved: the comp is `docs/comps/class.html` (the Warlock) and th
 view. Built: the art (the nine heads, `warrior` to `druid` in `resources/js/scene/scenes/` and in the
 `SCENES` table of `tools/scene-art`, with `AppSupportScene` and `PlayerClass::scene()` naming them, and `/design/scenes/{class}`
 showing each over invented numbers, and the spell icons, Spell icons), the view layer, and the route, the reads, the
-comparison and the Warlock page (below). The other eight classes have no builder yet, so their addresses are 404.
+comparison, the Warlock page and the Mage page (below). A class with no builder yet has a 404 address.
 
 **What is built (the view layer).** `App\Support\ClassPage\ClassPage` is the typed page object every class fills: the
 character line, the links, the callouts, the six figures, rows of modules (each a list of blocks), the talent modules,
@@ -1792,6 +1792,20 @@ only a fight's top five spells and say so. Summons: "At a dungeon door", the pla
 are replaced by "Interrupted". "Deaths undone by your own" reads "Deaths undone by a soulstone". The head has no link to
 a build page. A killing blow with no cast of yours in the 3 seconds before it is labelled "No cast in the 3 seconds
 before", with the note "a wand, a melee swing, a pet or a damage-over-time spell": the rows cannot tell which.
+
+**Mage.** `MageBuilder` draws its sheet from `App\Support\ClassPage\Mage\` (`Spells`, `Conjuring`, `Schools`, `Portals`,
+`Casting`, `Control`, `Party`, `Talents`, `Standings`) and reads the spells a meter listed by level through
+`MeterSpellLevels`. Its fixture is `Frost-Weaver` (`e2e/mage-lines.mjs`, worked out in `e2e/mage-expected.mjs`), a mage of
+the stranger install, so the first install's character counts do not move. The rows cannot answer some of the comp's
+modules, so the page says what they can. Conjured water and food: the site never receives the bag contents, so "in the
+bags now" is not known, and what is left in the bags and what was gone at logout cannot be told apart; they are one row,
+"In the bags or gone at logout" (conjured less everything that left), and a note says so. The bag chart is left out for the
+same reason. Damage by school by level counts the Frost, Fire and Arcane spells the damage meter listed, which holds the
+five largest spells of a fight, and a note says so. The talent modules are Ice Barrier, Cold Snap, Ice Block,
+Presence of Mind, Arcane Power, Pyroblast and Combustion, in that order, and the page shows the first three the build
+holds. The comparison covers water
+conjured, water handed out, portals opened, kills in the biggest pull, time spent drinking and Blinks, each as a rate a
+played hour or a share.
 
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
