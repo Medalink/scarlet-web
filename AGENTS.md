@@ -24,7 +24,8 @@ the app. Pint, PHPStan and Vite skip it. Never push to `gh-pages`.
   (`minimumReleaseAge` in `pnpm-workspace.yaml`); for composer, cargo and Docker images check the release date and
   pin. `scripts/deps-age` lists locked packages and pinned images younger than 7 days, and `composer check` runs it.
 - Never commit a key or secret. Never put a real player name in the repo, a doc, a screenshot or a commit message;
-  examples use `Name-Surname`. Do not name other websites or data services.
+  examples use `Name-Surname`. Do not name other websites or data services, except AHledger, whose auction prices
+  the site imports and credits as its terms ask (owner, 2026-11-23).
 - `docs/groups.tsv` is the one source for sharing groups. `scarlet-part check-groups` must pass after any change to
   it or to Scarlet's FORMAT.md.
 - No CI. Checks run locally and in the owner's flow.

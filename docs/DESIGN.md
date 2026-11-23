@@ -148,6 +148,28 @@ and observed numbers and stay apart from both:
   account's characters page, both labelled with the source. Both show the returned auctions (expired and cancelled) as a count, with the items in all.
   Removing the group or the character deletes its rows.
 
+### Imported market prices
+
+Beside the prices our own players saw (`auction_prices`), the site imports each Forever auction house's prices from
+AHledger's public API (`https://api.ahledger.com`), whose scans come from the players running its addon. Its terms ask
+for a credit link wherever the figures show (owner, 2026-11-23, chose to show it), and a licence once the site makes
+money from them. AHledger asks to be cited by that spelling, with a link to the page the figure came from and the
+market and scan time beside each price.
+
+- `prices:pull` runs every 15 minutes on one server. It reads `GET /v1/markets` into `markets`, enabling the Forever
+  markets of the regions in `scarlet.ahledger.regions` (US), then asks for each enabled market's price table
+  (`GET /v1/pricetable/{market}`) with the ETag it stored. An unchanged table answers 304. One request at a time, a
+  second apart; a 429, a server error or an unreachable host ends the run and the next run tries again. That is at
+  most nine requests every 15 minutes against a limit of 300 a minute.
+- A table is read only whole: a header of another version or market, a malformed row or a row count that does not
+  match the header stores nothing and sets the market's `status` to `unreadable`.
+- `market_price_days` (hypertable on `day`) holds one row per market, item and UTC day. Each newer scan of the day
+  replaces the row's latest figures (`min_buyout`, `median`, 7 and 30 day medians, `quantity`, `scanned_at` and
+  `sold_x10`, the estimated units sold a day times ten, null until AHledger has enough hours of a market's scans) and
+  keeps `low`, the lowest minimum buyout of the day. Single scans are not kept, since the table already carries the 7
+  and 30 day medians. About 6,800 items a market, so 8 US markets add about 20 million rows a year.
+- A market is a ruleset (`normal`, `pvp`, `rp`, `rppvp`), a faction and a region. Hardcore has no market.
+
 ### The Fishing Log
 
 The `fishing` group carries what the companion read from The Fishing Log's saved variables (Scarlet's FORMAT.md, "The

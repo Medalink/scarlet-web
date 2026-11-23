@@ -7,6 +7,7 @@ Schedule::command('ingest:sweep')->everyFiveMinutes()->withoutOverlapping()->onO
 Schedule::command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
 Schedule::command('rulesets:detect')->everyTenMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('search:scores')->hourly()->withoutOverlapping()->onOneServer();
+Schedule::command('prices:pull')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 // A safety net: sessions that sit under another ruleset than their character's are decoded again.
 Schedule::command('rulesets:refile')->dailyAt('04:30')->withoutOverlapping()->onOneServer();
 Schedule::command('api-calls:prune')->dailyAt('03:50')->withoutOverlapping()->onOneServer();

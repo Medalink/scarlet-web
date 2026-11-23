@@ -89,6 +89,13 @@ return [
         // How long one run of the job looks characters up before the next run takes the rest.
         'job_seconds' => 200,
     ],
+    'ahledger' => [
+        'base_url' => env('SCARLET_AHLEDGER_URL', 'https://api.ahledger.com'),
+        'regions' => array_values(array_filter(explode(',', (string) env('SCARLET_AHLEDGER_REGIONS', 'us')))),
+        'user_agent' => 'scarletweb.io price import (https://scarletweb.io)',
+        'timeout' => 30,
+        'pause_ms' => 1000,
+    ],
     'edge' => [
         'page_seconds' => 60,
         'api_seconds' => 300,
