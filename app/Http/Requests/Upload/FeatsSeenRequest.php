@@ -3,9 +3,8 @@
 namespace App\Http\Requests\Upload;
 
 use App\Support\Feat;
-use Closure;
 
-/** POST /api/v1/installs/me/feats/seen: the tiers the app showed for one character. */
+/** POST /api/v1/installs/me/feats/seen: the tiers the app showed for one character. A key that is not a feat is accepted and ignored. */
 class FeatsSeenRequest extends UploadRequest
 {
     /** @return array<string, mixed> */
@@ -13,15 +12,7 @@ class FeatsSeenRequest extends UploadRequest
     {
         return [
             'character' => ['required', 'string', 'regex:'.self::CHARACTER_PATTERN],
-            'feats' => ['required', 'array', 'min:1', 'max:'.count(Feat::cases()), function (string $attribute, mixed $value, Closure $fail): void {
-                foreach (array_keys((array) $value) as $key) {
-                    if (Feat::tryFrom((string) $key) === null) {
-                        $fail('The feats must be keyed by feat.');
-
-                        return;
-                    }
-                }
-            }],
+            'feats' => ['required', 'array', 'min:1', 'max:'.(2 * count(Feat::cases()))],
             'feats.*' => ['required', 'integer', 'between:1,'.count(Feat::TIERS)],
         ];
     }

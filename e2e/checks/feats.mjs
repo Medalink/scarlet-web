@@ -38,7 +38,7 @@ export async function shownFeatIsNotNewAgain(ctx) {
 export async function featsRefuseWhatIsNotTheInstalls(ctx) {
   expectError(await ctx.client.feats({ sign: false }), 401, "missing_signature", `an unsigned ${READ}`);
   expectError(await ctx.client.featsSeen("Nobody-Here", { slayer: 1 }), 404, "not_found", `${SEEN} for a character the install does not own`);
-  expectError(await ctx.client.featsSeen(NAME, { "not-a-feat": 1 }), 422, "invalid_request", `${SEEN} with a key that is not a feat`);
+  expectStatus(await ctx.client.featsSeen(NAME, { "not-a-feat": 1, slayer: 1 }), 204, `${SEEN} with a key that is not a feat, which is ignored`);
   expectError(await ctx.client.featsSeen(NAME, { slayer: 6 }), 422, "invalid_request", `${SEEN} with a tier above legend`);
 }
 

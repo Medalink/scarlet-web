@@ -182,8 +182,8 @@ a feat earned for the first time, and above 0 for an upgrade. `since` is the dat
 ```
 
 Records the tier shown for each feat, so `new` stops listing it. `204` with no body. A tier above the one the
-character holds is lowered to it, a tier below the one recorded changes nothing, and sending it twice is safe. `404
-not_found` when the character is not this install's. `422 invalid_request` for a feat that does not exist or a tier
+character holds is lowered to it, a tier below the one recorded changes nothing, a key that is not a feat is ignored, and sending it twice is safe. `404
+not_found` when the character is not this install's. `422 invalid_request` for a tier
 outside 1 to 5.
 
 ### `GET /installs/me/class-page/{character?}`
