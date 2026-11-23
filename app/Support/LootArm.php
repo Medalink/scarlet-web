@@ -60,7 +60,7 @@ final readonly class LootArm implements JsonSerializable
         }
         $reader = self::busiest($unkeyed);
         $contested = $freeForAll && $reader !== null
-            ? array_keys(array_filter($days, fn (array $parts): bool => ($parts['unkeyed'][$reader] ?? 0) > 0 && array_sum(array_diff_key($parts['keyed'], [$reader => 0])) > 0))
+            ? array_keys(array_filter($days, fn (array $parts): bool => self::contested($parts, $reader)))
             : [];
         $oneReader = $freeForAll && $reader !== null && (count($unkeyed) >= 2 || $contested !== []);
 
@@ -87,6 +87,53 @@ final readonly class LootArm implements JsonSerializable
             $key, $label, $personal, array_sum($unkeyed) + array_sum($keyed), $windows, $characters, $oneReader ? $reader : null, $counted,
             RateFlag::tags($oneReader ? 0 : count($characters), false, $oneReader, $ruleUnknown),
         );
+    }
+
+    /**
+     * The days of a free-for-all arm with the days that cannot change what it counts merged into two, so a source read for
+     * a long history is kept, and counted, as the few days that matter. A day is contested when the reader has windows with
+     * no key and another character has windows with a key (rule 6), and stays as it is. Every other day counts all its
+     * windows with a key and the reader's windows with no key, whatever the day is. The days where the reader has windows
+     * with no key become `reader`, where no other character has windows with a key, and the rest become `rest`, where the
+     * reader has no windows with no key: neither can be contested, so `overDays` gives the same arm over the merged days.
+     *
+     * @param  array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>  $days  windows by day, then by character id
+     * @return array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>
+     */
+    public static function collapsed(array $days): array
+    {
+        $unkeyed = [];
+        foreach ($days as $parts) {
+            foreach ($parts['unkeyed'] as $character => $windows) {
+                $unkeyed[$character] = ($unkeyed[$character] ?? 0) + $windows;
+            }
+        }
+        $reader = self::busiest($unkeyed);
+        if ($reader === null) {
+            return $days;
+        }
+        $kept = [];
+        $merged = ['reader' => ['unkeyed' => [], 'keyed' => []], 'rest' => ['unkeyed' => [], 'keyed' => []]];
+        foreach ($days as $day => $parts) {
+            if (self::contested($parts, $reader)) {
+                $kept[$day] = $parts;
+
+                continue;
+            }
+            $into = ($parts['unkeyed'][$reader] ?? 0) > 0 ? 'reader' : 'rest';
+            foreach (['unkeyed', 'keyed'] as $part) {
+                foreach ($parts[$part] as $character => $windows) {
+                    $merged[$into][$part][$character] = ($merged[$into][$part][$character] ?? 0) + $windows;
+                }
+            }
+        }
+        foreach ($merged as $name => $parts) {
+            if ($parts['unkeyed'] !== [] || $parts['keyed'] !== []) {
+                $kept[$name] = $parts;
+            }
+        }
+
+        return $kept;
     }
 
     /**
@@ -139,6 +186,17 @@ final readonly class LootArm implements JsonSerializable
             'key' => $this->key, 'label' => $this->label, 'windows' => $this->windows, 'corpses' => $this->corpses, 'characters' => count($this->characters),
             'flags' => array_map(fn (RateFlag $flag): string => $flag->value, $this->flags), 'drawn' => $this->drawn(),
         ];
+    }
+
+    /**
+     * Whether the day is one where the larger-set rule applies: the reader has windows with no key and another character has
+     * windows with a key.
+     *
+     * @param  array{unkeyed: array<int, int>, keyed: array<int, int>}  $parts
+     */
+    private static function contested(array $parts, int $reader): bool
+    {
+        return ($parts['unkeyed'][$reader] ?? 0) > 0 && array_sum(array_diff_key($parts['keyed'], [$reader => 0])) > 0;
     }
 
     /**

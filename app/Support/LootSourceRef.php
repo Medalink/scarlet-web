@@ -38,6 +38,26 @@ final readonly class LootSourceRef
         return $query->where($kind, $this->kind->value)->where($id, $this->id);
     }
 
+    /**
+     * The rows that belong to any of the sources: each kind with its ids, so a read of a few sources filters on the kind
+     * and an id list and never on a condition for each source.
+     *
+     * @param  list<self>  $sources
+     */
+    public static function anyOf(Builder $query, array $sources, string $kind = 'source_kind', string $id = 'source_id'): Builder
+    {
+        $ids = [];
+        foreach ($sources as $source) {
+            $ids[$source->kind->value][] = $source->id;
+        }
+
+        return $query->where(function (Builder $any) use ($ids, $kind, $id): void {
+            foreach ($ids as $value => $of) {
+                $any->orWhere(fn (Builder $one): Builder => $one->where($kind, $value)->whereIn($id, $of));
+            }
+        });
+    }
+
     /** The kind of the `names` dictionary that names this source. */
     public function nameKind(): NameKind
     {

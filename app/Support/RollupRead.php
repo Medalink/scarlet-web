@@ -102,6 +102,25 @@ class RollupRead
         return $this->remember('sum:'.$column, $query, fn (): int|float => $query->sum($column) + 0);
     }
 
+    /**
+     * An answer built from rows, kept like a read: for the fresh and then the stale seconds, under a key of what it was
+     * built from. Keep plain arrays, which a later release of the code can still read.
+     *
+     * @param  array<array-key, mixed>  $inputs  what the answer was asked for
+     * @param  Closure(): array<array-key, mixed>  $build
+     * @return array<array-key, mixed>
+     */
+    public function kept(string $kind, array $inputs, Closure $build): array
+    {
+        $wrapped = Cache::flexible(
+            self::builtKey($kind, $inputs),
+            [(int) config('scarlet.rollups.read_fresh_seconds'), (int) config('scarlet.rollups.read_stale_seconds')],
+            fn (): array => [$build()],
+        );
+
+        return $wrapped[0];
+    }
+
     /** @param  int|list<int>|null  $rulesetId */
     private function withRulesets(Builder $query, int|array|null $rulesetId): Builder
     {
@@ -160,6 +179,12 @@ class RollupRead
     private static function definitionKey(string $view): string
     {
         return 'rollup-definition:'.$view;
+    }
+
+    /** @param  array<array-key, mixed>  $inputs */
+    private static function builtKey(string $kind, array $inputs): string
+    {
+        return 'rollup-built:'.sha1($kind.'|'.json_encode($inputs, JSON_THROW_ON_ERROR));
     }
 
     private static function key(string $kind, Builder $query): string
