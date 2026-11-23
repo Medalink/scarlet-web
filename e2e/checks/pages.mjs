@@ -15,7 +15,6 @@ const PAGES = [
   { path: "/camps", shows: heading("Camps") },
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
   { path: "/developers", shows: heading("Public API") },
-  { path: "/release-notes", shows: heading("Release notes") },
   { path: "/download", shows: heading("Scarlet records what you do in WoW Forever") },
   { path: "/leaderboards", shows: heading("Leaderboards") },
   { path: "/leaderboards/most-quests", shows: heading("Most quests turned in") },
@@ -63,6 +62,7 @@ export async function everyPageShowsItself(ctx) {
 export async function oldAddressesRedirect(ctx) {
   const moved = [
     ["/demo", "/"],
+    ["/release-notes?v=1.0.0", "/download?v=1.0.0#release-notes"],
     ["/loot/groups?source=c1", "/loot?source=c1&view=groups"],
     ["/rulesets", "/stats/compare"],
     ["/rulesets/unidentified", "/stats/unidentified"],

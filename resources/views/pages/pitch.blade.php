@@ -207,6 +207,14 @@
     </div>
   </section>
 
+  <section class="band" id="release-notes" aria-labelledby="h-release-notes">
+    <div class="wrap">
+      <h2 id="h-release-notes">Release notes</h2>
+      <p class="intro">Running v{{ $notes['build']['full'] }}. {{ \App\View\Format::count($notes['count'], 'release') }} published.</p>
+      <x-release-notes :d="$notes" />
+    </div>
+  </section>
+
   <section class="close" aria-labelledby="h-close">
     <div class="wrap">
       <h2 id="h-close">The demo character Maren Ashlow has <span data-hours>96</span> hours of play on record</h2>

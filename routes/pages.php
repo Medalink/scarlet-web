@@ -17,7 +17,6 @@ use App\Http\Controllers\Web\MapTrailsController;
 use App\Http\Controllers\Web\ProfessionController;
 use App\Http\Controllers\Web\ProfessionsController;
 use App\Http\Controllers\Web\RecordController;
-use App\Http\Controllers\Web\ReleaseNotesController;
 use App\Http\Controllers\Web\RulesetsController;
 use App\Http\Controllers\Web\SearchController;
 use App\Http\Controllers\Web\SearchSuggestController;
@@ -42,7 +41,7 @@ Route::get('/professions/{slug}', ProfessionController::class)->where('slug', '[
 Route::get('/search', SearchController::class);
 Route::get('/search/suggest', SearchSuggestController::class);
 Route::get('/developers', DevelopersController::class);
-Route::get('/release-notes', ReleaseNotesController::class);
+Route::get('/release-notes', LegacyRedirectController::class)->defaults('to', '/download')->defaults('anchor', 'release-notes');
 Route::get('/download', DownloadController::class);
 Route::get('/feats', FeatsController::class);
 Route::get('/feats/{key}', FeatController::class)->where('key', '[a-z-]+');

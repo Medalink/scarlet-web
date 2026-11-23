@@ -7,7 +7,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/site.css', 'resources/css/landing.css', 'resources/js/landing.js']" :canonical="$canonical" :index="$index" :brand="$brand" />
+<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/site.css', 'resources/css/app.css', 'resources/css/landing.css', 'resources/js/landing.js']" :canonical="$canonical" :index="$index" :brand="$brand" />
 @isset($head){{ $head }}@endisset
 </head>
 <body>

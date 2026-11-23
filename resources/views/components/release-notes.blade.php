@@ -1,8 +1,5 @@
-<x-layouts.app title="Scarlet release notes" current="" description="What changed in each version of the Scarlet website and API, and the build that is running now." :brand="false">
-<div class="wrap">
-  <x-page-head title="Release notes" :single="true">
-    <x-slot:sub>Running v{{ $d['build']['full'] }}. {{ \App\View\Format::count($d['count'], 'release') }} published.</x-slot:sub>
-  </x-page-head>
+{{-- The release notes: the build that is running, the releases to pick from and one release with its changes. d: App\View\Pages\ReleaseNotesPage::data. --}}
+@props(['d'])
   <section class="mod first last" aria-labelledby="h-build" style="padding-block:1.6rem 0">
     <h2 id="h-build" class="vh">Running now</h2>
     <x-figures :items="$d['build']['figures']" />
@@ -16,7 +13,7 @@
     <nav class="rel-nav" aria-label="Releases">
       <h2>Releases</h2>
 @foreach ($d['rail'] as $entry)
-      <a href="/release-notes?v={{ urlencode($entry['version']) }}"@if ($entry['current']) aria-current="true"@endif><b>v{{ $entry['version'] }}</b><span>{{ $entry['date'] }}</span><i>{{ \App\View\Format::count($entry['total'], 'change') }}</i></a>
+      <a href="/download?v={{ urlencode($entry['version']) }}#release-notes"@if ($entry['current']) aria-current="true"@endif><b>v{{ $entry['version'] }}</b><span>{{ $entry['date'] }}</span><i>{{ \App\View\Format::count($entry['total'], 'change') }}</i></a>
 @endforeach
     </nav>
     <article class="rel-body" aria-labelledby="h-rel">
@@ -45,5 +42,3 @@
     </article>
   </div>
 @endif
-</div>
-</x-layouts.app>

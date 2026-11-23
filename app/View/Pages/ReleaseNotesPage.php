@@ -149,9 +149,9 @@ final class ReleaseNotesPage
      */
     private static function filters(string $version, ?string $only, array $counts, int $total): array
     {
-        $items = [['label' => 'All '.$total, 'href' => '/release-notes?v='.urlencode($version), 'on' => $only === null]];
+        $items = [['label' => 'All '.$total, 'href' => '/download?v='.urlencode($version).'#release-notes', 'on' => $only === null]];
         foreach (self::KINDS as $key => $label) {
-            $items[] = ['label' => $label.' '.$counts[$key], 'href' => '/release-notes?v='.urlencode($version).'&only='.$key, 'on' => $only === $key];
+            $items[] = ['label' => $label.' '.$counts[$key], 'href' => '/download?v='.urlencode($version).'&only='.$key.'#release-notes', 'on' => $only === $key];
         }
 
         return $items;
