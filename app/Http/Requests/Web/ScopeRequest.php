@@ -64,6 +64,13 @@ class ScopeRequest extends FormRequest
         return is_string($server) ? Server::from($server) : Server::All;
     }
 
+    public function viewer(): ?Account
+    {
+        $account = $this->user();
+
+        return $account instanceof Account ? $account : null;
+    }
+
     /** The signed-in account of a route behind the `auth` middleware. */
     public function account(): Account
     {

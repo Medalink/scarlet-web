@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Account\ChooseScope;
 use App\Actions\Account\OwnCharacterIds;
 use App\Actions\Public\CraftingDashboard;
 use App\Actions\Public\GatheringDashboard;
@@ -28,7 +29,7 @@ use Illuminate\Http\RedirectResponse;
  */
 class ProfessionController extends Controller
 {
-    public function __invoke(ScopeRequest $request, GatheringDashboard $gathering, CraftingDashboard $crafting, MapZones $mapZones, OwnCharacterIds $ownIds, string $slug): View|RedirectResponse
+    public function __invoke(ScopeRequest $request, GatheringDashboard $gathering, CraftingDashboard $crafting, MapZones $mapZones, OwnCharacterIds $ownIds, ChooseScope $chooseScope, string $slug): View|RedirectResponse
     {
         $profession = Profession::fromSlug($slug);
         $scene = $profession?->scene();
@@ -55,14 +56,26 @@ class ProfessionController extends Controller
         $map = $page['dots'] === null ? null : MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $mapZones->handle($scope->rollup()), dots: $page['dots']);
         $path = ($own ? '/account' : '').'/professions/'.$slug;
         $query = array_filter(['ruleset' => $scope->ruleset?->slug(), 'server' => $scope->server === Server::All ? null : $scope->server->value]);
+        $switch = $chooseScope->handle($request->viewer(), $request->choice(), $request->comparedName(), $own, $query, $page['figures'], function (int $id) use ($kind, $profession, $gathering, $crafting, $asked, $request): ?array {
+            $yours = $kind === null
+                ? $crafting->handle($profession, $asked, $request->serverFilter(), [$id])
+                : $gathering->handle($kind, $asked, $request->serverFilter(), [$id], (bool) config('scarlet.addon_counts_pages'));
+            if ($yours === null) {
+                return null;
+            }
+
+            return $kind === null ? CraftingPage::data($profession, $yours)['figures'] : GatheringPage::data($kind, $yours, null)['figures'];
+        }, ['Characters', 'Crafters', 'Gatherers']);
 
         return view('pages.profession', [
+            'scope' => $switch,
             'd' => $page,
             'scene' => $scene,
             'art' => SceneArt::stage($scene),
             'filters' => Filters::onPage($scope, $rulesets, $path),
             'trades' => Trades::of($slug, $query === [] ? '' : '?'.http_build_query($query), $own),
             'own' => $own,
+            'slug' => $slug,
             'everyone' => '/professions/'.$slug,
             'map' => $map,
             'title' => $page['title'],

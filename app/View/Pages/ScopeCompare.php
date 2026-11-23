@@ -8,18 +8,22 @@ use App\View\Format;
 final class ScopeCompare
 {
     /**
-     * @param  list<array{label: string, value: string, icon?: string|null}>  $everyone
-     * @param  list<array{label: string, value: string, icon?: string|null}>  $yours
+     * @param  array<mixed>  $everyone  figures, each with a label and a value
+     * @param  array<mixed>  $yours
      * @param  list<string>  $skip  figure labels that count players and mean nothing for one character
      * @return array{name: string, rows: list<array{0: string, 1: string, 2: string}>}
      */
     public static function figures(array $everyone, array $yours, string $name, array $skip = []): array
     {
-        $mine = array_column($yours, 'value', 'label');
+        $mine = [];
+        foreach ($yours as $figure) {
+            $mine[(string) ($figure['label'] ?? '')] = (string) ($figure['value'] ?? '');
+        }
         $rows = [];
         foreach ($everyone as $figure) {
-            if (! in_array($figure['label'], $skip, true) && isset($mine[$figure['label']])) {
-                $rows[] = [$figure['label'], $figure['value'], $mine[$figure['label']]];
+            $label = (string) ($figure['label'] ?? '');
+            if (! in_array($label, $skip, true) && isset($mine[$label])) {
+                $rows[] = [$label, (string) ($figure['value'] ?? ''), $mine[$label]];
             }
         }
 

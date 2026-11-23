@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Web;
 
-use App\Actions\Account\ChooseComparedCharacter;
+use App\Actions\Account\ChooseScope;
 use App\Actions\Account\OwnCharacterIds;
-use App\Actions\Account\OwnCharacterNames;
 use App\Actions\Public\CampsDashboard;
 use App\Actions\Public\MapZones;
 use App\Http\Controllers\Controller;
@@ -18,7 +17,6 @@ use App\Support\WorldLayer;
 use App\View\Pages\CampsPage;
 use App\View\Pages\Filters;
 use App\View\Pages\MapSpec;
-use App\View\Pages\ScopeCompare;
 use App\View\Pages\Trades;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +27,7 @@ use Illuminate\Http\RedirectResponse;
  */
 class CampsController extends Controller
 {
-    public function __invoke(ScopeRequest $request, CampsDashboard $dashboard, MapZones $mapZones, OwnCharacterIds $ownIds, OwnCharacterNames $ownNames, ChooseComparedCharacter $compared): View|RedirectResponse
+    public function __invoke(ScopeRequest $request, CampsDashboard $dashboard, MapZones $mapZones, OwnCharacterIds $ownIds, ChooseScope $chooseScope): View|RedirectResponse
     {
         $characters = $request->ownCharacters($ownIds);
         $own = $characters !== null;
@@ -50,14 +48,11 @@ class CampsController extends Controller
 
         $path = $own ? '/account/camps' : '/camps';
         $query = array_filter(['ruleset' => $scope->ruleset?->slug(), 'server' => $scope->server === Server::All ? null : $scope->server->value]);
-        $names = $request->user() === null ? [] : $ownNames->handle($request->account());
-        $choice = $request->choice();
-        $chosen = $choice === 'compare' ? $compared->handle($request->account(), $request->comparedName()) : null;
-        $versus = null;
-        if ($chosen !== null) {
-            $yours = $dashboard->handle($asked, $request->serverFilter(), [$chosen['id']]);
-            $versus = $yours === null ? null : ScopeCompare::figures($page['figures'], CampsPage::data($yours, null)['figures'], $chosen['name'], ['Characters']);
-        }
+        $switch = $chooseScope->handle($request->viewer(), $request->choice(), $request->comparedName(), $own, $query, $page['figures'], function (int $id) use ($dashboard, $asked, $request): ?array {
+            $yours = $dashboard->handle($asked, $request->serverFilter(), [$id]);
+
+            return $yours === null ? null : CampsPage::data($yours, null)['figures'];
+        }, ['Characters']);
 
         return view('pages.camps', [
             'd' => $page,
@@ -68,7 +63,7 @@ class CampsController extends Controller
             'art' => SceneArt::stage(Scene::Camp),
             'scene' => Scene::Camp,
             'canonical' => $path,
-            'scope' => ['choice' => $own && $choice !== 'mine' ? 'mine' : $choice, 'names' => $names, 'as' => $chosen['name'] ?? null, 'query' => $query, 'versus' => $versus],
+            'scope' => $switch,
         ]);
     }
 }

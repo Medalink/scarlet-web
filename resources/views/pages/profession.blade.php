@@ -13,7 +13,7 @@
   <div class="ch-id wrap">
     <div><h1 class="ch-name" id="h1">{{ $d['words']['title'] }}</h1>
       <p class="ch-sub">@foreach ($d['facts'] as $fact)<span>{{ $fact }}</span>@endforeach{{ '' }}@if ($own)<span><a href="{{ $everyone }}">Everyone's {{ $d['words']['title'] }}</a></span>@endif</p></div>
-    <div class="filters"><x-scope-filters :filters="$filters" /></div>
+    <div class="filters"><x-scope-switch :choice="$scope['choice']" :path="'/professions/'.$slug" :names="$scope['names']" :as="$scope['as']" :query="$scope['query']" /><x-scope-filters :filters="$filters" /></div>
   </div>
 </section>
 <div class="wrap">
@@ -25,6 +25,7 @@
   <p class="credit">{{ $scene->credit() }}</p>
   @endif
   <x-figures :items="$d['figures']" :five="$own" />
+  @if ($scope['versus'])<x-scope-compare :compare="$scope['versus']" />@endif
   @if ($d['note'])<x-note>{{ $d['note'] }}</x-note>@endif
   <x-sheet>
     @foreach ($d['layout'] as $row)
