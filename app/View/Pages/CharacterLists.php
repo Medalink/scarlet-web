@@ -116,6 +116,7 @@ final class CharacterLists
         $all = $scarlet + $addons;
 
         return [
+            'fromAddons' => $addons > 0,
             'rows' => array_map(fn (array $run): array => [
                 'label' => $run['name'] ?? 'Instance '.$run['instance_id'],
                 'date' => Carbon::parse($run['at'])->utc()->format('j M'),

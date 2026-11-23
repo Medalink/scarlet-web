@@ -936,7 +936,11 @@ function readerFigures(name) {
 }
 
 const figureShown = (text, label, total, added) =>
-  new RegExp(`${label} since \\d+ \\w+ ${count(total)}(?![\\d,]) ${added > 0 ? `From addons ${count(added)}(?![\\d,])` : "(?!From addons)"}`).test(text);
+  new RegExp(`${label}${added > 0 ? "" : " since \\d+ \\w+"} ${count(total)}(?![\\d,]) ${added > 0 ? `From addons ${count(added)}(?![\\d,])` : "(?!From addons)"}`).test(text);
+const sinceLabels = (text, added) => {
+  const shown = (label) => new RegExp(`${label} since \\d+ \\w+`).test(text);
+  return ["Kills", "Quests", "Dungeon runs"].every((label) => shown(label) === (added === 0));
+};
 const runsShown = (text, total, added) =>
   text.includes(`${count(total)} dungeon run${total === 1 ? "" : "s"} in all. ${added > 0 ? `From addons ${count(added)}.` : ""}`.trimEnd()) && text.includes("From addons") === added > 0;
 
@@ -960,6 +964,7 @@ async function readers() {
       const kills = figureShown(text, "Kills", person.kills + added.kills, added.kills);
       const quests = figureShown(text, "Quests", person.quests + added.quests, added.quests);
       const runs = runsShown(text, person.runs + added.runs, added.runs);
+      check(`${person.name}, ${page === "character" ? "a visitor" : "the owner"} with ${mode}: Kills, Quests and Dungeon runs ${sees && person.addKills > 0 ? "carry no since" : "keep their since"}`, sinceLabels(text, person.addKills > 0 && sees ? 1 : 0), text.slice(0, 700));
       check(`${person.name}, ${page === "character" ? "a visitor" : "the owner"} with ${mode}: ${expected}${sees && person.addKills > 0 ? ", with From addons beside each" : ", Scarlet's own and no From addons"}`, kills && quests && runs, `${kills} ${quests} ${runs} ${text.slice(0, 700)}`);
     }
   }
