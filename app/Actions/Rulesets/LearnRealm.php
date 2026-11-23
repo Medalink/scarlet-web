@@ -14,8 +14,9 @@ class LearnRealm
      * realm is this one and whose Armory lookup named a kind, credited to every install that uploaded the character;
      * the characters and their install links are the whole ledger, so a character that is looked up again or moves to
      * another realm stops counting. A kind becomes the realm's ruleset when the kind was seen on distinct voters up
-     * to the quorum (`scarlet.armory.realm_quorum`), a voter being an account, or an install that no account is linked to,
-     * so neither one install, one claimed name, nor all the installs of one account can decide a realm-wide fact. A learned
+     * to the quorum (`scarlet.armory.realm_quorum`), a voter being an account signed in with Google or Battle.net. An install
+     * that no account is linked to does not vote, since anyone can register installs; so neither one install, one claimed
+     * name, nor all the installs of one account can decide a realm-wide fact. A learned
      * kind that another corroborated kind outruns is re-decided, which files the realm's sessions under the new kind; a realm the site's owner seeded keeps its kind.
      *
      * @return bool whether the realm's ruleset changed
@@ -79,8 +80,9 @@ class LearnRealm
             ->join('installs', 'installs.id', '=', 'install_character.install_id')
             ->where('characters.home_realm_id', $realmId)
             ->whereNotNull('characters.armory_kind')
+            ->whereNotNull('installs.account_id')
             ->groupBy('characters.armory_kind')
-            ->selectRaw("characters.armory_kind, count(distinct coalesce('account:' || installs.account_id, 'install:' || installs.id::text)) as voters")
+            ->selectRaw('characters.armory_kind, count(distinct installs.account_id) as voters')
             ->get();
 
         return $rows->pluck('voters', 'armory_kind')

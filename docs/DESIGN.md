@@ -1129,9 +1129,10 @@ ruleset of a character is found outside the recording, in this order:
    `characters.home_realm_id` from its latest session that has one) names the realm, and `realms(id, kind, name,
    source)` says which ruleset it is. Two realms are seeded as Normal, the ones the first uploaders were seen on, and
    a seed keeps its kind. A realm learns its kind once the Armory's answers for characters of distinct voters
-   (`scarlet.armory.realm_quorum`, 2) agree on it, a voter being an account or an install that no account is linked to,
-   so one install, one claimed name, or the installs of one account, cannot decide the fact for every character on the
-   realm; a learned kind that a quorum of voters outruns later is re-decided, and the realm's sessions are filed under
+   (`scarlet.armory.realm_quorum`, 2) agree on it, a voter being an account signed in with Google or Battle.net. An
+   install that no account is linked to does not vote, since anyone can register installs, so a realm whose uploaders
+   are all unlinked stays unlearned until accounts upload from it; and one install, one claimed name, or the installs
+   of one account, cannot decide the fact for every character on the realm. A learned kind that a quorum of voters outruns later is re-decided, and the realm's sessions are filed under
    the new kind. A disagreement below the quorum is logged. The Armory's answer for one character files that
    character's sessions only through its realm: the name is claimed by one install, so the page of that name proves
    nothing about who uploaded it, and a character on a realm no quorum has named stays "Not identified" until
