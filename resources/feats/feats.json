@@ -1,11 +1,11 @@
 {
     "version": 2,
     "tiers": [
-        "Copper",
-        "Silver",
-        "Gold",
-        "Scarlet",
-        "Legend"
+        "Uncommon",
+        "Rare",
+        "Epic",
+        "Legendary",
+        "Scarlet"
     ],
     "families": [
         "journey",

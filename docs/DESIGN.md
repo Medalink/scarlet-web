@@ -1479,7 +1479,7 @@ cards and the account feats not yet shown, and `install_account_feats` (install,
 order of `new`. The stack is part of the owner's Livewire feat wall, so a visitor, a signed-out viewer and `?as=visitor`
 get no toast markup and no script work. About 600 ms after the page has loaded, and only while the tab is visible
 (otherwise when it becomes visible), the toasts play one at a time at the bottom right, above the page and above an
-open feats dialog. Each says "Feat earned" or "Upgraded from Silver", the feat name and its new tier, stays 4.2 s,
+open feats dialog. Each says "Feat earned" or "Upgraded from Rare", the feat name and its new tier, stays 4.2 s,
 pauses while hovered or focused, and has a close button; the next follows 300 ms after one leaves. At most five play.
 When more are new, a sixth toast says "N more feats" with a "View all" button that opens the feats dialog. Showing a
 toast marks it on the server (`FeatWall::seen`, through `MarkOwnedFeatsSeen`): the toast's feat and tier, or for the
@@ -1487,20 +1487,20 @@ toast marks it on the server (`FeatWall::seen`, through `MarkOwnedFeatsSeen`): t
 stays marked, and a reload after the sequence shows nothing. A pin toggle re-renders the section but not the stack,
 so it does not restart or repeat the sequence. The crest is drawn in the new tier's colours without the
 piece the tier adds. At 120 ms that piece attaches (the shield scales in, the crown drops, the banner rises, the wings,
-spurs or laurels spread, the rays scale up), a burst of light grows behind it (two in gold at Legend, 260 ms apart), a
+spurs or laurels spread, the rays scale up), a burst of light grows behind it (two at Scarlet, 260 ms apart), a
 white copy of the piece flashes at 400 ms and the ghost of the next piece fades in at 900 ms. With reduced motion there
 is only a 150 ms fade and the crest is drawn complete.
 
-A feat is one tier of one ladder. Copper comes in the first session or two. Each later tier takes several times the
-play of the one before: silver about 50 hours, gold about 200, scarlet about 500 and legend, the top tier, about
+A feat is one tier of one ladder. Uncommon comes in the first session or two. Each later tier takes several times the
+play of the one before: rare about 50 hours, epic about 200, legendary about 500 and scarlet, the top tier, about
 2,500 (owner, 2026-11-21: "much much much harder", "bronze can be easy to get people interested but then things get
-slow", "make legends larger, go 150k" for kills with scarlet at 30,000). The thresholds were sized from the rates of
+slow", "make legends larger, go 150k" for kills with legendary at 30,000). The thresholds were sized from the rates of
 one character that plays a lot (53 kills, 2.7 quests and 0.29 world widths an hour), so they are a first setting.
-Summit, Unbroken, Artisan, Explorer, Cartographer, Questing and Tracker stop where the game does: legend is the level
-cap, five professions at 300, or most of the zones, areas, quests and rares of the world. No legend asks for more than
+Summit, Unbroken, Artisan, Explorer, Cartographer, Questing and Tracker stop where the game does: scarlet is the level
+cap, five professions at 300, or most of the zones, areas, quests and rares of the world. No scarlet asks for more than
 one character can reach (owner, 2026-11-22: "capped to possibility"). Cartographer counts the discoveries that give experience: the client's
 AreaTable has about 585 such areas in the zones of the two continents, and a discovery gives none at the level cap or
-far above the area's level, so legend at 500 asks for the areas of both factions' zones found while leveling. Artisan and Master count
+far above the area's level, so scarlet at 500 asks for the areas of both factions' zones found while leveling. Artisan and Master count
 Cooking, First Aid, Fishing and the two primary professions with the highest ranks, each at most 300, and leave out
 Lockpicking and Poisons. `skill_ups` keeps the highest rank of a profession the character dropped, so a dropped
 primary can stand in for a held one, but the count never passes what two primaries reach. No feat counts yards flown: the realms have no flight a player
@@ -1508,7 +1508,7 @@ steers (taxis are not movement stretches), so no character could earn one. Delve
 sized for play given to them, such as 130 hours of fishing. The summary counts the feats held, and its counts by
 tier add up to them.
 
-| Feat | Counts | Copper | Silver | Gold | Scarlet | Legend |
+| Feat | Counts | Uncommon | Rare | Epic | Legendary | Scarlet |
 | --- | --- | --- | --- | --- | --- | --- |
 | Summit | levels reached | 10 | 25 | 45 | 55 | 60 |
 | Veteran | hours played | 2 | 50 | 200 | 500 | 2,500 |
@@ -1594,7 +1594,7 @@ class, whichever spec that session played. The role feats count only the session
 their hours, meters, runs and kills come from those sessions alone. Casts match spells by their English name in the
 `names` table; `feats:spells` lists, per cast rule, the spell names that table does not hold, so a spell the server
 renamed shows up. `feats:proof <tables>` checks every rule against the client's own spell tables: which spells the
-client lets each class learn and cast, and the fastest the legend tier could be earned from them. [FEAT-PROOF.md](FEAT-PROOF.md)
+client lets each class learn and cast, and the fastest the scarlet tier could be earned from them. [FEAT-PROOF.md](FEAT-PROOF.md)
 is its output.
 
 The tables on this page describe catalog version 1, 258 feats. Version 2 has 241: 22 feats are retired into others, five
@@ -1602,7 +1602,7 @@ are added (Streak, Trailblazer, Frequent Flyer, Companion, Fireside), four are r
 one source is `Feat`, `FeatRows`, `FeatRules`, `FeatMeta` and `FeatRetired` in `app/Support`; `php artisan feats:export`
 writes it as `resources/feats/feats.json`, the file the app and the addon generate their catalogs from.
 
-| Feat | For | Counts | Copper | Silver | Gold | Scarlet | Legend |
+| Feat | For | Counts | Uncommon | Rare | Epic | Legendary | Scarlet |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Battle Cry | Warrior | casts of Battle Shout | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Charger | Warrior | casts of Charge, Intercept | 10 | 400 | 2,000 | 6,000 | 25,000 |

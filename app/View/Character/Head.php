@@ -120,10 +120,10 @@ final class Head
         return $count > 0 && $hours >= 1 ? Format::number($per, $per < 10 ? 1 : 0).' an hour' : '';
     }
 
-    /** @param  list<int>  $tiers  characters' feats at each tier, Copper first */
+    /** @param  list<int>  $tiers  characters' feats at each tier, Uncommon first */
     private static function tierLine(array $tiers): string
     {
-        $names = ['Copper', 'Silver', 'Gold', 'Scarlet', 'Legend'];
+        $names = ['Uncommon', 'Rare', 'Epic', 'Legendary', 'Scarlet'];
         $lines = [];
         for ($tier = 4; $tier >= 0 && count($lines) < 2; $tier--) {
             if ($tiers[$tier] > 0) {

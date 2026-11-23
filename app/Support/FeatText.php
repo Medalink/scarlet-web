@@ -29,7 +29,7 @@ final class FeatText
         return self::unitValue($feat, $value) == 1 ? $row[1] : $row[2];
     }
 
-    /** "88 to Gold": what is left to the tier above `$tier`, null at Legend. */
+    /** "88 to Epic": what is left to the tier above `$tier`, null at Scarlet. */
     public static function toNext(Feat $feat, int|float $left, int $tier): ?string
     {
         $next = Feat::TIERS[$tier] ?? null;

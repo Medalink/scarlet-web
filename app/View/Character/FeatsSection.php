@@ -59,7 +59,7 @@ final class FeatsSection
         return $toasts;
     }
 
-    /** The first line of a toast: "Feat earned" or "Upgraded from Silver", and "Account feat earned" or "Account feat upgraded from Silver" for an account crest. */
+    /** The first line of a toast: "Feat earned" or "Upgraded from Rare", and "Account feat earned" or "Account feat upgraded from Rare" for an account crest. */
     public static function kicker(?string $from, bool $account = false): string
     {
         if ($account) {

@@ -248,7 +248,7 @@ enum Feat: string
     case Warden = 'warden';
 
     /** The tiers in order, copper first: tier `n` of a feat is `TIERS[n - 1]`, and 0 is no tier. */
-    public const array TIERS = ['Copper', 'Silver', 'Gold', 'Scarlet', 'Legend'];
+    public const array TIERS = ['Uncommon', 'Rare', 'Epic', 'Legendary', 'Scarlet'];
 
     private const array ECONOMY = [self::Earner, self::Spender, self::Tycoon, self::Windfall];
 
@@ -263,7 +263,7 @@ enum Feat: string
 
     private const array ACCOUNT_SUMMIT = [20, 60, 120, 180, 300];
 
-    /** The tier a count reaches: 0 for none, 1 copper to 5 legend. */
+    /** The tier a count reaches: 0 for none, 1 uncommon to 5 scarlet. */
     public function tier(int|float $value): int
     {
         $tier = 0;
@@ -284,7 +284,7 @@ enum Feat: string
         return $this->tier($decimals === 0 ? floor($stored) : round($stored, $decimals));
     }
 
-    /** @return array{0: int, 1: int, 2: int, 3: int, 4: int} the counts that earn copper, silver, gold, scarlet and legend */
+    /** @return array{0: int, 1: int, 2: int, 3: int, 4: int} the counts that earn uncommon, rare, epic, legendary and scarlet */
     public function thresholds(): array
     {
         return $this->row()[3];
@@ -388,7 +388,7 @@ enum Feat: string
         };
     }
 
-    /** @return array{0: int, 1: int, 2: int, 3: int, 4: int}|null the counts that earn copper to legend on the account, null without an account crest */
+    /** @return array{0: int, 1: int, 2: int, 3: int, 4: int}|null the counts that earn uncommon to scarlet on the account, null without an account crest */
     public function accountThresholds(): ?array
     {
         return $this === self::Summit ? self::ACCOUNT_SUMMIT : $this->account()->thresholds($this->thresholds());

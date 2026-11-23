@@ -6,11 +6,11 @@ use App\Support\Feat;
 use App\Support\FeatText;
 use App\View\Sc\Crest;
 
-/** The ladder of a feat: five rows from Legend to Copper, each with the count it takes and the share of characters at or above it, and a line at the viewer's count. */
+/** The ladder of a feat: five rows from Scarlet to Uncommon, each with the count it takes and the share of characters at or above it, and a line at the viewer's count. */
 final class FeatLadder
 {
     /**
-     * @param  list<int>  $thresholds  copper to legend
+     * @param  list<int>  $thresholds  uncommon to scarlet
      * @param  list<float>|null  $shares  the percent at each tier or higher, copper first
      * @param  int|null  $held  the tier the viewer holds, null to draw no line
      * @param  string|null  $you  the words on the line: "Sable, 9,912 kills"

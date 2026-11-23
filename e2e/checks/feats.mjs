@@ -110,7 +110,7 @@ function cardFaults(card, catalog) {
   if (top ? card.next !== null || card.left !== null || card.to_next !== null : card.next !== card.thresholds[card.tier] || card.left !== Math.max(0, card.next - card.value) || typeof card.to_next !== "string") {
     faults.push(`${at}: next ${card.next}, left ${card.left} and to_next ${JSON.stringify(card.to_next)} do not follow from tier ${card.tier} and value ${card.value}`);
   }
-  if (!top && !String(card.to_next).endsWith(" to " + ["Copper", "Silver", "Gold", "Scarlet", "Legend"][card.tier])) faults.push(`${at}: to_next ${JSON.stringify(card.to_next)} should name the next tier`);
+  if (!top && !String(card.to_next).endsWith(" to " + ["Uncommon", "Rare", "Epic", "Legendary", "Scarlet"][card.tier])) faults.push(`${at}: to_next ${JSON.stringify(card.to_next)} should name the next tier`);
   if (card.share !== null && typeof card.share !== "number") faults.push(`${at}: share is neither a number nor null`);
   if (card.tier === 0 && card.share !== null) faults.push(`${at}: an unearned feat has a share`);
   if (card.spell !== null && !Number.isInteger(card.spell)) faults.push(`${at}: spell is neither a spell id nor null`);

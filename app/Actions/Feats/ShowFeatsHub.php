@@ -7,7 +7,7 @@ use App\Support\Feat;
 use Illuminate\Support\Facades\DB;
 
 /**
- * What /feats draws from. A signed-out visitor, or an owner on `everyone`, gets the whole catalog with the Copper share of each feat.
+ * What /feats draws from. A signed-out visitor, or an owner on `everyone`, gets the whole catalog with the Uncommon share of each feat.
  * An owner on `compare` or `mine` gets the feats one of their characters can hold with its tiers, `compare` with the share at the tier held
  * and `mine` without shares.
  */

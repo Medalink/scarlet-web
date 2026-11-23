@@ -1,10 +1,10 @@
 .cls-page {
   --class: var(--cls);
   --mana: #4f8cf0;
-  --p1: var(--accent); --p2: var(--s-4); --p3: var(--s-2); --p4: var(--t-gold); --p5: #4fb286; --p6: var(--t-silver); --p7: #e07b39; --p8: #d66bc9;
+  --p1: var(--accent); --p2: var(--s-4); --p3: var(--s-2); --p4: var(--coin-gold); --p5: #4fb286; --p6: var(--coin-silver); --p7: #e07b39; --p8: #d66bc9;
   --q0: #9d9d9d; --q1: #f0f1f3; --q2: #6cc24a; --q3: #4a9eff; --q4: #b77bff;
-  --c-s1: var(--s-kill); --c-s2: var(--s-dungeon); --c-s3: var(--s-quest); --c-s4: var(--s-explore); --c-s5: var(--t-silver); --c-o: var(--s-other);
-  --gold: var(--t-gold); --silver: var(--t-silver); --horde: #d8473b; --alliance: #4f8cf0;
+  --c-s1: var(--s-kill); --c-s2: var(--s-dungeon); --c-s3: var(--s-quest); --c-s4: var(--s-explore); --c-s5: var(--coin-silver); --c-o: var(--s-other);
+  --gold: var(--coin-gold); --silver: var(--coin-silver); --horde: #d8473b; --alliance: #4f8cf0;
 }
 .cls-page .week dd small { font: 400 0.92rem/1 var(--body); color: var(--muted); margin-left: 0.3rem; }
 .cls-page .plot { position: relative; margin-top: 1.3rem; }

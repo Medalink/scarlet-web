@@ -51,7 +51,7 @@
   <section class="sc-panel mt-4 px-5 pb-3 pt-4" style="--surface:var(--panel)">
     <div class="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
       <h2 class="sc-h">Experience every five minutes</h2>
-      <div class="sc-key ml-auto"><span style="--c:var(--accent)">XP</span><span style="--c:var(--fg)">Level reached</span><span style="--c:var(--t-silver)">Feat earned</span><span style="--c:var(--muted)">Quest turned in</span></div>
+      <div class="sc-key ml-auto"><span style="--c:var(--accent)">XP</span><span style="--c:var(--fg)">Level reached</span><span style="--c:var(--coin-silver)">Feat earned</span><span style="--c:var(--muted)">Quest turned in</span></div>
     </div>
     <x-sc.strip :recap="$recap" />
   </section>

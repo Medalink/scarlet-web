@@ -10,7 +10,7 @@ use App\View\Pages\FeatsPage;
 /** The answer of ShowFeatsHub for the gallery page /design/feats: a Warlock with invented counts and shares over the real catalog, the way docs/comps/feats-web.html draws one. */
 final class FeatsDemo
 {
-    /** The tier of each draw of the random numbers: none, Copper, Silver, Gold, Scarlet. */
+    /** The tier of each draw of the random numbers: none, Uncommon, Rare, Epic, Legendary. */
     private const array CUTS = [0.22, 0.58, 0.85, 0.97];
 
     /**

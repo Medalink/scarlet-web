@@ -149,13 +149,13 @@ the feat score, the spec, how far the counts reach and the feats not yet shown t
   "name": "Name-Surname", "held": 31, "total": 75,
   "tiers": [{"count": 2, "name": "gold"}, {"count": 29, "name": "copper"}],
   "since": null, "limit": 3, "score": 58, "spec": "Affliction", "through": 1763840520, "pinned": [],
-  "top": [{"key": "slayer", "pinned": false, "tier": 2, "icon": "kills", "name": "Slayer", "tier_name": "Silver",
+  "top": [{"key": "slayer", "pinned": false, "tier": 2, "icon": "kills", "name": "Slayer", "tier_name": "Rare",
            "detail": "3,100 kills, 6,900 to gold at 10,000", "track": [100, 100, 3, 0, 0],
            "family": "combat", "collection": "Combat", "value": 3100, "thresholds": [100, 1000, 10000, 30000, 100000],
-           "next": 10000, "left": 6900, "progress": 0.233, "counted": "3,100 kills", "to_next": "6,900 to Gold",
+           "next": 10000, "left": 6900, "progress": 0.233, "counted": "3,100 kills", "to_next": "6,900 to Epic",
            "share": 41.2, "spell": null, "live": true}],
   "earned": ["... every card with tier 1 or more"], "unearned": ["... every card with tier 0"],
-  "new": [{"key": "slayer", "name": "Slayer", "icon": "kills", "from": 1, "from_name": "Copper", "tier": 2, "tier_name": "Silver"}]
+  "new": [{"key": "slayer", "name": "Slayer", "icon": "kills", "from": 1, "from_name": "Uncommon", "tier": 2, "tier_name": "Rare"}]
 }]}
 ```
 
@@ -166,9 +166,9 @@ for each tier held on the 68 general feats that are not gold feats, 340 at most,
 
 A card keeps `key`, `pinned`, `tier`, `name`, `tier_name`, `icon`, `detail` and `track`, and gains:
 `family` and `collection` (as in the catalog); `value`, the count in the units of the thresholds (yards for a feat
-shown in miles); `thresholds`, the five counts of copper to legend; `next` and `left`, the threshold above the tier held
-and what is missing to it, `null` at Legend; `progress`, 0 to 1 from the threshold of the tier held to `next`, and 1 at Legend;
-`counted`, the count in words (`9,912 kills`, miles for a mile feat); `to_next` (`88 to Gold`), `null` at Legend; `share`,
+shown in miles); `thresholds`, the five counts of uncommon to scarlet; `next` and `left`, the threshold above the tier held
+and what is missing to it, `null` at Scarlet; `progress`, 0 to 1 from the threshold of the tier held to `next`, and 1 at Scarlet;
+`counted`, the count in words (`9,912 kills`, miles for a mile feat); `to_next` (`88 to Epic`), `null` at Scarlet; `share`,
 the percent of counted characters at this tier or higher, `null` for a feat not earned and until 20 characters are counted for it;
 `spell`, the id of the spell the seal engraves for a cast feat, `null` for the others; and `live`, true when the addon can advance the count.
 
@@ -189,7 +189,7 @@ catalog's `account_thresholds`). It is computed on every read, with the economy 
 }
 ```
 
-A card has the fields of a character's card, with `prev` (the threshold of the tier held, 0 below Copper) and `holder` added;
+A card has the fields of a character's card, with `prev` (the threshold of the tier held, 0 below Uncommon) and `holder` added;
 `share`, `spell` and `live` are `null`, `null` and false. `new` lists the account feats above the tier this install was last
 shown, highest tier first, with `from` 0 for a first earn.
 
@@ -227,7 +227,7 @@ empty for a name the install does not own. A name that is not `Name-Surname` is 
   "talents": [{"name": "Nightfall", "points": 2, "max": 2, "icon": null, "note": null, "blocks": ["..."]}],
   "party": ["... rows as in sheet"],
   "comparison": {"of": "warlocks", "from": 50, "to": 59, "characters": 31, "standings": [{"label": "Life Taps", "value": 18, "unit": "count", "text": "18", "percent": 72, "icon": null}]},
-  "feats": [{"name": "Life-tapper", "tier": 2, "tier_name": "Silver", "detail": "18 Life Taps", "track": [100, 40, 0, 0, 0], "glyph": "spell", "icon": null}]
+  "feats": [{"name": "Life-tapper", "tier": 2, "tier_name": "Rare", "detail": "18 Life Taps", "track": [100, 40, 0, 0, 0], "glyph": "spell", "icon": null}]
 }]}
 ```
 
@@ -628,7 +628,7 @@ A public character: race, class, level, ruleset, time played, this week, distanc
 | --- | --- | --- | --- |
 | `name` | path | string | The character name, `Name-Surname`. |
 
-`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (every feat that applies to the character: those earned first, rarest first, then those not yet earned, closest first; `pinned` is true for a feat the owner pinned, which keeps its place in the list. `key` is a key of `GET /public/feats` (241 feats); the gold feats `earner`, `spender`, `tycoon` and `windfall` are listed only when `meta.economy` is true; `name`, `value`, `tier` from 0 for none to 5 for legend, with `tier_name` one of `Copper`, `Silver`, `Gold`, `Scarlet` or `Legend`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the ranks of Cooking, First Aid, Fishing and the character's two highest primary professions), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.
+`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (every feat that applies to the character: those earned first, rarest first, then those not yet earned, closest first; `pinned` is true for a feat the owner pinned, which keeps its place in the list. `key` is a key of `GET /public/feats` (241 feats); the gold feats `earner`, `spender`, `tycoon` and `windfall` are listed only when `meta.economy` is true; `name`, `value`, `tier` from 0 for none to 5 for scarlet, with `tier_name` one of `Uncommon`, `Rare`, `Epic`, `Legendary` or `Scarlet`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the ranks of Cooking, First Aid, Fishing and the character's two highest primary professions), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.
 
 Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane`
 

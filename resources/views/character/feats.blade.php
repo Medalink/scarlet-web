@@ -20,7 +20,7 @@
           <x-crest :glyph="$card['glyph']" :feat-key="$card['key']" :tier="$card['tier']" :progress="$card['progress']" :size="64" :spell="$card['spell']" :label="$card['name']" />
           <span class="min-w-0">
             <span class="sc-feat-n">{{ $card['name'] }}</span>
-            <span class="sc-num sc-num-md mt-2 block">{{ $card['left'] }}</span>
+            <span class="sc-num sc-num-md mt-2 block" style="white-space:normal;line-height:1.05">{{ $card['left'] }}</span>
             <span class="sc-sub mt-1 block" style="color:var(--muted)">{{ $card['counted'] }}</span>
           </span>
         </a>

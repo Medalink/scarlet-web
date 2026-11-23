@@ -107,10 +107,10 @@
     <h2 class="sc-h">Feat card</h2>
     @php
         $cards = [
-            ['name' => 'Soloist', 'glyph' => 'dungeons', 'tier' => 0, 'count' => 'No dungeon run alone yet', 'to' => '1 to Copper', 'share' => '6% hold Copper or higher'],
-            ['name' => 'Slayer', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.99, 'count' => '9,912 kills', 'to' => '88 to Gold', 'share' => '64% hold Silver or higher'],
-            ['name' => 'Rampage', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.04, 'count' => '312 kills in one session', 'to' => '288 to Gold', 'new' => true],
-            ['name' => 'Flawless', 'glyph' => 'shield', 'family' => 'dungeons', 'tier' => 5, 'progress' => 1, 'count' => '100 dungeon runs with no deaths in the party', 'to' => 'Legend since 4 November', 'share' => '<1% hold Legend'],
+            ['name' => 'Soloist', 'glyph' => 'dungeons', 'tier' => 0, 'count' => 'No dungeon run alone yet', 'to' => '1 to Uncommon', 'share' => '6% hold Uncommon or higher'],
+            ['name' => 'Slayer', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.99, 'count' => '9,912 kills', 'to' => '88 to Epic', 'share' => '64% hold Rare or higher'],
+            ['name' => 'Rampage', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.04, 'count' => '312 kills in one session', 'to' => '288 to Epic', 'new' => true],
+            ['name' => 'Flawless', 'glyph' => 'shield', 'family' => 'dungeons', 'tier' => 5, 'progress' => 1, 'count' => '100 dungeon runs with no deaths in the party', 'to' => 'Scarlet since 4 November', 'share' => '<1% hold Scarlet'],
         ];
     @endphp
     <div class="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
@@ -130,7 +130,7 @@
             ['name' => 'Thorough', 'glyph' => 'quests', 'tier' => 2, 'progress' => 0.2, 'share' => '44%'],
         ];
     @endphp
-    <x-sc.collection class="mt-4 !border-t-0" name="Quests" family="quests" :feats="$quests" note="A Silver collection: every feat in it is Silver or better." />
+    <x-sc.collection class="mt-4 !border-t-0" name="Quests" family="quests" :feats="$quests" note="A Rare collection: every feat in it is Rare or better." />
   </section>
 
   <section class="mt-14">
@@ -141,10 +141,10 @@
         $account = ['name' => 'Slayer', 'glyph' => 'kills', 'scope' => 'account', 'tier' => 2, 'progress' => 0.2, 'count' => '2,400 kills on 3 characters'];
     @endphp
     <div class="mt-5 grid gap-x-7 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
-      <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" :play="true" /><figcaption class="sc-note mt-2">Plays once when the page opens: the plate rises, the new piece attaches, a white copy of it flashes, the next piece fades in at the real progress.</figcaption></figure>
-      <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" /><figcaption class="sc-note mt-2">At rest, 1,200 ms to 5.2 s.</figcaption></figure>
-      <figure><x-sc.feat-toast :feat="$jumper" kicker="Upgraded from Scarlet" :play="true" /><figcaption class="sc-note mt-2">A Legend: gold rail, two gold bursts 260 ms apart.</figcaption></figure>
-      <figure><x-sc.feat-toast :feat="$account" :kicker="App\View\Character\FeatsSection::kicker('Copper', true)" :play="true" /><figcaption class="sc-note mt-2">An account crest: the laurels and the second rim.</figcaption></figure>
+      <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Uncommon" :play="true" /><figcaption class="sc-note mt-2">Plays once when the page opens: the plate rises, the new piece attaches, a white copy of it flashes, the next piece fades in at the real progress.</figcaption></figure>
+      <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Uncommon" /><figcaption class="sc-note mt-2">At rest, 1,200 ms to 5.2 s.</figcaption></figure>
+      <figure><x-sc.feat-toast :feat="$jumper" kicker="Upgraded from Legendary" :play="true" /><figcaption class="sc-note mt-2">A Scarlet crest: the rays and the great crown, two bursts 260 ms apart.</figcaption></figure>
+      <figure><x-sc.feat-toast :feat="$account" :kicker="App\View\Character\FeatsSection::kicker('Uncommon', true)" :play="true" /><figcaption class="sc-note mt-2">An account crest: the laurels and the second rim.</figcaption></figure>
     </div>
   </section>
 
@@ -189,7 +189,7 @@
     <h2 class="sc-h">Controls</h2>
     <div class="mt-4 flex flex-wrap items-center gap-x-8 gap-y-5">
       <span class="flex gap-2"><a class="sc-btn" href="#">Get the app</a><a class="sc-btn quiet" href="#">All sessions</a><a class="sc-btn quiet small" href="#">Link</a></span>
-      <span class="flex gap-2"><button class="sc-chipbtn on">All tiers</button><button class="sc-chipbtn">Silver</button><button class="sc-chipbtn">Gold</button></span>
+      <span class="flex gap-2"><button class="sc-chipbtn on">All tiers</button><button class="sc-chipbtn">Rare</button><button class="sc-chipbtn">Epic</button></span>
       <span class="flex items-center gap-2 text-[13.5px]"><span class="sc-toggle on"></span> Play a sound with a feat toast</span>
       <span class="flex items-center gap-2 text-[13.5px]"><span class="sc-toggle"></span> Animate feats</span>
     </div>

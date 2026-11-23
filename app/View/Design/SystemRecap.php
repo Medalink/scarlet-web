@@ -44,7 +44,7 @@ final class SystemRecap
             'moments' => [
                 ['at' => 2400, 'kind' => 'discovery', 'text' => 'Discovered Nesingwary\'s Expedition'],
                 ['at' => 4300, 'kind' => 'death', 'text' => 'Died to a Bloodscalp Warrior'],
-                ['at' => 5200, 'kind' => 'feat', 'text' => 'Rampage reached Silver', 'feat' => 'combat.kills', 'tier' => 2],
+                ['at' => 5200, 'kind' => 'feat', 'text' => 'Rampage reached Rare', 'feat' => 'combat.kills', 'tier' => 2],
                 ['at' => 6200, 'kind' => 'boss', 'text' => 'Defeated Bhag\'thera'],
             ],
             'route' => ['sheet' => ['aspect' => 1.4, 'points' => self::path(), 'breaks' => [], 'air' => []]],
