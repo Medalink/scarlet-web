@@ -10,7 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 
-/** Store the figures one character's class page compares with its class. Identified by the character, so the feat recounts of one upload queue it once. */
+/** Store the figures one character's class page compares with its class. Identified by the character, so the feat recounts of one upload queue it once. It runs on the backfill queue, after the decodes of the ingest queue. */
 class RefreshClassStandings implements BoundedJob, ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
@@ -28,7 +28,7 @@ class RefreshClassStandings implements BoundedJob, ShouldBeUniqueUntilProcessing
         $this->timeout = (int) config('scarlet.standings.timeout');
         $this->tries = (int) config('scarlet.standings.tries');
         $this->memoryMb = (int) config('scarlet.standings.memory_mb');
-        $this->onQueue((string) config('scarlet.queues.ingest'));
+        $this->onQueue((string) config('scarlet.queues.backfill'));
     }
 
     public function uniqueId(): string

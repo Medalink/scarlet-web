@@ -4,12 +4,15 @@ namespace App\Actions\Feats;
 
 use App\Actions\Public\ClassPage\ReadClassParts;
 use App\Models\Character;
+use App\Support\ClassPage\ClassRead;
+use App\Support\ClassPage\Drinking;
 use App\Support\ClassPage\StandingFigure;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Stores the figures a class page compares with the class in `class_standings`: one row for each figure of the
- * character's class builder, at the character's level now. Safe to run twice. A character whose class has no page
+ * character's class builder, and the time spent drinking for every class that has a builder, at the character's level
+ * now. A figure the character's rows cannot answer has no row. Safe to run twice. A character whose class has no page
  * keeps no rows.
  */
 class StoreClassStandings
@@ -33,7 +36,7 @@ class StoreClassStandings
             'figure' => $figure->key,
             'value' => $figure->value,
             'counted_at' => $now,
-        ], $read->parts->standings);
+        ], $this->figures($read));
 
         DB::transaction(function () use ($characterId, $rows): void {
             if ($rows !== []) {
@@ -41,5 +44,20 @@ class StoreClassStandings
             }
             DB::table('class_standings')->where('character_id', $characterId)->whereNotIn('figure', array_column($rows, 'figure'))->delete();
         });
+    }
+
+    /** @return list<StandingFigure> the builder's figures and the drinking one every class stores, whatever its builder draws */
+    private function figures(ClassRead $read): array
+    {
+        $figures = [];
+        foreach ($read->parts->standings as $figure) {
+            $figures[$figure->key] = $figure;
+        }
+        $drinking = Drinking::figure($read->rows);
+        if ($drinking !== null) {
+            $figures[$drinking->key] ??= $drinking;
+        }
+
+        return array_values($figures);
     }
 }

@@ -16,7 +16,8 @@ class ReadClassComparison
 
     /**
      * The figures of a character's page as places among the public characters of its class in its level bracket, from
-     * the stored standings of the others. Null until the bracket holds `ClassPeers::MIN_CHARACTERS` characters.
+     * the stored standings of the others and the character's own stored figure. Null until the bracket holds
+     * `ClassPeers::MIN_CHARACTERS` characters, and for a figure of the character that is not stored yet.
      */
     public function handle(ClassRead $read): ?Comparison
     {
@@ -28,7 +29,7 @@ class ReadClassComparison
         $standings = [];
         $characters = 0;
         foreach ($read->parts->standings as $figure) {
-            $place = $peers->place($figure->key, $figure->value);
+            $place = $peers->place($figure->key);
             if ($place === null) {
                 continue;
             }
