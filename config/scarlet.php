@@ -34,6 +34,7 @@ return [
         'max_manifest_bytes' => 32 << 20,
         'max_manifest_values' => 6_000_000,
         'max_manifest_parts' => 200_000,
+        'max_wanted_ids' => (int) env('SCARLET_MAX_WANTED_IDS', 50_000),
         'link_code_minutes' => 10,
     ],
 
