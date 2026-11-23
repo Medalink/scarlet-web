@@ -1,0 +1,48 @@
+{
+  "character": "Totem-Caller",
+  "parts": [
+    {
+      "group": "core",
+      "id": "63f0c6a61fd3359828f93fb411f5ea5328ab01374995cfef712263f6c0a3453c",
+      "lines": 7,
+      "raw_bytes": 273,
+      "session": 1795810000
+    },
+    {
+      "group": "movement",
+      "id": "b493e219d88292c954f4c0a3603fea2d59663815d490289514d3e748115bdd93",
+      "lines": 4,
+      "raw_bytes": 141,
+      "session": 1795810000
+    },
+    {
+      "group": "build",
+      "id": "0745023bb74b32d88e88c1cfb1f508b119d75a06b6b36d8257bb3581325b153d",
+      "lines": 8,
+      "raw_bytes": 393,
+      "session": 1795810000
+    },
+    {
+      "group": "combat",
+      "id": "9e6b533e677566a08bb6c64ae41f603b035860d4d3887fc5cc800611a329cabe",
+      "lines": 460,
+      "raw_bytes": 6776,
+      "session": 1795810000
+    },
+    {
+      "group": "loot",
+      "id": "351d389f48b7cc5744623126898d3dc617522a59825f75359709144e4e7ec09b",
+      "lines": 5,
+      "raw_bytes": 142,
+      "session": 1795810000
+    },
+    {
+      "group": "names",
+      "id": "008e7bb386e496f8fb8ad452e008f598a56ac591ecb97c4a32c9b51217b51935",
+      "lines": 38,
+      "raw_bytes": 974,
+      "session": 1795810000
+    }
+  ],
+  "set_digest": "7bde3696d93ca986c6db1de64da5a0aad97aec3896d8fc425b0a167219419e82"
+}

@@ -8,6 +8,7 @@ use App\Actions\Public\ClassPage\MageBuilder;
 use App\Actions\Public\ClassPage\PaladinBuilder;
 use App\Actions\Public\ClassPage\PriestBuilder;
 use App\Actions\Public\ClassPage\RogueBuilder;
+use App\Actions\Public\ClassPage\ShamanBuilder;
 use App\Actions\Public\ClassPage\WarlockBuilder;
 use App\Actions\Public\ClassPage\WarriorBuilder;
 use App\Contracts\ClassBuilder;
@@ -28,6 +29,7 @@ final class ClassBuilders
             PlayerClass::Warrior => WarriorBuilder::class,
             PlayerClass::Priest => PriestBuilder::class,
             PlayerClass::Rogue => RogueBuilder::class,
+            PlayerClass::Shaman => ShamanBuilder::class,
             PlayerClass::Warlock => WarlockBuilder::class,
             PlayerClass::Mage => MageBuilder::class,
             PlayerClass::Druid => DruidBuilder::class,

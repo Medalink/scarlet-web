@@ -1915,6 +1915,22 @@ share cast in a fight and the most in a row, and Shadowform reads casts, time up
 for the comparison are healing a fight, shields a fight, players raised a played hour, the share of played time in
 Shadowform, the share of fight time with the wand firing and deaths a played hour.
 
+**Where the Shaman page differs from the comp.** Built by `ShamanBuilder` and the classes in
+`App\Support\ClassPage\Shaman`. A totem's time is the time it stood, cut at the next totem of its slot and at its
+duration, so the head's hours and each element's "Stood" are never more than the totems could have run. What a totem did
+for the party or against the enemy is not recorded, so the page shows drops, hours and how each ended, and nothing about
+what a totem gave. "Totems for the group" ranks the hours the group totems stood, not the hours the character was
+grouped. The fight tally holds how many of the four elements had a totem down, not how many totems were dropped, so
+"Totems in a fight" reads "Fights with all four down", "Median elements down a fight" and "Fights with a totem down"
+where the comp has the median totems dropped and the most dropped in one fight. Astral Recall reads a count and a played
+hour, not a trip by trip rank. Stormstrike reads "Casts", "Cast in a fight" and "Most in a row" where the comp has the
+share of the character's damage; Elemental Focus reads "Times it came up", "Spent on a spell" and "Used"; Flurry reads
+"Times it came up", "Time up" and "Casts under it" where the comp has the share of fights with it. Lightning Mastery and
+Nature's Swiftness read casts, time up and casts under it, and Mana Tide Totem reads casts, the share cast in a fight and
+the most in a row. The six figures kept for the comparison are totems dropped a fight, the share of fights with all four
+elements down, shocks a fight, the share of played time as a Ghost Wolf, the share of deaths walked off with
+Reincarnation and Astral Recalls a played hour.
+
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
 the character's page is. `/c/{name}`, the class page and `/c/{name}/battlegrounds` share one line of navigation under

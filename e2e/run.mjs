@@ -15,7 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { InstallClient } from "./client.mjs";
 import { Gate } from "./gate.mjs";
-import { DRUID, ECHO, HUNTER, Http, INSTALL_CHARACTERS, Jar, LOCAL_HOSTS, MAGE, PALADIN, PRIEST, ROGUE, STRANGER_CHARACTERS, WARLOCK, WARRIOR, Skip } from "./support.mjs";
+import { DRUID, ECHO, HUNTER, Http, INSTALL_CHARACTERS, Jar, LOCAL_HOSTS, MAGE, PALADIN, PRIEST, ROGUE, SHAMAN, STRANGER_CHARACTERS, WARLOCK, WARRIOR, Skip } from "./support.mjs";
 import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
@@ -86,6 +86,7 @@ const REGISTRY = [
   { lane: "pages", name: `${HUNTER}'s class page shows the figures worked out from its lines and no comparison under twenty hunters`, run: hunterPage.hunterPageShowsItsFigures },
   { lane: "pages", name: "the Hunter's character page links its class page and shows its band", run: hunterPage.hunterBandLinksItsClassPage },
   { lane: "pages", name: `${PRIEST}'s class page shows the figures worked out from its plan and no comparison under twenty priests, and its character page has the band`, run: classPageRps.priestPageShowsItsFigures },
+  { lane: "pages", name: `${SHAMAN}'s class page shows the figures worked out from its plan and no comparison under twenty shamans, and its character page has the band`, run: classPageRps.shamanPageShowsItsFigures },
   { lane: "pages", name: `${ROGUE}'s class page shows the figures worked out from its plan and no comparison under twenty rogues, and its character page has the band`, run: classPageRps.roguePageShowsItsFigures },
   { lane: "pages", name: "a character's page links its class page and draws its band from the stored row, and a class with no page has neither", run: classPage.characterPageLinksItsClassPage },
   { lane: "pages", name: "a character with no class rows has no band and no link to a class page", run: classPage.characterWithNoClassRowsHasNoBand },

@@ -21,7 +21,7 @@ final class TalentModules
         PlayerClass::Hunter->value => ['Bestial Wrath', 'Intimidation', 'Aimed Shot', 'Scatter Shot', 'Deterrence', 'Counterattack'],
         PlayerClass::Rogue->value => ['Blade Flurry', 'Adrenaline Rush', 'Riposte', 'Cold Blood', 'Remorseless Attacks', 'Ghostly Strike', 'Premeditation'],
         PlayerClass::Priest->value => ['Inner Focus', 'Spirit of Redemption', 'Lightwell', 'Power Infusion', 'Shadowform', 'Vampiric Embrace'],
-        PlayerClass::Shaman->value => ['Stormstrike', 'Elemental Focus', 'Flurry'],
+        PlayerClass::Shaman->value => ['Stormstrike', 'Elemental Focus', 'Flurry', 'Lightning Mastery', "Nature's Swiftness", 'Mana Tide Totem'],
         PlayerClass::Mage->value => ['Ice Barrier', 'Cold Snap', 'Ice Block', 'Presence of Mind', 'Arcane Power', 'Pyroblast', 'Combustion'],
         PlayerClass::Warlock->value => ['Nightfall', 'Shadowburn', 'Siphon Life', 'Fel Domination', 'Demonic Sacrifice', 'Soul Link', 'Conflagrate'],
         PlayerClass::Druid->value => ['Feral Charge (Bear)', 'Omen of Clarity', 'Leader of the Pack', "Nature's Grasp", 'Moonkin Form', "Nature's Swiftness", 'Swiftmend'],

@@ -1,12 +1,14 @@
-import { PRIEST, ROGUE, expectStatus } from "../support.mjs";
+import { PRIEST, ROGUE, SHAMAN, expectStatus } from "../support.mjs";
 import * as priest from "../priest-expected.mjs";
 import * as rogue from "../rogue-expected.mjs";
+import * as shaman from "../shaman-expected.mjs";
 import { missing, showsLines, tokensOf } from "./class-page.mjs";
 import { ERROR_PAGE, heading } from "./pages.mjs";
 
 const PAGES = [
   { character: ROGUE, slug: "rogue", title: "Rogue", plural: "rogues", groups: { head: rogue.HEAD, stealth: rogue.STEALTH, hands: rogue.HANDS, fighting: rogue.FIGHTING, talents: rogue.TALENTS, party: rogue.PARTY }, band: rogue.BAND, callouts: rogue.CALLOUTS, notes: rogue.NOTES, headings: rogue.HEADINGS },
   { character: PRIEST, slug: "priest", title: "Priest", plural: "priests", groups: { head: priest.HEAD, healing: priest.HEALING, shadow: priest.SHADOW, support: priest.SUPPORT, talents: priest.TALENTS, party: priest.PARTY }, band: priest.BAND, callouts: priest.CALLOUTS, notes: priest.NOTES, headings: priest.HEADINGS },
+  { character: SHAMAN, slug: "shaman", title: "Shaman", plural: "shamans", groups: { head: shaman.HEAD, totems: shaman.TOTEMS, fighting: shaman.FIGHTING, walks: shaman.WALKS, talents: shaman.TALENTS, party: shaman.PARTY }, band: shaman.BAND, callouts: shaman.CALLOUTS, notes: shaman.NOTES, headings: shaman.HEADINGS },
 ];
 
 async function pageShows(ctx, page) {
@@ -41,3 +43,4 @@ async function pageShows(ctx, page) {
 
 export const roguePageShowsItsFigures = (ctx) => pageShows(ctx, PAGES[0]);
 export const priestPageShowsItsFigures = (ctx) => pageShows(ctx, PAGES[1]);
+export const shamanPageShowsItsFigures = (ctx) => pageShows(ctx, PAGES[2]);
