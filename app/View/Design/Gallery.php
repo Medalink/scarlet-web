@@ -83,6 +83,7 @@ final class Gallery
             'character' => CharacterPage::data(),
             'account', 'login', 'link' => AccountPages::data($page),
             'developers' => DevelopersPage::data(),
+            'system' => SystemPage::data(),
             'class', 'class-rogue', 'class-shaman' => ClassGallery::data($page),
             default => [],
         };

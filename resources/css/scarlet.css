@@ -145,4 +145,19 @@ a:hover { color: var(--soft); }
 .sc-say { font-size: 17px; line-height: 1.35; color: var(--fg); text-wrap: pretty; }
 .sc-say b { font-weight: 700; color: var(--soft); }
 .sc-note { font-size: 13px; color: var(--muted); }
+@keyframes sc-grow { from { transform: scaleX(0); } }
+@keyframes sc-tick { from { opacity: 0; } }
+.sc-bars .row > i::after, .sc-bar3::after { transform-origin: left; animation: sc-grow var(--t-3) var(--ease-out) both; }
+.sc-ring line.on { animation: sc-tick 120ms linear both; animation-delay: calc(var(--i) * 11ms); }
+@media (prefers-reduced-motion: reduce) {
+  .sc-bars .row > i::after, .sc-bar3::after, .sc-ring line.on { animation: none; }
+}
+.sc-sw { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.sc-sw > div { background: var(--bg); padding: 10px 12px 11px; font-size: 12.5px; line-height: 1.35; }
+.sc-sw i { display: block; height: 38px; margin-bottom: 9px; background: var(--c); border: 1px solid var(--line2); }
+.sc-sw b { display: block; color: var(--fg); font-weight: 600; }
+.sc-sw span { color: var(--muted); }
+.sc-type { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: baseline; column-gap: 24px; padding: 13px 0; border-top: 1px solid var(--line); }
+.sc-type > span { font-size: 12.5px; color: var(--muted); }
+.sc-cap { font-size: 13px; color: var(--muted); margin-top: 10px; max-width: 780px; }
 }
