@@ -1922,8 +1922,9 @@ for the party or against the enemy is not recorded, so the page shows drops, hou
 what a totem gave. "Totems for the group" ranks the hours the group totems stood, not the hours the character was
 grouped. The fight tally holds how many of the four elements had a totem down, not how many totems were dropped, so
 "Totems in a fight" reads "Fights with all four down", "Median elements down a fight" and "Fights with a totem down"
-where the comp has the median totems dropped and the most dropped in one fight. Astral Recall reads a count and a played
-hour, not a trip by trip rank. Stormstrike reads "Casts", "Cast in a fight" and "Most in a row" where the comp has the
+where the comp has the median totems dropped and the most dropped in one fight. The comparison reads Astral Recalls a
+played hour where the comp compares the count, and the share of deaths walked off where the comp compares Reincarnations
+a hundred deaths. Stormstrike reads "Casts", "Cast in a fight" and "Most in a row" where the comp has the
 share of the character's damage; Elemental Focus reads "Times it came up", "Spent on a spell" and "Used"; Flurry reads
 "Times it came up", "Time up" and "Casts under it" where the comp has the share of fights with it. Lightning Mastery and
 Nature's Swiftness read casts, time up and casts under it, and Mana Tide Totem reads casts, the share cast in a fight and

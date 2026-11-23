@@ -49,6 +49,19 @@ export const ORIGIN_HEADERS = { Cookie: `${ORIGIN_COOKIE.name}=${ORIGIN_COOKIE.v
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
 
+/** The fixture character whose class page each class slug is checked on. */
+export const CLASS_CHARACTERS = {
+  druid: DRUID,
+  hunter: HUNTER,
+  mage: MAGE,
+  paladin: PALADIN,
+  priest: PRIEST,
+  rogue: ROGUE,
+  shaman: SHAMAN,
+  warlock: WARLOCK,
+  warrior: WARRIOR,
+};
+
 /** The characters of the stranger install: the only ones whose fixture folder is not the first install's. */
 export const STRANGER_CHARACTERS = [STRANGER, LEDGER, MAGE, DRUID, ROGUE, PRIEST, SHAMAN];
 
