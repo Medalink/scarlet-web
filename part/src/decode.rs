@@ -7,7 +7,7 @@
 
 use crate::baselines::{Baselines, Ctx as BaselineCtx};
 use crate::bosses::{Bosses, Seen};
-use crate::build::{at_in_range, parse_header};
+use crate::build::{at_near, parse_header};
 use crate::camp::{Camp, Known};
 use crate::class::{Class, Now, OPEN_WORLD, place_of};
 use crate::death::Hit;
@@ -1532,7 +1532,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
                 backsteps += 1;
             }
             after_line = code != "pn";
-            let Some(next) = t.checked_add(dt).filter(|t| at_in_range(*t)) else {
+            let Some(next) = t.checked_add(dt).filter(|t| at_near(session * 1000, *t)) else {
                 skipped += 1;
                 continue;
             };

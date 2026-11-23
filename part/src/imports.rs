@@ -4,7 +4,7 @@
 //! one per UTC day under the session key of that day, skipped by the session decoder and read
 //! by `decode_imports` into rows of their own.
 
-use crate::build::{Options, PART_MAGIC, Part, at_in_range, parse_header, part_id};
+use crate::build::{Options, PART_MAGIC, Part, at_near, parse_header, part_id};
 use crate::payload::Ev;
 use crate::rows::Rows;
 use std::collections::BTreeMap;
@@ -77,7 +77,7 @@ pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String>
             let Some(dt) = f.next().and_then(|d| d.parse::<i64>().ok()) else {
                 continue;
             };
-            let Some(next) = t.checked_add(dt).filter(|t| at_in_range(*t)) else {
+            let Some(next) = t.checked_add(dt).filter(|t| at_near(session * 1000, *t)) else {
                 continue;
             };
             t = next;

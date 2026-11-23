@@ -84,6 +84,15 @@ pub fn at_in_range(ms: i64) -> bool {
     (MIN_AT_MS..=MAX_AT_MS).contains(&ms)
 }
 
+/// How far from the start of its part a line time may fall, either way: a session of the game never
+/// lasts a year, so a line past that is the writer's clock step or a forged one, and its rows would
+/// stretch every refresh of the rollups over the days between.
+pub const LINE_SPAN_MS: i64 = 400 * 86_400_000;
+
+pub fn at_near(origin_ms: i64, ms: i64) -> bool {
+    at_in_range(ms) && (ms - origin_ms).abs() <= LINE_SPAN_MS
+}
+
 /// `(character, session, group)` from a part's header line.
 pub fn parse_header(text: &str) -> Option<(&str, i64, &str)> {
     let head = text.split('\n').next()?;
