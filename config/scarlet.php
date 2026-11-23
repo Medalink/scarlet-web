@@ -85,6 +85,7 @@ return [
         'max_session_bytes' => 128 << 20,
         'max_session_lines' => 4_000_000,
         'name_votes_per_install_day' => 20_000,
+        'shared_votes_per_install_day' => 50_000,
         'sweep_max_failures' => 3,
         /** The part header `session`, in epoch seconds: the WoW era, at most one year ahead of the server clock. */
         'session_min' => 946_684_800,

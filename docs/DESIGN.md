@@ -838,15 +838,27 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `battleground_matches` | `BM` | pvp | a match that ended: instance, zone name, rated, arena, the uploader's team, the winning side, duration, result, whether it affects rating |
 | `battleground_scores` | `BO` | social | another player's scoreboard row, read after the match: name, faction, class file, killing blows, honorable kills, deaths, honor, damage, healing, the objective stats. `match_at` is the end of the match (the last `BM 0` before the row), so one uploader's rows of one match share it |
 
-Game reference tables, the same for every uploader, are replaced by every decode that reads them: `recipes` and
-`recipe_reagents` (`RQ`: what a recipe makes and needs) and `spells` (`SI`, `SD`: icon id, cast time, ranges, costs,
-passive, description). Their `seen_at` is the server time of the decode that wrote the row, never the line's `at`,
-so no uploader's clock decides which row survives; a spell keeps a stored value the new row has none for, and an
-`items` or `zones` row keeps the row its write displaced in `previous`.
+Game reference tables, the same for every uploader: `items`, `zones`, `recipes` and `recipe_reagents` (`RQ`: what a
+recipe makes and needs) and `spells` (`SI`, `SD`: icon id, cast time, ranges, costs, passive, description). Every
+field of a row is a vote (`shared_votes`, written by `VoteSharedRows`). A row is first written as the session that
+reached it read it. After that its served value of a field changes only when another value holds strictly more
+voters than the served one; a tie keeps the served value. A voter is an account, or an install that no account is
+linked to, so one person's installs count once; the voters of a decode are the installs behind its character, each
+with its latest value of a field, and an install may change or add `scarlet.ingest.shared_votes_per_install_day`
+(50000) vote rows a day. A row that had no votes when the first one reached it is backed by one voter that is none of
+the installs, so a single install that disagrees ties it. After a game patch changes a value, the installs that read the new one move their votes to it, and it
+replaces the served one once it holds more voters. Their `seen_at` is the server time of the decode that last changed the
+row, never the line's `at`, and an `items` or `zones` row keeps the row a change displaced in `previous`. A row
+no install has voted on yet is still set by the first session that reaches it, as names are, and a handful of installs
+that no account links agree as easily as a handful of honest ones: the rule keeps one install from deciding what the
+public API serves, not a group of them.
 
 Dictionaries, plain tables: `names(kind, id, name)` from the name lines, `items` from `II`, `zones`, `rulesets`,
-`talent_trees` and `talent_nodes` (the class tree layouts of `TV` and `TD`, one per tree, client build and layout hash;
-`uploads` counts the sessions that sent a layout, and the layout with the most uploads is the one drawn).
+`talent_trees` and `talent_nodes` (the class tree layouts of `TV` and `TD`, one per tree, client build and layout hash,
+the SHA-256 of the lines a layout was learned from; `uploads` counts the sessions that sent a layout and
+`talent_layout_votes` the installs that sent it). The layout drawn is the one the most senders sent, a sender being an
+account or an install that no account is linked to, then the one with the most uploads. A layout stored before senders
+were recorded counts as one sender.
 A name becomes the shown one for an id when most uploads agree on it.
 
 The talent tables are the build group's. Removing the group deletes their rows and clears `characters.spec_tab_id`,
@@ -1100,10 +1112,14 @@ ruleset of a character is found outside the recording, in this order:
 2. **The home realm.** A ruleset is a kind of realm. The realm id inside a character's GUID (`RU` server, kept as
    `characters.home_realm_id` from its latest session that has one) names the realm, and `realms(id, kind, name,
    source)` says which ruleset it is. Two realms are seeded as Normal, the ones the first uploaders were seen on, and
-   a seed keeps its kind. A realm learns its kind once the Armory's answers for characters of distinct installs
-   (`scarlet.armory.realm_quorum`, 2) agree on it, so one install, or one claimed name, cannot decide the fact for
-   every character on the realm; a learned kind that a quorum of installs outruns later is re-decided, and the
-   realm's sessions are filed under the new kind. A disagreement below the quorum is logged.
+   a seed keeps its kind. A realm learns its kind once the Armory's answers for characters of distinct voters
+   (`scarlet.armory.realm_quorum`, 2) agree on it, a voter being an account or an install that no account is linked to,
+   so one install, one claimed name, or the installs of one account, cannot decide the fact for every character on the
+   realm; a learned kind that a quorum of voters outruns later is re-decided, and the realm's sessions are filed under
+   the new kind. A disagreement below the quorum is logged. The Armory's answer for one character files that
+   character's sessions only through its realm: the name is claimed by one install, so the page of that name proves
+   nothing about who uploaded it, and a character on a realm no quorum has named stays "Not identified" until
+   one does. The addresses installs registered from are not kept, so the quorum does not ask for distinct addresses.
 
 A character with neither answer is "Not identified". A ruleset is its kind and nothing else: `rulesets` has one row
 for each kind (key and slug `normal`, `pvp`, `roleplay`, `roleplay-pvp`, `hardcore`) and one for characters whose kind

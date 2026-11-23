@@ -1,11 +1,12 @@
 //! Talent rows of the decoder (docs/ROWS.md): `talent_changes`, `talent_snapshots`, `talent_respecs`,
 //! `talent_group_spans`, and the layout rows `talent_trees` and `talent_nodes`. The state it keeps is one session's:
 //! the ranks of each talent group as the `TA` lines left them, and the group that is active. A layout is stored under
-//! the hash of the `TD` fields it was learned from, so the key of a layout is the content it holds and not a value
-//! the client chose.
+//! the SHA-256 of the `TV` class and node count and every `TD` line it was learned from, so the key of a layout is
+//! the content it holds, and no other content can be made to share it.
 
 use crate::decode::num;
 use crate::rows::Rows;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 const OFFER_TO_REFUND_MS: i64 = 10 * 60 * 1000;
@@ -100,11 +101,8 @@ fn hash(ranks: &Ranks) -> String {
 }
 
 fn layout_hash(seed: &str) -> String {
-    let mut h: u32 = 5381;
-    for b in seed.bytes() {
-        h = h.wrapping_mul(33).wrapping_add(u32::from(b));
-    }
-    format!("{h:08x}")
+    let digest = Sha256::digest(seed.as_bytes());
+    digest.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 fn points(ranks: &Ranks) -> i64 {
@@ -163,7 +161,7 @@ impl Talents {
             Layout {
                 class_id: class,
                 node_count: count,
-                seed: String::new(),
+                seed: format!("{class}\t{count}\n"),
                 nodes: Vec::new(),
             },
         );
@@ -178,10 +176,11 @@ impl Talents {
         };
         for i in 0..LAYOUT_FIELDS {
             if i > 0 {
-                layout.seed.push('|');
+                layout.seed.push('\t');
             }
             layout.seed.push_str(f.get(i).copied().unwrap_or(""));
         }
+        layout.seed.push('\n');
         layout.nodes.push(LayoutNode {
             node,
             x: integer(f, 2),

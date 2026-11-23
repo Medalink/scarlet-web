@@ -21,8 +21,8 @@ class RefileSessions
             ->join('rulesets as r', 'r.id', '=', 's.ruleset_id')
             ->join('characters as c', 'c.id', '=', 's.character_id')
             ->leftJoin('realms as re', 're.id', '=', 'c.home_realm_id')
-            ->whereRaw('coalesce(c.armory_kind, c.declared_kind, re.kind) is not null')
-            ->whereRaw('r.kind is distinct from coalesce(c.armory_kind, c.declared_kind, re.kind)')
+            ->whereRaw('coalesce(c.declared_kind, re.kind) is not null')
+            ->whereRaw('r.kind is distinct from coalesce(c.declared_kind, re.kind)')
             ->orderBy('s.character_id')->orderBy('s.session_start')
             ->select('s.character_id', 's.session_start');
 
