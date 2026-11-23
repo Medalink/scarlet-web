@@ -146,5 +146,83 @@
       <figure><x-sc.feat-toast :feat="$jumper" kicker="Upgraded from Scarlet" :play="true" /><figcaption class="sc-note mt-2">A Legend: gold rail, two gold bursts 260 ms apart.</figcaption></figure>
     </div>
   </section>
+
+  <section class="mt-14">
+    <h2 class="sc-h">Compare strip, bar list, heat grid</h2>
+    @php
+        $compare = [
+            ['Kills an hour', ['lo' => 0, 'hi' => 160, 'p10' => 38, 'p25' => 61, 'p50' => 84, 'p75' => 108, 'p90' => 124, 'you' => 104], '104'],
+            ['Deaths an hour', ['lo' => 0, 'hi' => 1.4, 'p10' => 0.1, 'p25' => 0.22, 'p50' => 0.36, 'p75' => 0.6, 'p90' => 0.9, 'you' => 0.21], '0.21'],
+            ['Jumps an hour', ['lo' => 0, 'hi' => 3000, 'p10' => 90, 'p25' => 210, 'p50' => 420, 'p75' => 760, 'p90' => 1300, 'you' => 2770, 'youText' => '2,770'], '2,770'],
+        ];
+        $bars = [['Wastewander Bandit', 58], ['Dunemaul Ogre', 44], ['Scorpid Hunter', 41], ['Wastewander Assassin', 37], ['Steeljaw Snapper', 29]];
+    @endphp
+    <div class="mt-4 grid gap-8 lg:grid-cols-[1.2fr_1fr_1fr]">
+      <div>
+        <div class="sc-key mb-3"><span style="--c:var(--accent)">You</span><span style="--c:var(--s-0)">Middle half</span><span style="--c:var(--text)">Median</span></div>
+        <x-sc.compare :rows="$compare" :n="212" />
+        <p class="sc-cap">Thin band: 10th to 90th percentile. Thick band: the middle half. Tick: the median. Diamond: you. Drawn only with 20 or more in the group.</p>
+        <div class="mt-6">
+          <x-sc.compare :rows="array_slice($compare, 0, 1)" :n="12" />
+          <p class="sc-cap">Twelve in the group: the value stays, the strip is not drawn.</p>
+        </div>
+      </div>
+      <div>
+        <x-sc.bars :rows="$bars" />
+        <p class="sc-cap">Label left, value right, a 4 px bar under both. Square ends.</p>
+      </div>
+      <div>
+        <x-sc.heat :cells="$d['heat']" />
+        <p class="sc-cap">Seven days by 24 hours, 2 px gap, five scarlet steps.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="sc-h">Controls</h2>
+    <div class="mt-4 flex flex-wrap items-center gap-x-8 gap-y-5">
+      <span class="flex gap-2"><a class="sc-btn" href="#">Get the app</a><a class="sc-btn quiet" href="#">All sessions</a><a class="sc-btn quiet small" href="#">Link</a></span>
+      <span class="flex gap-2"><button class="sc-chipbtn on">All tiers</button><button class="sc-chipbtn">Silver</button><button class="sc-chipbtn">Gold</button></span>
+      <span class="flex items-center gap-2 text-[13.5px]"><span class="sc-toggle on"></span> Play a sound with a feat toast</span>
+      <span class="flex items-center gap-2 text-[13.5px]"><span class="sc-toggle"></span> Animate feats</span>
+    </div>
+    <div class="mt-6 grid gap-y-5">
+      <x-sc.scope current="everyone" url="/design/system" />
+      <x-sc.scope current="compare" url="/design/system" :characters="['Sable Varrow', 'Odile Fenn']" />
+      <x-sc.scope current="mine" url="/design/system" />
+    </div>
+    <p class="sc-cap">The scope switch on every website hub. Signed out it is not drawn. You vs everyone adds a select of the account's characters.</p>
+    <x-sc.section-nav class="mt-6" :sections="['overview' => 'Overview', 'feats' => 'Feats', 'sessions' => 'Sessions', 'class' => 'Warlock', 'levelling' => 'Levelling', 'combat' => 'Combat', 'loot' => 'Loot and professions', 'time' => 'Play time']" :sticky="false" />
+    <p class="sc-empty">No sessions recorded for Odile Fenn yet. They appear after the next export.</p>
+    <p class="sc-cap" style="margin-top:0">An empty state is one plain sentence where the content would be. A filled scarlet button appears at most once on a view. The row of links is the section nav of a character's page: it sticks under the header on a real page, and the section in view gets the scarlet underline.</p>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="sc-h">Link entry points: four states on three surfaces</h2>
+    <div class="sc-states mt-4">
+      <div class="hd">State</div><div class="hd">Addon</div><div class="hd">App</div><div class="hd">Website</div>
+
+      <div class="st">No app</div>
+      <div><div class="wow"><p class="foot">Website: no app</p><p>The Scarlet app adds your history, all 241 feats and your pages on the website.</p><span class="sc-addr">scarletweb.io/download</span></div></div>
+      <div class="none">Does not apply.</div>
+      <div><x-sc.link-row action="Get the app" :quiet="false"><b class="text-fg">Record your own characters</b><br>The desktop app uploads what the addon records.</x-sc.link-row></div>
+
+      <div class="st">App, uploading off</div>
+      <div><div class="wow"><p class="foot">Website: not linked</p><p>Uploading is off in the Scarlet app.</p></div></div>
+      <div><p class="mb-2 text-[12px] text-muted"><span class="sc-dot off"></span>&nbsp; Uploading is off</p><x-sc.link-row action="Website settings">40 more feats are counted on the website. Uploading is off.</x-sc.link-row></div>
+      <div class="none">Nothing. The site has no data for this app.</div>
+
+      <div class="st">Uploading, not linked</div>
+      <div><div class="wow"><p class="foot">Website: not linked</p><p>Your page:</p><span class="sc-addr">scarletweb.io/c/Sable-Varrow</span><p class="mt-2 text-muted">Link in the Scarlet app: Settings, Website.</p></div></div>
+      <div><p class="mb-2 text-[12px] text-muted"><span class="sc-dot off"></span>&nbsp; Not linked</p><x-sc.link-row action="Link" hide="#">Link this app to your account to pin feats and choose what is public.</x-sc.link-row></div>
+      <div><p>On the character's page, one line in the head:</p><p class="mt-2 text-muted">Is this yours? <a href="#">Link the app to manage it</a></p><p class="mt-3">On /account with no app linked, the first module:</p><x-sc.link-row class="mt-2">In the Scarlet app, open Settings, Website and choose Link. It opens this site to confirm.</x-sc.link-row></div>
+
+      <div class="st">Linked</div>
+      <div><div class="wow"><p class="foot">Website: linked</p><p>Your page:</p><span class="sc-addr">scarletweb.io/c/Sable-Varrow</span><p class="mt-2 text-muted">Last upload today 22:07.</p></div></div>
+      <div><p class="text-[12px]"><span class="sc-dot"></span>&nbsp; Linked to scarletweb.io</p><p class="none mt-2">No rows anywhere.</p></div>
+      <div><x-sc.link-row dot="on" action="Settings">Scarlet app linked on 1 computer · last upload today 22:07</x-sc.link-row></div>
+    </div>
+    <p class="sc-cap">One line, in one fixed place per surface. It never opens by itself and no toast, nudge or login message mentions it. The addon cannot open a browser, so the address sits in a read-only box, selected for Ctrl+C.</p>
+  </section>
 </div>
 </x-layouts.sc>

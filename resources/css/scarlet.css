@@ -186,3 +186,21 @@ a:hover { color: var(--soft); }
   .sc-toast.play { animation: sc-fade 150ms linear both; }
 }
 }
+@layer components {
+.sc-seg > a { display: block; text-decoration: none; }
+.sc-seg > a:hover { color: var(--fg); }
+.sc-seg > a.on:hover { color: var(--ink); }
+.sc-select { height: 30px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 3px; background: var(--bg); color: var(--fg); font: 600 13px/1 var(--body); color-scheme: dark; }
+.sc-states { display: grid; grid-template-columns: 150px repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.sc-states > * { background: var(--bg); padding: 14px 16px 16px; font-size: 13px; line-height: 1.45; min-width: 0; }
+.sc-states > .hd { font-weight: 600; color: var(--muted); padding-block: 9px; }
+.sc-states > .st { color: var(--fg); font-weight: 600; }
+.sc-states .none { color: var(--muted); }
+.sc-states .wow { background: var(--win); border: 1px solid var(--line2); padding: 10px 12px 12px; font-size: 12.5px; }
+.sc-states .foot { font-size: 11.5px; color: var(--muted); padding-bottom: 8px; margin-bottom: 9px; border-bottom: 1px solid var(--line); }
+.sc-addr { display: block; margin-top: 7px; padding: 5px 8px; background: rgba(255, 45, 85, 0.16); border: 1px solid var(--line2); color: var(--fg); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 900px) {
+  .sc-states { grid-template-columns: 1fr; }
+  .sc-states > .hd { display: none; }
+}
+}

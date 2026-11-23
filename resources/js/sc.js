@@ -1,5 +1,6 @@
 import './local-time.js';
 import './sc/tip.js';
+import { controls } from './sc/controls.js';
 import { route } from './sc/route.js';
 import { area, days } from './sc/series.js';
 import { strip } from './sc/strip.js';
@@ -21,8 +22,13 @@ function draw(root = document) {
 
 window.SC = { draw };
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => draw());
-else draw();
+const start = () => {
+    controls();
+    draw();
+};
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+else start();
 
 let pending;
 addEventListener('resize', () => {
