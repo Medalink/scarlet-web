@@ -21,6 +21,7 @@
   @if ($d['owner'])<livewire:owner-bar :character-id="$d['id']" />@endif
   @if ($d['ownerSeesVisitorView'])<div class="own"><span>Visitor view</span><span class="sp"><a href="{{ $d['path'] }}">Back to your view</a></span></div>@endif
   <x-class.nav :links="$d['links']" :name="$d['name']" :class-name="$d['className']" current="character" />
+  @if ($d['classBand'])<x-class.band :band="$d['classBand']" :icons="$d['classIcons']" />@endif
   @if ($d['records'])
   <section class="recs" aria-labelledby="h-records">
     <h2 id="h-records">Records</h2>
@@ -43,7 +44,6 @@
     <ol class="stands">@foreach ($d['standings'] as $stand)<li @if ($stand['medal']) class="{{ $stand['medal'] }}" @endif><span class="place"><span class="vh">Place </span>{{ $stand['place'] }}</span><a class="board" href="{{ $stand['href'] }}">{{ $stand['title'] }}</a><span class="val">{{ $stand['value'] }}</span><span class="of">of {{ $stand['of'] }}</span></li>@endforeach</ol>
   </section>
   @endif
-  @if ($d['classBand'])<x-class.band :band="$d['classBand']" :icons="$d['classIcons']" />@endif
   @if ($d['week'])
   <section class="week" aria-labelledby="h-week">
     <div><h2 id="h-week">This week</h2><p>{{ $d['week']['range'] }}</p></div>

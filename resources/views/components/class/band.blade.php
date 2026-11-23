@@ -1,4 +1,4 @@
-{{-- The band of five of the class's figures on the character page, above "This week": band is App\Support\ClassPage\ClassBand. --}}
+{{-- The band of five of the class's figures on the character page, first under the line of pages: band is App\Support\ClassPage\ClassBand. --}}
 @props(['band', 'icons'])
 @php($name = \App\View\Format::className($band->class->value))
 <section class="week cls-band" data-class="{{ $band->class->value }}" data-n="{{ count($band->figures) }}" style="--n:{{ count($band->figures) }}" aria-labelledby="h-band">

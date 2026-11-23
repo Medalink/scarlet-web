@@ -18,6 +18,12 @@ const ROGUE = "rogue";
 const CLASS_SLUGS = Object.keys(CLASS_CHARACTERS);
 const BAND_WAIT_MS = 60_000;
 const BAND_POLL_MS = 500;
+const SECTIONS_BELOW_BAND = ['id="h-records"', 'id="h-stands"', 'id="h-week"'];
+
+function bandLeads(html) {
+  const band = html.indexOf('id="h-band"');
+  return band >= 0 && SECTIONS_BELOW_BAND.every((mark) => !html.includes(mark) || band < html.indexOf(mark));
+}
 
 export function tokensOf(html) {
   return html
@@ -113,7 +119,7 @@ export async function pageShowsItsFigures(ctx, page) {
   if (!band.text.includes(`<a href="${route}">All ${page.slug} numbers</a>`)) lacks.push(`the band's link All ${page.slug} numbers`);
   const absentBand = missing(tokensOf(band.text), page.band);
   if (absentBand.length > 0) lacks.push(`the band figures ${absentBand.join(", ")}`);
-  if (band.text.indexOf('id="h-band"') < 0 || band.text.indexOf('id="h-band"') > band.text.indexOf('id="h-week"')) lacks.push("the band above This week");
+  if (!bandLeads(band.text)) lacks.push("the band first under the line of pages");
   if (lacks.length > 0) throw new Error(`${own} should have ${lacks.join(", ")}`);
   const wrong = await ctx.http.page(`${own}/${page.slug === "mage" ? "warlock" : "mage"}`);
   if (wrong.status !== 404) throw new Error(`${own}/${page.slug === "mage" ? "warlock" : "mage"} answered ${wrong.status}: a class page exists only at the character's own class`);
@@ -128,7 +134,7 @@ export async function characterPageLinksItsClassPage(ctx) {
   if (!page.text.includes(`<a href="${route}/warlock">All warlock numbers</a>`)) problems.push("the band's link All warlock numbers");
   const absent = missing(tokensOf(page.text), warlock.BAND);
   if (absent.length > 0) problems.push(`the band figures ${absent.join(", ")}`);
-  if (page.text.indexOf('id="h-band"') < 0 || page.text.indexOf('id="h-band"') > page.text.indexOf('id="h-week"')) problems.push("the band above This week");
+  if (!bandLeads(page.text)) problems.push("the band first under the line of pages");
   if (problems.length > 0) throw new Error(`${route} should have ${problems.join(", ")}`);
 
   const ledger = `/c/${LEDGER}`;

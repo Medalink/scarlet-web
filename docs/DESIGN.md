@@ -1825,7 +1825,7 @@ stored standing either.
   `RemoveEverything` removes them with the characters (cascade). Bands of characters that already have a page appear at
   their next decode or the daily `feats:refresh`.
 - **Navigation.** `CharacterLinks` builds the line (Character, the class's name, Battlegrounds) for `/c/{name}`, the class
-  page and `/c/{name}/battlegrounds`; `CharacterClassBand` gives `/c/{name}` its band of up to five above "This week". A
+  page and `/c/{name}/battlegrounds`; `CharacterClassBand` gives `/c/{name}` its band of up to five, first under the line of pages. A
   caller that knows whether the class page exists passes the answer (`$hasClassPage`). The
   sitemap does not list battlegrounds pages, so it does not list class pages either.
 - **Charts of a short range.** A mirror or a stack of twelve levels or fewer names every level on its axis; longer ones
@@ -2005,7 +2005,7 @@ ten played hours, and the fight time in Bear or Cat Form, and waits for 20 druid
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
 the character's page is. `/c/{name}`, the class page and `/c/{name}/battlegrounds` share one line of navigation under
 the head (Character, the class's name, Battlegrounds), each shown only when it has something to show. `/c/{name}`
-carries a band of up to five of the class's figures above "This week", linking to the page. There is no public page for
+carries a band of up to five of the class's figures first under the line of pages, linking to the page. There is no public page for
 "all warlocks": the class page is a character's, and the one place other characters appear is the comparison below.
 
 **The skeleton, the same for every class.**
