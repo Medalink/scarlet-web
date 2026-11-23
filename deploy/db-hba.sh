@@ -13,7 +13,8 @@ install -d -m 755 etc
   echo 'local   all             all                                     trust'
   echo 'local   replication     all                                     trust'
   for c in "$@"; do
-    echo "hostssl all             all             $c/32            scram-sha-256"
+    echo "hostssl scarlet         scarlet_app     $c/32            scram-sha-256"
+    echo "hostssl all             postgres        $c/32            scram-sha-256"
     echo "hostssl replication     replicator      $c/32            scram-sha-256"
   done
 } > etc/pg_hba.conf
