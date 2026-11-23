@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 /** What the page of one session needs: the character, the recap, and the sessions before and after it. */
 class ShowSession
 {
-    private const int MIN_PLAYED_MS = 60_000;
+    public const int MIN_PLAYED_MS = 60_000;
 
     public function __construct(private readonly BuildRecap $recap) {}
 
@@ -25,7 +25,7 @@ class ShowSession
             return null;
         }
         $owner = $viewerAccountId !== null && $character->account_id === $viewerAccountId;
-        if (! $owner && ! ($character->is_public && $character->show_sessions)) {
+        if (! $character->sessionsVisibleTo($viewerAccountId)) {
             return null;
         }
         $economy = $owner || $character->show_economy;

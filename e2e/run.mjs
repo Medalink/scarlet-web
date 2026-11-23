@@ -52,6 +52,7 @@ const REGISTRY = [
   { lane: "api", name: "the uploaded character is served with the fixture's facts", run: api.characterIsServed },
   { lane: "api", name: "the records of the fixture are served", run: api.recordsAreServed },
   { lane: "api", name: "search finds the character", run: api.searchFindsTheCharacter },
+  { lane: "api", name: "the session list and a session recap are served with the fixture's figures, in pages, and an unknown session is 404", run: api.sessionEndpointsAreServed },
   { lane: "api", name: "an unknown character is 404 not_found", run: api.unknownCharacterIs404 },
   { lane: "api", name: "a bad parameter is 422 invalid_request", run: api.badParameterIs422 },
   { lane: "api", name: "the app reads a character's new feats, and one it showed is not new again", run: feats.shownFeatIsNotNewAgain },

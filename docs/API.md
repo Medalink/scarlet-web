@@ -606,6 +606,32 @@ One series of a public character: `levelling` (played time before each level, wi
 
 Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/series/levelling`
 
+#### `GET /public/characters/{name}/sessions`
+
+The sessions of a public character, newest first, 20 a page, for a character whose owner keeps the session pages on. Any other character answers 404.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `name` | path | string | The character name. |
+| `after` | query | integer | The `next` of the previous page: the start of the oldest session it listed. |
+
+`data`: `sessions`, each with `start` (the id of the session in its address: epoch seconds), `end`, `played` (seconds), `level` (`[at the start, at the end]`), `title` (`rule`, one of `level`, `dungeon`, `quests`, `kills`, `gather`, `travel` or `time`, and the English `text`), and `kills`, `quests`, `deaths` and `xp`, each `null` when the player did not share that group; and `next`, the `after` of the next page, `null` on the last.
+
+Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/sessions`
+
+#### `GET /public/characters/{name}/sessions/{start}`
+
+One session of a public character as a recap: title, played time, levels, experience by source, counters, five-minute buckets, zones in order, levels, moments, route, the top lists, the best of the last 30 sessions, and how it compares with sessions at the same levels. The data of the page at /c/{name}/sessions/{start}.
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `name` | path | string | The character name. |
+| `start` | path | integer | The `start` of a session from the list. |
+
+`data`: the same recap the Scarlet app and addon keep: `v`, `character`, `class`, `start`, `end`, `played`, `level`, `zone`, `title`, `xp` (`kills`, `dungeons`, `quests`, `explore`, `other`), `runs`, `counters` (a counter that is zero is left out), `buckets` (`secs`, `xp`, `combat`), `zones`, `levels`, `moments`, `route` (`legs`, and a `sheet` of points fitted to 0 to 1000 with `aspect`, `breaks` and `air`), `feats`, `bests`, `own` (the session against the 30 before it, `null` under 5), `top`, `compare` (against sessions at the same levels, `null` until 20 sessions are in the bracket) and `links`. Gold counters are in it only when `meta.economy` is true.
+
+Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/sessions/1763840520`
+
 ### Records
 
 #### `GET /public/creatures/{id}`

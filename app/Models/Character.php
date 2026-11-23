@@ -58,6 +58,11 @@ class Character extends Model
         return $this->is_public || ($accountId !== null && $this->account_id === $accountId);
     }
 
+    public function sessionsVisibleTo(?int $accountId): bool
+    {
+        return ($this->is_public && $this->show_sessions) || ($accountId !== null && $this->account_id === $accountId);
+    }
+
     /** The key two spellings of one name share. */
     public static function keyFor(string $name): string
     {

@@ -6,10 +6,10 @@ const SWITCH_MS = 8000;
 const SWITCH = `input[aria-label="Show sessions for ${SHOWN}"]`;
 
 async function firstSession(ctx) {
-  const data = expectJson(expectStatus(await ctx.http.api(`/api/v1/public/characters/${NAME}/series/sessions`), 200, `GET /api/v1/public/characters/${NAME}/series/sessions`), "the sessions answer").data;
-  const oldest = [...data.sessions].sort((a, b) => Date.parse(a.at) - Date.parse(b.at))[0];
+  const data = expectJson(expectStatus(await ctx.http.api(`/api/v1/public/characters/${NAME}/sessions`), 200, `GET /api/v1/public/characters/${NAME}/sessions`), "the sessions answer").data;
+  const oldest = data.sessions.at(-1);
   if (!oldest) throw new Error(`${NAME} has no session in its answer`);
-  return Math.round(Date.parse(oldest.at) / 1000);
+  return oldest.start;
 }
 
 export async function sessionPageShowsTheUpload(ctx) {
