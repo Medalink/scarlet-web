@@ -23,7 +23,7 @@ class ShowFeatBasis
             ->join('talent_snapshots as t', fn ($join) => $join->on('t.character_id', '=', 's.character_id')->on('t.session_start', '=', 's.session_start'))
             ->where('s.character_id', $character->id)->where('s.counted', true)->where('t.counted', true)
             ->where('s.level_end', '>=', self::MIN_SPEC_LEVEL)->whereNotNull('t.spec_tab_id')
-            ->orderByDesc('s.session_start')->orderBy('t.at')->value('t.spec_tab_id');
+            ->orderByDesc('s.session_start')->orderByDesc('t.at')->value('t.spec_tab_id');
 
         return ['through' => $through, 'spec' => $tab === null ? null : ($this->names->handle(NameKind::TalentTab, [(int) $tab])[(int) $tab] ?? null)];
     }
