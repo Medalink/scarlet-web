@@ -98,13 +98,6 @@ class RebuildKeyedLoot
                 select item_id from gather_items where kind = 'skin'
                 except
                 select item_id from loot_drops where via = 'window' and counted and read = 'loot'
-                except
-                select d.item_id from peer_drops d
-                where d.counted and d.corpse_key is not null and d.source_kind = 'c'
-                    and not exists (
-                        select 1 from loot_opens s
-                        where s.source_kind = d.source_kind and s.source_id = d.source_id and s.corpse_key = d.corpse_key and s.read = 'skin' and s.counted
-                    )
             ), readers as (
                 select source_kind, source_id, (array_agg(character_id order by windows desc, character_id))[1] as reader, count(*) as unkeyed_characters
                 from (
