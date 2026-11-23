@@ -1703,7 +1703,7 @@ The design is approved: the comp is `docs/comps/class.html` (the Warlock) and th
 view. Built: the art (the nine heads, `warrior` to `druid` in `resources/js/scene/scenes/` and in the
 `SCENES` table of `tools/scene-art`, with `AppSupportScene` and `PlayerClass::scene()` naming them, and `/design/scenes/{class}`
 showing each over invented numbers, and the spell icons, Spell icons), the view layer, and the route, the reads, the
-comparison, the Warlock page and the Mage page (below). A class with no builder yet has a 404 address.
+comparison, the Warlock, Mage and Druid pages (below). A class with no builder yet has a 404 address.
 
 **What is built (the view layer).** `App\Support\ClassPage\ClassPage` is the typed page object every class fills: the
 character line, the links, the callouts, the six figures, rows of modules (each a list of blocks), the talent modules,
@@ -1806,6 +1806,26 @@ Presence of Mind, Arcane Power, Pyroblast and Combustion, in that order, and the
 holds. The comparison covers water
 conjured, water handed out, portals opened, kills in the biggest pull, time spent drinking and Blinks, each as a rate a
 played hour or a share.
+
+**Druid.** `DruidBuilder` draws its sheet from `App\Support\ClassPage\Druid\` (`Spells`, `Forms`, `Casting`, `Talents`,
+`Party`, `Standings`). A form is the aura of `state_times` kind `a` under its client name (Bear Form and Dire Bear Form
+are one), and the form chart reads the `shift_form` tally, which counts gains only: the left side has "No form", the
+right side has none. A shift back into the form just left inside 2 seconds is the tally's `a` equal to `b`. Its fixture is
+`Moon-Walker` (`e2e/druid-lines.mjs`, figures in `e2e/druid-expected.mjs`), a druid of the stranger install. The rows
+cannot answer some of the comp's modules, so the page says what they can. "What each form did" lists the spells that need
+a form (Maul, Claw) and the caster's spells, by casts instead of a share, since no row holds the form worn at a cast, and
+a note says so. Left out, since no row says where or in which fight a cast fell: Rebirths by dungeon, Innervates in a
+dungeon run and in boss fights, most shifts in one fight, forms worn in one fight, and "The role played in dungeons",
+which "The form worn in fights" replaces (the form's share of fight time, over every fight). Rebirth and Innervate show
+casts, the share cast in a fight and Rebirth's interrupts or the hours between Innervates; who a spell was cast on is not
+recorded. Prowl shows the hours prowling, the casts of Prowl and the spells cast while it was on (`cast_under`), in
+place of the openers and fights opened. Leader of the Pack shows the hours it was up, its share of the time in Bear or
+Cat Form and the times it went on, since the group is not recorded. Healing by spell reads the healing meter and says it
+lists five spells a fight. The talent modules are Feral Charge (Bear), Omen of Clarity, Leader of the Pack, Nature's
+Grasp, Moonkin Form, Nature's Swiftness and Swiftmend, the first three the build holds shown first. Omen of Clarity is a
+Balance talent in this client, and its procs are the Clearcasting auras. The comparison covers shapeshifts a fight, the
+time in a form of played time, Travel Form of travel, the shifts back into the form just left, Rebirths and Innervates in
+ten played hours, and the fight time in Bear or Cat Form.
 
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
