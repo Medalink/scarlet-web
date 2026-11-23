@@ -23,9 +23,6 @@ use App\Support\ClassRows\SpellTotals;
 /** Where the character's soul shards came from and what they bought, from the Soul Shard's `item_flows` rows tied to the spell of each change. */
 final readonly class Shards
 {
-    /** The bag slots the page draws. */
-    public const int SLOTS = 32;
-
     /** @param  bool  $shared  whether the character has any item flow rows at all; without them every shard figure is withheld, not 0 */
     public function __construct(public ItemFlow $flow, public ?Icon $icon, private Spells $spells, public bool $shared = true) {}
 
@@ -57,7 +54,7 @@ final readonly class Shards
         return new Row([
             new Module('Where soul shards came from and what they bought', [$this->chart()], Span::W8, $this->note()),
             new Module('Shards in the bags', [
-                new Bag(max(self::SLOTS, $this->flow->held()), [new BagItem($this->icon, $this->flow->held())], 'soul shard'),
+                new Bag(Bag::MOST_SLOTS, [new BagItem($this->icon, min($this->flow->held(), Bag::MOST_SLOTS))], 'soul shard'),
                 new Pair([new PairRow('In the bags now', $this->flow->held())]),
             ]),
         ]);
