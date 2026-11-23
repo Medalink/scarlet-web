@@ -2,7 +2,7 @@ import { STRANGER, WARLOCK, expectError, expectJson, expectStatus } from "../sup
 import { HEAD, SHARDS } from "../warlock-expected.mjs";
 
 const READ = "GET /api/v1/installs/me/class-page";
-const PAGE_URL = new RegExp(`^https?://[^/]+/c/${WARLOCK}/warlock$`);
+const PAGE_URL = new RegExp(`^https?://[^/]+/c/${WARLOCK}#class$`);
 const BLOCK_TYPES = ["flow", "link", "mirror", "stack", "bag", "rank", "pair", "split", "titled", "columns"];
 
 function* blocksOf(blocks) {

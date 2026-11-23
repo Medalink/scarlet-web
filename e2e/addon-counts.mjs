@@ -377,11 +377,10 @@ async function pages(state) {
   if (PAGES_ON) {
     check(`the public and the account's own fishing page show the three terms, ${terms}`, addonPages.every((name) => shown[name].includes(terms)), addonPages.map((name) => shown[name].slice(0, 400)).join(" | "));
     check(`their heads count the total casts, ${count(state.total[0])}`, addonPages.every((name) => shown[name].includes(`Fishing ${count(state.total[0])} casts`)));
-    check(`the character page counts the catches with the addons' ${count(state.counted[1])} beside them, to the owner and to a visitor`, ["character", "character-owner"].every((name) => shown[name].includes(`${count(state.total[1])} Fish caught From addons ${count(state.counted[1])}`)), shown.character);
     return;
   }
   check("with the flag off no page shows what addons counted", Object.values(shown).every((text) => !text.includes("From addons")));
-  check(`the fishing pages count Scarlet's own ${count(state.scarlet[0])} casts and the character page its ${count(state.scarlet[1])} catches`, addonPages.every((name) => shown[name].includes(`Fishing ${count(state.scarlet[0])} casts`)) && shown.character.includes(`${count(state.scarlet[1])} Fish caught since`));
+  check(`the fishing pages count Scarlet's own ${count(state.scarlet[0])} casts`, addonPages.every((name) => shown[name].includes(`Fishing ${count(state.scarlet[0])} casts`)));
 }
 
 async function ensureLinked() {

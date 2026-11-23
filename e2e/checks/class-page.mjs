@@ -10,20 +10,11 @@ import * as warlock from "../warlock-expected.mjs";
 import * as warrior from "../warrior-expected.mjs";
 import { CHARACTER_MAP, CHARACTER_TRAILS } from "./map.mjs";
 import { browserFor } from "./owner.mjs";
-import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
+import { ERROR_PAGE, linkToAccount, signIn } from "./pages.mjs";
 
-const SWITCH = `.own input[type="checkbox"]`;
 const SWITCH_MS = 5000;
-const ROGUE = "rogue";
-const CLASS_SLUGS = Object.keys(CLASS_CHARACTERS);
 const BAND_WAIT_MS = 60_000;
 const BAND_POLL_MS = 500;
-const SECTIONS_BELOW_BAND = ['id="h-records"', 'id="h-stands"', 'id="h-week"'];
-
-function bandLeads(html) {
-  const band = html.indexOf('id="h-band"');
-  return band >= 0 && SECTIONS_BELOW_BAND.every((mark) => !html.includes(mark) || band < html.indexOf(mark));
-}
 
 export function tokensOf(html) {
   return html
@@ -70,7 +61,7 @@ export const PAGES = [
 async function pageOnceStoredBandShows(ctx, route) {
   const deadline = Date.now() + BAND_WAIT_MS;
   let page = expectStatus(await ctx.http.page(route), 200, route);
-  while (!page.text.includes('id="h-band"') && Date.now() < deadline) {
+  while (!page.text.includes('<section id="class"') && Date.now() < deadline) {
     await sleep(BAND_POLL_MS);
     page = expectStatus(await ctx.http.page(route), 200, route);
   }
@@ -85,10 +76,11 @@ async function pageOnceStoredBandShows(ctx, route) {
  */
 export async function pageShowsItsFigures(ctx, page) {
   const character = CLASS_CHARACTERS[page.slug];
-  const route = `/c/${character}/${page.slug}`;
+  const route = `/c/${character}`;
+  const className = page.slug[0].toUpperCase() + page.slug.slice(1);
   const answer = expectStatus(await ctx.http.page(route), 200, route);
   if (ERROR_PAGE.test(answer.text)) throw new Error(`${route}: the body carries the markers of an error page: ${answer.text.slice(0, 300)}`);
-  if (!heading(page.title).test(answer.text)) throw new Error(`${route}: expected the heading ${page.title}, saw ${answer.text.slice(0, 300)}`);
+  if (!new RegExp(`<section id="class"[^>]*>\\s*<div class="sc-sec-head"><h2[^>]*>${className}<`).test(answer.text)) throw new Error(`${route}: expected the class section headed ${className}, saw ${answer.text.slice(0, 300)}`);
   const tokens = tokensOf(answer.text);
   const text = answer.text.replaceAll("&#039;", "'");
   const sceneDrawn = answer.text.includes(`data-scene="${page.slug}"`);
@@ -109,63 +101,42 @@ export async function pageShowsItsFigures(ctx, page) {
   if (notes.length > 0) problems.push(`notes: ${notes.join(" | ")}`);
   const headings = (page.headings ?? []).filter((one) => !tokens.includes(one));
   if (headings.length > 0) problems.push(`headings: ${headings.join(", ")}`);
-  if (answer.text.includes(`Against other ${page.slug}s`) || answer.text.includes("More than")) problems.push(`a comparison with other ${page.slug}s, which needs 20 of them and the fixture has one`);
+  if (!answer.text.includes(`Not enough ${className}s at these levels yet.`) || answer.text.includes("More than")) problems.push(`a comparison with other ${page.slug}s, which needs 20 of them and the fixture has one`);
   if (problems.length > 0) throw new Error(`${route} should show every figure worked out from the fixture, but lacks:\n${problems.join("\n")}`);
 
-  const own = `/c/${character}`;
-  const band = await pageOnceStoredBandShows(ctx, own);
-  const lacks = [];
-  if (!band.text.includes(`<a href="${route}">${page.title}</a>`)) lacks.push(`the ${page.title} link in the line of pages under the head`);
-  if (!band.text.includes(`<a href="${route}">All ${page.slug} numbers</a>`)) lacks.push(`the band's link All ${page.slug} numbers`);
-  const absentBand = missing(tokensOf(band.text), page.band);
-  if (absentBand.length > 0) lacks.push(`the band figures ${absentBand.join(", ")}`);
-  if (!bandLeads(band.text)) lacks.push("the band first under the line of pages");
-  if (lacks.length > 0) throw new Error(`${own} should have ${lacks.join(", ")}`);
-  const wrong = await ctx.http.page(`${own}/${page.slug === "mage" ? "warlock" : "mage"}`);
-  if (wrong.status !== 404) throw new Error(`${own}/${page.slug === "mage" ? "warlock" : "mage"} answered ${wrong.status}: a class page exists only at the character's own class`);
-  if (!sceneDrawn) throw new Skip(`${route} shows every figure, but this server has no ${page.title} art, so the head draws no scene and its callouts are not checked`);
+  const old = await ctx.http.request(`${route}/${page.slug}`, { redirect: "manual", headers: { Accept: "text/html" } });
+  if (old.status !== 301 || !old.headers.get("location")?.endsWith(`${route}#class`)) throw new Error(`${route}/${page.slug} should be a 301 to ${route}#class, saw ${old.status} to ${old.headers.get("location")}`);
+  if (!sceneDrawn) throw new Skip(`${route} shows every figure, but this server has no ${className} art, so the section draws no scene and its callouts are not checked`);
 }
 
 export async function characterPageLinksItsClassPage(ctx) {
   const route = `/c/${WARLOCK}`;
   const page = await pageOnceStoredBandShows(ctx, route);
-  const problems = [];
-  if (!page.text.includes(`<a href="${route}/warlock">Warlock</a>`)) problems.push("the Warlock link in the line of pages under the head");
-  if (!page.text.includes(`<a href="${route}/warlock">All warlock numbers</a>`)) problems.push("the band's link All warlock numbers");
-  const absent = missing(tokensOf(page.text), warlock.BAND);
-  if (absent.length > 0) problems.push(`the band figures ${absent.join(", ")}`);
-  if (!bandLeads(page.text)) problems.push("the band first under the line of pages");
-  if (problems.length > 0) throw new Error(`${route} should have ${problems.join(", ")}`);
+  if (!page.text.includes('<a href="#class" ')) throw new Error(`${route} should link its Warlock section in the section nav`);
 
   const ledger = `/c/${LEDGER}`;
-  const answer = await ctx.http.page(`${ledger}/${ROGUE}`);
-  const other = answer.status === 200 ? await pageOnceStoredBandShows(ctx, ledger) : expectStatus(await ctx.http.page(ledger), 200, ledger);
-  const linked = other.text.includes(`<a href="${ledger}/${ROGUE}">`);
-  if (linked !== (answer.status === 200) || (answer.status !== 200 && answer.status !== 404)) {
-    throw new Error(`${ledger} ${linked ? "links" : "does not link"} its class page, which answers ${answer.status}: a link must lead to a page and a page with no link must be a 404`);
-  }
-  if (!linked && other.text.includes('id="h-band"')) throw new Error(`${ledger} has a class band though its class page is a 404`);
+  const answer = expectStatus(await ctx.http.page(ledger), 200, ledger);
+  const hasSection = answer.text.includes('<section id="class"');
+  const linked = answer.text.includes('<a href="#class" ');
+  if (hasSection !== linked) throw new Error(`${ledger} ${linked ? "links" : "does not link"} its class section in the section nav and ${hasSection ? "draws" : "does not draw"} one: a link must lead to a section and a section with no link must not exist`);
 }
 
 export async function characterWithNoClassRowsHasNoBand(ctx) {
   const route = `/c/${QUIET}`;
   const page = expectStatus(await ctx.http.page(route), 200, route);
   const problems = [];
-  if (page.text.includes('id="h-band"')) problems.push(`${route} draws a class band`);
-  const linked = CLASS_SLUGS.filter((slug) => page.text.includes(`<a href="${route}/${slug}"`));
-  if (linked.length > 0) problems.push(`${route} links its class page ${linked.join(", ")}`);
-  const answer = await ctx.http.page(`${route}/priest`);
-  if (answer.status !== 404) problems.push(`${route}/priest answered ${answer.status}`);
-  if (problems.length > 0) throw new Error(`a character whose sessions counted no cast has no class page, so no band and no link to one: ${problems.join(", ")}`);
+  if (page.text.includes('<section id="class"')) problems.push(`${route} draws a class section`);
+  if (page.text.includes('<a href="#class" ')) problems.push(`${route} links a class section`);
+  if (problems.length > 0) throw new Error(`a character whose sessions counted no cast has no class section and no link to one: ${problems.join(", ")}`);
 }
 
 export async function otherAddressesAre404(ctx) {
   const problems = [];
-  for (const route of [`/c/${WARLOCK}/mage`, `/c/${WARLOCK}/not-a-class`, `/c/Nobody-Here/warlock`]) {
+  for (const route of [`/c/${WARLOCK}/not-a-class`, `/c/Nobody-Here/warlock`]) {
     const answer = await ctx.http.page(route);
     if (answer.status !== 404) problems.push(`${route} answered ${answer.status}`);
   }
-  if (problems.length > 0) throw new Error(`a class page exists only for a known character at its own class: ${problems.join(", ")}`);
+  if (problems.length > 0) throw new Error(`only the class names of the character page redirect, and only for a known character: ${problems.join(", ")}`);
 }
 
 export async function hiddenCharacterHidesItsClassPage(ctx) {
@@ -177,11 +148,16 @@ export async function hiddenCharacterHidesItsClassPage(ctx) {
 
   const character = `/c/${WARLOCK}`;
   const classPage = `${character}/warlock`;
-  const tab = await browser.open(ctx.base + character, { width: 1280, height: 800, cookies: jar.entries() });
+  const switchOf = `input[type="checkbox"][aria-label="Public page for ${WARLOCK.replace("-", " ")}"]`;
+  const tab = await browser.open(ctx.base + "/account", { width: 1280, height: 800, cookies: jar.entries() });
   const setPublic = async (on) => {
-    await tab.until(`document.querySelector('${SWITCH}') !== null`, SWITCH_MS, `the owner's ${character} has no public switch (${tab.problems.join(" | ") || "no page errors"})`);
-    await tab.evaluate(`(() => { const box = document.querySelector('${SWITCH}'); if (box.checked !== ${on}) box.click(); })()`);
-    await tab.until(`document.querySelector(".own .state")?.textContent.includes(${JSON.stringify(on ? "Public page" : "Private page")})`, SWITCH_MS, `the owner bar never said ${on ? "Public" : "Private"} page`);
+    await tab.until(`document.querySelector('${switchOf}') !== null`, SWITCH_MS, `the account page has no public switch for ${WARLOCK} (${tab.problems.join(" | ") || "no page errors"})`);
+    await tab.evaluate(`(() => { const box = document.querySelector('${switchOf}'); if (box.checked !== ${on}) box.click(); })()`);
+    const deadline = Date.now() + SWITCH_MS;
+    while ((await ctx.http.page(character)).status !== (on ? 200 : 404)) {
+      if (Date.now() > deadline) throw new Error(`${character} never became ${on ? "public" : "private"} for a visitor`);
+      await sleep(250);
+    }
   };
   const owner = (route) => ctx.http.request(route, { jar, headers: { Accept: "text/html" } });
   try {

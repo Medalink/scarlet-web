@@ -71,17 +71,15 @@ export async function deathIsCountedOnce(ctx) {
 
 export async function scoreboardIsShownWithoutNames(ctx) {
   const character = expectStatus(await ctx.http.page(`/c/${PROBE}`), 200, `/c/${PROBE}`);
-  if (!character.text.includes(`<a href="/c/${PROBE}/battlegrounds">Battlegrounds</a>`)) {
-    throw new Error(`/c/${PROBE} should link its battlegrounds in the line of pages under the head, saw ${character.text.slice(0, 600)}`);
-  }
-  const answer = expectStatus(await ctx.http.page(`/c/${PROBE}/battlegrounds`), 200, `/c/${PROBE}/battlegrounds`);
   const problems = [];
-  if (!/<h1[^>]*>\s*Battlegrounds of Probe Lane/.test(answer.text)) problems.push("the heading");
-  if (!answer.text.includes("Warsong Gulch, won")) problems.push("the match, Warsong Gulch, won");
-  if ((answer.text.match(/>a player</g) ?? []).length !== 3) problems.push("three rows of a player");
-  if (!/<td class="n ?">4<\/td><td class="n ?">9<\/td>/.test(answer.text)) problems.push("4 killing blows and 9 honorable kills in the Alliance row");
-  for (const name of ["Pella", "Dorn", "Kesta"]) if (answer.text.includes(name)) problems.push(`no name, but ${name} is shown`);
-  if (problems.length > 0) throw new Error(`/c/${PROBE}/battlegrounds: expected ${problems.join(", ")}: ${answer.text.slice(answer.text.indexOf("<table"), answer.text.indexOf("<table") + 900)}`);
+  if (!character.text.includes('id="battlegrounds"')) problems.push("the Battlegrounds block in Combat");
+  if (!character.text.includes("Warsong Gulch, won")) problems.push("the match, Warsong Gulch, won");
+  if ((character.text.match(/>a player</g) ?? []).length !== 3) problems.push("three rows of a player");
+  if (!/<td class="[^"]*">4<\/td><td class="[^"]*">9<\/td>/.test(character.text)) problems.push("4 killing blows and 9 honorable kills in the Alliance row");
+  for (const name of ["Pella", "Dorn", "Kesta"]) if (character.text.includes(name)) problems.push(`no name, but ${name} is shown`);
+  if (problems.length > 0) throw new Error(`/c/${PROBE}: expected ${problems.join(", ")}: ${character.text.slice(character.text.indexOf('id="battlegrounds"'), character.text.indexOf('id="battlegrounds"') + 900)}`);
+  const old = await ctx.http.request(`/c/${PROBE}/battlegrounds`, { redirect: "manual", headers: { Accept: "text/html" } });
+  if (old.status !== 301 || !old.headers.get("location")?.endsWith(`/c/${PROBE}#battlegrounds`)) throw new Error(`/c/${PROBE}/battlegrounds should be a 301 to /c/${PROBE}#battlegrounds, saw ${old.status} to ${old.headers.get("location")}`);
 }
 
 export async function recipeSpellAndBossLootAreShown(ctx) {

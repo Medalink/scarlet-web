@@ -6,7 +6,6 @@ use App\Actions\Account\ShowImportedHistory;
 use App\Actions\Public\CharacterOverview;
 use App\Actions\Public\ClassPage\CharacterClassBand;
 use App\Actions\Public\ClassPage\CharacterLinks;
-use App\Actions\Public\ShowCharacter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\CharacterRequest;
 use App\Support\ClassPage\ClassIcons;
@@ -21,11 +20,8 @@ use Illuminate\Contracts\View\View;
  */
 class CharacterController extends Controller
 {
-    public function __invoke(CharacterRequest $request, CharacterPageController $page, ShowCharacter $show, CharacterOverview $overview, ShowImportedHistory $imported, CharacterLinks $links, CharacterClassBand $classBand, string $name): View
+    public function __invoke(CharacterRequest $request, CharacterOverview $overview, ShowImportedHistory $imported, CharacterLinks $links, CharacterClassBand $classBand, string $name): View
     {
-        if ($request->query('v') === '2') {
-            return $page($request, $show, $name);
-        }
         $viewer = $request->viewerAccountId();
         $answer = $overview->handle($name, $request->asVisitor() ? null : $viewer, $request->history(), (bool) config('scarlet.addon_counts_pages'));
         abort_if($answer === null, 404);

@@ -1,10 +1,9 @@
 <?php
 
 use App\Http\Controllers\Web\CampsController;
-use App\Http\Controllers\Web\CharacterBattlegroundsController;
-use App\Http\Controllers\Web\CharacterClassController;
-use App\Http\Controllers\Web\CharacterController;
 use App\Http\Controllers\Web\CharacterHeatController;
+use App\Http\Controllers\Web\CharacterPageController;
+use App\Http\Controllers\Web\CharacterSectionRedirectController;
 use App\Http\Controllers\Web\CharacterSessionController;
 use App\Http\Controllers\Web\DevelopersController;
 use App\Http\Controllers\Web\DownloadController;
@@ -44,10 +43,10 @@ Route::get('/release-notes', ReleaseNotesController::class);
 Route::get('/download', DownloadController::class);
 Route::get('/feats', FeatsController::class);
 Route::get('/feats/{key}', FeatController::class)->where('key', '[a-z-]+');
-Route::get('/c/{name}', CharacterController::class)->where('name', '[^/]+');
+Route::get('/c/{name}', CharacterPageController::class)->where('name', '[^/]+');
 Route::get('/c/{name}/sessions/{start}', CharacterSessionController::class)->where(['name' => '[^/]+', 'start' => '[0-9]+']);
-Route::get('/c/{name}/battlegrounds', CharacterBattlegroundsController::class)->where('name', '[^/]+');
-Route::get('/c/{name}/{class}', CharacterClassController::class)->where(['name' => '[^/]+', 'class' => implode('|', array_map(fn (PlayerClass $class): string => $class->slug(), PlayerClass::cases()))]);
+Route::get('/c/{name}/battlegrounds', CharacterSectionRedirectController::class)->where('name', '[^/]+')->defaults('anchor', 'battlegrounds');
+Route::get('/c/{name}/{class}', CharacterSectionRedirectController::class)->where(['name' => '[^/]+', 'class' => implode('|', array_map(fn (PlayerClass $class): string => $class->slug(), PlayerClass::cases()))])->defaults('anchor', 'class');
 Route::get('/c/{name}/heat', CharacterHeatController::class)->where('name', '[^/]+');
 Route::get('/c/{name}/trails', MapTrailsController::class)->where('name', '[^/]+');
 Route::get('/creatures/{id}', [RecordController::class, 'creature'])->where('id', RecordId::pattern());

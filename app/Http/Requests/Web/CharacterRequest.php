@@ -18,7 +18,7 @@ class CharacterRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        return ['sessions' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_HISTORY], 'as' => ['nullable', 'in:visitor'], 'v' => ['nullable', 'in:2']];
+        return ['sessions' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_HISTORY], 'as' => ['nullable', 'in:visitor']];
     }
 
     public function history(): int

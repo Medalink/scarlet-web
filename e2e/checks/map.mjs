@@ -41,8 +41,8 @@ export async function characterMapShowsItsTrails(ctx) {
   expectWarlockTrails(trailsOf(await ctx.http.api(CHARACTER_TRAILS), `GET ${CHARACTER_TRAILS}`), CHARACTER_TRAILS);
 
   const character = expectStatus(await ctx.http.page(`/c/${WARLOCK}`), 200, `GET /c/${WARLOCK}`);
-  if (character.text.includes('class="legend ch-legend"') && !character.text.includes(`href="${CHARACTER_MAP}"`)) {
-    throw new Error(`/c/${WARLOCK} draws its map but its legend does not link ${CHARACTER_MAP}`);
+  if (character.text.includes("data-route=") && !character.text.includes(`href="${CHARACTER_MAP}"`)) {
+    throw new Error(`/c/${WARLOCK} draws its route but does not link ${CHARACTER_MAP}`);
   }
 }
 
