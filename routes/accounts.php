@@ -21,7 +21,7 @@ Route::post('/logout', AuthLogoutController::class);
 
 // The development sign-in exists only where the environment is `local` and the switch is on.
 if (IdentityProvider::developmentAllowed()) {
-    Route::post('/auth/development', AuthDevelopmentController::class)->middleware('throttle:30,1');
+    Route::post('/auth/development', AuthDevelopmentController::class)->middleware('throttle:120,1');
 }
 
 Route::get('/account/characters', LegacyRedirectController::class)->defaults('to', '/account');
