@@ -27,7 +27,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 16;
+pub const DECODER_VERSION: u32 = 17;
 
 const HOUR_MS: i64 = 3_600_000;
 const COPPER_MAX: i64 = 1_000_000_000_000_000;
@@ -1531,7 +1531,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
             if dt < 0 && after_line {
                 backsteps += 1;
             }
-            after_line = true;
+            after_line = code != "pn";
             let Some(next) = t.checked_add(dt).filter(|t| at_in_range(*t)) else {
                 skipped += 1;
                 continue;
