@@ -77,7 +77,7 @@ final readonly class Taps
         if ($this->tap->casts === 0) {
             return null;
         }
-        $levels = $this->rows->levels();
+        $levels = $this->rows->levels($this->tap->firstLevel() ?? 0);
 
         return new Row([$this->chart($levels), $this->life($facts)]);
     }

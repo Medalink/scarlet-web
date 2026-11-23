@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * request that an earlier read already covers is answered from it, and a request with no argument reads everything.
  * Every summed column is held to `CAP`, so adding the rows of a crafted upload cannot pass the integer range. Four
  * small reads beside them answer what the tables cannot: the description of a spell, the kills a party member got,
- * the time played and the level axis of a chart.
+ * the time played and the level axis of a chart, which starts at the first level with the rows the chart reads.
  */
 final class ClassRows
 {
@@ -43,10 +43,6 @@ final class ClassRows
 
     /** @var array<string, bool>|null */
     private ?array $holds = null;
-
-    private bool $firstRead = false;
-
-    private ?int $first = null;
 
     public function __construct(public readonly int $characterId, public readonly int $level, private readonly ResolveNames $names) {}
 
@@ -188,28 +184,15 @@ final class ClassRows
         return $this->played;
     }
 
-    /** @return list<int> the levels a by-level chart draws: from the first level with rows to the character's level, up to `TOP_LEVEL` */
-    public function levels(): array
+    /** @return list<int> the levels a by-level chart draws: from the first level with the rows the chart reads ($from) to the character's level, up to `TOP_LEVEL` */
+    public function levels(int $from): array
     {
         $last = min($this->level, self::TOP_LEVEL);
-        $first = $this->firstLevel();
-        if ($first === null || $last < 1) {
+        if ($last < 1) {
             return [];
         }
 
-        return range(max(1, min($first, $last)), $last);
-    }
-
-    private function firstLevel(): ?int
-    {
-        if (! $this->firstRead) {
-            $levels = fn (string $table): Builder => $this->counted($table)->whereNotNull('level')->selectRaw('min(level) as level');
-            $first = DB::query()->fromSub($levels('spell_casts')->unionAll($levels('state_times'))->unionAll($levels('meter_totals')), 'first')->min('level');
-            $this->first = $first === null ? null : (int) $first;
-            $this->firstRead = true;
-        }
-
-        return $this->first;
+        return range(max(1, min($from, $last)), $last);
     }
 
     /** @param  list<string>  $kinds */

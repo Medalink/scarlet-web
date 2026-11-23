@@ -85,4 +85,15 @@ final readonly class SpellTotals
     {
         return $this->byLevel[$level]['casts'] ?? 0;
     }
+
+    /** The first level with a cast, or null with none. */
+    public function firstLevel(): ?int
+    {
+        $first = null;
+        foreach ($this->byLevel as $level => $row) {
+            $first = $first === null ? $level : min($first, $level);
+        }
+
+        return $first;
+    }
 }

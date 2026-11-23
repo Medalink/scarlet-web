@@ -45,7 +45,7 @@ final readonly class Demons
      * @param  array<string, StateTotals>  $families  by the pet's family
      * @param  array<string, string>  $pets  the name the character gave the demon of each family it kept longest
      */
-    private function __construct(private ClassRows $rows, private array $families, private array $pets, private int $others, private Spells $spells, private bool $shared) {}
+    private function __construct(private ClassRows $rows, private array $families, private array $pets, private int $others, private int $first, private Spells $spells, private bool $shared) {}
 
     public static function of(ClassRows $rows, Spells $spells): self
     {
@@ -73,8 +73,14 @@ final readonly class Demons
             }
             $others += $merged->ms;
         }
+        $first = null;
+        foreach ($spans as $pet) {
+            foreach (array_keys($pet->byLevel) as $level) {
+                $first = $first === null ? $level : min($first, $level);
+            }
+        }
 
-        return new self($rows, $families, $pets, $others, $spells, $spans !== []);
+        return new self($rows, $families, $pets, $others, $first ?? 0, $spells, $spans !== []);
     }
 
     /** Whether the character shares any pet rows at all; without them every demon figure is withheld, not 0. */
@@ -155,7 +161,7 @@ final readonly class Demons
         $series[] = new Series('No demon out', new Hue('#3d3d46'));
         $columns = [];
         $leading = [];
-        foreach ($this->rows->levels() as $level) {
+        foreach ($this->rows->levels($this->first) as $level) {
             $time = $played[$level] ?? 0;
             $shares = [];
             foreach (array_keys(self::FAMILIES) as $family) {
@@ -190,7 +196,13 @@ final readonly class Demons
         if ($this->others > 0) {
             $rows[] = new RankRow('Another demon', $this->others / 3_600_000, tone: new Hue('#8b8b95'));
         }
-        $none = max(0, $this->rows->playedMs() - $this->withMs());
+        $covered = 0;
+        foreach ($this->rows->playedByLevel() as $level => $ms) {
+            if ($level >= $this->first) {
+                $covered += $ms;
+            }
+        }
+        $none = max(0, $covered - $this->withMs());
         $rows[] = new RankRow('No demon out', $none / 3_600_000, tone: new Hue('#5d5d68'));
 
         return new Module('Demons', [
