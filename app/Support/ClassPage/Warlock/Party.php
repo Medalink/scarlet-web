@@ -32,7 +32,7 @@ final readonly class Party
 
     public function __construct(private ClassRows $rows, private Spells $spells)
     {
-        $this->healthstones = $rows->items()->named('*Healthstone');
+        $this->healthstones = $rows->items('*Healthstone')->named('*Healthstone');
     }
 
     /** Healthstones that left the bags in a trade. */
@@ -103,12 +103,12 @@ final readonly class Party
         $names = $this->rows->spellNames(array_values(array_unique(array_map(fn (TallyRow $row): int => $row->b, $taken))));
         $ids = array_keys(array_filter($names, fn (string $name): bool => fnmatch(self::SOULSTONE_RESURRECTION, $name, FNM_CASEFOLD)));
 
-        return $this->rows->tallies()->count(Tally::ResTaken, [], $ids);
+        return $this->rows->tallies()->count(Tally::ResTaken, null, $ids);
     }
 
     private function icon(string $pattern): ?Icon
     {
-        $ids = $this->rows->items()->idsNamed($pattern);
+        $ids = $this->rows->items($pattern)->idsNamed($pattern);
 
         return $ids === [] ? null : Icon::item($ids[0]);
     }

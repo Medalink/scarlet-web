@@ -10,14 +10,15 @@ use Illuminate\Support\Facades\DB;
 class HasClassPage
 {
     /**
-     * Whether a character has a class page: its class has a builder and its sessions counted at least one cast. The
-     * route, the band and the navigation all ask this, so a link never leads to a 404.
+     * Whether a character has a class page: its class has a builder and its sessions counted at least one cast (a
+     * row with `casts` above 0: a channel or an interrupted cast alone writes a row with none). The route, the stored
+     * band and the navigation all ask this, so a link never leads to a 404.
      */
     public function handle(Character $character): bool
     {
         $class = PlayerClass::tryFrom(strtoupper((string) $character->class));
 
         return $class !== null && ClassBuilders::has($class)
-            && DB::table('spell_casts')->where('character_id', $character->id)->where('counted', true)->exists();
+            && DB::table('spell_casts')->where('character_id', $character->id)->where('counted', true)->where('casts', '>', 0)->exists();
     }
 }

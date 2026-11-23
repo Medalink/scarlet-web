@@ -47,7 +47,7 @@ final readonly class Talents
     /** @return array{blocks: list<Block>, note: string|null} */
     private function nightfall(): array
     {
-        $trances = $this->rows->states()->of(StateKind::OwnBuff, 'Shadow Trance');
+        $trances = $this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, 'Shadow Trance');
         $procs = array_sum(array_map(fn (StateTotals $state): int => $state->starts, $trances));
         $bolts = $this->rows->tallies()->count(Tally::CastUnder, array_map(fn (StateTotals $state): int => $state->refId, $trances), $this->spells->shadowBolt->ids());
         $used = $procs === 0 ? 0 : min(100, $bolts / $procs * 100);

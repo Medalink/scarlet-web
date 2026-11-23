@@ -16,12 +16,21 @@ use App\Support\ClassPage\Warlock\Standings;
 use App\Support\ClassPage\Warlock\Talents;
 use App\Support\ClassPage\Warlock\Taps;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The warlock's page: shards, Life Tap, demons, curses and banes, the talents the build holds and what the warlock does for the party. */
 final class WarlockBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads: the demon out, fights, and the auras its modules name. */
+    private const array STATES = [StateKind::Pet, StateKind::Fight, StateKind::OwnBuff, StateKind::OthersBuff];
+
+    /** The items the page reads, by the client's names. */
+    private const array ITEMS = ['Soul Shard', '*Healthstone', '*Soulstone'];
+
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
+        $rows->items(...self::ITEMS);
         $spells = Spells::of($rows->spells());
         $shards = Shards::of($rows, $spells);
         $demons = Demons::of($rows, $spells);

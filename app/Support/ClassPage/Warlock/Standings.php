@@ -6,6 +6,7 @@ use App\Support\ClassPage\Drinking;
 use App\Support\ClassPage\StandingFigure;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The six figures a warlock is compared on, each a number a stranger's page computes the same way. */
 final readonly class Standings
@@ -18,7 +19,7 @@ final readonly class Standings
     public function all(): array
     {
         $played = $this->rows->playedMs();
-        $fight = $this->rows->states()->fights()->ms;
+        $fight = $this->rows->states(StateKind::Fight)->fights()->ms;
         $made = $this->shards->made();
         $demon = $this->demons->top();
 

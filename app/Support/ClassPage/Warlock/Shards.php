@@ -29,9 +29,10 @@ final readonly class Shards
 
     public static function of(ClassRows $rows, Spells $spells): self
     {
-        $ids = $rows->items()->idsNamed('Soul Shard');
+        $items = $rows->items('Soul Shard');
+        $ids = $items->idsNamed('Soul Shard');
 
-        return new self($rows->items()->named('Soul Shard'), $ids === [] ? null : Icon::item($ids[0]), $spells);
+        return new self($items->named('Soul Shard'), $ids === [] ? null : Icon::item($ids[0]), $spells);
     }
 
     /** Every shard that came into the bags. */

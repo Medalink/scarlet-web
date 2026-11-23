@@ -50,7 +50,7 @@ final readonly class Demons
     public static function of(ClassRows $rows, Spells $spells): self
     {
         $by = $pets = $longest = [];
-        foreach ($rows->states()->of(StateKind::Pet) as $pet) {
+        foreach ($rows->states(StateKind::Pet)->of(StateKind::Pet) as $pet) {
             if ($pet->name === '' && $pet->extra === '') {
                 continue;
             }
@@ -199,7 +199,7 @@ final readonly class Demons
     private function othersAt(int $level): int
     {
         $ms = 0;
-        foreach ($this->rows->states()->of(StateKind::Pet) as $pet) {
+        foreach ($this->rows->states(StateKind::Pet)->of(StateKind::Pet) as $pet) {
             if (! isset(self::FAMILIES[$pet->extra]) && ($pet->name !== '' || $pet->extra !== '')) {
                 $ms += $pet->byLevel[$level]['ms'] ?? 0;
             }

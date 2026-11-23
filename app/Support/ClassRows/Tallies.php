@@ -23,16 +23,17 @@ final class Tallies
     }
 
     /**
-     * How many a key counted where `a` is one of these ids and `b` one of those; an empty list matches anything.
+     * How many a key counted where `a` is one of these ids and `b` one of those. A side left out or null matches
+     * anything; an empty list matches nothing, so a spell the character never cast counts no rows.
      *
-     * @param  list<int>  $a
-     * @param  list<int>  $b
+     * @param  list<int>|null  $a
+     * @param  list<int>|null  $b
      */
-    public function count(Tally $key, array $a = [], array $b = []): int
+    public function count(Tally $key, ?array $a = null, ?array $b = null): int
     {
         $n = 0;
         foreach ($this->of($key) as $row) {
-            if (($a === [] || in_array($row->a, $a, true)) && ($b === [] || in_array($row->b, $b, true))) {
+            if (($a === null || in_array($row->a, $a, true)) && ($b === null || in_array($row->b, $b, true))) {
                 $n += $row->n;
             }
         }

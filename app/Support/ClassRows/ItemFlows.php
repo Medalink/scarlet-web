@@ -11,7 +11,7 @@ final class ItemFlows
      */
     public function __construct(private readonly array $rows, private readonly array $itemNames) {}
 
-    /** The flow of the items with these ids. */
+    /** The flow of the items with these ids, among the items the read asked for. */
     public function ofItems(int ...$ids): ItemFlow
     {
         return $this->flow(fn (int $id): bool => in_array($id, $ids, true));
