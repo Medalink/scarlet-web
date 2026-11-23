@@ -17,6 +17,8 @@ use App\Support\ClassRows\ClassRows;
 use App\Support\ClassRows\FlowDirection;
 use App\Support\ClassRows\FlowPlace;
 use App\Support\ClassRows\ItemFlow;
+use App\Support\ClassRows\ItemFlows;
+use App\Support\StateKind;
 
 /** The ammo that moved through the bags (`item_flows` of the items the client calls projectiles): where it came from, what fired it and what is left. */
 final readonly class Ammo
@@ -33,15 +35,14 @@ final readonly class Ammo
     /** @var list<int> the spell ids the client names Auto Shot */
     private array $autoShot;
 
+    private ItemFlows $flows;
+
     public function __construct(private ClassRows $rows)
     {
-        $ids = $rows->items()->ids();
-        $kinds = $ids === [] ? [] : $rows->itemKinds($ids);
+        $this->flows = $rows->itemsOfClass(self::PROJECTILE);
         $items = [];
-        foreach ($ids as $id) {
-            if (($kinds[$id]['class'] ?? null) === self::PROJECTILE) {
-                $items[$id] = $rows->items()->ofItems($id);
-            }
+        foreach ($this->flows->ids() as $id) {
+            $items[$id] = $this->flows->ofItems($id);
         }
         $this->items = $items;
         $spells = [];
@@ -74,7 +75,7 @@ final readonly class Ammo
             return null;
         }
         $in = fn (FlowPlace ...$places): int => array_sum(array_map(fn (ItemFlow $flow): int => array_sum(array_map(fn (FlowPlace $place): int => $flow->sum(FlowDirection::In, $place), $places)), $this->items));
-        $made = array_sum(array_map(fn (ItemFlow $flow): int => $flow->in(), $this->items));
+        $came = array_sum(array_map(fn (ItemFlow $flow): int => $flow->in(), $this->items));
         $left = [
             new FlowItem('Bought from vendors', $in(FlowPlace::Vendor)),
             new FlowItem('Crafted', $in(FlowPlace::Profession)),
@@ -82,7 +83,7 @@ final readonly class Ammo
             new FlowItem('Mailed or traded in', $in(FlowPlace::Mail, FlowPlace::Trade)),
         ];
         $known = array_sum(array_map(fn (FlowItem $item): int|float => $item->count, $left));
-        $left[] = new FlowItem('Another way', max(0, $made - $known));
+        $left[] = new FlowItem('Another way', max(0, $came - $known));
         $left = array_values(array_filter($left, fn (FlowItem $item): bool => $item->count > 0));
         $fired = [];
         foreach ($this->items as $id => $flow) {
@@ -94,7 +95,7 @@ final readonly class Ammo
         arsort($fired);
         $right = [];
         foreach (array_slice($fired, 0, self::SHOWN, true) as $id => $count) {
-            $right[] = new FlowItem($this->rows->items()->nameOf($id) ?? 'Ammo', $count, Icon::item($id));
+            $right[] = new FlowItem($this->flows->nameOf($id) ?? 'Ammo', $count, Icon::item($id));
         }
         $rest = array_sum($fired) - array_sum(array_map(fn (FlowItem $item): int|float => $item->count, $right));
         if ($rest > 0) {
@@ -129,7 +130,7 @@ final readonly class Ammo
                 $total += $slots;
             }
         }
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
         $blocks = [];
         if ($stacks !== []) {
             $blocks[] = new Bag($total, $stacks, 'stack of ammo');

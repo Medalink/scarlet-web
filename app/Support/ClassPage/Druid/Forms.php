@@ -53,13 +53,13 @@ final readonly class Forms
     {
         $forms = [];
         foreach (self::ALL as $key => [, $names]) {
-            $worn = $rows->states()->sum(StateKind::OwnBuff, ...$names);
+            $worn = $rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, ...$names);
             if ($worn->ms > 0) {
                 $forms[$key] = $worn;
             }
         }
 
-        return new self($rows, $forms, $rows->states()->sum(StateKind::Mount), $rows->tallies()->count(Tally::ShiftForm));
+        return new self($rows, $forms, $rows->states(StateKind::Mount)->sum(StateKind::Mount), $rows->tallies()->count(Tally::ShiftForm));
     }
 
     public function state(string $key): ?StateTotals
@@ -170,7 +170,7 @@ final readonly class Forms
         }
         $none = max(0, $this->rows->playedMs() - $this->inFormMs());
         $rows[] = new RankRow('No form', $none / 3_600_000, tone: new Hue('#5d5d68'));
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
 
         return new Module('Forms', [
             new Rank($rows, Unit::Hours, of: max(array_map(fn (RankRow $row): float|int => $row->value, $rows))),

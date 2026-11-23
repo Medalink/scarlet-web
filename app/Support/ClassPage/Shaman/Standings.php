@@ -7,6 +7,7 @@ use App\Support\ClassPage\Icon;
 use App\Support\ClassPage\StandingFigure;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The six figures a shaman is compared on, each a rate or a share so characters of different play time compare fairly. */
 final readonly class Standings
@@ -16,7 +17,7 @@ final readonly class Standings
     /** @return list<StandingFigure> */
     public function all(): array
     {
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
         $played = $this->rows->playedMs();
         $top = $this->totems->top();
         $totem = $top === null ? null : Icon::spell($top['ref']);

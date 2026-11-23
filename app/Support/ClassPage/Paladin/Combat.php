@@ -107,7 +107,7 @@ final readonly class Combat
     public function control(): ?Module
     {
         $cast = $this->cast(Spells::CONTROL);
-        $fury = $this->rows->states()->sum(StateKind::OwnBuff, 'Righteous Fury');
+        $fury = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, 'Righteous Fury');
         if ($cast === [] && $fury->ms === 0) {
             return null;
         }

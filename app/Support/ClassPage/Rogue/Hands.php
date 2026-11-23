@@ -32,7 +32,7 @@ final readonly class Hands
 
     public function lockboxes(): int
     {
-        return $this->rows->items()->named('*Lockbox')->bySpells(FlowDirection::Out, $this->spells->pickLock->ids());
+        return $this->rows->items('*Lockbox')->named('*Lockbox')->bySpells(FlowDirection::Out, $this->spells->pickLock->ids());
     }
 
     public function locks(): ?Module

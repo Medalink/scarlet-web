@@ -7,6 +7,7 @@ use App\Support\ClassPage\Icon;
 use App\Support\ClassPage\StandingFigure;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The six figures a priest is compared on, each a rate or a share so characters of different play time compare fairly. */
 final readonly class Standings
@@ -17,7 +18,7 @@ final readonly class Standings
     public function all(): array
     {
         $played = $this->rows->playedMs();
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
 
         return [
             new StandingFigure('healing_fight', 'Healing a fight', $this->healing->perFight(), Unit::Count, $this->icon()),

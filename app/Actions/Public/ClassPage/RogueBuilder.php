@@ -23,14 +23,19 @@ use App\Support\ClassPage\Rogue\Talents;
 use App\Support\ClassPage\Row;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The rogue's page: how a fight opened and ended, stealth, pockets and locks, poisons, the talents the build holds and what the rogue does for the party. */
 final class RogueBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads. */
+    private const array STATES = [StateKind::Fight, StateKind::OthersBuff, StateKind::OwnBuff];
+
     private const int CHEAP_SHOT = 1833;
 
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
         $spells = Spells::of($rows->spells());
         $stealth = Stealth::of($rows);
         $openers = Openers::of($rows);

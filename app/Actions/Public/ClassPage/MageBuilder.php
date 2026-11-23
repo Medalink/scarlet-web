@@ -21,12 +21,17 @@ use App\Support\ClassPage\Row;
 use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The mage's page: conjured water and food, damage by school, portals, Polymorph, escapes, the talents the build holds and what the mage does for the party. */
 final class MageBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads. */
+    private const array STATES = [StateKind::Fight, StateKind::OwnBuff];
+
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
         $spells = Spells::of($rows->spells());
         $conjuring = Conjuring::of($rows, $spells);
         $portals = Portals::of($rows->spells(), $spells);

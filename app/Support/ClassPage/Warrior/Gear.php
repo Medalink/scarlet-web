@@ -33,8 +33,8 @@ final readonly class Gear
 
     public static function of(ClassRows $rows): self
     {
-        $main = $rows->states()->of(StateKind::MainHand);
-        $off = $rows->states()->of(StateKind::OffHand);
+        $main = $rows->states(StateKind::MainHand)->of(StateKind::MainHand);
+        $off = $rows->states(StateKind::OffHand)->of(StateKind::OffHand);
         $kinds = $rows->itemKinds(array_values(array_unique(array_map(fn ($state): int => $state->refId, [...$main, ...$off]))));
         $types = [];
         foreach ($main as $state) {
@@ -61,7 +61,7 @@ final readonly class Gear
             }
         }
 
-        return new self($types, $shield, $shieldFight, $rows->states()->fights()->ms);
+        return new self($types, $shield, $shieldFight, $rows->states(StateKind::Fight)->fights()->ms);
     }
 
     /** @return list<Callout> */

@@ -49,12 +49,6 @@ final class ItemFlows
         return array_values($ids);
     }
 
-    /** The client's name of an item that moved, or null. */
-    public function nameOf(int $id): ?string
-    {
-        return $this->itemNames[$id] ?? null;
-    }
-
     /** @param  callable(int): bool  $wanted */
     private function flow(callable $wanted): ItemFlow
     {

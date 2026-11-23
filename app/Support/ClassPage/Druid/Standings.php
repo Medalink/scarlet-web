@@ -5,6 +5,7 @@ namespace App\Support\ClassPage\Druid;
 use App\Support\ClassPage\StandingFigure;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The six figures a druid is compared on, each a rate or a share a stranger's page computes the same way. */
 final readonly class Standings
@@ -19,7 +20,7 @@ final readonly class Standings
     public function all(): array
     {
         $played = $this->rows->playedMs();
-        $fights = $this->rows->states()->fights();
+        $fights = $this->rows->states(StateKind::Fight)->fights();
         $travel = $this->forms->travelMs();
         $revives = $this->spells->rebirth->casts + $this->spells->innervate->casts;
 

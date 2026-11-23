@@ -34,7 +34,7 @@ final readonly class Head
 
     private function mount(): ?Callout
     {
-        $rides = $this->rows->states()->of(StateKind::Mount, '*Warhorse', '*Charger');
+        $rides = $this->rows->states(StateKind::Mount)->of(StateKind::Mount, '*Warhorse', '*Charger');
         $summons = $this->spells->mount->casts;
         $ms = array_sum(array_map(fn ($state): int => $state->ms, $rides));
         if ($ms === 0 && $summons === 0) {

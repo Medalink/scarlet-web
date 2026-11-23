@@ -26,7 +26,7 @@ final readonly class Shadow
 
     public function __construct(private ClassRows $rows)
     {
-        $states = $rows->states();
+        $states = $rows->states(StateKind::OwnBuff, StateKind::AutoRepeat);
         $this->form = $states->sum(StateKind::OwnBuff, Spells::SHADOWFORM);
         $this->wand = $states->sum(StateKind::AutoRepeat, Spells::WAND);
         $this->formRef = $states->of(StateKind::OwnBuff, Spells::SHADOWFORM)[0]->refId ?? 0;
@@ -61,7 +61,7 @@ final readonly class Shadow
     /** Percent of the time in fights that the wand was firing. */
     public function wandShare(): float
     {
-        return Casts::share($this->wand->fightMs, $this->rows->states()->fights()->ms);
+        return Casts::share($this->wand->fightMs, $this->rows->states(StateKind::Fight)->fights()->ms);
     }
 
     public function side(): ?Module

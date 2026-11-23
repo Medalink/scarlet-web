@@ -78,10 +78,10 @@ final readonly class Talents
      */
     private function buff(string $name, string $first, ?int $casts, array $extra = []): array
     {
-        $states = $this->rows->states()->of(StateKind::OwnBuff, $name);
+        $states = $this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, $name);
         $starts = array_sum(array_map(fn ($state): int => $state->starts, $states));
         $fightMs = array_sum(array_map(fn ($state): int => $state->fightMs, $states));
-        $fights = $this->rows->states()->fights()->ms;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->ms;
         $up = $fights === 0 ? 0 : min(100, $fightMs / $fights * 100);
         $ids = array_map(fn ($state): int => $state->refId, $states);
         $under = $ids === [] ? 0 : $this->rows->tallies()->count(Tally::CastUnder, $ids);

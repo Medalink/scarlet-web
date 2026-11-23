@@ -17,6 +17,7 @@ use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
 use App\Support\ClassRows\Tally;
 use App\Support\ClassRows\TallyRow;
+use App\Support\StateKind;
 
 /** What became of each seal put up (`seal_fate`): judged, replaced, ran out, still up when the fight ended, or ended another way. */
 final readonly class Seals
@@ -129,7 +130,7 @@ final readonly class Seals
         if ($judgement->casts === 0 && $this->put() === 0) {
             return null;
         }
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
         $time = array_sum(array_map(fn (TallyRow $row): int => $row->b === self::JUDGED ? $row->sum : 0, $this->fates));
         $share = $this->judgedShare();
 

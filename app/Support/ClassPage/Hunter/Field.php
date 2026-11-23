@@ -62,7 +62,7 @@ final readonly class Field
 
     public function tracking(): ?Module
     {
-        $states = $this->rows->states()->of(StateKind::Tracking);
+        $states = $this->rows->states(StateKind::Tracking)->of(StateKind::Tracking);
         if ($states === []) {
             return null;
         }

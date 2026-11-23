@@ -19,12 +19,17 @@ use App\Support\ClassPage\Shaman\Totems;
 use App\Support\ClassPage\Shaman\Walks;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The shaman's page: the totems and how they ended, the shocks and imbues, coming back and getting around, the talents the build holds and what the shaman does for the party. */
 final class ShamanBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads. */
+    private const array STATES = [StateKind::Fight, StateKind::Mount, StateKind::OthersBuff, StateKind::OwnBuff, StateKind::Totem];
+
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
         $spells = Spells::of($rows->spells());
         $totems = Totems::of($rows);
         $fighting = new Fighting($rows, $spells);

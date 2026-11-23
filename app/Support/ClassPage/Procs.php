@@ -25,7 +25,7 @@ final readonly class Procs
      */
     public function aura(string $name): array
     {
-        $states = [...$this->rows->states()->of(StateKind::OwnBuff, $name), ...$this->rows->states()->of(StateKind::OthersBuff, $name)];
+        $states = [...$this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, $name), ...$this->rows->states(StateKind::OthersBuff)->of(StateKind::OthersBuff, $name)];
 
         return [
             'ids' => array_values(array_unique(array_map(fn (StateTotals $state): int => $state->refId, $states))),
@@ -39,9 +39,9 @@ final readonly class Procs
      * Casts made while one of these auras was on, or up to 0.3 seconds after it ended.
      *
      * @param  list<int>  $auras
-     * @param  list<int>  $spells  only these spells; any spell when empty
+     * @param  list<int>|null  $spells  only these spells; any spell when null, none when empty
      */
-    public function under(array $auras, array $spells = []): int
+    public function under(array $auras, ?array $spells = null): int
     {
         return $auras === [] ? 0 : $this->rows->tallies()->count(Tally::CastUnder, $auras, $spells);
     }

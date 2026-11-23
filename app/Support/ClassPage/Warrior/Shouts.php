@@ -19,8 +19,8 @@ final readonly class Shouts
     /** Battle Shout up, as a share of fight time from 0 to 100. */
     public function upShare(): float
     {
-        $fights = $this->rows->states()->fights()->ms;
-        $up = $this->rows->states()->sum(StateKind::OwnBuff, 'Battle Shout')->fightMs;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->ms;
+        $up = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, 'Battle Shout')->fightMs;
 
         return $fights === 0 ? 0.0 : min(100.0, $up / $fights * 100);
     }

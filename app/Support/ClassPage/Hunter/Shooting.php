@@ -42,7 +42,7 @@ final readonly class Shooting
     /** The share of fight time that Auto Shot ran, 0 to 100. */
     public function autoShotShare(): float
     {
-        $fights = $this->rows->states()->fights()->ms;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->ms;
 
         return $fights === 0 ? 0.0 : min(100.0, $this->autoShot()['fightMs'] / $fights * 100);
     }
@@ -54,7 +54,7 @@ final readonly class Shooting
      */
     private function autoShot(): array
     {
-        $states = $this->rows->states()->of(StateKind::AutoRepeat);
+        $states = $this->rows->states(StateKind::AutoRepeat)->of(StateKind::AutoRepeat);
         $names = $this->rows->spellNames(array_values(array_unique(array_map(fn ($state): int => $state->refId, $states))));
         $ms = $fightMs = 0;
         foreach ($states as $state) {
@@ -71,7 +71,7 @@ final readonly class Shooting
     {
         $states = [];
         foreach (array_keys(self::HUES) as $name) {
-            $sum = $this->rows->states()->sum(StateKind::OwnBuff, $name);
+            $sum = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, $name);
             if ($sum->ms > 0) {
                 $states[str_replace('Aspect of the ', '', $name)] = [$name, $sum];
             }

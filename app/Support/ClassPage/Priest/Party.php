@@ -64,7 +64,7 @@ final readonly class Party
             return null;
         }
         $cells = [new PairRow('Power Word: Fortitude', $this->spells->fortitude->casts), new PairRow('Prayer of Fortitude', $this->spells->prayer->casts)];
-        $candles = $this->rows->items()->named(Spells::CANDLE)->bySpells(FlowDirection::Out, $this->spells->prayer->ids());
+        $candles = $this->rows->items(Spells::CANDLE)->named(Spells::CANDLE)->bySpells(FlowDirection::Out, $this->spells->prayer->ids());
         if ($candles > 0) {
             $cells[] = new PairRow('Holy Candles used', $candles);
         }

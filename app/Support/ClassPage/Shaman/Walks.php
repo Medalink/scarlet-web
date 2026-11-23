@@ -30,7 +30,7 @@ final readonly class Walks
 
     public function __construct(private ClassRows $rows, private Spells $spells)
     {
-        $states = $rows->states();
+        $states = $rows->states(StateKind::OwnBuff);
         $this->wolf = $states->sum(StateKind::OwnBuff, Spells::WOLF);
         $this->wolfRef = $states->of(StateKind::OwnBuff, Spells::WOLF)[0]->refId ?? 0;
     }
@@ -63,7 +63,7 @@ final readonly class Walks
             return null;
         }
         $cells = [new PairRow('Reincarnations', $spell->casts)];
-        $ankhs = $this->rows->items()->named(Spells::ANKH)->sum(FlowDirection::In, FlowPlace::Vendor);
+        $ankhs = $this->rows->items(Spells::ANKH)->named(Spells::ANKH)->sum(FlowDirection::In, FlowPlace::Vendor);
         if ($ankhs > 0) {
             $cells[] = new PairRow('Ankhs bought', $ankhs);
         }
@@ -82,7 +82,7 @@ final readonly class Walks
     public function travel(): ?Module
     {
         $recalls = $this->spells->recall->casts;
-        $mounted = $this->rows->states()->sum(StateKind::Mount)->hours();
+        $mounted = $this->rows->states(StateKind::Mount)->sum(StateKind::Mount)->hours();
         if ($this->wolf->ms === 0 && $mounted === 0.0 && $recalls === 0) {
             return null;
         }

@@ -37,7 +37,7 @@ final readonly class Conjuring
 
     public static function of(ClassRows $rows, Spells $spells): self
     {
-        $items = $rows->items();
+        $items = $rows->items(...self::WATER, ...self::FOOD, ...self::GEMS);
         $water = $items->idsNamed(...self::WATER);
         $food = $items->idsNamed(...self::FOOD);
 

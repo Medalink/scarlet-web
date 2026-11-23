@@ -10,6 +10,7 @@ use App\Support\ClassPage\Row;
 use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** What the rogue does for the party: the fights it opened with a Sap, and the scouting spells. */
 final readonly class Party
@@ -35,7 +36,7 @@ final readonly class Party
         return new Module('Sap', [new Pair([
             new PairRow('Casts', $sap->casts),
             new PairRow('Fights opened with one', $opened),
-            new PairRow('Of all fights', Casts::share($opened, $this->rows->states()->fights()->starts), Unit::Percent),
+            new PairRow('Of all fights', Casts::share($opened, $this->rows->states(StateKind::Fight)->fights()->starts), Unit::Percent),
         ])], Span::W5, icon: Casts::icon($sap));
     }
 

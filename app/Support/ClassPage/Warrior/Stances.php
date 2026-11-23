@@ -32,10 +32,10 @@ final readonly class Stances
     {
         $held = [];
         foreach (Spells::STANCES as $name) {
-            $held[$name] = $rows->states()->sum(StateKind::OwnBuff, $name);
+            $held[$name] = $rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, $name);
         }
 
-        return new self($rows, $spells, $held, $rows->states()->fights()->ms);
+        return new self($rows, $spells, $held, $rows->states(StateKind::Fight)->fights()->ms);
     }
 
     /** The stance held longest, as the word before "Stance", or null when none was held. */
@@ -78,7 +78,7 @@ final readonly class Stances
         if ($shown < 99.5) {
             $parts[] = new SplitPart('No stance '.Unit::Count->say(100 - $shown).'%', 100 - $shown, new Hue(self::NONE));
         }
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
 
         return new Module('Stance', [
             new Split($parts),
@@ -92,7 +92,7 @@ final readonly class Stances
 
     public function stack(): ?Module
     {
-        $fights = $this->rows->states()->fights();
+        $fights = $this->rows->states(StateKind::Fight)->fights();
         $series = [];
         foreach (self::HUES as $name => $hue) {
             $series[] = new Series($name, new Hue($hue));

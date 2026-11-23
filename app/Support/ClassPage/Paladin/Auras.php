@@ -32,7 +32,7 @@ final readonly class Auras
     {
         $states = [];
         foreach (self::GROUPS as $label => [$patterns]) {
-            $sum = $this->rows->states()->sum(StateKind::OwnBuff, ...$patterns);
+            $sum = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, ...$patterns);
             if ($sum->ms > 0) {
                 $states[$label] = $sum;
             }

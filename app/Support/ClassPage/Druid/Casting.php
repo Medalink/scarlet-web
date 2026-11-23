@@ -92,11 +92,11 @@ final readonly class Casting
 
     private function prowl(): ?Module
     {
-        $prowling = $this->rows->states()->sum(StateKind::OwnBuff, 'Prowl');
+        $prowling = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, 'Prowl');
         if ($prowling->ms === 0 && $this->spells->prowl->casts === 0) {
             return null;
         }
-        $auras = array_map(fn ($state): int => $state->refId, $this->rows->states()->of(StateKind::OwnBuff, 'Prowl'));
+        $auras = array_map(fn ($state): int => $state->refId, $this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, 'Prowl'));
         $from = [];
         foreach ($auras === [] ? [] : $this->rows->tallies()->of(Tally::CastUnder) as $row) {
             if (in_array($row->a, $auras, true) && ! in_array($row->b, $this->spells->prowl->ids(), true)) {

@@ -37,7 +37,7 @@ final readonly class Blessings
     /** The Symbols of Kings that left the bags. */
     public function symbols(): int
     {
-        return $this->rows->items()->named('Symbol of Kings')->out();
+        return $this->rows->items('Symbol of Kings')->named('Symbol of Kings')->out();
     }
 
     public function module(): ?Module

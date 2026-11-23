@@ -17,12 +17,17 @@ use App\Support\ClassPage\Paladin\Spells;
 use App\Support\ClassPage\Paladin\Standings;
 use App\Support\ClassPage\Paladin\Talents;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The paladin's page: the seal to the judgement, the aura, blessings, the undead, the bubble, healing and control, the talents the build holds and what the paladin does for the party. */
 final class PaladinBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads. */
+    private const array STATES = [StateKind::Fight, StateKind::Mount, StateKind::OwnBuff];
+
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
         $spells = Spells::of($rows->spells());
         $seals = new Seals($rows, $spells);
         $blessings = new Blessings($rows, $spells);

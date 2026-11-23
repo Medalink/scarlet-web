@@ -12,6 +12,7 @@ use App\Support\ClassPage\SplitPart;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
 use App\Support\ClassRows\SpellTotals;
+use App\Support\StateKind;
 
 /** What the druid does for others and the form it fights in: Rebirth, Innervate and the share of fight time in each form. */
 final readonly class Party
@@ -57,7 +58,7 @@ final readonly class Party
 
     private function role(): ?Module
     {
-        $fights = $this->rows->states()->fights()->ms;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->ms;
         $in = $this->forms->fightMs();
         $whole = max($fights, $in);
         if ($in === 0 || $whole === 0) {

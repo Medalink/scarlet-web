@@ -5,6 +5,7 @@ namespace App\Support\ClassPage\Paladin;
 use App\Support\ClassPage\StandingFigure;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The six figures a paladin is compared on, each a rate or a share a stranger's page computes the same way. */
 final readonly class Standings
@@ -18,7 +19,7 @@ final readonly class Standings
     {
         $played = $this->rows->playedMs();
         $hours = $played / self::HOUR_MS;
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
 
         return [
             new StandingFigure('seals_judged', 'Seals judged', $this->seals->judgedShare(), Unit::Percent, Spells::icon($this->spells->judgement)),

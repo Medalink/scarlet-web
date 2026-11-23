@@ -16,12 +16,17 @@ use App\Support\ClassPage\Row;
 use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The druid's page: the form worn by level, the shifts between forms, what each form did, control, the talents the build holds and Rebirth and Innervate. */
 final class DruidBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads. */
+    private const array STATES = [StateKind::Fight, StateKind::Mount, StateKind::OthersBuff, StateKind::OwnBuff];
+
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
         $spells = Spells::of($rows->spells());
         $forms = Forms::of($rows);
         $casting = new Casting($rows, $spells);

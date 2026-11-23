@@ -86,8 +86,8 @@ final readonly class Talents
     private function holyShield(): array
     {
         $casts = $this->rows->spells()->sum('Holy Shield', 'Holy Shield')->casts;
-        $state = $this->rows->states()->sum(StateKind::OwnBuff, 'Holy Shield');
-        $fights = $this->rows->states()->fights()->ms;
+        $state = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, 'Holy Shield');
+        $fights = $this->rows->states(StateKind::Fight)->fights()->ms;
         $up = $fights === 0 ? 0 : min(100, $state->fightMs / $fights * 100);
 
         return [
@@ -118,7 +118,7 @@ final readonly class Talents
 
     private function perFight(int $casts): float
     {
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
 
         return $fights === 0 ? 0 : $casts / $fights;
     }

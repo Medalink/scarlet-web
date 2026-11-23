@@ -23,7 +23,7 @@ final readonly class Stealth
 
     public static function of(ClassRows $rows): self
     {
-        $states = [...$rows->states()->of(StateKind::OwnBuff, Spells::STEALTH), ...$rows->states()->of(StateKind::OthersBuff, Spells::STEALTH)];
+        $states = [...$rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, Spells::STEALTH), ...$rows->states(StateKind::OthersBuff)->of(StateKind::OthersBuff, Spells::STEALTH)];
         usort($states, fn (StateTotals $a, StateTotals $b): int => $b->ms <=> $a->ms);
         $ms = array_sum(array_map(fn (StateTotals $state): int => $state->ms, $states));
         $opened = $openedMs = 0;
@@ -32,7 +32,7 @@ final readonly class Stealth
             $openedMs += $row->sum;
         }
 
-        return new self($ms, $states === [] ? null : Icon::spell($states[0]->refId), $opened, $openedMs, $rows->states()->fights()->starts, $rows->playedMs());
+        return new self($ms, $states === [] ? null : Icon::spell($states[0]->refId), $opened, $openedMs, $rows->states(StateKind::Fight)->fights()->starts, $rows->playedMs());
     }
 
     public function hours(): float

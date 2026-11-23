@@ -19,12 +19,17 @@ use App\Support\ClassPage\Priest\Upkeep;
 use App\Support\ClassPage\Row;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The priest's page: the healing and the shields, the shadow side and the wand, the control and the buffs, the talents the build holds and what the priest does for the party. */
 final class PriestBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads. */
+    private const array STATES = [StateKind::AutoRepeat, StateKind::Fight, StateKind::OthersBuff, StateKind::OwnBuff];
+
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
         $spells = Spells::of($rows->spells());
         $healing = new Healing($rows, $spells);
         $shadow = new Shadow($rows);

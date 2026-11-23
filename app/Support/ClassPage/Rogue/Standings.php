@@ -6,6 +6,7 @@ use App\Support\ClassPage\Casts;
 use App\Support\ClassPage\StandingFigure;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The six figures a rogue is compared on, each a rate or a share so characters of different play time compare fairly. */
 final readonly class Standings
@@ -16,7 +17,7 @@ final readonly class Standings
     public function all(): array
     {
         $played = $this->rows->playedMs();
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
 
         return [
             new StandingFigure('opened_stealth', 'Fights opened from stealth', $this->stealth->openedShare(), Unit::Percent, $this->stealth->icon),

@@ -15,6 +15,7 @@ use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
 use App\Support\ClassRows\SpellTotals;
 use App\Support\ClassRows\Tally;
+use App\Support\StateKind;
 
 /** The modules of the hunter talents the latest build holds: Bestial Wrath, Intimidation, Aimed Shot, Scatter Shot, Deterrence and Counterattack. */
 final readonly class Talents
@@ -91,7 +92,7 @@ final readonly class Talents
 
     private function perFight(int $casts): float
     {
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
 
         return $fights === 0 ? 0 : $casts / $fights;
     }

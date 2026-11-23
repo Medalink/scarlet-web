@@ -46,7 +46,7 @@ final readonly class Totems
     public static function of(ClassRows $rows): self
     {
         $by = [];
-        foreach ($rows->states()->of(StateKind::Totem) as $state) {
+        foreach ($rows->states(StateKind::Totem)->of(StateKind::Totem) as $state) {
             $slot = (int) $state->extra;
             if (! isset(Spells::ELEMENTS[$slot]) || $state->name === '') {
                 continue;

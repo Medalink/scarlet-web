@@ -17,12 +17,17 @@ use App\Support\ClassPage\Hunter\Standings;
 use App\Support\ClassPage\Hunter\Talents;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The hunter's page: the ammo and the pet, the aspect and the shots, traps, Feign Death and tracking, the talents the build holds and what the hunter does for the party. */
 final class HunterBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads. */
+    private const array STATES = [StateKind::AutoRepeat, StateKind::Fight, StateKind::OwnBuff, StateKind::Pet, StateKind::PetHappiness, StateKind::Tracking];
+
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
         $spells = Spells::of($rows->spells());
         $pets = new Pets($rows, $spells);
         $ammo = new Ammo($rows);

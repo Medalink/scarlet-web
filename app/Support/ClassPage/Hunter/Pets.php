@@ -46,7 +46,7 @@ final readonly class Pets
 
     public function __construct(private ClassRows $rows, private Spells $spells)
     {
-        $this->out = array_values(array_filter($rows->states()->of(StateKind::Pet), fn (StateTotals $pet): bool => $pet->name !== '' || $pet->extra !== ''));
+        $this->out = array_values(array_filter($rows->states(StateKind::Pet)->of(StateKind::Pet), fn (StateTotals $pet): bool => $pet->name !== '' || $pet->extra !== ''));
         $by = $named = [];
         $longest = [];
         $other = 0;
@@ -102,7 +102,7 @@ final readonly class Pets
     {
         $ms = $this->ms();
         $happy = 0;
-        foreach ($this->rows->states()->of(StateKind::PetHappiness) as $state) {
+        foreach ($this->rows->states(StateKind::PetHappiness)->of(StateKind::PetHappiness) as $state) {
             $happy += $state->refId === self::HAPPY ? $state->ms : 0;
         }
 

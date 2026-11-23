@@ -34,6 +34,9 @@ final class ClassRows
     /** @var list<array{patterns: list<string>, flows: ItemFlows}> */
     private array $items = [];
 
+    /** @var array<int, ItemFlows> */
+    private array $itemClasses = [];
+
     private ?Tallies $tallies = null;
 
     private ?Meters $meters = null;
@@ -97,6 +100,12 @@ final class ClassRows
         $this->items[] = ['patterns' => $wanted, 'flows' => $flows];
 
         return $flows;
+    }
+
+    /** The item flows of the items the client gave one item class (`II` rows): ammo is class 6. */
+    public function itemsOfClass(int $class): ItemFlows
+    {
+        return $this->itemClasses[$class] ??= $this->readItems([], $class);
     }
 
     public function tallies(): Tallies
@@ -186,12 +195,6 @@ final class ClassRows
         return (int) $this->counted('kills')->where('player', false)->where('credit', 0)->count();
     }
 
-    /** Deaths of the character over the sessions that count. */
-    public function deaths(): int
-    {
-        return (int) $this->counted('deaths')->count();
-    }
-
     /**
      * The item class and subclass the client gave each item (`II`), for the ids that have them.
      *
@@ -262,10 +265,13 @@ final class ClassRows
     }
 
     /** @param  list<string>  $patterns */
-    private function readItems(array $patterns): ItemFlows
+    private function readItems(array $patterns, ?int $itemClass = null): ItemFlows
     {
         $query = $this->counted('item_flows')->groupBy('item_id', 'dir', 'place', 'spell_id')
             ->selectRaw('item_id, dir, place, spell_id, least(coalesce(sum(quantity), 0), ?) as quantity', [self::CAP]);
+        if ($itemClass !== null) {
+            $query->whereIn('item_id', fn (Builder $kind): Builder => $kind->select('item_id')->from('items')->where('class_id', $itemClass));
+        }
         if ($patterns !== []) {
             $query->whereIn('item_id', function (Builder $names) use ($patterns): void {
                 $names->select('id')->from('names')->where('kind', NameKind::Item->value)->where(function (Builder $named) use ($patterns): void {

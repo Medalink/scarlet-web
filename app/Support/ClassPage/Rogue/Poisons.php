@@ -25,15 +25,15 @@ final readonly class Poisons
 
     public static function of(ClassRows $rows): self
     {
-        $items = $rows->items();
+        $items = $rows->items(...array_merge(...array_map(self::patterns(...), self::NAMES)));
         $by = [];
         foreach (self::NAMES as $name) {
             $best = 0;
             $most = -1;
             $applied = $crafted = 0;
-            foreach ($items->idsNamed($name, $name.' I*', $name.' V*') as $id) {
+            foreach ($items->idsNamed(...self::patterns($name)) as $id) {
                 $flow = $items->ofItems($id);
-                $out = $flow->sum(FlowDirection::Out, FlowPlace::Other);
+                $out = $flow->spent();
                 $applied += $out;
                 $crafted += $flow->sum(FlowDirection::In, FlowPlace::Profession);
                 if ($out > $most) {
@@ -48,6 +48,16 @@ final readonly class Poisons
         usort($by, fn (array $a, array $b): int => [$b['applied'], $a['name']] <=> [$a['applied'], $b['name']]);
 
         return new self($by);
+    }
+
+    /**
+     * The item names a poison of one name goes by: the bare name and its ranks.
+     *
+     * @return list<string>
+     */
+    private static function patterns(string $name): array
+    {
+        return [$name, $name.' I*', $name.' V*'];
     }
 
     public function applied(): int

@@ -25,8 +25,8 @@ final readonly class Party
 
     private function auras(): ?Module
     {
-        $trueshot = $this->rows->states()->sum(StateKind::OwnBuff, 'Trueshot Aura');
-        $pack = $this->rows->states()->sum(StateKind::OwnBuff, 'Aspect of the Pack');
+        $trueshot = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, 'Trueshot Aura');
+        $pack = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, 'Aspect of the Pack');
         if ($trueshot->ms === 0 && $pack->ms === 0) {
             return null;
         }

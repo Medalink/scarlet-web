@@ -92,7 +92,7 @@ final readonly class Talents
     private function block(): array
     {
         $block = $this->spells->iceBlock;
-        $auras = array_map(fn (StateTotals $state): int => $state->refId, $this->rows->states()->of(StateKind::OwnBuff, $block->name));
+        $auras = array_map(fn (StateTotals $state): int => $state->refId, $this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, $block->name));
         $deaths = $auras === [] ? 0 : $this->rows->tallies()->count(Tally::DeathAfterAura, $auras, range(0, self::DEATH_SECONDS - 1));
         $lived = max(0, $block->casts - $deaths);
 
@@ -180,7 +180,7 @@ final readonly class Talents
     /** @return list<int> the ids of the aura a talent's spell puts on the mage */
     private function auras(SpellTotals $spell): array
     {
-        return array_map(fn (StateTotals $state): int => $state->refId, $this->rows->states()->of(StateKind::OwnBuff, $spell->name));
+        return array_map(fn (StateTotals $state): int => $state->refId, $this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, $spell->name));
     }
 
     /**

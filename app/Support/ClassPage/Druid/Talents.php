@@ -55,7 +55,7 @@ final readonly class Talents
     private function charge(): array
     {
         $charge = $this->spells->feralCharge;
-        $fights = $this->rows->states()->fights()->starts;
+        $fights = $this->rows->states(StateKind::Fight)->fights()->starts;
         $opened = $charge->ids() === [] ? 0 : min($fights, $this->rows->tallies()->count(Tally::FightFirst, $charge->ids()));
 
         return [
@@ -87,7 +87,7 @@ final readonly class Talents
     /** @return array{blocks: list<Block>, note: string|null} */
     private function pack(): array
     {
-        $pack = $this->rows->states()->sum(StateKind::OwnBuff, 'Leader of the Pack');
+        $pack = $this->rows->states(StateKind::OwnBuff)->sum(StateKind::OwnBuff, 'Leader of the Pack');
         $feral = $this->forms->ms('bear') + $this->forms->ms('cat');
 
         return [
@@ -156,13 +156,13 @@ final readonly class Talents
     /** @return list<StateTotals> the Clearcasting auras Omen of Clarity puts on the druid, whoever the client names as their source */
     private function clearcasting(): array
     {
-        return [...$this->rows->states()->of(StateKind::OwnBuff, 'Clearcasting'), ...$this->rows->states()->of(StateKind::OthersBuff, 'Clearcasting')];
+        return [...$this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, 'Clearcasting'), ...$this->rows->states(StateKind::OthersBuff)->of(StateKind::OthersBuff, 'Clearcasting')];
     }
 
     /** @return list<StateTotals> */
     private function auras(SpellTotals $spell): array
     {
-        return $this->rows->states()->of(StateKind::OwnBuff, $spell->name);
+        return $this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, $spell->name);
     }
 
     /**

@@ -19,12 +19,17 @@ use App\Support\ClassPage\Warrior\Stances;
 use App\Support\ClassPage\Warrior\Standings;
 use App\Support\ClassPage\Warrior\Talents;
 use App\Support\ClassRows\ClassRows;
+use App\Support\StateKind;
 
 /** The warrior's page: damage dealt and taken, stances, openers, attacks and Execute, shouts, weapons, the talents the build holds and what the warrior does for the party. */
 final class WarriorBuilder implements ClassBuilder
 {
+    /** The state kinds the page reads. */
+    private const array STATES = [StateKind::Fight, StateKind::MainHand, StateKind::OffHand, StateKind::OwnBuff];
+
     public function handle(ClassRows $rows, ClassFacts $facts): ClassParts
     {
+        $rows->states(...self::STATES);
         $spells = Spells::of($rows->spells());
         $stances = Stances::of($rows, $spells);
         $attacks = new Attacks($rows, $spells);
