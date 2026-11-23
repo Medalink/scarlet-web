@@ -41,23 +41,6 @@ class WorldCounts
             Feat::Runner->value => (int) ($moved->run ?? 0),
             Feat::Rider->value => (int) ($moved->ride ?? 0),
             Feat::Stroller->value => (int) ($moved->stroll ?? 0),
-            Feat::Trailblazer->value => $this->longestSessionYards($id),
-            Feat::FrequentFlyer->value => DB::table('flights')->where('character_id', $id)->where('counted', true)->count(),
         ];
-    }
-
-    /** The most yards on foot, walking, mounted and swimming in one session. */
-    private function longestSessionYards(int $characterId): int
-    {
-        $modes = [MovementMode::Run->value, MovementMode::Walk->value, MovementMode::Mount->value, MovementMode::Swim->value];
-        $row = DB::selectOne(
-            'select coalesce(max(yards), 0) as best from (
-                select sum(yards) as yards from movement_stretches
-                where character_id = ? and counted and mode in (?, ?, ?, ?) group by session_start
-            ) as sessions',
-            [$characterId, ...$modes],
-        );
-
-        return (int) ($row->best ?? 0);
     }
 }

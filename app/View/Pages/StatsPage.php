@@ -30,10 +30,7 @@ final class StatsPage
         $characters = $totals['characters'];
         $top = self::top($r);
 
-        $seconds = $totals['played_seconds'];
-
         return [
-            'headline' => $seconds === null || $seconds < 3600 ? null : number_format((int) round($seconds / 3600)).' hours of WoW Forever'.($scope->ruleset === null ? '' : ', '.$scope->ruleset->label()),
             'title' => $scope->ruleset?->label() ?? ($scope->server->warMode() === null ? 'All characters' : 'All characters, '.$scope->server->label()),
             'sub' => self::sub($totals, $r['coverage']),
             'game' => StatsGame::data($r, $levels, $reached, $target),

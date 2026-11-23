@@ -1,0 +1,10 @@
+@media (max-width: 980px) { .nav .app { display: none; } }
+@media (max-width: 720px) {
+  .top { position: static; }
+  .top-in { height: auto; flex-wrap: wrap; gap: 0.5rem 1rem; padding-block: 0.8rem 0.5rem; }
+  .acct { margin-left: auto; }
+  .nav { order: 3; flex: 0 0 100%; overflow-x: auto; scrollbar-width: none; }
+  .nav-more { display: none; }
+  .hero, .ch-head { padding-top: 0; }
+}
+@media (max-width: 560px) { .nav .demo { display: none; } .acct { padding: 0.4rem 0.6rem; } }

@@ -1,18 +1,18 @@
 <div>
 @if ($installs === [])
-  <p class="sc-note mt-4">No app is linked. Open Scarlet on your PC and choose Link to my account. The app is on the <a href="/download">download page</a>.</p>
+  <x-note>No app is linked. Open Scarlet on your PC and choose Link to my account. The app is on the <a href="/download">download page</a>.</x-note>
 @else
-  <div class="sc-set">
+  <x-rows>
 @foreach ($installs as $install)
-    <x-sc.set-row :title="($install->name ?? 'Scarlet app').', linked '.($install->linked_at ?? $install->created_at)->format('j M Y')" :body="($install->last_seen_at ? 'Last upload '.$install->last_seen_at->diffForHumans() : 'Nothing uploaded yet').' · '.\App\View\Format::count($install->characters_count, 'character')" wire:key="i-{{ $install->id }}">
+    <x-row :title="($install->name ?? 'Scarlet app').', linked '.($install->linked_at ?? $install->created_at)->format('j M Y')" :body="($install->last_seen_at ? 'Last upload '.$install->last_seen_at->diffForHumans() : 'Nothing uploaded yet').' · '.\App\View\Format::count($install->characters_count, 'character')" wire:key="i-{{ $install->id }}">
 @if ($install->isRevoked())
-      <span class="sc-state">Revoked</span>
+      <x-state>Revoked</x-state>
 @else
-      <button type="button" class="sc-btn danger small" wire:click="revoke('{{ $install->id }}')" wire:confirm="Revoke this install? It can no longer upload. What it uploaded stays.">Revoke</button>
+      <x-btn kind="danger" wire:click="revoke('{{ $install->id }}')" wire:confirm="Revoke this install? It can no longer upload. What it uploaded stays.">Revoke</x-btn>
 @endif
-    </x-sc.set-row>
+    </x-row>
 @endforeach
-  </div>
-  <p class="sc-note mt-3">A revoked install can no longer upload. What it uploaded stays until you remove it.</p>
+  </x-rows>
+  <x-note>A revoked install can no longer upload. What it uploaded stays until you remove it.</x-note>
 @endif
 </div>

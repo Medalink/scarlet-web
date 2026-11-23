@@ -1321,7 +1321,7 @@ Versioned by path: `/api/v1`. A breaking change is `/api/v2`; fields are only ev
   `PUT|DELETE /upload/groups/{key}`, `DELETE /upload`.
 - **Public**, read-only JSON, no sign-in: `GET /public/stats`, `/public/rulesets`, `/public/rulesets/{id}` and its
   series (`/levels`, `/xp`, `/deaths`, `/dungeons`, `/professions`, `/gold`, `/activity`), `/public/leaderboards/{board}`,
-  `/public/camps`, `/public/professions/{slug}`, `/public/search?q=`, `/public/characters/{name}` and its series and sessions, `/public/feats` and `/public/feats/{key}`, `/public/creatures/{id}`, `/public/items/{id}`,
+  `/public/camps`, `/public/professions/{slug}`, `/public/search?q=`, `/public/characters/{name}` and its series, `/public/creatures/{id}`, `/public/items/{id}`,
   `/public/spells/{id}`, `/public/encounters/{id}`, `/public/zones/{id}`, `/public/quests/{id}`, `/public/map/heat`. `Access-Control-Allow-Origin: *`,
   `Cache-Control: public, max-age=300` with an `ETag`, cursor pagination (`?cursor=`, `next_cursor` in the answer),
   60 requests a minute per IP, 600 with a free API key (a Sanctum token made on the account page, sent as a bearer
@@ -1399,7 +1399,7 @@ The JSON answers the pages fetch (`/api/v1/public/*` and a character's heat endp
 
 The stats pages show the same numbers as art and as a game (owner, 2026-11-21: "more fun, more gamified and more
 visual", "better art and better backgrounds"). The look is still the survey sheet; this layer adds what a survey
-sheet has and the pages lacked. `resources/css/hubs.css` holds it, on the Scarlet tokens, and loads with `tailwind.css` on every page.
+sheet has and the pages lacked. `resources/css/game.css` holds it and loads after `app.css` on every app page.
 
 - **Contour sheet.** `tools/art/contours.mjs` draws `public/art/contours.svg`: isolines of a seeded noise field at the
   sheet's two line alphas, every fifth line heavier, crosses on the summits. The same seed writes the same bytes. It
@@ -1410,9 +1410,8 @@ sheet has and the pages lacked. `resources/css/hubs.css` holds it, on the Scarle
   hidden from assistive technology. The interactive map stays in "Where characters go".
 - **Icons.** `<x-icon name>` is one authored set on a 24-unit grid with one round stroke, coloured by its text.
   No emoji and no icon font.
-- **Crest materials and tier colours.** A crest is steel, pewter and parchment, with gold at Scarlet only. The tier's colour
-  is the enamel field, the inlay, the gem and the banner's band. `resources/crests/kit.json` is the one table (`artisan crests:kit` writes `App\View\Sc\CrestKit` and the `--tier-N` tokens from it);
-  each crest's gradients take ids unique to that crest. A character's
+- **Metals and class colours.** Rank and tier use copper, silver, gold, scarlet and, above scarlet, legend: a scarlet
+  seal ringed in gold. A character's
   name carries its class in the game's class colour (`data-class` sets `--class`). Horde and Alliance have one
   colour each. Colour never carries a fact alone: a tier is also named, a class also written.
 - **Motion.** The tally counts up once when a page opens. Bars on a rule, rank tracks, plinths and flags grow in as
@@ -1507,43 +1506,30 @@ the deploy is announced; a row inserted later starts at 0, so a new character's 
 `POST /installs/me/feats/seen` and `MarkOwnedFeatsSeen` call it. `GET /public/characters/{name}` carries neither
 `seen_tier` nor `new`.
 
-**Account crests.** A general feat is also counted across the characters of an account (`Feat::account()`: `sum` adds the
-characters' counts, `max` takes the highest and names its holder, `none` for class, talent-tree and role feats; 39, 33
-and 169 feats). Its account tiers read the feat's `accountThresholds()`: the character's, times 1, 2, 2, 2, 2 for a `sum`
-feat (Summit is 20, 60, 120, 180 and 300 levels), the character's for a `max` feat. `ShowAccountFeats` computes them on
-every read from `character_feats`, with no stored account row: for a signed-in account over `Character::ownedByAccount` (the
-characters with its `account_id` plus those its installs sent), for an install over `Character::ownedBy`. The gold feats follow the economy switch:
-on the site the account row shows them when any of the account's characters shows its economy, and the install API shows
-them. `/feats` signed in and `/account` open on an `Account` row of crests, earned first, then the started ones; a feat page
-shows the account ladder beside the character's when the feat has one. The install API's `account` block carries the
-cards and the account feats not yet shown, and `install_account_feats` (install, feat, seen tier) records what the app showed.
-
 **Feat toasts.** The signed-in owner of a character sees a toast on that character's page for each new feat, in the
 order of `new`. The stack is part of the owner's Livewire feat wall, so a visitor, a signed-out viewer and `?as=visitor`
 get no toast markup and no script work. About 600 ms after the page has loaded, and only while the tab is visible
 (otherwise when it becomes visible), the toasts play one at a time at the bottom right, above the page and above an
-open feats dialog. Each says "Feat earned" or "Upgraded from Rare", the feat name and its new tier, stays 4.2 s,
+open feats dialog. Each says "Feat earned" or "Upgraded from Silver", the feat name and its new tier, stays 4.2 s,
 pauses while hovered or focused, and has a close button; the next follows 300 ms after one leaves. At most five play.
 When more are new, a sixth toast says "N more feats" with a "View all" button that opens the feats dialog. Showing a
 toast marks it on the server (`FeatWall::seen`, through `MarkOwnedFeatsSeen`): the toast's feat and tier, or for the
 "more feats" toast every feat beyond the fifth. A toast that never showed is not marked, one that was closed early
 stays marked, and a reload after the sequence shows nothing. A pin toggle re-renders the section but not the stack,
-so it does not restart or repeat the sequence. The crest is drawn in the new tier's colours without the
-piece the tier adds. At 120 ms that piece attaches (the shield scales in, the crown drops, the banner rises, the wings,
-spurs or laurels spread, the rays scale up), a burst of light grows behind it (two at Scarlet, 260 ms apart), a
-white copy of the piece flashes at 400 ms and the ghost of the next piece fades in at 900 ms. With reduced motion there
-is only a 150 ms fade and the crest is drawn complete.
+so it does not restart or repeat the sequence. The seal stamps in (scale 1.35 to 1, a ring in the tier's colour, one
+light sweep; an upgrade starts in the previous tier's colours and changes at the stamp; Legend rings twice). With
+reduced motion there is no movement, scale, ring or sweep, only a 150 ms fade, on the same timings.
 
-A feat is one tier of one ladder. Uncommon comes in the first session or two. Each later tier takes several times the
-play of the one before: rare about 50 hours, epic about 200, legendary about 500 and scarlet, the top tier, about
+A feat is one tier of one ladder. Copper comes in the first session or two. Each later tier takes several times the
+play of the one before: silver about 50 hours, gold about 200, scarlet about 500 and legend, the top tier, about
 2,500 (owner, 2026-11-21: "much much much harder", "bronze can be easy to get people interested but then things get
-slow", "make legends larger, go 150k" for kills with legendary at 30,000). The thresholds were sized from the rates of
+slow", "make legends larger, go 150k" for kills with scarlet at 30,000). The thresholds were sized from the rates of
 one character that plays a lot (53 kills, 2.7 quests and 0.29 world widths an hour), so they are a first setting.
-Summit, Unbroken, Artisan, Explorer, Cartographer, Questing and Tracker stop where the game does: scarlet is the level
-cap, five professions at 300, or most of the zones, areas, quests and rares of the world. No scarlet asks for more than
+Summit, Unbroken, Artisan, Explorer, Cartographer, Questing and Tracker stop where the game does: legend is the level
+cap, five professions at 300, or most of the zones, areas, quests and rares of the world. No legend asks for more than
 one character can reach (owner, 2026-11-22: "capped to possibility"). Cartographer counts the discoveries that give experience: the client's
 AreaTable has about 585 such areas in the zones of the two continents, and a discovery gives none at the level cap or
-far above the area's level, so scarlet at 500 asks for the areas of both factions' zones found while leveling. Artisan and Master count
+far above the area's level, so legend at 500 asks for the areas of both factions' zones found while leveling. Artisan and Master count
 Cooking, First Aid, Fishing and the two primary professions with the highest ranks, each at most 300, and leave out
 Lockpicking and Poisons. `skill_ups` keeps the highest rank of a profession the character dropped, so a dropped
 primary can stand in for a held one, but the count never passes what two primaries reach. No feat counts yards flown: the realms have no flight a player
@@ -1551,7 +1537,7 @@ steers (taxis are not movement stretches), so no character could earn one. Delve
 sized for play given to them, such as 130 hours of fishing. The summary counts the feats held, and its counts by
 tier add up to them.
 
-| Feat | Counts | Uncommon | Rare | Epic | Legendary | Scarlet |
+| Feat | Counts | Copper | Silver | Gold | Scarlet | Legend |
 | --- | --- | --- | --- | --- | --- | --- |
 | Summit | levels reached | 10 | 25 | 45 | 55 | 60 |
 | Veteran | hours played | 2 | 50 | 200 | 500 | 2,500 |
@@ -1637,15 +1623,10 @@ class, whichever spec that session played. The role feats count only the session
 their hours, meters, runs and kills come from those sessions alone. Casts match spells by their English name in the
 `names` table; `feats:spells` lists, per cast rule, the spell names that table does not hold, so a spell the server
 renamed shows up. `feats:proof <tables>` checks every rule against the client's own spell tables: which spells the
-client lets each class learn and cast, and the fastest the scarlet tier could be earned from them. [FEAT-PROOF.md](FEAT-PROOF.md)
+client lets each class learn and cast, and the fastest the legend tier could be earned from them. [FEAT-PROOF.md](FEAT-PROOF.md)
 is its output.
 
-The tables on this page describe catalog version 1, 258 feats. Version 2 has 241: 22 feats are retired into others, five
-are added (Streak, Trailblazer, Frequent Flyer, Companion, Fireside), four are renamed and 195 thresholds are lower. Its
-one source is `Feat`, `FeatRows`, `FeatRules`, `FeatMeta` and `FeatRetired` in `app/Support`; `php artisan feats:export`
-writes it as `resources/feats/feats.json`, the file the app and the addon generate their catalogs from.
-
-| Feat | For | Counts | Uncommon | Rare | Epic | Legendary | Scarlet |
+| Feat | For | Counts | Copper | Silver | Gold | Scarlet | Legend |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Battle Cry | Warrior | casts of Battle Shout | 10 | 400 | 2,000 | 6,000 | 25,000 |
 | Charger | Warrior | casts of Charge, Intercept | 10 | 400 | 2,000 | 6,000 | 25,000 |
@@ -1843,10 +1824,6 @@ value with `Feat::tier()`, so a threshold change needs no recount. Values that a
 rounded down before they are stored, and Wayfarer down to one decimal, so a value never shows a tier it has
 not reached. The emote feats leave out `Emote::READ`, as the emote rankings do. The character page and the API read the stored rows. `CountHolders` counts, for every feat and tier,
 the characters whose stored value reaches it (one query, cached 15 minutes), and `ShowCharacterFeats` orders by it.
-
-**Feat events, shares and score.** `RecordFeatTiers` wraps the count in `RefreshCharacterFeats`: it reads the tier each stored feat holds, runs `StoreCharacterFeats`, reads the tiers again, writes one `feat_events` row for each feat that now holds a higher tier (`tier`, `from_tier`, the `session_start` of the newest session decoded since the previous count, null when none was, and `at`), and sets `characters.feat_score`, the tiers held over the general feats that are not gold feats (`Feat::scores()`, 68 feats, 340 at most). Only the refresh calls it, so the catalog migration, which stores counts through `StoreCharacterFeats` alone, writes no event, and a threshold change writes none because both reads use the thresholds of the day. A character's score fills when it is next counted: after a decode or at the daily `feats:refresh`. `feats:shares` (daily, 04:50) rewrites `feat_shares`: for each feat and tier, `holders` of the `of` characters with a stored count of the feat and at least 20 recorded hours (`--hours` changes it) that hold the tier or higher, and `share` as a percent to two places, then deletes the `feat_events` older than `scarlet.feats.event_days` (90) days; `feat_events_at_index` serves that delete and the hub's week. The board `feat-score` lists public characters with a score above 0, highest first.
-
-**Feat pages.** `/feats` (`FeatsController`, `ShowFeatsHub`, `FeatsPage`) shows the catalog to a visitor: every feat at tier 0 with the share holding Copper, a family chip row, a name search and a sticky panel with the tier ladder (`FeatLadder`, `x-sc.ladder`) of the feat in `?feat=`. A signed-in owner with a counted character gets `?scope=compare` (default: the character's feats with the share at the tier held, three feats closest to the next tier, the ring, tier tiles and feat score), `mine` (the same without shares) or `everyone`; `?as=` picks another of their characters. Only `everyone` and the visitor view are indexed. `/feats/{key}` (`FeatController`, `ShowFeatPage`) is the public page of one feat: the ladder with shares, the top 20 characters, the last 10 tiers reached and the collection it belongs to; it takes the viewer's count from the same character choice. `/design/feats` draws the hub from `FeatsDemo` over the real catalog. Both pages are in the sitemap and in site search (`SitePages`). Shares hide below 20 characters, as on the public API.
 
 ### Class pages
 
@@ -2150,7 +2127,7 @@ on the right, each ribbon as wide as its count (soul shards, ammo, conjured wate
 pool, pairs from a left list to a right list (opener to finisher, the form left to the form entered, a seal to what
 became of it). A *mirror*: two series by level from one axis, one up and one down (health for mana, healing against
 damage). A *stack*: shares of time by level (the demon out, the stance, the form, the aura). A *bag*: the bag's slots
-with the item in the ones that hold it. The rest are the site's `rank`, `pair`, `tally`, `rules` and feat crests.
+with the item in the ones that hold it. The rest are the site's `rank`, `pair`, `tally`, `rules` and feat seals.
 
 **The nine pages.** Spell and item names are the client's own for build 1.60.1.71037, which differ from the old
 game's in places (`Bane of Agony`, `Subjugate Demon`); a page prints the name the client gives for the id.

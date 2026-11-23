@@ -2,7 +2,7 @@
     use App\View\Design\Gallery;
     $f = Gallery::filters();
 @endphp
-<x-layouts.sc title="Marsh Stalker: kills, deaths and drops" current="search" :base="Gallery::BASE">
+<x-layouts.app title="Marsh Stalker: kills, deaths and drops" current="search" :base="Gallery::BASE">
 <div class="wrap">
   <x-page-head title="Marsh Stalker">
     <x-slot:sub>Level 22 to 24 beast (crocolisk), normal. Seen in <a href="{{ Gallery::url('zone') }}">Saltmarsh Reach</a>.</x-slot:sub>
@@ -27,4 +27,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

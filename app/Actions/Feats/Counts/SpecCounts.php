@@ -47,6 +47,9 @@ class SpecCounts
             $rules[$feat] = match ($measure) {
                 FeatMeasure::Casts => $this->casts($scope instanceof Role ? $in : $sessions, $spellNames, $patterns),
                 FeatMeasure::Hours => intdiv($this->sum($in, fn (SpecSession $session): int => $session->playedMs), self::HOUR_MS),
+                FeatMeasure::Kills => $this->sum($in, fn (SpecSession $session): int => $session->kills),
+                FeatMeasure::Deaths => $this->sum($in, fn (SpecSession $session): int => $session->deaths),
+                FeatMeasure::PlayerKills => $this->sum($in, fn (SpecSession $session): int => $session->playerKills),
                 FeatMeasure::DungeonRuns => $this->sum($in, fn (SpecSession $session): int => $session->dungeonRuns),
                 FeatMeasure::DungeonBosses => $this->sum($in, fn (SpecSession $session): int => $session->dungeonBosses),
                 FeatMeasure::RaidBosses => $this->sum($in, fn (SpecSession $session): int => $session->raidBosses),
@@ -96,7 +99,7 @@ class SpecCounts
     {
         $id = (int) $character->id;
         $rows = DB::table('sessions')->where('character_id', $id)->where('counted', true)
-            ->select(['session_start', 'played_ms'])
+            ->selectRaw('session_start, played_ms, coalesce(kills, 0) as kills, coalesce(deaths, 0) as deaths')
             ->get()->keyBy('session_start');
         $trees = [];
         foreach (DB::table('talent_snapshots')->where('character_id', $id)->where('counted', true)
@@ -105,6 +108,9 @@ class SpecCounts
             $trees[(int) $row->session_start] = $row->spec_tab_id === null ? null : (int) $row->spec_tab_id;
         }
         $tabNames = $this->named(NameKind::TalentTab, array_values($trees));
+        $playerKills = DB::table('kills')->where('character_id', $id)->where('counted', true)->where('player', true)
+            ->groupBy('session_start')->selectRaw('session_start, count(*) as player_kills')
+            ->pluck('player_kills', 'session_start');
         $runs = DB::table('dungeon_runs')->where('character_id', $id)->where('counted', true)
             ->groupBy('session_start')
             ->selectRaw('session_start')
@@ -135,6 +141,9 @@ class SpecCounts
             $sessions[] = new SpecSession(
                 tree: $tab === null ? null : TalentTree::of($class, $tabNames[$tab] ?? ''),
                 playedMs: (int) $row->played_ms,
+                kills: (int) $row->kills,
+                deaths: (int) $row->deaths,
+                playerKills: (int) ($playerKills[$start] ?? 0),
                 dungeonRuns: $run === null ? 0 : (int) $run->runs,
                 dungeonBosses: $run === null ? 0 : (int) $run->bosses,
                 raidBosses: $run === null ? 0 : (int) $run->raid_bosses,

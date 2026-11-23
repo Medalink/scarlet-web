@@ -1,5 +1,5 @@
 @php($base = App\View\Design\Gallery::BASE)
-<x-layouts.sc title="Your Scarlet account" :signed-in="true" :base="$base">
+<x-layouts.app title="Your Scarlet account" :signed-in="true" :base="$base">
 <div class="wrap">
   <x-page-head title="Your account">
     <x-slot:sub>Signed in with Google. Scarlet stores the sign-in's id and nothing else about you: no email, no name.</x-slot:sub>
@@ -46,4 +46,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

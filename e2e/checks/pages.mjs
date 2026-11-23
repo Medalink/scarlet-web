@@ -1,32 +1,29 @@
 import crypto from "node:crypto";
 import { InstallClient } from "../client.mjs";
-import { NAME, PROBE, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool, rollupsRefreshed, sleep } from "../support.mjs";
+import { NAME, PROBE, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool, rollupsRefreshed } from "../support.mjs";
 
 const CONCURRENCY = 6;
 export const ERROR_PAGE = /Server Error|Whoops|Stack Trace|Illuminate\\|laravel-exceptions|Undefined (variable|array key)|Call to (undefined|a member)/i;
 export const heading = (text) => new RegExp(`<h1[^>]*>\\s*${text}`);
 
 const PAGES = [
-  { path: "/", shows: heading("(?:[\\d,]+ )?WoW Forever characters?, recorded by their players") },
-  { path: "/stats", shows: heading("(?:[\\d,]+ hours of WoW Forever|All characters)") },
+  { path: "/", shows: heading("Scarlet records what you do in WoW Forever") },
+  { path: "/demo", shows: heading("Maren Ashlow") },
+  { path: "/stats", shows: heading("All characters") },
   { path: "/loot", shows: heading("Loot") },
-  { path: "/loot?view=groups", shows: heading("Loot rules and group size") },
+  { path: "/loot/groups", shows: heading("Loot rules and group size") },
   { path: "/map", shows: heading("World map") },
   { path: "/camps", shows: heading("Camps") },
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
   { path: "/developers", shows: heading("Public API") },
-  { path: "/download", shows: heading("Scarlet for Windows") },
-  { path: "/leaderboards", shows: heading("\\d+ boards") },
+  { path: "/release-notes", shows: heading("Release notes") },
+  { path: "/download", shows: heading("Download the Scarlet app") },
+  { path: "/leaderboards", shows: heading("Leaderboards") },
   { path: "/leaderboards/most-quests", shows: heading("Most quests turned in") },
-  { path: "/leaderboards/feat-score", shows: heading("Highest feat score") },
-  { path: "/feats", shows: heading("241 feats, five tiers each") },
-  { path: "/feats/slayer", shows: heading("Slayer") },
   { path: "/talents", shows: heading("Talents") },
-  { path: "/stats/compare", shows: heading("Rulesets compared") },
-  { path: "/stats/unidentified", shows: heading("(?:[\\d,]+ hours of WoW Forever, )?Not identified") },
-  { path: "/professions", shows: heading("Twelve professions") },
   { path: "/rulesets", shows: heading("Rulesets compared") },
-  { path: "/rulesets/unidentified", shows: heading("(?:[\\d,]+ hours of WoW Forever, )?Not identified") },
+  { path: "/hardcore-deaths", shows: heading("Hardcore deaths") },
+  { path: "/rulesets/unidentified", shows: heading("Not identified") },
   { path: `/c/${NAME}`, shows: heading(SHOWN) },
   { path: `/c/${NAME}/heat`, shows: /^\{"data":/ },
   { path: "/creatures/113", shows: heading("Stonetusk Boar") },
@@ -59,45 +56,29 @@ export async function everyPageShowsItself(ctx) {
   failOn(problems, PAGES.length, "pages");
 }
 
-export async function oldAddressesRedirect(ctx) {
-  const moved = [
-    ["/demo", "/"],
-    ["/release-notes?v=1.0.0", "/download?v=1.0.0#release-notes"],
-    ["/loot/groups?source=c1", "/loot?source=c1&view=groups"],
-    ["/rulesets", "/stats/compare"],
-    ["/rulesets/unidentified", "/stats/unidentified"],
-    ["/hardcore-deaths", /^\/stats(\/[a-z0-9-]+#deaths)?$/],
-    ["/account/camps?ruleset=x", "/camps?ruleset=x&scope=mine"],
-    ["/account/map", "/map?scope=mine"],
-    ["/account/map/trails", "/map/trails?scope=mine"],
-    ["/account/characters", "/account"],
-    ["/account/professions", "/professions?scope=mine"],
-    ["/account/professions/fishing", "/professions/fishing?scope=mine"],
-    [`/c/${NAME}/heat`, `/map/trails?character=${NAME}`],
-    [`/c/${NAME}/trails`, `/map/trails?character=${NAME}`],
-  ];
-  const problems = [];
-  for (const [from, to] of moved) {
-    const answer = await ctx.http.request(from, { redirect: "manual", headers: { Accept: "text/html" } });
-    const location = answer.headers.get("location");
-    const path = location === null ? null : location.replace(/^https?:\/\/[^/]+/, "") || "/";
-    const ok = to instanceof RegExp ? path !== null && to.test(path) : path === to;
-    if (answer.status !== 301 || !ok) problems.push(`${from}: expected 301 to ${to}, saw ${answer.status} ${location}`);
+export async function deathIsCountedOnce(ctx) {
+  const answer = expectStatus(await ctx.http.page("/hardcore-deaths"), 200, "/hardcore-deaths");
+  if (!answer.text.includes("1 death recorded")) {
+    throw new Error(`/hardcore-deaths should say 1 death recorded for the notice two uploaders sent, saw ${answer.text.slice(0, 600)}`);
   }
-  failOn(problems, moved.length, "old addresses");
+  if (!/Level 23[^<]*1 death/.test(answer.text.replaceAll("&quot;", '"'))) {
+    throw new Error("/hardcore-deaths should chart that one death at level 23");
+  }
 }
 
 export async function scoreboardIsShownWithoutNames(ctx) {
   const character = expectStatus(await ctx.http.page(`/c/${PROBE}`), 200, `/c/${PROBE}`);
+  if (!character.text.includes(`<a href="/c/${PROBE}/battlegrounds">Battlegrounds</a>`)) {
+    throw new Error(`/c/${PROBE} should link its battlegrounds in the line of pages under the head, saw ${character.text.slice(0, 600)}`);
+  }
+  const answer = expectStatus(await ctx.http.page(`/c/${PROBE}/battlegrounds`), 200, `/c/${PROBE}/battlegrounds`);
   const problems = [];
-  if (!character.text.includes('id="battlegrounds"')) problems.push("the Battlegrounds block in Combat");
-  if (!character.text.includes("Warsong Gulch, won")) problems.push("the match, Warsong Gulch, won");
-  if ((character.text.match(/>a player</g) ?? []).length !== 3) problems.push("three rows of a player");
-  if (!/<td class="[^"]*">4<\/td><td class="[^"]*">9<\/td>/.test(character.text)) problems.push("4 killing blows and 9 honorable kills in the Alliance row");
-  for (const name of ["Pella", "Dorn", "Kesta"]) if (character.text.includes(name)) problems.push(`no name, but ${name} is shown`);
-  if (problems.length > 0) throw new Error(`/c/${PROBE}: expected ${problems.join(", ")}: ${character.text.slice(character.text.indexOf('id="battlegrounds"'), character.text.indexOf('id="battlegrounds"') + 900)}`);
-  const old = await ctx.http.request(`/c/${PROBE}/battlegrounds`, { redirect: "manual", headers: { Accept: "text/html" } });
-  if (old.status !== 301 || !old.headers.get("location")?.endsWith(`/c/${PROBE}#battlegrounds`)) throw new Error(`/c/${PROBE}/battlegrounds should be a 301 to /c/${PROBE}#battlegrounds, saw ${old.status} to ${old.headers.get("location")}`);
+  if (!/<h1[^>]*>\s*Battlegrounds of Probe Lane/.test(answer.text)) problems.push("the heading");
+  if (!answer.text.includes("Warsong Gulch, won")) problems.push("the match, Warsong Gulch, won");
+  if ((answer.text.match(/>a player</g) ?? []).length !== 3) problems.push("three rows of a player");
+  if (!/<td class="n ?">4<\/td><td class="n ?">9<\/td>/.test(answer.text)) problems.push("4 killing blows and 9 honorable kills in the Alliance row");
+  for (const name of ["Pella", "Dorn", "Kesta"]) if (answer.text.includes(name)) problems.push(`no name, but ${name} is shown`);
+  if (problems.length > 0) throw new Error(`/c/${PROBE}/battlegrounds: expected ${problems.join(", ")}: ${answer.text.slice(answer.text.indexOf("<table"), answer.text.indexOf("<table") + 900)}`);
 }
 
 export async function recipeSpellAndBossLootAreShown(ctx) {
@@ -171,7 +152,7 @@ export async function publicPagesStayPublic(ctx) {
 }
 
 export async function accountIsClosedToVisitors(ctx) {
-  for (const route of ["/account", "/account/settings", "/link"]) {
+  for (const route of ["/account", "/link", "/account/professions", "/account/professions/fishing", "/account/camps"]) {
     const answer = await ctx.http.page(route, { redirect: "manual" });
     const location = answer.headers.get("location") ?? "";
     if (answer.status !== 302 || new URL(location, ctx.base).pathname !== "/login") {
@@ -189,12 +170,7 @@ export async function signIn(http, jar) {
     if (STRICT) throw new Error(`${off} (E2E_STRICT=1 means the server was started with it, so the login page lost its form)`);
     throw new Skip(off);
   }
-  let signedIn = await http.request("/auth/development", { ...form({ _token: tokenIn(login.text) }), method: "POST", jar, redirect: "manual" });
-  if (signedIn.status === 429) {
-    await sleep(Math.min(Number(signedIn.headers.get("retry-after") ?? 60), 65) * 1000);
-    const again = expectStatus(await http.request("/login", { jar, headers: { Accept: "text/html" } }), 200, "GET /login");
-    signedIn = await http.request("/auth/development", { ...form({ _token: tokenIn(again.text) }), method: "POST", jar, redirect: "manual" });
-  }
+  const signedIn = await http.request("/auth/development", { ...form({ _token: tokenIn(login.text) }), method: "POST", jar, redirect: "manual" });
   if (signedIn.status !== 302 || !(signedIn.headers.get("location") ?? "").endsWith("/account")) {
     throw new Error(`POST /auth/development: expected a redirect to /account, saw ${signedIn.status} ${signedIn.headers.get("location")}: ${signedIn.text.slice(0, 300)}`);
   }
@@ -237,8 +213,7 @@ export async function appLinksToAccount(ctx) {
 
   const me = expectJson(expectStatus(await app.me(), 200, "GET /api/v1/installs/me after the link"), "installs/me after the link");
   if (me.linked !== true) throw new Error(`after the link the install should say linked: true, saw ${JSON.stringify(me)}`);
-  expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
-  const settings = expectStatus(await http.request("/account/settings", { jar, headers: { Accept: "text/html" } }), 200, "GET /account/settings");
-  if (!settings.text.includes(label)) throw new Error(`/account/settings should list the linked install ${label}, saw ${settings.text.slice(0, 300)}`);
-  expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
+  const account = expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
+  if (!account.text.includes(label)) throw new Error(`/account should list the linked install ${label}, saw ${account.text.slice(0, 300)}`);
+  expectStatus(await http.request("/account/characters", { jar, headers: { Accept: "text/html" } }), 200, "GET /account/characters");
 }

@@ -1,5 +1,5 @@
 @php($base = App\View\Design\Gallery::BASE)
-<x-layouts.sc title="Saltmarsh Reach: paths, deaths and levels" current="search" :base="$base">
+<x-layouts.app title="Saltmarsh Reach: paths, deaths and levels" current="search" :base="$base">
 <x-map-head name="Saltmarsh Reach" min-height="27rem" :facts="$d['facts']" :map="$d['map']" map-label="Heat from every recorded path in Saltmarsh Reach, with deaths as crosses"
   :legend="[['mark' => 'heat', 'label' => 'paths, by how many characters'], ['mark' => 'death', 'label' => 'deaths']]" />
 <div class="wrap">
@@ -13,4 +13,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

@@ -34,7 +34,7 @@ final class MapWhose
         $names = $character === null || in_array($character, $own, true) ? $own : [...$own, $character];
         $items = [['label' => self::EVERYONE, 'href' => $link('/map', []), 'on' => $character === null && ! $allOwn]];
         if (count($own) > 1) {
-            $items[] = ['label' => self::ALL_OWN, 'href' => $link('/map', ['scope' => 'mine']), 'on' => $allOwn];
+            $items[] = ['label' => self::ALL_OWN, 'href' => $link('/account/map', []), 'on' => $allOwn];
         }
         $onlyOwn = $allOwn && count($own) === 1;
         foreach ($names as $name) {

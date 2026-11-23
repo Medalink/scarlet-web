@@ -60,7 +60,7 @@ final class RulesetsPage
      */
     private static function row(array $row, array $ruleset, array $top): array
     {
-        $name = ['text' => $ruleset['label'], 'href' => '/stats/'.$ruleset['slug']];
+        $name = ['text' => $ruleset['label'], 'href' => '/rulesets/'.$ruleset['slug']];
         if ($row['characters'] === null) {
             return ['cells' => [$name, Format::TOO_FEW, '–', '–', '–', '–', '–']];
         }

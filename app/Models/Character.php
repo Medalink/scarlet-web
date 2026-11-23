@@ -17,7 +17,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $account_id
  * @property bool $is_public
  * @property bool $show_economy
- * @property bool $show_sessions
  * @property string $plausibility
  * @property list<string>|null $pinned_feats feat keys the owner pinned, in the order pinned
  * @property string|null $armory_kind the ruleset the Forever Armory named for the character
@@ -44,7 +43,6 @@ class Character extends Model
         return [
             'is_public' => 'boolean',
             'show_economy' => 'boolean',
-            'show_sessions' => 'boolean',
             'plausibility_flags' => 'array',
             'pinned_feats' => 'array',
             'first_seen_at' => 'datetime',
@@ -56,11 +54,6 @@ class Character extends Model
     public function visibleTo(?int $accountId): bool
     {
         return $this->is_public || ($accountId !== null && $this->account_id === $accountId);
-    }
-
-    public function sessionsVisibleTo(?int $accountId): bool
-    {
-        return ($this->is_public && $this->show_sessions) || ($accountId !== null && $this->account_id === $accountId);
     }
 
     /** The key two spellings of one name share. */
@@ -82,22 +75,6 @@ class Character extends Model
             if ($install->account_id !== null) {
                 $owned->orWhere('characters.account_id', $install->account_id);
             }
-        });
-    }
-
-    /**
-     * The characters of an account as `ownedBy` counts them for one install, over all the account's installs: those of the account and
-     * those any of its installs sent.
-     *
-     * @param  Builder<self>  $query
-     * @return Builder<self>
-     */
-    public function scopeOwnedByAccount(Builder $query, int $accountId): Builder
-    {
-        return $query->where(function (Builder $owned) use ($accountId): void {
-            $owned->where('characters.account_id', $accountId)
-                ->orWhereIn('characters.id', fn ($ids) => $ids->select('install_character.character_id')->from('install_character')
-                    ->join('installs', 'installs.id', '=', 'install_character.install_id')->where('installs.account_id', $accountId));
         });
     }
 

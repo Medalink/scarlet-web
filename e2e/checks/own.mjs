@@ -2,7 +2,7 @@ import { ECHO, INSTALL_CHARACTERS, Jar, expectJson, expectStatus, rollupsRefresh
 import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
 import { PAGES, STRANGER_SHOWN, holdsWithNoDigitBeside, textOf } from "./professions.mjs";
 
-const OWN_FISHING = "/professions/fishing?scope=mine";
+const OWN_FISHING = "/account/professions/fishing";
 const FISHING = PAGES.find((page) => page.slug === "fishing");
 const COOKING = PAGES.find((page) => page.slug === "cooking");
 const TAILORING = PAGES.find((page) => page.slug === "tailoring");
@@ -55,19 +55,30 @@ export async function ownProfessionPagesShowTheAccount(ctx) {
     throw new Error(`${OWN_FISHING} should be sent with Cache-Control ${PRIVATE_CACHE}, saw ${JSON.stringify(fishing.headers.get("cache-control"))}`);
   }
   if (fishing.text.includes('<meta name="description"')) throw new Error(`${OWN_FISHING} should not carry the public description`);
-  if (!fishing.text.includes('href="/professions/mining?scope=mine"') || fishing.text.includes('href="/professions/mining"')) {
-    throw new Error(`${OWN_FISHING}: the trades should link /professions/...?scope=mine, never the public pages`);
+  if (!fishing.text.includes('href="/account/professions/mining"') || fishing.text.includes('href="/professions/mining"')) {
+    throw new Error(`${OWN_FISHING}: the trades should link /account/professions/..., never the public pages`);
   }
   if (!fishing.text.includes('href="/professions/fishing"')) throw new Error(`${OWN_FISHING} should link everyone's Fishing page`);
 
-  const cooking = await ownPage(ctx, jar, "/professions/cooking?scope=mine");
+  const cooking = await ownPage(ctx, jar, "/account/professions/cooking");
   const cookingMissing = missingFrom(textOf(cooking.text), [...COOKING.shows, `1 of your ${INSTALL_CHARACTERS.length} characters`]);
-  if (cookingMissing.length > 0) throw new Error(`/professions/cooking?scope=mine: expected ${cookingMissing.map((phrase) => JSON.stringify(phrase)).join(", ")}`);
+  if (cookingMissing.length > 0) throw new Error(`/account/professions/cooking: expected ${cookingMissing.map((phrase) => JSON.stringify(phrase)).join(", ")}`);
 
-  const linked = await ownPage(ctx, jar, "/account");
-  if (!linked.text.includes('href="/professions?scope=mine"')) throw new Error("/account should link Your professions");
-  const unknown = await ctx.http.page("/professions/lockpicking?scope=mine", { jar });
-  if (unknown.status !== 404) throw new Error(`/professions/lockpicking?scope=mine should be 404, saw ${unknown.status}`);
+  const hub = expectStatus(await ctx.http.page("/account/professions", { jar, redirect: "manual" }), 302, "GET /account/professions");
+  if (new URL(hub.headers.get("location") ?? "", ctx.base).pathname !== OWN_FISHING) {
+    throw new Error(`/account/professions should go to the profession with the most attempts, ${OWN_FISHING}, saw ${hub.headers.get("location")}`);
+  }
+  const hubQuery = "ruleset=some-ruleset&server=pve";
+  const kept = expectStatus(await ctx.http.page(`/account/professions?${hubQuery}`, { jar, redirect: "manual" }), 302, "GET /account/professions with a ruleset and a server");
+  if (new URL(kept.headers.get("location") ?? "", ctx.base).search !== `?${hubQuery}`) {
+    throw new Error(`/account/professions should carry ?${hubQuery} to the profession page, saw ${kept.headers.get("location")}`);
+  }
+  for (const route of ["/account", "/account/characters"]) {
+    const linked = await ownPage(ctx, jar, route);
+    if (!linked.text.includes('href="/account/professions"')) throw new Error(`${route} should link Your professions`);
+  }
+  const unknown = await ctx.http.page("/account/professions/lockpicking", { jar });
+  if (unknown.status !== 404) throw new Error(`/account/professions/lockpicking should be 404, saw ${unknown.status}`);
 }
 
 /**
@@ -87,12 +98,12 @@ export async function ownPagesLeaveOutOtherInstalls(ctx) {
     throw new Error(`/professions/tailoring should show the stranger's rows: expected ${absent.map((phrase) => JSON.stringify(phrase)).join(", ")}, saw ${everyones.slice(everyones.indexOf("Tailoring"), everyones.indexOf("Tailoring") + 600)}`);
   }
 
-  const own = textOf((await ownPage(ctx, jar, "/professions/tailoring?scope=mine")).text);
+  const own = textOf((await ownPage(ctx, jar, "/account/professions/tailoring")).text);
   const wanted = [`0 of your ${INSTALL_CHARACTERS.length} characters`, "Scarlet records this once a character of yours has recorded crafts."];
   const missing = missingFrom(own, wanted);
   const leaked = [STRANGER_SHOWN, "Bolt of Linen Cloth", "2 crafts", "Too few characters"].filter((phrase) => own.includes(phrase));
   if (missing.length > 0 || leaked.length > 0) {
-    throw new Error(`/professions/tailoring?scope=mine should be the plain state (${wanted.join(" and ")}) with nothing of the stranger, missing ${JSON.stringify(missing)}, holding ${JSON.stringify(leaked)}, saw ${own.slice(own.indexOf("Tailoring"), own.indexOf("Tailoring") + 600)}`);
+    throw new Error(`/account/professions/tailoring should be the plain state (${wanted.join(" and ")}) with nothing of the stranger, missing ${JSON.stringify(missing)}, holding ${JSON.stringify(leaked)}, saw ${own.slice(own.indexOf("Tailoring"), own.indexOf("Tailoring") + 600)}`);
   }
 }
 
@@ -106,9 +117,13 @@ export async function accountWithNoCharacterSeesThePlainState(ctx) {
   if (missing.length > 0 || text.includes("Too few characters") || text.includes(ECHO.replace("-", " "))) {
     throw new Error(`${OWN_FISHING} of an account with no character should say ${wanted.map((phrase) => JSON.stringify(phrase)).join(" and ")} and nothing else, saw ${text.slice(text.indexOf("Fishing"), text.indexOf("Fishing") + 600)}`);
   }
+  const hub = expectStatus(await ctx.http.page("/account/professions", { jar, redirect: "manual" }), 302, "GET /account/professions");
+  if (new URL(hub.headers.get("location") ?? "", ctx.base).pathname !== OWN_FISHING) {
+    throw new Error(`/account/professions of an account with no character should go to ${OWN_FISHING}, saw ${hub.headers.get("location")}`);
+  }
 }
 
-const OWN_CAMPS = "/camps?scope=mine";
+const OWN_CAMPS = "/account/camps";
 const CAMP_SHOWS = [
   "Visits 1", "Characters 1", "Median visit 1m 30s", "Earn Camp Benefits 100%", "Camp Benefits you leave with",
   "Basic Campfire 100% of visits", "Elwynn Forest 1 visit", `1 of your ${INSTALL_CHARACTERS.length} characters`, "Your characters by time by the fire", ECHO.replace("-", " "), "Everyone's camps", "When you camp",
@@ -146,15 +161,17 @@ export async function ownCampsPageShowsTheAccount(ctx) {
   if (mixed.length > 0) throw new Error(`${OWN_CAMPS} holds the stranger: ${JSON.stringify(mixed)}`);
   const nav = camps.text.match(/<nav class="trades"[\s\S]*?<\/nav>/)?.[0] ?? "";
   const links = [...nav.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
-  if (links.length !== 13 || links.some((link) => !link.endsWith("scope=mine")) || !nav.includes('href="/camps?scope=mine" aria-current="page"')) {
-    throw new Error(`${OWN_CAMPS}: the nav should hold the twelve professions and Camps, all with scope=mine, Camps current, saw ${JSON.stringify(links)}`);
+  if (links.length !== 13 || links.some((link) => !link.startsWith("/account/")) || !nav.includes('href="/account/camps" aria-current="page"')) {
+    throw new Error(`${OWN_CAMPS}: the nav should hold the twelve professions and Camps, all under /account, Camps current, saw ${JSON.stringify(links)}`);
   }
   if (!camps.text.includes('href="/camps"')) throw new Error(`${OWN_CAMPS} should link everyone's camps page`);
 
   const fishing = await ownPage(ctx, jar, OWN_FISHING);
-  if (!fishing.text.includes('href="/camps?scope=mine"')) throw new Error(`${OWN_FISHING} should link Camps in the nav`);
-  const linked = await ownPage(ctx, jar, "/account");
-  if (!linked.text.includes('href="/camps?scope=mine"')) throw new Error("/account should link Your camps");
+  if (!fishing.text.includes('href="/account/camps"')) throw new Error(`${OWN_FISHING} should link Camps in the nav`);
+  for (const route of ["/account", "/account/characters"]) {
+    const linked = await ownPage(ctx, jar, route);
+    if (!linked.text.includes('href="/account/camps"')) throw new Error(`${route} should link Your camps`);
+  }
 }
 
 /** Once the upload is removed the account's camps page is the plain state. */

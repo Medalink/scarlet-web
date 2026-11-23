@@ -5,7 +5,6 @@
  *
  *   node e2e/run.mjs [--url http://127.0.0.1:8557] [--only upload|api|pages|browser|owner] [--keep <dir>] [--browser <path>]
  *
- * --leave skips the removal at the end, so a dev instance keeps the uploaded characters to look at.
  * Without --url it reads E2E_URL. Only a local address is accepted. The upload lane always runs first, because the
  * other lanes read what it uploaded. The owner lane runs after them, because it links the uploading install to an
  * account, and the removal always runs last. Exit 0 when every check passes, 1 when one
@@ -31,7 +30,6 @@ import * as own from "./checks/own.mjs";
 import * as installs from "./checks/installs.mjs";
 import * as removal from "./checks/removal.mjs";
 import * as admin from "./checks/admin.mjs";
-import * as session from "./checks/session.mjs";
 
 const LANES = ["upload", "api", "pages", "browser", "owner"];
 const SERVER_CONNECTIONS = 3;
@@ -52,7 +50,6 @@ const REGISTRY = [
   { lane: "api", name: "the uploaded character is served with the fixture's facts", run: api.characterIsServed },
   { lane: "api", name: "the records of the fixture are served", run: api.recordsAreServed },
   { lane: "api", name: "search finds the character", run: api.searchFindsTheCharacter },
-  { lane: "api", name: "the session list and a session recap are served with the fixture's figures, in pages, and an unknown session is 404", run: api.sessionEndpointsAreServed },
   { lane: "api", name: "an unknown character is 404 not_found", run: api.unknownCharacterIs404 },
   { lane: "api", name: "a bad parameter is 422 invalid_request", run: api.badParameterIs422 },
   { lane: "api", name: "the app reads a character's new feats, and one it showed is not new again", run: feats.shownFeatIsNotNewAgain },
@@ -60,13 +57,9 @@ const REGISTRY = [
   { lane: "api", name: `the app reads the class page of ${WARLOCK} as data with the fixture's figures`, run: classPageApi.installReadsItsClassPage },
   { lane: "api", name: "the class page request refuses an unsigned read, another install's character and a name that is not Name-Surname", run: classPageApi.classPageRefusesWhatIsNotTheInstalls },
   { lane: "api", name: "the rogue fixture's class, tree and role feats are counted, and no other class's or role's", run: feats.specFeatsAreCounted },
-  { lane: "api", name: "the feat-score board lists the fixtures by tiers held, highest first", run: feats.featScoreBoardListsTheFixtures },
-  { lane: "api", name: "the app reads the catalog version, the score, the spec and the newest session, and every card carries its place, count, thresholds, progress, share, spell and live flag", run: feats.featsAnswerHasTheNewFields },
-  { lane: "api", name: "the app reads the account crests of its characters against the catalog's account thresholds, and an account feat it showed is not new again", run: feats.accountCrestsAreServed },
-  { lane: "api", name: "the public feats are the 241 catalog feats with their shares, and one feat lists its top characters and its latest earners, and an unknown feat is 404", run: feats.publicFeatsAreServed },
   { lane: "api", name: "the six professions with recorded lines are served with their numbers", run: professions.apiShowsTheUpload },
   { lane: "pages", name: "every public page answers and shows its own content", run: pages.everyPageShowsItself },
-  { lane: "pages", name: "the addresses that moved answer a permanent redirect with the query kept", run: pages.oldAddressesRedirect },
+  { lane: "pages", name: "one death heard by two uploaders is counted once", run: pages.deathIsCountedOnce },
   { lane: "pages", name: "a match's scoreboard is shown without the players' names", run: pages.scoreboardIsShownWithoutNames },
   { lane: "pages", name: "a recipe, a spell and a boss encounter show what the uploads recorded", run: pages.recipeSpellAndBossLootAreShown },
   { lane: "pages", name: "the art answers set no cookie", independent: true, run: pages.artAnswersSetNoCookie },
@@ -86,7 +79,6 @@ const REGISTRY = [
   { lane: "pages", name: "a character's page links its class page and draws its band from the stored row, and a class with no page has neither", run: classPage.characterPageLinksItsClassPage },
   { lane: "pages", name: "a character with no class rows has no band and no link to a class page", run: classPage.characterWithNoClassRowsHasNoBand },
   { lane: "pages", name: "another class's slug, an unknown slug and an unknown character are 404 pages", run: classPage.otherAddressesAre404 },
-  { lane: "pages", name: "a session page shows the recap of its fixture session and answers 404 for a session, a character or a start that is not there", run: session.sessionPageShowsTheUpload },
   { lane: "browser", name: "the browser has no window", independent: true, run: browser.hasNoWindow },
   { lane: "browser", name: "the map art is installed", independent: true, run: browser.mapArtIsServed },
   { lane: "browser", name: "the key pages run clean at 1280", run: browser.pagesRunClean },
@@ -95,8 +87,6 @@ const REGISTRY = [
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
   { lane: "owner", name: "the admin opens the admin pages privately, /admin/api counts the upload and a character asked for by name, /admin/clients shows the install clients, and /admin/characters finds the characters", run: admin.adminSeesTheApiCalls },
   { lane: "owner", name: "a character the owner made private has no class page, world map or trails for a visitor, and has them again once public", run: classPage.hiddenCharacterHidesItsClassPage },
-  { lane: "owner", name: "the owner turns the session pages off and a visitor gets a 404 while the owner keeps the page", run: session.sessionSwitchHidesThePage },
-  { lane: "owner", name: "the feats page shows the catalog to a visitor and one character on compare and mine, and a feat has its own page", run: feats.featsHubFollowsTheScope },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },
@@ -118,11 +108,6 @@ function parseArguments(argv) {
   const options = {};
   for (let at = 0; at < argv.length; at += 2) {
     const flag = argv[at];
-    if (flag === "--leave") {
-      options.leave = true;
-      at -= 1;
-      continue;
-    }
     if (!["--url", "--only", "--keep", "--browser"].includes(flag) || argv[at + 1] === undefined) usage(`unknown or incomplete argument ${flag}`);
     options[flag.slice(2)] = argv[at + 1];
   }
@@ -199,7 +184,7 @@ process.on("SIGTERM", () => process.exit(143));
 const started = performance.now();
 try {
   for (const stage of STAGES) {
-    const lanes = stage.filter((lane) => lane === "upload" || (lane === "removal" && !options.leave) || only.includes(lane));
+    const lanes = stage.filter((lane) => lane === "upload" || lane === "removal" || only.includes(lane));
     for (const lines of await Promise.all(lanes.map(runLane))) console.log(lines.join(EOL));
   }
 } finally {

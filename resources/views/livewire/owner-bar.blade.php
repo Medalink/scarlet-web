@@ -1,0 +1,1 @@
+<x-owner-bar :state="$public ? 'Public page' : 'Private page'" :on="$public" :facts="$facts" :others="$others" :link="['href' => '/account', 'label' => 'Sharing and privacy']" :visitor="$visitor" switch-label="Public page" :public="$public" wire:change="setPublic($event.target.checked)" />

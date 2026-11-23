@@ -4,8 +4,6 @@ namespace App\Support;
 
 use App\Http\Controllers\Api\V1\Public\CampsController;
 use App\Http\Controllers\Api\V1\Public\CharacterController;
-use App\Http\Controllers\Api\V1\Public\CharacterSessionsController;
-use App\Http\Controllers\Api\V1\Public\FeatController;
 use App\Http\Controllers\Api\V1\Public\LeaderboardController;
 use App\Http\Controllers\Api\V1\Public\LootController;
 use App\Http\Controllers\Api\V1\Public\MapController;
@@ -24,7 +22,7 @@ final class PublicApiCatalog
     public const string ROUTE_PREFIX = 'public.';
 
     /** The endpoints whose answers name characters. */
-    public const array NAMES_CHARACTERS = ['leaderboard', 'camps', 'profession', 'search', 'character', 'character-series', 'character-sessions', 'character-session', 'feat'];
+    public const array NAMES_CHARACTERS = ['leaderboard', 'camps', 'profession', 'search', 'character', 'character-series'];
 
     /** The shared parameters, named once and referred to by the endpoints. */
     public const array PARAMS = [
@@ -32,7 +30,6 @@ final class PublicApiCatalog
         'server' => ['server', 'query', 'string', '`all`, `pve` or `pvp`: the rulesets of one kind of server. Ignored when `ruleset` is given.'],
         'class' => ['class', 'query', 'string', 'A class file name such as `WARRIOR`.'],
         'cursor' => ['cursor', 'query', 'string', 'The `next_cursor` of the previous page.'],
-        'after' => ['after', 'query', 'integer', 'The `next` of the previous page: the start of the oldest session it listed.'],
         'limit' => ['limit', 'query', 'integer', 'Rows per page, 1 to 100. Default 25.'],
         'q' => ['q', 'query', 'string', 'The text to search for, 2 to 80 characters.'],
     ];
@@ -87,7 +84,7 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'leaderboards', 'group' => 'Leaderboards', 'path' => '/leaderboards', 'action' => [LeaderboardController::class, 'index'],
-                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most jumps, most dungeon runs, most distance, most time by the fire, most fish caught, most herbs gathered, most ore mined, most creatures skinned and most crafts for each crafting profession, and the highest feat score.',
+                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most jumps, most dungeon runs, most distance, most time by the fire, most fish caught, most herbs gathered, most ore mined, most creatures skinned and most crafts for each crafting profession.',
                 'params' => [],
                 'returns' => '`data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).',
                 'example' => '/leaderboards', 'where' => [],
@@ -110,7 +107,7 @@ final class PublicApiCatalog
                 'name' => 'character', 'group' => 'Characters', 'path' => '/characters/{name}', 'action' => [CharacterController::class, 'show'],
                 'summary' => 'A public character: race, class, level, ruleset, time played, this week, distance walked, feats and standings. A character that is not public answers 404.',
                 'params' => [['name', 'path', 'string', 'The character name, `Name-Surname`.']],
-                'returns' => '`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (every feat that applies to the character: those earned first, rarest first, then those not yet earned, closest first; `pinned` is true for a feat the owner pinned, which keeps its place in the list. `key` is one of '.self::featKeys().'; the gold feats `earner`, `spender`, `tycoon` and `windfall` are listed only when `meta.economy` is true; `name`, `value`, `tier` from 0 for none to 5 for scarlet, with `tier_name` one of `Uncommon`, `Rare`, `Epic`, `Legendary` or `Scarlet`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the ranks of Cooking, First Aid, Fishing and the character\'s two highest primary professions), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.',
+                'returns' => '`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (every feat that applies to the character: those earned first, rarest first, then those not yet earned, closest first; `pinned` is true for a feat the owner pinned, which keeps its place in the list. `key` is one of '.self::featKeys().'; the gold feats `earner`, `spender`, `tycoon` and `windfall` are listed only when `meta.economy` is true; `name`, `value`, `tier` from 0 for none to 5 for legend, with `tier_name` one of `Copper`, `Silver`, `Gold`, `Scarlet` or `Legend`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the ranks of Cooking, First Aid, Fishing and the character\'s two highest primary professions), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.',
                 'example' => '/characters/Tolvir-Greane', 'where' => ['name' => '[^/]+'],
             ],
             [
@@ -119,34 +116,6 @@ final class PublicApiCatalog
                 'params' => [['name', 'path', 'string', 'The character name.'], ['series', 'path', 'string', 'The series name.']],
                 'returns' => '`data`: the rows of the series.',
                 'example' => '/characters/Tolvir-Greane/series/levelling', 'where' => ['name' => '[^/]+', 'series' => '[a-z]+'],
-            ],
-            [
-                'name' => 'character-sessions', 'group' => 'Characters', 'path' => '/characters/{name}/sessions', 'action' => [CharacterSessionsController::class, 'index'],
-                'summary' => 'The sessions of a public character, newest first, 20 a page, for a character whose owner keeps the session pages on. Any other character answers 404.',
-                'params' => [['name', 'path', 'string', 'The character name.'], 'after'],
-                'returns' => '`data`: `sessions`, each with `start` (the id of the session in its address: epoch seconds), `end`, `played` (seconds), `level` (`[at the start, at the end]`), `title` (`rule`, one of `level`, `dungeon`, `quests`, `kills`, `gather`, `travel` or `time`, and the English `text`), and `kills`, `quests`, `deaths` and `xp`, each `null` when the player did not share that group; and `next`, the `after` of the next page, `null` on the last.',
-                'example' => '/characters/Tolvir-Greane/sessions', 'where' => ['name' => '[^/]+'],
-            ],
-            [
-                'name' => 'character-session', 'group' => 'Characters', 'path' => '/characters/{name}/sessions/{start}', 'action' => [CharacterSessionsController::class, 'show'],
-                'summary' => 'One session of a public character as a recap: title, played time, levels, experience by source, counters, five-minute buckets, zones in order, levels, moments, route, the top lists, the best of the last 30 sessions, and how it compares with sessions at the same levels. The data of the page at /c/{name}/sessions/{start}.',
-                'params' => [['name', 'path', 'string', 'The character name.'], ['start', 'path', 'integer', 'The `start` of a session from the list.']],
-                'returns' => '`data`: the same recap the Scarlet app and addon keep: `v`, `character`, `class`, `start`, `end`, `played`, `level`, `zone`, `title`, `xp` (`kills`, `dungeons`, `quests`, `explore`, `other`), `runs`, `counters` (a counter that is zero is left out), `buckets` (`secs`, `xp`, `combat`), `zones`, `levels`, `moments`, `route` (`legs`, and a `sheet` of points fitted to 0 to 1000 with `aspect`, `breaks` and `air`), `feats`, `bests`, `own` (the session against the 30 before it, `null` under 5), `top`, `compare` (against sessions at the same levels, `null` until 20 sessions are in the bracket) and `links`. Gold counters are in it only when `meta.economy` is true.',
-                'example' => '/characters/Tolvir-Greane/sessions/1763840520', 'where' => ['name' => '[^/]+', 'start' => '[0-9]+'],
-            ],
-            [
-                'name' => 'feats', 'group' => 'Feats', 'path' => '/feats', 'action' => [FeatController::class, 'index'],
-                'summary' => 'The feat catalog: every feat with its family, collection, scope, thresholds and how the addon counts it, and the share of characters at each tier or higher.',
-                'params' => [],
-                'returns' => '`data`: `catalog` (the catalog version) and `feats`, each with `key`, `name`, `family`, `collection`, `scope` (`general`, `class`, `tree` or `role`), `class`, `tree` or `role` where the scope has one, `glyph`, `icon` (`spell` or `tree` when the crest engraves one), `one` and `many` (what is counted), `unit` (`mi` when the thresholds are yards), `thresholds` (uncommon to scarlet), `economy` (a gold feat), `measure`, `spells`, `live` and `shares`: five percentages, uncommon first, of the characters with 20 recorded hours or more that hold the tier or a higher one, or `null` until 20 characters are counted for the feat.',
-                'example' => '/feats', 'where' => [],
-            ],
-            [
-                'name' => 'feat', 'group' => 'Feats', 'path' => '/feats/{key}', 'action' => [FeatController::class, 'show'],
-                'summary' => 'One feat of the catalog, the 20 public characters with the highest count and the 10 that reached a tier of it last. A gold feat lists only characters that show their economy.',
-                'params' => [['key', 'path', 'string', 'A feat key from `/feats`, such as `slayer`.']],
-                'returns' => '`data`: `catalog` and the fields of the feat in `/feats`, `top` (`character`, `value` in the units of the thresholds and `tier`, highest value first) and `recent` (`character`, the `tier` reached and `at`, newest first).',
-                'example' => '/feats/slayer', 'where' => ['key' => '[a-z-]+'],
             ],
             [
                 'name' => 'creature', 'group' => 'Records', 'path' => '/creatures/{id}', 'action' => [RecordController::class, 'creature'],

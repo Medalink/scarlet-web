@@ -1,4 +1,4 @@
-<x-layouts.sc title="Scarlet public API" current="developers" description="Everything public on Scarlet as read-only JSON: statistics, camps, professions, rulesets, leaderboards, search, characters, records and map heat." :brand="false">
+<x-layouts.app title="Scarlet public API" current="developers" description="Everything public on Scarlet as read-only JSON: statistics, camps, professions, rulesets, leaderboards, search, characters, records and map heat." :brand="false">
 <div class="wrap">
   <x-page-head title="Public API" :single="true">
     <x-slot:sub>Everything public on this site is readable as JSON. Read-only, no sign-up, version 1.</x-slot:sub>
@@ -24,4 +24,4 @@
     </div>
   </div>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

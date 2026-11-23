@@ -12,10 +12,8 @@ use LogicException;
 /** The ruleset and server filters of a dashboard page, as query parameters. */
 class ScopeRequest extends FormRequest
 {
-    /** The Cache-Control of a page that shows one account's own numbers. */
-    public const string PRIVATE_CACHE = 'max-age=0, must-revalidate, no-cache, no-store, private';
-
-    private const int MAX_NAME = 64;
+    /** The route default that declares a page a player's own. */
+    public const string OWN = 'own';
 
     public function authorize(): bool
     {
@@ -29,22 +27,6 @@ class ScopeRequest extends FormRequest
             'ruleset' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9-]+$/'],
             'server' => ['nullable', Rule::enum(Server::class)],
         ];
-    }
-
-    /** Everyone, You vs everyone (`compare`) or Only you (`mine`); the last two are the signed-in viewer's alone, and any other value is everyone. */
-    public function choice(): string
-    {
-        $scope = $this->query('scope');
-
-        return $this->user() instanceof Account && in_array($scope, ['compare', 'mine'], true) ? $scope : 'everyone';
-    }
-
-    /** The name of the character `You vs everyone` compares, when the query names one. */
-    public function comparedName(): ?string
-    {
-        $name = $this->query('as');
-
-        return is_string($name) && $name !== '' && mb_strlen($name) <= self::MAX_NAME ? $name : null;
     }
 
     /** The ruleset of the query, unless the path already names one. */
@@ -62,13 +44,6 @@ class ScopeRequest extends FormRequest
         return is_string($server) ? Server::from($server) : Server::All;
     }
 
-    public function viewer(): ?Account
-    {
-        $account = $this->user();
-
-        return $account instanceof Account ? $account : null;
-    }
-
     /** The signed-in account of a route behind the `auth` middleware. */
     public function account(): Account
     {
@@ -78,15 +53,13 @@ class ScopeRequest extends FormRequest
     }
 
     /**
-     * The characters of the signed-in account when the page is asked for with `?scope=mine`, where it shows
-     * only a player's own numbers; null otherwise. The ids never come from the request.
+     * The characters of the signed-in account on a route declared with `->defaults(ScopeRequest::OWN, true)`, where the page shows
+     * only a player's own numbers; null on a public route. The ids never come from the request.
      *
      * @return list<int>|null
      */
     public function ownCharacters(OwnCharacterIds $ids): ?array
     {
-        $own = $this->choice() === 'mine';
-
-        return $own ? $ids->handle($this->account()) : null;
+        return ($this->route()?->defaults[self::OWN] ?? false) === true ? $ids->handle($this->account()) : null;
     }
 }

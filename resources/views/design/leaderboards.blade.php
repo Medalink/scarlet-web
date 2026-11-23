@@ -2,7 +2,7 @@
     use App\View\Design\Gallery;
     $f = Gallery::filters();
 @endphp
-<x-layouts.sc title="Scarlet leaderboards" current="leaderboards" :base="Gallery::BASE">
+<x-layouts.app title="Scarlet leaderboards" current="leaderboards" :base="Gallery::BASE">
 <div class="wrap">
   <x-page-head title="Fastest to level 60">
     <x-slot:sub>Played time from the first recorded session to level 60. Only characters whose owner made them public, and whose recording covers every level, are listed.</x-slot:sub>
@@ -18,4 +18,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

@@ -9,7 +9,7 @@ use App\Livewire\Concerns\ActsForAccount;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
-/** The Characters module of /account: the public switch of each character and, when public, its economy and session switches. */
+/** The Characters module of /account: the public switch of each character and, when public, its economy switch. */
 class Characters extends Component
 {
     use ActsForAccount;
@@ -22,11 +22,6 @@ class Characters extends Component
     public function setEconomy(int $characterId, bool $on, SetCharacterSwitch $set): void
     {
         $set->handle($this->account(), $characterId, CharacterSwitch::Economy, $on);
-    }
-
-    public function setSessions(int $characterId, bool $on, SetCharacterSwitch $set): void
-    {
-        $set->handle($this->account(), $characterId, CharacterSwitch::Sessions, $on);
     }
 
     public function render(ShowCharacters $characters): View

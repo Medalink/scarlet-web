@@ -18,12 +18,12 @@
           </section>
 @endforeach
 @if ($feed['hiddenCount'] > 0)
-          <p class="upd-more">Plus {{ \App\View\Format::count($feed['hiddenCount'], 'earlier release') }} in the <a href="/download#release-notes">release notes</a>.</p>
+          <p class="upd-more">Plus {{ \App\View\Format::count($feed['hiddenCount'], 'earlier release') }} in the <a href="/release-notes">release notes</a>.</p>
 @endif
         </div>
       </details>
       <div class="upd-act">
-        <a href="/download#release-notes">All release notes</a>
+        <a href="/release-notes">All release notes</a>
         <x-btn kind="quiet" wire:click="dismiss">Dismiss</x-btn>
         <x-btn kind="quiet" wire:click="markRead">Mark as read</x-btn>
       </div>

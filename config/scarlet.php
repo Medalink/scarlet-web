@@ -143,16 +143,11 @@ return [
         'tries' => 2,
         'memory_mb' => 256,
         'holders_seconds' => 900,
-        'event_days' => 90,
     ],
     'standings' => [
         'timeout' => 120,
         'tries' => 2,
         'memory_mb' => 256,
-    ],
-
-    'seed' => [
-        'characters_per_class' => (int) env('SCARLET_SEED_PER_CLASS', 22),
     ],
 
 ];

@@ -1,4 +1,4 @@
-<x-layouts.sc :title="$d['name'].': time played, deaths and creatures'" :description="implode(', ', $d['facts']).'. Time played, deaths and creatures met in '.$d['name'].' in WoW Forever.'">
+<x-layouts.app :title="$d['name'].': time played, deaths and creatures'" :description="implode(', ', $d['facts']).'. Time played, deaths and creatures met in '.$d['name'].' in WoW Forever.'">
 <section class="ch-head" aria-labelledby="h1" style="min-height:27rem">
   <div class="stage"><x-world-canvas id="map" :behind-head="true" label="Heat from every recorded path, with the zone {{ $d['name'] }} in view. Drag to move, click the map and scroll to zoom." :spec="$d['map']" /></div>
   <div class="ch-id wrap" style="padding-top:3rem">
@@ -65,4 +65,4 @@
     @endif
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

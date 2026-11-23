@@ -1,4 +1,4 @@
-<x-layouts.sc title="Link the Scarlet app to your account" current="" :signed-in="true" :index="false" :brand="false">
+<x-layouts.app title="Link the Scarlet app to your account" current="" :signed-in="true" :index="false" :brand="false">
 <x-gate map-label="An invented survey map" :spec="$map">
     <h1>Link this app</h1>
 @if ($redeem === null)
@@ -18,4 +18,4 @@
     <p class="note">Linking puts the characters this app uploads under your account. You can revoke the app at any time. The code works once and expires in 10 minutes.</p>
 @endif
 </x-gate>
-</x-layouts.sc>
+</x-layouts.app>

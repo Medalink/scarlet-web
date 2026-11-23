@@ -70,7 +70,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Warrior
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Battle Cry | Warrior | casts of Battle Shout | Battle Shout (level 1) | 25,000 | 10.4 | in reach |
 | Charger | Warrior | casts of Charge, Intercept | Charge (level 4, 15s cooldown), Intercept (level 30, 30s cooldown) | 25,000 | 69.4 | in reach |
@@ -91,7 +91,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Paladin
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Judicator | Paladin | casts of Judgement* | Judgement (level 4, 10s cooldown), Judgement of Command (level 20), Judgement of Fury (level 25), Judgement of Justice (level 22), Judgement of Light (level 30), Judgement of Martyrdom, Judgement of Righteousness (level 1), Judgement of Wisdom (level 38), Judgement of the Crusader (level 12) | 100,000 | 5.1 | in reach |
 | Benediction | Paladin | casts of Blessing of *, Greater Blessing of * | Blessing of Freedom (level 18, 20s cooldown), Blessing of Kings (level 20), Blessing of Might (level 4), Blessing of Protection (level 10, 300s cooldown), Blessing of Sacrifice (level 46), Blessing of Wisdom (level 14), Greater Blessing of Kings (level 60), Greater Blessing of Might (level 52), Greater Blessing of Wisdom (level 54) | 25,000 | 1.5 | in reach |
@@ -112,7 +112,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Hunter
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Playing Dead | Hunter | casts of Feign Death | Feign Death (level 30, 30s cooldown) | 6,000 | 50.0 | in reach |
 | Trapper | Hunter | casts of * Trap | Explosive Trap (level 34), Freezing Trap (level 20, 30s cooldown), Frost Trap (level 28, 30s cooldown), Immolation Trap (level 16) | 25,000 | 5.0 | in reach |
@@ -133,7 +133,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Rogue
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Unseen | Rogue | casts of Stealth | Stealth (level 1, 10s cooldown) | 25,000 | 69.4 | in reach |
 | Pickpocket | Rogue | casts of Pick Pocket | Pick Pocket (level 4) | 25,000 | 10.4 | in reach |
@@ -154,7 +154,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Priest
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Fortifier | Priest | casts of Power Word: Fortitude, Prayer of Fortitude | Power Word: Fortitude (level 1), Prayer of Fortitude (level 48) | 25,000 | 5.2 | in reach |
 | Aegis | Priest | casts of Power Word: Shield | Power Word: Shield (level 6, 4s cooldown) | 100,000 | 111.1 | in reach |
@@ -175,7 +175,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Shaman
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Totemic | Shaman | casts of * Totem | Decoy Totem (20s cooldown), Disease Cleansing Totem (level 38), Earthbind Totem (level 6, 15s cooldown), Fire Resistance Totem (level 28), Flametongue Totem (level 28), Frost Resistance Totem (level 24), Grace of Air Totem (level 42), Grounding Totem (level 30, 15s cooldown), Healing Stream Totem (level 20), Magma Totem (level 26), Mana Spring Totem (level 26), Mana Tide Totem (level 1, 300s cooldown), Nature Resistance Totem (level 30), Poison Cleansing Totem (level 22), Searing Totem (level 10), Sentry Totem (level 34), Stoneclaw Totem (level 8, 30s cooldown), Stoneskin Totem (level 4), Strength of Earth Totem (level 10), Tremor Totem (level 18), Windfury Totem (level 32), Windwall Totem (level 36) | 100,000 | 2.4 | in reach |
 | Pack Runner | Shaman | casts of Ghost Wolf | Ghost Wolf (level 20) | 25,000 | 10.4 | in reach |
@@ -196,7 +196,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Mage
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Sheep Herder | Mage | casts of Polymorph* | Polymorph (level 8), Polymorph: Cow (level 60) | 25,000 | 5.2 | in reach |
 | Portal Master | Mage | casts of Portal: * | Portal: Darnassus (level 50, 60s cooldown), Portal: Ironforge (level 40, 60s cooldown), Portal: Orgrimmar (level 40, 60s cooldown), Portal: Stormwind (level 40, 60s cooldown), Portal: Thunder Bluff (level 50, 60s cooldown), Portal: Undercity (level 40, 60s cooldown) | 1,500 | 4.2 | in reach |
@@ -217,7 +217,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Warlock
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Soul Harvester | Warlock | casts of Drain Soul | Drain Soul (level 10) | 25,000 | 10.4 | in reach |
 | Life Tapper | Warlock | casts of Life Tap | Life Tap (level 6) | 100,000 | 41.7 | in reach |
@@ -238,7 +238,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Druid
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Shapeshifter | Druid | casts of Bear Form, Dire Bear Form, Cat Form, Travel Form, Aquatic Form, Moonkin Form | Aquatic Form (level 16), Bear Form (level 10), Cat Form (level 20), Dire Bear Form (level 40), Moonkin Form (level 40), Travel Form (level 30) | 100,000 | 6.9 | in reach |
 | Wild Gift | Druid | casts of Mark of the Wild, Gift of the Wild | Gift of the Wild (level 50), Mark of the Wild (level 1) | 25,000 | 5.2 | in reach |
@@ -259,7 +259,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Healer
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Caretaker | Paladin | played time of the sessions that logged in with this spec; no ceiling | - | 1,500 | - | in reach |
 | Caretaker | Priest | played time of the sessions that logged in with this spec; no ceiling | - | 1,500 | - | in reach |
@@ -304,7 +304,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Tank
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Stalwart | Warrior | played time of the sessions that logged in with this spec; no ceiling | - | 1,500 | - | in reach |
 | Stalwart | Paladin | played time of the sessions that logged in with this spec; no ceiling | - | 1,500 | - | in reach |
@@ -339,7 +339,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Melee
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Brawler | Warrior | played time of the sessions that logged in with this spec; no ceiling | - | 1,500 | - | in reach |
 | Brawler | Paladin | played time of the sessions that logged in with this spec; no ceiling | - | 1,500 | - | in reach |
@@ -394,7 +394,7 @@ Export the client's tables `SpellName`, `SpellMisc`, `SpellLevels`, `SpellCooldo
 
 ## Ranged
 
-| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |
+| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | Longshot | Hunter | played time of the sessions that logged in with this spec; no ceiling | - | 1,500 | - | in reach |
 | Longshot | Priest | played time of the sessions that logged in with this spec; no ceiling | - | 1,500 | - | in reach |

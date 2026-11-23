@@ -16,14 +16,14 @@ use Illuminate\Console\Command;
 
 /** The proof map of the class, talent tree and role feats against the client's spell tables (docs/FEAT-PROOF.md). */
 #[Signature("feats:proof {tables : Folder of the client's tables as CSV} {--write : Rewrite the generated part of docs/FEAT-PROOF.md}")]
-#[Description('Proves every class, talent tree and role feat can reach its scarlet tier on the spell tables of the client')]
+#[Description('Proves every class, talent tree and role feat can reach its legend on the spell tables of the client')]
 class FeatProofCommand extends Command
 {
     private const string START = '<!-- feats:proof start -->';
 
     private const string END = '<!-- feats:proof end -->';
 
-    private const string HEADER = '| Feat | For | Counts | Spells on this client | Scarlet | Fastest possible, hours | Result |';
+    private const string HEADER = '| Feat | For | Counts | Spells on this client | Legend | Fastest possible, hours | Result |';
 
     private const string SEPARATOR = '| --- | --- | --- | --- | --- | --- | --- |';
 
@@ -188,9 +188,10 @@ class FeatProofCommand extends Command
     {
         return match ($measure) {
             FeatMeasure::Hours => 'played time of the sessions that logged in with this spec; no ceiling',
-            FeatMeasure::DungeonRuns, FeatMeasure::DungeonBosses, FeatMeasure::RaidBosses, FeatMeasure::DeathlessRuns => 'the same count as the general feat, over the sessions played in this role; repeatable without limit',
+            FeatMeasure::Kills, FeatMeasure::Deaths, FeatMeasure::PlayerKills, FeatMeasure::DungeonRuns,
+            FeatMeasure::DungeonBosses, FeatMeasure::RaidBosses, FeatMeasure::DeathlessRuns => 'the same count as the general feat, over the sessions played in this role; repeatable without limit',
             FeatMeasure::Damage, FeatMeasure::Healing, FeatMeasure::DamageTaken => 'the client\'s damage meter totals (`DM` lines) summed over the sessions played in this role; no ceiling',
-            FeatMeasure::BestDamage, FeatMeasure::BestHealing, FeatMeasure::BestDamageTaken => 'the largest single-fight total of the client\'s damage meter; the scarlet tier is an estimate of a long raid boss fight at level 60, not measured on this server',
+            FeatMeasure::BestDamage, FeatMeasure::BestHealing, FeatMeasure::BestDamageTaken => 'the largest single-fight total of the client\'s damage meter; the legend is an estimate of a long raid boss fight at level 60, not measured on this server',
             default => '',
         };
     }

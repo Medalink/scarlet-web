@@ -19,12 +19,7 @@ class ShowCharacterPlayByDay
      */
     public function handle(array $characterIds): array
     {
-        $last = DB::table(Rollup::PlayHourlyCharacter->value)->whereIn('character_id', $characterIds)->max('bucket');
-        if ($last === null) {
-            return [];
-        }
-        $from = Carbon::parse((string) $last, 'UTC')->startOfDay()->subDays(self::DAYS - 1);
-        $rows = DB::table(Rollup::PlayHourlyCharacter->value)->whereIn('character_id', $characterIds)->where('bucket', '>=', $from)
+        $rows = DB::table(Rollup::PlayHourlyCharacter->value)->whereIn('character_id', $characterIds)
             ->selectRaw("to_char(bucket at time zone 'UTC', 'YYYY-MM-DD') as day, character_id")
             ->selectRaw('(sum(ms) / 1000.0)::float as seconds')
             ->groupBy('day', 'character_id')->orderBy('day')->get();
@@ -33,6 +28,11 @@ class ShowCharacterPlayByDay
             $days[$row->day][(int) $row->character_id] = (float) $row->seconds;
         }
 
-        return $days;
+        if ($days === []) {
+            return [];
+        }
+        $from = Carbon::parse((string) array_key_last($days))->subDays(self::DAYS - 1)->toDateString();
+
+        return array_filter($days, fn (string $day): bool => $day >= $from, ARRAY_FILTER_USE_KEY);
     }
 }

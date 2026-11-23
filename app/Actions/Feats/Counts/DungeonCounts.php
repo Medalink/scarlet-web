@@ -14,6 +14,8 @@ class DungeonCounts
 
     private const int SOLO = 1;
 
+    private const int FULL_GROUP = 5;
+
     /**
      * One count per dungeon feat, keyed by the enum value; null when the feat does not apply to the character.
      *
@@ -30,7 +32,8 @@ class DungeonCounts
             ->selectRaw('coalesce(sum(bosses) filter (where instance_type = ?), 0) as conqueror', [InstanceType::Raid->value])
             ->selectRaw('coalesce(sum(inside_ms), 0) as inside')
             ->selectRaw('count(*) filter (where not continues_previous and bosses > 0 and deaths = 0) as flawless')
-            ->selectRaw('count(*) filter (where not continues_previous and group_size = ?) as soloist', [self::SOLO])->first();
+            ->selectRaw('count(*) filter (where not continues_previous and group_size = ?) as soloist', [self::SOLO])
+            ->selectRaw('count(*) filter (where not continues_previous and group_size = ?) as full_house', [self::FULL_GROUP])->first();
         $familiar = DB::table('dungeon_runs')->where('character_id', $id)->where('counted', true)->where('continues_previous', false)
             ->groupBy('instance_id')->selectRaw('instance_id, count(*) as runs')->pluck('runs', 'instance_id');
 
@@ -44,6 +47,7 @@ class DungeonCounts
             Feat::Flawless->value => (int) ($runs->flawless ?? 0),
             Feat::Familiar->value => (int) $familiar->max(),
             Feat::Soloist->value => (int) ($runs->soloist ?? 0),
+            Feat::FullHouse->value => (int) ($runs->full_house ?? 0),
         ];
     }
 }

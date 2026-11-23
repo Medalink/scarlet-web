@@ -23,15 +23,7 @@ final class LeaderboardHallPage
         $filters = Filters::onPage($scope, $rulesets, self::PATH);
         $query = self::query($scope);
 
-        $entries = array_map(fn (array $item): array => self::entry($item['board'], $item['lead'], $item['total'], $query), $r['boards']);
-        $groups = [];
-        foreach ($r['boards'] as $i => $item) {
-            $groups[$item['board']->group()][] = $entries[$i];
-        }
-
         return [
-            'title' => count($r['boards']).' boards',
-            'groups' => $groups,
             'sub' => count($r['boards']).' boards of public characters. Each names who leads it now.',
             'filters' => $filters,
             'boards' => array_map(fn (array $item): array => self::entry($item['board'], $item['lead'], $item['total'], $query), $r['boards']),
@@ -76,7 +68,7 @@ final class LeaderboardHallPage
             'class' => $lead === null ? null : (string) $lead['class'],
             'none' => $level === null ? 'No public character yet' : 'Nobody has a recorded level-up to '.$level.' yet',
             'value' => $lead === null ? null : $board->format($lead['value']),
-            'count' => ($board === Board::MostDistance ? 'world widths, ' : '').Format::count($total, 'character'),
+            'count' => Format::count($total, 'character'),
         ];
     }
 }

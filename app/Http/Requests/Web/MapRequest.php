@@ -8,8 +8,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * The ruleset, layer, opened zone and character of the world map page, as query parameters. With `?scope=mine` the page is the
- * signed-in account's own characters.
+ * The ruleset, layer, opened zone and character of the world map page, as query parameters. On `/account/map`, declared
+ * with `->defaults(ScopeRequest::OWN, true)`, the page is the signed-in account's own characters.
  */
 class MapRequest extends FormRequest
 {
@@ -36,7 +36,6 @@ class MapRequest extends FormRequest
             'layer' => ['nullable', Rule::enum(WorldLayer::class)],
             'zone' => ['nullable', 'integer', 'min:1', 'max:'.self::LARGEST_ZONE],
             'character' => ['nullable', 'string', 'max:64'],
-            'scope' => ['nullable', Rule::in(['everyone', 'mine'])],
         ];
     }
 
@@ -70,10 +69,10 @@ class MapRequest extends FormRequest
         return is_string($name) && $name !== '' ? $name : null;
     }
 
-    /** Whether a signed-in viewer asks for their own map with `?scope=mine`. */
+    /** Whether the route is the signed-in account's own map. */
     public function own(): bool
     {
-        return $this->viewer() !== null && $this->validated('scope') === 'mine';
+        return ($this->route()?->defaults[ScopeRequest::OWN] ?? false) === true;
     }
 
     /** The signed-in account, or null for a visitor. */

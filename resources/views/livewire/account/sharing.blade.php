@@ -1,15 +1,15 @@
 <div>
-  <div class="sc-set">
+  <x-rows>
 @foreach ($groups as $group)
-    <x-sc.set-row :title="$group['label']" :body="$group['body']" wire:key="g-{{ $group['key'] }}">
+    <x-row :title="$group['label']" :body="$group['body']" wire:key="g-{{ $group['key'] }}">
 @if (! $group['on'])
-      <button type="button" class="sc-btn danger small" wire:click="remove('{{ $group['key'] }}')" wire:confirm="Remove {{ $group['label'] }} from the server? Its parts and numbers are deleted for all your characters. This cannot be undone.">Remove from server</button>
+      <x-btn kind="danger" wire:click="remove('{{ $group['key'] }}')" wire:confirm="Remove {{ $group['label'] }} from the server? Its parts and numbers are deleted for all your characters. This cannot be undone.">Remove from server</x-btn>
 @endif
-      <x-sc.toggle :label="'Share '.$group['label']" :checked="$group['on']" :disabled="$group['locked']" wire:change="setShared('{{ $group['key'] }}', $event.target.checked)" />
-    </x-sc.set-row>
+      <x-switch :label="'Share '.$group['label']" :checked="$group['on']" :disabled="$group['locked']" wire:change="setShared('{{ $group['key'] }}', $event.target.checked)" />
+    </x-row>
 @endforeach
-  </div>
+  </x-rows>
 @if ($notice)
-  <p class="sc-note mt-3" role="status">{{ $notice }}</p>
+  <x-note role="status">{{ $notice }}</x-note>
 @endif
 </div>

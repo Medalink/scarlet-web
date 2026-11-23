@@ -1,6 +1,6 @@
 {{-- One glyph of the site's icon set: 24 units, drawn with one round stroke, coloured by the text around it.
      name: characters, level, hours, kills, deaths, quests, dungeons, gold, zones, distance, skills, fish, gather,
-     jumps, swim, emote, crown, shield, clock, pin, creature, item, tack, talents, spell, heal, pet, fire, wing. --}}
+     jumps, swim, emote, crown, shield, clock, pin, creature, item, tack, talents, spell, heal, pet. --}}
 @props(['name'])
 @php
     $glyphs = [
@@ -31,8 +31,6 @@
         'spell' => '<path d="m12 3.2 2.1 6.7 6.7 2.1-6.7 2.1-2.1 6.7-2.1-6.7L3.2 12l6.7-2.1z"/>',
         'heal' => '<path d="M9.4 3.6h5.2v5.8h5.8v5.2h-5.8v5.8H9.4v-5.8H3.6V9.4h5.8z"/>',
         'pet' => '<circle cx="6.6" cy="10" r="1.9"/><circle cx="12" cy="6.6" r="1.9"/><circle cx="17.4" cy="10" r="1.9"/><path d="M12 12c-2.9 0-5.2 2.4-5.2 4.8 0 1.6 1.2 2.6 2.6 2.6 1 0 1.6-.5 2.6-.5s1.6.5 2.6.5c1.4 0 2.6-1 2.6-2.6 0-2.4-2.3-4.8-5.2-4.8z"/>',
-        'fire' => '<path d="M12 3.4c.6 3.4 4.8 5.2 4.8 9.8a4.8 4.8 0 0 1-9.6 0c0-1.9.9-3.2 2-4.4.3 1.6 1 2.4 1.8 2.6-.4-2.9.2-5.6 1-8z"/><path d="M5 20.6h14"/>',
-        'wing' => '<path d="M3 15.2c5.6.4 9.6-1.6 12.4-6.2 1.6-2.6 3.4-4 5.6-4.4-.4 3.8-1.8 6.6-4 8.6l-3.4.6 2 1.2c-1.6 1.6-3.8 2.6-6.6 2.8L7 20l-.4-2.4c-1.4-.4-2.6-1.2-3.6-2.4z"/>',
     ];
 @endphp
 <svg {{ $attributes->class('ico') }} viewBox="0 0 24 24" aria-hidden="true">{!! $glyphs[$name] ?? '' !!}</svg>

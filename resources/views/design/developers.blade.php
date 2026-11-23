@@ -1,5 +1,5 @@
 @php($base = App\View\Design\Gallery::BASE)
-<x-layouts.sc title="Scarlet public API reference" current="developers" :base="$base">
+<x-layouts.app title="Scarlet public API reference" current="developers" :base="$base">
 <div class="wrap">
   <x-page-head title="Public API">
     <x-slot:sub>Everything public on this site is readable as JSON. Read-only, no sign-up, version 1.</x-slot:sub>
@@ -22,4 +22,4 @@
     </div>
   </div>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

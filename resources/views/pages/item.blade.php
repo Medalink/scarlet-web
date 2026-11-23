@@ -1,6 +1,6 @@
 @php($tail = array_keys(array_filter(['gathered' => $d['gathered'], 'bosses' => $d['bosses'], 'made' => $d['made'], 'uses' => $d['uses'], 'prices' => $d['prices'], 'market' => $d['market']])))
 @php($recipeColumns = [['label' => 'Recipe'], ['label' => 'Makes'], ['label' => 'Needs']])
-<x-layouts.sc :title="$d['name'].': where it drops and how often'" :description="trim($d['sub'].' Where '.$d['name'].' drops in WoW Forever and how often.')">
+<x-layouts.app :title="$d['name'].': where it drops and how often'" :description="trim($d['sub'].' Where '.$d['name'].' drops in WoW Forever and how often.')">
 <div class="wrap">
   <x-page-head :title="$d['name']" :class="$d['quality']" :single="true">
     <x-slot:sub>{{ $d['sub'] }}@if ($d['sell']) Sells for {{ $d['sell'] }}.@endif</x-slot:sub>
@@ -61,4 +61,4 @@
     @endif
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

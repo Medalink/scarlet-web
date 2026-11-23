@@ -6,6 +6,7 @@ use App\Actions\Public\Character\SkillRanks;
 use App\Models\Character;
 use App\Support\Feat;
 use App\Support\Profession;
+use App\Support\SkillKind;
 use Illuminate\Support\Facades\DB;
 
 /** The skill feats: professions and their ranks, skill-ups and crafts. */
@@ -28,6 +29,7 @@ class SkillCounts
         return [
             Feat::Artisan->value => array_sum($held),
             Feat::Master->value => count(array_filter($held, fn (int $rank): bool => $rank >= Profession::SKILL_CAP)),
+            Feat::Practised->value => DB::table('skill_ups')->where('character_id', $id)->where('counted', true)->where('kind', SkillKind::Skill->value)->count(),
             Feat::Crafter->value => (int) ($crafts->crafted ?? 0),
             Feat::Repertoire->value => (int) ($crafts->repertoire ?? 0),
         ];

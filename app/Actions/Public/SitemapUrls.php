@@ -3,7 +3,6 @@
 namespace App\Actions\Public;
 
 use App\Support\Board;
-use App\Support\Feat;
 use App\Support\Profession;
 use App\Support\SearchKind;
 use App\Support\Server;
@@ -38,16 +37,13 @@ class SitemapUrls
      */
     private function pages(): array
     {
-        $paths = ['/', '/stats', '/map', '/loot', '/loot/groups', '/camps', '/professions'];
+        $paths = ['/', '/demo', '/stats', '/map', '/loot', '/loot/groups', '/camps'];
         foreach (Profession::withPages() as $profession) {
             $paths[] = '/professions/'.$profession->slug();
         }
-        array_push($paths, '/search', '/developers', '/download', '/leaderboards', '/feats', '/talents', '/stats/compare');
-        foreach (Feat::cases() as $feat) {
-            $paths[] = '/feats/'.$feat->value;
-        }
+        array_push($paths, '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/talents', '/rulesets', '/hardcore-deaths');
         foreach ($this->rulesets->handle() as $ruleset) {
-            $paths[] = '/stats/'.$ruleset['slug'];
+            $paths[] = '/rulesets/'.$ruleset['slug'];
         }
         foreach (Board::cases() as $board) {
             $paths[] = '/leaderboards/'.$board->value;

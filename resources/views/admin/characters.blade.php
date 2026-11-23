@@ -1,4 +1,4 @@
-<x-layouts.sc title="Scarlet admin: characters" :index="false" :brand="false">
+<x-layouts.app title="Scarlet admin: characters" :index="false" :brand="false">
 <div class="wrap">
   <x-page-head title="Characters">
     <x-slot:sub>Every character uploaded, public and private, the most recently seen first. Search part of a name, or #12 for the characters of account 12.</x-slot:sub>
@@ -29,4 +29,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

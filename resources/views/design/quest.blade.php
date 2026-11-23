@@ -2,7 +2,7 @@
     use App\View\Design\Gallery;
     $f = Gallery::filters();
 @endphp
-<x-layouts.sc title="The Marsh Takes Its Due: turn-ins and levels" current="search" :base="Gallery::BASE">
+<x-layouts.app title="The Marsh Takes Its Due: turn-ins and levels" current="search" :base="Gallery::BASE">
 <div class="wrap">
   <x-page-head title="The Marsh Takes Its Due">
     <x-slot:sub>Level 23 quest in <a href="{{ Gallery::url('zone') }}">Saltmarsh Reach</a>. Pays 2,450 XP and <x-money :copper="1800" />.</x-slot:sub>
@@ -16,4 +16,4 @@
     <x-module span="w5" :last="true" id="h-r" heading="Reward chosen"><x-rank :rows="$d['rewards']" /></x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

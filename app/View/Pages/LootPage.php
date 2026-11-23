@@ -31,9 +31,8 @@ final class LootPage
         $zones = $r['zones'];
         /** @var array{rows: list<array<string, mixed>>, more: bool} $table */
         $table = $r['table'];
-        /** @var list<array{rule: string, size: int|null, windows: int}> $byRule */
-        $byRule = $r['rules'];
-        $rules = self::byWords($byRule);
+        /** @var list<array{rule: string, size: int|null, windows: int}> $rules */
+        $rules = $r['rules'];
         $offset = (int) $r['offset'];
         $items = $filter->view === LootView::Items;
         $top = $zones === [] ? 1 : max(1, $zones[0]['windows']);
@@ -50,9 +49,9 @@ final class LootPage
                 ['label' => 'Characters', 'value' => Format::number($figures['characters'])],
             ],
             'heading' => $items ? 'Items' : 'Sources',
-            'views' => [...array_map(fn (LootView $view): array => [
+            'views' => array_map(fn (LootView $view): array => [
                 'label' => $view->label(), 'href' => self::url(['view' => $view === LootView::Creatures ? null : $view->value, ...array_intersect_key($filter->params(), array_flip(['zone', 'q', 'quality']))]), 'on' => $view === $filter->view,
-            ], LootView::cases()), ['label' => 'Group loot', 'href' => '/loot?view=groups', 'on' => false]],
+            ], LootView::cases()),
             'form' => self::form($filter, $zones),
             'columns' => $items
                 ? [['label' => 'Item'], ['label' => 'Dropped', 'numeric' => true], ['label' => 'Sources', 'numeric' => true], ['label' => 'Best source'], ['label' => 'Zone']]
@@ -68,27 +67,9 @@ final class LootPage
                 'value' => Format::number($zone['windows']), 'share' => $zone['windows'] / $top * 100,
             ], array_slice($zones, 0, self::ZONES)),
             'rules' => array_map(fn (array $rule): array => [
-                'label' => $rule['label'], 'href' => '/loot?view=groups', 'value' => Format::number($rule['windows']), 'share' => $rule['windows'] / $mostRule * 100,
+                'label' => self::ruleWords($rule['rule'], $rule['size']), 'href' => '/loot/groups', 'value' => Format::number($rule['windows']), 'share' => $rule['windows'] / $mostRule * 100,
             ], $rules),
         ];
-    }
-
-    /**
-     * The rule rows merged by the words they show: a size of none, 0 and 1 all read as the rule alone.
-     *
-     * @param  list<array{rule: string, size: int|null, windows: int}>  $rules
-     * @return list<array{label: string, windows: int}>
-     */
-    private static function byWords(array $rules): array
-    {
-        $merged = [];
-        foreach ($rules as $rule) {
-            $label = self::ruleWords($rule['rule'], $rule['size']);
-            $merged[$label] = ($merged[$label] ?? 0) + $rule['windows'];
-        }
-        arsort($merged);
-
-        return array_map(fn (string $label, int $windows): array => ['label' => $label, 'windows' => $windows], array_keys($merged), array_values($merged));
     }
 
     private static function ruleWords(string $rule, ?int $size): string

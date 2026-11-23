@@ -20,8 +20,8 @@ class CharacterLinks
     {
         $path = '/c/'.rawurlencode($character->name);
         $class = PlayerClass::tryFrom(strtoupper((string) $character->class));
-        $classPage = $class !== null && ($hasClassPage ?? $this->has->handle($character)) ? $path.'#class' : null;
+        $classPage = $class !== null && ($hasClassPage ?? $this->has->handle($character)) ? $path.'/'.$class->slug() : null;
 
-        return new Links($path, $classPage, null, $this->matches->handle($character->id) > 0 ? $path.'#battlegrounds' : null);
+        return new Links($path, $classPage, null, $this->matches->handle($character->id) > 0 ? $path.'/battlegrounds' : null);
     }
 }

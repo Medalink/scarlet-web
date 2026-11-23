@@ -1,4 +1,4 @@
-<x-layouts.sc title="Loot: what creatures and objects give and how often" description="What WoW Forever players looted, from which creatures, objects and containers, and how often each item dropped, with the counts behind every rate." current="loot">
+<x-layouts.app title="Loot: what creatures and objects give and how often" description="What WoW Forever players looted, from which creatures, objects and containers, and how often each item dropped, with the counts behind every rate." current="loot">
 <div class="wrap">
   <x-page-head title="Loot" :single="true">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
@@ -15,7 +15,7 @@
         @if ($f['levels'])<input name="min" type="number" min="-1" max="80" value="{{ $f['min'] }}" placeholder="Level from" aria-label="Level from"><input name="max" type="number" min="-1" max="80" value="{{ $f['max'] }}" placeholder="to" aria-label="Level to">@endif
         <select class="pick" name="quality" aria-label="Quality"><option value="">Any quality</option>@foreach ($f['qualities'] as $quality)<option value="{{ $quality['value'] }}" @selected($quality['value'] === $f['quality'])>{{ $quality['label'] }}</option>@endforeach</select>
         <select class="pick" name="sort" aria-label="Sort by">@foreach ($f['sorts'] as $sort)<option value="{{ $sort['value'] }}" @selected($sort['value'] === $f['sort'])>{{ $sort['label'] }}</option>@endforeach</select>
-        <button class="sc-btn quiet" type="submit">Apply</button>
+        <button class="btn quiet" type="submit">Apply</button>
       </form>
       @if ($d['rows'])
       <x-table :rows="$d['rows']" :columns="$d['columns']" style="margin-top:1.1rem" />
@@ -41,4 +41,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

@@ -1,4 +1,4 @@
-<x-layouts.sc title="WoW Forever rulesets compared" current="stats" canonical="/stats/compare" :description="'Characters, hours, time to level '.$target.' and deaths for each ruleset.'">
+<x-layouts.app title="WoW Forever rulesets compared" current="rulesets" :description="'Characters, hours, time to level '.$target.' and deaths for each ruleset.'">
 <div class="wrap">
   <x-page-head title="Rulesets compared">
     <x-slot:sub>A ruleset is a permanent choice for each character. Each row links to its own dashboard.@if ($d['unidentified']) "Not identified" holds characters whose ruleset Scarlet cannot tell yet, because the game does not report it.@endif</x-slot:sub>
@@ -26,10 +26,11 @@
     <x-module :last="true" id="h-s" heading="Hardcore characters reaching each level">
       @if ($d['survival'])
       <x-plot id="surv" label="Share of hardcore characters that reached each level" :spec="$d['survival']" />
+      <x-note><a href="/hardcore-deaths">Hardcore deaths by level and by day</a></x-note>
       @else
       <x-note>No hardcore characters recorded yet.</x-note>
       @endif
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

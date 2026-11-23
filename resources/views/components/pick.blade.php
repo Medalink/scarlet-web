@@ -2,4 +2,4 @@
      or with `fit` the id of a zone the world map with that canvas id moves to. selected: the chosen label, the first by default. --}}
 @props(['label', 'options', 'selected' => null, 'fit' => null])
 @php($chosen = $selected ?? (is_array($options[0]) ? $options[0][0] : $options[0]))
-<select class="sc-select" aria-label="{{ $label }}"@if ($fit) data-fit-map="{{ $fit }}"@elseif (is_array($options[0])) data-nav @endif>@foreach ($options as $option)@php([$text, $value, $off] = is_array($option) ? array_pad($option, 3, null) : [$option, null, null])<option @selected($text === $chosen) @disabled($off)@if ($value !== null) value="{{ $value }}"@endif>{{ $text }}</option>@endforeach</select>
+<select class="pick" aria-label="{{ $label }}"@if ($fit) data-fit-map="{{ $fit }}"@elseif (is_array($options[0])) data-nav @endif>@foreach ($options as $option)@php([$text, $value, $off] = is_array($option) ? array_pad($option, 3, null) : [$option, null, null])<option @selected($text === $chosen) @disabled($off)@if ($value !== null) value="{{ $value }}"@endif>{{ $text }}</option>@endforeach</select>

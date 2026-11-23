@@ -2,7 +2,7 @@
     use App\View\Design\Gallery;
     $f = Gallery::filters();
 @endphp
-<x-layouts.sc title="Marshwalker Greaves: where it drops" current="search" :base="Gallery::BASE">
+<x-layouts.app title="Marshwalker Greaves: where it drops" current="search" :base="Gallery::BASE">
 <div class="wrap">
   <x-page-head title="Marshwalker Greaves" class="q3">
     <x-slot:sub>Item level 28 mail feet. Requires level 23. Binds when equipped. Sells for <x-money :copper="2140" />.</x-slot:sub>
@@ -18,4 +18,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>

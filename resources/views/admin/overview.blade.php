@@ -1,4 +1,4 @@
-<x-layouts.sc title="Scarlet admin: totals and growth" :index="false" :brand="false">
+<x-layouts.app title="Scarlet admin: totals and growth" :index="false" :brand="false">
 <div class="wrap">
   <x-page-head title="Admin">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
@@ -66,4 +66,4 @@
     </x-module>
   </x-sheet>
 </div>
-</x-layouts.sc>
+</x-layouts.app>
