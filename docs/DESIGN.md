@@ -1357,7 +1357,7 @@ The JSON answers the pages fetch (`/api/v1/public/*` and a character's heat endp
 
 The stats pages show the same numbers as art and as a game (owner, 2026-11-21: "more fun, more gamified and more
 visual", "better art and better backgrounds"). The look is still the survey sheet; this layer adds what a survey
-sheet has and the pages lacked. `resources/css/game.css` holds it and loads after `app.css` on every app page.
+sheet has and the pages lacked. `resources/css/hubs.css` holds it, on the Scarlet tokens, and loads with `tailwind.css` on every page.
 
 - **Contour sheet.** `tools/art/contours.mjs` draws `public/art/contours.svg`: isolines of a seeded noise field at the
   sheet's two line alphas, every fifth line heavier, crosses on the summits. The same seed writes the same bytes. It
