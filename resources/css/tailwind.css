@@ -13,6 +13,9 @@
 @source '../views/pages/feats.blade.php';
 @source '../views/pages/feat.blade.php';
 @source '../views/character';
+@source '../views/account';
+@source '../views/livewire/account';
+@source '../../app/View/Account';
 @source '../../app/View/Character';
 @source '../views/design/feats.blade.php';
 @source '../js/sc';

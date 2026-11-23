@@ -149,9 +149,9 @@ export async function hiddenCharacterHidesItsClassPage(ctx) {
   const character = `/c/${WARLOCK}`;
   const classPage = `${character}/warlock`;
   const switchOf = `input[type="checkbox"][aria-label="Public page for ${WARLOCK.replace("-", " ")}"]`;
-  const tab = await browser.open(ctx.base + "/account", { width: 1280, height: 800, cookies: jar.entries() });
+  const tab = await browser.open(ctx.base + "/account/settings", { width: 1280, height: 800, cookies: jar.entries() });
   const setPublic = async (on) => {
-    await tab.until(`document.querySelector('${switchOf}') !== null`, SWITCH_MS, `the account page has no public switch for ${WARLOCK} (${tab.problems.join(" | ") || "no page errors"})`);
+    await tab.until(`document.querySelector('${switchOf}') !== null`, SWITCH_MS, `the account settings page has no public switch for ${WARLOCK} (${tab.problems.join(" | ") || "no page errors"})`);
     await tab.evaluate(`(() => { const box = document.querySelector('${switchOf}'); if (box.checked !== ${on}) box.click(); })()`);
     const deadline = Date.now() + SWITCH_MS;
     while ((await ctx.http.page(character)).status !== (on ? 200 : 404)) {

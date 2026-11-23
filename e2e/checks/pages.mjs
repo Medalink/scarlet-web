@@ -215,7 +215,8 @@ export async function appLinksToAccount(ctx) {
 
   const me = expectJson(expectStatus(await app.me(), 200, "GET /api/v1/installs/me after the link"), "installs/me after the link");
   if (me.linked !== true) throw new Error(`after the link the install should say linked: true, saw ${JSON.stringify(me)}`);
-  const account = expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
-  if (!account.text.includes(label)) throw new Error(`/account should list the linked install ${label}, saw ${account.text.slice(0, 300)}`);
+  expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
+  const settings = expectStatus(await http.request("/account/settings", { jar, headers: { Accept: "text/html" } }), 200, "GET /account/settings");
+  if (!settings.text.includes(label)) throw new Error(`/account/settings should list the linked install ${label}, saw ${settings.text.slice(0, 300)}`);
   expectStatus(await http.request("/account/characters", { jar, headers: { Accept: "text/html" } }), 200, "GET /account/characters");
 }

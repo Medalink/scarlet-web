@@ -34,7 +34,7 @@
         <a href="{{ $row['href'] }}" class="sc-char" style="--cls:{{ $row['color'] }}">
           <span><span class="nm">{{ $row['name'] }}</span><span class="sc-sub mt-1 block" style="color:var(--muted)">{{ $row['line'] }}</span></span>
           <span><span class="flex items-baseline justify-between"><b class="sc-num sc-num-md">{{ $row['level'] }}</b><span class="sc-label">of 60</span></span><span class="sc-lvl mt-1.5 block"><i style="width:{{ $row['width'] }}%"></i></span></span>
-          <span class="flex items-center gap-2"><x-sc.ring :value="$row['ring']" :ticks="20" :size="40" /><span class="text-[13px]"><b class="text-fg">{{ $row['feats'] }}</b> feats</span></span>
+          <span class="flex items-center gap-2"><x-sc.ring :value="$row['ring']" :ticks="20" :size="40" /><span class="text-[13px]"><b class="text-fg">{{ $row['feats'] }}</b> {{ $row['feats'] === 1 ? 'feat' : 'feats' }}</span></span>
           <span><span class="block text-[13px] text-muted">{{ $row['seen'] }}</span>@if ($row['place'])<span class="sc-say mt-1 block" style="font-size:15px">{{ $row['place'] }}</span>@endif</span>
           <x-sc.glyph name="arrow" :size="18" />
         </a>

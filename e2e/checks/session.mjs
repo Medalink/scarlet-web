@@ -38,7 +38,7 @@ export async function sessionSwitchHidesThePage(ctx) {
   if (me.linked !== true) await linkToAccount(ctx.http, jar, ctx.client);
 
   const route = `/c/${NAME}/sessions/${await firstSession(ctx)}`;
-  const tab = await browser.open(`${ctx.base}/account`, { width: 1280, height: 800, cookies: jar.entries() });
+  const tab = await browser.open(`${ctx.base}/account/settings`, { width: 1280, height: 800, cookies: jar.entries() });
   const visitorSees = async (status) => {
     for (const deadline = Date.now() + SWITCH_MS; Date.now() < deadline; await sleep(250)) {
       if ((await ctx.http.page(route)).status === status) return;
@@ -46,7 +46,7 @@ export async function sessionSwitchHidesThePage(ctx) {
     throw new Error(`${route} never answered a visitor ${status}`);
   };
   const setSessions = async (on) => {
-    await tab.until(`document.querySelector('${SWITCH}') !== null`, SWITCH_MS, `the account page has no "Show sessions" switch for ${SHOWN} (${tab.problems.join(" | ") || "no page errors"})`);
+    await tab.until(`document.querySelector('${SWITCH}') !== null`, SWITCH_MS, `the account settings page has no "Show sessions" switch for ${SHOWN} (${tab.problems.join(" | ") || "no page errors"})`);
     await tab.evaluate(`(() => { const box = document.querySelector('${SWITCH}'); if (box.checked !== ${on}) box.click(); })()`);
     await visitorSees(on ? 200 : 404);
   };
