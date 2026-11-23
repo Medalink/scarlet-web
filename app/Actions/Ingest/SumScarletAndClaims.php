@@ -12,8 +12,8 @@ class SumScarletAndClaims
     /**
      * What Scarlet's own rows of the kind plus the counted amounts of the characters' claims that add come to inside
      * `[from, to]` (docs/DESIGN.md, Addon counts, rule 7). Fishing is casts, landed and items; herb and ore are
-     * attempts, the characters' `gathers` rows of that kind; any other kind has no source of Scarlet rows and no
-     * metric, so it adds up to an empty array.
+     * attempts, the characters' `gathers` rows of that kind; any other kind (`kill`, `run`, `xp`) has no figure here
+     * and no metric, so it adds up to an empty array.
      *
      * @param  list<int>  $characters
      * @return array<string, int>

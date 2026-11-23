@@ -304,8 +304,8 @@ group, or the character, deletes the character's claims.
 `reconcile(character, kind)` is one function in `scarlet-part`, run by the server and later by the app
 (`scarlet-part reconcile` reads JSON on stdin and writes JSON; `--explain` prints the table of statuses). It reads rows,
 not parts: the character's claims of the kind, the character-scope claims of the characters linked to it with the
-times of the Scarlet rows each holds within 60 s of those claims (rule 4) and its own Scarlet rows of the kind, counted
-or not. For fishing a row is a `gathers` row of kind fish with its `looted` and
+Scarlet rows each holds beside those claims (rule 4: for fishing the times of its rows within 60 s of them, for
+`kill`, `xp` and `run` the rows the kind's rule reads) and its own Scarlet rows of the kind, counted or not. For fishing a row is a `gathers` row of kind fish with its `looted` and
 the quantity of the loot window that followed it (the `gather_items` from its cast to the next cast of its session,
 without the ones that came from opening a container). For a `kill` claim a row is the count of `kills` rows with
 `player` false at one level, with the time of the last of them, and the count with no level (the decoder writes a null
@@ -334,8 +334,9 @@ The order of the work is fixed, and each step sees only the claims the steps bef
 3. A claim equal to one of another linked character is `superseded` (rule 4) unless its character is the one that
    counts it: the one with Scarlet rows beside the claim, else the lowest id. The claims it moves stay known to
    steps 4 and 5, so that the claims they were one record with are decided with them.
-4. Dated claims of one origin that overlap collapse into one (rule 5, second sentence): the claims are taken by end,
-   start, store and dims, latest first, and each one overlapping a winner already taken loses to it.
+4. Dated claims of one origin with equal dims that overlap collapse into one (rule 5, second sentence): the claims
+   are taken by end, start, store and dims, latest first, and each one with equal dims overlapping a winner already
+   taken loses to it.
 5. For `kill`, `xp` and `run`, each claim left goes through its own rule (3L, 2Q, 3R): none has a second origin, so
    there is no rule 5 across origins, and none has a time to assign rows by. For fishing, per
    origin, highest rank first, Scarlet's rows are assigned to the claims left and settled across the seams between
@@ -369,7 +370,8 @@ A page reads a claim only while its character has no null version.
 
 Each claim stores `status`, `counted` and `evidence`, the `ruleset_id` and `counted_ok` of the session that holds the
 window's end (else the nearest session in time), and the `level` and `zone_id` of the last Scarlet row assigned to it
-(null when none is). The evidence is a JSON object that always holds `rule` (1 to 7, `bounds` or `unmapped`) and
+(null when none is). A `kill` or `xp` claim stores its `level` dim instead, with a row or without; `sharedLevels`,
+`killsAssigned` and the rows beside a claim for rule 4 read it. The evidence is a JSON object that always holds `rule` (1 to 7, `bounds` or `unmapped`) and
 `diff`, the claimed minus the counted amount per metric, so that claimed = counted + diff for every metric. It adds
 what the rule used: `rows` (`n`, `first` and `last` in epoch milliseconds, `looted`, `items`; for rule 3L `n`, `level`
 and `unleveled`, the rows at the claim's level and with none; for rule 2Q `n` 1 and `quest`), `quest`, `scarlet` and
@@ -500,7 +502,8 @@ Rules, in order:
    counted claim amounts of its characters inside `[from, to]`, and lists a sum more than 2.5% above it as a note,
    never a violation (Mastercraft ran 1.2% below the sum of the per-character addons; a character also played on
    another PC, or with Mastercraft off, honestly exceeds it). It does the same for a herb or ore read, its `attempts`
-   against the characters' `gathers` rows of that kind; a kind with no source of Scarlet rows is never compared.
+   against the characters' `gathers` rows of that kind; a kind the account page has no figure for (`kill`, `run`,
+   `xp`) is never compared.
 
 On the owner's fishing data this gives Scarlet's 343 casts, 295 landed and 316 items, plus 0 casts, 39 landed and 40
 items from the two Fishing Log sessions before Scarlet read loot windows: 343, 334 and 356. With a Scarlet session
@@ -570,8 +573,9 @@ node e2e/addon-counts.mjs levels` runs only these). The totals each history has:
 
 The audit passes with every one of these characters held at once, reconcile from blank columns decides all of their
 claims again to the same hash, and a second reconcile changes none. The fishing cases of the lane keep their verdict
-hashes (every claim, status, counted amount and evidence, without the reconcile version) at version 6: 38 of 38 equal
-to the ones the same lane gave at version 5.
+hashes (every claim, status, counted amount and evidence, without the reconcile version) at version 6: 39 of 39 equal
+to the ones the same lane gave when these rules first ran, and 38 of 38 equal to the ones it gave at version 5 (the
+herb and ore case came after it).
 
 ### Reading
 
@@ -618,8 +622,8 @@ to the ones the same lane gave at version 5.
   Each shows the read's `from_at` and `to_at`, and under it what Scarlet's rows plus the counted claims of the
   characters of the account that carry the read add up to inside `[from, to]`, the sum of rule 7 and of the audit
   (`SumScarletAndClaims`). Scarlet's rows are picked by kind: fishing's `gathers` (casts, those looted as catches) and
-  `gather_items` (fish), and for herb and ore the characters' `gathers` rows of that kind, one attempt each. A kind with
-  no source of Scarlet rows (`kill`, `run`, `xp`) has no figures and no note, and the page does not show it. A sum more
+  `gather_items` (fish), and for herb and ore the characters' `gathers` rows of that kind, one attempt each. A kind the
+  account page has no figure for (`kill`, `run`, `xp`) has no figures and no note, and the page does not show it. A sum more
   than 2.5% above a figure is written under the table as a note, for herb and ore as for fishing. A read is left out
   while a character that carries it has a null reconcile version, and the flag above switches it off with the other
   reads. The public API and the public pages never read it.
@@ -660,8 +664,8 @@ character (check 9).
    - `xp`: per character and quest id, the `counted` claims number at most the claims minus Scarlet's turn-ins of it,
      the `counted` XP is at most that of the claims with the smallest `xp`, as many as the claims minus Scarlet's
      turn-ins, and no Scarlet row is the evidence of two claims.
-   - `run`: no `counted` claim has a joined Scarlet run of its instance overlapping `[from - 600 s, to + 5 s]`, and no
-     two claims of one instance are under 2,400 s apart when one is `counted` and the other is `counted` or was
+   - `run`: no `counted` claim has a joined Scarlet run of its instance overlapping `[from - 600 s, to + 5 s]` or a
+     Scarlet run of any instance overlapping its unpadded `[from, to]`, and no two claims of one instance are under 2,400 s apart when one is `counted` and the other is `counted` or was
      moved to another character by rule 4.
 5. No two counted or residual dated claims of one character overlap by more than 60 s across origins, except a
    residual of rule 5, which counts only what the higher claims do not cover, or at all within one origin with equal
