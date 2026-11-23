@@ -531,14 +531,37 @@ pub fn reconcile(input: &Input) -> Vec<Outcome> {
 
     let mut dated = Vec::new();
     let mut events = Vec::new();
+    let mut twinned = Vec::new();
     for &i in &order {
         let c = &claims[i];
-        match early(input, c).or_else(|| twin(input, c)) {
-            Some(d) => decided[i] = Some(d),
-            None if c.window == WINDOW_EVENT => events.push(i),
-            None => dated.push(i),
+        if let Some(d) = early(input, c) {
+            decided[i] = Some(d);
+            continue;
+        }
+        if let Some(d) = twin(input, c) {
+            decided[i] = Some(d);
+            twinned.push(i);
+            continue;
+        }
+        if c.window == WINDOW_EVENT {
+            events.push(i);
+            continue;
+        }
+        dated.push(i);
+    }
+    for &i in &dated {
+        let moved = twinned
+            .iter()
+            .find(|&&t| rules::one_level_record(&claims[t], &claims[i]));
+        if let Some(&t) = moved {
+            decided[i] = Some(nothing(
+                &claims[i],
+                Status::Superseded,
+                json!({"rule": 5, "same_origin": true, "with": claims[t].natural()}),
+            ));
         }
     }
+    dated.retain(|&i| decided[i].is_none());
     for (loser, winner) in rules::collapse(claims, &dated) {
         decided[loser] = Some(nothing(
             &claims[loser],
@@ -559,7 +582,13 @@ pub fn reconcile(input: &Input) -> Vec<Outcome> {
         }
         Some(Kind::Kill) => levels::kills(&input.character.claims, &rows, &open, &mut decided),
         Some(Kind::Xp) => levels::quests(&input.character.claims, &rows, &open, &mut decided),
-        Some(Kind::Run) => runs::runs(&input.character.claims, &rows, &open, &mut decided),
+        Some(Kind::Run) => runs::runs(
+            &input.character.claims,
+            &rows,
+            &open,
+            &twinned,
+            &mut decided,
+        ),
         None => {}
     }
     for (&i, event) in events

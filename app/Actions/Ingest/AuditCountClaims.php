@@ -25,11 +25,12 @@ class AuditCountClaims
     /**
      * Checks 4 and 11 of docs/DESIGN.md, Addon counts, Checks, for the kinds that count by level, quest and run, as
      * SQL over the stored columns and Scarlet's own rows. Kill: no two claims of one origin and store that count, or
-     * are superseded by rows, share a level, and the count assigned is Scarlet's kills at the level plus the ones with
-     * no level. Xp: per character and quest id the counted claims number at most the claims minus Scarlet's turn-ins,
-     * and no Scarlet row is the evidence of two claims. Run: no counted claim has a joined Scarlet run beside it, and
-     * no two counted claims of one instance are under 2,400 seconds apart. Every kind: no claim is superseded by rule 4
-     * in favour of a character that holds fewer Scarlet rows beside it. With no character, every character is checked.
+     * are superseded by rows, share a level, none counts beside one that rule 4 moved to another character, and the
+     * count assigned is Scarlet's kills at the level plus the ones with no level. Xp: per character and quest id the
+     * counted claims number at most the claims minus Scarlet's turn-ins, and no Scarlet row is the evidence of two
+     * claims. Run: no counted claim has a joined Scarlet run beside it, and none is under 2,400 seconds from another
+     * that counts or that rule 4 moved to another character. Every kind: no claim is superseded by rule 4 in favour of
+     * a character that holds fewer Scarlet rows beside it. With no character, every character is checked.
      *
      * @return list<string> one line per violation
      */
@@ -54,19 +55,23 @@ class AuditCountClaims
         $lines = [];
         foreach ($this->rows(
             <<<'SQL'
-            select ch.name as character_name, c.origin, c.store, c.level, count(*) as claims
-            from addon_claims c join characters ch on ch.id = c.character_id
-            where c.kind = ? and c.scope = ? and c.level is not null
-                and (c.status in (?, ?) or (c.status = ? and c.evidence ->> 'rule' = '3' and coalesce((c.evidence #>> '{rows,n}')::int, 0) > 0))
-                and (?::bigint is null or c.character_id = ?)
-            group by c.character_id, ch.name, c.origin, c.store, c.level
-            having count(*) > 1
-            order by ch.name, c.level
+            select ch.name as character_name, t.origin, t.store, t.level, t.claims - t.moved as claims, t.moved
+            from (
+                select c.character_id, c.origin, c.store, c.level, count(*) as claims, count(*) filter (where c.evidence ->> 'rule' = '4') as moved
+                from addon_claims c
+                where c.kind = ? and c.scope = ? and c.level is not null
+                    and (c.status in (?, ?) or (c.status = ? and (c.evidence ->> 'rule' = '4' or (c.evidence ->> 'rule' = '3' and coalesce((c.evidence #>> '{rows,n}')::int, 0) > 0))))
+                    and (?::bigint is null or c.character_id = ?)
+                group by c.character_id, c.origin, c.store, c.level
+            ) t
+            join characters ch on ch.id = t.character_id
+            where t.claims - t.moved > 1 or (t.claims > t.moved and t.moved > 0)
+            order by ch.name, t.level
             limit 20
             SQL,
             [AddonKind::Kill->value, self::SCOPE_CHARACTER, ClaimStatus::Counted->value, ClaimStatus::Residual->value, ClaimStatus::Superseded->value, $characterId, $characterId],
         ) as $row) {
-            $lines[] = "{$row->character_name} holds {$row->claims} kill claims of {$row->origin} '{$row->store}' that count or were superseded by rows at level {$row->level}";
+            $lines[] = "{$row->character_name} holds {$row->claims} kill claims of {$row->origin} '{$row->store}' that count or were superseded by rows at level {$row->level}, and {$row->moved} that rule 4 moved to another character";
         }
 
         return $lines;
@@ -196,18 +201,19 @@ class AuditCountClaims
         foreach ($this->rows(
             <<<'SQL'
             select * from (
-                select c.id, ch.name as character_name, c.origin, c.to_at, coalesce(c.from_at, c.to_at) as start_at,
-                    lag(c.to_at) over (partition by c.character_id, c.dims ->> 'instance' order by coalesce(c.from_at, c.to_at), c.to_at) as before_to
+                select c.id, c.status, ch.name as character_name, c.origin, c.to_at, coalesce(c.from_at, c.to_at) as start_at,
+                    lag(c.to_at) over w as before_to, lead(coalesce(c.from_at, c.to_at)) over w as after_start
                 from addon_claims c join characters ch on ch.id = c.character_id
-                where c.kind = ? and c.status = ? and (?::bigint is null or c.character_id = ?)
+                where c.kind = ? and (c.status = ? or (c.status = ? and c.evidence ->> 'rule' = '4')) and (?::bigint is null or c.character_id = ?)
+                window w as (partition by c.character_id, c.dims ->> 'instance' order by coalesce(c.from_at, c.to_at), c.to_at)
             ) t
-            where start_at - before_to < ?
+            where status = ? and (start_at - before_to < ? or after_start - to_at < ?)
             order by id
             limit 20
             SQL,
-            [AddonKind::Run->value, ClaimStatus::Counted->value, $characterId, $characterId, self::RUN_JOIN],
+            [AddonKind::Run->value, ClaimStatus::Counted->value, ClaimStatus::Superseded->value, $characterId, $characterId, ClaimStatus::Counted->value, self::RUN_JOIN, self::RUN_JOIN],
         ) as $row) {
-            $lines[] = "claim {$row->id} of {$row->character_name} ({$row->origin} run to {$row->to_at}) counts less than ".self::RUN_JOIN.' seconds after another run of its instance that counts';
+            $lines[] = "claim {$row->id} of {$row->character_name} ({$row->origin} run to {$row->to_at}) counts less than ".self::RUN_JOIN.' seconds from another run of its instance that counts or that rule 4 moved to another character';
         }
 
         return $lines;
@@ -226,8 +232,9 @@ class AuditCountClaims
         }
         if ($kind === AddonKind::Xp) {
             return [
-                "greatest((select count(*) from quest_events q where q.character_id = {$claim}.character_id and q.event = ? and q.quest_id = ({$claim}.dims ->> 'quest')::int), (select count(*) from xp_gains x where x.character_id = {$claim}.character_id and x.source = ? and x.source_id = ({$claim}.dims ->> 'quest')::int))",
-                [QuestRecord::TURNED_IN, XpSource::Quest->value],
+                "(greatest((select count(*) from quest_events q where q.character_id = {$claim}.character_id and q.event = ? and q.quest_id = ({$claim}.dims ->> 'quest')::int), (select count(*) from xp_gains x where x.character_id = {$claim}.character_id and x.source = ? and x.source_id = ({$claim}.dims ->> 'quest')::int))"
+                ." + greatest((select count(*) from quest_events q where q.character_id = {$claim}.character_id and q.event = ? and q.quest_id is null and (q.level is null or {$claim}.level in (q.level, q.level - 1))), (select count(*) from xp_gains x where x.character_id = {$claim}.character_id and x.source = ? and x.source_id is null and (x.level is null or {$claim}.level in (x.level, x.level - 1)))))",
+                [QuestRecord::TURNED_IN, XpSource::Quest->value, QuestRecord::TURNED_IN, XpSource::Quest->value],
             ];
         }
 

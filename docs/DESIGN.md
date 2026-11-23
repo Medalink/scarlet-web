@@ -330,7 +330,8 @@ The order of the work is fixed, and each step sees only the claims the steps bef
    database cannot bind as an integer.
 2. A character-scope `life` claim is `held` (rule 6).
 3. A claim equal to one of another linked character is `superseded` (rule 4) unless its character is the one that
-   counts it: the one with Scarlet rows beside the claim, else the lowest id.
+   counts it: the one with Scarlet rows beside the claim, else the lowest id. The claims it moves stay known to
+   steps 4 and 5, so that the claims they were one record with are decided with them.
 4. Dated claims of one origin that overlap collapse into one (rule 5, second sentence): the claims are taken by end,
    start, store and dims, latest first, and each one overlapping a winner already taken loses to it.
 5. For `kill`, `xp` and `run`, each claim left goes through its own rule (3L, 2Q, 3R): none has a second origin, so
@@ -462,15 +463,23 @@ Rules, in order:
    from two folders (a restored backup, a copied folder). It counts on the character that holds the most Scarlet rows of
    the kind beside the claim, and on the lowest id among those that hold as many (among all when none holds any).
    Beside the claim is within 60 s of its window for fishing, and for the other kinds the rows its own rule reads:
-   the kills at its level and with none, the turn-ins of its quest, the runs that overlap it. Every character counts its own rows and the others' the same way, once each. It is `superseded` on
-   the others, with that claim and its character as evidence. The lowest id alone would count a copied folder's history
+   the kills at its level and with none, the turn-ins of its quest and the ones with no quest id that fit its level
+   (the larger count of the two tables), the runs that overlap it. Every character counts its own rows and the others'
+   the same way, once each. It is `superseded` on the others, with that claim and its character as evidence. The lowest id alone would count a copied folder's history
    twice whenever the copy was uploaded first: its claim counts on the copy and the original's rows count beside it.
    The lowest id among those that hold rows would do the same beside a character that holds more of them: with 2 rows
    of its own in the window on the copy and 50 on the original, the copy counted 48 casts beside the original's 50
    rows. Characters are of one account when they share a game account,
    or an install that uploaded both, and so on transitively among the characters that hold claims. A decode or
    removal that adds or removes such a claim or the rows beside it reconciles the other characters too, locked lowest
-   id first.
+   id first. A claim moved to another character stays part of its record on this one. A dated `level` claim with the
+   origin, store and dims of a claim moved away is `superseded` (rule 5, `same_origin`, with the moved claim as
+   evidence), since a level read under two `to` values is one level whichever character holds the first reading. A
+   chain of runs (3R) with a moved member and no Scarlet run beside it counts nothing here: its other claims are
+   `superseded` (rule 5) with the moved claim's key, and the character that holds the record counts the run. Without
+   both, one record cut in two by rule 4 counted on two characters: the original's later reading of a level, or its
+   third wing, beside the copy's. The cost: a character's own run that starts under 2,400 s after a run rule 4 moved
+   away is lost with it. By 3R they are one run.
 5. **Between origins.** A fixed rank per kind (fishing: `fl` above `ff`). A claim whose window overlaps counted or
    residual claims of a higher rank by more than 60 s counts what it claims minus what they claim in the time they
    share with it, per metric, floored at 0: each higher claim gives its amount times the overlap over its own length,
@@ -524,7 +533,7 @@ for the character to have no null `reconcile_version` and the rows and claims it
 after that.
 
 The same lane holds one invented character per case of the kill, quest and run rules, each with a Scarlet session and
-one `counts` part uploaded through the real API (2026-11-22, 49 of the lane's 151 checks; `node e2e/boot.mjs --
+one `counts` part uploaded through the real API (2026-11-22, 69 of the lane's 171 checks; `node e2e/boot.mjs --
 node e2e/addon-counts.mjs levels` runs only these). The totals each history has:
 
 - Levels. 120 kills claimed with no Scarlet row count 120. With 100 Scarlet kills at no level beside a claim of 150, the
@@ -548,6 +557,12 @@ node e2e/addon-counts.mjs levels` runs only these). The totals each history has:
   claims 41 minutes apart are 2; one claim alone is 1.
 - Two characters of one install with the same claims, one with no Scarlet rows: its three claims are superseded by rule
   4 and name the other, which counts 50 kills (20 are Scarlet's, 30 residual), 300 quest XP and 1 run beside its rows.
+- One record cut in two by rule 4, the copy (lower id) uploaded first and the original holding the Scarlet rows. Two
+  wings 35 minutes apart on both, the original's Scarlet run beside the second only: 1 run, not 2. Three wings 20
+  minutes apart on the original, the copy holding the first two and no Scarlet row anywhere: 1 run, not 2. A level
+  read under two `to` values an hour apart on the original, the earlier reading on the copy: 40 kills, not 80. A
+  turn-in with no quest id, 900 at the claim's level, in the original's rows beside a claim of 900 on both: 900, not
+  1,800.
 
 The audit passes with every one of these characters held at once, reconcile from blank columns decides all of their
 claims again to the same hash, and a second reconcile changes none. The fishing cases of the lane keep their verdict
@@ -634,12 +649,14 @@ character (check 9).
 4. No Scarlet row is assigned to two claims of one origin: the assigned ranges of a character and origin are disjoint,
    they name no more rows than Scarlet holds, each range holds at least the rows it names, and a range lies within 60 s
    of its window. The kinds without a time to assign by hold it as follows.
-   - `kill`: no two claims of one origin and store that count or are superseded by rows share a level, and the count
-     assigned to a claim equals Scarlet's count at its level plus its count with no level.
+   - `kill`: no two claims of one origin and store that count or are superseded by rows share a level, none of them
+     shares a level with a claim rule 4 moved to another character, and the count assigned to a claim equals
+     Scarlet's count at its level plus its count with no level.
    - `xp`: per character and quest id, the `counted` claims number at most the claims minus Scarlet's turn-ins of it,
      and no Scarlet row is the evidence of two claims.
    - `run`: no `counted` claim has a joined Scarlet run of its instance overlapping `[from - 600 s, to + 5 s]`, and no
-     two `counted` claims of one instance are under 2,400 s apart.
+     two claims of one instance are under 2,400 s apart when one is `counted` and the other is `counted` or was
+     moved to another character by rule 4.
 5. No two counted or residual dated claims of one character overlap by more than 60 s across origins, except a
    residual of rule 5, which counts only what the higher claims do not cover, or at all within one origin with equal
    dims: the quests and the levels of one origin share windows by design, and are told apart by their dims.

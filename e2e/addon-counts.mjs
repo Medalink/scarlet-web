@@ -755,6 +755,45 @@ function levelCases() {
   ];
 }
 
+const WINGS = (k) => [fdjRun(k, 1, 0, 1800), fdjRun(k, 2, 3900, 6000)];
+const OLDER_WINGS = (k) => [fdjRun(k, 1, 0, 1800), fdjRun(k, 2, 3000, 4800), fdjRun(k, 3, 6000, 7800)];
+const LEVEL_TWICE = (k) => [rxpKill(k, 0, 1800, 5, 40), rxpKill(k, 3600, 5400, 5, 40)];
+const HIDDEN_TURN_IN = (k) => [rxpQuest(k, 0, 3600, 30, 2002, 900)];
+
+function recordPairs() {
+  const side = (kind) => (k, name, spec, claims, scarlet, total, verdicts) => ({
+    k, name, sessions: spec === null ? [] : countSession(name, slot(k), spec), claims, scarlet: { [kind]: scarlet }, total: { [kind]: total }, verdicts,
+  });
+  const [run, kill, xp] = ["run", "kill", "xp"].map(side);
+  const superseded = (rule) => `run instance=189 superseded 0 r${rule}`;
+  return [
+    {
+      kind: "run", together: 1, cases: [
+        run(23, "Quill-Victor", null, WINGS(23), 0, 0, [superseded(4), superseded(5)]),
+        run(23, "Quill-Whiskey", { stays: [[3600, 6060]] }, WINGS(23), 1, 1, [superseded(3), superseded(4)]),
+      ],
+    },
+    {
+      kind: "run", together: 1, cases: [
+        run(24, "Quill-Xray", null, OLDER_WINGS(24).slice(0, 2), 0, 1, ["run instance=189 counted 1 r3", superseded(5)]),
+        run(24, "Quill-Yankee", null, OLDER_WINGS(24), 0, 0, [superseded(4), superseded(4), superseded(5)]),
+      ],
+    },
+    {
+      kind: "kill", together: 40, cases: [
+        kill(25, "Quill-Birch", null, LEVEL_TWICE(25).slice(0, 1), 0, 40, ["kill level=5 counted 40 r3"]),
+        kill(25, "Quill-Cedar", null, LEVEL_TWICE(25), 0, 0, ["kill level=5 superseded 0 r4", "kill level=5 superseded 0 r5"]),
+      ],
+    },
+    {
+      kind: "xp", together: 900, cases: [
+        xp(26, "Quill-Elm", null, HIDDEN_TURN_IN(26), 0, 0, ["xp level=30;quest=2002 superseded 0 r4"]),
+        xp(26, "Quill-Fir", { level: 30, quests: [{ at: 21, id: "", xp: 900 }] }, HIDDEN_TURN_IN(26), 900, 900, ["xp level=30;quest=2002 superseded 0 r2"]),
+      ],
+    },
+  ];
+}
+
 const SIERRA = "Quill-Sierra";
 
 async function oversizedDims() {
@@ -833,8 +872,13 @@ async function levelsProved(cases) {
 async function levels() {
   await fresh(client, second);
   const twins = levelTwins();
-  const cases = [...levelCases(), ...twins];
+  const pairs = recordPairs();
+  const cases = [...levelCases(), ...twins, ...pairs.flatMap((pair) => pair.cases)];
   await levelsProved(cases);
+  for (const { kind, together, cases: [copy, original] } of pairs) {
+    const joint = tallyOf(copy.name, kind).total + tallyOf(original.name, kind).total;
+    check(`${copy.name} and ${original.name} hold one record on two characters: ${together} ${METRIC_OF[kind]} together`, joint === together, `${joint} together`);
+  }
   await oversizedDims();
   const audited = artisan("addons:audit");
   console.log(audited.stdout.split("\n").filter((line) => /^Quill-(Alpha|Echo|Golf|Hotel|India|Lima|Mike|Quest) (kill|xp|run)$/.test(line)).join("\n"));

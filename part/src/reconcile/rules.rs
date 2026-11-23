@@ -292,6 +292,14 @@ pub(super) fn hidden_fits(row: &Row, level: Option<i64>) -> bool {
         .is_none_or(|at| level == Some(at) || level == Some(at - 1))
 }
 
+pub(super) fn one_level_record(a: &Claim, b: &Claim) -> bool {
+    a.origin == b.origin
+        && a.store == b.store
+        && a.dims == b.dims
+        && a.window == WINDOW_LEVEL
+        && b.window == WINDOW_LEVEL
+}
+
 pub(super) fn runs_over<'a>(rows: &'a [Row], c: &Claim) -> Vec<&'a Row> {
     let (from, to) = (start(c) * 1000, c.to * 1000);
     let instance = dim_int(c, INSTANCE);
@@ -318,7 +326,15 @@ pub(super) fn beside(kind: &str, c: &Claim, rows: &[Row]) -> i64 {
             let (at_level, unleveled) = kills_split(rows, level);
             at_level + unleveled
         }),
-        Some(Kind::Xp) => dim_int(c, QUEST).map_or(0, |quest| turn_ins(rows, quest).len() as i64),
+        Some(Kind::Xp) => dim_int(c, QUEST).map_or(0, |quest| {
+            let level = dim_int(c, LEVEL);
+            let hidden = |events: bool| {
+                rows.iter()
+                    .filter(|r| r.events == events && r.key.is_none() && hidden_fits(r, level))
+                    .count()
+            };
+            (turn_ins(rows, quest).len() + hidden(true).max(hidden(false))) as i64
+        }),
         Some(Kind::Run) => runs_over(rows, c).len() as i64,
         None => 0,
     }
