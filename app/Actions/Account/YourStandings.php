@@ -2,14 +2,14 @@
 
 namespace App\Actions\Account;
 
-use App\Actions\Public\Character\Standings;
+use App\Actions\Public\Character\StandingsOfMany;
 use App\Models\Account;
 use App\Models\Character;
 use App\Support\Board;
 
 class YourStandings
 {
-    public function __construct(private readonly Standings $standings) {}
+    public function __construct(private readonly StandingsOfMany $standings) {}
 
     /**
      * The places of the account's characters on the boards: the one character `$only` names, or all of them, the most
@@ -21,9 +21,10 @@ class YourStandings
     {
         $characters = $account->characters()->when($only !== null, fn ($query) => $query->whereKey($only))->orderByDesc('played_seconds')->orderBy('name_key')->get();
         $groups = [];
+        $all = $this->standings->handle(array_values($characters->all()));
         foreach ($characters as $character) {
             /** @var Character $character */
-            $rows = $this->standings->handle($character);
+            $rows = $all[$character->id];
             $rows = $board === null ? $rows : array_values(array_filter($rows, fn (array $row): bool => $row['board'] === $board->value));
             if ($rows !== []) {
                 $groups[] = ['name' => (string) $character->name, 'standings' => $rows];

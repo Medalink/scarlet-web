@@ -10,6 +10,8 @@ class BuildCharacterFeats
 {
     private const int CLOSEST = 3;
 
+    private ?int $publicScored = null;
+
     public function __construct(
         private readonly ShowCharacterFeats $rows,
         private readonly ShowFeatCardFields $fields,
@@ -82,6 +84,7 @@ class BuildCharacterFeats
             }
         }
         $public = DB::table('characters')->where('is_public', true)->where('feat_score', '>', 0);
+        $this->publicScored ??= (clone $public)->count();
 
         return [
             'name' => $character->name,
@@ -93,7 +96,7 @@ class BuildCharacterFeats
             'tiers' => $tiers,
             'score' => (int) $character->feat_score,
             'place' => $character->is_public && $character->feat_score > 0 ? 1 + (clone $public)->where('feat_score', '>', $character->feat_score)->count() : null,
-            'of' => $character->is_public ? $public->count() : null,
+            'of' => $character->is_public ? $this->publicScored : null,
             'general' => $general,
             'class_feats' => $classes,
             'role_feats' => $roleFeats,

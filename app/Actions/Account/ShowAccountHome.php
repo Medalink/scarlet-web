@@ -5,7 +5,7 @@ namespace App\Actions\Account;
 use App\Actions\Feats\BuildCharacterFeats;
 use App\Actions\Feats\ShowFeatCatalog;
 use App\Actions\Public\Character\CharacterRates;
-use App\Actions\Public\Character\Standings;
+use App\Actions\Public\Character\StandingsOfMany;
 use App\Actions\Sessions\BuildRecap;
 use App\Models\Account;
 use App\Models\Character;
@@ -27,7 +27,7 @@ class ShowAccountHome
         private readonly ShowInstalls $installs,
         private readonly ShowFeatCatalog $catalog,
         private readonly BuildCharacterFeats $feats,
-        private readonly Standings $standings,
+        private readonly StandingsOfMany $standings,
         private readonly CharacterRates $rates,
         private readonly BuildRecap $recap,
     ) {}
@@ -42,13 +42,15 @@ class ShowAccountHome
         $featured = $latest === null ? ($characters[0]['id'] ?? null) : $latest['character_id'];
         $catalog = $this->catalog->handle()['feats'];
         $shown = array_slice($characters, 0, self::ROWS);
-        $feats = $places = [];
+        $feats = [];
+        $shownModels = [];
         foreach ($shown as $row) {
             /** @var Character $model */
             $model = $models[$row['id']];
+            $shownModels[] = $model;
             $feats[$row['id']] = $this->feats->handle($model, $catalog, false, true);
-            $places[$row['id']] = $this->standings->handle($model);
         }
+        $places = $this->standings->handle($shownModels);
         $mainRow = null;
         foreach ($characters as $row) {
             $mainRow = $row['id'] === $featured ? $row : $mainRow;
