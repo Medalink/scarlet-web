@@ -295,6 +295,7 @@ phase compose-up "$t_migrate"
 t_migrate=$(date +%s.%N)
 
 if has_role scheduler; then
+  if [ -f deploy/db-app-role.sh ]; then bash deploy/db-app-role.sh; fi
   SCARLET_RELEASE=$new $dc run --rm --no-deps -T tools sh -ec '
     php artisan migrate --force --no-interaction
     php artisan scarlet:storage-policies --no-interaction

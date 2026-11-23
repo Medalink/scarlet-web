@@ -44,6 +44,10 @@ chmod 644 etc/tls/server.crt
 
 sh deploy/db-hba.sh $clients
 
+if deploy/dc-db ps --status running --services 2>/dev/null | grep -qx postgres; then
+  SCARLET_BASE=/srv/scarlet-db bash deploy/db-app-role.sh deploy/dc-db
+fi
+
 if [ -n "${PGBR_PASS:-}" ]; then
   (
     set -a
