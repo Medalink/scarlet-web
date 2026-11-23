@@ -2,9 +2,11 @@
 
 namespace App\Actions\Rollups;
 
+use App\Support\CountedLoot;
 use App\Support\LootCounted;
 use App\Support\LootFilter;
 use App\Support\LootListing;
+use App\Support\LootRead;
 use App\Support\LootRule;
 use App\Support\LootSort;
 use App\Support\LootSourceKind;
@@ -17,13 +19,15 @@ use Illuminate\Support\Facades\DB;
 
 class LootItems
 {
-    public function __construct(private readonly RollupRead $read) {}
+    public function __construct(private readonly RollupRead $read, private readonly CountedLoot $counted) {}
 
     /**
      * The items that dropped, one page: in how many windows (first reads of every source read for loot, skinning, herbs,
      * ore or a container, every loot rule but personal loot), from how many sources, the best source with its rate and
      * the zone the item dropped most in. Narrowed by zone, by the item's quality or better and by a text that matches the
-     * item's name or id. Ordered by windows, or by sources for `LootSort::Items`. `more` is true when a next page exists.
+     * item's name or id. Ordered by windows, or by sources for `LootSort::Items`. `more` is true when a next page exists. A
+     * free-for-all drop counts only the windows of its source's arm, and a best source's rate is over the arm's windows
+     * (`FreeForAllArms`), as the creature page counts them.
      *
      * @return array{rows: list<array<string, mixed>>, more: bool}
      */
@@ -50,13 +54,18 @@ class LootItems
 
     private function page(LootFilter $filter, int $offset, int $take): Builder
     {
+        $shift = $this->counted->dropShift($filter->zone);
         $query = $this->within($this->read->table(LootCounted::Items->value.' as d', null), $filter)
             ->leftJoin('items as i', 'i.item_id', '=', 'd.item_id')
             ->selectRaw('d.item_id, (select n.name from names n where n.kind = ? and n.id = d.item_id order by n.votes desc, n.name limit 1) as name', [NameKind::Item->value])
-            ->selectRaw('i.quality, sum(d.windows) as dropped, count(distinct (d.source_kind, d.source_id)) as sources')
+            ->selectRaw('i.quality, count(distinct (d.source_kind, d.source_id)) as sources')
             ->when($filter->quality !== null, fn (Builder $query): Builder => $query->where('i.quality', '>=', $filter->quality))
             ->groupBy('d.item_id', 'i.quality')
             ->havingRaw('distinct_count(rollup(d.characters)) >= ?', [(int) config('scarlet.min_characters')]);
+        $query->selectRaw($shift === null ? 'sum(d.windows) as dropped' : 'sum(d.windows) + coalesce(max(x.delta), 0) as dropped');
+        if ($shift !== null) {
+            $query->leftJoinSub($shift, 'x', 'x.item_id', '=', 'd.item_id');
+        }
         $like = $filter->like();
         if ($like !== null) {
             $query->where(function (Builder $any) use ($filter, $like): void {
@@ -69,8 +78,8 @@ class LootItems
         }
 
         $ordered = match ($filter->sort) {
-            LootSort::Items => $query->orderByRaw('count(distinct (d.source_kind, d.source_id)) desc')->orderByRaw('sum(d.windows) desc'),
-            default => $query->orderByRaw('sum(d.windows) desc'),
+            LootSort::Items => $query->orderByRaw('count(distinct (d.source_kind, d.source_id)) desc')->orderByDesc('dropped'),
+            default => $query->orderByDesc('dropped'),
         };
 
         return $ordered->orderBy('d.item_id')->offset($offset)->limit($take);
@@ -95,7 +104,9 @@ class LootItems
         $windows = LootListing::ofSources(LootRule::within(DB::table(LootCounted::Windows->value), 'loot_rule', null))
             ->when($filter->zone !== null, fn (Builder $query): Builder => $query->where('zone_id', $filter->zone))
             ->selectRaw('source_kind, source_id, read, sum(windows) as windows')->groupBy('source_kind', 'source_id', 'read');
-        $query = LootSourceKind::withName($this->within(DB::table(LootCounted::Items->value.' as d'), $filter)
+        $sources = $this->counted->sourcesOf($ids);
+        $shift = $this->counted->windowShift($sources, $filter->zone === null ? 'source' : 'source_zone');
+        $query = LootSourceKind::withName($this->within($this->counted->items('d', $sources, $ids), $filter)
             ->joinSub($windows, 'o', fn (JoinClause $join) => $join->on('o.source_kind', '=', 'd.source_kind')->on('o.source_id', '=', 'd.source_id')->on('o.read', '=', 'd.read'))
             ->whereIn('d.item_id', $ids)
             ->select('d.item_id', 'd.source_kind', 'd.source_id', 'd.read'))
@@ -106,7 +117,8 @@ class LootItems
         $best = [];
         foreach ($this->read->rows($query) as $row) {
             $item = (int) $row['item_id'];
-            $estimate = RateEstimate::of((int) $row['drops'], (int) $row['opens']);
+            $opens = (int) $row['opens'] + ($row['read'] === LootRead::Loot->value ? ($shift[$row['source_kind'].$row['source_id'].($filter->zone === null ? '' : '|'.$filter->zone)] ?? 0) : 0);
+            $estimate = RateEstimate::of((int) $row['drops'], $opens);
             if (! isset($best[$item]) || RateEstimate::compare($estimate, $best[$item]['estimate']) < 0) {
                 $best[$item] = ['source_kind' => (string) $row['source_kind'], 'source_id' => (int) $row['source_id'], 'source' => $row['source'], 'estimate' => $estimate];
             }
@@ -123,7 +135,7 @@ class LootItems
      */
     private function zones(LootFilter $filter, array $ids): array
     {
-        $rows = $this->read->rows($this->within($this->read->table(LootCounted::Items->value.' as d', null), $filter)
+        $rows = $this->read->rows($this->within($this->counted->items('d', $this->counted->sourcesOf($ids), $ids), $filter)
             ->selectRaw('d.item_id, d.zone_id, (select z.name from zones z where z.id = d.zone_id) as zone, sum(d.windows) as windows')
             ->whereIn('d.item_id', $ids)->whereNotNull('d.zone_id')->groupBy('d.item_id', 'd.zone_id')
             ->orderByRaw('sum(d.windows) desc')->orderBy('d.zone_id'));

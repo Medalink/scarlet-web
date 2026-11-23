@@ -51,7 +51,8 @@ final class CountedLoot
 
     /**
      * How many windows the arms add to the windows of the free-for-all loot rows in the view, negative when an arm counts
-     * fewer, summed by `$by`: `source` (`LootSourceRef::key()`), `zone`, group `size` (an empty key for none) or `total`.
+     * fewer, summed by `$by`: `source` (`LootSourceRef::key()`), `zone`, group `size` (an empty key for none), `total`, or
+     * `source_zone` (a source's key, then `|` and the zone).
      * A source whose arm counts every window adds nothing. For a table that sums the view's windows itself and adds this to
      * what it shows, which keeps the view's plan for the scan; `$kind` narrows it to one kind of source.
      *
@@ -69,12 +70,34 @@ final class CountedLoot
                 'zone' => (string) $row[3],
                 'size' => (string) $row[4],
                 'total' => '',
+                'source_zone' => $row[1].$row[2].'|'.$row[3],
                 default => $row[1].$row[2],
             };
             $shift[$key] = ($shift[$key] ?? 0) + $row[5];
         }
 
         return $shift;
+    }
+
+    /**
+     * What the arms add to each item's drops (negative when an arm counts fewer) over every source, as the rows `item_id` and
+     * `delta` of a query a table joins on its item and adds to the sum of the view's windows, which keeps the view's plan for
+     * the scan. `$zone` narrows it to one zone. Null when no item changes.
+     */
+    public function dropShift(?int $zone = null): ?Builder
+    {
+        $shift = [];
+        foreach ($this->rows(null, null)['items'] as $row) {
+            if ($zone === null || $row[3] === $zone) {
+                $shift[$row[5]] = ($shift[$row[5]] ?? 0) + $row[6];
+            }
+        }
+        $shift = array_filter($shift, fn (int $delta): bool => $delta !== 0);
+        if ($shift === []) {
+            return null;
+        }
+
+        return DB::query()->fromRaw('unnest(?::int[], ?::bigint[]) as u(item_id, delta)', [$this->literal(array_keys($shift)), $this->literal(array_values($shift))])->select('u.item_id', 'u.delta');
     }
 
     /**
