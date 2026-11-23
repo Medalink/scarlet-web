@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Runs the feat count of a character and notes what it changed. A feat that holds a higher tier afterwards than before gets one
- * `feat_events` row (the tier it holds now and the tier it held), and `characters.feat_score` is set from the tiers held. Only the
+ * `feat_events` row (the tier it holds now, the tier it held and the newest session decoded since the last count, null when none was), and `characters.feat_score` is set from the tiers held. Only the
  * refresh calls it, so a catalog change, which stores counts on its own, writes no event.
  */
 class RecordFeatTiers
@@ -17,10 +17,13 @@ class RecordFeatTiers
     public function handle(int $characterId, Closure $count): void
     {
         $before = $this->held($characterId);
+        $countedAt = DB::table('character_feats')->where('character_id', $characterId)->max('updated_at');
         $count();
         $after = $this->held($characterId);
 
-        $session = DB::table('sessions')->where('character_id', $characterId)->max('session_start');
+        $session = DB::table('sessions')->where('character_id', $characterId)
+            ->when($countedAt !== null, fn ($query) => $query->where('decoded_at', '>', $countedAt))
+            ->orderByDesc('decoded_at')->value('session_start');
         $now = now();
         $events = [];
         $score = 0;
