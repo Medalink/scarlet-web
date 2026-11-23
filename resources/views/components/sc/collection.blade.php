@@ -1,4 +1,4 @@
-@props(['name', 'family', 'feats', 'size' => 48, 'note' => null, 'counts' => true])
+@props(['name', 'family', 'feats', 'size' => 48, 'note' => null, 'counts' => true, 'pin' => false])
 @php
     $earned = count(array_filter($feats, fn (array $feat): bool => $feat['tier'] > 0));
     $tier = min(array_column($feats, 'tier'));
@@ -17,6 +17,7 @@
         <x-sc.seal :glyph="$feat['glyph']" :family="$feat['family'] ?? $family" :tier="$feat['tier']" :progress="$feat['progress'] ?? 0" :size="$size" :spell="$feat['spell'] ?? null" />
         <span>{{ $feat['name'] }}@isset ($feat['share'])<small>{{ $feat['share'] }}</small>@endisset</span>
         @isset ($feat['href'])<a class="absolute inset-0" href="{{ $feat['href'] }}" aria-label="{{ $feat['name'] }}"></a>@endisset
+        @if ($pin && $feat['tier'] > 0 && isset($feat['key']))<button type="button" @class(['sc-pin', 'on' => $feat['pinned'] ?? false]) wire:click="{{ ($feat['pinned'] ?? false) ? 'unpin' : 'pin' }}('{{ $feat['key'] }}')" aria-pressed="{{ ($feat['pinned'] ?? false) ? 'true' : 'false' }}" aria-label="{{ ($feat['pinned'] ?? false) ? 'Unpin' : 'Pin' }} {{ $feat['name'] }}">{{ ($feat['pinned'] ?? false) ? 'Pinned' : 'Pin' }}</button>@endif
       </li>
     @endforeach
   </ul>

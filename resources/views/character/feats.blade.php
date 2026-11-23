@@ -1,4 +1,4 @@
-@php($f = $d['feats'])
+
 <section id="feats" class="sc-sec">
   <div class="sc-sec-head"><h2>Feats</h2><p class="ml-auto pb-1 text-[14px] text-muted">{{ $f['summary']['held'] }} of {{ $f['summary']['total'] }} held @if ($f['hidden'])· {{ $f['hidden'] }}@endif · <a href="/feats">All feats</a></p></div>
   @if ($f['pinned'] !== [])
@@ -29,7 +29,7 @@
   @endif
   <div class="mt-8">
     @foreach ($f['wall'] as $collection)
-      <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" />
+      <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :pin="$pin" />
     @endforeach
   </div>
 </section>

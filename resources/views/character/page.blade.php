@@ -11,7 +11,9 @@
   <x-sc.section-nav class="mt-9" :sections="$d['sections']" />
 
   @include('character.overview')
-  @includeWhen($d['feats'], 'character.feats')
+  @if ($d['feats'])
+    @if ($d['owner'])<livewire:character-feats :character-id="$d['id']" />@else @include('character.feats', ['f' => $d['feats'], 'pin' => false])@endif
+  @endif
   @includeWhen($d['sessions'], 'character.sessions')
   @includeWhen($class['page'], 'character.class')
   @includeWhen($d['levelling'], 'character.levelling')

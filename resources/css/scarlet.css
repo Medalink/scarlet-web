@@ -262,3 +262,9 @@ a:hover { color: var(--soft); }
   .sc-coll { grid-template-columns: minmax(0, 1fr); }
 }
 }
+@layer components {
+.sc-pin { position: absolute; top: 2px; right: 2px; z-index: 2; height: 18px; padding: 0 6px; border: 1px solid var(--line2); border-radius: 9px; background: var(--panel); color: var(--text); font: 600 11px/1 var(--body); cursor: pointer; opacity: 0; }
+.sc-wall > li:hover .sc-pin, .sc-pin:focus-visible, .sc-pin.on { opacity: 1; }
+.sc-pin.on { background: var(--fg); border-color: var(--fg); color: var(--ink); }
+@media (hover: none) { .sc-pin { opacity: 1; } }
+}

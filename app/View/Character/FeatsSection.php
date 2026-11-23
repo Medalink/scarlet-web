@@ -28,7 +28,7 @@ final class FeatsSection
             'hidden' => $character->show_economy ? null : 'gold feats hidden by the owner',
             'pinned' => array_map(self::pinned(...), self::pinnedFeats($feats, $character)),
             'closest' => $owner ? array_map(FeatsPage::closestCard(...), $hub['closest']) : [],
-            'wall' => self::wall($feats),
+            'wall' => self::wall($feats, $character->pinned_feats ?? []),
         ];
     }
 
@@ -68,15 +68,16 @@ final class FeatsSection
 
     /**
      * @param  list<array<string, mixed>>  $feats
+     * @param  list<string>  $pinned
      * @return list<array{name: string, family: string, feats: list<array<string, mixed>>}>
      */
-    private static function wall(array $feats): array
+    private static function wall(array $feats, array $pinned): array
     {
         $groups = [];
         foreach ($feats as $feat) {
             $groups[(string) $feat['collection']]['family'] = (string) $feat['family'];
             $groups[(string) $feat['collection']]['feats'][] = [
-                'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'], 'href' => '/feats/'.$feat['key'],
+                'key' => $feat['key'], 'pinned' => in_array($feat['key'], $pinned, true), 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'], 'href' => '/feats/'.$feat['key'],
             ];
         }
         $wall = [];
