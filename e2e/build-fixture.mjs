@@ -24,6 +24,7 @@ import { HUNTER_LINES } from "./hunter-lines.mjs";
 import { MAGE_LINES } from "./mage-lines.mjs";
 import { PALADIN_LINES } from "./paladin-lines.mjs";
 import { PRIEST_LINES } from "./priest-lines.mjs";
+import { QUIET_LINES } from "./quiet-lines.mjs";
 import { ROGUE_LINES } from "./rogue-lines.mjs";
 import { SHAMAN_LINES } from "./shaman-lines.mjs";
 import { WARLOCK_LINES } from "./warlock-lines.mjs";
@@ -253,6 +254,7 @@ const BUILDS = [
   { character: "Pocket-Shade", session: 1795630000, lines: ROGUE_LINES },
   { character: "Candle-Warden", session: 1795720000, lines: PRIEST_LINES },
   { character: "Totem-Caller", session: 1795810000, lines: SHAMAN_LINES },
+  { character: "Quiet-Walker", session: 1795900000, lines: QUIET_LINES },
 ];
 
 function partsOf(character, session, lines) {

@@ -1,0 +1,13 @@
+{
+  "character": "Quiet-Walker",
+  "parts": [
+    {
+      "group": "core",
+      "id": "13bf243bb3e24631ab2f20c1ea9b99710a1253f2c58c9b7b965e582ac6d1b939",
+      "lines": 3,
+      "raw_bytes": 181,
+      "session": 1795900000
+    }
+  ],
+  "set_digest": "13bf243bb3e24631ab2f20c1ea9b99710a1253f2c58c9b7b965e582ac6d1b939"
+}

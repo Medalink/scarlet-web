@@ -15,15 +15,11 @@ import os from "node:os";
 import path from "node:path";
 import { InstallClient } from "./client.mjs";
 import { Gate } from "./gate.mjs";
-import { DRUID, ECHO, HUNTER, Http, INSTALL_CHARACTERS, Jar, LOCAL_HOSTS, MAGE, PALADIN, PRIEST, ROGUE, SHAMAN, STRANGER_CHARACTERS, WARLOCK, WARRIOR, Skip } from "./support.mjs";
+import { CLASS_CHARACTERS, ECHO, Http, INSTALL_CHARACTERS, Jar, LOCAL_HOSTS, STRANGER_CHARACTERS, WARLOCK, Skip } from "./support.mjs";
 import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
 import * as classPage from "./checks/class-page.mjs";
-import * as warriorPage from "./checks/class-page-warrior.mjs";
-import * as paladinPage from "./checks/class-page-paladin.mjs";
-import * as hunterPage from "./checks/class-page-hunter.mjs";
-import * as classPageRps from "./checks/class-page-rps.mjs";
 import * as professions from "./checks/professions.mjs";
 import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
@@ -76,18 +72,7 @@ const REGISTRY = [
   { lane: "pages", name: "the admin pages are a 404 to visitors", independent: true, run: admin.adminIsHiddenFromVisitors },
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },
   { lane: "pages", name: "the twelve profession pages show what the upload recorded", run: professions.pagesShowTheUpload },
-  { lane: "pages", name: `${WARLOCK}'s class page shows the figures worked out from its lines and no comparison under twenty warlocks`, run: classPage.warlockPageShowsItsFigures },
-  { lane: "pages", name: `${MAGE}'s class page shows the figures worked out from its lines and no comparison under twenty mages`, run: classPage.magePageShowsItsFigures },
-  { lane: "pages", name: `${DRUID}'s class page shows the figures worked out from its lines and no comparison under twenty druids`, run: classPage.druidPageShowsItsFigures },
-  { lane: "pages", name: `${WARRIOR}'s class page shows the figures worked out from its lines and no comparison under twenty warriors`, run: warriorPage.warriorPageShowsItsFigures },
-  { lane: "pages", name: "the Warrior's character page links its class page and shows its band", run: warriorPage.warriorBandLinksItsClassPage },
-  { lane: "pages", name: `${PALADIN}'s class page shows the figures worked out from its lines and no comparison under twenty paladins`, run: paladinPage.paladinPageShowsItsFigures },
-  { lane: "pages", name: "the Paladin's character page links its class page and shows its band", run: paladinPage.paladinBandLinksItsClassPage },
-  { lane: "pages", name: `${HUNTER}'s class page shows the figures worked out from its lines and no comparison under twenty hunters`, run: hunterPage.hunterPageShowsItsFigures },
-  { lane: "pages", name: "the Hunter's character page links its class page and shows its band", run: hunterPage.hunterBandLinksItsClassPage },
-  { lane: "pages", name: `${PRIEST}'s class page shows the figures worked out from its plan and no comparison under twenty priests, and its character page has the band`, run: classPageRps.priestPageShowsItsFigures },
-  { lane: "pages", name: `${SHAMAN}'s class page shows the figures worked out from its plan and no comparison under twenty shamans, and its character page has the band`, run: classPageRps.shamanPageShowsItsFigures },
-  { lane: "pages", name: `${ROGUE}'s class page shows the figures worked out from its plan and no comparison under twenty rogues, and its character page has the band`, run: classPageRps.roguePageShowsItsFigures },
+  ...classPage.PAGES.map((page) => ({ lane: "pages", name: `${CLASS_CHARACTERS[page.slug]}'s class page shows the figures worked out from its lines and no comparison under twenty ${page.slug}s, and its character page links it and shows the band`, run: (ctx) => classPage.pageShowsItsFigures(ctx, page) })),
   { lane: "pages", name: "a character's page links its class page and draws its band from the stored row, and a class with no page has neither", run: classPage.characterPageLinksItsClassPage },
   { lane: "pages", name: "a character with no class rows has no band and no link to a class page", run: classPage.characterWithNoClassRowsHasNoBand },
   { lane: "pages", name: "another class's slug, an unknown slug and an unknown character are 404 pages", run: classPage.otherAddressesAre404 },

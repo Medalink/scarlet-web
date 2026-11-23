@@ -49,6 +49,9 @@ export const ORIGIN_HEADERS = { Cookie: `${ORIGIN_COOKIE.name}=${ORIGIN_COOKIE.v
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
 
+/** A Priest of the first install who cast no spell, so no class table holds a row of it and its class has no page for it. */
+export const QUIET = "Quiet-Walker";
+
 /** The fixture character whose class page each class slug is checked on. */
 export const CLASS_CHARACTERS = {
   druid: DRUID,
