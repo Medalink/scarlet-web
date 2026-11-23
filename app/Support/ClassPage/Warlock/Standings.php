@@ -6,6 +6,7 @@ use App\Support\ClassPage\Drinking;
 use App\Support\ClassPage\StandingFigure;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\StateKind;
 
 /**
@@ -22,13 +23,13 @@ final readonly class Standings
     /** @return list<StandingFigure> */
     public function all(): array
     {
-        $played = $this->rows->playedMs();
+        $items = $this->rows->playedMs(ClassTable::Items);
         $fight = $this->rows->states(StateKind::Fight)->fights()->ms;
         $made = $this->shards->made();
         $demon = $this->demons->top();
 
         return array_values(array_filter([
-            $this->shards->shared && $played > 0 ? new StandingFigure('shards_hour', 'Soul shards a played hour', $made / ($played / self::HOUR_MS), Unit::Decimal, $this->shards->icon) : null,
+            $this->shards->shared && $items > 0 ? new StandingFigure('shards_hour', 'Soul shards a played hour', $made / ($items / self::HOUR_MS), Unit::Decimal, $this->shards->icon) : null,
             $fight > 0 ? new StandingFigure('taps_fight_hour', 'Life Taps an hour in combat', $this->spells->lifeTap->fightCasts / ($fight / self::HOUR_MS), icon: Spells::icon($this->spells->lifeTap)) : null,
             $this->demons->shared() && $this->demons->playedMs() > 0 ? new StandingFigure('demon_time', 'Time with a demon out', min(100, $this->demons->withMs() / $this->demons->playedMs() * 100), Unit::Percent, $this->demons->icon($demon)) : null,
             Drinking::figure($this->rows),
