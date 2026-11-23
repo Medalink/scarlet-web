@@ -159,7 +159,9 @@ market and scan time beside each price.
 - `prices:pull` runs every 15 minutes on one server. It reads `GET /v1/markets` into `markets`, enabling the Forever
   markets of the regions in `scarlet.ahledger.regions` (US) and disabling any market the list no longer names, then
   asks for each enabled market's price table (`GET /v1/pricetable/{market}`) with the ETag it stored. An unchanged
-  table answers 304. One request at a time, a second apart; a 429, a server error or an unreachable host ends the run
+  table answers 304. One request at a time, a second apart. The market list is tried three times, 3 seconds apart,
+  when the host is unreachable or answers 429 or a server error; a list that still cannot be read is logged with its
+  status or error and the command fails. A 429, a server error or an unreachable host ends the run
   and the next run tries again. That is at most nine requests every 15 minutes against a limit of 300 a minute.
 - A table is read only whole: a header of another version or market, a malformed row or a row count that does not
   match the header stores nothing and sets the market's `status` to `unreadable`. A readable table's rows and the
