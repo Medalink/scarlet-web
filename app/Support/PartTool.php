@@ -110,6 +110,29 @@ class PartTool
     }
 
     /**
+     * The imported rows of `decodeImports`, written by the child to a work file and read back a row at a time, so
+     * the worker never holds the day's rows. The file goes when the answer is dropped.
+     *
+     * @param  list<string>  $bodies  the `body` column of each part
+     */
+    public function importRows(array $bodies): RowFile
+    {
+        $input = '';
+        foreach ($bodies as $body) {
+            $input .= pack('V', strlen($body)).$body;
+        }
+        $file = rtrim((string) config('scarlet.work_dir'), '/\\').DIRECTORY_SEPARATOR.'scarlet-imports-'.uniqid().'.ndjson';
+
+        $run = Process::timeout(60)->input($input)->run([$this->binary(), 'decode', '--stdin', '--imports', '--out', $file]);
+        $rows = new RowFile($file);
+        if (! $run->successful()) {
+            throw new RuntimeException('scarlet-part decode --imports failed: '.$this->message($run->errorOutput()));
+        }
+
+        return $rows;
+    }
+
+    /**
      * Decode the `fishing` parts and the `addons` parts of one part key into newline-delimited JSON: a `fishing` row
      * per line and a `pn` row per pseudonym a fishing part explains.
      *
