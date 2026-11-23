@@ -860,7 +860,8 @@ field of a row is a vote (`shared_votes`, written by `VoteSharedRows`). A row is
 reached it read it. After that its served value of a field changes only when another value holds strictly more
 voters than the served one; a tie keeps the served value. A voter is an account, or an install that no account is
 linked to, so one person's installs count once; the voters of a decode are the installs behind its character, each
-with its latest value of a field, and an install may change or add `scarlet.ingest.shared_votes_per_install_day`
+with its latest value of a field (the value of the newest session that cast its vote, `shared_votes.session_start`, so
+a redecode of an older session leaves it alone), and an install may change or add `scarlet.ingest.shared_votes_per_install_day`
 (50000) vote rows a day. A row that had no votes when the first one reached it is backed by one voter that is none of
 the installs, so a single install that disagrees ties it. After a game patch changes a value, the installs that read the new one move their votes to it, and it
 replaces the served one once it holds more voters. Their `seen_at` is the server time of the decode that last changed the

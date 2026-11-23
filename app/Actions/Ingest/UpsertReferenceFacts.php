@@ -14,9 +14,9 @@ class UpsertReferenceFacts
      * on by the installs behind the character (`VoteSharedRows`) and no one install sets what a page serves.
      * `seen_at` is the server time of the decode that last changed a row, never the line's `at`.
      */
-    public function handle(int $characterId, DecodedSession $decoded): void
+    public function handle(int $characterId, DecodedSession $decoded, ?int $sessionStart = null): void
     {
-        $this->shared->handle($characterId, SharedKind::Recipe, $decoded->recipes);
-        $this->shared->handle($characterId, SharedKind::Spell, $decoded->spells);
+        $this->shared->handle($characterId, SharedKind::Recipe, $decoded->recipes, $sessionStart);
+        $this->shared->handle($characterId, SharedKind::Spell, $decoded->spells, $sessionStart);
     }
 }

@@ -22,9 +22,13 @@ class VoteSharedRows
      * Rows are locked in id order. Two decodes that create rows the other then locks can still deadlock on the insert;
      * PostgreSQL aborts one, and `IngestSession` gives its attempt back and the queue runs it again.
      *
+     * An install's vote keeps the values of the newest session that cast it, so a redecode of an older session leaves a
+     * newer vote alone.
+     *
      * @param  list<array<string, mixed>>  $rows  decoded rows with the kind's key and fields
+     * @param  int|null  $sessionStart  the session the rows came from; null votes as if it were the newest
      */
-    public function handle(int $characterId, SharedKind $kind, array $rows): void
+    public function handle(int $characterId, SharedKind $kind, array $rows, ?int $sessionStart = null): void
     {
         $candidates = $this->candidates($kind, $rows);
         if ($candidates === []) {
@@ -34,7 +38,7 @@ class VoteSharedRows
         $installs = array_values(DB::table('install_character')->where('character_id', $characterId)->pluck('install_id')->map(fn (mixed $install): string => (string) $install)->all());
         $remaining = $this->remaining($installs);
         foreach (array_chunk($candidates, self::CHUNK, preserve_keys: true) as $chunk) {
-            $this->chunk($kind, $chunk, $installs, $remaining);
+            $this->chunk($kind, $chunk, $installs, $remaining, $sessionStart);
         }
     }
 
@@ -64,7 +68,7 @@ class VoteSharedRows
      * @param  list<string>  $installs
      * @param  array<string, int>  $remaining
      */
-    private function chunk(SharedKind $kind, array $chunk, array $installs, array &$remaining): void
+    private function chunk(SharedKind $kind, array $chunk, array $installs, array &$remaining, ?int $sessionStart): void
     {
         $ids = array_keys($chunk);
         $existing = DB::table($kind->table())->whereIn($kind->key(), $ids)->pluck($kind->key())->map(fn (mixed $id): int => (int) $id)->all();
@@ -73,7 +77,7 @@ class VoteSharedRows
 
         $served = $this->lockServed($kind, $ids);
         $this->seedServed($kind, array_intersect_key($served, array_flip($existing)));
-        $this->cast($kind, $chunk, $installs, $remaining);
+        $this->cast($kind, $chunk, $installs, $remaining, $sessionStart);
         $ballots = $this->ballots($kind, $ids);
 
         foreach ($ids as $id) {
@@ -173,21 +177,29 @@ class VoteSharedRows
      * @param  list<string>  $installs
      * @param  array<string, int>  $remaining
      */
-    private function cast(SharedKind $kind, array $chunk, array $installs, array &$remaining): void
+    private function cast(SharedKind $kind, array $chunk, array $installs, array &$remaining, ?int $sessionStart): void
     {
         if ($installs === []) {
             return;
         }
 
         $old = [];
-        $rows = DB::table('shared_votes')->where('kind', $kind->value)->whereIn('row_id', array_keys($chunk))->whereIn('install_id', $installs)->get(['row_id', 'install_id', 'fields']);
+        $newer = [];
+        $rows = DB::table('shared_votes')->where('kind', $kind->value)->whereIn('row_id', array_keys($chunk))->whereIn('install_id', $installs)->get(['row_id', 'install_id', 'fields', 'session_start']);
         foreach ($rows as $row) {
-            $old[$row->row_id.'|'.$row->install_id] = $this->decode((string) $row->fields);
+            $key = $row->row_id.'|'.$row->install_id;
+            $old[$key] = $this->decode((string) $row->fields);
+            if ($sessionStart !== null && $row->session_start !== null && (int) $row->session_start > $sessionStart) {
+                $newer[$key] = true;
+            }
         }
 
         $votes = [];
         foreach ($chunk as $id => $fields) {
             foreach ($installs as $install) {
+                if (isset($newer[$id.'|'.$install])) {
+                    continue;
+                }
                 $before = $old[$id.'|'.$install] ?? null;
                 $after = array_replace($before ?? [], $fields);
                 if ($before !== null && $this->same($before, $after)) {
@@ -197,11 +209,11 @@ class VoteSharedRows
                     continue;
                 }
                 $remaining[$install]--;
-                $votes[] = ['kind' => $kind->value, 'row_id' => $id, 'install_id' => $install, 'fields' => json_encode($after), 'created_at' => now(), 'updated_at' => now()];
+                $votes[] = ['kind' => $kind->value, 'row_id' => $id, 'install_id' => $install, 'fields' => json_encode($after), 'session_start' => $sessionStart, 'created_at' => now(), 'updated_at' => now()];
             }
         }
         if ($votes !== []) {
-            DB::table('shared_votes')->upsert($votes, ['kind', 'row_id', 'install_id'], ['fields', 'updated_at']);
+            DB::table('shared_votes')->upsert($votes, ['kind', 'row_id', 'install_id'], ['fields', 'session_start', 'updated_at']);
         }
     }
 
@@ -215,7 +227,7 @@ class VoteSharedRows
     {
         $ballots = [];
         $rows = DB::table('shared_votes as v')->leftJoin('installs as i', 'i.id', '=', 'v.install_id')
-            ->where('v.kind', $kind->value)->whereIn('v.row_id', $ids)->orderBy('v.updated_at')->orderBy('v.created_at')
+            ->where('v.kind', $kind->value)->whereIn('v.row_id', $ids)->orderByRaw('v.session_start asc nulls first')->orderBy('v.updated_at')->orderBy('v.created_at')
             ->get(['v.row_id', 'v.install_id', 'i.account_id', 'v.fields']);
         foreach ($rows as $row) {
             $voter = $row->install_id === null ? 'served' : ($row->account_id === null ? 'install:'.$row->install_id : 'account:'.$row->account_id);

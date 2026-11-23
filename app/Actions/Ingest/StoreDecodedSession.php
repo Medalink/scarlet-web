@@ -88,8 +88,8 @@ class StoreDecodedSession
         $this->insertRows->handle($characterId, $sessionStart, $rulesetId, $counted, $decoded);
         $span = $this->sessionRows->write($characterId, $sessionStart, $rulesetId, $counted, $decoded->summary);
         $this->distance->handle($characterId, $sessionStart);
-        $this->dictionaries->handle($characterId, $decoded, countVotes: ! $namesCounted);
-        $this->reference->handle($characterId, $decoded);
+        $this->dictionaries->handle($characterId, $decoded, countVotes: ! $namesCounted, sessionStart: $sessionStart);
+        $this->reference->handle($characterId, $decoded, $sessionStart);
         $this->layouts->handle($characterId, $decoded, countUpload: ! $namesCounted);
 
         return $span;

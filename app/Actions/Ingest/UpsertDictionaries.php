@@ -19,11 +19,11 @@ class UpsertDictionaries
      *
      * @param  bool  $countVotes  false when the session's names were counted by an earlier decode
      */
-    public function handle(int $characterId, DecodedSession $decoded, bool $countVotes): void
+    public function handle(int $characterId, DecodedSession $decoded, bool $countVotes, ?int $sessionStart = null): void
     {
         $this->names($characterId, $decoded->names, $countVotes);
-        $this->shared->handle($characterId, SharedKind::Item, $decoded->items);
-        $this->shared->handle($characterId, SharedKind::Zone, array_map(fn (array $row): array => ['name' => mb_substr((string) ($row['name'] ?? ''), 0, 128)] + $row, $decoded->zones));
+        $this->shared->handle($characterId, SharedKind::Item, $decoded->items, $sessionStart);
+        $this->shared->handle($characterId, SharedKind::Zone, array_map(fn (array $row): array => ['name' => mb_substr((string) ($row['name'] ?? ''), 0, 128)] + $row, $decoded->zones), $sessionStart);
         $this->pseudonyms($characterId, $decoded->pseudonyms);
     }
 
