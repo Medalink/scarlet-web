@@ -90,6 +90,14 @@ class StoreParts
             throw ApiException::groupRefused($refused);
         }
 
+        $sessionMin = (int) config('scarlet.ingest.session_min');
+        $sessionMax = time() + (int) config('scarlet.ingest.session_future');
+        foreach ($parts as $part) {
+            if ($part['session'] < $sessionMin || $part['session'] > $sessionMax) {
+                throw ApiException::invalidRequest("part {$part['id']} has a session outside the accepted window.", ['parts.'.$part['id'] => ["A session between {$sessionMin} and {$sessionMax} (epoch seconds)."]]);
+            }
+        }
+
         $characters = [];
         $known = [];
         foreach ($parts as $part) {

@@ -15,13 +15,13 @@ final class RollupLock
 {
     private const int EXTRA_SECONDS = 30;
 
-    /** Run `$work` holding the lock, waiting up to `$waitSeconds` for the holder before the wait fails. */
-    public static function block(int $waitSeconds, Closure $work): void
+    /** Run `$work` holding the lock and return what it returns, waiting up to `$waitSeconds` for the holder before the wait fails. */
+    public static function block(int $waitSeconds, Closure $work): mixed
     {
         /** @var LockProvider $store */
         $store = Cache::store('durable')->getStore();
 
-        $store->lock(self::lockKey(), (int) config('scarlet.rollups.timeout') + self::EXTRA_SECONDS)->block($waitSeconds, $work);
+        return $store->lock(self::lockKey(), (int) config('scarlet.rollups.timeout') + self::EXTRA_SECONDS)->block($waitSeconds, $work);
     }
 
     private static function lockKey(): string

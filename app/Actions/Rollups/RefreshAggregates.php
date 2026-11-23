@@ -31,27 +31,41 @@ class RefreshAggregates
      * at once: the callers here (several `RefreshRollups` instances can process together, and commands call this
      * directly) wait for the refresh running on a lock instead of failing with `SQLSTATE 55P03`. A slice that stays
      * locked fails the refresh; `RefreshRollups` keeps its range pending and goes back on the queue to retry.
-     * The keyed loot tables are rebuilt for the same days after the aggregates, under the same lock (`RebuildKeyedLoot`).
+     * With `$budgetSeconds` set, the slices stop once the budget is spent and the span that is not refreshed yet comes
+     * back, so one call always ends inside the job that called it; the caller puts the span back and a follow-up run
+     * continues. The keyed loot tables are rebuilt for the same days after the aggregates, under the same lock
+     * (`RebuildKeyedLoot`), also inside the budget. Without a budget the whole range is refreshed in one call.
      * CALL cannot run inside a transaction, so this must not be called from one.
+     *
+     * @return array{from: int, until: int}|null the span the budget left, null when the refresh finished
      */
-    public function handle(int $from, int $until): void
+    public function handle(int $from, int $until, ?int $budgetSeconds = null): ?array
     {
         $extent = DB::selectOne("select extract(epoch from min(range_start))::bigint as first, extract(epoch from max(range_end))::bigint as last from timescaledb_information.chunks where hypertable_schema = 'public'");
         if ($extent->first === null) {
-            return;
+            return null;
         }
 
         $start = max(intdiv($from, self::DAY) * self::DAY, intdiv((int) $extent->first, self::DAY) * self::DAY);
         $end = min((intdiv($until, self::DAY) + 1) * self::DAY, (intdiv((int) $extent->last, self::DAY) + 1) * self::DAY);
         $slice = max(1, (int) config('scarlet.storage.refresh_slice_days')) * self::DAY;
 
-        RollupLock::block(self::WAIT_SECONDS, function () use ($start, $end, $slice): void {
+        return RollupLock::block(self::WAIT_SECONDS, function () use ($start, $end, $slice, $budgetSeconds): ?array {
+            $stop = $budgetSeconds === null ? null : microtime(true) + $budgetSeconds;
             foreach (Rollup::cases() as $rollup) {
                 for ($sliceStart = $start; $sliceStart < $end; $sliceStart += $slice) {
+                    if ($stop !== null && microtime(true) >= $stop) {
+                        return ['from' => $start, 'until' => $end];
+                    }
                     $this->slice($rollup->value, $sliceStart, min($sliceStart + $slice, $end));
                 }
             }
+            if ($stop !== null && microtime(true) >= $stop) {
+                return ['from' => $start, 'until' => $end];
+            }
             $this->keyedLoot->handle($start, $end);
+
+            return null;
         });
     }
 

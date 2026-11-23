@@ -86,6 +86,9 @@ return [
         'max_session_lines' => 4_000_000,
         'name_votes_per_install_day' => 20_000,
         'sweep_max_failures' => 3,
+        /** The part header `session`, in epoch seconds: the WoW era, at most one year ahead of the server clock. */
+        'session_min' => 946_684_800,
+        'session_future' => 31_536_000,
     ],
     // The Forever Armory names the ruleset of a character (docs/DESIGN.md, Rulesets). One request at a time.
     'armory' => [
@@ -122,6 +125,12 @@ return [
         'timeout' => 900,
         'tries' => 6,
         'memory_mb' => 256,
+        /** How long one run of the job refreshes slices before the next run takes the rest, inside the timeout. */
+        'job_seconds' => 600,
+        /** The widest span of pending days one refresh takes on top of its own window. */
+        'pending_span_days' => 90,
+        /** Failed jobs after which a refresh stops putting a pending range back; it returns when its data changes. */
+        'pending_attempts' => 2,
         // How long a refresh waits so the ingests of one upload share it.
         'debounce_seconds' => 5,
         'read_fresh_seconds' => 60,
