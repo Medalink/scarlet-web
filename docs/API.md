@@ -560,6 +560,8 @@ One board, best first. Only public characters with counted sessions are listed.
 
 `data`: rows with `rank`, `name`, `race`, `class`, `value`, `ruleset`, `hardcore`, `deaths`, `since` (the date the character was first recorded, `null` when recorded from level 1) and `at`. `meta.next_cursor`, `meta.total`.
 
+The board `feat-score` ranks the feat score: one point for each tier held on the 68 general feats that are not gold feats, 340 at most. Its `value` is the score.
+
 Example: `curl https://<host>/api/v1/public/leaderboards/most-quests?limit=2`
 
 ### Search

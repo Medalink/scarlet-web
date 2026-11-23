@@ -1788,6 +1788,8 @@ rounded down before they are stored, and Wayfarer down to one decimal, so a valu
 not reached. The emote feats leave out `Emote::READ`, as the emote rankings do. The character page and the API read the stored rows. `CountHolders` counts, for every feat and tier,
 the characters whose stored value reaches it (one query, cached 15 minutes), and `ShowCharacterFeats` orders by it.
 
+**Feat events, shares and score.** `RecordFeatTiers` wraps the count in `RefreshCharacterFeats`: it reads the tier each stored feat holds, runs `StoreCharacterFeats`, reads the tiers again, writes one `feat_events` row for each feat that now holds a higher tier (`tier`, `from_tier`, the `session_start` of the character's newest session and `at`), and sets `characters.feat_score`, the tiers held over the general feats that are not gold feats (`Feat::scores()`, 68 feats, 340 at most). Only the refresh calls it, so the catalog migration, which stores counts through `StoreCharacterFeats` alone, writes no event, and a threshold change writes none because both reads use the thresholds of the day. A character's score fills when it is next counted: after a decode or at the daily `feats:refresh`. `feats:shares` (daily, 04:50) rewrites `feat_shares`: for each feat and tier, `holders` of the `of` characters with a stored count of the feat and at least 20 recorded hours (`--hours` changes it) that hold the tier or higher, and `share` as a percent to two places. The board `feat-score` lists public characters with a score above 0, highest first.
+
 ### Class pages
 
 A character has a page for its class, `/c/{name}/{class}` (owner, 2026-11-22: "go deeper into class fantasy so we

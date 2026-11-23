@@ -60,6 +60,7 @@ const REGISTRY = [
   { lane: "api", name: `the app reads the class page of ${WARLOCK} as data with the fixture's figures`, run: classPageApi.installReadsItsClassPage },
   { lane: "api", name: "the class page request refuses an unsigned read, another install's character and a name that is not Name-Surname", run: classPageApi.classPageRefusesWhatIsNotTheInstalls },
   { lane: "api", name: "the rogue fixture's class, tree and role feats are counted, and no other class's or role's", run: feats.specFeatsAreCounted },
+  { lane: "api", name: "the feat-score board lists the fixtures by tiers held, highest first", run: feats.featScoreBoardListsTheFixtures },
   { lane: "api", name: "the six professions with recorded lines are served with their numbers", run: professions.apiShowsTheUpload },
   { lane: "pages", name: "every public page answers and shows its own content", run: pages.everyPageShowsItself },
   { lane: "pages", name: "one death heard by two uploaders is counted once", run: pages.deathIsCountedOnce },

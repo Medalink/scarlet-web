@@ -355,6 +355,12 @@ enum Feat: string
         return in_array($this, self::ECONOMY, true);
     }
 
+    /** True for the general feats that are not gold feats: each tier held on one is a point of the feat score. */
+    public function scores(): bool
+    {
+        return ! array_key_exists($this->value, FeatRules::RULES) && ! $this->economy();
+    }
+
     /** @return array{0: string, 1: string, 2: string, 3: array{kind: string, keys?: list<string>, per?: int, once_at?: int, gate?: string, note?: string}|null, 4: string|null} */
     private function meta(): array
     {

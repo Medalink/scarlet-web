@@ -18,7 +18,7 @@ use stdClass;
 
 /**
  * The SessionRecap of one session of one character (CONTRACTS.md, "Session recap"), built from the session row and the fact tables the way the app's recap.rs builds it
- * from the log. `buckets.combat` is zero until the decoder keeps fight times with a time, `feats` is empty until feat events exist, `compare` is null while the bracket
+ * from the log. `buckets.combat` is zero until the decoder keeps fight times with a time, `feats` is empty because `feat_events` holds when the refresh ran, not the minute of the session, `compare` is null while the bracket
  * has fewer than 20 sessions, and `links` is left to ShowSession. `$economy` false leaves out what a public page may not show without the owner's say.
  */
 class BuildRecap

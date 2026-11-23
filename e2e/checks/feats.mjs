@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { NAME, expectError, expectJson, expectStatus, sleep, uncached } from "../support.mjs";
+import { ECHO, NAME, WARRIOR, expectError, expectJson, expectStatus, sleep, uncached } from "../support.mjs";
 
 const SPEC_WAIT_MS = 20_000;
 const SPEC_POLL_MS = 250;
@@ -66,6 +66,23 @@ export async function specFeatsAreCounted(ctx) {
     if (wrong.length === 0) return;
     if (Date.now() > deadline) {
       throw new Error(`Echo-Witness is served with other spec feats than the fixture holds, ${SPEC_WAIT_MS / 1000}s after the decode:\n${wrong.join("\n")}`);
+    }
+    await sleep(SPEC_POLL_MS);
+  }
+}
+
+/** The feat score is written by the feat refresh job after the decode, so the board is read until it lists the fixtures. */
+export async function featScoreBoardListsTheFixtures(ctx) {
+  const route = "/api/v1/public/leaderboards/feat-score";
+  const deadline = Date.now() + SPEC_WAIT_MS;
+  for (;;) {
+    const rows = expectJson(expectStatus(await ctx.http.api(uncached(route, crypto.randomInt(20, 101))), 200, `GET ${route}`), route).data ?? [];
+    const listed = rows.filter((row) => [NAME, ECHO, WARRIOR].includes(row.name));
+    const ordered = rows.every((row, i) => i === 0 || rows[i - 1].value >= row.value);
+    const inRange = rows.every((row) => Number.isInteger(row.value) && row.value >= 1 && row.value <= 340);
+    if (listed.length === 3 && ordered && inRange) return;
+    if (Date.now() > deadline) {
+      throw new Error(`${route} should list ${NAME}, ${ECHO} and ${WARRIOR} by feat score, highest first, each from 1 to 340 points, ${SPEC_WAIT_MS / 1000}s after the decode, saw ${JSON.stringify(rows.slice(0, 6))}`);
     }
     await sleep(SPEC_POLL_MS);
   }

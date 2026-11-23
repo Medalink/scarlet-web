@@ -50,6 +50,9 @@ final class CharacterStandings
         if ($board === Board::MostFishCaught) {
             return $board->format($value).' fish';
         }
+        if ($board === Board::FeatScore) {
+            return Format::count($value, 'point');
+        }
         if ($board === Board::MostQuestsCompleted) {
             return Format::count($value, 'quest').' completed';
         }
