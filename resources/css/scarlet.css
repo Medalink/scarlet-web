@@ -90,7 +90,6 @@ a:hover { color: var(--soft); }
 @keyframes cr-spread { from { transform: scaleX(0.35); opacity: 0; } }
 @keyframes cr-shine { from { transform: scale(0.55); opacity: 0; } }
 @keyframes cr-flash { 0% { opacity: 0; } 8% { opacity: 0.85; } 100% { opacity: 0; } }
-.sc-pips { display: inline-block; line-height: 0; vertical-align: -1px; }
 .sc-bar3 { display: block; height: 3px; background: var(--line2); position: relative; }
 .sc-bar3::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w, 0%); background: var(--c, var(--tier-1)); }
 .sc-coll { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 8px 20px; padding: 18px 0 16px; border-top: 1px solid var(--line); }
@@ -174,11 +173,11 @@ a:hover { color: var(--soft); }
 .sc-say b { font-weight: 700; color: var(--soft); }
 .sc-note { font-size: 13px; color: var(--muted); }
 @keyframes sc-grow { from { transform: scaleX(0); } }
-@keyframes sc-tick { from { opacity: 0; } }
+@keyframes sc-arc { from { stroke-dasharray: 0 100; } }
 .sc-bars .row > i::after, .sc-bar3::after { transform-origin: left; animation: sc-grow var(--t-3) var(--ease-out) both; }
-.sc-ring line.on { animation: sc-tick 120ms linear both; animation-delay: calc(var(--i) * 11ms); }
+.sc-ring .arc { animation: sc-arc var(--t-3) var(--ease-out) both; }
 @media (prefers-reduced-motion: reduce) {
-  .sc-bars .row > i::after, .sc-bar3::after, .sc-ring line.on { animation: none; }
+  .sc-bars .row > i::after, .sc-bar3::after, .sc-ring .arc { animation: none; }
 }
 .sc-sw { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
 .sc-sw > div { background: var(--bg); padding: 10px 12px 11px; font-size: 12.5px; line-height: 1.35; }

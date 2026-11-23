@@ -56,7 +56,7 @@
   </section>
 
   <section class="mt-14">
-    <h2 class="sc-h">Numbers: tiles, hero, tick ring</h2>
+    <h2 class="sc-h">Numbers: tiles, hero, progress ring</h2>
     <div class="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px]">
       <x-sc.tiles :cols="4">
         <x-sc.tile label="Kills" value="9,912" sub="63 an hour" />
@@ -66,7 +66,7 @@
       </x-sc.tiles>
       <div class="sc-panel flex items-center gap-5 px-5 py-4">
         <x-sc.ring :value="0.78" :size="112"><b class="sc-num" style="font-size:40px">72</b><span class="sc-label">of 92</span></x-sc.ring>
-        <div><p class="sc-h3">Tick ring</p><p class="sc-label mt-1">36 ticks, lit clockwise from the top.</p></div>
+        <div><p class="sc-h3">Progress ring</p><p class="sc-label mt-1">One arc, filled clockwise from the top.</p></div>
       </div>
     </div>
     <p class="sc-cap">Tiles share one hairline grid and are never separate cards. A tile whose value is zero is left out.</p>

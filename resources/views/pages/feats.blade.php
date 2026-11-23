@@ -18,7 +18,7 @@
   @if ($head)
     <section class="mt-8 grid gap-4 lg:grid-cols-[330px_minmax(0,1fr)_230px]">
       <div class="sc-panel flex items-center gap-5 px-6 py-5">
-        <x-sc.ring :value="$head['ring']" :ticks="48" :size="124"><span class="sc-num sc-num-xl">{{ $head['held'] }}</span><br><span class="sc-label">of {{ $head['total'] }}</span></x-sc.ring>
+        <x-sc.ring :value="$head['ring']" :size="124"><span class="sc-num sc-num-xl">{{ $head['held'] }}</span><br><span class="sc-label">of {{ $head['total'] }}</span></x-sc.ring>
         <div>
           <p class="sc-h3">{{ $head['first'] }} holds {{ $head['held'] }} {{ $head['held'] === 1 ? 'feat' : 'feats' }}</p>
           <p class="sc-sub mt-1" style="color:var(--muted)">{{ $head['line'] }}</p>
@@ -74,7 +74,7 @@
       <nav class="mt-2 flex flex-wrap gap-2" aria-label="Family">@foreach ($d['familyChips'] as $chip)<a href="{{ $chip['href'] }}" @class(['sc-chipbtn no-underline', 'on' => $chip['on']])>{{ $chip['label'] }}</a>@endforeach</nav>
       <div class="mt-6" id="wall">
         @if ($d['account'])
-          <x-sc.collection :name="$d['account']['name']" :family="$d['account']['family']" :feats="$d['account']['feats']" :count="$d['account']['held'].' of '.$d['account']['total']" :pips="false" />
+          <x-sc.collection :name="$d['account']['name']" :family="$d['account']['family']" :feats="$d['account']['feats']" :count="$d['account']['held'].' of '.$d['account']['total']" />
         @endif
         @forelse ($d['wall'] as $collection)
           <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :counts="$d['mode'] !== 'everyone'" />

@@ -37,7 +37,7 @@ final class Crest
     ];
 
     /**
-     * The tier table, by tier (0 is not earned): `color` is the accent (the field's top, the inlay, the band, the pips); `deep` the foot of
+     * The tier table, by tier (0 is not earned): `color` is the accent (the field's top, the inlay, the band); `deep` the foot of
      * the field; `frame`, `crown`, `banner`, `side` and `rays` the MATERIAL each piece is made of; `field` the field's opacity (1 is the
      * solid field inside a dark gap); `plain` the field's opacity under 22 px; `glyph` the glyph's stroke; `gem` the gem's colour; `ghost`
      * and `near` the opacity of a ghost drawn in this tier's colour at rest and from NEAR_AT. Mirrors `QUALITY` in design/crests/crests.js.
@@ -121,21 +121,6 @@ final class Crest
         $crest = new self('cr'.self::$salt.++self::$made, $scope, $drawn, $p, $size < 44, $size < 22, $outline, $state === 'earned');
 
         return '<svg viewBox="'.($crest->compact ? '13 8.5 70 70' : '6 5 84 84').'" width="'.$size.'" height="'.$size.'" role="img" aria-label="'.e($label).'">'.$crest->layers($glyph, $icon).'</svg>';
-    }
-
-    /** The five tier pips on their own, for a collection's tier. */
-    public static function pips(int $tier): string
-    {
-        $name = $tier > 0 ? (self::TIER_NAMES[$tier] ?? '').' collection' : 'No tier yet';
-        $color = (self::QUALITY[$tier] ?? self::QUALITY[0])['color'];
-        $off = self::QUALITY[0]['color'];
-        $out = '<svg viewBox="0 0 46 10" width="46" height="10" role="img" aria-label="'.$name.'">';
-        for ($i = 0; $i < 5; $i++) {
-            $on = $i < $tier;
-            $out .= '<rect x="'.(2.5 + $i * 9).'" y="2" width="6" height="6" transform="rotate(45 '.(5.5 + $i * 9).' 5)" fill="'.($on ? $color : 'none').'" stroke="'.($on ? 'none' : $off).'" stroke-opacity="'.self::UNEARNED_RIM.'" stroke-width="1"/>';
-        }
-
-        return $out.'</svg>';
     }
 
     private function layers(string $glyph, ?string $icon): string
