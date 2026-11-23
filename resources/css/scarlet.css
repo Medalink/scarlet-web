@@ -160,4 +160,29 @@ a:hover { color: var(--soft); }
 .sc-type { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: baseline; column-gap: 24px; padding: 13px 0; border-top: 1px solid var(--line); }
 .sc-type > span { font-size: 12.5px; color: var(--muted); }
 .sc-cap { font-size: 13px; color: var(--muted); margin-top: 10px; max-width: 780px; }
+.sc-toast .glow { position: absolute; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--metal) 50%, transparent), transparent); opacity: 0; pointer-events: none; }
+.sc-toast .glow2 { display: none; }
+.sc-toast.t5 { --metal: var(--t-gold); }
+.sc-toast.t5 .glow2 { display: block; }
+.sc-toast .sweep { position: absolute; left: -60px; top: -30px; width: 46px; height: 140px; rotate: 18deg; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent); opacity: 0; pointer-events: none; }
+.sc-toast.play { animation: sc-toast-in 200ms var(--ease-out) both; }
+.sc-toast.play .sc-seal { animation: sc-stamp 320ms var(--ease-out) 120ms both; }
+.sc-toast.play .glow { animation: sc-burst 620ms ease-out 120ms both; }
+.sc-toast.play .glow2 { animation-delay: 380ms; }
+.sc-toast.play .sweep { animation: sc-sweep 600ms linear 500ms both; }
+.sc-toast.play .txt { animation: sc-fade 300ms linear 520ms both; }
+.sc-toast.play .pip { transform-box: fill-box; transform-origin: center; animation: sc-pop 200ms var(--ease-out) both; animation-delay: calc(300ms + var(--i) * 70ms); }
+.sc-toast.play .tick { animation: sc-fade 120ms linear both; animation-delay: calc(300ms + var(--i) * 30ms); }
+.sc-toast.play .tick:not(.on) { animation: sc-fade 120ms linear both, sc-dial-off 300ms linear 900ms both; animation-delay: calc(300ms + var(--i) * 30ms), 900ms; }
+@keyframes sc-toast-in { from { opacity: 0; translate: 0 12px; } }
+@keyframes sc-stamp { from { scale: 1.35; opacity: 0; } }
+@keyframes sc-burst { from { scale: 0.4; opacity: 0.9; } to { scale: 1; opacity: 0; } }
+@keyframes sc-sweep { from { translate: 0 0; opacity: 1; } 90% { opacity: 1; } to { translate: 380px 0; opacity: 0; } }
+@keyframes sc-fade { from { opacity: 0; } }
+@keyframes sc-pop { from { scale: 0; opacity: 0; } }
+@keyframes sc-dial-off { from { stroke: var(--metal); } }
+@media (prefers-reduced-motion: reduce) {
+  .sc-toast.play .sc-seal, .sc-toast.play .glow, .sc-toast.play .sweep, .sc-toast.play .pip, .sc-toast.play .tick, .sc-toast.play .tick:not(.on) { animation: none; }
+  .sc-toast.play { animation: sc-fade 150ms linear both; }
+}
 }

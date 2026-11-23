@@ -100,7 +100,7 @@ final class Seal
             $on = $i < $lit;
             $sx = sin($a);
             $cy = -cos($a);
-            $out .= '<line class="tick" style="--i:'.$i.'" x1="'.round(32 + $sx * 27.4, 2).'" y1="'.round(32 + $cy * 27.4, 2).'" x2="'.round(32 + $sx * 31, 2).'" y2="'.round(32 + $cy * 31, 2).'" stroke="'.($on ? self::NEXT[$tier] : 'rgba(255,255,255,0.16)').'" stroke-width="'.($on ? 2.3 : 1.4).'"/>';
+            $out .= '<line class="tick'.($on ? ' on' : '').'" style="--i:'.$i.'" x1="'.round(32 + $sx * 27.4, 2).'" y1="'.round(32 + $cy * 27.4, 2).'" x2="'.round(32 + $sx * 31, 2).'" y2="'.round(32 + $cy * 31, 2).'" stroke="'.($on ? self::NEXT[$tier] : 'rgba(255,255,255,0.16)').'" stroke-width="'.($on ? 2.3 : 1.4).'"/>';
         }
 
         return $out;

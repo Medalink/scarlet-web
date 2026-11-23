@@ -92,5 +92,48 @@
     </div>
     <p class="sc-cap">Web and app: one inline SVG. Addon: a cell of Plates.tga drawn two to five times, 20 Tick.tga placed with SetRotation, a cell of Glyphs.tga or the spell's texture. Under 48 px the dial and pips are dropped.</p>
   </section>
+
+  <section class="mt-14">
+    <h2 class="sc-h">Feat card</h2>
+    @php
+        $cards = [
+            ['name' => 'Soloist', 'glyph' => 'dungeons', 'tier' => 0, 'count' => 'No dungeon run alone yet', 'to' => '1 to Copper', 'share' => '6% hold Copper or higher'],
+            ['name' => 'Slayer', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.99, 'count' => '9,912 kills', 'to' => '88 to Gold', 'share' => '64% hold Silver or higher'],
+            ['name' => 'Rampage', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.04, 'count' => '312 kills in one session', 'to' => '288 to Gold', 'new' => true],
+            ['name' => 'Flawless', 'glyph' => 'shield', 'family' => 'dungeons', 'tier' => 5, 'progress' => 1, 'count' => '100 dungeon runs with no deaths in the party', 'to' => 'Legend since 4 November', 'share' => '<1% hold Legend'],
+        ];
+    @endphp
+    <div class="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
+      @foreach ($cards as $card)<x-sc.feat :feat="$card" />@endforeach
+    </div>
+    <p class="sc-cap">The card has no bar: the dial on the seal is the progress.</p>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="sc-h">A collection</h2>
+    @php
+        $quests = [
+            ['name' => 'Questing', 'glyph' => 'quests', 'tier' => 3, 'progress' => 0.3, 'share' => '41%'],
+            ['name' => 'Errand Runner', 'glyph' => 'quests', 'tier' => 2, 'progress' => 0.4, 'share' => '58%', 'on' => true],
+            ['name' => 'Fickle', 'glyph' => 'quests', 'tier' => 2, 'progress' => 0.5, 'share' => '52%'],
+            ['name' => 'Local Hero', 'glyph' => 'quests', 'tier' => 2, 'progress' => 0.6, 'share' => '47%'],
+            ['name' => 'Thorough', 'glyph' => 'quests', 'tier' => 2, 'progress' => 0.2, 'share' => '44%'],
+        ];
+    @endphp
+    <x-sc.collection class="mt-4 !border-t-0" name="Quests" family="quests" :feats="$quests" note="A Silver collection: every feat in it is Silver or better." />
+  </section>
+
+  <section class="mt-14">
+    <h2 class="sc-h">The toast, frame by frame</h2>
+    @php
+        $rampage = ['name' => 'Rampage', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.04, 'count' => '300 kills in one session'];
+        $jumper = ['name' => 'Jumper', 'glyph' => 'jumps', 'tier' => 5, 'progress' => 1, 'count' => '250,000 jumps'];
+    @endphp
+    <div class="mt-5 grid gap-x-7 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
+      <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" :play="true" /><figcaption class="sc-note mt-2">Plays once when the page opens: the plate rises, the seal is stamped, the pips light, a sweep crosses, the dial runs to full and settles at the real progress.</figcaption></figure>
+      <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" /><figcaption class="sc-note mt-2">At rest, 1,200 ms to 5.2 s.</figcaption></figure>
+      <figure><x-sc.feat-toast :feat="$jumper" kicker="Upgraded from Scarlet" :play="true" /><figcaption class="sc-note mt-2">A Legend: gold rail, two gold bursts 260 ms apart.</figcaption></figure>
+    </div>
+  </section>
 </div>
 </x-layouts.sc>
