@@ -19,6 +19,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { xorDigest } from "./client.mjs";
 import { LEDGER_LINES } from "./ledger-lines.mjs";
+import { MAGE_LINES } from "./mage-lines.mjs";
 import { WARLOCK_LINES } from "./warlock-lines.mjs";
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
@@ -237,6 +238,7 @@ const BUILDS = [
   { character: "Tailor-Stranger", session: 1795360000, lines: STRANGER_LINES },
   { character: "Spell-Ledger", session: 1795450000, lines: LEDGER_LINES },
   { character: "Shard-Keeper", session: 1795540000, lines: WARLOCK_LINES },
+  { character: "Frost-Weaver", session: 1795630000, lines: MAGE_LINES },
 ];
 
 function partsOf(character, session, lines) {

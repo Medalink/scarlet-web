@@ -1,4 +1,5 @@
-import { Jar, LEDGER, NAME, PROBE, Skip, WARLOCK, expectJson, expectStatus, sleep } from "../support.mjs";
+import { Jar, LEDGER, MAGE, NAME, PROBE, Skip, WARLOCK, expectJson, expectStatus, sleep } from "../support.mjs";
+import * as mage from "../mage-expected.mjs";
 import { BAND, CALLOUTS, CASTING, DEMONS, HEAD, PARTY, SHARDS, TALENTS, TAPS } from "../warlock-expected.mjs";
 import { browserFor } from "./owner.mjs";
 import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
@@ -137,4 +138,41 @@ export async function hiddenCharacterHidesItsClassPage(ctx) {
     await tab.close();
   }
   expectStatus(await ctx.http.page(classPage), 200, `${classPage} once the page is public again`);
+}
+
+async function classPageShowsItsFigures(ctx, { name, slug, title, plural, groups, band, callouts, notes }) {
+  const route = `/c/${name}/${slug}`;
+  const page = expectStatus(await ctx.http.page(route), 200, route);
+  if (ERROR_PAGE.test(page.text)) throw new Error(`${route}: the body carries the markers of an error page: ${page.text.slice(0, 300)}`);
+  if (!heading(title).test(page.text)) throw new Error(`${route}: expected the heading ${title}, saw ${page.text.slice(0, 300)}`);
+  const tokens = tokensOf(page.text);
+  const problems = [];
+  for (const [group, pairs] of Object.entries(groups)) {
+    const absent = missing(tokens, pairs);
+    if (absent.length > 0) problems.push(`${group}: ${absent.join(", ")}`);
+  }
+  const lost = callouts.filter((callout) => !showsLines(tokens, callout)).map(([first]) => first);
+  if (lost.length > 0) problems.push(`callouts: ${lost.join(", ")}`);
+  const unsaid = notes.filter((note) => !tokens.includes(note));
+  if (unsaid.length > 0) problems.push(`notes: ${unsaid.join(" | ")}`);
+  if (page.text.includes(`Against other ${plural}`) || page.text.includes("More than")) problems.push(`a comparison with other ${plural}, which needs 20 of them and the fixture has one`);
+  if (problems.length > 0) throw new Error(`${route} should show every figure worked out from the fixture, but lacks:\n${problems.join("\n")}`);
+  const character = expectStatus(await ctx.http.page(`/c/${name}`), 200, `/c/${name}`);
+  const absentBand = missing(tokensOf(character.text), band);
+  const wanted = [`<a href="/c/${name}/${slug}">${title}</a>`, `<a href="/c/${name}/${slug}">All ${slug} numbers</a>`].filter((link) => !character.text.includes(link));
+  const order = character.text.indexOf('id="h-band"') < 0 || character.text.indexOf('id="h-band"') > character.text.indexOf('id="h-week"');
+  if (absentBand.length > 0 || wanted.length > 0 || order) throw new Error(`/c/${name} should link its class page and show the band above This week; missing figures: ${absentBand.join(", ")}; missing links: ${wanted.join(", ")}; band above This week: ${!order}`);
+}
+
+export async function magePageShowsItsFigures(ctx) {
+  await classPageShowsItsFigures(ctx, {
+    name: MAGE,
+    slug: "mage",
+    title: "Mage",
+    plural: "mages",
+    groups: { head: mage.HEAD, conjuring: mage.CONJURING, travel: mage.TRAVEL, casting: mage.CASTING, control: mage.CONTROL, party: mage.PARTY, talents: mage.TALENTS },
+    band: mage.BAND,
+    callouts: mage.CALLOUTS,
+    notes: mage.NOTES,
+  });
 }

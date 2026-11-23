@@ -1,0 +1,45 @@
+scarlet-part	1	Frost-Weaver	1795630000	names
+100	SN	5504	Conjure Water
+1	SN	587	Conjure Food
+1	SN	10053	Conjure Mana Citrine
+1	SN	430	Drink
+1	SN	433	Food
+1	SN	10059	Portal: Stormwind
+1	SN	11416	Portal: Ironforge
+1	SN	11419	Portal: Darnassus
+1	SN	3561	Teleport: Stormwind
+1	SN	3562	Teleport: Ironforge
+1	SN	3565	Teleport: Darnassus
+1	SN	118	Polymorph
+1	SN	28272	Polymorph: Pig
+1	SN	1953	Blink
+1	SN	122	Frost Nova
+1	SN	2139	Counterspell
+1	SN	11958	Ice Block
+1	SN	1463	Mana Shield
+1	SN	12051	Evocation
+1	SN	10	Blizzard
+1	SN	116	Frostbolt
+1	SN	8406	Frostbolt
+1	SN	133	Fireball
+1	SN	2136	Fire Blast
+1	SN	5143	Arcane Missiles
+1	SN	120	Cone of Cold
+1	SN	2948	Scorch
+1	SN	1449	Arcane Explosion
+1	SN	2120	Flamestrike
+1	SN	11366	Pyroblast
+1	SN	1459	Arcane Intellect
+1	SN	23028	Arcane Brilliance
+1	SN	475	Remove Lesser Curse
+1	SN	11426	Ice Barrier
+1	SN	12472	Cold Snap
+1	SN	12043	Presence of Mind
+1	SN	12042	Arcane Power
+1	SN	11129	Combustion
+63	IN	5350	Conjured Water
+1	IN	5349	Conjured Muffin
+1	IN	8007	Mana Citrine
+298	TY	301	Arcane
+10	TY	302	Fire
+10	TY	303	Frost

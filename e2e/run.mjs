@@ -15,7 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { InstallClient } from "./client.mjs";
 import { Gate } from "./gate.mjs";
-import { ECHO, Http, Jar, LEDGER, LOCAL_HOSTS, NAME, PROBE, STRANGER, WARLOCK, Skip } from "./support.mjs";
+import { ECHO, Http, Jar, LEDGER, LOCAL_HOSTS, MAGE, NAME, PROBE, STRANGER, WARLOCK, Skip } from "./support.mjs";
 import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
@@ -42,7 +42,7 @@ const REGISTRY = [
   { lane: "upload", name: "installs/me refuses an unsigned request", run: upload.meUnsigned },
   { lane: "upload", name: "installs/me refuses a wrong signature", run: upload.meWrongSignature },
   { lane: "upload", name: "what an earlier run left is removed", run: upload.leftoversRemoved },
-  { lane: "upload", name: `${NAME}, ${PROBE}, ${ECHO} and ${WARLOCK} upload side by side, and ${STRANGER} and ${LEDGER} from another install: sync, manifest, parts, sync`, run: upload.bothUpload },
+  { lane: "upload", name: `${NAME}, ${PROBE}, ${ECHO} and ${WARLOCK} upload side by side, and ${STRANGER} and ${LEDGER} and ${MAGE} from another install: sync, manifest, parts, sync`, run: upload.bothUpload },
   { lane: "upload", name: "the same manifest needs nothing", run: upload.sameManifestNeedsNothing },
   { lane: "upload", name: "the upload is decoded", run: upload.decoded },
   { lane: "api", name: "every public endpoint answers data and meta", run: api.everyEndpointAnswers },
@@ -73,6 +73,7 @@ const REGISTRY = [
   { lane: "pages", name: "the app links to an account", independent: true, run: pages.appLinksToAccount },
   { lane: "pages", name: "the twelve profession pages show what the upload recorded", run: professions.pagesShowTheUpload },
   { lane: "pages", name: `${WARLOCK}'s class page shows the figures worked out from its lines and no comparison under twenty warlocks`, run: classPage.warlockPageShowsItsFigures },
+  { lane: "pages", name: `${MAGE}'s class page shows the figures worked out from its lines and no comparison under twenty mages`, run: classPage.magePageShowsItsFigures },
   { lane: "pages", name: "a character's page links its class page and draws its band from the stored row, and a class with no page has neither", run: classPage.characterPageLinksItsClassPage },
   { lane: "pages", name: "a character with no class rows has no band and no link to a class page", run: classPage.characterWithNoClassRowsHasNoBand },
   { lane: "pages", name: "another class's slug, an unknown slug and an unknown character are 404 pages", run: classPage.otherAddressesAre404 },

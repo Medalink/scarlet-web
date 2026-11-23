@@ -1,0 +1,41 @@
+{
+  "character": "Frost-Weaver",
+  "parts": [
+    {
+      "group": "core",
+      "id": "6d65f8de8d8599e82f52db35acb079c803ee59fa173154f4a25165dcc319b0e9",
+      "lines": 5,
+      "raw_bytes": 208,
+      "session": 1795630000
+    },
+    {
+      "group": "build",
+      "id": "c4f3bfba36dc4949eca7cf485af5efc78a8ed66f8c7efb7b8175f96f045b04b8",
+      "lines": 8,
+      "raw_bytes": 387,
+      "session": 1795630000
+    },
+    {
+      "group": "combat",
+      "id": "dd51461a4f79e808518fff3c3c4fe17546fbe8438377d79cb833811a65d7bac5",
+      "lines": 487,
+      "raw_bytes": 7285,
+      "session": 1795630000
+    },
+    {
+      "group": "loot",
+      "id": "902e5aadde09b29d3fcf8c4cbc0e15f52485053f43efd09971624e05950ed04f",
+      "lines": 61,
+      "raw_bytes": 1029,
+      "session": 1795630000
+    },
+    {
+      "group": "names",
+      "id": "70b4cbae623d7f16c9e6a2deb82521868f310aaa470f9dcb7161cd5ab162cf15",
+      "lines": 44,
+      "raw_bytes": 1056,
+      "session": 1795630000
+    }
+  ],
+  "set_digest": "945d907d4814f5226453c5d3ce214309642f68431cd835419b149ef686f911ce"
+}
