@@ -14,6 +14,16 @@
     @endif
   </section>
 
+  @if ($latest)
+    <section class="mt-12 grid grid-cols-[minmax(0,1fr)] items-end gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <div>
+        <p class="sc-label mb-2"><span class="sc-cls" style="--cls:{{ $latest['color'] }}"></span> <b class="font-semibold text-fg">{{ $latest['name'] }}</b> · latest session</p>
+        <x-sc.session-card :recap="$latest['recap']" :href="$latest['href']" :heading="38" />
+      </div>
+      <a href="/account" class="sc-btn quiet">Your account</a>
+    </section>
+  @endif
+
   @if ($d['curve'] || $d['deaths'])
     <section class="mt-16 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       @if ($d['curve'])
@@ -73,12 +83,14 @@
     </div>
   </section>
 
-  <section class="sc-panel mt-16 grid grid-cols-[minmax(0,1fr)] items-center gap-6 px-7 py-6 md:grid-cols-[minmax(0,1fr)_auto]">
-    <div>
-      <h2 class="sc-h" style="font-size:30px">Record your own characters</h2>
-      <p class="mt-2 text-[15.5px]" style="max-width:62ch">The Scarlet addon records what you do in game. The desktop app uploads it, and your characters, sessions and feats show up here. Uploading works without an account; linking the app to an account lets you choose what is public.</p>
-    </div>
-    <div class="flex gap-3"><a href="/download" class="sc-btn">Get the app</a></div>
-  </section>
+  @unless ($signedIn)
+    <section class="sc-panel mt-16 grid grid-cols-[minmax(0,1fr)] items-center gap-6 px-7 py-6 md:grid-cols-[minmax(0,1fr)_auto]">
+      <div>
+        <h2 class="sc-h" style="font-size:30px">Record your own characters</h2>
+        <p class="mt-2 text-[15.5px]" style="max-width:62ch">The Scarlet addon records what you do in game. The desktop app uploads it, and your characters, sessions and feats show up here. Uploading works without an account; linking the app to an account lets you choose what is public.</p>
+      </div>
+      <div class="flex gap-3"><a href="/download" class="sc-btn">Get the app</a></div>
+    </section>
+  @endunless
 </div>
 </x-layouts.sc>

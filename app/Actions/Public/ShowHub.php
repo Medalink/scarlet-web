@@ -12,6 +12,7 @@ use App\Actions\Rollups\Roster;
 use App\Actions\Rollups\Totals;
 use App\Support\Board;
 use App\Support\Server;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /** What the front page draws: the site's totals, the levelling curve, deaths by level, the class split, when everyone plays and who leads two boards. */
@@ -33,8 +34,18 @@ class ShowHub
         private readonly ShowFeatCatalog $catalog,
     ) {}
 
-    /** @return array<string, mixed> */
+    /**
+     * Kept for the time the edge keeps a page, so a signed-in visitor, who bypasses the edge, costs no more queries than a signed-out one.
+     *
+     * @return array<string, mixed>
+     */
     public function handle(): array
+    {
+        return Cache::remember(self::key(), (int) config('scarlet.edge.page_seconds'), fn (): array => $this->read());
+    }
+
+    /** @return array<string, mixed> */
+    private function read(): array
     {
         $scope = $this->scope->handle(null, Server::All);
         $ids = $scope === null ? [] : $scope->ids;
@@ -55,6 +66,11 @@ class ShowHub
             'rulesets' => count($this->rulesets->handle()),
             'feats' => ['kinds' => count($this->catalog->handle()['feats']), 'tiers' => (int) ($feats->total ?? 0), 'week' => (int) ($feats->week ?? 0)],
         ];
+    }
+
+    private static function key(): string
+    {
+        return 'hub-answer';
     }
 
     /** @return list<array<string, mixed>> */
