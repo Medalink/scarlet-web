@@ -18,7 +18,7 @@ class CharacterRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        return ['sessions' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_HISTORY], 'as' => ['nullable', 'in:visitor']];
+        return ['sessions' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_HISTORY]];
     }
 
     public function history(): int
@@ -39,7 +39,7 @@ class CharacterRequest extends FormRequest
     /** Whether the page is asked for as a signed-out visitor sees it (`?as=visitor`). */
     public function asVisitor(): bool
     {
-        return $this->validated('as') === 'visitor';
+        return $this->query('as') === 'visitor';
     }
 
     /** The account the page is shown to, or null for a visitor. */

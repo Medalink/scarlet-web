@@ -15,7 +15,7 @@ class ScopeRequest extends FormRequest
     /** The Cache-Control of a page that shows one account's own numbers. */
     public const string PRIVATE_CACHE = 'max-age=0, must-revalidate, no-cache, no-store, private';
 
-    private const array CHOICES = ['everyone', 'compare', 'mine'];
+    private const int MAX_NAME = 64;
 
     public function authorize(): bool
     {
@@ -28,15 +28,13 @@ class ScopeRequest extends FormRequest
         return [
             'ruleset' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9-]+$/'],
             'server' => ['nullable', Rule::enum(Server::class)],
-            'scope' => ['nullable', Rule::in(self::CHOICES)],
-            'as' => ['nullable', 'string', 'max:64'],
         ];
     }
 
-    /** Everyone, You vs everyone (`compare`) or Only you (`mine`); the last two are the signed-in viewer's alone. */
+    /** Everyone, You vs everyone (`compare`) or Only you (`mine`); the last two are the signed-in viewer's alone, and any other value is everyone. */
     public function choice(): string
     {
-        $scope = $this->validated('scope');
+        $scope = $this->query('scope');
 
         return $this->user() instanceof Account && in_array($scope, ['compare', 'mine'], true) ? $scope : 'everyone';
     }
@@ -44,9 +42,9 @@ class ScopeRequest extends FormRequest
     /** The name of the character `You vs everyone` compares, when the query names one. */
     public function comparedName(): ?string
     {
-        $name = $this->validated('as');
+        $name = $this->query('as');
 
-        return is_string($name) && $name !== '' ? $name : null;
+        return is_string($name) && $name !== '' && mb_strlen($name) <= self::MAX_NAME ? $name : null;
     }
 
     /** The ruleset of the query, unless the path already names one. */
