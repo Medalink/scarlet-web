@@ -17,8 +17,11 @@ class ManifestRequest extends UploadRequest
     /** The manifest object, its groups list and its parts list, and room for a bracket inside a group name. */
     private const int ENVELOPE_CONTAINERS = 16;
 
-    /** The values of one part: its object and its five fields. */
-    private const int VALUES_PER_PART = 6;
+    /**
+     * The commas of one part: four between its five fields and one after it. With 200,000 parts this keeps every
+     * object and list under 2^20 entries, below the hash table doubling that a 1.2M-member object fatals at 256M.
+     */
+    private const int VALUES_PER_PART = 5;
 
     /** The manifest's own values: character, up to 64 group keys, the lists, and room for a comma inside a name. */
     private const int ENVELOPE_VALUES = 128;
