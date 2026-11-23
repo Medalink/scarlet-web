@@ -1369,7 +1369,7 @@ sheet has and the pages lacked. `resources/css/hubs.css` holds it, on the Scarle
 - **Icons.** `<x-icon name>` is one authored set on a 24-unit grid with one round stroke, coloured by its text.
   No emoji and no icon font.
 - **Crest materials and tier colours.** A crest is steel, pewter and parchment, with gold at Scarlet only. The tier's colour
-  is the enamel field, the inlay, the gem and the banner's band. `Crest::MATERIAL` and `Crest::QUALITY` are the one table;
+  is the enamel field, the inlay, the gem and the banner's band. `resources/crests/kit.json` is the one table (`artisan crests:kit` writes `App\View\Sc\CrestKit` and the `--tier-N` tokens from it);
   each crest's gradients take ids unique to that crest. A character's
   name carries its class in the game's class colour (`data-class` sets `--class`). Horde and Alliance have one
   colour each. Colour never carries a fact alone: a tier is also named, a class also written.

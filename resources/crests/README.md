@@ -23,7 +23,7 @@ own copy of these numbers.
 New shapes, colours or materials, with the same pieces:
 
 1. Edit `kit.json`. Keep every key; a path is any SVG path in the 96 by 96 box.
-2. Website: `bin/artisan crests:kit` writes `app/View/Sc/CrestKit.php`.
+2. Website: `bin/artisan crests:kit` writes `app/View/Sc/CrestKit.php` and `resources/css/crest-tiers.css`.
 3. App (scarlet-app): `node scripts/crests-gen.mjs` writes `app/ui/crest-kit.js` from this file.
 4. Addon (scarlet): `node tools/media/build.mjs` writes `Media/Crests.tga` and `Tiers.lua`'s generated tables from this file.
 5. Look at the website's `/design/system`, the app's component sheet and the addon render, then ship the three repos.

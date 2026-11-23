@@ -7,7 +7,7 @@
   --s-1: #ff2d55; --s-2: #2f9ec4; --s-3: #98721c; --s-4: #9a7df2; --s-0: #54545d;
   --s-kill: var(--s-1); --s-dungeon: var(--s-4); --s-quest: var(--s-3); --s-explore: var(--s-2); --s-other: var(--s-0);
   --m-swim: var(--s-2); --m-foot: var(--s-1); --m-mount: var(--s-3); --m-flight: var(--s-4); --m-still: var(--s-0);
-  --tier-0: #9d9d9d; --tier-1: #1eff00; --tier-2: #0070dd; --tier-3: #a335ee; --tier-4: #ff8000; --tier-5: #ff2d55; --light: #f0f1f3;
+  --light: #f0f1f3;
   --coin-copper: #c58a63; --coin-silver: #c3c7cf; --coin-gold: #d9b25f;
   --heat-1: rgba(255, 45, 85, 0.14); --heat-2: rgba(255, 45, 85, 0.32); --heat-3: rgba(255, 45, 85, 0.56); --heat-4: rgba(255, 45, 85, 0.8); --heat-5: #ff2d55;
   --display: "Sofia Sans Extra Condensed", "Bahnschrift", "Arial Narrow", sans-serif;
