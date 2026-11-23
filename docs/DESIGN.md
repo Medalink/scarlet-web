@@ -1204,8 +1204,9 @@ feature needs an email address, so the scopes ask for none (`openid` only). An a
 Sessions are Laravel's own, cookie based. Client ids and secrets come from the environment.
 
 **Linking the app.** In Settings the player presses "Link to my account". The app asks the API for a link code
-(a signed request), shows it and opens `/link?code=XXXX-XXXX` in the browser. The player signs in and confirms; the
-install now belongs to the account. The app polls `GET /api/v1/installs/me` until it sees the link. The code lives 10
+(a signed request), shows it and opens `/link?redeem=<signature>` in the browser. The player signs in and types the
+code the app shows; the install now belongs to the account only when the typed code matches the signature. A link
+someone else sends fills in no code, so it cannot link an app whose code the player has not read. The app polls `GET /api/v1/installs/me` until it sees the link. The code lives 10
 minutes and works once. The app holds no account token: its key stays the only credential.
 
 Uploading works without an account. An account adds the private views, the public switch per character and control

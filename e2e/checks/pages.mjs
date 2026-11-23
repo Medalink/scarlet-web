@@ -176,21 +176,25 @@ export async function signIn(http, jar) {
   }
 }
 
-/** Links the install of `app` to the account `jar` is signed in to, the way the app does it: the code, the
- *  `redeem` line of the link-code answer signed by the install's key in the address, and both back in the confirm. */
+/** Links the install of `app` to the account `jar` is signed in to, the way the app does it: the install's key signs
+ *  the redeem line it builds from the code, the address carries that signature, and the confirm carries it back with
+ *  the code the person types. */
 export async function linkToAccount(http, jar, app) {
   const issued = expectJson(expectStatus(await app.linkCode(), 201, "POST /api/v1/installs/link-code"), "the link code");
   const code = issued.code;
   if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code ?? "")) throw new Error(`the link code should look like XXXX-XXXX, saw ${JSON.stringify(code)}`);
   if (typeof issued.redeem !== "string" || issued.redeem === "") throw new Error(`the link code answer should carry a redeem line, saw ${JSON.stringify(issued)}`);
-  const redeem = app.redeem(issued.redeem);
+  const redeem = app.redeem(`scarlet-link-redeem\n${code}`);
 
   const shown = expectStatus(await http.request(`/link?code=${code}&redeem=${encodeURIComponent(redeem)}`, { jar, headers: { Accept: "text/html" } }), 200, "GET /link?code=");
-  if (!shown.text.includes("The app is linked to your account.") && !shown.text.includes(code)) {
-    throw new Error(`/link?code= should show the code or its state, saw ${shown.text.slice(0, 300)}`);
-  }
+  if (shown.text.includes(code)) throw new Error(`/link must not show a code from its address, saw it in ${shown.text.slice(0, 300)}`);
   if (!shown.text.includes('name="redeem" value="' + redeem)) {
-    throw new Error(`/link?code= should carry the redeem signature into its form, saw ${shown.text.slice(shown.text.indexOf("<form"), shown.text.indexOf("</form>"))}`);
+    throw new Error(`/link?redeem= should carry the redeem signature into its form, saw ${shown.text.slice(shown.text.indexOf("<form"), shown.text.indexOf("</form>"))}`);
+  }
+  const wrong = await http.request("/link", { ...form({ _token: tokenIn(shown.text), code: "ZZZZ-ZZZZ", redeem }), method: "POST", jar, redirect: "manual" });
+  const wrongTo = new URL(wrong.headers.get("location") ?? "/", "http://x");
+  if (wrong.status !== 302 || wrongTo.pathname !== "/link" || wrongTo.searchParams.get("redeem") !== redeem) {
+    throw new Error(`POST /link with a code the app never showed: expected a redirect back to /link?redeem=, saw ${wrong.status} ${wrong.headers.get("location")}`);
   }
   const confirmed = await http.request("/link", { ...form({ _token: tokenIn(shown.text), code, redeem }), method: "POST", jar, redirect: "manual" });
   if (confirmed.status !== 302 || !(confirmed.headers.get("location") ?? "").endsWith("/account")) {

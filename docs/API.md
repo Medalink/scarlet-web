@@ -220,10 +220,12 @@ the site's theme (`var(--class)` is the class colour), at most one of the two se
 ### `POST /installs/link-code`
 
 No body. `201` with `{"code": "XXXX-XXXX", "redeem": "scarlet-link-redeem\nXXXX-XXXX", "expires_at": "...", "expires_in": 600}`.
-The app signs the `redeem` line with its own key (docs/API.md, "Signing") and opens
-`/link?code=XXXX-XXXX&redeem=<base64 signature>` in the browser; the confirm there carries the signature back, so only
-the holder of the install's key can complete the link — the code string alone binds nothing. A code works once. An
-install that is already linked gets `409 already_linked`.
+The app builds the line `scarlet-link-redeem\nXXXX-XXXX` from the code itself, signs it with its own key (this is not
+a request signature: no `Scarlet-` headers) and opens `/link?redeem=<base64 signature>` in the browser; a client never
+signs the `redeem` text the server sends. The page asks the person to type the code the app shows, and the confirm
+carries the typed code and the signature back. The link completes only when the signature is the install's over the
+typed code, so only the holder of the install's key can complete it, and a code in the address is ignored. A code works
+once. An install that is already linked gets `409 already_linked`.
 
 ## Upload
 

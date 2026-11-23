@@ -9,7 +9,7 @@ use App\Http\Requests\Web\LinkRequest;
 use App\Models\Account;
 use Illuminate\Http\RedirectResponse;
 
-/** POST /link: redeem the code for the signed-in account. */
+/** POST /link: redeem the code the person typed for the signed-in account, when it matches the app's signature. */
 class LinkConfirmController extends Controller
 {
     public function __invoke(LinkRequest $request, LinkInstall $link): RedirectResponse
@@ -17,14 +17,17 @@ class LinkConfirmController extends Controller
         $account = $request->user();
         abort_unless($account instanceof Account, 403);
 
+        $redeem = $request->redeem();
+        $again = redirect('/link'.($redeem === null ? '' : '?'.http_build_query(['redeem' => $redeem])));
+
         $code = $request->code();
         if ($code === null) {
-            return redirect('/link');
+            return $again->with('link_message', 'Type the code the Scarlet app shows.');
         }
 
-        $state = $link->handle($account, $code, (string) $request->redeem());
+        $state = $link->handle($account, $code, (string) $redeem);
         if ($state !== LinkState::Linked) {
-            return redirect('/link?code='.$code);
+            return $again->with('link_message', LinkMessage::of($state));
         }
 
         return redirect('/account')->with('notice', 'The app is linked to your account. It will pick up the link the next time it checks.');

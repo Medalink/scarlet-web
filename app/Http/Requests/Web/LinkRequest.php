@@ -5,8 +5,9 @@ namespace App\Http\Requests\Web;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * The code of /link, as the app shows it: eight letters and digits, with or without the hyphen. The
- * `redeem` is the base64 signature of the app's key that the confirm POST carries back.
+ * The code the person types on /link, as the app shows it: eight letters and digits, with or without the hyphen.
+ * Only the confirm POST reads it; the page ignores a code in its address. The `redeem` is the base64 signature of
+ * the app's key over that code, which the address carries in and the confirm POST carries back.
  */
 class LinkRequest extends FormRequest
 {
@@ -19,7 +20,7 @@ class LinkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}$/'],
+            'code' => $this->isMethod('post') ? ['nullable', 'string', 'regex:/^[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}$/'] : ['nullable'],
             'redeem' => ['nullable', 'string', 'max:128'],
         ];
     }
