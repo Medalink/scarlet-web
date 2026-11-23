@@ -22,7 +22,7 @@ class SummarizeTalents
                 select c.id,
                     s.spec_tab_id,
                     s.build_hash,
-                    (select sum(split_part(e, ':', 3)::int)::smallint from string_to_table(s.ranks, ',') as e where e <> '') as points
+                    (select least(greatest(sum(split_part(e, ':', 3)::bigint), 0), 32767)::smallint from string_to_table(s.ranks, ',') as e where e <> '') as points
                 from characters c
                 left join lateral (
                     select spec_tab_id, build_hash, ranks from talent_snapshots

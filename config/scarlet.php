@@ -84,6 +84,7 @@ return [
         'max_session_bytes' => 128 << 20,
         'max_session_lines' => 4_000_000,
         'name_votes_per_install_day' => 20_000,
+        'sweep_max_failures' => 3,
     ],
     // The Forever Armory names the ruleset of a character (docs/DESIGN.md, Rulesets). One request at a time.
     'armory' => [

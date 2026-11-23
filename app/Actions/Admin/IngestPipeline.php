@@ -34,6 +34,8 @@ class IngestPipeline
         return Cache::remember(self::key(), self::SECONDS, fn (): array => [
             'groups' => $this->groups(),
             'undecoded' => Part::query()->whereNull('decoded_at')->count(),
+            'failed_parts' => Part::query()->whereNull('decoded_at')
+                ->where('failed_attempts', '>=', (int) config('scarlet.ingest.sweep_max_failures'))->count(),
             'sessions' => $this->sessions(),
             'latency' => $this->latency(),
             'queues' => $this->queues(),

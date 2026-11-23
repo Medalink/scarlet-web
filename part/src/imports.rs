@@ -4,13 +4,17 @@
 //! one per UTC day under the session key of that day, skipped by the session decoder and read
 //! by `decode_imports` into rows of their own.
 
-use crate::build::{Options, PART_MAGIC, Part, parse_header, part_id};
+use crate::build::{Options, PART_MAGIC, Part, at_in_range, parse_header, part_id};
 use crate::payload::Ev;
 use crate::rows::Rows;
 use std::collections::BTreeMap;
 
 pub const GROUP: &str = "imports";
 const DAY_MS: i64 = 86_400_000;
+
+const SOURCE_MAX: usize = 24;
+
+const VIA_MAX: usize = 64;
 
 /// The line codes of the group, in FORMAT.md order.
 pub const CODES: [&str; 5] = ["YG", "YS", "YB", "YM", "YU"];
@@ -55,7 +59,9 @@ pub fn build_parts(character: &str, mut events: Vec<Ev>, opts: &Options) -> Vec<
 /// Rows of table `imported` from the imports parts among `parts` (other groups are ignored), one
 /// per line: `kind`, `at` (epoch ms), `source`, `via`, `item_id`, `quantity`, `copper`. A `YU` line
 /// is kind `expired` or `cancel`, with the stack size in `via` and no copper; one whose kind is
-/// neither `e` nor `x` is skipped.
+/// neither `e` nor `x` is skipped. A line whose time leaves the window the columns keep, whose code
+/// is none of the group's, or whose id or count is wider than its column holds is skipped, never
+/// fatal: one bad line costs its row, not the day.
 /// Returns the number of rows.
 pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String> {
     let mut rows = Rows::new(out);
@@ -68,15 +74,22 @@ pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String>
         let mut t = session * 1000;
         for line in text.split('\n').skip(1).filter(|l| !l.is_empty()) {
             let mut f = line.split('\t');
-            let dt: i64 = f
-                .next()
-                .and_then(|d| d.parse().ok())
-                .ok_or("bad line in an imports part")?;
-            t += dt;
+            let Some(dt) = f.next().and_then(|d| d.parse::<i64>().ok()) else {
+                continue;
+            };
+            let Some(next) = t.checked_add(dt).filter(|t| at_in_range(*t)) else {
+                continue;
+            };
+            t = next;
             let code = f.next().unwrap_or("");
             let f: Vec<&str> = f.collect();
             let int = |i: usize| f.get(i).and_then(|v| v.parse::<i64>().ok());
-            let source = f.first().copied().unwrap_or("");
+            let count = |i: usize| int(i).filter(|v| (0..=i64::from(u32::MAX)).contains(v));
+            let clip = |i: usize, max: usize| {
+                f.get(i)
+                    .map_or(String::new(), |s| s.chars().take(max).collect())
+            };
+            let source = clip(0, SOURCE_MAX);
             let returned = match f.get(1).copied() {
                 Some("e") => "expired",
                 Some("x") => "cancel",
@@ -90,40 +103,43 @@ pub fn decode_imports(parts: &[&str], out: &mut String) -> Result<usize, String>
                 "YG" => {
                     rows.str("kind", "gold")
                         .int("at", t)
-                        .str("source", source)
+                        .str("source", &source)
                         .null("via")
                         .null("item_id")
                         .null("quantity")
                         .int("copper", int(1).unwrap_or(0));
                 }
                 "YS" | "YB" => {
+                    let via = clip(1, VIA_MAX);
                     rows.str("kind", if code == "YS" { "sale" } else { "buy" })
                         .int("at", t)
-                        .str("source", source)
-                        .text("via", f.get(1).copied().unwrap_or(""))
-                        .opt("item_id", int(2))
-                        .opt("quantity", int(3))
+                        .str("source", &source)
+                        .text("via", &via)
+                        .opt("item_id", count(2))
+                        .opt("quantity", count(3))
                         .int("copper", int(4).unwrap_or(0));
                 }
                 "YM" => {
+                    let via = clip(1, VIA_MAX);
                     rows.str("kind", "other")
                         .int("at", t)
-                        .str("source", source)
-                        .text("via", f.get(1).copied().unwrap_or(""))
+                        .str("source", &source)
+                        .text("via", &via)
                         .null("item_id")
                         .null("quantity")
                         .int("copper", int(2).unwrap_or(0));
                 }
                 "YU" => {
+                    let via = clip(4, VIA_MAX);
                     rows.str("kind", returned)
                         .int("at", t)
-                        .str("source", source)
-                        .text("via", f.get(4).copied().unwrap_or(""))
-                        .opt("item_id", int(2))
-                        .opt("quantity", int(3))
+                        .str("source", &source)
+                        .text("via", &via)
+                        .opt("item_id", count(2))
+                        .opt("quantity", count(3))
                         .int("copper", 0);
                 }
-                _ => return Err(format!("unknown imports code {code}")),
+                _ => continue,
             }
             rows.end();
         }

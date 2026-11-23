@@ -2,17 +2,23 @@
 
 namespace App\Actions\Ingest;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StoreImportedRecords
 {
     private const int ROWS_PER_INSERT = 500;
 
+    /** The widest value an unsigned integer column of the table keeps. */
+    private const int MAX_UNSIGNED = 4294967295;
+
     public function __construct(private readonly MarkPartsDecoded $markDecoded) {}
 
     /**
      * Replace the imported records of one UTC day of one character with a fresh decode. A character
-     * is locked while this runs, as for a session. Safe to run twice.
+     * is locked while this runs, as for a session. Safe to run twice. A row whose columns cannot
+     * keep it is skipped with a note in the log, never fatal to the day.
      *
      * @param  list<array<string, mixed>>  $rows  `imported` rows of `scarlet-part decode --imports`
      * @param  list<string>  $partIds  lower-case hex ids of the parts `$rows` came from, marked decoded
@@ -32,19 +38,41 @@ class StoreImportedRecords
                     'character_id' => $characterId,
                     'day_start' => $dayStart,
                     'kind' => (string) $row['kind'],
-                    'at' => intdiv((int) $row['at'], 1000),
-                    'source' => (string) $row['source'],
-                    'via' => isset($row['via']) && $row['via'] !== '' ? (string) $row['via'] : null,
-                    'item_id' => isset($row['item_id']) ? (int) $row['item_id'] : null,
-                    'quantity' => isset($row['quantity']) ? (int) $row['quantity'] : null,
+                    'at' => max(0, intdiv((int) $row['at'], 1000)),
+                    'source' => mb_substr((string) $row['source'], 0, 24),
+                    'via' => isset($row['via']) && $row['via'] !== '' ? mb_substr((string) $row['via'], 0, 64) : null,
+                    'item_id' => isset($row['item_id']) ? self::unsigned((int) $row['item_id']) : null,
+                    'quantity' => isset($row['quantity']) ? self::unsigned((int) $row['quantity']) : null,
                     'copper' => (int) $row['copper'],
                 ];
             }
             foreach (array_chunk($records, self::ROWS_PER_INSERT) as $chunk) {
-                DB::table('imported_records')->insert($chunk);
+                $this->insert($chunk);
             }
 
             $this->markDecoded->handle($characterId, $dayStart, $partIds);
         });
+    }
+
+    /** @param  list<array<string, mixed>>  $chunk */
+    private function insert(array $chunk): void
+    {
+        try {
+            DB::table('imported_records')->insert($chunk);
+        } catch (QueryException) {
+            foreach ($chunk as $record) {
+                try {
+                    DB::transaction(fn (): bool => DB::table('imported_records')->insert($record));
+                } catch (QueryException $e) {
+                    Log::warning('Imported record skipped.', ['character_id' => $record['character_id'], 'day_start' => $record['day_start'], 'error' => $e->getMessage()]);
+                }
+            }
+        }
+    }
+
+    /** The value inside what an unsigned integer column keeps. */
+    private static function unsigned(int $value): int
+    {
+        return max(0, min($value, self::MAX_UNSIGNED));
     }
 }

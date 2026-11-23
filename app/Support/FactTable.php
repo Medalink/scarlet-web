@@ -221,10 +221,15 @@ enum FactTable: string
         };
     }
 
-    /** A PostgreSQL timestamptz literal for epoch milliseconds. */
+    /**
+     * A PostgreSQL timestamptz literal for epoch milliseconds. A negative value lands in the
+     * second before 1970 with its fraction kept positive, the shape `timestamptz` accepts.
+     */
     public static function instant(int $milliseconds): string
     {
         // One row in a hundred thousand: no Carbon object per row.
-        return gmdate('Y-m-d H:i:s', intdiv($milliseconds, 1000)).sprintf('.%03d+00', $milliseconds % 1000);
+        $fraction = (($milliseconds % 1000) + 1000) % 1000;
+
+        return gmdate('Y-m-d H:i:s', intdiv($milliseconds - $fraction, 1000)).sprintf('.%03d+00', $fraction);
     }
 }

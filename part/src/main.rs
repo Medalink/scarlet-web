@@ -487,7 +487,10 @@ fn decode(args: Vec<OsString>) -> Result<(), String> {
         }
         let refs: Vec<&str> = parts.iter().map(String::as_str).collect();
         out.clear();
-        scarlet_part::decode::decode_session(&refs, &mut out)?;
+        let summary = scarlet_part::decode::decode_session(&refs, &mut out)?;
+        if summary.skipped > 0 {
+            eprintln!("scarlet-part: {} lines skipped", summary.skipped);
+        }
         match sink {
             Some(path) => {
                 let mut file = fs::OpenOptions::new()
@@ -517,7 +520,10 @@ fn check_overview(args: Vec<OsString>) -> Result<(), String> {
     for (_, parts) in by_session(texts)? {
         let refs: Vec<&str> = parts.iter().map(String::as_str).collect();
         let mut out = String::new();
-        scarlet_part::decode::decode_session(&refs, &mut out)?;
+        let summary = scarlet_part::decode::decode_session(&refs, &mut out)?;
+        if summary.skipped > 0 {
+            eprintln!("scarlet-part: {} lines skipped", summary.skipped);
+        }
         decoded.push(out);
     }
     let overview = fs::read_to_string(need(&f, "overview")?).map_err(|e| e.to_string())?;

@@ -5,7 +5,9 @@ namespace App\Actions\Ingest;
 use App\Support\DecodedSession;
 use App\Support\FactTable;
 use App\Support\WorldPlacement;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InsertFactRows
 {
@@ -82,11 +84,31 @@ class InsertFactRows
         return $inserted;
     }
 
-    /** @param  list<array<string, mixed>>  $batch */
+    /**
+     * Insert the batch in one statement; when that fails, insert the rows one by one inside a
+     * savepoint each, so a row its columns cannot keep is skipped with a note in the log and the
+     * rest of the batch, and the session's transaction, carries on.
+     *
+     * @param  list<array<string, mixed>>  $batch
+     */
     private function flush(FactTable $table, array $batch): int
     {
-        DB::table($table->value)->insert($batch);
+        try {
+            DB::table($table->value)->insert($batch);
 
-        return count($batch);
+            return count($batch);
+        } catch (QueryException) {
+            $inserted = 0;
+            foreach ($batch as $row) {
+                try {
+                    DB::transaction(fn (): bool => DB::table($table->value)->insert($row));
+                    $inserted++;
+                } catch (QueryException $e) {
+                    Log::warning('Fact row skipped.', ['table' => $table->value, 'error' => $e->getMessage()]);
+                }
+            }
+
+            return $inserted;
+        }
     }
 }

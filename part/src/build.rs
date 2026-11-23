@@ -75,7 +75,9 @@ pub fn part_id(text: &str) -> [u8; 32] {
     Sha256::digest(text.as_bytes()).into()
 }
 
-pub const MIN_AT_MS: i64 = -210_866_803_200_000;
+/// The window a line time may fall in: 2000-01-01, past every realm the game ever ran, to the
+/// newest instant PostgreSQL keeps a timestamptz in.
+pub const MIN_AT_MS: i64 = 946_684_800_000;
 pub const MAX_AT_MS: i64 = 9_224_318_015_999_000;
 
 pub fn at_in_range(ms: i64) -> bool {

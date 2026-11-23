@@ -30,6 +30,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 pub const DECODER_VERSION: u32 = 16;
 
 const HOUR_MS: i64 = 3_600_000;
+const COPPER_MAX: i64 = 1_000_000_000_000_000;
 const MAX_HOUR_CUTS: usize = 24 * 7;
 
 /// XP a level needs to reach the next one, level 1 first (docs/OVERVIEW.md).
@@ -44,6 +45,7 @@ const NEED: [i64; 59] = [
 pub struct Summary {
     pub rows: usize,
     pub lines: usize,
+    pub skipped: usize,
     pub session: i64,
     pub played_ms: i64,
 }
@@ -597,7 +599,7 @@ impl Dec<'_> {
             }
             "M" => self.on_money(t, &f),
             "ST" => {
-                if let Some(c) = num(&f, 1) {
+                if let Some(c) = num(&f, 1).map(|c| c.clamp(-COPPER_MAX, COPPER_MAX)) {
                     self.balance = Some(c);
                     self.money_start.get_or_insert(c);
                 }
@@ -935,7 +937,7 @@ impl Dec<'_> {
         self.level_start = self.level;
         self.last_level_t = t;
         self.xp_bar = (num(f, 10), num(f, 11));
-        let money = num(f, 12);
+        let money = num(f, 12).map(|m| m.clamp(-COPPER_MAX, COPPER_MAX));
         self.balance = money;
         self.money_start = money;
         if money.is_some() && self.has.economy {
@@ -1092,15 +1094,15 @@ impl Dec<'_> {
     }
 
     fn on_money(&mut self, t: i64, f: &[&str]) {
-        let copper = num(f, 0).unwrap_or(0);
-        let transfer = num(f, 1).unwrap_or(0);
+        let copper = num(f, 0).unwrap_or(0).clamp(-COPPER_MAX, COPPER_MAX);
+        let transfer = num(f, 1).unwrap_or(0).clamp(-COPPER_MAX, COPPER_MAX);
         let net = copper - transfer;
         let (earned, spent) = if net > 0 { (net, 0) } else { (0, -net) };
-        self.earned += earned;
-        self.spent += spent;
-        match num(f, 2) {
+        self.earned = self.earned.saturating_add(earned);
+        self.spent = self.spent.saturating_add(spent);
+        match num(f, 2).map(|b| b.clamp(-COPPER_MAX, COPPER_MAX)) {
             Some(b) => self.balance = Some(b),
-            None => self.balance = self.balance.map(|c| c + copper),
+            None => self.balance = self.balance.map(|c| c.saturating_add(copper)),
         }
         self.fact("money_changes", t);
         let b = self.balance;
@@ -1487,6 +1489,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
     let mut ident: Option<(&str, i64)> = None;
     let mut keys: BTreeSet<usize> = BTreeSet::new();
     let (mut seq, mut count, mut backsteps) = (0u32, 0usize, 0usize);
+    let mut skipped = 0usize;
     for text in parts {
         let (character, session, group) =
             parse_header(text).ok_or_else(|| "a part has no valid header".to_string())?;
@@ -1516,7 +1519,8 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
             let dt = it.next().and_then(|d| d.parse::<i64>().ok());
             let code = it.next();
             let (Some(dt), Some(code)) = (dt, code) else {
-                return Err(format!("bad line in a {group} part"));
+                skipped += 1;
+                continue;
             };
             if skip {
                 continue;
@@ -1528,10 +1532,11 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
                 backsteps += 1;
             }
             after_line = true;
-            t = t
-                .checked_add(dt)
-                .filter(|t| at_in_range(*t))
-                .ok_or_else(|| format!("bad line in a {group} part"))?;
+            let Some(next) = t.checked_add(dt).filter(|t| at_in_range(*t)) else {
+                skipped += 1;
+                continue;
+            };
+            t = next;
             lines.push(DLine {
                 t,
                 rank: tie_rank(code, gi),
@@ -1645,6 +1650,7 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
     Ok(Summary {
         rows,
         lines: count,
+        skipped,
         session,
         played_ms,
     })

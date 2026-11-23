@@ -9,6 +9,17 @@ use std::collections::BTreeMap;
 const OFFER_TO_REFUND_MS: i64 = 10 * 60 * 1000;
 const RESET_TO_REFUND_MS: i64 = 60 * 1000;
 
+const MAX_SMALLINT: i64 = i16::MAX as i64;
+const MAX_INTEGER: i64 = i32::MAX as i64;
+
+fn smallint(f: &[&str], i: usize) -> Option<i64> {
+    num(f, i).filter(|v| (0..=MAX_SMALLINT).contains(v))
+}
+
+fn integer(f: &[&str], i: usize) -> Option<i64> {
+    num(f, i).filter(|v| (i32::MIN as i64..=MAX_INTEGER).contains(v))
+}
+
 type Held = (i64, i64, Option<i64>, Option<i64>);
 type Ranks = BTreeMap<i64, Held>;
 
@@ -82,6 +93,9 @@ fn tab_with_most_points(tabs: &str) -> Option<i64> {
         ) else {
             continue;
         };
+        if !(0..=MAX_SMALLINT).contains(&id) {
+            continue;
+        }
         match best {
             Some((_, p)) if spent == p => tie = true,
             Some((_, p)) if spent < p => {}
@@ -104,7 +118,9 @@ impl Talents {
     }
 
     pub fn on_tv(&mut self, c: &Ctx, w: &mut Rows, f: &[&str]) {
-        let (Some(tree), Some(class), Some(count)) = (num(f, 0), num(f, 1), num(f, 2)) else {
+        let (Some(tree), Some(class), Some(count)) =
+            (integer(f, 0), smallint(f, 1), smallint(f, 2))
+        else {
             return;
         };
         let Some(layout) = f.get(3).map(|s| s.trim()).filter(|s| !s.is_empty()) else {
@@ -121,7 +137,7 @@ impl Talents {
     }
 
     pub fn on_td(&mut self, c: &Ctx, w: &mut Rows, f: &[&str]) {
-        let (Some(tree), Some(node)) = (num(f, 0), num(f, 1)) else {
+        let (Some(tree), Some(node)) = (integer(f, 0), integer(f, 1)) else {
             return;
         };
         let Some(layout) = self.trees.get(&tree).cloned() else {
@@ -133,11 +149,11 @@ impl Talents {
         w.int("tree_id", tree)
             .str("layout_hash", &layout)
             .int("node_id", node)
-            .opt("pos_x", num(f, 2))
-            .opt("pos_y", num(f, 3))
+            .opt("pos_x", integer(f, 2))
+            .opt("pos_y", integer(f, 3))
             .text("node_type", text(4))
-            .opt("max_ranks", num(f, 5))
-            .opt("tab_id", num(f, 6))
+            .opt("max_ranks", smallint(f, 5))
+            .opt("tab_id", integer(f, 6))
             .text("entries", text(7))
             .text("edges", text(8));
         w.end();
@@ -157,20 +173,21 @@ impl Talents {
     }
 
     pub fn on_ta(&mut self, c: &Ctx, w: &mut Rows, f: &[&str]) {
-        let (Some(group), Some(node), Some(rank)) = (num(f, 0), num(f, 1), num(f, 3)) else {
+        let (Some(group), Some(node), Some(rank)) = (smallint(f, 0), integer(f, 1), smallint(f, 3))
+        else {
             return;
         };
-        let entry = num(f, 2).unwrap_or(0);
+        let entry = integer(f, 2).unwrap_or(0);
         let why = f.get(8).map_or("", |s| s.trim());
         if why == "s" {
-            self.apply(group, node, (entry, rank, num(f, 6), num(f, 7)));
+            self.apply(group, node, (entry, rank, integer(f, 6), integer(f, 7)));
             if !self.baselined.contains(&group) {
                 self.baselined.push(group);
             }
             return;
         }
         let before = self.current(group);
-        let old = num(f, 4).unwrap_or_else(|| before.get(&node).map_or(0, |held| held.1));
+        let old = smallint(f, 4).unwrap_or_else(|| before.get(&node).map_or(0, |held| held.1));
         let kind = match rank.cmp(&old) {
             std::cmp::Ordering::Greater => "pick",
             std::cmp::Ordering::Less => "refund",
@@ -178,7 +195,7 @@ impl Talents {
         };
         let hash_before = hash(&before);
         let points_before = points(&before);
-        self.apply(group, node, (entry, rank, num(f, 6), num(f, 7)));
+        self.apply(group, node, (entry, rank, integer(f, 6), integer(f, 7)));
         let now = self.current(group);
         let total = points(&now);
         let index = match kind {
@@ -187,15 +204,17 @@ impl Talents {
             }
             _ => self.respec_being_rebuilt(c, group, kind == "pick", total, &now, &hash_before),
         };
-        let point_no = (kind == "pick" && self.baselined.contains(&group)).then_some(total);
+        let point_no = (kind == "pick" && self.baselined.contains(&group))
+            .then_some(total)
+            .filter(|v| (0..=MAX_SMALLINT).contains(v));
         c.begin(w, "talent_changes");
         w.int("spec_group", group)
             .int("node_id", node)
-            .opt("entry_id", num(f, 2))
+            .opt("entry_id", integer(f, 2))
             .int("rank", rank)
             .int("old_rank", old)
-            .opt("max_ranks", num(f, 5))
-            .opt("spell_id", num(f, 6))
+            .opt("max_ranks", smallint(f, 5))
+            .opt("spell_id", integer(f, 6))
             .str("kind", kind)
             .opt("point_no", point_no)
             .opt("respec_index", index);
@@ -285,7 +304,7 @@ impl Talents {
 
     pub fn on_tg(&mut self, c: &Ctx, w: &mut Rows, f: &[&str]) {
         let why = f.first().map_or("", |s| s.trim());
-        let group = num(f, 1);
+        let group = smallint(f, 1);
         if let Some(group) = group
             && (why == "s" || why == "w")
             && self.active != Some(group)
@@ -295,7 +314,7 @@ impl Talents {
             w.int("spec_group", group);
             w.end();
         }
-        let (Some(group), Some(tree)) = (group, num(f, 5)) else {
+        let (Some(group), Some(tree)) = (group, integer(f, 5)) else {
             return;
         };
         let ranks = self.current(group);
@@ -315,14 +334,14 @@ impl Talents {
         let text = |i: usize| f.get(i).map_or("", |s| s.trim());
         c.begin(w, "talent_snapshots");
         w.int("spec_group", group)
-            .opt("groups", num(f, 2))
-            .opt("spec_id", num(f, 3))
+            .opt("groups", smallint(f, 2))
+            .opt("spec_id", integer(f, 3))
             .text("spec", text(4))
             .int("tree_id", tree)
             .text("tab_points", text(6))
             .opt("spec_tab_id", tab_with_most_points(text(6)))
-            .opt("class_points", num(f, 7))
-            .opt("spec_points", num(f, 8))
+            .opt("class_points", smallint(f, 7))
+            .opt("spec_points", smallint(f, 8))
             .opt("config_id", num(f, 9))
             .str("build_hash", &build_hash)
             .str("ranks", &list.join(","))
@@ -349,7 +368,7 @@ impl Talents {
             w.int("spec_group", r.group)
                 .str("kind", r.kind)
                 .opt("cost_copper", r.cost)
-                .int("points_moved", r.moved)
+                .int("points_moved", r.moved.clamp(-MAX_SMALLINT, MAX_SMALLINT))
                 .str("hash_before", &r.before)
                 .text("hash_after", r.after.as_deref().unwrap_or(""))
                 .int("respec_index", r.index);
