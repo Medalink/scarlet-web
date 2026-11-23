@@ -313,7 +313,9 @@ level until the session has one). For an `xp` claim a row is a turn-in, from `qu
 `xp_gains` (source `q`), with its quest id (null when the client hid it), `xp`, `level` and zone; both tables are read
 because their groups (`quests`, `xp`) can be on apart, and the turn-ins with no quest id are those of the table that
 holds more of them. For a `run` claim a row is a `dungeon_runs` row joined along
-`continues_previous`: `instance_id`, the first entry and the last leave (`at` plus `inside_ms` when `left_at` is null).
+`continues_previous`: `instance_id`, the first entry and the last leave (the entry of the session's next run when
+`left_at` is null, a direct move to another dungeon, and `at` plus `inside_ms` when no run follows). `inside_ms` is
+the time inside over all stays, so it ends a run that was left and entered again too early.
 It gives every claim exactly one status with its counted amounts
 and its evidence. It reads no database and no clock; `now` is an input. Every counted amount is floored at 0 and
 rounded half up in integer arithmetic; a ratio whose denominator is 0 is 0.
@@ -533,7 +535,7 @@ for the character to have no null `reconcile_version` and the rows and claims it
 after that.
 
 The same lane holds one invented character per case of the kill, quest and run rules, each with a Scarlet session and
-one `counts` part uploaded through the real API (2026-11-22, 69 of the lane's 171 checks; `node e2e/boot.mjs --
+one `counts` part uploaded through the real API (2026-11-22, 71 of the lane's 173 checks; `node e2e/boot.mjs --
 node e2e/addon-counts.mjs levels` runs only these). The totals each history has:
 
 - Levels. 120 kills claimed with no Scarlet row count 120. With 100 Scarlet kills at no level beside a claim of 150, the
@@ -554,7 +556,9 @@ node e2e/addon-counts.mjs levels` runs only these). The totals each history has:
 - Runs. A run whose first kill is 433 s after Scarlet's entry is superseded by Scarlet's run, 1 in all, and so is one
   of an instance Scarlet does not have where Scarlet has another run at the same time. Two claims 41 minutes apart
   under one joined Scarlet run are both superseded, 1. With no Scarlet run, two claims 39 minutes apart are 1 and two
-  claims 41 minutes apart are 2; one claim alone is 1.
+  claims 41 minutes apart are 2; one claim alone is 1. An instance entered, left, entered again 15 minutes later and
+  left by a direct move to another dungeon, with a claim of the last stay, is 2 runs in all (Scarlet's two), not 3: the
+  run ends at the entry of the next one, not where its time inside adds up to.
 - Two characters of one install with the same claims, one with no Scarlet rows: its three claims are superseded by rule
   4 and name the other, which counts 50 kills (20 are Scarlet's, 30 residual), 300 quest XP and 1 run beside its rows.
 - One record cut in two by rule 4, the copy (lower id) uploaded first and the original holding the Scarlet rows. Two
