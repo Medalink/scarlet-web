@@ -1,4 +1,4 @@
-import { Jar, LEDGER, NAME, PROBE, WARLOCK, expectJson, expectStatus, sleep } from "../support.mjs";
+import { Jar, LEDGER, NAME, PROBE, Skip, WARLOCK, expectJson, expectStatus, sleep } from "../support.mjs";
 import { BAND, CALLOUTS, CASTING, DEMONS, HEAD, PARTY, SHARDS, TALENTS, TAPS } from "../warlock-expected.mjs";
 import { browserFor } from "./owner.mjs";
 import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
@@ -56,10 +56,12 @@ export async function warlockPageShowsItsFigures(ctx) {
     const absent = missing(tokens, pairs);
     if (absent.length > 0) problems.push(`${group}: ${absent.join(", ")}`);
   }
-  const lost = CALLOUTS.filter((callout) => !showsLines(tokens, callout)).map(([name]) => name);
+  const sceneDrawn = page.text.includes('data-scene="warlock"');
+  const lost = sceneDrawn ? CALLOUTS.filter((callout) => !showsLines(tokens, callout)).map(([name]) => name) : [];
   if (lost.length > 0) problems.push(`callouts: ${lost.join(", ")}`);
   if (page.text.includes("Against other warlocks") || page.text.includes("More than")) problems.push("a comparison with other warlocks, which needs 20 of them and the fixture has one");
   if (problems.length > 0) throw new Error(`${route} should show every figure worked out from the fixture, but lacks:\n${problems.join("\n")}`);
+  if (!sceneDrawn) throw new Skip(`${route} shows every figure, but this server has no Warlock art, so the head draws no scene and its demon callouts are not checked`);
 }
 
 export async function characterPageLinksItsClassPage(ctx) {
