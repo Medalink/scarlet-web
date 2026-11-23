@@ -121,8 +121,8 @@ final class Page
         $feats = $b['feats'];
 
         return [
-            ['name' => 'Stats', 'href' => '/stats', 'fact' => 'Levelling, danger, dungeons, gold and play time, by ruleset.', 'bold' => Format::count($b['rulesets'], 'ruleset').' compared.', 'aside' => null],
-            ['name' => 'Feats', 'href' => '/feats', 'fact' => Format::number($feats['kinds']).' feats in five tiers.', 'bold' => Format::count($feats['week'], 'tier').' earned this week.', 'aside' => null],
+            ['name' => 'Stats', 'href' => '/stats', 'fact' => 'Levelling, danger, dungeons, gold and play time, by ruleset.', 'bold' => $b['rulesets'] > 1 ? Format::count($b['rulesets'], 'ruleset').' compared.' : null, 'aside' => null],
+            ['name' => 'Feats', 'href' => '/feats', 'fact' => Format::number($feats['kinds']).' feats in five tiers.', 'bold' => $feats['week'] > 0 ? Format::count($feats['week'], 'tier').' earned this week.' : null, 'aside' => null],
             ['name' => 'Leaderboards', 'href' => '/leaderboards', 'fact' => Format::number($b['boards']).' boards.', 'bold' => $lead === null ? null : 'Fastest to 60: '.$lead['value'].'.', 'aside' => null],
             ['name' => 'Map', 'href' => '/map', 'fact' => 'Every walked path, kill and death on one map.', 'bold' => null, 'aside' => null],
             ['name' => 'Loot', 'href' => '/loot', 'fact' => 'Drop rates for creatures and objects, with 95% ranges and loot rules.', 'bold' => null, 'aside' => null],
