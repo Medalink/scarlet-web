@@ -30,7 +30,7 @@ class RefreshAggregates
      * TimescaleDB holds an aggregate for the whole window of a refresh, so two refreshes over one aggregate cannot run
      * at once: the callers here (several `RefreshRollups` instances can process together, and commands call this
      * directly) wait for the refresh running on a lock instead of failing with `SQLSTATE 55P03`. A slice that stays
-     * locked fails the refresh; `RefreshRollups` keeps its range pending and the job retries.
+     * locked fails the refresh; `RefreshRollups` keeps its range pending and goes back on the queue to retry.
      * The keyed loot tables are rebuilt for the same days after the aggregates, under the same lock (`RebuildKeyedLoot`).
      * CALL cannot run inside a transaction, so this must not be called from one.
      */

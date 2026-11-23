@@ -105,7 +105,7 @@ return [
     ],
     'rollups' => [
         'timeout' => 900,
-        'tries' => 2,
+        'tries' => 6,
         'memory_mb' => 256,
         // How long a refresh waits so the ingests of one upload share it.
         'debounce_seconds' => 5,
