@@ -28,7 +28,6 @@ const PAGES = [
   { path: "/stats/unidentified", shows: heading("Not identified") },
   { path: "/professions", shows: heading("Professions") },
   { path: "/rulesets", shows: heading("Rulesets compared") },
-  { path: "/hardcore-deaths", shows: heading("Hardcore deaths") },
   { path: "/rulesets/unidentified", shows: heading("Not identified") },
   { path: `/c/${NAME}`, shows: heading(SHOWN) },
   { path: `/c/${NAME}/heat`, shows: /^\{"data":/ },
@@ -62,14 +61,30 @@ export async function everyPageShowsItself(ctx) {
   failOn(problems, PAGES.length, "pages");
 }
 
-export async function deathIsCountedOnce(ctx) {
-  const answer = expectStatus(await ctx.http.page("/hardcore-deaths"), 200, "/hardcore-deaths");
-  if (!answer.text.includes("1 death recorded")) {
-    throw new Error(`/hardcore-deaths should say 1 death recorded for the notice two uploaders sent, saw ${answer.text.slice(0, 600)}`);
+export async function oldAddressesRedirect(ctx) {
+  const moved = [
+    ["/demo", "/"],
+    ["/rulesets", "/stats/compare"],
+    ["/rulesets/unidentified", "/stats/unidentified"],
+    ["/hardcore-deaths", /^\/stats(\/[a-z0-9-]+#deaths)?$/],
+    ["/account/camps?ruleset=x", "/camps?ruleset=x&scope=mine"],
+    ["/account/map", "/map?scope=mine"],
+    ["/account/map/trails", "/map/trails?scope=mine"],
+    ["/account/characters", "/account"],
+    ["/account/professions", "/professions?scope=mine"],
+    ["/account/professions/fishing", "/professions/fishing?scope=mine"],
+    [`/c/${NAME}/heat`, `/map/trails?character=${NAME}`],
+    [`/c/${NAME}/trails`, `/map/trails?character=${NAME}`],
+  ];
+  const problems = [];
+  for (const [from, to] of moved) {
+    const answer = await ctx.http.request(from, { redirect: "manual", headers: { Accept: "text/html" } });
+    const location = answer.headers.get("location");
+    const path = location === null ? null : location.replace(/^https?:\/\/[^/]+/, "");
+    const ok = to instanceof RegExp ? path !== null && to.test(path) : path === to;
+    if (answer.status !== 301 || !ok) problems.push(`${from}: expected 301 to ${to}, saw ${answer.status} ${location}`);
   }
-  if (!/Level 23[^<]*1 death/.test(answer.text.replaceAll("&quot;", '"'))) {
-    throw new Error("/hardcore-deaths should chart that one death at level 23");
-  }
+  failOn(problems, moved.length, "old addresses");
 }
 
 export async function scoreboardIsShownWithoutNames(ctx) {
@@ -156,7 +171,7 @@ export async function publicPagesStayPublic(ctx) {
 }
 
 export async function accountIsClosedToVisitors(ctx) {
-  for (const route of ["/account", "/link", "/account/professions", "/account/professions/fishing", "/account/camps"]) {
+  for (const route of ["/account", "/account/settings", "/link"]) {
     const answer = await ctx.http.page(route, { redirect: "manual" });
     const location = answer.headers.get("location") ?? "";
     if (answer.status !== 302 || new URL(location, ctx.base).pathname !== "/login") {
@@ -221,5 +236,5 @@ export async function appLinksToAccount(ctx) {
   expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
   const settings = expectStatus(await http.request("/account/settings", { jar, headers: { Accept: "text/html" } }), 200, "GET /account/settings");
   if (!settings.text.includes(label)) throw new Error(`/account/settings should list the linked install ${label}, saw ${settings.text.slice(0, 300)}`);
-  expectStatus(await http.request("/account/characters", { jar, headers: { Accept: "text/html" } }), 200, "GET /account/characters");
+  expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
 }

@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Web;
 
-use App\Actions\Public\HardcoreDeaths;
+use App\Actions\Public\ListRulesets;
 use App\Http\Controllers\Controller;
-use App\View\Pages\HardcoreDeathsPage;
-use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
-/** Hardcore deaths by level and by day, each death counted once. Public. */
+/** /hardcore-deaths moved to the Deaths section of the hardcore ruleset's stats, or to /stats while there is none. */
 class HardcoreDeathsController extends Controller
 {
-    public function __invoke(HardcoreDeaths $deaths): View
+    public function __invoke(ListRulesets $rulesets): RedirectResponse
     {
-        return view('pages.hardcore-deaths', ['d' => HardcoreDeathsPage::data($deaths->handle())]);
+        $hardcore = array_find($rulesets->handle(), fn (array $ruleset): bool => $ruleset['hardcore']);
+
+        return redirect()->to($hardcore === null ? '/stats' : '/stats/'.$hardcore['slug'].'#deaths', 301);
     }
 }

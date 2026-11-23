@@ -65,7 +65,7 @@ const REGISTRY = [
   { lane: "api", name: "the public feats are the 241 catalog feats with their shares, and one feat lists its top characters and its latest earners, and an unknown feat is 404", run: feats.publicFeatsAreServed },
   { lane: "api", name: "the six professions with recorded lines are served with their numbers", run: professions.apiShowsTheUpload },
   { lane: "pages", name: "every public page answers and shows its own content", run: pages.everyPageShowsItself },
-  { lane: "pages", name: "one death heard by two uploaders is counted once", run: pages.deathIsCountedOnce },
+  { lane: "pages", name: "the addresses that moved answer a permanent redirect with the query kept", run: pages.oldAddressesRedirect },
   { lane: "pages", name: "a match's scoreboard is shown without the players' names", run: pages.scoreboardIsShownWithoutNames },
   { lane: "pages", name: "a recipe, a spell and a boss encounter show what the uploads recorded", run: pages.recipeSpellAndBossLootAreShown },
   { lane: "pages", name: "the art answers set no cookie", independent: true, run: pages.artAnswersSetNoCookie },

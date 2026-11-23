@@ -329,7 +329,7 @@ async function upload(held, name = NAME, app = client, groups = GROUP_ORDER) {
 const audit = (name = NAME) => artisan("addons:audit", name);
 const pagesOf = (name) => [
   ["public", "/professions/fishing", false],
-  ["own", "/account/professions/fishing", true],
+  ["own", "/professions/fishing?scope=mine", true],
   ["character", `/c/${name}`, false],
   ["character-owner", `/c/${name}`, true],
 ];

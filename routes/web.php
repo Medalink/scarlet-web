@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\HubController;
+use App\Http\Controllers\Web\LegacyRedirectController;
 use App\Http\Controllers\Web\MapViewerDesignController;
 use App\Http\Controllers\Web\SceneDesignController;
 use App\Http\Middleware\RateLimitRequests;
@@ -9,7 +10,7 @@ use App\View\Design\Gallery;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HubController::class)->middleware('scarlet.edge');
-Route::view('/demo', 'demo')->middleware('scarlet.edge');
+Route::get('/demo', LegacyRedirectController::class)->defaults('to', '/');
 
 // The component gallery rebuilds every comp from invented data; it is not part of the site.
 if (app()->environment('local')) {

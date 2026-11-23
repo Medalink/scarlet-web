@@ -26,7 +26,6 @@
     <x-module :last="true" id="h-s" heading="Hardcore characters reaching each level">
       @if ($d['survival'])
       <x-plot id="surv" label="Share of hardcore characters that reached each level" :spec="$d['survival']" />
-      <x-note><a href="/hardcore-deaths">Hardcore deaths by level and by day</a></x-note>
       @else
       <x-note>No hardcore characters recorded yet.</x-note>
       @endif

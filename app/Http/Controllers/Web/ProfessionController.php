@@ -20,16 +20,16 @@ use App\View\Pages\Filters;
 use App\View\Pages\GatheringPage;
 use App\View\Pages\MapSpec;
 use App\View\Pages\Trades;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 
 /**
  * The page of one profession, gathering or crafting: what players do with it and how. Public at `/professions/{slug}`;
- * at `/account/professions/{slug}` the same page over only the signed-in account's characters.
+ * with `?scope=mine` the same page over only the signed-in account's characters.
  */
 class ProfessionController extends Controller
 {
-    public function __invoke(ScopeRequest $request, GatheringDashboard $gathering, CraftingDashboard $crafting, MapZones $mapZones, OwnCharacterIds $ownIds, ChooseScope $chooseScope, string $slug): View|RedirectResponse
+    public function __invoke(ScopeRequest $request, GatheringDashboard $gathering, CraftingDashboard $crafting, MapZones $mapZones, OwnCharacterIds $ownIds, ChooseScope $chooseScope, string $slug): Response|RedirectResponse
     {
         $profession = Profession::fromSlug($slug);
         $scene = $profession?->scene();
@@ -54,7 +54,7 @@ class ProfessionController extends Controller
         $rect = is_array($answer['heat'] ?? null) ? MapRect::query()->find((int) $answer['heat']['map']) : null;
         $page = $kind === null ? CraftingPage::data($profession, $answer) : GatheringPage::data($kind, $answer, $rect);
         $map = $page['dots'] === null ? null : MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $mapZones->handle($scope->rollup()), dots: $page['dots']);
-        $path = ($own ? '/account' : '').'/professions/'.$slug;
+        $path = '/professions/'.$slug;
         $query = array_filter(['ruleset' => $scope->ruleset?->slug(), 'server' => $scope->server === Server::All ? null : $scope->server->value]);
         $switch = $chooseScope->handle($request->viewer(), $request->choice(), $request->comparedName(), $own, $query, $page['figures'], function (int $id) use ($kind, $profession, $gathering, $crafting, $asked, $request): ?array {
             $yours = $kind === null
@@ -67,19 +67,19 @@ class ProfessionController extends Controller
             return $kind === null ? CraftingPage::data($profession, $yours)['figures'] : GatheringPage::data($kind, $yours, null)['figures'];
         }, ['Characters', 'Crafters', 'Gatherers']);
 
-        return view('pages.profession', [
+        return response()->view('pages.profession', [
             'scope' => $switch,
             'd' => $page,
             'scene' => $scene,
             'art' => SceneArt::stage($scene),
-            'filters' => Filters::onPage($scope, $rulesets, $path),
-            'trades' => Trades::of($slug, $query === [] ? '' : '?'.http_build_query($query), $own),
+            'filters' => Filters::onPage($scope, $rulesets, $path, $own ? ['scope' => 'mine'] : []),
+            'trades' => Trades::of($slug, '?'.http_build_query($own ? $query + ['scope' => 'mine'] : $query), $own),
             'own' => $own,
             'slug' => $slug,
             'everyone' => '/professions/'.$slug,
             'map' => $map,
             'title' => $page['title'],
             'canonical' => $path,
-        ]);
+        ], 200, $own ? ['Cache-Control' => ScopeRequest::PRIVATE_CACHE] : []);
     }
 }

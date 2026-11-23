@@ -12,8 +12,8 @@ use LogicException;
 /** The ruleset and server filters of a dashboard page, as query parameters. */
 class ScopeRequest extends FormRequest
 {
-    /** The route default that declares a page a player's own. */
-    public const string OWN = 'own';
+    /** The Cache-Control of a page that shows one account's own numbers. */
+    public const string PRIVATE_CACHE = 'max-age=0, must-revalidate, no-cache, no-store, private';
 
     private const array CHOICES = ['everyone', 'compare', 'mine'];
 
@@ -80,14 +80,14 @@ class ScopeRequest extends FormRequest
     }
 
     /**
-     * The characters of the signed-in account on a route declared with `->defaults(ScopeRequest::OWN, true)`, where the page shows
-     * only a player's own numbers; null on a public route. The ids never come from the request.
+     * The characters of the signed-in account when the page is asked for with `?scope=mine`, where it shows
+     * only a player's own numbers; null otherwise. The ids never come from the request.
      *
      * @return list<int>|null
      */
     public function ownCharacters(OwnCharacterIds $ids): ?array
     {
-        $own = ($this->route()?->defaults[self::OWN] ?? false) === true || $this->choice() === 'mine';
+        $own = $this->choice() === 'mine';
 
         return $own ? $ids->handle($this->account()) : null;
     }

@@ -1,13 +1,13 @@
-{{-- The frame of the landing page and the demo character: the header lies over the page, as on the static site. --}}
-@props(['title', 'description', 'demo' => false, 'canonical' => null, 'index' => true, 'brand' => true])
+{{-- The frame of the pitch page: the header lies over the page, as on the static site. --}}
+@props(['title', 'description', 'canonical' => null, 'index' => true, 'brand' => true])
 @php
-    $jump = $demo ? '/' : '';
+    $jump = '';
     $explore = array_values(App\View\Sc\Nav::LINKS);
 @endphp
 <!doctype html>
 <html lang="en">
 <head>
-<x-layouts.head :title="$title" :description="$description" :entries="$demo ? ['resources/css/site.css', 'resources/css/landing.css', 'resources/js/demo.js'] : ['resources/css/site.css', 'resources/css/landing.css', 'resources/js/landing.js']" :canonical="$canonical" :index="$index" :brand="$brand" />
+<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/site.css', 'resources/css/landing.css', 'resources/js/landing.js']" :canonical="$canonical" :index="$index" :brand="$brand" />
 @isset($head){{ $head }}@endisset
 </head>
 <body>
@@ -23,10 +23,6 @@
       <a class="jump" href="{{ $jump }}#events">Events</a>
       <a class="jump" href="{{ $jump }}#never">Never recorded</a>
       <a class="jump" href="{{ $jump }}#capture">Capture map</a>
-      <a class="demo" href="/demo"@if ($demo) aria-current="page"@endif>Character overview</a>
-      <a href="/stats">Stats</a>
-      <a href="/map">Map</a>
-      <a href="/loot">Loot</a>
       <details class="nav-more app"><summary>Explore</summary><div class="nav-menu">@foreach ($explore as [$label, $path])<a href="{{ $path }}">{{ $label }}</a>@endforeach</div></details>
       <a class="get" href="/download">Get the app</a>
     </nav>

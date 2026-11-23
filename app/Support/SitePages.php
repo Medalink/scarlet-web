@@ -34,7 +34,6 @@ final class SitePages
             self::page('Camps', '/camps', 'How players use the campsite: visits, Camp Benefits and what gets set up', ['camp', 'campfire', 'tent', 'chair', 'rested', 'benefits']),
             ...array_map(self::profession(...), Profession::withPages()),
             self::page('Rulesets', '/stats/compare', 'The rulesets side by side', ['compare', 'comparison']),
-            self::page('Hardcore deaths', '/hardcore-deaths', 'Hardcore deaths by level and by day', ['hardcore', 'deaths', 'died', 'death']),
         ];
         foreach ($rulesets as $ruleset) {
             if ($ruleset['recorded']) {

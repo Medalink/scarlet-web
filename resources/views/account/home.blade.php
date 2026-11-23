@@ -40,7 +40,7 @@
         </a>
       @endforeach
     </div>
-    @if ($d['more'])<p class="mt-3 text-[14px]">{{ ucfirst($d['more']) }} not shown. <a href="/account/characters">Compare all characters</a></p>@else<p class="mt-3 text-[14px]"><a href="/account/characters">Compare characters side by side</a> · <a href="/account/professions">Your professions</a> · <a href="/account/camps">Your camps</a></p>@endif
+    @if ($d['more'])<p class="mt-3 text-[14px]">{{ ucfirst($d['more']) }} not shown.</p>@endif<p class="mt-3 text-[14px]"><a href="/stats?scope=compare">Your stats against everyone</a> · <a href="/professions?scope=mine">Your professions</a> · <a href="/camps?scope=mine">Your camps</a> · <a href="/map?scope=mine">Your map</a></p>
   </section>
 
   @if ($d['play'] || $d['gold'])
