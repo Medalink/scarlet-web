@@ -23,7 +23,8 @@ class SourceRuleArms
     /**
      * One source's drop table split into arms, by loot rule or by group size inside one rule (docs/LOOT.md, Creature
      * drops): a row for each item with 10 drops or more, and the rate in each arm that has 10 windows or more, over
-     * windows read for loot, each corpse with a key once (docs/LOOT.md, Units of counting, rule 7). A free-for-all arm with windows with no key that a second character contributed to counts one set (`LootArm`). The two
+     * windows read for loot, each corpse with a key once (docs/LOOT.md, Units of counting, rule 7). A free-for-all arm with windows with no key that a second character contributed to counts one reader's set, and the
+     * larger of two sets only on the days where both exist (`LootArm::overDays`). The two
      * drawn arms with the most windows, never personal loot, are compared, and each row carries their difference over
      * the items of the chart. `rules` and `sizes` list what was recorded, for the empty states; `rule` is the rule a
      * size split reads (`$rule` when the source has windows under it, else the rule with the most windows). `$data` is
@@ -47,16 +48,18 @@ class SourceRuleArms
             return $answer;
         }
 
-        $items = $data->items;
-        $readers = $data->readers;
-        $listed = $this->listed($items, $split, $chosen);
-        $answer['rows'] = array_map(fn (array $item): array => $this->row($item, $drawn, $pair, count($listed), $items, $readers, $split, $chosen), $listed);
+        $listed = $this->listed($data->items, $split, $chosen);
+        $byItem = [];
+        foreach ($data->items as $row) {
+            $byItem[(int) $row['item_id']][] = $row;
+        }
+        $answer['rows'] = array_map(fn (array $item): array => $this->row($item, $drawn, $pair, count($listed), $byItem, $data->readers, $split, $chosen), $listed);
 
         return $answer;
     }
 
     /**
-     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, windows: int}>  $windows
+     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, day: string, windows: int}>  $windows
      * @return list<array{rule: string, windows: int}>
      */
     private function rulesSeen(array $windows): array
@@ -84,7 +87,7 @@ class SourceRuleArms
     }
 
     /**
-     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, windows: int}>  $windows
+     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, day: string, windows: int}>  $windows
      * @return list<array{size: int, windows: int}>
      */
     private function sizesSeen(array $windows, string $rule): array
@@ -101,7 +104,7 @@ class SourceRuleArms
     }
 
     /**
-     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, windows: int}>  $windows
+     * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, day: string, windows: int}>  $windows
      * @return list<LootArm>
      */
     private function arms(ArmSplit $split, array $windows, ?string $chosen): array
@@ -113,14 +116,16 @@ class SourceRuleArms
             }
             $key = $split === ArmSplit::Rule ? $row['loot_rule'] : (string) $row['size'];
             $part = $row['keyed'] ? 'keyed' : 'unkeyed';
-            $groups[$key][$part][$row['character']] = ($groups[$key][$part][$row['character']] ?? 0) + $row['windows'];
+            $groups[$key][$row['day']]['unkeyed'] ??= [];
+            $groups[$key][$row['day']]['keyed'] ??= [];
+            $groups[$key][$row['day']][$part][$row['character']] = ($groups[$key][$row['day']][$part][$row['character']] ?? 0) + $row['windows'];
         }
         $arms = [];
-        foreach ($groups as $key => $parts) {
+        foreach ($groups as $key => $days) {
             $key = (string) $key;
             $rule = $split === ArmSplit::Rule ? $key : (string) $chosen;
-            $arm = LootArm::of(
-                $key, $split === ArmSplit::Rule ? LootRule::words($key) : 'Size '.$key, $parts['unkeyed'] ?? [], $parts['keyed'] ?? [],
+            $arm = LootArm::overDays(
+                $key, $split === ArmSplit::Rule ? LootRule::words($key) : 'Size '.$key, $days,
                 $rule === LootRule::FreeForAll->value, $split === ArmSplit::Rule && $rule === LootRule::Personal->value, $rule === LootRule::Unknown->value,
                 (int) config('scarlet.min_characters'),
             );
@@ -178,16 +183,16 @@ class SourceRuleArms
      * @param  array{item_id: int, item: string|null, bind_type: int, drops: int}  $item
      * @param  list<LootArm>  $drawn
      * @param  list<LootArm>  $pair
-     * @param  list<array<string, mixed>>  $items
-     * @param  array<int, array<int, array<int, int>>>  $readers
+     * @param  array<int, list<array<string, mixed>>>  $byItem  the item rows by item
+     * @param  array<int, array<int, array<string, array<int, int>>>>  $readers
      * @return array{item_id: int, item: string|null, drops: int, cells: list<array{arm: LootArm, estimate: RateEstimate}>, difference: RateDifference|null}
      */
-    private function row(array $item, array $drawn, array $pair, int $compared, array $items, array $readers, ArmSplit $split, ?string $chosen): array
+    private function row(array $item, array $drawn, array $pair, int $compared, array $byItem, array $readers, ArmSplit $split, ?string $chosen): array
     {
         $quest = $item['bind_type'] === ItemBind::Quest->value ? [RateFlag::QuestItem] : [];
         $cells = array_map(fn (LootArm $arm): array => [
             'arm' => $arm,
-            'estimate' => RateEstimate::of($this->listing($item['item_id'], $arm, $items, $readers, $split, $chosen), $arm->windows, [...$arm->flags, ...$quest]),
+            'estimate' => RateEstimate::of($this->listing($item['item_id'], $arm, $byItem, $readers, $split, $chosen), $arm->windows, [...$arm->flags, ...$quest]),
         ], $drawn);
         $estimates = [];
         foreach ($cells as $cell) {
@@ -201,37 +206,36 @@ class SourceRuleArms
     }
 
     /**
-     * Windows of the arm that listed the item (`LootArm::drops`): the corpses with a key, and of the windows with no key
-     * its reader's or every character's, whichever the arm counts.
+     * Windows of the arm that listed the item (`LootArm::dropsOver`): each day, the corpses with a key and of the windows
+     * with no key its reader's or every character's, whichever the arm counts that day.
      *
-     * @param  list<array<string, mixed>>  $items
-     * @param  array<int, array<int, array<int, int>>>  $readers
+     * @param  array<int, list<array<string, mixed>>>  $byItem
+     * @param  array<int, array<int, array<string, array<int, int>>>>  $readers
      */
-    private function listing(int $itemId, LootArm $arm, array $items, array $readers, ArmSplit $split, ?string $chosen): int
+    private function listing(int $itemId, LootArm $arm, array $byItem, array $readers, ArmSplit $split, ?string $chosen): int
     {
-        $reader = 0;
-        if ($arm->reader !== null) {
-            foreach ($readers[$itemId] ?? [] as $size => $byCharacter) {
-                if ($split === ArmSplit::Rule || (string) $size === $arm->key) {
-                    $reader += $byCharacter[$arm->reader] ?? 0;
-                }
-            }
-        }
-        $keyed = $unkeyed = 0;
-        foreach ($items as $row) {
-            if ((int) $row['item_id'] !== $itemId) {
-                continue;
-            }
+        $days = [];
+        foreach ($byItem[$itemId] ?? [] as $row) {
             $size = $row['group_size'] === null ? null : max(1, (int) $row['group_size']);
             $matches = $split === ArmSplit::Rule ? $row['loot_rule'] === $arm->key : $row['loot_rule'] === $chosen && (string) $size === $arm->key;
             if (! $matches) {
                 continue;
             }
-            $isKeyed = (int) $row['keyed'] === 1;
-            $keyed += $isKeyed ? (int) $row['drops'] : 0;
-            $unkeyed += $isKeyed ? 0 : (int) $row['drops'];
+            $day = (string) $row['day'];
+            $days[$day] ??= ['keyed' => 0, 'unkeyed' => 0, 'reader' => 0];
+            $days[$day][(int) $row['keyed'] === 1 ? 'keyed' : 'unkeyed'] += (int) $row['drops'];
+        }
+        if ($arm->reader !== null) {
+            foreach ($readers[$itemId] ?? [] as $size => $byDay) {
+                if ($split === ArmSplit::Rule || (string) $size === $arm->key) {
+                    foreach ($byDay as $day => $byCharacter) {
+                        $days[(string) $day] ??= ['keyed' => 0, 'unkeyed' => 0, 'reader' => 0];
+                        $days[(string) $day]['reader'] += $byCharacter[$arm->reader] ?? 0;
+                    }
+                }
+            }
         }
 
-        return $arm->drops($keyed, $unkeyed, $reader);
+        return $arm->dropsOver($days);
     }
 }
