@@ -38,4 +38,41 @@ final class Apportion
 
         return $parts;
     }
+
+    /**
+     * `split`, with no key taking more than its cap: what a key gets past its cap goes to the keys still under theirs, in
+     * proportion to their weights (or their room, when none of them has weight). A total above the sum of the caps leaves
+     * the rest on the keys as `split` gave it.
+     *
+     * @param  array<array-key, int>  $weights
+     * @param  array<array-key, int>  $caps
+     * @return array<array-key, int>
+     */
+    public static function capped(array $weights, array $caps, int $total): array
+    {
+        $parts = self::split($weights, $total);
+        if ($total > array_sum($caps)) {
+            return $parts;
+        }
+        while (true) {
+            $over = 0;
+            foreach ($parts as $key => $part) {
+                if ($part > $caps[$key]) {
+                    $over += $part - $caps[$key];
+                    $parts[$key] = $caps[$key];
+                }
+            }
+            if ($over === 0) {
+                return $parts;
+            }
+            $open = array_filter($parts, fn (int $part, int|string $key): bool => $part < $caps[$key], ARRAY_FILTER_USE_BOTH);
+            $openWeights = array_intersect_key($weights, $open);
+            if (array_sum($openWeights) <= 0) {
+                $openWeights = array_map(fn (int|string $key): int => $caps[$key] - $parts[$key], array_combine(array_keys($open), array_keys($open)));
+            }
+            foreach (self::split($openWeights, $over) as $key => $extra) {
+                $parts[$key] += $extra;
+            }
+        }
+    }
 }

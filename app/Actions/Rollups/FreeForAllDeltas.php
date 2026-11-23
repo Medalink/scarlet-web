@@ -38,18 +38,21 @@ class FreeForAllDeltas
         $refs = array_map(fn (string $key): LootSourceRef => new LootSourceRef(LootSourceKind::from(substr($key, 0, 1)), (int) substr($key, 1)), array_keys($counts));
 
         /** @var array{windows: list<array{string, string, int, int|null, int|null, int}>, items: list<array{string, string, int, int|null, int|null, int, int, int}>} */
-        return $this->read->kept('free-for-all-deltas', [$sources === null ? null : array_keys($counts), $itemIds], fn (): array => [
-            'windows' => $this->windows($counts, $refs),
-            'items' => $itemIds === [] ? [] : $this->items($counts, $refs, $itemIds),
-        ]);
+        return $this->read->kept('free-for-all-deltas', [$sources === null ? null : array_keys($counts), $itemIds], function () use ($counts, $refs, $itemIds): array {
+            $kept = $this->keptWindows($counts, $refs);
+
+            return ['windows' => $this->windows($kept), 'items' => $itemIds === [] ? [] : $this->items($counts, $refs, $itemIds, $kept)];
+        });
     }
 
     /**
+     * The arm's windows of each source shared over its zone and size rows, with the view's windows of each row.
+     *
      * @param  array<string, FreeForAllCounts>  $counts
      * @param  list<LootSourceRef>  $refs
-     * @return list<array{string, string, int, int|null, int|null, int}>
+     * @return array<string, array<string, array{row: array<string, mixed>, windows: int, kept: int}>> by source key, then zone and size
      */
-    private function windows(array $counts, array $refs): array
+    private function keptWindows(array $counts, array $refs): array
     {
         $rows = $this->read->rows(LootSourceRef::anyOf(LootRead::Loot->within(DB::table(LootCounted::Windows->value))->where('loot_rule', LootRule::FreeForAll->value)
             ->selectRaw('source_kind, source_id, zone_id, group_size, sum(windows) as windows, max(bucket) as bucket')
@@ -59,11 +62,28 @@ class FreeForAllDeltas
             $by[$row['source_kind'].$row['source_id']][] = $row;
         }
 
-        $deltas = [];
+        $answer = [];
         foreach ($by as $key => $own) {
             $kept = Apportion::split(array_map(fn (array $row): int => (int) $row['windows'], $own), $counts[$key]->arm->windows);
             foreach ($own as $position => $row) {
-                $delta = $kept[$position] - (int) $row['windows'];
+                $answer[$key][$this->place($row)] = ['row' => $row, 'windows' => (int) $row['windows'], 'kept' => $kept[$position]];
+            }
+        }
+
+        return $answer;
+    }
+
+    /**
+     * @param  array<string, array<string, array{row: array<string, mixed>, windows: int, kept: int}>>  $kept
+     * @return list<array{string, string, int, int|null, int|null, int}>
+     */
+    private function windows(array $kept): array
+    {
+        $deltas = [];
+        foreach ($kept as $places) {
+            foreach ($places as $place) {
+                $row = $place['row'];
+                $delta = $place['kept'] - $place['windows'];
                 if ($delta !== 0) {
                     $deltas[] = [(string) $row['bucket'], (string) $row['source_kind'], (int) $row['source_id'], $this->nullable($row['zone_id']), $this->nullable($row['group_size']), $delta];
                 }
@@ -73,13 +93,20 @@ class FreeForAllDeltas
         return $deltas;
     }
 
+    /** @param  array<string, mixed>  $row */
+    private function place(array $row): string
+    {
+        return ($row['zone_id'] ?? '').'|'.($row['group_size'] ?? '');
+    }
+
     /**
      * @param  array<string, FreeForAllCounts>  $counts
      * @param  list<LootSourceRef>  $refs
      * @param  list<int>|null  $itemIds
+     * @param  array<string, array<string, array{row: array<string, mixed>, windows: int, kept: int}>>  $kept
      * @return list<array{string, string, int, int|null, int|null, int, int, int}>
      */
-    private function items(array $counts, array $refs, ?array $itemIds): array
+    private function items(array $counts, array $refs, ?array $itemIds, array $kept): array
     {
         $query = LootSourceRef::anyOf(LootRead::Loot->within(DB::table(LootCounted::Items->value))->where('loot_rule', LootRule::FreeForAll->value)
             ->selectRaw('source_kind, source_id, item_id, zone_id, group_size, sum(windows) as drops, sum(quantity) as quantity, max(bucket) as bucket')
@@ -92,12 +119,15 @@ class FreeForAllDeltas
 
         $deltas = [];
         foreach ($by as $key => $items) {
-            foreach ($items as $item => $own) {
+            foreach ($items as $item => $listed) {
+                $own = $this->everyPlace($listed, $kept[$key] ?? []);
                 $counted = $counts[$key]->items[$item] ?? ['drops' => 0, 'quantity' => 0];
                 $drops = array_map(fn (array $row): int => (int) $row['drops'], $own);
                 $quantities = array_map(fn (array $row): int => (int) $row['quantity'], $own);
-                $keptDrops = Apportion::split($drops, $counted['drops']);
-                $keptQuantity = Apportion::split(array_sum($quantities) > 0 ? $quantities : $drops, $counted['quantity']);
+                $caps = array_map(fn (array $row): int => $kept[$key][$this->place($row)]['kept'] ?? 0, $own);
+                $weights = array_map(fn (array $row): int => intdiv((int) $row['drops'] * 1000 * ($kept[$key][$this->place($row)]['kept'] ?? 0), max(1, $kept[$key][$this->place($row)]['windows'] ?? 1)), $own);
+                $keptDrops = Apportion::capped(array_sum($weights) > 0 ? $weights : $drops, $caps, $counted['drops']);
+                $keptQuantity = Apportion::split(array_sum($keptDrops) > 0 ? $keptDrops : $quantities, $counted['quantity']);
                 foreach ($own as $position => $row) {
                     $drop = $keptDrops[$position] - $drops[$position];
                     $quantity = $keptQuantity[$position] - $quantities[$position];
@@ -109,6 +139,27 @@ class FreeForAllDeltas
         }
 
         return $deltas;
+    }
+
+    /**
+     * The view's rows of one item of a source, with a row of no drops for each zone and size the source has windows in and
+     * the item has none, so an arm's drops can go to a row only as far as its windows.
+     *
+     * @param  list<array<string, mixed>>  $listed
+     * @param  array<string, array{row: array<string, mixed>, windows: int, kept: int}>  $places
+     * @return list<array<string, mixed>>
+     */
+    private function everyPlace(array $listed, array $places): array
+    {
+        $by = [];
+        foreach ($listed as $row) {
+            $by[$this->place($row)] = $row;
+        }
+        foreach ($places as $place => $window) {
+            $by[$place] ??= [...$window['row'], 'drops' => 0, 'quantity' => 0];
+        }
+
+        return array_values($by);
     }
 
     private function nullable(mixed $value): ?int
