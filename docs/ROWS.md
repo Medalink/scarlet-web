@@ -653,7 +653,7 @@ of slack at the stretch's start): `f` running, `w` walking, `m` mounted, `s` swi
 when no `W` covers the point: a stretch under 1 yard, a point written while standing, a `W` without seconds.
 A `W` ends its stretch after its points, so a point's row waits for that `W` and keeps the `level` and
 `zone_id` of its `P` line; rows still waiting when the session ends are written before the `sessions` row with
-a null `mode`. `mode` came with decoder version 15.
+a null `mode`. `mode` came with decoder version 16.
 
 ### `movement_stretches` (movement: `W`)
 
@@ -668,7 +668,7 @@ One row per flight along a flight path: a `T 1` (the flight started) followed by
 session. `at` is the `T 1`'s time, and `level` and `zone_id` are as at it. `map`, `x`, `y`: int or null each,
 the position the flight started from; `to_map`, `to_x`, `to_y`: int or null each, where it landed; `ms` (int)
 is the `T 0` time minus the `T 1` time. A `T 1` with no `T 0` before the session ends, or a `T 0` with no
-`T 1`, gives no row; a second `T 1` replaces a still waiting one. New with decoder version 15.
+`T 1`, gives no row; a second `T 1` replaces a still waiting one. New with decoder version 16.
 
 ### `emotes` (social: `EM`)
 

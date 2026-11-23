@@ -940,13 +940,13 @@ const bossRows = (c) => JSON.parse(db(`
   select coalesce(json_agg(json_build_array(floor(extract(epoch from at))::bigint - ${bossSlot(c.k)}, encounter_id, source, instance_id) order by at, encounter_id), '[]'::json)
   from boss_kills where ${own(c.name)}`));
 const bossCount = (c) => Number(db(`select coalesce(sum(bosses), 0) from dungeon_runs where ${own(c.name)}`));
-const decodedAt15 = (c) => Number(db(`select count(*) from sessions where ${own(c.name)} and decoder_version = 15`));
+const decodedWithBossKills = (c) => Number(db(`select count(*) from sessions where ${own(c.name)} and decoder_version >= 15`));
 
 async function bosses() {
   await fresh(client, second);
   const cases = bossCases();
   for (const c of cases) await upload(known(c.parts), c.name);
-  const stored = () => cases.every((c) => decodedAt15(c) === 1);
+  const stored = () => cases.every((c) => decodedWithBossKills(c) === 1);
   await settle(cases.map((c) => c.name), (...now) => now.every((s) => s.sessions === 1) && stored(), "the boss kill cases");
   for (const c of cases) {
     check(`${c.name}: boss_kills holds ${JSON.stringify(c.kills)}`, JSON.stringify(bossRows(c)) === JSON.stringify(c.kills), JSON.stringify(bossRows(c)));

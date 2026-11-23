@@ -22,7 +22,7 @@ class MapTrails
 
     /**
      * What the world map draws for some characters a viewer may see: every cell of the finest world grid they walked
-     * with the points walked on foot, mounted and in a stretch of no known mode (a session decoded before version 15, or
+     * with the points walked on foot, mounted and in a stretch of no known mode (a session decoded before version 16, or
      * a step under a yard), the flight routes they took as straight lines from where each flight began to where it
      * landed, and the world rectangle that fits both. The ids come from the caller, which decides who may see them. Read
      * once in `PublicApi::MAX_AGE`, like the character page's own cells. The counts by mode are filtered aggregates, which
