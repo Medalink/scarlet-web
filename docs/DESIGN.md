@@ -1864,7 +1864,27 @@ over the time played, and "Lay on Hands in the open" is left out of Saves. Heart
 `cast_under` and deaths after a bubble from `death_after_aura`, both counting only the shield and protection that
 the character cast. The fixture is Oath-Bearer (`e2e/paladin-lines.mjs`); `e2e/paladin-expected.mjs` works its figures
 out from the lines, including the fate of each seal by the rules of docs/ROWS.md, and `e2e/checks/class-page-paladin.mjs`
-reads the page against them. The Warrior and Paladin checks share `e2e/checks/class-page-kit.mjs`.
+reads the page against them. The Warrior, Paladin and Hunter checks share `e2e/checks/class-page-kit.mjs`.
+
+**Where the Hunter page differs from the comp.** Built by `HunterBuilder`: a head of the pets (a cat, a wolf, a boar and
+an owl, each with a callout of its name, family, hours out and share of pet time); six figures (Hours with a pet out,
+Tame Beast casts, Shots fired, Hours of Auto Shot, Traps set, Feign Deaths); the chart from where the ammo came to where
+it went (bought, crafted, looted, mailed or traded in, on one side; fired by ammo, sold or destroyed, and held, on the
+other); the quiver; the pet out, by level; pets; the aspect up, by level; shots; traps; Feign Death; tracking; a module
+for each of Bestial Wrath, Intimidation, Aimed Shot, Scatter Shot, Deterrence and Counterattack that the build holds; and
+auras, Freezing Trap, Tranquilizing Shot and Mend Pet for the party. What the rows cannot answer is replaced or left
+out. "Beasts tamed" is Tame Beast casts, since no row says a taming worked. The comp's gold spent on ammo and its fights
+that ran out of ammo are replaced by shots a fight and ammo bought, because no row prices an item or says a fight began
+without ammo. The quiver is a bag of stacks of 200 counted from the changes the addon saw, since `BC` does not say which
+bag is a quiver. A pet of any other family than the four with a model is "Another pet" in the level chart and keeps its
+name in the list. Tracking comes from `MP`, whose numeric names are resolved by spell id. Auto Shot is found by the
+name of the spell id the `r` rows carry, as they hold no name. "Auras for the group" and the traps are hours up and
+casts: no row holds group time, so "in dungeons" is left out. Shots fired are the ammo item changes that Auto Shot
+caused, read as for the item flows of docs/ROWS.md. Scatter Shot, Deterrence and Counterattack carry the "Used in a
+fight" pair and a rate or deaths within 10 seconds; the fixture holds none of the three, so they were checked once
+against synthetic talents and are not a page check. The fixture is Pack-Warden (`e2e/hunter-lines.mjs`), whose pets,
+ammo and aspects are scripted per fight; `e2e/hunter-expected.mjs` works its figures out from the lines and
+`e2e/checks/class-page-hunter.mjs` reads the page against them. The comparison with other hunters waits for 20 of them.
 
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when

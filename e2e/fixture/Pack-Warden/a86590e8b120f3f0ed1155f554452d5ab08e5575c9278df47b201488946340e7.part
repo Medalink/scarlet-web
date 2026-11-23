@@ -1,0 +1,24 @@
+scarlet-part	1	Pack-Warden	1795810000	build
+800	TV	1003	3	3	3e5b72a1
+10	TD	1003	3001	100	200	single	1	361	4001:19574:1	
+10	TD	1003	3002	200	200	single	1	361	4002:19577:1	
+10	TD	1003	3003	300	200	single	1	363	4003:19434:1	
+670	TA	1	3001	4001	1		1	19574	361	s
+10	TA	1	3002	4002	1		1	19577	361	s
+10	TA	1	3003	4003	1		1	19434	363	s
+480	TG	s	1	1		Beast Mastery	1003	361:31:0,363:20:0,362:0:0	0	0	1	
+8000	PT	Ashfang	Cat
+500	PD	Ashfang	50	0	100	3	Faithful	0	0	c
+3589500	PD	Ashfang	50	0	100	2	Faithful	0	0	c
+720000	PD	Ashfang	50	0	100	3	Faithful	0	0	c
+2160000	PT	Duskrum	Wolf
+500	PD	Duskrum	50	0	100	3	Faithful	0	0	c
+1799500	PT	Briarhorn	Boar
+500	PD	Briarhorn	50	0	100	3	Faithful	0	0	c
+1079500	PT	Nightperch	Owl
+500	PD	Nightperch	50	0	100	3	Faithful	0	0	c
+1439500	PD	Nightperch	50	0	100	2	Faithful	0	0	c
+1080000	PD	Nightperch	50	0	100	3	Faithful	0	0	c
+6840000	PT	Rex	Raptor
+500	PD	Rex	50	0	100	2	Faithful	0	0	c
+1799500	PT		

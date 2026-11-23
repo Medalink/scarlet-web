@@ -3,6 +3,7 @@
 namespace App\Support\ClassPage;
 
 use App\Actions\Public\ClassPage\DruidBuilder;
+use App\Actions\Public\ClassPage\HunterBuilder;
 use App\Actions\Public\ClassPage\MageBuilder;
 use App\Actions\Public\ClassPage\PaladinBuilder;
 use App\Actions\Public\ClassPage\WarlockBuilder;
@@ -20,6 +21,7 @@ final class ClassBuilders
     public static function for(PlayerClass $class): ?string
     {
         return match ($class) {
+            PlayerClass::Hunter => HunterBuilder::class,
             PlayerClass::Paladin => PaladinBuilder::class,
             PlayerClass::Warrior => WarriorBuilder::class,
             PlayerClass::Warlock => WarlockBuilder::class,

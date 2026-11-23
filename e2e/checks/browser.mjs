@@ -2,10 +2,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { Browser, browserCommand } from "../cdp.mjs";
-import { NAME, PROBE, SHOWN, PALADIN, Skip, WARLOCK, WARRIOR, failOn, pool, rollupsRefreshed } from "../support.mjs";
+import { NAME, PROBE, SHOWN, HUNTER, PALADIN, Skip, WARLOCK, WARRIOR, failOn, pool, rollupsRefreshed } from "../support.mjs";
 
-const WIDE = ["/", "/stats", "/map", "/camps", "/professions/fishing", "/professions/mining", "/professions/cooking", "/professions/tailoring", "/hardcore-deaths", "/leaderboards", "/search?q=Testa", `/c/${NAME}`, `/c/${PROBE}/battlegrounds`, `/c/${WARLOCK}`, `/c/${WARLOCK}/warlock`, `/c/${WARRIOR}/warrior`, `/c/${PALADIN}/paladin`, "/spells/2660", "/encounters/1065", "/items/2862"];
-const NARROW = ["/", "/stats", "/camps", "/professions/fishing", "/professions/cooking", "/hardcore-deaths", `/c/${WARLOCK}/warlock`, `/c/${WARRIOR}/warrior`, `/c/${PALADIN}/paladin`, "/spells/2660", "/encounters/1065"];
+const WIDE = ["/", "/stats", "/map", "/camps", "/professions/fishing", "/professions/mining", "/professions/cooking", "/professions/tailoring", "/hardcore-deaths", "/leaderboards", "/search?q=Testa", `/c/${NAME}`, `/c/${PROBE}/battlegrounds`, `/c/${WARLOCK}`, `/c/${WARLOCK}/warlock`, `/c/${WARRIOR}/warrior`, `/c/${PALADIN}/paladin`, `/c/${HUNTER}/hunter`, "/spells/2660", "/encounters/1065", "/items/2862"];
+const NARROW = ["/", "/stats", "/camps", "/professions/fishing", "/professions/cooking", "/hardcore-deaths", `/c/${WARLOCK}/warlock`, `/c/${WARRIOR}/warrior`, `/c/${PALADIN}/paladin`, `/c/${HUNTER}/hunter`, "/spells/2660", "/encounters/1065"];
 const TABS = 4;
 const SUGGEST_MS = 5000;
 

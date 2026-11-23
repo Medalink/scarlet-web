@@ -27,6 +27,10 @@ export function readLines(lines) {
   const durations = new Map();
   const moves = [];
   const rides = [];
+  const shooting = [];
+  const tracks = [];
+  const pets = [];
+  const moods = [];
   const spans = new Map();
   let end = 0;
   let open = null;
@@ -44,7 +48,15 @@ export function readLines(lines) {
     if (code === "DM") meters.push({ t, meter: f[0], total: Number(f[1]), level: levels.at(-1)[1] });
     if (code === "DS") top.push({ meter: f[0], spell: Number(f[1]), amount: Number(f[2]) });
     if (code === "G") gear.push({ t, slot: Number(f[0]), item: Number(f[1]) });
-    if (code === "I") moves.push({ t, item: Number(f[0]), delta: Number(f[1]) });
+    if (code === "I") moves.push({ t, item: Number(f[0]), delta: Number(f[1]), where: String(f[2] ?? "") });
+    if (code === "AR") {
+      const running = shooting.at(-1);
+      if (running && running.end === undefined) running.end = t;
+      if (Number(f[0]) === 1) shooting.push({ start: t, spell: Number(f[1]) });
+    }
+    if (code === "MP") tracks.push({ t, types: String(f[0]).split(",").filter((one) => one !== "") });
+    if (code === "PT") pets.push({ t, name: f[0], family: f[1] });
+    if (code === "PD") moods.push({ t, name: f[0], mood: Number(f[4]) });
     if (code === "MO") rides.push({ t, on: Number(f[0]) === 1 });
     if (code === "K") kills.push({ t, by: Number(f[1]), level: levels.at(-1)[1] });
     if (code === "D") deaths.push({ t, level: levels.at(-1)[1] });
@@ -118,6 +130,34 @@ export function readLines(lines) {
         return { name: span.name, fate, ms: span.end - span.start };
       }).filter((one) => one.fate !== null);
     },
+    autoShotMs: () => shooting.reduce((sum, span) => sum + (span.end ?? end) - span.start, 0),
+    autoShotFightMs: () => shooting.reduce((sum, span) => sum + fights.reduce((inner, fight) => inner + overlap({ start: span.start, end: span.end ?? end }, fight), 0), 0),
+    tracking: () => {
+      const hours = new Map();
+      tracks.forEach((one, at) => {
+        const until = tracks[at + 1]?.t ?? end;
+        for (const type of one.types) {
+          const label = /^[0-9]+$/.test(type) ? spells.get(Number(type)) : type;
+          hours.set(label, (hours.get(label) ?? 0) + until - one.t);
+        }
+      });
+      return hours;
+    },
+    petSegments: () => pets.map((one, at) => ({ ...one, start: one.t, end: pets[at + 1]?.t ?? end })).filter((one) => one.name !== ""),
+    petMsIn: (family, level) => facts.petSegments().filter((one) => family === undefined || one.family === family).reduce((sum, one) => sum + (level === undefined ? one.end - one.t : overlap(one, facts.levelWindow(level))), 0),
+    happyMs: () => {
+      let total = 0;
+      for (const segment of facts.petSegments()) {
+        const inside = moods.filter((one) => one.t >= segment.t && one.t < segment.end);
+        inside.forEach((one, at) => {
+          if (one.mood === 3) total += (inside[at + 1]?.t ?? segment.end) - one.t;
+        });
+      }
+      return total;
+    },
+    firedShots: () => moves.filter((one) => one.delta < 0 && one.where === "" && !named.some((cast) => cast.t <= one.t && one.t - cast.t <= 1500) && shooting.some((span) => one.t >= span.start && one.t <= (span.end ?? end))).reduce((sum, one) => sum - one.delta, 0),
+    ammoIn: (where) => moves.filter((one) => one.delta > 0 && (where === undefined || one.where === where)).reduce((sum, one) => sum + one.delta, 0),
+    ammoHeld: (item) => Math.max(0, moves.filter((one) => one.item === item).reduce((sum, one) => sum + one.delta, 0)),
     castCount: (...names) => named.filter((cast) => names.includes(cast.name)).length,
     castLevels: (name) => named.filter((cast) => cast.name === name).map((cast) => cast.level),
     fightMs: (level) => fights.filter((fight) => level === undefined || fight.level === level).reduce((sum, fight) => sum + fight.end - fight.start, 0),

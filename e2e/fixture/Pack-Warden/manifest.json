@@ -1,0 +1,48 @@
+{
+  "character": "Pack-Warden",
+  "parts": [
+    {
+      "group": "core",
+      "id": "94824bc8538998dedbcc5e1f57f6b8a93ca8975d8cd2ec80bd313ccc09d315ee",
+      "lines": 5,
+      "raw_bytes": 209,
+      "session": 1795810000
+    },
+    {
+      "group": "movement",
+      "id": "94d69e98be70bf28e4e4ef06d26c78dd9733767a50c749036d6fa2e0cedd1be8",
+      "lines": 5,
+      "raw_bytes": 140,
+      "session": 1795810000
+    },
+    {
+      "group": "build",
+      "id": "a86590e8b120f3f0ed1155f554452d5ab08e5575c9278df47b201488946340e7",
+      "lines": 23,
+      "raw_bytes": 916,
+      "session": 1795810000
+    },
+    {
+      "group": "combat",
+      "id": "4285d65327d4d73170a47c0634d30b8dbae989ec5e11bcec9944996589fc8b12",
+      "lines": 221,
+      "raw_bytes": 3431,
+      "session": 1795810000
+    },
+    {
+      "group": "loot",
+      "id": "99e6ab27952d980f8f52e6fde7fdab60f47f7986e620d5033afed0b1dc013c94",
+      "lines": 26,
+      "raw_bytes": 533,
+      "session": 1795810000
+    },
+    {
+      "group": "names",
+      "id": "dad60fae58f7b3196879193ddee4ac761a3c41f4cbb61af8c74b3bfbf272b650",
+      "lines": 33,
+      "raw_bytes": 889,
+      "session": 1795810000
+    }
+  ],
+  "set_digest": "a9843762b6d7282145b6672adc15e1b54fbf05cc66b55b60cf8ff88bf4e24f37"
+}

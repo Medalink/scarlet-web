@@ -22,6 +22,7 @@ import { DRUID_LINES } from "./druid-lines.mjs";
 import { LEDGER_LINES } from "./ledger-lines.mjs";
 import { MAGE_LINES } from "./mage-lines.mjs";
 import { WARLOCK_LINES } from "./warlock-lines.mjs";
+import { HUNTER_LINES } from "./hunter-lines.mjs";
 import { PALADIN_LINES } from "./paladin-lines.mjs";
 import { WARRIOR_LINES } from "./warrior-lines.mjs";
 
@@ -245,6 +246,7 @@ const BUILDS = [
   { character: "Moon-Walker", session: 1795720000, lines: DRUID_LINES },
   { character: "Iron-Vanguard", session: 1795630000, lines: WARRIOR_LINES },
   { character: "Oath-Bearer", session: 1795720000, lines: PALADIN_LINES },
+  { character: "Pack-Warden", session: 1795810000, lines: HUNTER_LINES },
 ];
 
 function partsOf(character, session, lines) {
