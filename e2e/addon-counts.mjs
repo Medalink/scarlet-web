@@ -21,6 +21,10 @@
  *
  * With both installs linked it also reads the public and the account's own fishing page and the character's page.
  * The account's characters page shows each lifetime read once, with what Scarlet and the counted addons add up to inside its window and the ceiling note of rule 7: fishing's casts, catches and fish, and Mastercraft's herb and ore attempts against the herb and ore gathers of an invented gatherer.
+ * Two more characters, one with counted `rxp` kills, `rxp` quest claims and an `fdj` run beside Scarlet's rows and one whose claims are all superseded, check
+ * that the character page's Kills, Quests and Dungeon runs equal Scarlet plus the counted amounts read from the database, with "From addons" to the owner and
+ * to a visitor where `E2E_MIN_CHARACTERS` (boot.mjs, default 1) is 1. `node e2e/addon-counts.mjs readers` runs only those two, for
+ * `E2E_MIN_CHARACTERS=2 node e2e/boot.mjs -- node e2e/addon-counts.mjs readers`.
  * By default they show Scarlet, what the addons added and the total, which equal the database's; run with
  * ADDON_COUNTS_PAGES=false (boot.mjs passes it on) they show Scarlet's own numbers and nothing from addons. ADDON_PAGES_DIR=<folder> keeps the pages read, for a before and after comparison.
  */
@@ -897,6 +901,72 @@ async function levels() {
   check("addons:audit passes after the claims were decided again", last.status === 0, last.stdout + last.stderr);
 }
 
+const MIN_CHARACTERS = Number(process.env.E2E_MIN_CHARACTERS ?? 1);
+
+function readerCases() {
+  const reader = 27;
+  const echoed = 28;
+  const one = (k, name, spec, claims) => ({ k, name, sessions: countSession(name, slot(k), spec), claims });
+
+  return [
+    one(reader, "Quill-Reader", { level: 20, kills: 3, quests: [{ at: 5, id: 9000, xp: 100 }], stays: [[60, 560]] }, [
+      rxpKill(reader, 0, 1800, 12, 50),
+      rxpQuest(reader, 0, 3600, 12, 9101, 300),
+      rxpQuest(reader, 0, 3600, 12, 9102, 400),
+      fdjRun(reader, 1, 3000, 3500),
+    ]),
+    one(echoed, "Quill-Echoed", { level: 16, kills: 130, quests: [{ at: 5, id: 3001, xp: 500 }], stays: [[60, 1560]] }, [
+      rxpKill(echoed, 0, 1800, 16, 100),
+      rxpQuest(echoed, 0, 3600, 16, 3001, 500),
+      fdjRun(echoed, 1, 493, 1558),
+    ]),
+  ];
+}
+
+function readerFigures(name) {
+  const added = (kind, origin, statuses) => `from addon_claims c where c.${own(name)} and c.kind = '${kind}' and c.origin = '${origin}' and c.scope = 'c' and c.status in (${statuses})`;
+  return JSON.parse(db(`
+    select json_build_object(
+      'kills', (select coalesce(sum(kills), 0) from sessions where ${own(name)} and counted),
+      'quests', (select coalesce(sum(quests_done), 0) from sessions where ${own(name)} and counted),
+      'runs', (select count(*) from dungeon_runs where ${own(name)} and counted and not continues_previous),
+      'addKills', (select coalesce(sum((c.counted ->> 'kills')::bigint), 0) ${added("kill", "rxp", "'counted', 'residual'")}),
+      'addQuests', (select count(*) ${added("xp", "rxp", "'counted'")}),
+      'addRuns', (select coalesce(sum((c.counted ->> 'runs')::bigint), 0) ${added("run", "fdj", "'counted', 'residual'")}))`));
+}
+
+const figureShown = (text, label, total, added) =>
+  new RegExp(`${label} since \\d+ \\w+ ${count(total)}(?![\\d,]) ${added > 0 ? `From addons ${count(added)}(?![\\d,])` : "(?!From addons)"}`).test(text);
+const runsShown = (text, total, added) =>
+  text.includes(`${count(total)} dungeon run${total === 1 ? "" : "s"} in all. ${added > 0 ? `From addons ${count(added)}.` : ""}`.trimEnd()) && text.includes("From addons") === added > 0;
+
+async function readers() {
+  await fresh(client, second);
+  await ensureLinked();
+  const cases = readerCases();
+  for (const c of cases) await upload(known([...c.sessions, ...countsPartsOf(c.claims, c.name)]), c.name);
+  await settle(cases.map((c) => c.name), (...now) => now.every((s, i) => s.claims === cases[i].claims.length && readerFigures(cases[i].name).runs > 0 && readerFigures(cases[i].name).kills > 0), "the page readers");
+  const [reader, echoed] = cases.map((c) => ({ name: c.name, ...readerFigures(c.name) }));
+  check(`${reader.name}: Scarlet holds ${reader.kills} kills, ${reader.quests} quests and ${reader.runs} runs, and the claims count 50 kills, 2 quests and 1 run`, reader.addKills === 50 && reader.addQuests === 2 && reader.addRuns === 1 && reader.kills > 0 && reader.quests > 0 && reader.runs > 0, JSON.stringify(reader));
+  check(`${echoed.name}: every claim is superseded, 0 kills, 0 quests and 0 runs added`, echoed.addKills === 0 && echoed.addQuests === 0 && echoed.addRuns === 0 && echoed.kills > 0 && echoed.quests > 0 && echoed.runs > 0, JSON.stringify(echoed));
+  const visitorSees = PAGES_ON && MIN_CHARACTERS <= 1;
+  const mode = PAGES_ON ? `a minimum of ${MIN_CHARACTERS} characters` : "the flag off";
+  for (const person of [reader, echoed]) {
+    const shown = await pagesRead(person.name, `${person.name}-`);
+    for (const [page, sees] of [["character-owner", PAGES_ON], ["character", visitorSees]]) {
+      const added = { kills: sees ? person.addKills : 0, quests: sees ? person.addQuests : 0, runs: sees ? person.addRuns : 0 };
+      const expected = `${person.kills + added.kills} kills, ${person.quests + added.quests} quests, ${person.runs + added.runs} runs`;
+      const text = shown[page];
+      const kills = figureShown(text, "Kills", person.kills + added.kills, added.kills);
+      const quests = figureShown(text, "Quests", person.quests + added.quests, added.quests);
+      const runs = runsShown(text, person.runs + added.runs, added.runs);
+      check(`${person.name}, ${page === "character" ? "a visitor" : "the owner"} with ${mode}: ${expected}${sees && person.addKills > 0 ? ", with From addons beside each" : ", Scarlet's own and no From addons"}`, kills && quests && runs, `${kills} ${quests} ${runs} ${text.slice(0, 700)}`);
+    }
+  }
+  const audited = artisan("addons:audit");
+  check("addons:audit passes with the page readers' claims", audited.status === 0, audited.stdout + audited.stderr);
+}
+
 async function main() {
   for (const app of [client, second]) {
     const registered = await app.register();
@@ -905,6 +975,11 @@ async function main() {
   await fresh(client, second);
   if (process.argv[2] === "levels") {
     await levels();
+    await fresh(client, second);
+    return;
+  }
+  if (process.argv[2] === "readers") {
+    await readers();
     await fresh(client, second);
     return;
   }
@@ -1016,6 +1091,7 @@ async function main() {
   await addonOnly();
   await gatheredAndReturned();
   await levels();
+  await readers();
 
   await fresh(client, second);
 }

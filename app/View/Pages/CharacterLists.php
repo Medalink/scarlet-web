@@ -103,15 +103,17 @@ final class CharacterLists
      *
      * @param  list<array{instance_id: int, name: string|null, at: string, seconds: float, bosses: int, deaths: int, group_size: int|null}>  $runs
      * @param  list<array<string, mixed>>  $instances  the answer of CharacterOverview for dungeons: one row per instance with its runs
+     * @param  int  $addons  the runs other addons counted, which add to the count and are not listed
      * @return array{rows: list<array<string, mixed>>, total: string}|null
      */
-    public static function runs(array $runs, array $instances): ?array
+    public static function runs(array $runs, array $instances, int $addons = 0): ?array
     {
-        if ($runs === []) {
+        if ($runs === [] && $addons === 0) {
             return null;
         }
-        $top = max(1.0, ...array_column($runs, 'seconds'));
-        $all = (int) array_sum(array_column($instances, 'runs'));
+        $top = max([1.0, ...array_column($runs, 'seconds')]);
+        $scarlet = (int) array_sum(array_column($instances, 'runs'));
+        $all = $scarlet + $addons;
 
         return [
             'rows' => array_map(fn (array $run): array => [
@@ -125,7 +127,7 @@ final class CharacterLists
                 'deathsSay' => $run['deaths'] === 0 ? 'No deaths' : Format::count($run['deaths'], 'death'),
                 'group' => $run['group_size'] === null ? null : ($run['group_size'] === 1 ? 'Solo' : $run['group_size'].' players'),
             ], $runs),
-            'total' => Format::count($all, 'dungeon run').' in all.'.(count($runs) < $all ? ' The latest '.DungeonRuns::SHOWN.' are listed.' : ''),
+            'total' => Format::count($all, 'dungeon run').' in all.'.($addons > 0 ? ' From addons '.Format::number($addons).'.' : '').(count($runs) < $scarlet ? ' The latest '.DungeonRuns::SHOWN.' are listed.' : ''),
         ];
     }
 }

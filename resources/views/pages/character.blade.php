@@ -12,7 +12,7 @@
   <div class="ch-id wrap">
     <div><h1 class="ch-name" id="h1">{{ $d['name'] }}</h1>
       <p class="ch-sub" @if ($d['classKey'] !== '') data-class="{{ $d['classKey'] }}" @endif><i class="dot" aria-hidden="true"></i>@foreach ($d['facts'] as $fact)<span>@if ($fact['href'])<a href="{{ $fact['href'] }}">{{ $fact['text'] }}</a>@else{{ $fact['text'] }}@endif</span>@endforeach</p>
-      <dl class="ch-figs">@foreach ($d['figures'] as $figure)<div><dt>@if ($figure['icon'])<x-icon :name="$figure['icon']" />@endif {{ $figure['label'] }}</dt><dd @if (isset($figure['count'])) data-count="{{ $figure['count'] }}" @endif>{{ $figure['value'] }}</dd></div>@endforeach</dl>
+      <dl class="ch-figs">@foreach ($d['figures'] as $figure)<div><dt>@if ($figure['icon'])<x-icon :name="$figure['icon']" />@endif {{ $figure['label'] }}</dt><dd @if (isset($figure['count'])) data-count="{{ $figure['count'] }}" @endif>{{ $figure['value'] }}</dd>@if (! empty($figure['addons']))<small class="from">{{ $figure['addons'] }}</small>@endif</div>@endforeach</dl>
       @if ($d['levelRule'])<x-rules :rows="$d['levelRule']" />@endif</div>
   </div>
 </section>

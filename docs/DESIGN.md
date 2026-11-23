@@ -589,13 +589,10 @@ herb and ore case came after it).
   has no character at all, which gives nothing away; a player's own pages always show the split.
 - The flag. `ADDON_COUNTS_PAGES` (`scarlet.addon_counts_pages`, true unless the environment sets it to false) switches these
   reads on for the fishing page, public at `/professions/fishing` and the player's own at
-  `/account/professions/fishing`, and for the Fish caught tile of a character page. Only the web controllers read it:
+  `/account/professions/fishing`, and for the Fish caught tile, the Kills and Quests figures and the Dungeon runs module of a character page. Only the web controllers read it:
   with it off no page reads `addon_claims`, and the public API never does. On since 2026-11-22, after the owner's 38 Fishing Log claims reconciled in production to the verdicts the design predicts; `ADDON_COUNTS_PAGES=false` turns it off.
 - What a page reads. The terms are the `counted` amounts of character-scope `fishing` claims whose status is `counted`
-  or `residual`. No page reads `kill`, `xp` or `run` claims yet: they are decided and audited, and the pages that add
-  them to kills, quest XP and dungeon runs come in a later ship, with the three terms above. An `xp` claim then adds to
-  quest XP only, as a figure read from `quest_events.xp` or `xp_gains` of source `q`, the two tables rule 2Q matched it
-  against. Dated are the windows other than `life`, undated the `life` windows, one query each. A claim is read
+  or `residual`. Dated are the windows other than `life`, undated the `life` windows, one query each. A claim is read
   only while its character has no `addon_days` row with a null `reconcile_version`, so a character whose claims
   reconcile has not decided again adds nothing. A claim with no ruleset (its character has no session) is missing from
   a page narrowed to a ruleset or a server.
@@ -630,6 +627,18 @@ herb and ore case came after it).
 - The character page. The Fish caught tile adds the claims' `landed` and says "From addons" with their count, to the
   character's owner, and to a visitor only where `scarlet.min_characters` is 1. A character whose only records are
   those catches shows the Records strip with that tile alone. Most caught, the feats and the standings stay Scarlet's.
+- Kills, quests and dungeon runs on the character page (`AddonCharacterTerms`, `CharacterOverview`'s `addonCounts`).
+  Three terms, one query each, over the character's character-scope claims, read under the same rules as the fishing
+  tile (the flag, the null reconcile version, the owner or a threshold of 1; a character-scope read has no other
+  threshold). The head figure Kills adds the counted `kills` of the `rxp` `kill` claims that are `counted` or
+  `residual`. Quests adds one for each `rxp` `xp` claim that is `counted`: each is a turn-in Scarlet did not record,
+  and the claim's XP adds to nothing, since the page shows no quest XP total and no figure here reads
+  `quest_events.xp` or `xp_gains`. The Dungeon runs module adds the counted `runs` of the `fdj` `run` claims that are
+  `counted` or `residual` to its count, "N dungeon runs in all. From addons M.", and lists only Scarlet's runs, so a
+  character whose only runs are the addon's shows the module with that line and no list. Each figure shows "From
+  addons N" beside it when N is above 0. Everything else stays Scarlet's rows only: the leaderboards, the public stats
+  and ruleset pages, the per-level charts (XP by level, time per level), XP per hour, the sessions table, the quest
+  and kill lists, the week's figures, rates, and the public API. With the flag off these claims are not read either.
 
 ### Checks
 

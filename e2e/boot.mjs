@@ -248,7 +248,7 @@ function appEnvironment(url) {
     REDIS_CLIENT: "phpredis", REDIS_HOST: redis.host, REDIS_PORT: String(redis.port), REDIS_PASSWORD: "null",
     REDIS_PREFIX: prefix, CACHE_PREFIX: prefix + "cache_", HORIZON_PREFIX: prefix + "horizon:", SESSION_COOKIE: prefix + "session",
     SESSION_DRIVER: "redis", CACHE_STORE: "redis", QUEUE_CONNECTION: "redis",
-    SCARLET_DEV_LOGIN: "true", SCARLET_ADMINS: "development:development-1", SCARLET_MIN_CHARACTERS: "1", SCARLET_PART_BIN: partBinary, VIEW_COMPILED_PATH: path.join(scratch, "views"),
+    SCARLET_DEV_LOGIN: "true", SCARLET_ADMINS: "development:development-1", SCARLET_MIN_CHARACTERS: process.env.E2E_MIN_CHARACTERS ?? "1", SCARLET_PART_BIN: partBinary, VIEW_COMPILED_PATH: path.join(scratch, "views"),
     SCARLET_RATE_REGISTRATION_PER_IP: lifted, SCARLET_RATE_UPLOAD_PER_INSTALL: lifted, SCARLET_RATE_UPLOAD_PER_IP: lifted,
     SCARLET_RATE_PUBLIC_ANONYMOUS: lifted, SCARLET_RATE_PUBLIC_TOKEN: lifted, SCARLET_RATE_PAGE_PER_ADDRESS: lifted,
     PHP_CLI_SERVER_WORKERS: "4",

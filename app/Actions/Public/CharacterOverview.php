@@ -21,6 +21,7 @@ use App\Actions\Public\Character\SkillRanks;
 use App\Actions\Public\Character\Standings;
 use App\Actions\Public\Character\Talents;
 use App\Actions\Public\Character\ZoneHours;
+use App\Actions\Rollups\AddonCharacterTerms;
 use App\Actions\Rollups\AddonFishingTerms;
 use App\Actions\Rollups\LevellingCurve;
 use App\Actions\Rollups\TimePerLevel;
@@ -70,6 +71,7 @@ class CharacterOverview
         private readonly Standings $standings,
         private readonly LifetimeBaselines $lifetime,
         private readonly AddonFishingTerms $addonTerms,
+        private readonly AddonCharacterTerms $addonCounts,
     ) {}
 
     /**
@@ -78,7 +80,8 @@ class CharacterOverview
      * for the owner, or when the owner chose to show the economy. Null when the character is unknown or private.
      *
      * With `$addons` the answer also has `addons`, what other addons counted of the character's fishing
-     * (`AddonFishingTerms`): to its owner, and to everyone only where one character is enough to show a bucket
+     * (`AddonFishingTerms`), and `addonCounts`, what they counted of its kills, quests and dungeon runs
+     * (`AddonCharacterTerms`): to its owner, and to everyone only where one character is enough to show a bucket
      * (`scarlet.min_characters` of 1). Null otherwise.
      *
      * @return array<string, mixed>|null
@@ -139,17 +142,16 @@ class CharacterOverview
             'history' => $history,
         ];
 
-        return $addons ? [...$answer, 'addons' => $this->addonsOf($id, $owner)] : $answer;
-    }
-
-    /** @return array{dated: array{casts: int, landed: int, items: int}, undated: array{casts: int, landed: int, items: int}, characters: int}|null */
-    private function addonsOf(int $id, bool $owner): ?array
-    {
-        if (! $owner && (int) config('scarlet.min_characters') > 1) {
-            return null;
+        if (! $addons) {
+            return $answer;
         }
+        $shown = $owner || (int) config('scarlet.min_characters') <= 1;
 
-        return $this->addonTerms->handle(new CharacterScope([$id], null));
+        return [
+            ...$answer,
+            'addons' => $shown ? $this->addonTerms->handle(new CharacterScope([$id], null)) : null,
+            'addonCounts' => $shown ? $this->addonCounts->handle($id) : null,
+        ];
     }
 
     /** @return list<array{kind: string, u: float, v: float, day: string}> the deaths on the map, oldest first, each with its UTC day */

@@ -447,6 +447,7 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .ch-figs { display: flex; flex-wrap: wrap; gap: 1rem 2.6rem; margin-top: 1.5rem; }
 .ch-figs > div { display: flex; flex-direction: column-reverse; gap: 0.35rem; }
 .ch-figs dt { font-size: 0.86rem; color: var(--text); }
+.ch-figs .from { order: -1; font-size: 0.78rem; color: var(--soft); }
 .ch-figs dd { font: 750 clamp(2.1rem, 3.4vw, 3rem)/0.95 var(--display); color: var(--fg); white-space: nowrap; }
 .ch-head.ch-bare { min-height: 0; background: linear-gradient(0deg, rgba(255, 45, 85, 0.07) 0, rgba(255, 45, 85, 0) 70%); }
 .ch-sub a { color: inherit; text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 0.2em; }

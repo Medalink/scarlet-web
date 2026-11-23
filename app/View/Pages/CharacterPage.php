@@ -40,6 +40,8 @@ final class CharacterPage
         /** @var array<string, mixed> $totals */
         $totals = $r['totals'];
         $since = self::since($character);
+        /** @var array{kills: int, quests: int, runs: int} $added */
+        $added = $r['addonCounts'] ?? ['kills' => 0, 'quests' => 0, 'runs' => 0];
         $levels = CharacterLevels::figure($r['levelTimes'], $r['xp'], $r['deathLevels']);
 
         $quests = CharacterLists::quests($r['questsDone']);
@@ -58,9 +60,9 @@ final class CharacterPage
                 ? ['label' => 'Played', 'value' => Format::duration($character->played_seconds), 'icon' => 'hours']
                 : ['label' => 'Recorded'.$since, 'value' => Format::duration($character->recorded_seconds), 'icon' => 'hours'],
             $cap === null ? null : ['label' => 'Time at level '.$cap['level'].($cap['observed'] ? $since : ''), 'value' => Format::duration($cap['seconds_at_cap']), 'icon' => null],
-            ['label' => 'Kills'.$since, 'value' => Format::number($totals['kills']), 'icon' => 'kills'],
+            ['label' => 'Kills'.$since, 'value' => Format::number($totals['kills'] + $added['kills']), 'icon' => 'kills', 'addons' => self::fromAddons($added['kills'])],
             ['label' => 'Deaths'.$since, 'value' => Format::number($totals['deaths']), 'icon' => 'deaths'],
-            ['label' => 'Quests'.$since, 'value' => Format::number($totals['quests']), 'icon' => 'quests'],
+            ['label' => 'Quests'.$since, 'value' => Format::number($totals['quests'] + $added['quests']), 'icon' => 'quests', 'addons' => self::fromAddons($added['quests'])],
             round($totals['distance'], 1) > 0 ? ['label' => 'World widths walked'.$since, 'value' => Format::number($totals['distance'], 1), 'icon' => 'distance'] : null,
         ]));
 
@@ -90,7 +92,7 @@ final class CharacterPage
             'quests' => $quests,
             'lifetime' => $lifetime,
             'creatures' => $creatures,
-            'runs' => CharacterLists::runs($r['dungeonRuns'], $dungeons),
+            'runs' => CharacterLists::runs($r['dungeonRuns'], $dungeons, $added['runs']),
             'killed' => CharacterLists::killed($r['killed']),
             'crafted' => CharacterLists::crafted($r['crafted']),
             'play' => CharacterPlay::band($r['playBuckets'], Carbon::now()),
@@ -200,6 +202,11 @@ final class CharacterPage
             'change' => $last < 1 ? 'One session recorded' : Format::moneyText($change, true).' over the last '.Format::count($last + 1, 'session'),
             'spec' => $last < 1 ? null : Charts::line(['x0' => 0, 'x1' => $last, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'g'), 'xt' => []], [['cls' => 'g', 'pts' => $points, 'mark' => $last]], $say, $last, 'gold-out'),
         ];
+    }
+
+    private static function fromAddons(int $count): ?string
+    {
+        return $count > 0 ? 'From addons '.Format::number($count) : null;
     }
 
     private static function xpPerHour(int $xp, int $seconds): string
