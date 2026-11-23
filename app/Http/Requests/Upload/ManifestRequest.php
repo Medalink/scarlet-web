@@ -17,6 +17,12 @@ class ManifestRequest extends UploadRequest
     /** The manifest object, its groups list and its parts list, and room for a bracket inside a group name. */
     private const int ENVELOPE_CONTAINERS = 16;
 
+    /** The values of one part: its object and its five fields. */
+    private const int VALUES_PER_PART = 6;
+
+    /** The manifest's own values: character, up to 64 group keys, the lists, and room for a comma inside a name. */
+    private const int ENVELOPE_VALUES = 128;
+
     private ?Manifest $manifest = null;
 
     public function manifest(PartTool $tool): Manifest
@@ -36,6 +42,10 @@ class ManifestRequest extends UploadRequest
         $maxContainers = (int) config('scarlet.upload.max_manifest_parts') + self::ENVELOPE_CONTAINERS;
         if (substr_count($raw, '{') + substr_count($raw, '[') > $maxContainers) {
             throw ApiException::invalidRequest("The manifest carries more than {$maxContainers} JSON objects and lists.");
+        }
+        $maxValues = (int) config('scarlet.upload.max_manifest_parts') * self::VALUES_PER_PART + self::ENVELOPE_VALUES;
+        if (substr_count($raw, ',') > $maxValues) {
+            throw ApiException::invalidRequest("The manifest carries more than {$maxValues} JSON values.");
         }
 
         $data = json_decode($raw, associative: true);
