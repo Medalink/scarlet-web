@@ -13,7 +13,7 @@
   <div class="ch-id wrap">
     <div><h1 class="ch-name" id="h1">Camps</h1>
       @if ($own)<p class="ch-sub"><span>{{ $d['whose'] }}</span><span><a href="/camps">Everyone's camps</a></span></p>@endif</div>
-    <div class="filters"><x-scope-filters :filters="$filters" /></div>
+    <div class="filters"><x-scope-switch :choice="$scope['choice']" path="/camps" :names="$scope['names']" :as="$scope['as']" :query="$scope['query']" /><x-scope-filters :filters="$filters" /></div>
   </div>
 </section>
 <div class="wrap">
@@ -27,6 +27,7 @@
   <p class="credit">{{ $scene->credit() }}</p>
   @endif
   <x-figures :items="$d['figures']" />
+  @if ($scope['versus'])<x-scope-compare :compare="$scope['versus']" />@endif
   @if ($d['note'])<x-note>{{ $d['note'] }}</x-note>@endif
   <x-sheet>
     <x-module span="w7" :first="true" class="camp-mod" id="h-ben" :heading="'Camp Benefits '.$d['who'].' leave with'">
