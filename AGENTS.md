@@ -26,8 +26,32 @@ the app. Pint, PHPStan and Vite skip it. Never push to `gh-pages`.
 - Never commit a key or secret. Never put a real player name in the repo, a doc, a screenshot or a commit message;
   examples use `Name-Surname`. Do not name other websites or data services, except AHledger, whose auction prices
   the site imports and credits as its terms ask (owner, 2026-11-23).
+- Game art, models, icons and names come from the game's own files, never from stand-in art: no drawn icons, no
+  invented models, no classic-era names written from memory. Forever renames some spells and lacks others, so read the
+  client's own tables. `tools/scene-art/README.md` says how the art tools read them. What is built from them stays out
+  of git, as Production says of map art. This repo is public: never name the owner's local game-file tooling, its
+  folders or its paths in a file, a comment or a commit message.
+- Change only the surface the report or design names. A component several pages share changes for all of them: list
+  its users, make the change opt-in for the page named (a prop or a data attribute), and check one other user in the
+  running app before shipping.
+- Never open a visible window or take focus on medaviper, where the owner plays while agents work. Browsers run
+  headless; the e2e lane's `hasNoWindow` check stops a browser whose window handle is not 0.
+- A backslash in a script passed inline through the Bash tool on medaviper can arrive changed: a doubled backslash
+  arrives as one, so an escape meant as text is read by the script's language as a control character (Python reads
+  `\0` as a NUL). On 2026-11-22 this put a NUL into `scripts/deploy/ring-entry.sh`, which shipped and made git show the
+  file as binary while `sh -n` still passed. Write any script or patch that holds a backslash with the file Write tool,
+  then run it. Scan an edited script for control bytes, and read a diff with `git diff --text` when git says Bin.
+- The beta UI rebuild is on the branch `feat/beta-ui-parity-rebuild` and stays off main until the owner says in so many
+  words to ship the rebuild (held since 2026-11-23). Push that branch only: no `ship`, no merge into main, no deploy of
+  it. Approval of how one part looks is not approval to ship. The ship that lands the rebuild deletes this bullet.
 - `docs/groups.tsv` is the one source for sharing groups. `scarlet-part check-groups` must pass after any change to
   it or to Scarlet's FORMAT.md.
+  A new line code ships in this order: Scarlet's `docs/FORMAT.md` (Medalink/scarlet) first, then its row here at once,
+  then the `scarlet-part` revision in scarlet-app. The `part-groups` gate runs on changes that touch `part/**` or
+  `docs/groups.tsv`, reads FORMAT.md on Medalink/scarlet main and fails both ways: a code in no group, and a group code
+  FORMAT.md lacks (the `none` row too). A row shipped first fails it, and until the row lands every ship here that
+  touches `part/` or `docs/groups.tsv` fails. Production can lag main when the live ring skips a deploy, so the app
+  copes with `unknown_group`.
 - No CI. Checks run locally and in the owner's flow.
 
 ## Architecture
@@ -66,12 +90,20 @@ made unused.
 2. Run the real app: `bin/dev start`, then `node e2e/run.mjs --url http://127.0.0.1:<port>`.
 3. Every command runs in a wslc container through `bin/composer`, `bin/artisan`, `bin/pnpm`, `bin/php`, `bin/psql`.
    Nothing runs on Windows PHP. From PowerShell, `bin\psql` runs `bin/psql.cmd`; every script in `bin/` has one.
+4. e2e on Windows against `bin/dev` can fail without a regression. After a rebase that brings migrations or rollup
+   code, Horizon still runs the old code and the profession and camps checks fail: run `bin/artisan migrate --force`,
+   then `bin/dev stop && bin/dev start`. A server that kept the default of 5 registrations per IP per hour
+   (`config/scarlet.php`; DEV.md, Checks before a ship, says to raise `SCARLET_RATE_REGISTRATION_PER_IP`) fails every
+   upload check on a second run in the hour: raise the limits as DEV.md says, or run `bin/artisan cache:clear` (dev
+   only) before the run. `e2e/boot.mjs`, which gives a run a clean database, works only on Linux; `ship` runs it on
+   medaware.
 
 ## Landing changes
 
 This repo is in the owner's continuous flow. Every change lands with `ship`, run on medaware from a `ws` worktree
 (`ws open scarlet-web --for <workload>`): the PHP 8.5 gates run there, and a ship from another machine stops at the
-first gate. Open no pull request and run no `git push` by hand.
+first gate. From another machine, `ship --land` hands the commits to the lander on medaware, which runs the gates there
+and lands them; run it as a background task and wait for its result. Open no pull request and run no `git push` by hand.
 
 The commit message is the ship note: a plain title that names the outcome, one to three sentences on what changed
 for the user and what stays the same, then `What changes` (concrete identifiers, old to new), `Unchanged on purpose`
