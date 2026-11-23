@@ -247,6 +247,11 @@ The wire details are in [API.md](API.md). Where the first implementation settled
   one session uploaded in two requests decode once. A per-character lock serializes the jobs of one character.
 - The job spends one of its parts' failure attempts (`ingest.sweep_max_failures`) before it decodes, so a run that
   dies without an exception (a memory fatal, a timeout kill) still counts and the sweep stops queueing the session.
+- The decoder writes a session's rows to a work file. The worker spools fact rows into one file per table and reads
+  them back a row at a time; the dictionary rows (names, items, zones, recipes, spells, pseudonyms, talent layouts)
+  stay in memory, at most `ingest.max_dictionary_rows` (100,000, which a session of crafted item rows takes to about
+  460 MB of the worker's 1 GiB; 300,000 of them is a memory fatal). The imported records of a day are read back from
+  a work file the same way.
 
 What the server already has is known two ways: the app remembers the ids the server acknowledged
 (`out/upload-state.json`), and the set digest catches every case where that memory is wrong.

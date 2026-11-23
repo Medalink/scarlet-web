@@ -155,7 +155,11 @@ class DecodeSession
             }
         }
 
-        return $this->store->handle($characterId, $sessionStart, $decoded, $partIds);
+        try {
+            return $this->store->handle($characterId, $sessionStart, $decoded, $partIds);
+        } finally {
+            $decoded->dispose();
+        }
     }
 
     /** Decode into a work file under the ingest work dir; the caller unlinks it. */

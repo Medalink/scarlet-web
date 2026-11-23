@@ -84,6 +84,7 @@ return [
         'max_parts_per_session' => 64,
         'max_session_bytes' => 128 << 20,
         'max_session_lines' => 4_000_000,
+        'max_dictionary_rows' => 100_000,
         'name_votes_per_install_day' => 20_000,
         'shared_votes_per_install_day' => 50_000,
         'sweep_max_failures' => 3,

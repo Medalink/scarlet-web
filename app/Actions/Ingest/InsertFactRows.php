@@ -31,10 +31,10 @@ class InsertFactRows
         $inserted = 0;
 
         foreach (FactTable::cases() as $table) {
-            $rows = $decoded->facts[$table->value] ?? null;
-            if ($rows === null) {
+            if (! $decoded->hasRows($table)) {
                 continue;
             }
+            $rows = $decoded->rows($table);
             $renames = $table->renames();
             $skip = array_flip([...self::COMMON, ...$table->dropped()]);
             $instants = array_flip($table->instants());
