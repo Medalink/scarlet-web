@@ -4,9 +4,10 @@
   <div class="wrap">
     <x-page-head :title="$d['title']">
       <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
-      <x-slot:filters><x-scope-filters :filters="$filters" /></x-slot:filters>
+      <x-slot:filters><x-scope-switch :choice="$scope['choice']" :path="$path" :names="$scope['names']" :as="$scope['as']" :query="$scope['query']" :mine="false" /><x-scope-filters :filters="$filters" /></x-slot:filters>
     </x-page-head>
     <x-tally :items="$d['game']['tally']" />
+    @if ($scope['versus'])<x-scope-compare :compare="$scope['versus']" />@endif
   </div>
 </section>
 <div class="wrap">
