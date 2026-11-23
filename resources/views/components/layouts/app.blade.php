@@ -4,7 +4,7 @@
 @php
     $signedIn = $signedIn || auth()->check();
     $primary = ['stats' => ['Stats', '/stats'], 'world' => ['Map', '/map'], 'loot' => ['Loot', '/loot'], 'leaderboards' => ['Leaderboards', '/leaderboards']];
-    $explore = ['camps' => ['Camps', '/camps'], 'professions' => ['Professions', '/professions/fishing'], 'rulesets' => ['Rulesets', '/rulesets'], 'talents' => ['Talents', '/talents']];
+    $explore = ['camps' => ['Camps', '/camps'], 'professions' => ['Professions', '/professions/fishing'], 'rulesets' => ['Rulesets', '/stats/compare'], 'talents' => ['Talents', '/talents']];
     $inExplore = array_key_exists($current, $explore);
 @endphp
 <!doctype html>

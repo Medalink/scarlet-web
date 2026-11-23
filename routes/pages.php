@@ -31,6 +31,8 @@ use Illuminate\Support\Facades\Route;
 
 // The public pages: dashboards, the map, boards, search, result pages and characters. Every one reads App\Actions\Public.
 Route::get('/stats', StatsController::class);
+Route::get('/stats/compare', RulesetsController::class);
+Route::get('/stats/{slug}', StatsController::class)->where('slug', '[a-z0-9-]+');
 Route::get('/map', MapController::class);
 Route::get('/loot', LootController::class);
 Route::get('/loot/groups', LootGroupsController::class);

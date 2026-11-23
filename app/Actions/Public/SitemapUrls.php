@@ -42,12 +42,12 @@ class SitemapUrls
         foreach (Profession::withPages() as $profession) {
             $paths[] = '/professions/'.$profession->slug();
         }
-        array_push($paths, '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/feats', '/talents', '/rulesets', '/hardcore-deaths');
+        array_push($paths, '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/feats', '/talents', '/stats/compare');
         foreach (Feat::cases() as $feat) {
             $paths[] = '/feats/'.$feat->value;
         }
         foreach ($this->rulesets->handle() as $ruleset) {
-            $paths[] = '/rulesets/'.$ruleset['slug'];
+            $paths[] = '/stats/'.$ruleset['slug'];
         }
         foreach (Board::cases() as $board) {
             $paths[] = '/leaderboards/'.$board->value;

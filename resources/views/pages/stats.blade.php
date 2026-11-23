@@ -89,6 +89,24 @@
       @if ($d['deathZones'])<x-rank :rows="$d['deathZones']" plain />@else<x-note>No deaths with a known place yet.</x-note>@endif
     </x-module>
 
+    @if ($deaths)
+    <h2 class="sect" id="deaths">Deaths</h2>
+    <x-module :first="true" id="h-death-levels" heading="Hardcore deaths by level">
+      @if ($deaths['levels'])
+      <x-plot id="levels" label="Hardcore deaths at each level" :spec="$deaths['levels']" />
+      @else
+      <x-note>No death with a level recorded yet.</x-note>
+      @endif
+    </x-module>
+    <x-module :last="true" id="h-death-days" heading="Hardcore deaths by day">
+      @if ($deaths['days'])
+      <x-plot id="days" label="Hardcore deaths on each of the last {{ \App\View\Pages\HardcoreDeathsPage::DAYS }} days, in UTC" :spec="$deaths['days']" />
+      @else
+      <x-note>No hardcore deaths recorded yet.</x-note>
+      @endif
+    </x-module>
+    @endif
+
     <h2 class="sect" id="dungeons-skills">Dungeons and skills</h2>
     <x-module span="w7" :first="true" id="h-dung" heading="Dungeons">
       @if ($d['dungeons'])

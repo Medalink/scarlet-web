@@ -52,7 +52,7 @@ final class CharacterPage
         $facts = array_values(array_filter([
             ['text' => Format::character(null, $character->race, $character->class), 'href' => null],
             ['text' => $character->faction, 'href' => null],
-            $ruleset === null ? null : ['text' => $ruleset['name'], 'href' => '/rulesets/'.$ruleset['slug']],
+            $ruleset === null ? null : ['text' => $ruleset['name'], 'href' => '/stats/'.$ruleset['slug']],
             $character->whole_life || $character->first_level === null ? null : ['text' => 'First recorded at level '.$character->first_level, 'href' => null],
         ], fn (?array $fact): bool => $fact !== null && (string) $fact['text'] !== ''));
         $figures = array_values(array_filter([

@@ -2,7 +2,7 @@
 @props(['title', 'description', 'demo' => false, 'canonical' => null, 'index' => true, 'brand' => true])
 @php
     $jump = $demo ? '/' : '';
-    $explore = [['Camps', '/camps'], ['Professions', '/professions/fishing'], ['Rulesets', '/rulesets'], ['Talents', '/talents'], ['Leaderboards', '/leaderboards'], ['Search', '/search'], ['API', '/developers']];
+    $explore = [['Camps', '/camps'], ['Professions', '/professions/fishing'], ['Rulesets', '/stats/compare'], ['Talents', '/talents'], ['Leaderboards', '/leaderboards'], ['Search', '/search'], ['API', '/developers']];
 @endphp
 <!doctype html>
 <html lang="en">
