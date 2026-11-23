@@ -647,7 +647,13 @@ was caught in this session): `kind` is `fish`, `source_id` is null and `containe
 
 ### `path_points` (movement: `P`)
 
-`map`, `x`, `y`, `facing`: int or null each. By far the most rows (about 80 percent).
+`map`, `x`, `y`, `facing`: int or null each. By far the most rows (about 80 percent). `mode` (string or null) is
+the mode of the `W` stretch that covers the point, `W.at - round(seconds*1000) - 1000 <= at <= W.at` (a second
+of slack at the stretch's start): `f` running, `w` walking, `m` mounted, `s` swimming or `a` flying. It is null
+when no `W` covers the point: a stretch under 1 yard, a point written while standing, a `W` without seconds.
+A `W` ends its stretch after its points, so a point's row waits for that `W` and keeps the `level` and
+`zone_id` of its `P` line; rows still waiting when the session ends are written before the `sessions` row with
+a null `mode`. `mode` came with decoder version 15.
 
 ### `movement_stretches` (movement: `W`)
 
@@ -655,6 +661,14 @@ A stretch of movement ended: one row per `W` line. `mode` (string or null) is `f
 `m` mounted, `s` swimming or `a` flying; `yards` (int or null) is the length of the stretch in yards,
 `seconds` (int or null) how long it lasted and `jumps` (int or null) how many jumps were in it. The
 `jumpAt` field, the second of each jump, is not kept.
+
+### `flights` (movement: `T`)
+
+One row per flight along a flight path: a `T 1` (the flight started) followed by a `T 0` (it ended) in the same
+session. `at` is the `T 1`'s time, and `level` and `zone_id` are as at it. `map`, `x`, `y`: int or null each,
+the position the flight started from; `to_map`, `to_x`, `to_y`: int or null each, where it landed; `ms` (int)
+is the `T 0` time minus the `T 1` time. A `T 1` with no `T 0` before the session ends, or a `T 0` with no
+`T 1`, gives no row; a second `T 1` replaces a still waiting one. New with decoder version 15.
 
 ### `emotes` (social: `EM`)
 

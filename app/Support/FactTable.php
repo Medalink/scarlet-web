@@ -31,6 +31,7 @@ enum FactTable: string
     case Crafts = 'crafts';
     case PathPoints = 'path_points';
     case MovementStretches = 'movement_stretches';
+    case Flights = 'flights';
     case CreatureSightings = 'creature_sightings';
     case Emotes = 'emotes';
     case AuctionPrices = 'auction_prices';
@@ -81,7 +82,7 @@ enum FactTable: string
             self::MoneyChanges, self::AuctionPrices => SharingGroup::ECONOMY,
             self::LootOpens, self::LootDrops, self::BossLoot, self::GroupLoot, self::LootRolls, self::PeerOpens, self::PeerDrops, self::ItemFlows => SharingGroup::LOOT,
             self::SkillUps, self::Crafts, self::Gathers, self::GatherItems => SharingGroup::PROFESSIONS,
-            self::PathPoints, self::MovementStretches => SharingGroup::MOVEMENT,
+            self::PathPoints, self::MovementStretches, self::Flights => SharingGroup::MOVEMENT,
             self::CreatureSightings => SharingGroup::WORLD,
             self::Emotes, self::HardcoreDeaths, self::WhoResults, self::InspectedGear, self::BattlegroundScores, self::GroupSpans => SharingGroup::SOCIAL,
             self::BattlegroundMatches => SharingGroup::PVP,

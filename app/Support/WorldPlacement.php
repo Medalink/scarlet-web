@@ -34,14 +34,26 @@ class WorldPlacement
             FactTable::LootOpens => $this->place($row['map'] ?? null, $row['x'] ?? null, $row['y'] ?? null, self::POSITION_SCALE),
             FactTable::Deaths => $this->place($row['map_id'] ?? null, $row['x'] ?? null, $row['y'] ?? null, self::POSITION_SCALE),
             FactTable::CreatureSightings => $this->sighting($row),
+            FactTable::Flights => $this->place($row['map'] ?? null, $row['x'] ?? null, $row['y'] ?? null, self::POSITION_SCALE),
             default => null,
         };
+    }
+
+    /**
+     * Where a flight row landed (`to_u, to_v`), or null.
+     *
+     * @param  array<string, mixed>  $row  a decoder row of `flights`
+     * @return array{u: float, v: float}|null
+     */
+    public function flightEnd(array $row): ?array
+    {
+        return $this->place($row['to_map'] ?? null, $row['to_x'] ?? null, $row['to_y'] ?? null, self::POSITION_SCALE);
     }
 
     /** Whether the table has `u, v` columns. */
     public static function places(FactTable $table): bool
     {
-        return in_array($table, [FactTable::PathPoints, FactTable::CampStays, FactTable::Gathers, FactTable::LootOpens, FactTable::Deaths, FactTable::CreatureSightings], strict: true);
+        return in_array($table, [FactTable::PathPoints, FactTable::CampStays, FactTable::Gathers, FactTable::LootOpens, FactTable::Deaths, FactTable::CreatureSightings, FactTable::Flights], strict: true);
     }
 
     /**

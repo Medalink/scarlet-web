@@ -61,6 +61,11 @@ class InsertFactRows
                     $out['u'] = $world['u'] ?? null;
                     $out['v'] = $world['v'] ?? null;
                 }
+                if ($table === FactTable::Flights) {
+                    $end = $this->placement->flightEnd($row);
+                    $out['to_u'] = $end['u'] ?? null;
+                    $out['to_v'] = $end['v'] ?? null;
+                }
                 $width = count($out);
                 $batch[] = $out;
 

@@ -163,6 +163,25 @@ struct LootWindow {
     key: String,
 }
 
+struct PendingPoint {
+    at: i64,
+    level: Option<i64>,
+    zone_id: Option<i64>,
+    map: Option<i64>,
+    x: Option<i64>,
+    y: Option<i64>,
+    facing: Option<i64>,
+}
+
+struct PendingFlight {
+    at: i64,
+    level: Option<i64>,
+    zone_id: Option<i64>,
+    map: Option<i64>,
+    x: Option<i64>,
+    y: Option<i64>,
+}
+
 /// Which groups have a part in this call. Without one the counts it feeds are
 /// unknown (null), not zero.
 #[derive(Clone, Copy)]
@@ -232,6 +251,8 @@ struct Dec<'o> {
     zones_seen: BTreeSet<String>,
     // collected for the end
     death_list: Vec<Death>,
+    points: Vec<PendingPoint>,
+    flight: Option<PendingFlight>,
     runs: Vec<Run>,
     run_inside: Option<usize>,
     run_last: Option<i64>,
@@ -293,6 +314,23 @@ impl Dec<'_> {
             level: self.lvl(),
             zone_id: self.zone_id,
             run: self.run_inside,
+        }
+    }
+
+    fn flush_points_covered_by(&mut self, stretch: Option<(&str, i64, i64)>) {
+        let s = self.session;
+        for p in std::mem::take(&mut self.points) {
+            prefix(&mut self.w, "path_points", s, p.at, p.level, p.zone_id);
+            self.w
+                .opt("map", p.map)
+                .opt("x", p.x)
+                .opt("y", p.y)
+                .opt("facing", p.facing);
+            match stretch.filter(|(_, from, until)| p.at >= *from && p.at <= *until) {
+                Some((mode, _, _)) if !mode.is_empty() => self.w.str("mode", mode),
+                _ => self.w.null("mode"),
+            };
+            self.w.end();
         }
     }
 
@@ -663,15 +701,25 @@ impl Dec<'_> {
             "CR" if crafted => self.camp.on_craft(t),
             "P" => {
                 self.camp.on_pos(&f);
-                self.fact("path_points", t);
-                self.w
-                    .opt("map", num(&f, 0))
-                    .opt("x", num(&f, 1))
-                    .opt("y", num(&f, 2))
-                    .opt("facing", num(&f, 3));
-                self.w.end();
+                self.points.push(PendingPoint {
+                    at: t,
+                    level: self.lvl(),
+                    zone_id: self.zone_id,
+                    map: num(&f, 0),
+                    x: num(&f, 1),
+                    y: num(&f, 2),
+                    facing: num(&f, 3),
+                });
             }
             "W" => {
+                let mode = field(&f, 0).to_string();
+                match field(&f, 2).trim().parse::<f64>() {
+                    Ok(s) => {
+                        let ms = (s * 1000.0).round() as i64;
+                        self.flush_points_covered_by(Some((&mode, t - ms - 1000, t)));
+                    }
+                    Err(_) => self.flush_points_covered_by(None),
+                }
                 self.fact("movement_stretches", t);
                 self.w
                     .text("mode", field(&f, 0))
@@ -680,6 +728,34 @@ impl Dec<'_> {
                     .opt("jumps", num(&f, 3));
                 self.w.end();
             }
+            "T" => match field(&f, 0) {
+                "1" => {
+                    self.flight = Some(PendingFlight {
+                        at: t,
+                        level: self.lvl(),
+                        zone_id: self.zone_id,
+                        map: num(&f, 1),
+                        x: num(&f, 2),
+                        y: num(&f, 3),
+                    });
+                }
+                "0" => {
+                    if let Some(fl) = self.flight.take() {
+                        let s = self.session;
+                        prefix(&mut self.w, "flights", s, fl.at, fl.level, fl.zone_id);
+                        self.w
+                            .opt("map", fl.map)
+                            .opt("x", fl.x)
+                            .opt("y", fl.y)
+                            .opt("to_map", num(&f, 1))
+                            .opt("to_x", num(&f, 2))
+                            .opt("to_y", num(&f, 3))
+                            .int("ms", t - fl.at);
+                        self.w.end();
+                    }
+                }
+                _ => {}
+            },
             "EM" => {
                 self.fact("emotes", t);
                 self.w.text("token", field(&f, 0));
@@ -1289,6 +1365,7 @@ impl Dec<'_> {
                 .str("name", &name);
             self.w.end();
         }
+        self.flush_points_covered_by(None);
         self.session_row(lines, groups, backsteps);
         (self.w.count, self.end_ms.max(self.start_ms) - self.start_ms)
     }
@@ -1535,6 +1612,8 @@ pub fn decode_session(parts: &[&str], out: &mut String) -> Result<Summary, Strin
         level_skip: false,
         zones_seen: BTreeSet::new(),
         death_list: Vec::new(),
+        points: Vec::new(),
+        flight: None,
         runs: Vec::new(),
         run_inside: None,
         run_last: None,
