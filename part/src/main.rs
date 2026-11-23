@@ -17,7 +17,7 @@ const USAGE: &str = "usage:
   scarlet-part groups --json
   scarlet-part pack --out-dir <dir> --payloads <dir> [--addon-payloads <dir>] [--groups a,b,c] [--name-key-hex <64 hex>]
   scarlet-part batch --parts-dir <dir> --out <file> [--split]
-  scarlet-part unbatch --in <file> --out-dir <dir> [--stored] [--accept <id file>] [--max-inflated <bytes>]
+  scarlet-part unbatch --in <file> --out-dir <dir> [--stored] [--accept <id file>] [--max-inflated <bytes>] [--room <units> [--part-charge <units>]]
   scarlet-part inflate < <zstd frame> > <bytes>
   scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin [--out <file>] [--imports | --fishing | --counts]
   scarlet-part check-overview --parts-dir <dir> --overview <overview.json>
@@ -325,7 +325,14 @@ fn inflate() -> Result<(), String> {
 fn unbatch(args: Vec<OsString>) -> Result<(), String> {
     let (f, _) = flags(
         args,
-        &["in", "out-dir", "accept", "max-inflated"],
+        &[
+            "in",
+            "out-dir",
+            "accept",
+            "max-inflated",
+            "room",
+            "part-charge",
+        ],
         &["stored"],
     )?;
     let path = need(&f, "in")?;
@@ -342,9 +349,26 @@ fn unbatch(args: Vec<OsString>) -> Result<(), String> {
     let parts = wire::decode_batch(&bytes, max)?;
     let out = PathBuf::from(need(&f, "out-dir")?);
     fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+    let number = |name: &str| -> Result<Option<u64>, String> {
+        f.get(name)
+            .map(|v| v.parse().map_err(|_| format!("bad --{name}")))
+            .transpose()
+    };
+    let part_charge = number("part-charge")?.unwrap_or(0);
+    let accepted = |id: &[u8; 32]| accept.as_ref().is_none_or(|a| a.contains(id));
+    let cost = parts
+        .iter()
+        .filter(|p| accepted(&p.id))
+        .map(|p| {
+            (p.text.len() as u64)
+                .saturating_add(p.text.lines().count().saturating_sub(1) as u64)
+                .saturating_add(part_charge)
+        })
+        .fold(0u64, u64::saturating_add);
+    let write = number("room")?.is_none_or(|room| cost <= room);
     for p in &parts {
         let stored = f.contains_key("stored");
-        if accept.as_ref().is_none_or(|a| a.contains(&p.id)) {
+        if write && accepted(&p.id) {
             let id = hex(&p.id);
             if !stored {
                 fs::write(out.join(format!("{id}.part")), p.text.as_bytes())
@@ -405,6 +429,17 @@ fn by_session(texts: Vec<String>) -> Result<BTreeMap<i64, Vec<String>>, String> 
     Ok(map)
 }
 
+fn write_rows(out: Option<&String>, rows: &str) -> Result<(), String> {
+    use std::io::Write;
+    match out {
+        Some(path) => fs::write(path, rows).map_err(|e| format!("{path}: {e}")),
+        None => std::io::stdout()
+            .lock()
+            .write_all(rows.as_bytes())
+            .map_err(|e| e.to_string()),
+    }
+}
+
 fn decode(args: Vec<OsString>) -> Result<(), String> {
     use std::io::{Read, Write};
     let (f, files) = flags(
@@ -448,28 +483,19 @@ fn decode(args: Vec<OsString>) -> Result<(), String> {
         let refs: Vec<&str> = texts.iter().map(String::as_str).collect();
         let mut out = String::new();
         scarlet_part::fishing::decode_fishing(&refs, &mut out)?;
-        return std::io::stdout()
-            .lock()
-            .write_all(out.as_bytes())
-            .map_err(|e| e.to_string());
+        return write_rows(f.get("out"), &out);
     }
     if f.contains_key("counts") {
         let refs: Vec<&str> = texts.iter().map(String::as_str).collect();
         let mut out = String::new();
         scarlet_part::counts::decode_counts(&refs, &mut out)?;
-        return std::io::stdout()
-            .lock()
-            .write_all(out.as_bytes())
-            .map_err(|e| e.to_string());
+        return write_rows(f.get("out"), &out);
     }
     if f.contains_key("imports") {
         let refs: Vec<&str> = texts.iter().map(String::as_str).collect();
         let mut out = String::new();
         scarlet_part::imports::decode_imports(&refs, &mut out)?;
-        return std::io::stdout()
-            .lock()
-            .write_all(out.as_bytes())
-            .map_err(|e| e.to_string());
+        return write_rows(f.get("out"), &out);
     }
     let want: Option<i64> = f
         .get("session")
