@@ -411,17 +411,20 @@ bin/deploy ssh 'cd /srv/scarlet-web && h=$(sed -n "s/^DB_HOST=//p" .env) && dock
 droplet's `.env` as `DB_PASSWORD` and run `bin/deploy db-server` and then `bin/deploy` back to back: the old containers
 cannot open new connections between the two.
 
-An install from before the role existed switches to it once, on the machine with the checkout:
+An install from before the role existed switches to it once, on the machine with the checkout. The `.env` line takes
+effect at the next deploy. `bin/deploy db-server` creates the role on the database host and gives `postgres` its own
+password, so the running containers, which still log in as `postgres`, cannot open new connections until `bin/deploy`
+replaces them: run the last two back to back.
 
 ```sh
-bin/deploy ssh 'bash -s' < deploy/db-app-role.sh                       # create the role on the live database
 bin/deploy ssh "cd /srv/scarlet-web && sed -i s/^DB_USERNAME=.*/DB_USERNAME=scarlet_app/ .env"
+bin/deploy db-server           # creates scarlet_app with DB_PASSWORD, sets DB_ADMIN_PASSWORD on postgres, drops the remote postgres row
+bin/deploy                     # the new containers connect as scarlet_app
 ```
 
-The next deploy's containers then connect as `scarlet_app`. The droplet keeps its copy of
-`deploy/db-app-role.sh` from the last full `bin/deploy`; until then a rollout skips its own call, and the two commands
-above work from the checkout alone. The restore (above) reassigns every object to `postgres`, so it ends with one more
-line: `deploy/db-app-role.sh`.
+Then run the `no pg_hba.conf entry` check above. On one droplet whose `DB_HOST` is `postgres`, every rollout runs
+`deploy/db-app-role.sh` before it migrates, so the `.env` line and `bin/deploy` are enough. The restore (above) reassigns
+every object to `postgres`, so it ends with one more line: `deploy/db-app-role.sh`.
 
 ### Install the database host
 
