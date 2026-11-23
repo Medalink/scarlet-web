@@ -5,7 +5,6 @@ import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
 const SWITCH_MS = 8000;
 const SWITCH = `input[aria-label="Show sessions for ${SHOWN}"]`;
 
-/** The oldest session of NAME, from the sessions series of the public API: Level 5 to 6, 2 kills, 1 quest, 1,605 XP, a 22-point walk. */
 async function firstSession(ctx) {
   const data = expectJson(expectStatus(await ctx.http.api(`/api/v1/public/characters/${NAME}/series/sessions`), 200, `GET /api/v1/public/characters/${NAME}/series/sessions`), "the sessions answer").data;
   const oldest = [...data.sessions].sort((a, b) => Date.parse(a.at) - Date.parse(b.at))[0];

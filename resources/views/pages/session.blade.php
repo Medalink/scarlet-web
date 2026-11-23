@@ -13,6 +13,7 @@
       <p class="text-[14.5px]"><a href="{{ $d['href'] }}" style="color:var(--cls);font-weight:700">{{ $d['name'] }}</a> @if ($d['line'])<span class="text-muted">· {{ $d['line'] }}</span>@endif</p>
       <h1 class="sc-title mt-3 text-[40px] md:text-[60px]">{{ $d['title'] }}</h1>
       <p class="mt-3 text-[15px]"><time datetime="{{ $startAt }}" data-local="D j M Y">{{ gmdate('D j M Y', $recap['start']) }}</time> · <time datetime="{{ $startAt }}" data-local="H:i">{{ gmdate('H:i', $recap['start']) }}</time> to <time datetime="{{ $endAt }}" data-local="H:i">{{ gmdate('H:i', $recap['end']) }}</time> · {{ $played }} played</p>
+      @if ($d['say'])<p class="sc-say mt-4">{{ $d['say'] }}</p>@endif
     </div>
     <div class="ml-auto flex gap-2 pt-1">
       @if ($d['earlier'])
@@ -55,13 +56,23 @@
     <x-sc.strip :recap="$recap" />
   </section>
 
-  @if ($shown($d['own']))
-    <section class="mt-4 grid gap-4">
-      <div class="sc-panel px-5 py-4">
-        <h2 class="sc-h">Against {{ $d['first'] }}'s last {{ $d['ownCount'] }} sessions</h2>
-        <div class="sc-key mt-2" style="--surface:var(--panel)"><span style="--c:var(--accent)">This session</span><span style="--c:var(--s-0)">Middle half</span></div>
-        <x-sc.compare class="mt-4 max-w-[640px]" :rows="$d['own']" :n="$d['ownCount']" :min="1" :label="118" style="--surface:var(--panel)" />
-      </div>
+  @if ($shown($d['own']) || $d['peers'])
+    <section class="mt-4 grid gap-4 {{ $shown($d['own']) && $d['peers'] ? 'lg:grid-cols-2' : '' }}">
+      @if ($shown($d['own']))
+        <div class="sc-panel px-5 py-4" style="--surface:var(--panel)">
+          <h2 class="sc-h">Against {{ $d['first'] }}'s last {{ $d['ownCount'] }} sessions</h2>
+          <div class="sc-key mt-2" style="--surface:var(--panel)"><span style="--c:var(--accent)">This session</span><span style="--c:var(--s-0)">Middle half</span></div>
+          <x-sc.compare class="mt-4 max-w-[640px]" :rows="$d['own']" :n="$d['ownCount']" :min="1" :label="118" />
+        </div>
+      @endif
+      @if ($d['peers'])
+        <div class="sc-panel px-5 py-4" style="--surface:var(--panel)">
+          <h2 class="sc-h">{{ $d['peers']['heading'] }}</h2>
+          <div class="sc-key mt-2" style="--surface:var(--panel)"><span style="--c:var(--accent)">This session</span><span style="--c:var(--s-0)">{{ $d['peers']['note'] }}</span></div>
+          <x-sc.compare class="mt-4 max-w-[640px]" :rows="$d['peers']['rows']" :n="$d['recap']['compare']['sessions']" :label="118" />
+          <p class="sc-note mt-4">The number at the right is the share of sessions this one beats.</p>
+        </div>
+      @endif
     </section>
   @endif
 

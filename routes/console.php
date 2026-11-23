@@ -14,3 +14,4 @@ Schedule::command('api-calls:prune')->dailyAt('03:50')->withoutOverlapping()->on
 Schedule::command('feats:refresh')->dailyAt('04:10')->withoutOverlapping()->onOneServer();
 Schedule::command('loot:rebuild-keyed')->dailyAt('04:20')->withoutOverlapping()->onOneServer();
 Schedule::command('ingest:redecode --outdated')->everyTenMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('sessions:rates')->dailyAt('04:40')->withoutOverlapping()->onOneServer();

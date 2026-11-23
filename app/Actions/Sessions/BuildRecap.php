@@ -2,9 +2,11 @@
 
 namespace App\Actions\Sessions;
 
+use App\Actions\Rollups\RebuildSessionRates;
 use App\Models\Character;
 use App\Support\Recap\Counters;
 use App\Support\Recap\History;
+use App\Support\Recap\Peers;
 use App\Support\Recap\Route;
 use App\Support\Recap\Scope;
 use App\Support\Recap\Stretches;
@@ -12,11 +14,12 @@ use App\Support\Recap\Timeline;
 use App\Support\Recap\Top;
 use App\Support\SessionTitle;
 use Illuminate\Support\Facades\DB;
+use stdClass;
 
 /**
  * The SessionRecap of one session of one character (CONTRACTS.md, "Session recap"), built from the session row and the fact tables the way the app's recap.rs builds it
- * from the log. `buckets.combat` is zero until the decoder keeps fight times with a time, `feats` is empty until feat events exist, `compare` and `links` are left to their own
- * actions. `$economy` false leaves out what a public page may not show without the owner's say.
+ * from the log. `buckets.combat` is zero until the decoder keeps fight times with a time, `feats` is empty until feat events exist, `compare` is null while the bracket
+ * has fewer than 20 sessions, and `links` is left to ShowSession. `$economy` false leaves out what a public page may not show without the owner's say.
  */
 class BuildRecap
 {
@@ -68,9 +71,28 @@ class BuildRecap
             'bests' => $history['bests'],
             'own' => $history['own'],
             'top' => Top::read($scope),
+            'compare' => $this->compare($session, $counters, $played),
         ];
 
         return $economy ? $recap : $this->withoutEconomy($recap);
+    }
+
+    /**
+     * @param  array<string, int>  $counters
+     * @return array<string, mixed>|null null for a session under ten minutes, which the bands leave out, and when its bracket has no band
+     */
+    private function compare(stdClass $session, array $counters, int $played): ?array
+    {
+        if ($played * 1000 < RebuildSessionRates::MIN_PLAYED_MS || $session->level_start === null) {
+            return null;
+        }
+        $hours = $played / 3600;
+
+        return Peers::read((int) $session->ruleset_id, (int) $session->level_start, [
+            'xp_h' => ($counters['xp'] ?? 0) / $hours,
+            'kills_h' => ($counters['kills'] ?? 0) / $hours,
+            'quests_h' => ($counters['quests'] ?? 0) / $hours,
+        ]);
     }
 
     /**

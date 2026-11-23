@@ -5,6 +5,7 @@ namespace App\View\Pages;
 use App\Models\Character;
 use App\View\Format;
 use App\View\Sc\RecapView;
+use Illuminate\Support\HtmlString;
 
 /** The data of /c/{name}/sessions/{start} (design/final/session-web.html) from the answer of App\Actions\Sessions\ShowSession. */
 final class SessionPage
@@ -49,6 +50,8 @@ final class SessionPage
             'distance' => self::distance($counters),
             'own' => self::own($recap['own'] ?? null),
             'ownCount' => $recap['own']['n'] ?? 0,
+            'say' => self::say($recap['compare']['sentence'] ?? null),
+            'peers' => self::peers($recap['compare'] ?? null),
             ...SessionBlocks::data($recap, $counters, $hours, $miles),
         ];
     }
@@ -75,6 +78,38 @@ final class SessionPage
         ];
 
         return array_values(array_filter($tiles, fn (array $tile): bool => $tile['n'] > 0));
+    }
+
+    private static function say(?string $sentence): ?HtmlString
+    {
+        return $sentence === null ? null : new HtmlString((string) preg_replace('/(\d+% of sessions)/', '<b>$1</b>', e($sentence)));
+    }
+
+    /**
+     * @param  array{bracket: array{0: int, 1: int}, sessions: int, metrics: array<string, array<string, int|float>>}|null  $compare
+     * @return array{heading: string, note: string, rows: list<array{0: string, 1: array<string, float|int|string>, 2: string}>}|null
+     */
+    private static function peers(?array $compare): ?array
+    {
+        if ($compare === null) {
+            return null;
+        }
+        $rows = [];
+        foreach (['xp_h' => 'XP an hour', 'kills_h' => 'Kills an hour', 'quests_h' => 'Quests an hour'] as $key => $label) {
+            $m = $compare['metrics'][$key] ?? null;
+            if ($m === null) {
+                continue;
+            }
+            $lo = min($m['p10'], $m['you']);
+            $hi = max($m['p90'], $m['you']);
+            $rows[] = [$label, [...$m, 'lo' => $lo, 'hi' => $hi > $lo ? $hi : $lo + 1, 'youText' => Format::number($m['you'], $m['you'] < 10 ? 1 : 0)], $m['percent'].'%'];
+        }
+
+        return [
+            'heading' => 'Against sessions at levels '.$compare['bracket'][0].' to '.$compare['bracket'][1],
+            'note' => 'Middle half of '.Format::number($compare['sessions']).' sessions',
+            'rows' => $rows,
+        ];
     }
 
     private static function rate(int|float $n, float $hours): string
