@@ -654,10 +654,12 @@ character (check 9).
    they name no more rows than Scarlet holds, each range holds at least the rows it names, and a range lies within 60 s
    of its window. The kinds without a time to assign by hold it as follows.
    - `kill`: no two claims of one origin and store that count or are superseded by rows share a level, none of them
-     shares a level with a claim rule 4 moved to another character, and the count assigned to a claim equals
-     Scarlet's count at its level plus its count with no level.
+     shares a level with a claim rule 4 moved to another character, the count assigned to a claim equals Scarlet's
+     count at its level plus its count with no level, and its counted kills are the claimed minus that count, floored
+     at 0.
    - `xp`: per character and quest id, the `counted` claims number at most the claims minus Scarlet's turn-ins of it,
-     and no Scarlet row is the evidence of two claims.
+     the `counted` XP is at most that of the claims with the smallest `xp`, as many as the claims minus Scarlet's
+     turn-ins, and no Scarlet row is the evidence of two claims.
    - `run`: no `counted` claim has a joined Scarlet run of its instance overlapping `[from - 600 s, to + 5 s]`, and no
      two claims of one instance are under 2,400 s apart when one is `counted` and the other is `counted` or was
      moved to another character by rule 4.

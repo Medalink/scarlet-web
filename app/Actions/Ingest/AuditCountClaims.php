@@ -25,10 +25,11 @@ class AuditCountClaims
     /**
      * Checks 4 and 11 of docs/DESIGN.md, Addon counts, Checks, for the kinds that count by level, quest and run, as
      * SQL over the stored columns and Scarlet's own rows. Kill: no two claims of one origin and store that count, or
-     * are superseded by rows, share a level, none counts beside one that rule 4 moved to another character, and the
-     * count assigned is Scarlet's kills at the level plus the ones with no level. Xp: per character and quest id the
-     * counted claims number at most the claims minus Scarlet's turn-ins, and no Scarlet row is the evidence of two
-     * claims. Run: no counted claim has a joined Scarlet run beside it, and none is under 2,400 seconds from another
+     * are superseded by rows, share a level, none counts beside one that rule 4 moved to another character, the
+     * count assigned is Scarlet's kills at the level plus the ones with no level, and the kills counted are the
+     * claimed minus that count, floored at 0. Xp: per character and quest id the counted claims number at most the
+     * claims minus Scarlet's turn-ins, their XP is at most that of the claims with the smallest XP (as many as the
+     * claims minus the turn-ins), and no Scarlet row is the evidence of two claims. Run: no counted claim has a joined Scarlet run beside it, and none is under 2,400 seconds from another
      * that counts or that rule 4 moved to another character. Every kind: no claim is superseded by rule 4 in favour of
      * a character that holds fewer Scarlet rows beside it. With no character, every character is checked.
      *
@@ -40,6 +41,7 @@ class AuditCountClaims
             ...$this->sharedLevels($characterId),
             ...$this->killsAssigned($characterId),
             ...$this->questsCounted($characterId),
+            ...$this->questsPicked($characterId),
             ...$this->questRowsShared($characterId),
             ...$this->runsBesideRows($characterId),
             ...$this->runsApart($characterId),
@@ -83,7 +85,8 @@ class AuditCountClaims
         $lines = [];
         foreach ($this->rows(
             <<<'SQL'
-            select c.id, ch.name as character_name, c.origin, c.level, (c.evidence #>> '{rows,n}')::bigint as assigned, held.kills
+            select c.id, ch.name as character_name, c.origin, c.level, (c.evidence #>> '{rows,n}')::bigint as assigned, held.kills,
+                coalesce((c.counted ->> 'kills')::numeric, 0) as counted, coalesce((c.amounts ->> 'kills')::numeric, 0) as claimed
             from addon_claims c
             join characters ch on ch.id = c.character_id
             cross join lateral (
@@ -91,14 +94,17 @@ class AuditCountClaims
                 where k.character_id = c.character_id and not k.player and (k.level = c.level or k.level is null)
             ) held
             where c.kind = ? and c.status in (?, ?, ?) and c.evidence ->> 'rule' = '3' and jsonb_exists(c.evidence, 'rows') and c.level is not null
-                and (c.evidence #>> '{rows,n}')::bigint <> held.kills
+                and (
+                    (c.evidence #>> '{rows,n}')::bigint <> held.kills
+                    or coalesce((c.counted ->> 'kills')::numeric, 0) <> greatest(coalesce((c.amounts ->> 'kills')::numeric, 0) - held.kills, 0)
+                )
                 and (?::bigint is null or c.character_id = ?)
             order by c.id
             limit 20
             SQL,
             [AddonKind::Kill->value, ClaimStatus::Counted->value, ClaimStatus::Residual->value, ClaimStatus::Superseded->value, $characterId, $characterId],
         ) as $row) {
-            $lines[] = "claim {$row->id} of {$row->character_name} ({$row->origin} level {$row->level}) was assigned {$row->assigned} Scarlet kills and Scarlet holds {$row->kills} at the level and with none";
+            $lines[] = "claim {$row->id} of {$row->character_name} ({$row->origin} level {$row->level}) was assigned {$row->assigned} Scarlet kills and counts {$row->counted} of {$row->claimed} while Scarlet holds {$row->kills} at the level and with none";
         }
 
         return $lines;
@@ -132,6 +138,47 @@ class AuditCountClaims
             [ClaimStatus::Counted->value, AddonKind::Xp->value, $characterId, $characterId, QuestRecord::TURNED_IN, XpSource::Quest->value],
         ) as $row) {
             $lines[] = "{$row->character_name} counts {$row->counted} of {$row->claims} claims of quest {$row->quest} and Scarlet holds {$row->turned_in} turn-ins of it";
+        }
+
+        return $lines;
+    }
+
+    /** @return list<string> */
+    private function questsPicked(?int $characterId): array
+    {
+        $lines = [];
+        foreach ($this->rows(
+            <<<'SQL'
+            with ranked as (
+                select c.character_id, (c.dims ->> 'quest')::int as quest,
+                    coalesce((c.amounts ->> 'xp')::numeric, 0) as xp, coalesce((c.counted ->> 'xp')::numeric, 0) as counted,
+                    row_number() over (partition by c.character_id, c.dims ->> 'quest'
+                        order by coalesce((c.amounts ->> 'xp')::numeric, 0), c.to_at, c.store) as place,
+                    count(*) over (partition by c.character_id, c.dims ->> 'quest') as claims
+                from addon_claims c
+                where c.kind = ? and c.evidence ->> 'rule' = '2' and (?::bigint is null or c.character_id = ?)
+            )
+            select ch.name as character_name, t.quest, t.counted, t.most
+            from (
+                select r.character_id, r.quest, sum(r.counted) as counted,
+                    coalesce(sum(r.xp) filter (where r.place <= r.claims - held.turned_in), 0) as most
+                from ranked r
+                cross join lateral (
+                    select greatest(
+                        (select count(*) from quest_events q where q.character_id = r.character_id and q.event = ? and q.quest_id = r.quest),
+                        (select count(*) from xp_gains x where x.character_id = r.character_id and x.source = ? and x.source_id = r.quest)
+                    ) as turned_in
+                ) held
+                group by r.character_id, r.quest
+            ) t
+            join characters ch on ch.id = t.character_id
+            where t.counted > t.most
+            order by ch.name, t.quest
+            limit 20
+            SQL,
+            [AddonKind::Xp->value, $characterId, $characterId, QuestRecord::TURNED_IN, XpSource::Quest->value],
+        ) as $row) {
+            $lines[] = "{$row->character_name} counts {$row->counted} XP of quest {$row->quest} and the claims Scarlet did not see hold at most {$row->most}";
         }
 
         return $lines;
