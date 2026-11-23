@@ -175,6 +175,15 @@ market and scan time beside each price.
   under "AHledger auction house prices", after our own players' "Auction price", one row per house with its median,
   lowest buyout, quantity on sale, units sold a day and scan time, the house linking to AHledger's page of the item on
   it and the note crediting AHledger. `/public/items/{id}` returns them as `market_prices`.
+- `PriceLootTable` values every drop table that `SourceDrops` builds for a page: a creature's drops and skins, an
+  object's openings (chests, veins, herbs) and a container item's contents (clams, lockboxes). An item's market value is
+  the median over the enabled markets of each one's newest 7 day median from the last 7 days; the 7 day median keeps
+  one odd listing on a thin market out. The value is the vendor price instead when that is higher, when the item is
+  poor or when it binds on pickup; a quest item has no value. The table's worth a corpse, skin or opening is the sum of
+  each item's quantity times its value over the table's windows, the same windows its rates use, and is shown only
+  from 10 windows, where the rates are stated. Coin is not counted. Each table gets a Value column and a note under it
+  with the worth, the newest scan used and the AHledger credit. The creature API returns `drop_value` and
+  `skinning.value`, the object API `drop_table.value`.
 
 ### The Fishing Log
 

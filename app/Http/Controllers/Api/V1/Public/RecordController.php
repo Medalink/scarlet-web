@@ -29,7 +29,8 @@ class RecordController extends PublicController
         return $this->respond([
             'id' => $answer['id'], 'name' => $answer['name'], 'facts' => $answer['facts'], 'kills' => $answer['kills'],
             'deaths' => $answer['deaths'], 'deaths_by_level' => $answer['deaths_by_level'], 'drops' => $answer['drops'],
-            'skinning' => ['windows' => $answer['skin_table']['windows'], 'rows' => $answer['skin_table']['rows']],
+            'drop_value' => [...$answer['drop_table']['value'], 'windows' => $answer['drop_table']['windows'], 'rows' => array_map(fn (array $row): array => ['item_id' => $row['item_id'], 'quantity' => $row['quantity'], 'value' => $row['value']], $answer['drop_table']['rows'])],
+            'skinning' => ['windows' => $answer['skin_table']['windows'], 'rows' => $answer['skin_table']['rows'], 'value' => $answer['skin_table']['value']],
             'solo' => $answer['solo'], 'looted' => $answer['looted'],
             'by_rule' => SourceArmsJson::from($answer['rule_arms']),
             'by_size' => SourceArmsJson::from($answer['size_arms']),

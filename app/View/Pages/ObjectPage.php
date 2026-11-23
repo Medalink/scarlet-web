@@ -17,7 +17,7 @@ final class ObjectPage
      */
     public static function from(array $r): array
     {
-        /** @var array{rule: string|null, unread: int, rules: list<array{rule: string, windows: int}>, rows: list<array<string, mixed>>} $table */
+        /** @var array{rule: string|null, windows: int, unread: int, rules: list<array{rule: string, windows: int}>, rows: list<array<string, mixed>>, value: array{per_window: int|null, unpriced: int, scanned_at: string|null}} $table */
         $table = $r['drop_table'];
         /** @var list<array{id: int, name: string|null, windows: int}> $zones */
         $zones = $r['zones'];
@@ -45,6 +45,7 @@ final class ObjectPage
             'tags' => $table['rows'] === [] ? [] : array_map(fn (RateFlag $flag): string => $flag->label(), array_values(array_filter($table['rows'][0]['estimate']->flags, fn (RateFlag $flag): bool => $flag !== RateFlag::QuestItem))),
             'unread' => $table['unread'] === 0 ? null : 'Left out: '.Format::count($table['unread'], 'opening').' from sessions that do not record what an object was read for.',
             'drops' => LootRows::gives($table['rows']),
+            'worth' => LootRows::worth($table),
             'map' => MapSpec::density(WorldLayer::Creatures, null, $r['map_zones'], null, dots: $r['points']),
             'hasMap' => $r['points'] !== null,
         ];

@@ -14,9 +14,12 @@
       <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
       @endif
       @if ($d['drops'])
-      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true], ...($d['ofKills'] ? [['label' => 'Of all kills', 'numeric' => true]] : [])]" style="margin-top:1.1rem" />
+      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true], ['label' => 'Value', 'numeric' => true], ...($d['ofKills'] ? [['label' => 'Of all kills', 'numeric' => true]] : [])]" style="margin-top:1.1rem" />
       @if ($d['tags'] || $d['unread'])
       <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach @if ($d['unread']){{ $d['unread'] }}@endif</p>
+      @endif
+      @if ($d['dropWorth'])
+      <x-loot-worth :worth="$d['dropWorth']" noun="corpse" />
       @endif
       @else
       <x-note>No drops recorded for this creature yet.@if ($d['unread']) {{ $d['unread'] }}@endif</x-note>
@@ -40,7 +43,11 @@
     </x-module>
     @if ($d['skinning'])
     <x-module span="w5" :last="true" id="h-k" heading="Skinning">
-      <x-table :rows="$d['skinning']" :columns="[['label' => 'Item'], ['label' => 'Share of skins', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Skins', 'numeric' => true]]" style="margin-top:1.1rem" />    </x-module>
+      <x-table :rows="$d['skinning']" :columns="[['label' => 'Item'], ['label' => 'Share of skins', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Skins', 'numeric' => true], ['label' => 'Value', 'numeric' => true]]" style="margin-top:1.1rem" />
+      @if ($d['skinWorth'])
+      <x-loot-worth :worth="$d['skinWorth']" noun="skin" />
+      @endif
+    </x-module>
     @endif
     @if ($d['ruleArms'])
     <x-module span="w12" :first="true" :last="true" id="h-r" :heading="$d['ruleArms']['heading']">

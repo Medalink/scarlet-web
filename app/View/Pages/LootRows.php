@@ -3,12 +3,14 @@
 namespace App\View\Pages;
 
 use App\Support\ItemIcons;
+use App\Support\ItemValueSource;
 use App\Support\LootSourceKind;
 use App\Support\LootView;
 use App\Support\RateEstimate;
 use App\Support\RateFlag;
 use App\View\Format;
 use App\View\ItemTypes;
+use Illuminate\Support\HtmlString;
 
 /** The table rows of the loot index and of the Looted here module of a zone page, from the rows of LootSources and LootItems. */
 final class LootRows
@@ -86,7 +88,36 @@ final class LootRows
             $row['estimate']->stated() ? $row['estimate']->range() : '–',
             $row['estimate']->counts(),
             Format::number($row['per_drop'], 1),
+            self::value($row['value'] ?? null),
         ]], $rows);
+    }
+
+    /**
+     * The value cell of a drop table row priced by PriceLootTable: one item's value, with `vendor` after a vendor price.
+     *
+     * @param  array{copper: int, from: string}|null  $value
+     * @return array<string, mixed>|string
+     */
+    public static function value(?array $value): array|string
+    {
+        if ($value === null) {
+            return '–';
+        }
+
+        return ['text' => Format::money($value['copper']), 'note' => $value['from'] === ItemValueSource::Vendor->value ? 'vendor' : null];
+    }
+
+    /**
+     * What a priced drop table's items are worth a window, for x-loot-worth; null while the table states no worth.
+     *
+     * @param  array{windows: int, value: array{per_window: int|null, unpriced: int, scanned_at: string|null}}  $table
+     * @return array{per: HtmlString, windows: int, unpriced: int, scanned_at: string|null}|null
+     */
+    public static function worth(array $table): ?array
+    {
+        $value = $table['value'];
+
+        return $value['per_window'] === null ? null : ['per' => Format::money($value['per_window']), 'windows' => $table['windows'], 'unpriced' => $value['unpriced'], 'scanned_at' => $value['scanned_at']];
     }
 
     /**

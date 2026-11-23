@@ -33,6 +33,7 @@ class CreatureRecord
         private readonly MapZones $zones,
         private readonly CreaturePoints $points,
         private readonly ListRulesets $rulesets,
+        private readonly PriceLootTable $price,
     ) {}
 
     /**
@@ -65,8 +66,8 @@ class CreatureRecord
             'deaths' => $this->deaths($name, $ids),
             'deaths_by_level' => $this->deathsByLevel($name, $ids),
             'drops' => $this->drops->handle(self::SOURCE, $id),
-            'drop_table' => $table,
-            'skin_table' => $this->dropTable->handle(self::SOURCE, $id, null, LootRead::Skin),
+            'drop_table' => $this->price->handle($table),
+            'skin_table' => $this->price->handle($this->dropTable->handle(self::SOURCE, $id, null, LootRead::Skin)),
             'rule_arms' => $this->arms->handle(self::SOURCE, $id, ArmSplit::Rule),
             'size_arms' => $this->arms->handle(self::SOURCE, $id, ArmSplit::Size, $rule),
             'solo' => $this->looted->handle($id, null, soloOnly: true),

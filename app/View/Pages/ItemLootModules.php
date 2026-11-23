@@ -17,7 +17,7 @@ final class ItemLootModules
     {
         /** @var list<array{id: int, name: string|null, dropped: int, estimate: RateEstimate}> $zones */
         $zones = $r['zones'];
-        /** @var array{rows: list<array<string, mixed>>}|null $holds */
+        /** @var array{windows: int, rows: list<array<string, mixed>>, value: array{per_window: int|null, unpriced: int, scanned_at: string|null}}|null $holds */
         $holds = $r['holds'];
 
         return [
@@ -29,6 +29,7 @@ final class ItemLootModules
             'hasMap' => $r['points'] !== null,
             'map' => MapSpec::density(WorldLayer::Creatures, null, $r['map_zones'], null, dots: $r['points']),
             'holds' => $holds === null ? [] : LootRows::gives($holds['rows']),
+            'holdsWorth' => $holds === null ? null : LootRows::worth($holds),
         ];
     }
 }

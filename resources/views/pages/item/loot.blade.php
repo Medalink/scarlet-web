@@ -1,6 +1,10 @@
 @if ($loot['holds'])
 <x-module span="w12" :first="true" :last="true" id="h-h" heading="What it holds">
-  <x-table :rows="$loot['holds']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Opened', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true]]" style="margin-top:1.1rem" /></x-module>
+  <x-table :rows="$loot['holds']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Opened', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true], ['label' => 'Value', 'numeric' => true]]" style="margin-top:1.1rem" />
+  @if ($loot['holdsWorth'])
+  <x-loot-worth :worth="$loot['holdsWorth']" noun="opening" />
+  @endif
+</x-module>
 @endif
 @php($both = $loot['zones'] && $loot['hasMap'])
 @if ($loot['zones'])

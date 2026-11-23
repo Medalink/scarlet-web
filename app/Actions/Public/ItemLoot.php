@@ -14,6 +14,7 @@ class ItemLoot
         private readonly ItemPoints $points,
         private readonly SourceDrops $drops,
         private readonly MapZones $mapZones,
+        private readonly PriceLootTable $price,
     ) {}
 
     /**
@@ -31,7 +32,7 @@ class ItemLoot
             'zones' => $this->zones->handle($id),
             'points' => $this->points->handle($id),
             'map_zones' => $this->mapZones->handle(),
-            'holds' => $holds['windows'] === 0 ? null : $holds,
+            'holds' => $holds['windows'] === 0 ? null : $this->price->handle($holds),
         ];
     }
 }

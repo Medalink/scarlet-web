@@ -41,9 +41,9 @@ final class RecordPages
         $kills = $r['kills'];
         /** @var array{deaths: int|null, characters: int|null} $deaths */
         $deaths = $r['deaths'];
-        /** @var array{rule: string|null, windows: int, characters: int, unread: int, rules: list<array{rule: string, windows: int}>, rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $table */
+        /** @var array{rule: string|null, windows: int, characters: int, unread: int, rules: list<array{rule: string, windows: int}>, rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate, value: array{copper: int, from: string}|null}>, value: array{per_window: int|null, unpriced: int, scanned_at: string|null}} $table */
         $table = $r['drop_table'];
-        /** @var array{rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate}>} $skin */
+        /** @var array{windows: int, rows: list<array{item_id: int, item: string|null, quantity: int, per_drop: float, estimate: RateEstimate, value: array{copper: int, from: string}|null}>, value: array{per_window: int|null, unpriced: int, scanned_at: string|null}} $skin */
         $skin = $r['skin_table'];
         /** @var array{kills: int, windows: int, estimate: RateEstimate|null, rows: list<array{item_id: int, item: string|null, estimate: RateEstimate}>} $looted */
         $looted = $r['looted'];
@@ -84,6 +84,7 @@ final class RecordPages
                 $row['estimate']->stated() ? $row['estimate']->range() : '–',
                 $row['estimate']->counts(),
                 Format::number($row['per_drop'], 1),
+                LootRows::value($row['value']),
                 ...($ofKills ? [($killItems[$row['item_id']] ?? RateEstimate::of(0, $looted['kills'], unit: RateEstimate::UNIT_KILL))->counts()] : []),
             ]], $table['rows']),
             'ofKills' => $ofKills,
@@ -94,7 +95,10 @@ final class RecordPages
                 ['rate' => $row['estimate']],
                 $row['estimate']->stated() ? $row['estimate']->range() : '–',
                 $row['estimate']->counts(),
+                LootRows::value($row['value']),
             ]], $skin['rows']),
+            'dropWorth' => LootRows::worth($table),
+            'skinWorth' => LootRows::worth($skin),
             'map' => MapSpec::density(WorldLayer::Creatures, $scope->ruleset?->slug(), $r['map_zones'], $r['points'] === null ? ($zones[0]['id'] ?? null) : null, creature: (int) $r['id'], dots: $r['points']),
             'hasMap' => $r['points'] !== null || $r['heat'] !== [],
             'dots' => $r['points'] !== null,

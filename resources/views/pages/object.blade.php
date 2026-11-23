@@ -10,7 +10,10 @@
       <x-slot:controls><x-seg label="Loot rule" :items="$d['rules']" /></x-slot:controls>
       @endif
       @if ($d['drops'])
-      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Opened', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true]]" style="margin-top:1.1rem" />
+      <x-table :rows="$d['drops']" :columns="[['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Opened', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true], ['label' => 'Value', 'numeric' => true]]" style="margin-top:1.1rem" />
+      @if ($d['worth'])
+      <x-loot-worth :worth="$d['worth']" noun="opening" />
+      @endif
       @if ($d['tags'] || $d['unread'])
       <p class="note">@foreach ($d['tags'] as $tag)<span class="tag">{{ $tag }}</span> @endforeach @if ($d['unread']){{ $d['unread'] }}@endif</p>
       @endif

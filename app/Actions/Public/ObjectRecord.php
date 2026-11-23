@@ -19,6 +19,7 @@ class ObjectRecord
         private readonly SourceDrops $dropTable,
         private readonly LootPoints $points,
         private readonly MapZones $zones,
+        private readonly PriceLootTable $price,
     ) {}
 
     /**
@@ -50,7 +51,7 @@ class ObjectRecord
             'items' => $items,
             'zones' => $this->zonesOf($kind, $id),
             ...$this->levels($kind, $id),
-            'drop_table' => $this->dropTable->handle($kind, $id, $rule, $read),
+            'drop_table' => $this->price->handle($this->dropTable->handle($kind, $id, $rule, $read)),
             'points' => $this->points->handle($kind, $id),
             'map_zones' => $this->zones->handle(),
         ];
