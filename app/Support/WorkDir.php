@@ -28,7 +28,7 @@ final class WorkDir
 
     private static function sweep(string $dir): void
     {
-        if (! Cache::add('work-dir-sweep:'.gethostname(), true, self::SWEEP_EVERY_SECONDS)) {
+        if (! Cache::add(self::sweepKey(), true, self::SWEEP_EVERY_SECONDS)) {
             return;
         }
         $cutoff = time() - self::STALE_SECONDS;
@@ -40,5 +40,10 @@ final class WorkDir
                 }
             }
         }
+    }
+
+    private static function sweepKey(): string
+    {
+        return 'work-dir-sweep:'.gethostname();
     }
 }
