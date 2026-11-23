@@ -3,6 +3,7 @@
 $roles = preg_split('/\s+/', trim((string) env('SCARLET_ROLES', 'web ingest scheduler')), -1, PREG_SPLIT_NO_EMPTY);
 $supervisorRole = [
     'supervisor-ingest' => 'ingest',
+    'supervisor-backfill' => 'scheduler',
     'supervisor-rollups' => 'scheduler',
     'supervisor-armory' => 'scheduler',
     'supervisor-default' => 'scheduler',
@@ -216,9 +217,21 @@ return [
         // Decoding parts into rows: one job per character and session, each with its own limits.
         'supervisor-ingest' => [
             'connection' => 'redis',
-            'queue' => ['ingest', 'backfill'],
+            'queue' => ['ingest'],
             'balance' => false,
             'maxProcesses' => 2,
+            'maxTime' => 3600,
+            'maxJobs' => 500,
+            'memory' => 1024,
+            'tries' => 3,
+            'timeout' => 300,
+            'nice' => 0,
+        ],
+        'supervisor-backfill' => [
+            'connection' => 'redis',
+            'queue' => ['backfill'],
+            'balance' => false,
+            'maxProcesses' => 1,
             'maxTime' => 3600,
             'maxJobs' => 500,
             'memory' => 1024,
@@ -270,6 +283,7 @@ return [
     'environments' => [
         'production' => $forThisHost([
             'supervisor-ingest' => $ingestProcesses(2),
+            'supervisor-backfill' => ['maxProcesses' => (int) env('SCARLET_BACKFILL_PROCESSES', 1)],
             'supervisor-rollups' => ['maxProcesses' => (int) env('SCARLET_ROLLUPS_PROCESSES', 1)],
             'supervisor-armory' => ['maxProcesses' => (int) env('SCARLET_ARMORY_PROCESSES', 1)],
             'supervisor-default' => ['maxProcesses' => (int) env('SCARLET_DEFAULT_PROCESSES', 2), 'balanceMaxShift' => 1, 'balanceCooldown' => 3],
@@ -277,6 +291,7 @@ return [
 
         'local' => $forThisHost([
             'supervisor-ingest' => $ingestProcesses(3),
+            'supervisor-backfill' => ['maxProcesses' => (int) env('SCARLET_BACKFILL_PROCESSES', 1)],
             'supervisor-rollups' => ['maxProcesses' => (int) env('SCARLET_ROLLUPS_PROCESSES', 1)],
             'supervisor-armory' => ['maxProcesses' => (int) env('SCARLET_ARMORY_PROCESSES', 1)],
             'supervisor-default' => ['maxProcesses' => (int) env('SCARLET_DEFAULT_PROCESSES', 2)],

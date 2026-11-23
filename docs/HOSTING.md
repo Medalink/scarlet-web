@@ -108,22 +108,26 @@ scarlet-db	db
 | Role | What the host runs |
 | --- | --- |
 | `web` | nginx and the blue/green php-fpm slots, the maps, the origin certificate |
-| `ingest` | Horizon with `supervisor-ingest`, which works the `ingest` queue first and the `backfill` queue when `ingest` is empty |
-| `scheduler` | `schedule`, Redis (both instances), the registry and the migrations of a release, and Horizon with `supervisor-rollups`, `-armory` and `-default` |
+| `ingest` | Horizon with `supervisor-ingest`, which works the `ingest` queue |
+| `scheduler` | `schedule`, Redis (both instances), the registry and the migrations of a release, and Horizon with `supervisor-backfill`, `-rollups`, `-armory` and `-default` |
 | `db` | Postgres alone (`bin/deploy db-server`) |
 
 Exactly one host has `scheduler` and exactly one has `db`; `bin/deploy` refuses any other inventory before it touches a
 host. The scheduler's entries also use `onOneServer()`. Settings are `KEY=value` pairs separated by commas, written into
 that host's `.env` on each release: `SCARLET_INGEST_PROCESSES` (default 2, the supervisor's `maxProcesses`),
-`SCARLET_ROLLUPS_PROCESSES`, `SCARLET_ARMORY_PROCESSES` and `SCARLET_DEFAULT_PROCESSES`. Horizon starts only the
+`SCARLET_BACKFILL_PROCESSES` (default 1), `SCARLET_ROLLUPS_PROCESSES`, `SCARLET_ARMORY_PROCESSES` and
+`SCARLET_DEFAULT_PROCESSES`. Horizon starts only the
 supervisors of the host's roles (`SCARLET_ROLES`, which `rollout.sh` keeps in `release.env`); a host that sets none runs all
 three roles, which is the one-droplet stack.
 
 Backfill work (`rulesets:refile`, `ingest:redecode`, `talents:backfill`) queues `IngestSession` on `backfill`. The
 scheduler runs `ingest:redecode --outdated` every ten minutes, which queues the next 1000 sessions an older decoder
-wrote whenever the backfill queue is empty, so a decoder that changed its rows rebuilds every stored session by itself. The ingest supervisor takes `ingest` before `backfill`, so a backlog of re-decodes
-waits behind live uploads. A job in the backfill queue has its own identity, so a live upload of the same session is
-queued as well and a lock on the session (`IngestSession::handle`, kept in the queue's Redis) makes two decodes of one
+wrote whenever the backfill queue is empty, so a decoder that changed its rows rebuilds every stored session by itself.
+`supervisor-backfill` works that queue with one process on the scheduler host, however many ingest hosts there are, and
+the ingest workers never take it, so live uploads do not wait behind re-decodes. Each re-decode also rebuilds its
+character's levels, summaries and money flags and queues a rollup refresh; with the old two shared workers, 257
+re-decodes on 2026-11-23 held the one-vCPU database at 77% for ten minutes and set off the CPU alert. A job in the
+backfill queue has its own identity, so a live upload of the same session is queued as well and a lock on the session (`IngestSession::handle`, kept in the queue's Redis) makes two decodes of one
 session wait for each other on any host.
 
 ### Add a host
