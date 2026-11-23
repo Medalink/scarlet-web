@@ -2,7 +2,10 @@
 
 namespace App\Support\Recap;
 
+use Closure;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use stdClass;
 
 /** The `zone` and the `zones` of a recap, from the session's play spans. */
 final class Stretches
@@ -14,8 +17,41 @@ final class Stretches
      */
     public static function read(Scope $scope): array
     {
-        $raw = [];
         $spans = $scope->rows('play_spans')->whereNotNull('zone_name')->where('zone_name', '!=', '')->orderBy('at')->get(['at', 'ms', 'zone_name', 'instance_type']);
+
+        return self::assemble($scope->start, $spans, fn (string $zone): int => self::runs($scope, $zone));
+    }
+
+    /**
+     * `read()` for several sessions of one character in two queries.
+     *
+     * @param  list<int>  $starts
+     * @return array<int, array{zone: string, dungeon: array{name: string, runs: int}|null, zones: list<array{name: string, at: int, secs: int}>}>
+     */
+    public static function readMany(int $character, array $starts): array
+    {
+        $spans = DB::table('play_spans')->where('character_id', $character)->whereIn('session_start', $starts)
+            ->whereNotNull('zone_name')->where('zone_name', '!=', '')->orderBy('at')->get(['session_start', 'at', 'ms', 'zone_name', 'instance_type'])->groupBy('session_start');
+        $runs = DB::table('dungeon_runs')->where('character_id', $character)->whereIn('session_start', $starts)->where('continues_previous', false)
+            ->selectRaw('session_start, name, count(*) as n')->groupBy('session_start', 'name')->get()
+            ->mapWithKeys(fn (object $row): array => [$row->session_start.'|'.$row->name => (int) $row->n]);
+
+        $out = [];
+        foreach ($starts as $start) {
+            $out[$start] = self::assemble($start, $spans->get($start, []), fn (string $zone): int => max(1, $runs->get($start.'|'.$zone, 0)));
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  iterable<stdClass>  $spans
+     * @param  Closure(string): int  $runs
+     * @return array{zone: string, dungeon: array{name: string, runs: int}|null, zones: list<array{name: string, at: int, secs: int}>}
+     */
+    private static function assemble(int $start, iterable $spans, Closure $runs): array
+    {
+        $raw = [];
         foreach ($spans as $span) {
             $from = self::ms((string) $span->at);
             $to = $from + (int) $span->ms;
@@ -44,8 +80,8 @@ final class Stretches
 
         return [
             'zone' => $zone,
-            'dungeon' => $zone !== '' && ($instance[$zone] ?? false) ? ['name' => $zone, 'runs' => self::runs($scope, $zone)] : null,
-            'zones' => self::merged($raw, $scope->start * 1000),
+            'dungeon' => $zone !== '' && ($instance[$zone] ?? false) ? ['name' => $zone, 'runs' => $runs($zone)] : null,
+            'zones' => self::merged($raw, $start * 1000),
         ];
     }
 

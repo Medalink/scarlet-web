@@ -4,7 +4,6 @@ namespace App\Actions\Sessions;
 
 use App\Models\Character;
 use App\Support\Recap\Headline;
-use App\Support\Recap\Scope;
 use Illuminate\Support\Facades\DB;
 
 /** A page of a character's sessions, newest first, with the title each one has. */
@@ -27,12 +26,13 @@ class ListSessions
             ->when($after !== null, fn ($query) => $query->where('session_start', '<', $after))
             ->orderByDesc('session_start')->limit(self::PAGE + 1)->get();
         $page = $rows->take(self::PAGE);
+        $titles = Headline::titles($character->id, array_values($page->all()));
         $sessions = $page->map(fn (object $row): array => [
             'start' => (int) $row->session_start,
             'end' => $row->end_at === null ? (int) $row->session_start + intdiv((int) $row->played_ms, 1000) : (int) strtotime((string) $row->end_at),
             'played' => intdiv((int) $row->played_ms, 1000),
             'level' => [(int) $row->level_start, max((int) $row->level_start, (int) $row->level_end)],
-            'title' => Headline::title(new Scope($character->id, (int) $row->session_start), $row),
+            'title' => $titles[(int) $row->session_start],
             'kills' => $row->kills === null ? null : (int) $row->kills,
             'quests' => $row->quests_done === null ? null : (int) $row->quests_done,
             'deaths' => $row->deaths === null ? null : (int) $row->deaths,

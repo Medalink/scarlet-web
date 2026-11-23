@@ -108,4 +108,21 @@ final class Counters
     {
         return $scope->rows('gathers')->where('looted', true)->selectRaw('kind, count(*) as n')->groupBy('kind')->pluck('n', 'kind')->map(fn (mixed $n): int => (int) $n)->all();
     }
+
+    /**
+     * `gathered()` for several sessions of one character in one query.
+     *
+     * @param  list<int>  $starts
+     * @return array<int, array<string, int>>
+     */
+    public static function gatheredMany(int $character, array $starts): array
+    {
+        $out = [];
+        foreach (DB::table('gathers')->where('character_id', $character)->whereIn('session_start', $starts)->where('looted', true)
+            ->selectRaw('session_start, kind, count(*) as n')->groupBy('session_start', 'kind')->get() as $row) {
+            $out[(int) $row->session_start][(string) $row->kind] = (int) $row->n;
+        }
+
+        return $out;
+    }
 }
