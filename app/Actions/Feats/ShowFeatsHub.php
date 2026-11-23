@@ -20,12 +20,13 @@ class ShowFeatsHub
     public function __construct(
         private readonly ShowFeatCatalog $catalog,
         private readonly BuildCharacterFeats $built,
+        private readonly ShowAccountFeats $account,
     ) {}
 
     /**
      * @param  string  $scope  one of `SCOPES`; an owner with no counted character gets `everyone`
      * @param  string|null  $as  the name of the character shown, the owner's most recently seen one when null or not theirs
-     * @return array{mode: string, names: list<string>, character: array<string, mixed>|null, catalog: int, feats: list<array<string, mixed>>, closest: list<array<string, mixed>>, rarest: array<string, mixed>|null}
+     * @return array{mode: string, names: list<string>, character: array<string, mixed>|null, catalog: int, feats: list<array<string, mixed>>, account: array<string, mixed>|null, closest: list<array<string, mixed>>, rarest: array<string, mixed>|null}
      */
     public function handle(?int $accountId, string $scope, ?string $as): array
     {
@@ -50,6 +51,7 @@ class ShowFeatsHub
             'character' => $of['character'] ?? null,
             'catalog' => count($catalog['feats']),
             'feats' => $feats,
+            'account' => $character === null ? null : $this->account->handle(array_values(array_map(fn (Character $owned): int => $owned->id, $characters))),
             'closest' => $of['closest'] ?? [],
             'rarest' => $this->rarest(),
         ];

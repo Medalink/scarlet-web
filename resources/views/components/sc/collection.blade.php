@@ -1,4 +1,4 @@
-@props(['name', 'family', 'feats', 'size' => 48, 'note' => null, 'counts' => true, 'pin' => false, 'full' => false])
+@props(['name', 'family', 'feats', 'size' => 48, 'note' => null, 'counts' => true, 'pin' => false, 'full' => false, 'count' => null, 'pips' => true])
 @php
     $earned = count(array_filter($feats, fn (array $feat): bool => $feat['tier'] > 0));
     $tier = min(array_column($feats, 'tier'));
@@ -7,7 +7,7 @@
 <div {{ $attributes->class('sc-coll') }}>
   <div>
     <p class="sc-coll-h">{{ $name }}</p>
-    @if ($counts)<p class="sc-coll-n">{{ $earned }} of {{ count($feats) }} <x-sc.pips :tier="$tier" /></p>@endif
+    @if ($counts)<p class="sc-coll-n">{{ $count ?? $earned.' of '.count($feats) }} @if ($pips)<x-sc.pips :tier="$tier" />@endif</p>@endif
     @if ($note)<p class="sc-note mt-2 max-w-[150px]">{{ $note }}</p>@endif
   </div>
   <ul class="sc-wall">

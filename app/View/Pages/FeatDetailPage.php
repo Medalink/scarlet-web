@@ -11,7 +11,7 @@ use App\View\Sc\Crest;
 final class FeatDetailPage
 {
     /**
-     * @param  array{feat: array<string, mixed>, collection: list<array<string, mixed>>, mine: array{character: string, value: int|float, tier: int}|null}  $answer
+     * @param  array{feat: array<string, mixed>, collection: list<array<string, mixed>>, mine: array{character: string, value: int|float, tier: int}|null, account: array<string, mixed>|null}  $answer
      * @return array<string, mixed>
      */
     public static function data(array $answer): array
@@ -40,6 +40,29 @@ final class FeatDetailPage
                 'share' => FeatsPage::percent($other['shares'][0] ?? null), 'href' => '/feats/'.$other['key'],
             ], $answer['collection']),
             'mine' => $mine === null ? null : ['name' => Format::characterName($mine['character']), 'count' => FeatText::counted($kind, $mine['value'])],
+            'account' => self::account($feat, $kind, $answer['account']),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $feat
+     * @param  array<string, mixed>|null  $card  the account's card of the feat, for a signed-in owner
+     * @return array{tier: int, ladder: list<array<string, int|string>>, card: array<string, mixed>|null}|null null for a feat with no account crest
+     */
+    private static function account(array $feat, Feat $kind, ?array $card): ?array
+    {
+        if ($feat['account_thresholds'] === null) {
+            return null;
+        }
+        $tier = $card['tier'] ?? 0;
+
+        return [
+            'tier' => $tier,
+            'ladder' => FeatLadder::rows($kind, $feat['account_thresholds'], null, $card === null ? null : $tier, $card === null ? null : 'Account, '.$card['counted']),
+            'card' => $card === null ? null : [
+                'key' => $card['key'], 'name' => $card['name'], 'glyph' => $card['icon'], 'scope' => 'account', 'tier' => $tier,
+                'progress' => $card['progress'], 'count' => $card['counted'], 'to' => $card['to_next'],
+            ],
         ];
     }
 

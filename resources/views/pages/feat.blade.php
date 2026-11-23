@@ -4,6 +4,7 @@
   <p class="text-[14.5px]"><a href="/feats">Feats</a> <span class="text-muted">· {{ $d['collection'] }}</span></p>
   <div class="mt-4 flex items-center gap-6">
     <x-crest :glyph="$d['glyph']" :feat-key="$d['key']" :tier="$d['tier']" :size="104" :label="$d['name']" />
+    @if ($d['account'])<x-crest :glyph="$d['glyph']" scope="account" :tier="$d['account']['tier']" :size="104" :label="$d['name'].' on the account'" />@endif
     <div class="min-w-0">
       <h1 class="sc-title text-[40px] md:text-[60px]">{{ $d['name'] }}</h1>
       <p class="mt-3 text-[15px]">{{ $d['line'] }}@if ($d['mine']) {{ $d['mine']['name'] }} has {{ $d['mine']['count'] }}.@endif</p>
@@ -15,6 +16,11 @@
       <h2 class="sc-h text-[24px]">Tiers</h2>
       <x-sc.ladder class="mt-5" :rows="$d['ladder']" :feat="['glyph' => $d['glyph'], 'key' => $d['key'], 'family' => $family]" />
       <p class="sc-label mt-5">{{ $d['shares'] ? 'Share of characters holding each tier or higher' : 'Shares appear once 20 characters are counted' }}</p>
+      @if ($d['account'])
+        <h2 class="sc-h mt-8 text-[24px]">Account tiers</h2>
+        @if ($d['account']['card'])<x-sc.feat class="mt-5" :feat="$d['account']['card']" />@endif
+        <x-sc.ladder class="mt-5" :rows="$d['account']['ladder']" :feat="['glyph' => $d['glyph'], 'key' => $d['key']]" scope="account" />
+      @endif
     </div>
     <div class="grid gap-10">
       <div>

@@ -17,15 +17,17 @@ use Illuminate\Support\Facades\DB;
 class ShowAccountFeats
 {
     /**
-     * @param  list<int>  $characterIds  the characters of one account, every one with stored feats
-     * @param  bool  $economy  whether the gold feats are in
-     * @return array{held: int, total: int, tiers: array<int, int>, characters: int, cards: list<array<string, mixed>>}|null null for no characters
+     * @param  list<int>  $characterIds  the characters of one account; those with no stored feats are left out
+     * @param  bool|null  $economy  whether the gold feats are in; when null, whether any of the characters shows its economy
+     * @return array{held: int, total: int, tiers: array<int, int>, characters: int, cards: list<array<string, mixed>>}|null null for no character with feats
      */
-    public function handle(array $characterIds, bool $economy): ?array
+    public function handle(array $characterIds, ?bool $economy = null): ?array
     {
+        $characterIds = array_values(array_map(fn ($id): int => (int) $id, DB::table('character_feats')->whereIn('character_id', $characterIds)->distinct()->pluck('character_id')->all()));
         if ($characterIds === []) {
             return null;
         }
+        $economy ??= DB::table('characters')->whereIn('id', $characterIds)->where('show_economy', true)->exists();
         $feats = array_values(array_filter(Feat::cases(), fn (Feat $feat): bool => $feat->accountThresholds() !== null && ($economy || ! $feat->economy())));
         $values = $this->values($characterIds, $feats);
         $cards = [];

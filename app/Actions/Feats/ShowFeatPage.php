@@ -3,6 +3,7 @@
 namespace App\Actions\Feats;
 
 use App\Models\Character;
+use App\Support\AccountRule;
 use App\Support\Feat;
 use Illuminate\Support\Facades\DB;
 
@@ -12,11 +13,12 @@ class ShowFeatPage
     public function __construct(
         private readonly ShowFeat $feat,
         private readonly ShowFeatCatalog $catalog,
+        private readonly ShowAccountFeats $account,
     ) {}
 
     /**
      * @param  string|null  $as  the name of the owner's character to mark on the ladder, their most recently seen one with a count when null or not theirs
-     * @return array{feat: array<string, mixed>, collection: list<array<string, mixed>>, mine: array{character: string, value: int|float, tier: int}|null}|null null for a key that is not a feat
+     * @return array{feat: array<string, mixed>, collection: list<array<string, mixed>>, mine: array{character: string, value: int|float, tier: int}|null, account: array<string, mixed>|null}|null null for a key that is not a feat
      */
     public function handle(string $key, ?int $accountId, ?string $as): ?array
     {
@@ -26,7 +28,20 @@ class ShowFeatPage
         }
         $collection = array_values(array_filter($this->catalog->handle()['feats'], fn (array $other): bool => $other['collection'] === $feat['collection'] && $other['key'] !== $feat['key']));
 
-        return ['feat' => $feat, 'collection' => $collection, 'mine' => $accountId === null ? null : $this->mine(Feat::from($key), $accountId, $as)];
+        return [
+            'feat' => $feat, 'collection' => $collection,
+            'mine' => $accountId === null ? null : $this->mine(Feat::from($key), $accountId, $as),
+            'account' => $accountId === null || $feat['account'] === AccountRule::None->value ? null : $this->ofAccount($key, $accountId),
+        ];
+    }
+
+    /** @return array<string, mixed>|null the account's card of the feat, null when no character of the account has feats */
+    private function ofAccount(string $key, int $accountId): ?array
+    {
+        $ids = array_values(array_map(fn ($id): int => (int) $id, Character::query()->where('account_id', $accountId)->pluck('id')->all()));
+        $cards = array_column($this->account->handle($ids)['cards'] ?? [], null, 'key');
+
+        return $cards[$key] ?? null;
     }
 
     /** @return array{character: string, value: int|float, tier: int}|null */

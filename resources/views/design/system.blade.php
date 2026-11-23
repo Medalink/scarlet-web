@@ -138,11 +138,13 @@
     @php
         $rampage = ['name' => 'Rampage', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.04, 'count' => '300 kills in one session'];
         $jumper = ['name' => 'Jumper', 'glyph' => 'jumps', 'tier' => 5, 'progress' => 1, 'count' => '250,000 jumps'];
+        $account = ['name' => 'Slayer', 'glyph' => 'kills', 'scope' => 'account', 'tier' => 2, 'progress' => 0.2, 'count' => '2,400 kills on 3 characters'];
     @endphp
     <div class="mt-5 grid gap-x-7 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
       <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" :play="true" /><figcaption class="sc-note mt-2">Plays once when the page opens: the plate rises, the new piece attaches, a white copy of it flashes, the next piece fades in at the real progress.</figcaption></figure>
       <figure><x-sc.feat-toast :feat="$rampage" kicker="Upgraded from Copper" /><figcaption class="sc-note mt-2">At rest, 1,200 ms to 5.2 s.</figcaption></figure>
       <figure><x-sc.feat-toast :feat="$jumper" kicker="Upgraded from Scarlet" :play="true" /><figcaption class="sc-note mt-2">A Legend: gold rail, two gold bursts 260 ms apart.</figcaption></figure>
+      <figure><x-sc.feat-toast :feat="$account" :kicker="App\View\Character\FeatsSection::kicker('Copper', true)" :play="true" /><figcaption class="sc-note mt-2">An account crest: the laurels and the second rim.</figcaption></figure>
     </div>
   </section>
 

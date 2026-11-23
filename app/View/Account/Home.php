@@ -3,6 +3,7 @@
 namespace App\View\Account;
 
 use App\View\Format;
+use App\View\Pages\AccountFeatWall;
 use App\View\Pages\CharacterStandings;
 use App\View\Pages\FeatsPage;
 use App\View\Sc\ClassColor;
@@ -39,6 +40,7 @@ final class Home
             'latest' => self::latest($b['latest'], $by),
             'week' => Week::tiles($b, $by),
             'rows' => self::rows($b),
+            'accountFeats' => AccountFeatWall::row($b['accountFeats']),
             'more' => count($characters) > count($b['shown']) ? Format::count(count($characters) - count($b['shown']), 'more character') : null,
             'play' => Play::days($characters, $b['days']),
             'gold' => Play::gold($characters, $b['gold'], $b['days']),

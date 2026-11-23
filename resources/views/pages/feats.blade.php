@@ -73,6 +73,9 @@
       @endif
       <nav class="mt-2 flex flex-wrap gap-2" aria-label="Family">@foreach ($d['familyChips'] as $chip)<a href="{{ $chip['href'] }}" @class(['sc-chipbtn no-underline', 'on' => $chip['on']])>{{ $chip['label'] }}</a>@endforeach</nav>
       <div class="mt-6" id="wall">
+        @if ($d['account'])
+          <x-sc.collection :name="$d['account']['name']" :family="$d['account']['family']" :feats="$d['account']['feats']" :count="$d['account']['held'].' of '.$d['account']['total']" :pips="false" />
+        @endif
         @forelse ($d['wall'] as $collection)
           <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :counts="$d['mode'] !== 'everyone'" />
         @empty

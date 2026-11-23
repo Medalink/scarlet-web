@@ -3,6 +3,7 @@
 namespace App\Actions\Account;
 
 use App\Actions\Feats\BuildCharacterFeats;
+use App\Actions\Feats\ShowAccountFeats;
 use App\Actions\Feats\ShowFeatCatalog;
 use App\Actions\Public\Character\CharacterRates;
 use App\Actions\Public\Character\StandingsOfMany;
@@ -27,6 +28,7 @@ class ShowAccountHome
         private readonly ShowInstalls $installs,
         private readonly ShowFeatCatalog $catalog,
         private readonly BuildCharacterFeats $feats,
+        private readonly ShowAccountFeats $accountFeats,
         private readonly StandingsOfMany $standings,
         private readonly CharacterRates $rates,
         private readonly BuildRecap $recap,
@@ -67,6 +69,7 @@ class ShowAccountHome
             'installs' => $this->installs->handle($account),
             'catalog' => $catalog,
             'feats' => $feats,
+            'accountFeats' => $this->accountFeats->handle($ids),
             'places' => $places,
             'featured' => $featured,
             'rates' => $main === null ? null : $this->rates->handle($main),

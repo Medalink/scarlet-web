@@ -43,6 +43,14 @@
     @if ($d['more'])<p class="mt-3 text-[14px]">{{ ucfirst($d['more']) }} not shown.</p>@endif<p class="mt-3 text-[14px]"><a href="/stats?scope=compare">Your stats against everyone</a> · <a href="/professions?scope=mine">Your professions</a> · <a href="/camps?scope=mine">Your camps</a> · <a href="/map?scope=mine">Your map</a></p>
   </section>
 
+  @if ($d['accountFeats'])
+    <section class="mt-12">
+      <h2 class="sc-h" style="font-size:30px">Feats</h2>
+      <x-sc.collection class="mt-4" :name="$d['accountFeats']['name']" :family="$d['accountFeats']['family']" :feats="$d['accountFeats']['feats']" :count="$d['accountFeats']['held'].' of '.$d['accountFeats']['total']" :pips="false" />
+      <p class="mt-3 text-[14px]"><a href="/feats">All feats</a></p>
+    </section>
+  @endif
+
   @if ($d['play'] || $d['gold'])
     <section class="mt-14 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
       @if ($d['play'])

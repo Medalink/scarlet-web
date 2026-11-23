@@ -36,6 +36,7 @@ final class FeatsPage
             'rarest' => self::rarest($hub['rarest']),
             'head' => $character === null ? null : self::head($character),
             'closest' => array_map(self::closestCard(...), $hub['closest']),
+            'account' => AccountFeatWall::row($hub['account'] ?? null, fn (array $feat): bool => self::passes($feat, $query, $keep)),
             'who' => $character === null ? 'Every feat' : 'Every feat '.self::first($character['name']).' can hold',
             'tierChips' => $keep ? self::tierChips($query) : [],
             'familyChips' => self::familyChips($feats, $query, $keep),

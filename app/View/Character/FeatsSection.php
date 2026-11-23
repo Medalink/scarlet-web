@@ -51,12 +51,22 @@ final class FeatsSection
                 continue;
             }
             $toasts[] = [
-                'key' => $item['key'], 'tier' => $item['tier'], 'kicker' => $item['from'] > 0 ? 'Upgraded from '.$item['from_name'] : 'Feat earned',
+                'key' => $item['key'], 'tier' => $item['tier'], 'kicker' => self::kicker($item['from_name']),
                 'feat' => ['key' => $item['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $item['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'], 'count' => $feat['counted']],
             ];
         }
 
         return $toasts;
+    }
+
+    /** The first line of a toast: "Feat earned" or "Upgraded from Silver", and "Account feat earned" or "Account feat upgraded from Silver" for an account crest. */
+    public static function kicker(?string $from, bool $account = false): string
+    {
+        if ($account) {
+            return $from === null ? 'Account feat earned' : 'Account feat upgraded from '.$from;
+        }
+
+        return $from === null ? 'Feat earned' : 'Upgraded from '.$from;
     }
 
     /**
