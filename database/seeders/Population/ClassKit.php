@@ -198,7 +198,7 @@ final class ClassKit
     }
 
     /** The name of a talent the builds hold. */
-    public static function talentName(int $spell): string
+    public static function talentName(int $spell): ?string
     {
         return [
             12294 => 'Mortal Strike', 12292 => 'Death Wish', 12317 => 'Enrage',
@@ -210,22 +210,20 @@ final class ClassKit
             11426 => 'Ice Barrier', 12472 => 'Icy Veins', 12043 => 'Presence of Mind',
             18094 => 'Nightfall', 18265 => 'Siphon Life', 17877 => 'Shadowburn',
             16979 => 'Feral Charge', 16864 => 'Omen of Clarity', 17116 => 'Nature\'s Swiftness',
-        ][$spell] ?? 'Talent '.$spell;
+        ][$spell] ?? null;
     }
 
-    /** The weapon the class swings, item id and name, for the main hand line. */
-    public static function weapon(PlayerClass $class): array
+    /** The item id of the weapon the class swings, for the main hand line; `World::ITEMS` names it. */
+    public static function weapon(PlayerClass $class): int
     {
         return match ($class) {
-            PlayerClass::Warrior => [12784, 'Arcanite Reaper'],
-            PlayerClass::Paladin => [18816, 'Ironforge Claymore'],
-            PlayerClass::Hunter => [15290, 'Bloodstained Longbow'],
-            PlayerClass::Rogue => [876, 'Bearded Rocksplitter'],
-            PlayerClass::Priest => [5200, 'Blessed Walking Stick'],
-            PlayerClass::Shaman => [1718, 'Windcaller Mace'],
-            PlayerClass::Mage => [5210, 'Firestrife Wand'],
-            PlayerClass::Warlock => [5213, 'Shadow Wand'],
-            PlayerClass::Druid => [5700, 'Forest Staff'],
+            PlayerClass::Warrior => 12784,
+            PlayerClass::Paladin => 1728,
+            PlayerClass::Hunter => 2825,
+            PlayerClass::Rogue => 2092,
+            PlayerClass::Priest, PlayerClass::Shaman => 36,
+            PlayerClass::Mage, PlayerClass::Warlock => 5210,
+            PlayerClass::Druid => 35,
         };
     }
 }

@@ -3,6 +3,7 @@
 namespace Database\Seeders\Population;
 
 use App\Models\RulesetKind;
+use App\Support\ClassPage\ClassPeers;
 use App\Support\PlayerClass;
 
 /**
@@ -35,6 +36,13 @@ final class PopulationPlan
     private const array LAST_NAMES = [
         'Vanguard', 'Keeper', 'Walker', 'Strider', 'Weaver', 'Caller', 'Bearer', 'Warden',
         'Seeker', 'Mender', 'Smith', 'Binder',
+    ];
+
+    /** The characters of `e2e/fixture`, whose names the end-to-end lane uploads and expects to be free. */
+    private const array FIXTURE_NAMES = [
+        'Candle-Warden', 'Echo-Witness', 'Frost-Weaver', 'Iron-Vanguard', 'Moon-Walker', 'Oath-Bearer', 'Pack-Warden',
+        'Pocket-Shade', 'Probe-Lane', 'Quiet-Walker', 'Shard-Keeper', 'Spell-Ledger', 'Tailor-Stranger',
+        'Testa-Fixture', 'Totem-Caller',
     ];
 
     /** @var list<CharacterPlan> */
@@ -114,7 +122,7 @@ final class PopulationPlan
         }
         $free = array_values(array_filter(
             Rng::for('names')->shuffled($all),
-            fn (string $name): bool => ! in_array(mb_strtolower($name), $foreignNames, true),
+            fn (string $name): bool => ! in_array(mb_strtolower($name), $foreignNames, true) && ! in_array($name, self::FIXTURE_NAMES, true),
         ));
 
         return $free;
@@ -123,11 +131,10 @@ final class PopulationPlan
     private function character(PlayerClass $class, int $nth, int $at, int $perClass, string $name): CharacterPlan
     {
         $rng = Rng::for('character:'.$name);
-        $dense = max(1, $perClass - 2);
         [$low, $high] = self::DENSE[$class->value];
         $level = match (true) {
-            $nth < $dense => $rng->interval($low, $high),
-            $nth === $dense => $rng->interval(10, 19),
+            $nth < ClassPeers::MIN_CHARACTERS => $rng->interval($low, $high),
+            $nth === ClassPeers::MIN_CHARACTERS => $rng->interval(10, 19),
             default => $rng->interval(1, 9),
         };
         $persona = $at < 8 ? Persona::cases()[$at % count(Persona::cases())] : Persona::draw($rng);

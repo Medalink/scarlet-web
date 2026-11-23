@@ -104,7 +104,9 @@ final class World
         3182 => 'Spider\'s Silk', 2672 => 'Stringy Wolf Meat', 769 => 'Chunk of Boar Meat', 723 => 'Goretusk Liver',
         1529 => 'Jade', 1210 => 'Shadowgem', 3864 => 'Citrine', 1705 => 'Lesser Moonstone', 1206 => 'Moss Agate',
         2841 => 'Bronze Bar', 3577 => 'Gold Bar', 3860 => 'Mithril Bar', 2776 => 'Gold Ore', 2835 => 'Rough Stone',
-        2836 => 'Coarse Stone', 2838 => 'Heavy Stone',
+        2836 => 'Coarse Stone', 2838 => 'Heavy Stone', 12784 => 'Arcanite Reaper', 1728 => 'Teebu\'s Blazing Longsword',
+        2825 => 'Bow of Searing Arrows', 2092 => 'Worn Dagger', 36 => 'Worn Mace', 5210 => 'Burning Wand',
+        35 => 'Bent Staff',
     ];
 
     /** The herbs, veins and animals the professions cast on, with the id their loot windows carry. */

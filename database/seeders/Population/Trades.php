@@ -41,8 +41,6 @@ final class Trades
     private const array SPELL_NAMES = [
         2575 => 'Mining', 2366 => 'Herb Gathering', 8613 => 'Skinning', 7620 => 'Fishing',
         2660 => 'Rough Sharpening Stone', 2538 => 'Charred Wolf Meat', 2963 => 'Bolt of Linen Cloth',
-        self::CAMPFIRE => 'Basic Campfire', self::NEAR_CAMPFIRE => 'Near a Campfire',
-        self::SITTING => 'Sitting', self::CAMP_BENEFITS => 'Campfire Rest',
     ];
 
     private readonly Rng $rng;
@@ -160,10 +158,6 @@ final class Trades
     public function camp(int $at): void
     {
         $afk = $this->afk();
-        $this->book->spell(self::CAMPFIRE, self::SPELL_NAMES[self::CAMPFIRE]);
-        $this->book->spell(self::NEAR_CAMPFIRE, self::SPELL_NAMES[self::NEAR_CAMPFIRE]);
-        $this->book->spell(self::SITTING, self::SPELL_NAMES[self::SITTING]);
-        $this->book->spell(self::CAMP_BENEFITS, self::SPELL_NAMES[self::CAMP_BENEFITS]);
         $this->book->at($at * 1000, 'C', self::CAMPFIRE, '');
         $this->book->at(($at + 8) * 1000, 'A', 1, self::NEAR_CAMPFIRE, '', 0, '', '');
         $this->book->at(($at + 12) * 1000, 'A', 1, self::SITTING, '', 0, '', '');

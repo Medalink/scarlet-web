@@ -142,9 +142,8 @@ final class SessionScript
     private function gear(): void
     {
         $weapon = ClassKit::weapon($this->plan->class);
-        $this->book->at(400, 'IN', $weapon[0], $weapon[1]);
-        $this->book->at(410, 'II', $weapon[0], 2, 1, 'INVTYPE_2HWEAPON', 50, 40, 100, 1, 1);
-        $this->book->at(2500, 'G', 16, $weapon[0], '', '', '');
+        $this->book->item($weapon);
+        $this->book->at(2500, 'G', 16, $weapon, '', '', '');
     }
 
     /** @return array{0: int, 1: array{0: string, 1: int, 2: list<string>}}|null the dungeon this session may run, by level */
@@ -288,7 +287,7 @@ final class SessionScript
             $this->book->at($at * 1000, 'C', $spell);
             $at += $this->rng->interval(1, 3);
         }
-        $this->book->spell($finisher, $spells[$finisher] ?? 'Finisher');
+        $this->book->spell($finisher, $spells[$finisher] ?? null);
         $this->book->at($at * 1000, 'C', $finisher);
         $aura = $this->aura($start + 1);
         $at += 2;
@@ -318,7 +317,7 @@ final class SessionScript
             return null;
         }
         $id = $this->rng->pick(array_keys($auras));
-        $this->book->spell($id, ClassKit::spells($this->plan->class)[$id] ?? 'Aura '.$id);
+        $this->book->spell($id, ClassKit::spells($this->plan->class)[$id] ?? null);
         $this->book->at($at * 1000, 'A', 1, $id, 1, $auras[$id], 1, '');
 
         return $id;

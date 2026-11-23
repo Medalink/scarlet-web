@@ -4,7 +4,7 @@ namespace Database\Seeders\Population;
 
 /**
  * The lines of one session as they are written, `[milliseconds since the session began, code, ...fields]`, and the
- * name lines (`SN`, `IN`, `N`) of every spell, item and creature a line mentions, written once each.
+ * name lines (`SN`, `IN`, `N`) of the spells, items and creatures a line mentions that the dictionary does not name yet.
  */
 final class LineBook
 {
@@ -19,19 +19,19 @@ final class LineBook
         $this->lines[] = [$ms, $code, array_values($fields)];
     }
 
-    public function spell(int $id, string $name): void
+    public function spell(int $id, ?string $name): void
     {
-        $this->name('SN', $id, $name);
+        $this->name('SN', 'spell', $id, $name);
     }
 
     public function item(int $id): void
     {
-        $this->name('IN', $id, World::ITEMS[$id] ?? 'Item '.$id);
+        $this->name('IN', 'item', $id, World::ITEMS[$id] ?? null);
     }
 
     public function creature(int $id, ?string $name = null): void
     {
-        $this->name('N', $id, $name ?? World::PREY[$id][0] ?? 'Creature '.$id);
+        $this->name('N', 'npc', $id, $name ?? World::PREY[$id][0] ?? null);
     }
 
     /** @return list<array{0: int, 1: list<int|float|string>}> in time order, each line as `[ms, [code, ...fields]]` */
@@ -43,14 +43,17 @@ final class LineBook
         return array_map(fn (array $line): array => [$line[0], [$line[1], ...$line[2]]], $lines);
     }
 
-    private function name(string $code, int $id, string $name): void
+    private function name(string $code, string $kind, int $id, ?string $name): void
     {
         $key = $code.$id;
 
-        if (isset($this->named[$key])) {
+        if ($name === null || isset($this->named[$key])) {
             return;
         }
         $this->named[$key] = true;
-        $this->at(100 + count($this->named), $code, $id, $name);
+
+        if (Dictionary::offer($kind, $id)) {
+            $this->at(100 + count($this->named), $code, $id, $name);
+        }
     }
 }

@@ -53,8 +53,15 @@ pinned feats). Every layer only creates what is missing, so a second run uploads
 skipped by its start, and everything is drawn from fixed keys (`Rng`) and `setseed`, so a rebuilt database gets the
 same people. Characters of the database that are not the seeder's are never touched, and their names are never used.
 
-`bin/run env SCARLET_SEED_PER_CLASS=2 php artisan db:seed` seeds the first 18 of the same people (about a minute). The class pages compare a character with 20 peers of its class in its level bracket, so
-those pages stay empty below 20 per class.
+Recordings name a spell, item or creature only when the shared name dictionary has no name for it, so the seed never
+outvotes what real installs reported.
+
+`bin/run env SCARLET_SEED_PER_CLASS=2 php artisan db:seed` seeds the first 18 of the same people (about a minute); the
+rest join later at the full size. The class pages compare a character with 20 peers of its class in its level bracket,
+so those pages stay empty below 20 per class.
+
+The seeder never uses the character names of `e2e/fixture`, but the development account owns characters now, so run the
+end-to-end lane with `node e2e/boot.mjs` or on an unseeded database.
 
 ## Checks before a ship
 
