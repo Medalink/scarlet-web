@@ -22,7 +22,8 @@ class AuditClaimStatuses
      * The checks of docs/DESIGN.md, Addon counts, Checks, that read what reconcile stored, as SQL over the stored
      * columns and never by running reconcile again: 1 every claim has a status and its amounts are its counted amounts
      * plus its stored difference, 2 counted stays between 0 and claimed and is 0 where the status says so, 3 a
-     * superseded or residual claim names its evidence, 4 no Scarlet row is assigned to two fishing claims of one
+     * superseded or residual claim names its evidence (rows, a record on another character, a session or the row of
+     * rule 2), 4 no Scarlet row is assigned to two fishing claims of one
      * origin (`AuditCountClaims` holds it for the other kinds), 5 no two counted or residual dated claims of a
      * character overlap, one origin's within equal dimensions (but a residual of rule 5 may overlap the claims
      * above it), and 11 no dated claim counts on two characters of
@@ -37,7 +38,7 @@ class AuditClaimStatuses
             ...$this->listed($this->claims('c.status is null or c.status not in ('.$this->marks(ClaimStatus::cases()).')', array_map(fn (ClaimStatus $status): string => $status->value, ClaimStatus::cases()), $characterId), 'has no valid status'),
             ...$this->listed($this->claims($this->differs(), [], $characterId), 'does not add up: its amounts are not its counted amounts plus the stored difference'),
             ...$this->listed($this->claims($this->counts(), ClaimStatus::uncounted(), $characterId), 'counts a negative amount, more than it claimed, or an amount its status does not allow'),
-            ...$this->listed($this->claims("c.status in (?, ?) and not (jsonb_exists(c.evidence, 'with') or jsonb_exists(c.evidence, 'session') or coalesce((c.evidence #>> '{rows,n}')::int, 0) > 0)", [ClaimStatus::Superseded->value, ClaimStatus::Residual->value], $characterId), 'is superseded or residual and names no evidence'),
+            ...$this->listed($this->claims("c.status in (?, ?) and not (jsonb_exists(c.evidence, 'with') or jsonb_exists(c.evidence, 'session') or jsonb_exists(c.evidence, 'row') or coalesce((c.evidence #>> '{rows,n}')::int, 0) > 0)", [ClaimStatus::Superseded->value, ClaimStatus::Residual->value], $characterId), 'is superseded or residual and names no evidence'),
             ...$this->sharedRows($characterId),
             ...$this->overlaps($characterId),
             ...$this->twins($characterId),

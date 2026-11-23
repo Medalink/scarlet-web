@@ -25,10 +25,14 @@
  * that the character page's Kills, Quests and Dungeon runs equal Scarlet plus the counted amounts read from the database, with "From addons" to the owner and
  * to a visitor where `E2E_MIN_CHARACTERS` (boot.mjs, default 1) is 1. `node e2e/addon-counts.mjs readers` runs only those two, for
  * `E2E_MIN_CHARACTERS=2 node e2e/boot.mjs -- node e2e/addon-counts.mjs readers`.
- * `node e2e/addon-counts.mjs bosses` runs only the boss kill cases: five invented characters whose sessions hold `B` lines and `E` ends,
- * checked against the `boss_kills` rows and the bosses of their dungeon run, and the removal and restore of the combat group.
  * By default they show Scarlet, what the addons added and the total, which equal the database's; run with
  * ADDON_COUNTS_PAGES=false (boot.mjs passes it on) they show Scarlet's own numbers and nothing from addons. ADDON_PAGES_DIR=<folder> keeps the pages read, for a before and after comparison.
+ *
+ * `node e2e/addon-counts.mjs bosses` runs only the boss kill cases. Five invented characters upload sessions that hold `B` lines and `E` ends, checked against
+ * the `boss_kills` rows and the bosses of their dungeon run, and the removal and restore of the combat group. Then thirteen more hold `nf` boss claims beside a
+ * kill with a `B`, with only an `E` end, after a wipe and with a `B` that has no encounter id, inside a session with no kill of the boss, before and after
+ * the one kill of a session, 30 and 100 seconds after a session, outside every session, two characters of one install holding one claim (one with the row, one with a
+ * combat session only) and claims the rule does not map or bounds. Each names its total, its verdicts and, with the combat group removed and restored, the same hash.
  */
 
 import crypto from "node:crypto";
@@ -710,7 +714,7 @@ async function accountReferences(jar, state) {
 
 const LEVEL_DAY = Date.parse("2026-10-01T12:00:00Z") / 1000;
 const RXP_STORE = "guid-quill-one";
-const METRIC_OF = { kill: "kills", xp: "xp", run: "runs" };
+const METRIC_OF = { kill: "kills", xp: "xp", run: "runs", boss: "bosses" };
 const slot = (k, seconds = 0) => LEVEL_DAY + k * 86400 + seconds;
 
 function countSession(name, start, { level = 20, kills = 0, ups = [], quests = [], stays = [] }) {
@@ -841,6 +845,7 @@ function tallyOf(name, kind) {
     kill: `(select count(*) from kills where ${own(name)} and not player)`,
     xp: `greatest((select coalesce(sum(xp), 0) from quest_events where ${own(name)} and event = 'turned_in'), (select coalesce(sum(amount), 0) from xp_gains where ${own(name)} and source = 'q'))`,
     run: `(select count(*) from dungeon_runs where ${own(name)} and not continues_previous)`,
+    boss: `(select count(*) from boss_kills where ${own(name)} and counted)`,
   }[kind];
   const added = `(select coalesce(sum((c.counted ->> '${METRIC_OF[kind]}')::numeric), 0) from addon_claims c where c.${own(name)} and c.kind = '${kind}' and c.status in ('counted', 'residual'))`;
   const [held, counted] = db(`select ${scarlet}, ${added}`).split("|").map(Number);
@@ -851,7 +856,7 @@ function verdictsOf(name) {
   return JSON.parse(db(`
     select coalesce(json_agg(t.v), '[]'::json) from (
       select c.kind || ' ' || coalesce((select string_agg(d.key || '=' || (d.value #>> '{}'), ';' order by d.key) from jsonb_each(c.dims) d), '') || ' ' || c.status || ' '
-        || coalesce(c.counted ->> (case c.kind when 'kill' then 'kills' when 'xp' then 'xp' else 'runs' end), '-') || ' r' || coalesce(c.evidence ->> 'rule', '?') as v
+        || coalesce(c.counted ->> (case c.kind when 'kill' then 'kills' when 'xp' then 'xp' when 'boss' then 'bosses' else 'runs' end), '-') || ' r' || coalesce(c.evidence ->> 'rule', '?') as v
       from addon_claims c where c.${own(name)}) t`)).sort();
 }
 
@@ -956,6 +961,72 @@ async function bosses() {
   check("combat group restored: every case holds its boss_kills rows again", cases.every((c) => JSON.stringify(bossRows(c)) === JSON.stringify(c.kills)));
 }
 
+const nf = (k, seconds, encounter, amounts = "bosses=1") =>
+  claimOf({ origin: "nf", window: "event", kind: "boss", from: bossSlot(k) + seconds, to: bossSlot(k) + seconds, dims: `encounter=${encounter}`, amounts });
+const verdict = (encounter, status, counted, rule) => `boss encounter=${encounter} ${status} ${counted} r${rule}`;
+const wonKill = (id) => [ended(300, id, true), killed(300, id)];
+const combatOnly = [[300, "K", STONETUSK_BOAR]];
+
+function bossClaimCases() {
+  const one = (k, name, events, claims, scarlet, total, verdicts, extra = {}) => ({
+    k, name, sessions: events === null ? [] : bossStart(k, name, { events }), claims, scarlet: { boss: scarlet }, total: { boss: total }, verdicts, ...extra,
+  });
+  return [
+    one(11, "Quill-Gale", [ended(300, 3101, true), killed(300.5, 3101)], [nf(11, 300, 3101)], 1, 1, [verdict(3101, "superseded", 0, 2)]),
+    one(12, "Quill-Hawk", [ended(300, 3102, true)], [nf(12, 300, 3102)], 1, 1, [verdict(3102, "superseded", 0, 2)], { bosses: 1 }),
+    one(13, "Quill-Iris", [ended(200, 3103, false), killed(200, 3103), [430, "E", 1, 3103, 1, 5, "Boss"], ended(440, 3103, true), killed(440, 3103)], [nf(13, 440, 3103)], 1, 1, [verdict(3103, "superseded", 0, 2)], { bosses: 1 }),
+    one(14, "Quill-Jade", combatOnly, [nf(14, 300, 3104)], 0, 0, [verdict(3104, "held", 0, 2)]),
+    one(15, "Quill-Kite", wonKill(3105), [nf(15, 120, 3105), nf(15, 300, 3105), nf(15, 500, 3105)], 1, 1, [verdict(3105, "held", 0, 2), verdict(3105, "superseded", 0, 2), verdict(3105, "held", 0, 2)]),
+    one(16, "Quill-Lark", wonKill(3106), [nf(16, 300, 3106), nf(16, 10800, 3107)], 1, 2, [verdict(3106, "superseded", 0, 2), verdict(3107, "counted", 1, 2)]),
+    one(17, "Quill-Moss", wonKill(3108), [nf(17, 630, 3109), nf(17, 700, 3110)], 1, 2, [verdict(3109, "held", 0, 2), verdict(3110, "counted", 1, 2)]),
+    one(18, "Quill-Nash", null, [nf(18, 300, 3111)], 0, 0, [verdict(3111, "superseded", 0, 4)]),
+    one(18, "Quill-Oak", wonKill(3111), [nf(18, 300, 3111)], 1, 1, [verdict(3111, "superseded", 0, 2)]),
+    one(19, "Quill-Pine", null, [nf(19, 300, 3112)], 0, 0, [verdict(3112, "superseded", 0, 4)]),
+    one(19, "Quill-Quartz", combatOnly, [nf(19, 300, 3112)], 0, 0, [verdict(3112, "held", 0, 2)]),
+    one(20, "Quill-Reed", [ended(300, 3113, true), killed(301, "", "Delta")], [nf(20, 300, 3113)], 1, 1, [verdict(3113, "superseded", 0, 2)]),
+    one(21, "Quill-Slate", null, [nf(21, 300, 3000000000), nf(21, 300, 3114, "bosses=2"), nf(21, 300, 3115)], 0, 1, ["boss encounter=3000000000 held 0 runmapped", "boss encounter=3114 rejected 0 rbounds", verdict(3115, "counted", 1, 2)]),
+  ];
+}
+
+async function bossClaims() {
+  await fresh(client, second);
+  const cases = bossClaimCases();
+  await levelsProved(cases);
+  for (const c of cases.filter((x) => x.bosses !== undefined)) {
+    check(`${c.name}: the run's bosses is ${c.bosses}`, bossCount(c) === c.bosses, `${bossCount(c)}`);
+  }
+  for (const [copy, original, together] of [["Quill-Nash", "Quill-Oak", 1], ["Quill-Pine", "Quill-Quartz", 0]]) {
+    const joint = tallyOf(copy, "boss").total + tallyOf(original, "boss").total;
+    check(`${copy} and ${original} hold one record on two characters: ${together} bosses together`, joint === together, `${joint} together`);
+  }
+  check("the character with the lower id and no session is superseded by rule 4 and names the one with the combat session and no row", claimCount("Quill-Pine", "c.status = 'superseded' and c.evidence ->> 'rule' = '4' and c.evidence #>> '{with,character}' = 'Quill-Quartz'") === 1);
+  const audited = artisan("addons:audit");
+  check("addons:audit passes with every boss case held at once", audited.status === 0, audited.stdout + audited.stderr);
+  const explained = (name) => audited.stdout.match(new RegExp(`^${name} boss\\n(?:(?!Scarlet )[\\s\\S])*^Scarlet ([^\\n]*)`, "m"))?.[1];
+  check("the explain table gives Quill-Lark Scarlet 1 boss and a total of 2, and Quill-Quartz 0 and 0", explained("Quill-Lark") === "bosses=1  Total bosses=2" && explained("Quill-Quartz") === "bosses=0  Total bosses=0", `${explained("Quill-Lark")} | ${explained("Quill-Quartz")}`);
+  const notes = audited.stdout.split("\n").filter((line) => line.startsWith("note: ") && line.includes("boss claims"));
+  const noted = ["Quill-Jade", "Quill-Kite", "Quill-Moss", "Quill-Quartz"].map((name) => notes.find((line) => line.startsWith(`note: ${name}: `)));
+  check("the held note names each character whose boss claims are held beside a session at the current version, and no other", noted.every((line) => line !== undefined) && notes.length === 4 && /note: Quill-Jade: 1 boss claims of nf for encounter 3104 are held/.test(noted[0]), notes.join(" | "));
+  const names = cases.map((c) => c.name);
+  const before = names.map((name) => snapshot(name).hash);
+  expectStatus(await client.request("DELETE", "/api/v1/upload/groups/combat"), 200, "DELETE groups/combat");
+  await settle(names, (...now) => now.every((s, i) => s.claims === cases[i].claims.length) && cases.every((c) => tallyOf(c.name, "boss").scarlet === 0) && verdictsOf("Quill-Hawk")[0] === verdict(3102, "counted", 1, 2), "the combat group removal with boss claims");
+  check("combat group removed: the claims no row or session holds count again, 1 each for the E-only and the combat-only characters", tallyOf("Quill-Hawk", "boss").total === 1 && tallyOf("Quill-Jade", "boss").total === 1 && verdictsOf("Quill-Jade")[0] === verdict(3104, "counted", 1, 2));
+  const withoutCombat = artisan("addons:audit");
+  check("addons:audit passes with the combat group removed", withoutCombat.status === 0, withoutCombat.stdout + withoutCombat.stderr);
+  expectStatus(await client.request("PUT", "/api/v1/upload/groups/combat"), 200, "PUT groups/combat");
+  for (const c of cases) await upload(known([...c.sessions, ...countsPartsOf(c.claims, c.name)]), c.name);
+  await settle(names, (...now) => now.every((s, i) => s.claims === cases[i].claims.length) && cases.every((c) => tallyOf(c.name, "boss").scarlet === c.scarlet.boss) && verdictsOf("Quill-Hawk")[0] === verdict(3102, "superseded", 0, 2), "the combat group restore with boss claims");
+  check("combat group restored: every case has the hash it had before", JSON.stringify(names.map((name) => snapshot(name).hash)) === JSON.stringify(before));
+  db(`update addon_claims set status = null, counted = null, evidence = null, ruleset_id = null, counted_ok = null, level = null, zone_id = null, reconcile_version = null where character_id in (select id from characters where name like 'Quill-%')`);
+  const rerun = artisan("addons:reconcile");
+  check("reconcile from blank columns decides every boss claim again to the same hash", rerun.status === 0 && JSON.stringify(names.map((name) => snapshot(name).hash)) === JSON.stringify(before), `${rerun.stdout}${rerun.stderr}`);
+  const twice = artisan("addons:reconcile");
+  check("reconcile twice changes nothing: 0 claims changed for every character", twice.status === 0 && !/: [1-9]\d* claims changed/.test(twice.stdout), twice.stdout);
+  const last = artisan("addons:audit");
+  check("addons:audit passes after the boss claims were decided again", last.status === 0, last.stdout + last.stderr);
+}
+
 const MIN_CHARACTERS = Number(process.env.E2E_MIN_CHARACTERS ?? 1);
 
 function readerCases() {
@@ -1045,6 +1116,7 @@ async function main() {
   }
   if (process.argv[2] === "bosses") {
     await bosses();
+    await bossClaims();
     await fresh(client, second);
     return;
   }
@@ -1158,6 +1230,7 @@ async function main() {
   await levels();
   await readers();
   await bosses();
+  await bossClaims();
 
   await fresh(client, second);
 }

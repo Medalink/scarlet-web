@@ -95,12 +95,15 @@ class ExplainAddonClaims
      * Scarlet's own term of the kind: the figure the counted claims add to. Fishing: attempts, looted attempts and
      * the quantity of the item rows. Kill: the kills that are not players. Xp: the experience of the quests turned
      * in, the larger of what `quest_events` and `xp_gains` of source quest hold, since the two sharing groups are
-     * on or off apart. Run: the dungeon runs, joined.
+     * on or off apart. Run: the dungeon runs, joined. Boss: the `boss_kills` rows that count.
      *
      * @return array<string, int>
      */
     private function scarlet(int $characterId, AddonKind $kind): array
     {
+        if ($kind === AddonKind::Boss) {
+            return ['bosses' => DB::table('boss_kills')->where('character_id', $characterId)->where('counted', true)->count()];
+        }
         if ($kind === AddonKind::Kill) {
             return ['kills' => DB::table('kills')->where('character_id', $characterId)->where('player', false)->count()];
         }

@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 
 /// The version of the rules below. The scheduled pass reconciles a character again when its claims carry an
 /// older one.
-pub const RECONCILE_VERSION: u32 = 6;
+pub const RECONCILE_VERSION: u32 = 7;
 
 const EPOCH_FLOOR: i64 = 1_566_777_600;
 const FUTURE_SLACK: i64 = 86_400;
@@ -134,7 +134,8 @@ impl Claim {
 /// non-player `kills` rows there (`count`, `level`) or, with no `level`, the rows the decoder wrote before the
 /// session had one; `at` is the last of them. Xp: one turn-in (`at`, `key` the quest id or none when the client
 /// hid it, `xp`, `level`), from `quest_events` (`events`) or from `xp_gains` of source `q`. Run: one joined
-/// `dungeon_runs` row (`key` the instance, `at` its first entry, `end` its last leave).
+/// `dungeon_runs` row (`key` the instance, `at` its first entry, `end` its last leave). Boss: one `boss_kills` row
+/// (`at`, `key` the encounter id or none, `session`), counted or not.
 #[derive(Clone, Debug)]
 pub struct Row {
     pub at: i64,
@@ -153,13 +154,15 @@ pub struct Row {
 
 /// A character, its claims of the kind and, for a character other than the one reconciled, its Scarlet rows of
 /// the kind that its claims' rule reads: for fishing only the `at` (epoch milliseconds) of the rows within a
-/// minute of its claims' windows.
+/// minute of its claims' windows. `spans` holds the start and end (epoch milliseconds) of each of its sessions with a
+/// combat part whose span lies within 63 s of one of its claims, which the boss rules read.
 #[derive(Clone, Debug)]
 pub struct Sibling {
     pub id: i64,
     pub name: String,
     pub claims: Vec<Claim>,
     pub rows: Vec<Row>,
+    pub spans: Vec<(i64, i64)>,
 }
 
 /// Everything one reconcile reads. Times of claims are epoch seconds, `at` of a row epoch milliseconds.
@@ -265,17 +268,17 @@ fn early(input: &Input, c: &Claim) -> Option<Decision> {
 }
 
 fn twin(input: &Input, c: &Claim) -> Option<Decision> {
-    let own = (
-        Reverse(rules::beside(&input.kind, c, &input.rows)),
-        input.character.id,
-    );
+    let standing = |who: &Sibling, rows: &[Row]| {
+        let (held, in_session) = rules::beside(&input.kind, c, rows, &who.spans);
+        (Reverse(held), Reverse(in_session), who.id)
+    };
+    let own = standing(&input.character, &input.rows);
     let (key, holder, same) = input
         .others
         .iter()
         .filter_map(|o| {
             let same = o.claims.iter().find(|x| rules::same_record(c, x))?;
-            let rows = rules::beside(&input.kind, c, &o.rows);
-            Some(((Reverse(rows), o.id), o, same))
+            Some((standing(o, &o.rows), o, same))
         })
         .min_by_key(|(key, _, _)| *key)?;
     (key < own).then(|| {
@@ -589,12 +592,12 @@ pub fn reconcile(input: &Input) -> Vec<Outcome> {
             &twinned,
             &mut decided,
         ),
-        None => {}
+        Some(Kind::Boss) | None => {}
     }
-    for (&i, event) in events
-        .iter()
-        .zip(rules::match_events(claims, &events, &rows))
-    {
+    let verdicts = Kind::of(&input.kind).map_or_else(Vec::new, |kind| {
+        rules::match_events(kind, claims, &events, &rows, &input.character.spans)
+    });
+    for (&i, event) in events.iter().zip(verdicts) {
         let c = &claims[i];
         decided[i] = Some(match event {
             Event::Matched { at, offset } => nothing(
@@ -605,7 +608,7 @@ pub fn reconcile(input: &Input) -> Vec<Outcome> {
             Event::Held => nothing(
                 c,
                 Status::Held,
-                json!({"rule": 2, "why": "no Scarlet row matches inside a session that recorded rows of the kind"}),
+                json!({"rule": 2, "why": rules::held_why(&input.kind)}),
             ),
             Event::Unkeyed => nothing(
                 c,
@@ -747,12 +750,32 @@ fn sibling_of(v: &Value) -> Result<Sibling, String> {
                 .collect::<Result<_, _>>()?,
             None => Vec::new(),
         },
+        spans: match v.get("spans") {
+            Some(spans) => spans
+                .as_array()
+                .ok_or("`spans` must be an array")?
+                .iter()
+                .map(span_of)
+                .collect::<Result<_, _>>()?,
+            None => Vec::new(),
+        },
     })
 }
 
-/// Read the JSON the server and the command line send: `kind`, `now`, `character` (`id`, `name`, `claims`),
-/// `rows` and `others` (characters like `character`, each with its own rows in `rows`, which may be left out:
-/// a fishing row is the integer `at` alone, the other kinds send the rows their rule reads).
+fn span_of(v: &Value) -> Result<(i64, i64), String> {
+    match v.as_array().map(Vec::as_slice) {
+        Some([first, last]) => first
+            .as_i64()
+            .zip(last.as_i64())
+            .ok_or_else(|| "a span holds two integers".to_string()),
+        _ => Err("a span is an array of two integers".to_string()),
+    }
+}
+
+/// Read the JSON the server and the command line send: `kind`, `now`, `character` (`id`, `name`, `claims`,
+/// `spans`), `rows` and `others` (characters like `character`, each with its own rows in `rows`, which may be left
+/// out: a fishing row is the integer `at` alone, the other kinds send the rows their rule reads, and `spans` is a
+/// list of `[first, last]` in epoch milliseconds that only the boss kind reads).
 pub fn parse(v: &Value) -> Result<Input, String> {
     Ok(Input {
         kind: text(v, "kind")?,

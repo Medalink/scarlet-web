@@ -14,9 +14,10 @@ enum AddonKind: string
     case Xp = 'xp';
     case Herb = 'herb';
     case Ore = 'ore';
+    case Boss = 'boss';
 
     public function hasRows(): bool
     {
-        return in_array($this, [self::Fishing, self::Kill, self::Run, self::Xp], true);
+        return in_array($this, [self::Fishing, self::Kill, self::Run, self::Xp, self::Boss], true);
     }
 }

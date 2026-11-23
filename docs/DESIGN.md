@@ -251,6 +251,8 @@ measurement before it ships.
 | `rxp` | `mobs[*].xp`, `deaths`, `groupExperience`, `levelsArchive`, the /played seconds | nothing | the XP is the first number of the chat line (+5,341 at one level: a boss with "6000" in its name), deaths are 27 against Scarlet's 15, the rest has no Scarlet twin |
 | `fdj` | each `runLog.runs[i]` with `closed = true` | `runs` = 1 of a `run` claim, window `session` from `created` (the first kill) to `lastSeen`, dims `instance` (`map`), store `<id>:<created>` | its 8 runs are 4 of Scarlet's joined runs, and Scarlet has 16 in all, so it adds 0 runs to the owner's data. `map` equals `instance_id` in 8 of 8 (2970, 189, 129, 3039). `lastSeen` is within 2 to 3 s of Scarlet's leave, and `created` is the first kill, 39, 55, 200 and 433 s after Scarlet's entry |
 | `fdj` | `kills`, `x`, `money`, `deaths`, `needs`, `party`, `exits` | nothing | kills are 235 above Scarlet's in 8 of 8 runs, exactly the kills that gave no XP; XP and money equal Scarlet's to the copper and the one death is 1 against 1, the same figures twice |
+| `nf` | each `journalKills[<guid>][<encounterID>].at[i]` | `bosses` = 1 of a `boss` claim, window `event`, `from` = `to` = `at[i]`, dims `encounter` (the encounter id), store empty | 115 kills of 82 bosses, and all 115 match a Scarlet kill within 0.6 s (offset 0 ms), 5 of them kills Scarlet knows only from an `E` end; 3 Scarlet kills match no NF kill (2 encounters its journal does not list, 1 before it recorded). The character is the one `charGuid` names for the GUID; a GUID with no name there writes nothing. The store is empty, so two GUIDs of one name give one claim |
+| `nf` | `n` past the 10 dated `at`, `first`, `took`, `best`, `team`, `drops`, `completoRareKills` | nothing | never written; `team` and `drops` hold other players' names |
 
 ### Lines, parts and the archive
 
@@ -294,7 +296,7 @@ Scarlet's rows had covered can count once more, never twice.
 
 `scarlet-part decode --counts` reads a day's `counts` parts and writes one `claim` row per `YC` line (the part's id,
 the key fields, `dims`, `amounts`) and a closing `day` row with the decoder version and the lines skipped: a code that
-is not `YC`, a kind the decoder does not list (`fishing`, `kill`, `run`, `xp`, `herb`, `ore`), a line it cannot read, and a key a part
+is not `YC`, a kind the decoder does not list (`fishing`, `kill`, `run`, `xp`, `herb`, `ore`, `boss`), a line it cannot read, and a key a part
 repeats (the last line wins). Nothing is fatal to the day. `StoreAddonClaims` takes the rows under the character lock;
 a key whose `counts` parts are all gone decodes again, which drops the claims only they carried. Removing the `counts`
 group, or the character, deletes the character's claims.
@@ -323,21 +325,24 @@ rounded half up in integer arithmetic; a ratio whose denominator is 0 is 0.
 The order of the work is fixed, and each step sees only the claims the steps before it left:
 
 1. Claims that fail their bounds are `rejected`; account-scope claims are `reference`; a kind with no row source
-   (`fishing`, `kill`, `xp` and `run` have one), an origin outside the kind's rank list (fishing: `fl`, `ff`; `kill` and
-   `xp`: `rxp`; `run`: `fdj`), a metric the kind does not know (`kills`; `xp`; `runs`) and, for the kinds with a
-   shape, a window or dimension keys other than it reads or a dimension that is not a whole number from 1 to
-   2,147,483,647 written plainly (`kill`: window `level`, dim `level`; `xp`: window `level`, dims `level` and `quest`;
-   `run`: window `session`, dim `instance`) are `held` with the rule `unmapped`. A `level` is inside 1 to 100 by then,
+   (`fishing`, `kill`, `xp`, `run` and `boss` have one), an origin outside the kind's rank list (fishing: `fl`, `ff`;
+   `kill` and `xp`: `rxp`; `run`: `fdj`; `boss`: `nf`), a metric the kind does not know (`kills`; `xp`; `runs`;
+   `bosses`) and, for the kinds with a shape, a window or dimension keys other than it reads or a dimension that is
+   not a whole number from 1 to 2,147,483,647 written plainly (`kill`: window `level`, dim `level`; `xp`: window
+   `level`, dims `level` and `quest`; `run`: window `session`, dim `instance`; `boss`: window `event`, dim
+   `encounter`) are `held` with the rule `unmapped`. A `level` is inside 1 to 100 by then,
    since the bounds run first, and the read of Scarlet's rows leaves out a dimension above 2,147,483,647, which the
    database cannot bind as an integer.
 2. A character-scope `life` claim is `held` (rule 6).
 3. A claim equal to one of another linked character is `superseded` (rule 4) unless its character is the one that
-   counts it: the one with Scarlet rows beside the claim, else the lowest id. The claims it moves stay known to
+   counts it: the one with Scarlet rows beside the claim, else (for `boss`) the one with a session that has a combat
+   part within 60 s of it, else the lowest id. The claims it moves stay known to
    steps 4 and 5, so that the claims they were one record with are decided with them.
 4. Dated claims of one origin with equal dims that overlap collapse into one (rule 5, second sentence): the claims
    are taken by end, start, store and dims, latest first, and each one with equal dims overlapping a winner already
    taken loses to it.
-5. For `kill`, `xp` and `run`, each claim left goes through its own rule (3L, 2Q, 3R): none has a second origin, so
+5. For `kill`, `xp` and `run`, each claim left goes through its own rule (3L, 2Q, 3R; `boss` goes with the events
+   of step 6): none has a second origin, so
    there is no rule 5 across origins, and none has a time to assign rows by. For fishing, per
    origin, highest rank first, Scarlet's rows are assigned to the claims left and settled across the seams between
    neighbouring claims (rule 3). Then each claim in turn: a
@@ -354,9 +359,9 @@ plausibility change happens only inside a decode, which writes `sessions.counted
 inputs again and writes only when they are the ones it decided on; otherwise it decides again, three times at most. A
 claim row is written only where a column differs, so a second run changes no row. The scheduled outdated pass queues a
 reconcile on its own, without a decode, for a character whose `addon_days.reconcile_version` is older than the rules
-or null. `RECONCILE_VERSION` is 6: the rules for `kill`, `xp` and `run` and the equal-dims collapse arrive with it, every
-character is decided again once, and no fishing verdict changes (every fishing claim is a `session` window with empty
-dims).
+or null. `RECONCILE_VERSION` is 7: the `boss` kind arrives with it (6 brought the rules for `kill`, `xp` and `run` and
+the equal-dims collapse), every character is decided again once, and no fishing, `kill`, `xp` or `run` verdict changes
+(every other claim is keyed on its kind).
 
 Every write that can change a verdict nulls `addon_days.reconcile_version` of the character and of the characters
 linked to it in its own transaction: the store of a decoded session or of a day of `counts` parts, `RemoveGroup`,
@@ -385,7 +390,7 @@ claims in a list, with `minus`, their share of it per metric), `same_origin`, `o
 | `counted` | whole | no Scarlet row and no higher-ranked claim falls in its window |
 | `residual` | part | Scarlet's rows, or the claims of a higher-ranked origin, cover part of its window |
 | `superseded` | 0 | Scarlet's rows, a higher-ranked origin, the same claim on another character, or another claim of its origin cover it; the evidence names which |
-| `held` | 0 | an event with no matching Scarlet row inside a Scarlet session that recorded rows of its kind; a claim no rule maps (a kind with no row source, an origin outside the rank list, an unknown metric); a lifetime of one character (rule 6); an `ff` claim with Scarlet rows near it and none assigned (rule 1) |
+| `held` | 0 | an event with no matching Scarlet row inside a Scarlet session that recorded rows of its kind (a `boss` event: within 60 s of a session that has a combat part); a claim no rule maps (a kind with no row source, an origin outside the rank list, an unknown metric); a lifetime of one character (rule 6); an `ff` claim with Scarlet rows near it and none assigned (rule 1) |
 | `rejected` | 0 | it fails its bounds: an amount that is not a whole number from 0 to 9e15, a window that ends before it starts or starts before 2019-08-26 (before the addons existed), a window that ends more than a day after the clock, landed above casts, `casts - unknown` above the window's seconds / 2 + 1; a `level` dim outside 1 to 100, more than 100,000 `kills` in a level claim, more than 1,000,000 `xp` in a quest claim, a `run` claim of any count but 1 |
 | `reference` | 0 | an account-scope claim: shown on the account page and checked as a ceiling, never added to a character |
 
@@ -398,10 +403,19 @@ Rules, in order:
    are assigned to it and `held` when none are, never `residual`. An event origin takes its offset per character from
    the pairs that match, never a constant per origin.
 2. **Events** match one to one with an unused Scarlet row of the same key (npc, item) within the origin's tolerance.
-   Matched is `superseded` with the row it matched. No mapped origin writes events yet, so this is built and not
-   measured: the tolerance is a provisional 2 s around an offset searched within 60 s (per origin, the median offset
+   Matched is `superseded` with the row it matched. No mapped origin writes item events yet (`nf` writes boss events,
+   2B), so this is built and not measured: the tolerance is a provisional 2 s around an offset searched within 60 s (per origin, the median offset
    of the pairs that matched). An event that names no item is `held`, as is an unmatched one that falls inside the
    span of a Scarlet session that recorded rows of the kind; any other counts.
+   **2B, boss claims (`boss`).** A `boss` claim is one kill of one encounter at one second. The key is the encounter
+   id and Scarlet's rows are the character's `boss_kills` (docs/ROWS.md), counted or not; the offset, the 2 s
+   tolerance and the one-to-one match are those above. An unmatched claim within 60 s of a session of the character
+   that has a combat part, from the session's start to its end and not from its first to its last kill, is `held`
+   ("Scarlet recorded this session and has no kill of the boss"), by the claim's own time and not the offset's; any
+   other counts 1. A session decoded before the current decoder version has no `boss_kills` rows, but its span exists,
+   so its claims are held until the re-decode writes the rows that supersede them. A kill is also an XP kill and a
+   `K` row, so it is a `boss` claim and never a `kill` claim, which would meet the `kill` claims of `rxp` and add to
+   the Kills figure.
    **2Q, quest claims (`xp`).** An `xp` claim is one turn-in of a quest, and Scarlet's rows are matched to it by quest
    id, never by time: a character is one name, so both lives and every ruleset share one pool, and a one-to-one match
    cannot add. Per quest id Scarlet holds m turn-ins, the larger of its `quest_events` count (`turned_in`) and its
@@ -570,12 +584,24 @@ node e2e/addon-counts.mjs levels` runs only these). The totals each history has:
   read under two `to` values an hour apart on the original, the earlier reading on the copy: 40 kills, not 80. A
   turn-in with no quest id, 900 at the claim's level, in the original's rows beside a claim of 900 on both: 900, not
   1,800.
+- Boss claims (`nf`, window `event`) of 13 characters, each with its total and its verdicts: a Scarlet `B` 0.5 s after
+  the kill, and a kill with only a successful `E` end, are `superseded` (rule 2) and add 0, and the run's `bosses` is
+  1. A wipe (an `E` end with success 0 and a `B` at the same second) and the kill 4 minutes later give one `boss_kills`
+  row, and the claim of the kill is superseded. A `B` with no encounter id 1 s after a successful `E` end is one row
+  with the `E`'s id and the claim is superseded. A claim inside a session that has a combat part and no kill of its
+  boss is `held`, as are claims 120 s before and 200 s after the one kill of a session and one 30 s after the session's
+  end; one 100 s after it, and one 3 hours after, count 1. Two characters of one install with one claim: with the row on
+  the higher id, the lower is superseded by rule 4 and the higher by rule 2 (1 boss in all); with no row anywhere and a
+  combat session only on the higher id, the lower is superseded by rule 4 and the higher holds it (0). An encounter id
+  above 2,147,483,647 is `held` (`unmapped`) and a claim of 2 bosses is `rejected` (`bounds`). With the combat group
+  removed the claims no row or session holds count 1 each, and restored every character has its hash again.
 
 The audit passes with every one of these characters held at once, reconcile from blank columns decides all of their
 claims again to the same hash, and a second reconcile changes none. The fishing cases of the lane keep their verdict
-hashes (every claim, status, counted amount and evidence, without the reconcile version) at version 6: 39 of 39 equal
-to the ones the same lane gave when these rules first ran, and 38 of 38 equal to the ones it gave at version 5 (the
-herb and ore case came after it).
+hashes (every claim, status, counted amount and evidence, without the reconcile version) at versions 6 and 7: 39 of 39
+equal to the ones the same lane gave when these rules first ran, and 38 of 38 equal to the ones it gave at version 5
+(the herb and ore case came after it). At version 7 all 72 hashes of the cases that existed before the boss cases, and
+the 15 of the decoder's boss kill cases, equal the ones the lane gave at version 6.
 
 ### Reading
 
@@ -662,7 +688,7 @@ character (check 9).
 2. 0 <= counted <= claimed; `superseded`, `held`, `rejected` and `reference` count 0. A `rejected` claim may claim a
    negative amount, so it only has to count 0.
 3. Every `superseded` and `residual` claim names its evidence. A claim superseded by rule 2Q names one Scarlet row
-   (`rows` with `n` 1).
+   (`rows` with `n` 1), and one superseded by rule 2 or 2B names its row (`row`).
 4. No Scarlet row is assigned to two claims of one origin: the assigned ranges of a character and origin are disjoint,
    they name no more rows than Scarlet holds, each range holds at least the rows it names, and a range lies within 60 s
    of its window. The kinds without a time to assign by hold it as follows.
@@ -676,6 +702,8 @@ character (check 9).
    - `run`: no `counted` claim has a joined Scarlet run of its instance overlapping `[from - 600 s, to + 5 s]` or a
      Scarlet run of any instance overlapping its unpadded `[from, to]`, and no two claims of one instance are under 2,400 s apart when one is `counted` and the other is `counted` or was
      moved to another character by rule 4.
+   - `boss`: no `boss_kills` row is the evidence of two claims, and no claim is `counted` within 60 s of a session of
+     its character that has a combat part.
 5. No two counted or residual dated claims of one character overlap by more than 60 s across origins, except a
    residual of rule 5, which counts only what the higher claims do not cover, or at all within one origin with equal
    dims: the quests and the levels of one origin share windows by design, and are told apart by their dims.
@@ -683,12 +711,14 @@ character (check 9).
    bucket.
 7. Scarlet's row counts and rollup sums are the same before and after each ship of this work.
 8. The account notes of rule 7 are listed (a note, not a violation), and so is each claim assigned more looted rows
-   than its `landed` (rule 3, seams).
+   than its `landed` (rule 3, seams), and the `boss` claims held beside a session already decoded at the current
+   version, per character and encounter id: they measure whether the addon's encounter id is Scarlet's for a boss
+   Scarlet has no kill of.
 9. No text field of a claim holds a `First-Last` name other than the character's own.
 10. No public bucket shows a per-origin figure from fewer characters than the threshold.
 11. No dated claim is counted or residual on two characters of one account with the same origin, kind, `from`, `to`
     and amounts, and no such claim is superseded by rule 4 on a character that has a Scarlet row within 60 s of it
-    in favour of one that has none. For `kill`, `xp` and `run` the rows beside the claim are the ones rule 4 names, and
+    in favour of one that has none. For `kill`, `xp`, `run` and `boss` the rows beside the claim are the ones rule 4 names, and
     the claim is not superseded on a character that has more of them in favour of one that has fewer.
 
 The rest is proven on a copy of the owner's data under an invented name, through the real companion and the real

@@ -15,7 +15,7 @@ pub const GROUP: &str = "counts";
 /// The line code of the group.
 pub const CODE: &str = "YC";
 
-const KINDS: [&str; 6] = ["fishing", "kill", "run", "xp", "herb", "ore"];
+const KINDS: [&str; 7] = ["fishing", "kill", "run", "xp", "herb", "ore", "boss"];
 const WINDOWS: [&str; 5] = ["event", "session", "day", "level", "life"];
 const FIELDS: usize = 9;
 const MAX_ORIGIN: usize = 8;

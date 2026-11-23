@@ -6,6 +6,7 @@ use App\Actions\Public\QuestRecord;
 use App\Support\AddonKind;
 use App\Support\GatherKind;
 use App\Support\JoinedDungeonRuns;
+use App\Support\SharingGroup;
 use App\Support\XpSource;
 use Illuminate\Support\Facades\DB;
 use stdClass;
@@ -20,6 +21,12 @@ class ReadReconcileInput
      * minute the rule counts in, so that the part's own bounds in milliseconds are the only filter on either side.
      */
     private const int TWIN_REACH = 61;
+
+    /**
+     * How far from a boss claim's time its Scarlet rows and sessions are read, in seconds: the minute the rule
+     * searches for a pair, the 2 seconds it matches within after the offset, and a second of rounding.
+     */
+    private const int BOSS_REACH = 63;
 
     private const string SCOPE_CHARACTER = 'c';
 
@@ -51,7 +58,7 @@ class ReadReconcileInput
                         $kind->hasRows() => $this->rowsOf($id, $kind, $theirs),
                         default => [],
                     },
-                ];
+                ] + $this->sessionSpans($id, $kind, $theirs);
             }
         }
         $own = $claims[$characterId] ?? [];
@@ -59,10 +66,43 @@ class ReadReconcileInput
         return json_encode([
             'kind' => $kind->value,
             'now' => $now,
-            'character' => ['id' => $characterId, 'name' => (string) ($names[$characterId] ?? ''), 'claims' => $own],
+            'character' => ['id' => $characterId, 'name' => (string) ($names[$characterId] ?? ''), 'claims' => $own] + $this->sessionSpans($characterId, $kind, $own),
             'rows' => $kind->hasRows() ? $this->rowsOf($characterId, $kind, $own) : [],
             'others' => $others,
         ], JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * The `spans` of a character for the kinds whose rule reads them: the first and last time, in epoch milliseconds,
+     * of each of its sessions with a combat part that lies near one of the character's claims. Left out for the others,
+     * so their input text stays as it was.
+     *
+     * @param  list<array<string, mixed>>  $claims
+     * @return array{spans?: list<array{int, int}>}
+     */
+    private function sessionSpans(int $characterId, AddonKind $kind, array $claims): array
+    {
+        if ($kind !== AddonKind::Boss) {
+            return [];
+        }
+        if ($claims === []) {
+            return ['spans' => []];
+        }
+
+        return ['spans' => array_values(array_map(fn (stdClass $row): array => [(int) $row->start_ms, (int) $row->end_ms], DB::select(
+            <<<'SQL'
+            select round(extract(epoch from s.start_at) * 1000)::bigint as start_ms, round(extract(epoch from s.end_at) * 1000)::bigint as end_ms
+            from sessions s
+            where s.character_id = ? and jsonb_exists(s.groups, ?)
+                and exists (
+                    select 1 from addon_claims c
+                    where c.character_id = s.character_id and c.kind = ? and c.scope = ? and c.window <> 'life'
+                        and c.to_at between extract(epoch from s.start_at) - ?::bigint and extract(epoch from s.end_at) + ?::bigint
+                )
+            order by s.start_at, s.id
+            SQL,
+            [$characterId, SharingGroup::COMBAT, $kind->value, self::SCOPE_CHARACTER, self::BOSS_REACH, self::BOSS_REACH],
+        )))];
     }
 
     /**
@@ -141,8 +181,39 @@ class ReadReconcileInput
         if ($kind === AddonKind::Run) {
             return $this->runRows($characterId);
         }
+        if ($kind === AddonKind::Boss) {
+            return $this->bossRows($characterId);
+        }
 
         return $this->fishRows($characterId, $claims);
+    }
+
+    /**
+     * Scarlet's boss kills near the claims: each `boss_kills` row of the character within {@see self::BOSS_REACH} seconds
+     * of a dated claim of the kind, counted or not, with its encounter id (null when the line had none) and session.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function bossRows(int $characterId): array
+    {
+        return array_values(array_map(fn (stdClass $row): array => [
+            'at' => (int) $row->at_ms,
+            'key' => $row->encounter_id === null ? null : (int) $row->encounter_id,
+            'session' => (int) $row->session_start,
+        ], DB::select(
+            <<<'SQL'
+            select round(extract(epoch from k.at) * 1000)::bigint as at_ms, k.encounter_id, k.session_start
+            from boss_kills k
+            where k.character_id = ?
+                and exists (
+                    select 1 from addon_claims c
+                    where c.character_id = k.character_id and c.kind = ? and c.scope = ? and c.window <> 'life'
+                        and k.at between to_timestamp(c.to_at - ?::bigint) and to_timestamp(c.to_at + ?::bigint)
+                )
+            order by k.at, k.encounter_id nulls first, k.session_start
+            SQL,
+            [$characterId, AddonKind::Boss->value, self::SCOPE_CHARACTER, self::BOSS_REACH, self::BOSS_REACH],
+        )));
     }
 
     /**

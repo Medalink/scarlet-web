@@ -1,4 +1,4 @@
-use super::{Claim, EPOCH_FLOOR, FUTURE_SLACK, Row, SCOPE_ACCOUNT};
+use super::{Claim, EPOCH_FLOOR, FUTURE_SLACK, Row, SCOPE_ACCOUNT, WINDOW_EVENT};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::ops::RangeInclusive;
@@ -16,6 +16,7 @@ const FISHING: &str = "fishing";
 const KILL: &str = "kill";
 const XP: &str = "xp";
 const RUN: &str = "run";
+const BOSS: &str = "boss";
 const FISHING_RANK: [&str; 2] = ["fl", "ff"];
 const FISHING_METRICS: [&str; 4] = ["casts", "landed", "items", "unknown"];
 const FISHING_REPORTED: [&str; 3] = ["casts", "landed", "items"];
@@ -24,10 +25,13 @@ const KILL_METRICS: [&str; 1] = ["kills"];
 const XP_METRICS: [&str; 1] = ["xp"];
 const RUN_RANK: [&str; 1] = ["fdj"];
 const RUN_METRICS: [&str; 1] = ["runs"];
+const BOSS_RANK: [&str; 1] = ["nf"];
+const BOSS_METRICS: [&str; 1] = ["bosses"];
 const SERVER_CLOCK: [&str; 1] = ["ff"];
 const LEVEL: &str = "level";
 const QUEST: &str = "quest";
 const INSTANCE: &str = "instance";
+const ENCOUNTER: &str = "encounter";
 const LEVELS: RangeInclusive<i64> = 1..=100;
 const IDS: RangeInclusive<i64> = 1..=2_147_483_647;
 const MAX_KILLS: i64 = 100_000;
@@ -49,6 +53,7 @@ pub(super) enum Kind {
     Kill,
     Xp,
     Run,
+    Boss,
 }
 
 struct Shape {
@@ -63,6 +68,7 @@ impl Kind {
             KILL => Some(Kind::Kill),
             XP => Some(Kind::Xp),
             RUN => Some(Kind::Run),
+            BOSS => Some(Kind::Boss),
             _ => None,
         }
     }
@@ -72,6 +78,7 @@ impl Kind {
             Kind::Fishing => &FISHING_RANK,
             Kind::Kill | Kind::Xp => &KILL_RANK,
             Kind::Run => &RUN_RANK,
+            Kind::Boss => &BOSS_RANK,
         }
     }
 
@@ -81,6 +88,7 @@ impl Kind {
             Kind::Kill => &KILL_METRICS,
             Kind::Xp => &XP_METRICS,
             Kind::Run => &RUN_METRICS,
+            Kind::Boss => &BOSS_METRICS,
         }
     }
 
@@ -98,6 +106,10 @@ impl Kind {
             Kind::Run => Some(Shape {
                 window: WINDOW_SESSION,
                 dims: &[INSTANCE],
+            }),
+            Kind::Boss => Some(Shape {
+                window: WINDOW_EVENT,
+                dims: &[ENCOUNTER],
             }),
         }
     }
@@ -183,6 +195,10 @@ fn kind_bounds(c: &Claim, whole: &BTreeMap<String, i64>) -> Option<String> {
             .get("runs")
             .filter(|&&n| n != 1)
             .map(|n| format!("a run claim holds {n} runs, not 1")),
+        Kind::Boss => whole
+            .get("bosses")
+            .filter(|&&n| n != 1)
+            .map(|n| format!("a boss claim holds {n} bosses, not 1")),
     }
 }
 
@@ -315,8 +331,12 @@ pub(super) fn runs_over<'a>(rows: &'a [Row], c: &Claim) -> Vec<&'a Row> {
     over
 }
 
-pub(super) fn beside(kind: &str, c: &Claim, rows: &[Row]) -> i64 {
-    match Kind::of(kind) {
+fn near_a_span(spans: &[(i64, i64)], at: i64, pad: i64) -> bool {
+    spans.iter().any(|&(a, b)| at >= a - pad && at <= b + pad)
+}
+
+pub(super) fn beside(kind: &str, c: &Claim, rows: &[Row], spans: &[(i64, i64)]) -> (i64, bool) {
+    let held = match Kind::of(kind) {
         Some(Kind::Fishing) => rows_within(
             rows.iter().map(|r| r.at),
             start(c) * 1000 - ASSIGN_SLACK_MS,
@@ -336,8 +356,22 @@ pub(super) fn beside(kind: &str, c: &Claim, rows: &[Row]) -> i64 {
             (turn_ins(rows, quest).len() + hidden(true).max(hidden(false))) as i64
         }),
         Some(Kind::Run) => runs_over(rows, c).len() as i64,
+        Some(Kind::Boss) => dim_int(c, ENCOUNTER).map_or(0, |encounter| {
+            let at = c.to * 1000;
+            matching(
+                Kind::Boss,
+                rows,
+                encounter,
+                at - EVENT_SEARCH_MS,
+                at + EVENT_SEARCH_MS,
+            )
+            .count() as i64
+        }),
         None => 0,
-    }
+    };
+    let in_session = matches!(Kind::of(kind), Some(Kind::Boss))
+        && near_a_span(spans, c.to * 1000, EVENT_SEARCH_MS);
+    (held, in_session)
 }
 
 pub(super) fn covers(claimed_above: i64, claimed: i64) -> bool {
@@ -577,26 +611,39 @@ pub(super) fn share(whole: &BTreeMap<String, i64>, rows: &[&Row]) -> BTreeMap<St
     out
 }
 
-fn item_of(c: &Claim) -> Option<i64> {
-    c.dims.get("item").and_then(|v| v.parse().ok())
+fn event_key(kind: Kind, c: &Claim) -> Option<i64> {
+    match kind {
+        Kind::Boss => dim_int(c, ENCOUNTER),
+        _ => c.dims.get("item").and_then(|v| v.parse().ok()),
+    }
 }
 
-fn matching(rows: &[Row], item: i64, from: i64, to: i64) -> impl Iterator<Item = usize> + '_ {
+fn matching(
+    kind: Kind,
+    rows: &[Row],
+    key: i64,
+    from: i64,
+    to: i64,
+) -> impl Iterator<Item = usize> + '_ {
     let first = rows.partition_point(|r| r.at < from);
     (first..rows.len())
         .take_while(move |&r| rows[r].at <= to)
-        .filter(move |&r| rows[r].item_ids.contains(&item))
+        .filter(move |&r| match kind {
+            Kind::Boss => rows[r].key == Some(key),
+            _ => rows[r].item_ids.contains(&key),
+        })
 }
 
-fn offset_of(claims: &[Claim], mine: &[usize], rows: &[Row]) -> i64 {
+fn offset_of(kind: Kind, claims: &[Claim], mine: &[usize], rows: &[Row]) -> i64 {
     let mut deltas: Vec<i64> = mine
         .iter()
         .filter_map(|&i| {
             let c = &claims[i];
             let at = c.to * 1000;
             matching(
+                kind,
                 rows,
-                item_of(c)?,
+                event_key(kind, c)?,
                 at - EVENT_SEARCH_MS,
                 at + EVENT_SEARCH_MS,
             )
@@ -636,10 +683,26 @@ pub(super) fn cancelled_in_session(
         .find(|&(first, last)| first <= start(c) * 1000 && c.to * 1000 <= last)
 }
 
-pub(super) fn match_events(claims: &[Claim], events: &[usize], rows: &[Row]) -> Vec<Event> {
+pub(super) fn held_why(kind: &str) -> &'static str {
+    match Kind::of(kind) {
+        Some(Kind::Boss) => "Scarlet recorded this session and has no kill of the boss",
+        _ => "no Scarlet row matches inside a session that recorded rows of the kind",
+    }
+}
+
+pub(super) fn match_events(
+    kind: Kind,
+    claims: &[Claim],
+    events: &[usize],
+    rows: &[Row],
+    sessions: &[(i64, i64)],
+) -> Vec<Event> {
     let mut verdicts: Vec<Option<Event>> = (0..events.len()).map(|_| None).collect();
     let mut used = vec![false; rows.len()];
-    let spans = session_spans(rows);
+    let (spans, pad) = match kind {
+        Kind::Boss => (sessions.to_vec(), EVENT_SEARCH_MS),
+        _ => (session_spans(rows), EVENT_TOLERANCE_MS),
+    };
     let mut origins: Vec<&str> = events.iter().map(|&i| claims[i].origin.as_str()).collect();
     origins.sort_unstable();
     origins.dedup();
@@ -652,17 +715,23 @@ pub(super) fn match_events(claims: &[Claim], events: &[usize], rows: &[Row]) -> 
             (c.to, c.store.clone(), c.dims.clone())
         });
         let indices: Vec<usize> = mine.iter().map(|&e| events[e]).collect();
-        let offset = offset_of(claims, &indices, rows);
+        let offset = offset_of(kind, claims, &indices, rows);
         for &e in &mine {
             let c = &claims[events[e]];
-            let Some(item) = item_of(c) else {
+            let Some(key) = event_key(kind, c) else {
                 verdicts[e] = Some(Event::Unkeyed);
                 continue;
             };
             let target = c.to * 1000 - offset;
+            let held_at = if kind == Kind::Boss {
+                c.to * 1000
+            } else {
+                target
+            };
             let hit = matching(
+                kind,
                 rows,
-                item,
+                key,
                 target - EVENT_TOLERANCE_MS,
                 target + EVENT_TOLERANCE_MS,
             )
@@ -676,12 +745,7 @@ pub(super) fn match_events(claims: &[Claim], events: &[usize], rows: &[Row]) -> 
                         offset,
                     }
                 }
-                None if spans.iter().any(|&(a, b)| {
-                    target >= a - EVENT_TOLERANCE_MS && target <= b + EVENT_TOLERANCE_MS
-                }) =>
-                {
-                    Event::Held
-                }
+                None if near_a_span(&spans, held_at, pad) => Event::Held,
                 None => Event::Open,
             });
         }

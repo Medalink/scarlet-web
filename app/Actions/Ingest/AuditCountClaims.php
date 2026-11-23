@@ -6,6 +6,7 @@ use App\Actions\Public\QuestRecord;
 use App\Support\AddonKind;
 use App\Support\ClaimStatus;
 use App\Support\JoinedDungeonRuns;
+use App\Support\SharingGroup;
 use App\Support\XpSource;
 use Illuminate\Support\Facades\DB;
 use stdClass;
@@ -22,6 +23,9 @@ class AuditCountClaims
 
     private const string SCOPE_CHARACTER = 'c';
 
+    /** Seconds around a session with a combat part in which a boss claim is held and not counted, and in which rule 4 counts rows. */
+    private const int BOSS_SESSION_REACH = 60;
+
     /**
      * Checks 4 and 11 of docs/DESIGN.md, Addon counts, Checks, for the kinds that count by level, quest and run, as
      * SQL over the stored columns and Scarlet's own rows. Kill: no two claims of one origin and store that count, or
@@ -30,8 +34,10 @@ class AuditCountClaims
      * claimed minus that count, floored at 0. Xp: per character and quest id the counted claims number at most the
      * claims minus Scarlet's turn-ins, their XP is at most that of the claims with the smallest XP (as many as the
      * claims minus the turn-ins), and no Scarlet row is the evidence of two claims. Run: no counted claim has a joined Scarlet run beside it, and none is under 2,400 seconds from another
-     * that counts or that rule 4 moved to another character. Every kind: no claim is superseded by rule 4 in favour of
-     * a character that holds fewer Scarlet rows beside it. With no character, every character is checked.
+     * that counts or that rule 4 moved to another character. Boss: no `boss_kills` row is the evidence of two claims,
+     * and no claim counts within a minute of a session of its character that has a combat part. Every kind: no claim is
+     * superseded by rule 4 in favour of a character that holds fewer Scarlet rows beside it. With no character, every
+     * character is checked.
      *
      * @return list<string> one line per violation
      */
@@ -45,10 +51,61 @@ class AuditCountClaims
             ...$this->questRowsShared($characterId),
             ...$this->runsBesideRows($characterId),
             ...$this->runsApart($characterId),
+            ...$this->bossRowsShared($characterId),
+            ...$this->bossesBesideSessions($characterId),
             ...$this->twinsOnFewerRows(AddonKind::Kill, $characterId),
             ...$this->twinsOnFewerRows(AddonKind::Xp, $characterId),
             ...$this->twinsOnFewerRows(AddonKind::Run, $characterId),
+            ...$this->twinsOnFewerRows(AddonKind::Boss, $characterId),
         ];
+    }
+
+    /** @return list<string> */
+    private function bossRowsShared(?int $characterId): array
+    {
+        $lines = [];
+        foreach ($this->rows(
+            <<<'SQL'
+            select ch.name as character_name, c.evidence #>> '{row,at}' as at_ms, c.dims ->> 'encounter' as encounter, count(*) as claims
+            from addon_claims c join characters ch on ch.id = c.character_id
+            where c.kind = ? and c.status = ? and c.evidence ->> 'rule' = '2' and jsonb_exists(c.evidence, 'row')
+                and (?::bigint is null or c.character_id = ?)
+            group by c.character_id, ch.name, c.evidence #>> '{row,at}', c.dims ->> 'encounter'
+            having count(*) > 1
+            order by ch.name, at_ms
+            limit 20
+            SQL,
+            [AddonKind::Boss->value, ClaimStatus::Superseded->value, $characterId, $characterId],
+        ) as $row) {
+            $lines[] = "{$row->character_name}: the Scarlet kill of encounter {$row->encounter} at {$row->at_ms} is the evidence of {$row->claims} boss claims";
+        }
+
+        return $lines;
+    }
+
+    /** @return list<string> */
+    private function bossesBesideSessions(?int $characterId): array
+    {
+        $lines = [];
+        foreach ($this->rows(
+            <<<'SQL'
+            select c.id, ch.name as character_name, c.origin, c.to_at
+            from addon_claims c join characters ch on ch.id = c.character_id
+            where c.kind = ? and c.status = ? and (?::bigint is null or c.character_id = ?)
+                and exists (
+                    select 1 from sessions s
+                    where s.character_id = c.character_id and jsonb_exists(s.groups, ?)
+                        and c.to_at between extract(epoch from s.start_at) - ?::bigint and extract(epoch from s.end_at) + ?::bigint
+                )
+            order by c.id
+            limit 20
+            SQL,
+            [AddonKind::Boss->value, ClaimStatus::Counted->value, $characterId, $characterId, SharingGroup::COMBAT, self::BOSS_SESSION_REACH, self::BOSS_SESSION_REACH],
+        ) as $row) {
+            $lines[] = "claim {$row->id} of {$row->character_name} ({$row->origin} boss to {$row->to_at}) counts within ".self::BOSS_SESSION_REACH.' seconds of a session of the character that has a combat part';
+        }
+
+        return $lines;
     }
 
     /** @return list<string> */
@@ -282,6 +339,13 @@ class AuditCountClaims
                 "(greatest((select count(*) from quest_events q where q.character_id = {$claim}.character_id and q.event = ? and q.quest_id = ({$claim}.dims ->> 'quest')::int), (select count(*) from xp_gains x where x.character_id = {$claim}.character_id and x.source = ? and x.source_id = ({$claim}.dims ->> 'quest')::int))"
                 ." + greatest((select count(*) from quest_events q where q.character_id = {$claim}.character_id and q.event = ? and q.quest_id is null and (q.level is null or {$claim}.level in (q.level, q.level - 1))), (select count(*) from xp_gains x where x.character_id = {$claim}.character_id and x.source = ? and x.source_id is null and (x.level is null or {$claim}.level in (x.level, x.level - 1)))))",
                 [QuestRecord::TURNED_IN, XpSource::Quest->value, QuestRecord::TURNED_IN, XpSource::Quest->value],
+            ];
+        }
+
+        if ($kind === AddonKind::Boss) {
+            return [
+                "(select count(*) from boss_kills b where b.character_id = {$claim}.character_id and b.encounter_id = ({$claim}.dims ->> 'encounter')::int and b.at between to_timestamp({$claim}.to_at - ?::bigint) and to_timestamp({$claim}.to_at + ?::bigint))",
+                [self::BOSS_SESSION_REACH, self::BOSS_SESSION_REACH],
             ];
         }
 
