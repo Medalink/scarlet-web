@@ -3,19 +3,12 @@
 namespace App\Actions\Public\ClassPage;
 
 use App\Models\Character;
-use App\Support\ClassPage\CharacterLine;
 use App\Support\ClassPage\ClassPage;
 use App\Support\PlayerClass;
-use App\View\Format;
 
 class CharacterClassPage
 {
-    public function __construct(
-        private readonly ReadClassParts $read,
-        private readonly ReadClassComparison $comparison,
-        private readonly ClassFeatCards $feats,
-        private readonly CharacterLinks $links,
-    ) {}
+    public function __construct(private readonly BuildClassPage $build) {}
 
     /**
      * The class page of a character: what the class's builder made of its rows, the character line, the links to its
@@ -31,23 +24,10 @@ class CharacterClassPage
         if ($character === null || ! $character->visibleTo($viewerAccountId) || $class === null || strtoupper((string) $character->class) !== $class->value) {
             return null;
         }
-        $read = $this->read->handle($character);
-        if ($read === null) {
+        $page = $this->build->handle($character);
+        if ($page === null) {
             return null;
         }
-        $parts = $read->parts;
-        $page = new ClassPage(
-            $class,
-            new CharacterLine(Format::characterName($character->name), (int) $character->level, $read->facts->hours, $read->facts->build, $parts->icon),
-            $this->links->handle($character, true),
-            $parts->callouts,
-            $parts->figures,
-            $parts->sheet,
-            $parts->talents,
-            $parts->party,
-            $this->comparison->handle($read),
-            $this->feats->handle($read),
-        );
 
         return ['character' => $character, 'owner' => $viewerAccountId !== null && $character->account_id === $viewerAccountId, 'page' => $page];
     }

@@ -160,6 +160,50 @@ character holds is lowered to it, a tier below the one recorded changes nothing,
 not_found` when the character is not this install's. `422 invalid_request` for a feat that does not exist or a tier
 outside 1 to 5.
 
+### `GET /installs/me/class-page/{character?}`
+
+The class page of every character this install owns (uploaded by it, or on the account it is linked to), public or
+not, whose class has a page and whose sessions counted a cast, most recently seen first: the data the page at
+`/c/{name}/{class}` draws. A character with no class page is not listed, so a character's absence is the answer. With
+`{character}` (`Name-Surname`, percent-encoded in the path that is signed) the list holds only that character, and is
+empty for a name the install does not own. A name that is not `Name-Surname` is `404`.
+
+```json
+{"characters": [{
+  "name": "Name-Surname", "class": "warlock", "class_name": "Warlock", "scene": "warlock",
+  "url": "https://scarletweb.io/c/Name-Surname/warlock",
+  "links": {"character": "https://scarletweb.io/c/Name-Surname", "class_page": "https://scarletweb.io/c/Name-Surname/warlock", "build": null, "battlegrounds": null},
+  "character": {"name": "Name Surname", "level": 52, "hours": 5.9, "hours_text": "5.9", "build": {"tree": "Affliction", "points": [30, 0, 12]}, "icon": "https://scarletweb.io/spell-icons/136.png?v=1"},
+  "callouts": [{"key": "voidwalker", "title": "Zharmok", "text": "Voidwalker, out 2.7 hours", "note": "45% of demon time", "left": false}],
+  "figures": [{"label": "Soul shards made", "value": 38, "unit": "count", "text": "38", "of": null, "icon": null}],
+  "sheet": [{"modules": [{"heading": "Soul shards", "span": "W12", "note": null, "icon": null, "blocks": ["..."]}]}],
+  "talents": [{"name": "Nightfall", "points": 2, "max": 2, "icon": null, "note": null, "blocks": ["..."]}],
+  "party": ["... rows as in sheet"],
+  "comparison": {"of": "warlocks", "from": 50, "to": 59, "characters": 31, "standings": [{"label": "Life Taps", "value": 18, "unit": "count", "text": "18", "percent": 72, "icon": null}]},
+  "feats": [{"name": "Life-tapper", "tier": 2, "tier_name": "Silver", "detail": "18 Life Taps", "track": [100, 40, 0, 0, 0], "glyph": "spell", "icon": null}]
+}]}
+```
+
+Numbers are numbers with `unit`, one of `count`, `short`, `decimal`, `percent`, `percent_tenth` or `hours`, and `text`,
+the number as the page writes it (`254k`, `71%`). `comparison` is `null` under 20 characters of the class in the
+bracket. `span` is a module's width on the sheet: `Third`, `W5`, `W7`, `W8` or `W12`. Every `icon` is an absolute
+address on the site or `null`, and `scene` names the class's scene art. Hues and tones are by name: `tone` is `class`
+(the class colour), `scarlet`, `lost` (grey) or `held` (white), and `hue` is a `#rrggbb` colour or `var(--name)` of
+the site's theme (`var(--class)` is the class colour), at most one of the two set. A block has a `type`:
+
+| `type` | Fields |
+| --- | --- |
+| `flow` | `unit`, `label`, `left` and `right` lists of `{label, count, icon, tone}`, at most 8 and 12 |
+| `link` | `unit`, `label`, `left` and `right` lists of `{label, icon, tone}`, `pairs` of `{left, right, count}` with indexes into them |
+| `mirror` | `label`, `unit`, `up` and `down` as `{label, hue}`, `points` of `{level, up, down}` |
+| `stack` | `label`, `series` of `{label, hue}`, `columns` of `{label, shares}` with one share from 0 to 1 for each series |
+| `bag` | `noun`, `slots`, `items` of `{icon, slots}` |
+| `rank` | `unit`, `plain`, `of`, `rows` of `{label, aside, value, text, icon, tone, hue, share}` |
+| `pair` | `rows` of `{label, small, value, unit, text}` |
+| `split` | `parts` of `{label, value, tone, hue}` |
+| `titled` | `title`, `icon`, `blocks` |
+| `columns` | `columns`, two to four `titled` blocks |
+
 ### `POST /installs/link-code`
 
 No body. `201` with `{"code": "XXXX-XXXX", "expires_at": "...", "expires_in": 600}`. The app shows the code and opens

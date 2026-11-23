@@ -1762,12 +1762,16 @@ character's own log and needs neither.
 six were dropped; what they counted stays on the page as modules. Zealot counts Repentance: Crusader Strike exists
 on build 1.60.1.71037 only as a creature spell, so a rule naming it could never be earned.
 
-**The app.** The Scarlet app gets a view named for the character's class, after Talents in its navigation, shown
-only for that class's characters. It carries the same charts from the character's own log with no upload: a banner
-with the head's still, the six figures as cards, then the first chart and the rows below it in panels. The app has
-no game art of its own today; the view loads the still and the icons from the site and falls back to plain cards
-without them. The comparison against other characters of the class needs the site and
-is shown only while the character is uploaded.
+**The app.** The Scarlet app gets a view named for the character's class, after Talents in its navigation. It
+does not compute the charts from the local log: it reads the page from the site over the install's signed request,
+`GET /installs/me/class-page/{character}` (docs/API.md), as its Feats view reads feats, so the decoder keeps the one
+copy of the nine classes' derivations (the app cannot share its crate). `ClassPageJson` writes the same
+`ClassPage` the web page draws, one case for each block type. The view is shown only for a character the site
+answered a page for, so it is missing with uploading off, for a character not uploaded yet and for a class or a
+character with no page. It draws a banner in the class colour with the class name, the character line and the link to
+the page on the site, the six figures as cards, the first chart and the rows below it in panels, the talent modules,
+the party rows, the comparison and the feats. Icons load from the addresses the answer gives and a card without an icon
+is a plain card. The app draws no still of the head's scene: the answer names the scene and the banner stays plain.
 
 ### Search
 

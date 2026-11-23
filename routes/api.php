@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Upload\InstallClassPageController;
 use App\Http\Controllers\Api\V1\Upload\InstallController;
 use App\Http\Controllers\Api\V1\Upload\InstallFeatController;
 use App\Http\Controllers\Api\V1\Upload\UploadController;
 use App\Http\Middleware\PublicApi;
 use App\Http\Middleware\RateLimitRequests;
 use App\Http\Middleware\RecordApiCall;
+use App\Http\Requests\Upload\ClassPageRequest;
 use App\Models\ApiSurface;
 use App\Support\PublicApiCatalog;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +29,7 @@ Route::prefix('v1')->middleware(RecordApiCall::class.':'.ApiSurface::Upload->val
         Route::post('installs/link-code', [InstallController::class, 'linkCode']);
         Route::get('installs/me/feats', [InstallFeatController::class, 'show']);
         Route::post('installs/me/feats/seen', [InstallFeatController::class, 'seen']);
+        Route::get('installs/me/class-page/{character?}', [InstallClassPageController::class, 'show'])->where('character', ClassPageRequest::NAME_PATTERN);
 
         Route::prefix('upload')->group(function (): void {
             Route::post('sync', [UploadController::class, 'sync']);

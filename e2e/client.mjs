@@ -61,6 +61,11 @@ export class InstallClient {
     return this.request("GET", "/api/v1/installs/me/feats", options);
   }
 
+  classPage({ character, ...options } = {}) {
+    const name = character === undefined ? "" : `/${encodeURIComponent(character)}`;
+    return this.request("GET", "/api/v1/installs/me/class-page" + name, options);
+  }
+
   featsSeen(character, feats) {
     return this.request("POST", "/api/v1/installs/me/feats/seen", { body: JSON.stringify({ character, feats }) });
   }

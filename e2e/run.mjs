@@ -23,6 +23,7 @@ import * as classPage from "./checks/class-page.mjs";
 import * as professions from "./checks/professions.mjs";
 import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
+import * as classPageApi from "./checks/class-page-api.mjs";
 import * as owner from "./checks/owner.mjs";
 import * as own from "./checks/own.mjs";
 import * as installs from "./checks/installs.mjs";
@@ -52,6 +53,8 @@ const REGISTRY = [
   { lane: "api", name: "a bad parameter is 422 invalid_request", run: api.badParameterIs422 },
   { lane: "api", name: "the app reads a character's new feats, and one it showed is not new again", run: feats.shownFeatIsNotNewAgain },
   { lane: "api", name: "the feats requests refuse an unsigned read, another character, an unknown feat and a sixth tier", run: feats.featsRefuseWhatIsNotTheInstalls },
+  { lane: "api", name: `the app reads the class page of ${WARLOCK} as data with the fixture's figures`, run: classPageApi.installReadsItsClassPage },
+  { lane: "api", name: "the class page request refuses an unsigned read, another install's character and a name that is not Name-Surname", run: classPageApi.classPageRefusesWhatIsNotTheInstalls },
   { lane: "api", name: "the rogue fixture's class, tree and role feats are counted, and no other class's or role's", run: feats.specFeatsAreCounted },
   { lane: "api", name: "the six professions with recorded lines are served with their numbers", run: professions.apiShowsTheUpload },
   { lane: "pages", name: "every public page answers and shows its own content", run: pages.everyPageShowsItself },
