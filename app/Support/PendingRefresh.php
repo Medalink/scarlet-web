@@ -48,12 +48,14 @@ final class PendingRefresh
     }
 
     /**
-     * Remove and return pending days for the window `$from` to `$until` (epoch seconds): the ranges the window
-     * touches, then, while the union stays within one span, the waiting ranges it reaches, so a burst of uploads on
-     * nearby days leaves in the one job instead of stranding the ranges whose own job a unique lock folded away;
-     * when none touches, the oldest range goes. A range wider than the span gives its first span and keeps the rest.
-     * `attempts` is the most often a taken range has failed; `followUp` bounds the ranges that are left for the next
-     * run, whose job must be dispatched for them, since they can lie past this job's window. Null when nothing is
+     * Remove and return the pending days one job refreshes for its window `$from` to `$until` (epoch seconds), at
+     * most one span from `$from`. A range that touches the window comes whole while its union with the window stays
+     * within one span, else only its part inside the window, and the rest waits. A range that waits comes whole while
+     * the union stays within one span, so a burst of uploads on nearby days leaves in one job instead of stranding
+     * the ranges whose own job a unique lock folded away. The job's range starts at its own window, never at the
+     * start of a wide range somebody else added: that range is handed out span by span to the jobs that ask for it.
+     * `attempts` is the most often a taken range has failed; `followUp` is the first span of the oldest range left,
+     * for the job that must be dispatched for it, since it can lie past this job's window. Null when nothing is
      * pending.
      *
      * @return array{from: int, until: int, attempts: int, followUp: array{from: int, until: int}|null}|null
@@ -62,9 +64,19 @@ final class PendingRefresh
     {
         return self::lock()->block(5, function () use ($from, $until): ?array {
             $span = self::spanSeconds();
+            $chunks = self::prune(self::peek());
+            if ($chunks === []) {
+                self::put([]);
+
+                return null;
+            }
+            $until = min($until, $from + $span);
+            $lo = $from;
+            $hi = $until;
+            $attempts = 0;
             $touching = [];
             $waiting = [];
-            foreach (self::prune(self::peek()) as $chunk) {
+            foreach ($chunks as $chunk) {
                 if ($chunk['until'] <= $from || $chunk['from'] >= $until) {
                     $waiting[] = $chunk;
 
@@ -72,51 +84,47 @@ final class PendingRefresh
                 }
                 $touching[] = $chunk;
             }
-            $lo = null;
-            $hi = 0;
-            $attempts = 0;
+            usort($touching, fn (array $a, array $b): int => $a['from'] <=> $b['from']);
+            $split = [];
             foreach ($touching as $chunk) {
-                $lo = $lo === null ? $chunk['from'] : min($chunk['from'], $lo);
-                $hi = max($chunk['until'], $hi);
-                $attempts = max($attempts, $chunk['attempts']);
-            }
-            if ($lo === null) {
-                $chunk = array_shift($waiting);
-                if ($chunk === null) {
-                    self::put([]);
+                if (max($chunk['until'], $hi) - min($chunk['from'], $lo) <= $span) {
+                    $lo = min($chunk['from'], $lo);
+                    $hi = max($chunk['until'], $hi);
+                    $attempts = max($attempts, $chunk['attempts']);
 
-                    return null;
+                    continue;
                 }
-                $lo = $chunk['from'];
-                $hi = $chunk['until'];
-                $attempts = $chunk['attempts'];
+                $split[] = $chunk;
             }
             $rest = [];
-            if ($hi - $lo > $span) {
-                $rest[] = ['from' => $lo + $span, 'until' => $hi, 'attempts' => $attempts, 'added' => time()];
-                $hi = $lo + $span;
+            foreach ($split as $chunk) {
+                $attempts = max($attempts, $chunk['attempts']);
+                if ($chunk['from'] < $lo) {
+                    $rest[] = ['from' => $chunk['from'], 'until' => $lo, 'attempts' => $chunk['attempts'], 'added' => $chunk['added']];
+                }
+                if ($chunk['until'] > $hi) {
+                    $rest[] = ['from' => $hi, 'until' => $chunk['until'], 'attempts' => $chunk['attempts'], 'added' => $chunk['added']];
+                }
             }
-            foreach ($waiting as $waitingChunk) {
-                if (max($waitingChunk['until'], $hi) - min($waitingChunk['from'], $lo) <= $span) {
-                    $lo = min($waitingChunk['from'], $lo);
-                    $hi = max($waitingChunk['until'], $hi);
-                    $attempts = max($attempts, $waitingChunk['attempts']);
+            usort($waiting, fn (array $a, array $b): int => $a['from'] <=> $b['from']);
+            foreach ($waiting as $chunk) {
+                if (max($chunk['until'], $hi) - min($chunk['from'], $lo) <= $span) {
+                    $lo = min($chunk['from'], $lo);
+                    $hi = max($chunk['until'], $hi);
+                    $attempts = max($attempts, $chunk['attempts']);
 
                     continue;
                 }
-                $rest[] = $waitingChunk;
+                $rest[] = $chunk;
             }
             self::put($rest);
-            $followUp = null;
-            foreach ($rest as $restChunk) {
-                if ($followUp === null) {
-                    $followUp = ['from' => $restChunk['from'], 'until' => $restChunk['until']];
-
-                    continue;
+            $oldest = null;
+            foreach ($rest as $chunk) {
+                if ($oldest === null || $chunk['added'] < $oldest['added']) {
+                    $oldest = $chunk;
                 }
-                $followUp['from'] = min($followUp['from'], $restChunk['from']);
-                $followUp['until'] = max($followUp['until'], $restChunk['until']);
             }
+            $followUp = $oldest === null ? null : ['from' => $oldest['from'], 'until' => min($oldest['until'], $oldest['from'] + $span)];
 
             return ['from' => $lo, 'until' => $hi, 'attempts' => $attempts, 'followUp' => $followUp];
         });
@@ -136,7 +144,7 @@ final class PendingRefresh
     }
 
     /** @return int<1, max> */
-    private static function spanSeconds(): int
+    public static function spanSeconds(): int
     {
         return max(1, (int) config('scarlet.rollups.pending_span_days')) * self::DAY;
     }

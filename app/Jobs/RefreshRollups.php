@@ -66,12 +66,12 @@ class RefreshRollups implements BoundedJob, ShouldBeUniqueUntilProcessing, Shoul
     public function handle(RefreshAggregates $refresh): void
     {
         $pending = PendingRefresh::take($this->from, $this->until);
-        $from = $pending === null ? $this->from : min($this->from, $pending['from']);
-        $until = $pending === null ? $this->until : max($this->until, $pending['until']);
+        $from = $pending === null ? $this->from : $pending['from'];
+        $until = $pending === null ? min($this->until, $this->from + PendingRefresh::spanSeconds()) : $pending['until'];
         $attempts = $pending === null ? 0 : $pending['attempts'];
 
         try {
-            $leftover = $refresh->handle($from, $until, (int) config('scarlet.rollups.job_seconds'));
+            $leftover = $refresh->handle($from, $until - 1, (int) config('scarlet.rollups.job_seconds'));
         } catch (LockTimeoutException $busy) {
             PendingRefresh::add($from, $until, $attempts);
             $this->release(self::RETRY_SECONDS);
@@ -85,14 +85,13 @@ class RefreshRollups implements BoundedJob, ShouldBeUniqueUntilProcessing, Shoul
             throw $failure;
         }
 
+        $next = $pending['followUp'] ?? null;
         if ($leftover !== null) {
-            RefreshRollups::dispatch($leftover['from'], $leftover['until']);
-
-            return;
+            PendingRefresh::add($leftover['from'], $leftover['until'], $attempts);
+            $next ??= ['from' => $leftover['from'], 'until' => min($leftover['until'], $leftover['from'] + PendingRefresh::spanSeconds())];
         }
-        $followUp = $pending['followUp'] ?? null;
-        if ($followUp !== null) {
-            RefreshRollups::dispatch($followUp['from'], $followUp['until']);
+        if ($next !== null) {
+            RefreshRollups::dispatch($next['from'], $next['until'] - 1);
         }
     }
 }

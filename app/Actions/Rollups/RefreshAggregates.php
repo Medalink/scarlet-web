@@ -23,19 +23,21 @@ class RefreshAggregates
     public function __construct(private readonly RebuildKeyedLoot $keyedLoot) {}
 
     /**
-     * Bring the continuous aggregates up to date over a time range (epoch seconds): the range is widened to whole days,
-     * cut to the days the fact hypertables have chunks for, and refreshed in slices of `storage.refresh_slice_days`.
-     * Only what TimescaleDB's invalidation log marks as changed in a slice is recomputed, so a range from 1970 to 2100
-     * costs the days that hold rows, and a slice that reaches a compressed chunk reads that chunk and no other.
+     * Bring the continuous aggregates up to date over a time range (epoch seconds, `$until` excluded once it is a
+     * whole day): the range is widened to whole days and refreshed in slices of `storage.refresh_slice_days`, taken
+     * only from the days the fact hypertables have chunks for, so a range from 1970 to 2100 costs the slices that hold
+     * rows. Only what TimescaleDB's invalidation log marks as changed in a slice is recomputed, and a slice that
+     * reaches a compressed chunk reads that chunk and no other.
      * TimescaleDB holds an aggregate for the whole window of a refresh, so two refreshes over one aggregate cannot run
      * at once: the callers here (several `RefreshRollups` instances can process together, and commands call this
      * directly) wait for the refresh running on a lock instead of failing with `SQLSTATE 55P03`. A slice that stays
      * locked fails the refresh; `RefreshRollups` keeps its range pending and goes back on the queue to retry.
-     * With `$budgetSeconds` set, the slices stop once the budget is spent and the span that is not refreshed yet comes
-     * back, so one call always ends inside the job that called it; the caller puts the span back and a follow-up run
-     * continues. The keyed loot tables are rebuilt for the same days after the aggregates, under the same lock
-     * (`RebuildKeyedLoot`), also inside the budget. Without a budget the whole range is refreshed in one call.
-     * CALL cannot run inside a transaction, so this must not be called from one.
+     * A slice is refreshed for every aggregate before the next slice starts. With `$budgetSeconds` set, no new slice
+     * starts once the budget is spent (the first always does) and the span from the slice that did not start to the
+     * end of the range comes back, so one call ends inside the job that called it and a follow-up over the span
+     * continues where this one stopped. The keyed loot tables are rebuilt after the aggregates for the days the
+     * slices that ran cover, under the same lock (`RebuildKeyedLoot`). Without a budget the whole range is refreshed
+     * in one call. CALL cannot run inside a transaction, so this must not be called from one.
      *
      * @return array{from: int, until: int}|null the span the budget left, null when the refresh finished
      */
@@ -48,25 +50,56 @@ class RefreshAggregates
 
         $start = max(intdiv($from, self::DAY) * self::DAY, intdiv((int) $extent->first, self::DAY) * self::DAY);
         $end = min((intdiv($until, self::DAY) + 1) * self::DAY, (intdiv((int) $extent->last, self::DAY) + 1) * self::DAY);
-        $slice = max(1, (int) config('scarlet.storage.refresh_slice_days')) * self::DAY;
+        $width = max(1, (int) config('scarlet.storage.refresh_slice_days')) * self::DAY;
 
-        return RollupLock::block(self::WAIT_SECONDS, function () use ($start, $end, $slice, $budgetSeconds): ?array {
+        return RollupLock::block(self::WAIT_SECONDS, function () use ($start, $end, $width, $budgetSeconds): ?array {
             $stop = $budgetSeconds === null ? null : microtime(true) + $budgetSeconds;
-            foreach (Rollup::cases() as $rollup) {
-                for ($sliceStart = $start; $sliceStart < $end; $sliceStart += $slice) {
-                    if ($stop !== null && microtime(true) >= $stop) {
-                        return ['from' => $start, 'until' => $end];
-                    }
-                    $this->slice($rollup->value, $sliceStart, min($sliceStart + $slice, $end));
+            $left = null;
+            $reached = $start;
+            foreach ($this->slices($start, $end, $width) as $position => [$sliceStart, $sliceEnd]) {
+                if ($position > 0 && $stop !== null && microtime(true) >= $stop) {
+                    $left = ['from' => $sliceStart, 'until' => $end];
+                    break;
                 }
+                foreach (Rollup::cases() as $rollup) {
+                    $this->slice($rollup->value, $sliceStart, $sliceEnd);
+                }
+                $reached = $sliceEnd;
             }
-            if ($stop !== null && microtime(true) >= $stop) {
-                return ['from' => $start, 'until' => $end];
-            }
-            $this->keyedLoot->handle($start, $end);
+            $this->keyedLoot->handle($start, $left === null ? $end : $reached);
 
-            return null;
+            return $left;
         });
+    }
+
+    /**
+     * The slices of `[$start, $end)` that hold a chunk of any hypertable, each at most `$width` long, oldest first.
+     *
+     * @return list<array{int, int}>
+     */
+    private function slices(int $start, int $end, int $width): array
+    {
+        $chunks = DB::select("select distinct extract(epoch from range_start)::bigint as lo, extract(epoch from range_end)::bigint as hi from timescaledb_information.chunks where hypertable_schema = 'public' and range_start < to_timestamp(?) and range_end > to_timestamp(?) order by 1, 2", [$end, $start]);
+        $ranges = [];
+        foreach ($chunks as $chunk) {
+            $lo = max($start, intdiv((int) $chunk->lo, self::DAY) * self::DAY);
+            $hi = min($end, (intdiv((int) $chunk->hi - 1, self::DAY) + 1) * self::DAY);
+            $last = array_key_last($ranges);
+            if ($last !== null && $lo <= $ranges[$last][1]) {
+                $ranges[$last][1] = max($ranges[$last][1], $hi);
+
+                continue;
+            }
+            $ranges[] = [$lo, $hi];
+        }
+        $slices = [];
+        foreach ($ranges as [$lo, $hi]) {
+            for ($sliceStart = $lo; $sliceStart < $hi; $sliceStart += $width) {
+                $slices[] = [$sliceStart, min($sliceStart + $width, $hi)];
+            }
+        }
+
+        return $slices;
     }
 
     /** One CALL on one slice; a slice whose aggregate is locked retries a few times before the refresh fails. */
