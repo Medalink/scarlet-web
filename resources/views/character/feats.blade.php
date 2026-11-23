@@ -27,9 +27,13 @@
       @endforeach
     </div>
   @endif
+  @php($full = $pin && count(array_filter(array_merge(...array_column($f['wall'], 'feats')), fn (array $feat): bool => $feat['pinned'])) >= App\Models\Character::MAX_PINNED_FEATS)
+  @if ($pin)
+    @error('feat')<p class="sc-note mt-6" role="alert">{{ $message }}</p>@enderror
+  @endif
   <div class="mt-8">
     @foreach ($f['wall'] as $collection)
-      <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :pin="$pin" />
+      <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :pin="$pin" :full="$full" />
     @endforeach
   </div>
 </section>
