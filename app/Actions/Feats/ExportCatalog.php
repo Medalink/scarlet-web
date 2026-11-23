@@ -68,6 +68,9 @@ class ExportCatalog
             $out['unit'] = $feat->unit();
         }
         $out['thresholds'] = $row[3];
+        $out['crest'] = $feat->crest()->value;
+        $out['account'] = $feat->account()->value;
+        $out['account_thresholds'] = $feat->accountThresholds();
         if ($feat->economy()) {
             $out['economy'] = true;
         }

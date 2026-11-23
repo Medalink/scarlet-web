@@ -164,6 +164,15 @@
                 50,
                 60
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                20,
+                60,
+                120,
+                180,
+                300
+            ],
             "live": {
                 "kind": "level"
             }
@@ -184,6 +193,15 @@
                 500,
                 1500
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                2,
+                40,
+                200,
+                1000,
+                3000
+            ],
             "live": {
                 "kind": "clock",
                 "per": 3600
@@ -199,6 +217,15 @@
             "one": "day played",
             "many": "days played",
             "thresholds": [
+                3,
+                14,
+                60,
+                150,
+                365
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 3,
                 14,
                 60,
@@ -225,6 +252,15 @@
                 60,
                 180
             ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                2,
+                7,
+                21,
+                60,
+                180
+            ],
             "live": {
                 "kind": "login"
             }
@@ -239,6 +275,15 @@
             "one": "week played",
             "many": "weeks played",
             "thresholds": [
+                1,
+                4,
+                12,
+                26,
+                52
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 1,
                 4,
                 12,
@@ -265,6 +310,15 @@
                 150,
                 500
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                300,
+                1000
+            ],
             "live": {
                 "kind": "clock",
                 "once_at": 7200
@@ -280,6 +334,15 @@
             "one": "level reached without dying",
             "many": "levels reached without dying",
             "thresholds": [
+                10,
+                20,
+                35,
+                50,
+                60
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 10,
                 20,
                 35,
@@ -307,6 +370,15 @@
                 30000,
                 100000
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                100,
+                2000,
+                20000,
+                60000,
+                200000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -324,6 +396,15 @@
             "one": "kind of creature killed",
             "many": "kinds of creature killed",
             "thresholds": [
+                10,
+                100,
+                400,
+                1000,
+                2000
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 10,
                 100,
                 400,
@@ -347,6 +428,15 @@
                 15000,
                 50000
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                50,
+                1000,
+                10000,
+                30000,
+                100000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -369,6 +459,15 @@
                 100,
                 500,
                 2500
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                200,
+                1000,
+                5000
             ]
         },
         {
@@ -381,6 +480,15 @@
             "one": "kill in one session",
             "many": "kills in one session",
             "thresholds": [
+                50,
+                300,
+                600,
+                1000,
+                2000
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 50,
                 300,
                 600,
@@ -410,6 +518,15 @@
                 2500,
                 5000
             ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                25,
+                250,
+                1000,
+                2500,
+                5000
+            ],
             "live": {
                 "kind": "pending",
                 "note": "kills since the last death, a counter the addon does not keep yet"
@@ -430,6 +547,15 @@
                 40,
                 100,
                 400
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                80,
+                200,
+                800
             ],
             "live": {
                 "kind": "counter",
@@ -453,6 +579,15 @@
                 1000,
                 2500,
                 5000
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                50,
+                300,
+                1000,
+                2500,
+                5000
             ]
         },
         {
@@ -465,6 +600,15 @@
             "one": "death to one killer",
             "many": "deaths to one killer",
             "thresholds": [
+                2,
+                4,
+                8,
+                15,
+                30
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 2,
                 4,
                 8,
@@ -487,6 +631,15 @@
                 1500,
                 4000,
                 12000
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                50,
+                500,
+                1500,
+                4000,
+                12000
             ]
         },
         {
@@ -499,6 +652,15 @@
             "one": "zone with 100 kills",
             "many": "zones with 100 kills",
             "thresholds": [
+                1,
+                5,
+                12,
+                20,
+                30
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 1,
                 5,
                 12,
@@ -522,6 +684,15 @@
                 800,
                 1500
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                10,
+                200,
+                800,
+                1600,
+                3000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -539,6 +710,15 @@
             "one": "quest in one session",
             "many": "quests in one session",
             "thresholds": [
+                3,
+                10,
+                20,
+                35,
+                50
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 3,
                 10,
                 20,
@@ -568,6 +748,15 @@
                 150,
                 300
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                300,
+                600
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -585,6 +774,15 @@
             "one": "area discovered",
             "many": "areas discovered",
             "thresholds": [
+                5,
+                50,
+                200,
+                400,
+                500
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 5,
                 50,
                 200,
@@ -613,6 +811,15 @@
                 8,
                 12,
                 18
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                1,
+                4,
+                8,
+                12,
+                18
             ]
         },
         {
@@ -625,6 +832,15 @@
             "one": "quest in one zone",
             "many": "quests in one zone",
             "thresholds": [
+                10,
+                30,
+                60,
+                90,
+                110
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 10,
                 30,
                 60,
@@ -647,6 +863,15 @@
                 50,
                 200,
                 500
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                400,
+                1000
             ],
             "live": {
                 "kind": "counter",
@@ -672,6 +897,15 @@
                 500,
                 2500
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                200,
+                1000,
+                5000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -695,6 +929,15 @@
                 12,
                 18,
                 22
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                1,
+                5,
+                12,
+                18,
+                22
             ]
         },
         {
@@ -712,6 +955,15 @@
                 40,
                 100,
                 250
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                80,
+                200,
+                500
             ]
         },
         {
@@ -729,6 +981,15 @@
                 50,
                 250,
                 800
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                500,
+                1600
             ]
         },
         {
@@ -746,6 +1007,15 @@
                 50,
                 200,
                 600
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                400,
+                1200
             ]
         },
         {
@@ -763,6 +1033,15 @@
                 40,
                 100,
                 300
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                80,
+                200,
+                600
             ]
         },
         {
@@ -775,6 +1054,15 @@
             "one": "run of one dungeon",
             "many": "runs of one dungeon",
             "thresholds": [
+                2,
+                8,
+                20,
+                50,
+                120
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 2,
                 8,
                 20,
@@ -797,6 +1085,15 @@
                 20,
                 50,
                 150
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                10,
+                40,
+                100,
+                300
             ]
         },
         {
@@ -809,6 +1106,15 @@
             "one": "zone entered",
             "many": "zones entered",
             "thresholds": [
+                5,
+                20,
+                40,
+                55,
+                65
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 5,
                 20,
                 40,
@@ -831,6 +1137,15 @@
                 20,
                 30,
                 40
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                2,
+                10,
+                20,
+                30,
+                40
             ]
         },
         {
@@ -843,6 +1158,15 @@
             "one": "hour in one zone",
             "many": "hours in one zone",
             "thresholds": [
+                2,
+                10,
+                40,
+                100,
+                300
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 2,
                 10,
                 40,
@@ -865,6 +1189,15 @@
                 50,
                 150,
                 750
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                300,
+                1500
             ]
         },
         {
@@ -878,6 +1211,15 @@
             "many": "miles in one session",
             "unit": "mi",
             "thresholds": [
+                1760,
+                8800,
+                17600,
+                35200,
+                70400
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 1760,
                 8800,
                 17600,
@@ -910,6 +1252,15 @@
                 50000,
                 250000
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                100,
+                2000,
+                20000,
+                100000,
+                500000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -932,6 +1283,15 @@
                 250,
                 1000,
                 4000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                5,
+                100,
+                500,
+                2000,
+                8000
             ],
             "live": {
                 "kind": "counter",
@@ -957,6 +1317,15 @@
                 105600,
                 528000
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                500,
+                10560,
+                52800,
+                211200,
+                1056000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -980,6 +1349,15 @@
                 88000,
                 880000,
                 8800000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                880,
+                17600,
+                176000,
+                1760000,
+                17600000
             ],
             "live": {
                 "kind": "counter",
@@ -1005,6 +1383,15 @@
                 880000,
                 8800000
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                880,
+                17600,
+                176000,
+                1760000,
+                17600000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -1029,6 +1416,15 @@
                 44000,
                 220000
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                100,
+                3520,
+                17600,
+                88000,
+                440000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -1051,6 +1447,15 @@
                 30,
                 60,
                 100
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                1,
+                10,
+                30,
+                60,
+                100
             ]
         },
         {
@@ -1063,6 +1468,15 @@
             "one": "kind of creature seen",
             "many": "kinds of creature seen",
             "thresholds": [
+                25,
+                250,
+                1000,
+                2500,
+                5000
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 25,
                 250,
                 1000,
@@ -1085,6 +1499,15 @@
                 20,
                 50,
                 100
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                1,
+                5,
+                20,
+                50,
+                100
             ]
         },
         {
@@ -1102,6 +1525,15 @@
                 1000,
                 10000,
                 50000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                10,
+                200,
+                2000,
+                20000,
+                100000
             ]
         },
         {
@@ -1119,6 +1551,15 @@
                 250,
                 1000,
                 4000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                50,
+                500,
+                2000,
+                8000
             ]
         },
         {
@@ -1136,6 +1577,15 @@
                 50,
                 150,
                 500
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                300,
+                1000
             ]
         },
         {
@@ -1153,6 +1603,15 @@
                 10,
                 25,
                 75
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                6,
+                20,
+                50,
+                150
             ]
         },
         {
@@ -1165,6 +1624,15 @@
             "one": "kind of item received",
             "many": "kinds of item received",
             "thresholds": [
+                25,
+                250,
+                1000,
+                2500,
+                4000
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 25,
                 250,
                 1000,
@@ -1187,6 +1655,15 @@
                 50,
                 250,
                 1000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                500,
+                2000
             ]
         },
         {
@@ -1204,6 +1681,15 @@
                 1000,
                 5000,
                 15000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                10,
+                200,
+                2000,
+                10000,
+                30000
             ]
         },
         {
@@ -1216,6 +1702,15 @@
             "one": "kind of catch",
             "many": "kinds of catch",
             "thresholds": [
+                3,
+                15,
+                30,
+                45,
+                60
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 3,
                 15,
                 30,
@@ -1238,6 +1733,15 @@
                 10,
                 20,
                 30
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                1,
+                5,
+                10,
+                20,
+                30
             ]
         },
         {
@@ -1255,6 +1759,15 @@
                 1000,
                 5000,
                 15000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                10,
+                200,
+                2000,
+                10000,
+                30000
             ]
         },
         {
@@ -1267,6 +1780,15 @@
             "one": "zone gathered in",
             "many": "zones gathered in",
             "thresholds": [
+                1,
+                5,
+                10,
+                20,
+                30
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 1,
                 5,
                 10,
@@ -1289,6 +1811,15 @@
                 600,
                 1200,
                 1500
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                75,
+                600,
+                1200,
+                2400,
+                3000
             ]
         },
         {
@@ -1306,6 +1837,15 @@
                 3,
                 4,
                 5
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                4,
+                6,
+                8,
+                10
             ]
         },
         {
@@ -1323,6 +1863,15 @@
                 500,
                 5000,
                 25000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                5,
+                100,
+                1000,
+                10000,
+                50000
             ],
             "live": {
                 "kind": "counter",
@@ -1346,6 +1895,15 @@
                 75,
                 150,
                 300
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                3,
+                25,
+                75,
+                150,
+                300
             ]
         },
         {
@@ -1363,6 +1921,15 @@
                 250,
                 2500,
                 25000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                50,
+                500,
+                5000,
+                50000
             ],
             "economy": true,
             "live": {
@@ -1389,6 +1956,15 @@
                 2500,
                 25000
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                50,
+                500,
+                5000,
+                50000
+            ],
             "economy": true,
             "live": {
                 "kind": "counter",
@@ -1414,6 +1990,15 @@
                 2000,
                 10000
             ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                1,
+                25,
+                250,
+                2000,
+                10000
+            ],
             "economy": true,
             "live": {
                 "kind": "money",
@@ -1430,6 +2015,15 @@
             "one": "gold earned in one session",
             "many": "gold earned in one session",
             "thresholds": [
+                1,
+                10,
+                50,
+                200,
+                1000
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 1,
                 10,
                 50,
@@ -1461,6 +2055,15 @@
                 5000,
                 25000
             ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                10,
+                200,
+                2000,
+                10000,
+                50000
+            ],
             "live": {
                 "kind": "counter",
                 "keys": [
@@ -1483,6 +2086,15 @@
                 40,
                 80,
                 120
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
+                3,
+                15,
+                40,
+                80,
+                120
             ]
         },
         {
@@ -1495,6 +2107,15 @@
             "one": "use of one emote",
             "many": "uses of one emote",
             "thresholds": [
+                5,
+                50,
+                500,
+                2000,
+                10000
+            ],
+            "crest": "character",
+            "account": "max",
+            "account_thresholds": [
                 5,
                 50,
                 500,
@@ -1517,6 +2138,15 @@
                 10,
                 25,
                 60
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                6,
+                20,
+                50,
+                120
             ]
         },
         {
@@ -1534,6 +2164,15 @@
                 50,
                 250,
                 1000
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                20,
+                100,
+                500,
+                2000
             ],
             "live": {
                 "kind": "counter",
@@ -1558,6 +2197,15 @@
                 25,
                 100,
                 400
+            ],
+            "crest": "character",
+            "account": "sum",
+            "account_thresholds": [
+                1,
+                10,
+                50,
+                200,
+                800
             ],
             "live": {
                 "kind": "counter",
@@ -1585,6 +2233,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Battle Shout"
@@ -1612,6 +2263,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Charge",
@@ -1640,6 +2294,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Execute"
@@ -1667,6 +2324,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Battle Stance",
@@ -1697,6 +2357,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Mortal Strike"
@@ -1725,6 +2388,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Overpower"
@@ -1753,6 +2419,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Rend"
@@ -1781,6 +2450,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -1807,6 +2479,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Bloodthirst"
@@ -1835,6 +2510,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Whirlwind"
@@ -1863,6 +2541,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Death Wish",
@@ -1893,6 +2574,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -1919,6 +2603,9 @@
                 30000,
                 200000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Sunder Armor",
@@ -1948,6 +2635,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Revenge"
@@ -1976,6 +2666,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Shield Block",
@@ -2006,6 +2699,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -2031,6 +2727,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Judgement*"
@@ -2058,6 +2757,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Blessing of *",
@@ -2086,6 +2788,9 @@
                 80,
                 200
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Lay on Hands"
@@ -2113,6 +2818,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Divine Shield",
@@ -2142,6 +2850,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Holy Light"
@@ -2170,6 +2881,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Flash of Light"
@@ -2198,6 +2912,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Cleanse",
@@ -2227,6 +2944,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -2253,6 +2973,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Holy Shield"
@@ -2281,6 +3004,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Hammer of Justice"
@@ -2309,6 +3035,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Consecration"
@@ -2337,6 +3066,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -2363,6 +3095,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Seal of *"
@@ -2391,6 +3126,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Hammer of Wrath"
@@ -2419,6 +3157,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Repentance"
@@ -2447,6 +3188,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -2472,6 +3216,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Feign Death"
@@ -2499,6 +3246,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "* Trap"
@@ -2526,6 +3276,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Hunter's Mark"
@@ -2553,6 +3306,9 @@
                 120,
                 400
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Tame Beast"
@@ -2581,6 +3337,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Bestial Wrath"
@@ -2609,6 +3368,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Intimidation"
@@ -2637,6 +3399,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Mend Pet",
@@ -2667,6 +3432,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -2693,6 +3461,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Aimed Shot"
@@ -2721,6 +3492,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Multi-Shot"
@@ -2749,6 +3523,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Arcane Shot"
@@ -2777,6 +3554,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -2803,6 +3583,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Raptor Strike",
@@ -2832,6 +3615,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Wing Clip"
@@ -2860,6 +3646,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Disengage",
@@ -2890,6 +3679,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -2915,6 +3707,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Stealth"
@@ -2942,6 +3737,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Pick Pocket"
@@ -2969,6 +3767,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Pick Lock"
@@ -2996,6 +3797,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Vanish"
@@ -3024,6 +3828,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Eviscerate"
@@ -3052,6 +3859,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Rupture",
@@ -3081,6 +3891,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Cold Blood"
@@ -3109,6 +3922,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -3135,6 +3951,9 @@
                 30000,
                 200000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Sinister Strike"
@@ -3163,6 +3982,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Gouge"
@@ -3191,6 +4013,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Blade Flurry",
@@ -3222,6 +4047,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -3248,6 +4076,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Ambush",
@@ -3277,6 +4108,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Sap"
@@ -3305,6 +4139,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Backstab",
@@ -3335,6 +4172,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -3360,6 +4200,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Power Word: Fortitude",
@@ -3388,6 +4231,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Power Word: Shield"
@@ -3415,6 +4261,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Mind Control"
@@ -3442,6 +4291,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Psychic Scream"
@@ -3470,6 +4322,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Inner Fire"
@@ -3498,6 +4353,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Dispel Magic"
@@ -3526,6 +4384,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Power Infusion",
@@ -3555,6 +4416,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -3581,6 +4445,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Lesser Heal",
@@ -3612,6 +4479,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Renew"
@@ -3640,6 +4510,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Prayer of Healing",
@@ -3669,6 +4542,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -3695,6 +4571,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Mind Flay"
@@ -3723,6 +4602,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Shadow Word: Pain"
@@ -3751,6 +4633,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Mind Blast"
@@ -3779,6 +4664,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -3804,6 +4692,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "* Totem"
@@ -3831,6 +4722,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Ghost Wolf"
@@ -3858,6 +4752,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Earth Shock",
@@ -3887,6 +4784,9 @@
                 40,
                 100
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Reincarnation"
@@ -3915,6 +4815,9 @@
                 30000,
                 200000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Lightning Bolt"
@@ -3943,6 +4846,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Chain Lightning"
@@ -3971,6 +4877,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Purge"
@@ -3999,6 +4908,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -4025,6 +4937,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Stormstrike"
@@ -4053,6 +4968,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "* Weapon"
@@ -4081,6 +4999,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Lightning Shield"
@@ -4109,6 +5030,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -4135,6 +5059,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Healing Wave",
@@ -4164,6 +5091,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Chain Heal"
@@ -4192,6 +5122,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Mana Tide Totem",
@@ -4221,6 +5154,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -4246,6 +5182,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Polymorph*"
@@ -4273,6 +5212,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Portal: *"
@@ -4300,6 +5242,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Conjure *"
@@ -4327,6 +5272,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Blink"
@@ -4355,6 +5303,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Arcane Missiles"
@@ -4383,6 +5334,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Arcane Explosion"
@@ -4411,6 +5365,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Evocation",
@@ -4441,6 +5398,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -4467,6 +5427,9 @@
                 30000,
                 200000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Fireball"
@@ -4495,6 +5458,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Pyroblast"
@@ -4523,6 +5489,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Scorch",
@@ -4552,6 +5521,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -4578,6 +5550,9 @@
                 30000,
                 200000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Frostbolt"
@@ -4606,6 +5581,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Frost Nova",
@@ -4635,6 +5613,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Ice Block",
@@ -4664,6 +5645,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -4689,6 +5673,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Drain Soul"
@@ -4716,6 +5703,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Life Tap"
@@ -4743,6 +5733,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Fear",
@@ -4772,6 +5765,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Ritual of Summoning"
@@ -4800,6 +5796,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Corruption"
@@ -4828,6 +5827,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Bane of Agony"
@@ -4856,6 +5858,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Drain Life",
@@ -4885,6 +5890,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -4911,6 +5919,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Summon Imp",
@@ -4944,6 +5955,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Health Funnel"
@@ -4972,6 +5986,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Demonic Sacrifice",
@@ -5003,6 +6020,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -5029,6 +6049,9 @@
                 30000,
                 200000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Shadow Bolt"
@@ -5057,6 +6080,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Immolate"
@@ -5085,6 +6111,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Searing Pain"
@@ -5113,6 +6142,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -5138,6 +6170,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Bear Form",
@@ -5170,6 +6205,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Mark of the Wild",
@@ -5198,6 +6236,9 @@
                 80,
                 200
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Rebirth"
@@ -5225,6 +6266,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Entangling Roots",
@@ -5254,6 +6298,9 @@
                 30000,
                 200000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Wrath"
@@ -5282,6 +6329,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Starfire"
@@ -5310,6 +6360,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Moonfire"
@@ -5338,6 +6391,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -5364,6 +6420,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Maul",
@@ -5393,6 +6452,9 @@
                 30000,
                 200000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Claw",
@@ -5423,6 +6485,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Ferocious Bite",
@@ -5452,6 +6517,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -5478,6 +6546,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Healing Touch",
@@ -5507,6 +6578,9 @@
                 15000,
                 100000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Rejuvenation"
@@ -5535,6 +6609,9 @@
                 1500,
                 6000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Swiftmend",
@@ -5566,6 +6643,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -5590,6 +6670,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -5614,6 +6697,9 @@
                 20000000,
                 150000000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Healing",
             "live": {
                 "kind": "counter",
@@ -5640,6 +6726,9 @@
                 75000,
                 150000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "BestHealing"
         },
         {
@@ -5659,6 +6748,9 @@
                 150,
                 400
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "DungeonRuns",
             "live": {
                 "kind": "counter",
@@ -5685,6 +6777,9 @@
                 500,
                 2000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "DungeonBosses",
             "live": {
                 "kind": "counter",
@@ -5711,6 +6806,9 @@
                 250,
                 650
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "RaidBosses"
         },
         {
@@ -5730,6 +6828,9 @@
                 80,
                 250
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "DeathlessRuns"
         },
         {
@@ -5749,6 +6850,9 @@
                 300,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Resurrection",
@@ -5779,6 +6883,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Cleanse",
@@ -5812,6 +6919,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -5836,6 +6946,9 @@
                 30000000,
                 200000000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "DamageTaken",
             "live": {
                 "kind": "counter",
@@ -5862,6 +6975,9 @@
                 120000,
                 250000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "BestDamageTaken"
         },
         {
@@ -5881,6 +6997,9 @@
                 150,
                 400
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "DungeonRuns",
             "live": {
                 "kind": "counter",
@@ -5907,6 +7026,9 @@
                 500,
                 2000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "DungeonBosses",
             "live": {
                 "kind": "counter",
@@ -5933,6 +7055,9 @@
                 250,
                 650
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "RaidBosses"
         },
         {
@@ -5952,6 +7077,9 @@
                 80,
                 250
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "DeathlessRuns"
         },
         {
@@ -5971,6 +7099,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Taunt",
@@ -6002,6 +7133,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -6026,6 +7160,9 @@
                 50000000,
                 300000000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Damage",
             "live": {
                 "kind": "counter",
@@ -6052,6 +7189,9 @@
                 120000,
                 250000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "BestDamage"
         },
         {
@@ -6071,6 +7211,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Kick",
@@ -6105,6 +7248,9 @@
                 400,
                 1500
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Hours",
             "live": {
                 "kind": "clock",
@@ -6129,6 +7275,9 @@
                 50000000,
                 300000000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Damage",
             "live": {
                 "kind": "counter",
@@ -6155,6 +7304,9 @@
                 120000,
                 250000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "BestDamage"
         },
         {
@@ -6174,6 +7326,9 @@
                 5000,
                 25000
             ],
+            "crest": "class",
+            "account": "none",
+            "account_thresholds": null,
             "measure": "Casts",
             "spells": [
                 "Polymorph*",

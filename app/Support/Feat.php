@@ -252,6 +252,17 @@ enum Feat: string
 
     private const array ECONOMY = [self::Earner, self::Spender, self::Tycoon, self::Windfall];
 
+    private const array ACCOUNT_SUM = [
+        self::Summit, self::Veteran, self::LongHaul, self::Slayer, self::Finisher, self::Gladiator, self::Fallen, self::Questing,
+        self::Fickle, self::Delver, self::Vanquisher, self::Raider, self::Conqueror, self::DeepDweller, self::Flawless,
+        self::Soloist, self::Wayfarer, self::Jumper, self::FrequentFlyer, self::Swimmer, self::Runner, self::Rider,
+        self::Stroller, self::Looter, self::Lucky, self::Collector, self::Jackpot, self::Unboxer, self::Angler, self::Gatherer,
+        self::Artisan, self::Master, self::Crafter, self::Earner, self::Spender, self::Expressive, self::Indecisive,
+        self::Companion, self::Fireside,
+    ];
+
+    private const array ACCOUNT_SUMMIT = [20, 60, 120, 180, 300];
+
     /** The tier a count reaches: 0 for none, 1 copper to 5 legend. */
     public function tier(int|float $value): int
     {
@@ -359,6 +370,28 @@ enum Feat: string
     public function scores(): bool
     {
         return ! array_key_exists($this->value, FeatRules::RULES) && ! $this->economy();
+    }
+
+    /** The shield its crest wears: class, talent-tree and role feats wear the class shield. */
+    public function crest(): CrestScope
+    {
+        return array_key_exists($this->value, FeatRules::RULES) ? CrestScope::ClassBased : CrestScope::Character;
+    }
+
+    /** How the account counts it: `sum` or `max` for a general feat, `none` for a class, talent-tree or role feat. */
+    public function account(): AccountRule
+    {
+        return match (true) {
+            array_key_exists($this->value, FeatRules::RULES) => AccountRule::None,
+            in_array($this, self::ACCOUNT_SUM, true) => AccountRule::Sum,
+            default => AccountRule::Max,
+        };
+    }
+
+    /** @return array{0: int, 1: int, 2: int, 3: int, 4: int}|null the counts that earn copper to legend on the account, null without an account crest */
+    public function accountThresholds(): ?array
+    {
+        return $this === self::Summit ? self::ACCOUNT_SUMMIT : $this->account()->thresholds($this->thresholds());
     }
 
     /** @return array{0: string, 1: string, 2: string, 3: array{kind: string, keys?: list<string>, per?: int, once_at?: int, gate?: string, note?: string}|null, 4: string|null} */
