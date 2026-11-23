@@ -75,5 +75,22 @@
       <div class="sc-panel px-5 py-4"><p class="sc-label mb-2">Gold held</p><x-sc.area :spec="$d['area']" /></div>
     </div>
   </section>
+
+  <section class="mt-14">
+    <h2 class="sc-h">Feat seal: the family is the shape, the tier is the metal</h2>
+    <x-sc.tiles :cols="6" class="mt-4">
+      @foreach ([[0, 0.3, 'Not earned', 'The dial fills in copper'], [1, 0.9, null, '1 pip · fills in silver'], [2, 0.5, null, '2 pips · fills in gold'], [3, 0.7, null, '3 pips · fills in scarlet'], [4, 0.4, null, '4 pips · fills in gold'], [5, 1, null, '5 gold pips · all lit']] as [$tier, $progress, $name, $note])
+        <div class="px-5 pb-5 pt-[18px] text-center"><x-sc.seal glyph="kills" :tier="$tier" :progress="$progress" :size="104" /><p class="sc-h3 mt-3">@if ($name){{ $name }}@else<span class="sc-chip t{{ $tier }}">{{ App\View\Sc\Seal::TIER_NAMES[$tier] }}</span>@endif</p><p class="sc-label">{{ $note }}</p></div>
+      @endforeach
+    </x-sc.tiles>
+    <div class="mt-6 flex flex-wrap items-end gap-7">
+      @foreach ([['hours', 'Journey', null], ['kills', 'Combat', null], ['quests', 'Quests', null], ['dungeons', 'Dungeons', null], ['zones', 'World', null], ['fish', 'Trade', null], ['m-bolt', 'Class', null], ['heal', 'Role', null]] as [$glyph, $name])
+        <div class="text-center"><x-sc.seal :glyph="$glyph" :tier="2" :progress="0.5" :size="64" /><p class="sc-label mt-2">{{ $name }}</p></div>
+      @endforeach
+      <div class="ml-6 text-center"><x-sc.seal glyph="level" :tier="3" :size="28" /><p class="sc-label mt-2">28 · row</p></div>
+      <div class="text-center"><x-sc.seal glyph="level" :tier="3" :size="18" /><p class="sc-label mt-2">18 · inline</p></div>
+    </div>
+    <p class="sc-cap">Web and app: one inline SVG. Addon: a cell of Plates.tga drawn two to five times, 20 Tick.tga placed with SetRotation, a cell of Glyphs.tga or the spell's texture. Under 48 px the dial and pips are dropped.</p>
+  </section>
 </div>
 </x-layouts.sc>
