@@ -5,6 +5,7 @@
  *
  *   node e2e/run.mjs [--url http://127.0.0.1:8557] [--only upload|api|pages|browser|owner] [--keep <dir>] [--browser <path>]
  *
+ * --leave skips the removal at the end, so a dev instance keeps the uploaded characters to look at.
  * Without --url it reads E2E_URL. Only a local address is accepted. The upload lane always runs first, because the
  * other lanes read what it uploaded. The owner lane runs after them, because it links the uploading install to an
  * account, and the removal always runs last. Exit 0 when every check passes, 1 when one
@@ -108,6 +109,11 @@ function parseArguments(argv) {
   const options = {};
   for (let at = 0; at < argv.length; at += 2) {
     const flag = argv[at];
+    if (flag === "--leave") {
+      options.leave = true;
+      at -= 1;
+      continue;
+    }
     if (!["--url", "--only", "--keep", "--browser"].includes(flag) || argv[at + 1] === undefined) usage(`unknown or incomplete argument ${flag}`);
     options[flag.slice(2)] = argv[at + 1];
   }
@@ -184,7 +190,7 @@ process.on("SIGTERM", () => process.exit(143));
 const started = performance.now();
 try {
   for (const stage of STAGES) {
-    const lanes = stage.filter((lane) => lane === "upload" || lane === "removal" || only.includes(lane));
+    const lanes = stage.filter((lane) => lane === "upload" || (lane === "removal" && !options.leave) || only.includes(lane));
     for (const lines of await Promise.all(lanes.map(runLane))) console.log(lines.join(EOL));
   }
 } finally {
