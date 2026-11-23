@@ -1368,8 +1368,9 @@ sheet has and the pages lacked. `resources/css/hubs.css` holds it, on the Scarle
   hidden from assistive technology. The interactive map stays in "Where characters go".
 - **Icons.** `<x-icon name>` is one authored set on a 24-unit grid with one round stroke, coloured by its text.
   No emoji and no icon font.
-- **Metals and class colours.** Rank and tier use copper, silver, gold, scarlet and, above scarlet, legend: a gold
-  crest with scarlet rays and gem. A character's
+- **Crest materials and tier colours.** A crest is steel, pewter and parchment, with gold at Scarlet only. The tier's colour
+  is the enamel field, the inlay, the gem and the banner's band. `Crest::MATERIAL` and `Crest::QUALITY` are the one table;
+  each crest's gradients take ids unique to that crest. A character's
   name carries its class in the game's class colour (`data-class` sets `--class`). Horde and Alliance have one
   colour each. Colour never carries a fact alone: a tier is also named, a class also written.
 - **Motion.** The tally counts up once when a page opens. Bars on a rule, rank tracks, plinths and flags grow in as
@@ -1468,8 +1469,8 @@ the deploy is announced; a row inserted later starts at 0, so a new character's 
 characters' counts, `max` takes the highest and names its holder, `none` for class, talent-tree and role feats; 39, 33
 and 169 feats). Its account tiers read the feat's `accountThresholds()`: the character's, times 1, 2, 2, 2, 2 for a `sum`
 feat (Summit is 20, 60, 120, 180 and 300 levels), the character's for a `max` feat. `ShowAccountFeats` computes them on
-every read from `character_feats`, with no stored account row: for a signed-in account over the characters with its
-`account_id` (the same set as the wall), for an install over `Character::ownedBy`. The gold feats follow the economy switch:
+every read from `character_feats`, with no stored account row: for a signed-in account over `Character::ownedByAccount` (the
+characters with its `account_id` plus those its installs sent), for an install over `Character::ownedBy`. The gold feats follow the economy switch:
 on the site the account row shows them when any of the account's characters shows its economy, and the install API shows
 them. `/feats` signed in and `/account` open on an `Account` row of crests, earned first, then the started ones; a feat page
 shows the account ladder beside the character's when the feat has one. The install API's `account` block carries the

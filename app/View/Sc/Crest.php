@@ -24,21 +24,40 @@ final class Crest
     private const string LIGHT = '#f0f1f3';
 
     /**
-     * The one colour table, by tier (0 is not earned): `color` is the field, the crown and the banner; `rim` the shield's rim and the
-     * account ring; `field` the field's opacity (1 is the solid field inside a dark gap); `plain` the shield's opacity under 22 px;
-     * `glyph` the glyph's stroke; `side`, `rays` and `gem` those pieces; `ghost` and `near` the opacity of a ghost drawn in this tier's
-     * colour at rest and from NEAR_AT. Mirrors `QUALITY` in design/crests/crests.js.
+     * A material is lit from above: `top` and `bottom` are the ends of a vertical gradient across a piece's box, `flat` the tint of a
+     * ghost. Mirrors `MATERIAL` in design/crests/crests.js.
      *
-     * @var array<int, array{color: string, rim: string, field: float|int, plain: float|int, glyph: string, side: string|null, rays: string|null, gem: string|null, ghost: float|int, near: float|int}>
+     * @var array<string, array{top: string, bottom: string, flat: string}>
+     */
+    public const array MATERIAL = [
+        'steel' => ['top' => '#e6e9ef', 'bottom' => '#767c88', 'flat' => '#aeb4bf'],
+        'pewter' => ['top' => '#a9aeb9', 'bottom' => '#4b4f58', 'flat' => '#787d89'],
+        'parchment' => ['top' => '#f3ead6', 'bottom' => '#c2b391', 'flat' => '#ddd0b3'],
+        'gold' => ['top' => '#ffeaa6', 'bottom' => '#b8872a', 'flat' => '#e8c060'],
+    ];
+
+    /**
+     * The tier table, by tier (0 is not earned): `color` is the accent (the field's top, the inlay, the band, the pips); `deep` the foot of
+     * the field; `frame`, `crown`, `banner`, `side` and `rays` the MATERIAL each piece is made of; `field` the field's opacity (1 is the
+     * solid field inside a dark gap); `plain` the field's opacity under 22 px; `glyph` the glyph's stroke; `gem` the gem's colour; `ghost`
+     * and `near` the opacity of a ghost drawn in this tier's colour at rest and from NEAR_AT. Mirrors `QUALITY` in design/crests/crests.js.
+     *
+     * @var array<int, array{color: string, deep: string|null, frame: string|null, field: float|int, plain: float|int, glyph: string, crown: string|null, banner: string|null, side: string|null, rays: string|null, gem: string|null, ghost: float|int, near: float|int}>
      */
     public const array QUALITY = [
-        ['color' => '#9d9d9d', 'rim' => '#9d9d9d', 'field' => 0, 'plain' => 0, 'glyph' => '#9d9d9d', 'side' => null, 'rays' => null, 'gem' => null, 'ghost' => 0, 'near' => 0],
-        ['color' => '#1eff00', 'rim' => '#1eff00', 'field' => 0.12, 'plain' => 0.55, 'glyph' => self::LIGHT, 'side' => null, 'rays' => null, 'gem' => null, 'ghost' => 0.12, 'near' => 0.3],
-        ['color' => '#0070dd', 'rim' => '#0070dd', 'field' => 0.3, 'plain' => 1, 'glyph' => self::LIGHT, 'side' => null, 'rays' => null, 'gem' => null, 'ghost' => 0.3, 'near' => 0.55],
-        ['color' => '#a335ee', 'rim' => '#a335ee', 'field' => 0.3, 'plain' => 1, 'glyph' => self::LIGHT, 'side' => null, 'rays' => null, 'gem' => null, 'ghost' => 0.3, 'near' => 0.55],
-        ['color' => '#ff8000', 'rim' => '#ff8000', 'field' => 1, 'plain' => 1, 'glyph' => self::INK, 'side' => '#b85c00', 'rays' => null, 'gem' => null, 'ghost' => 0.16, 'near' => 0.36],
-        ['color' => '#ff2d55', 'rim' => self::LIGHT, 'field' => 1, 'plain' => 1, 'glyph' => self::INK, 'side' => '#c0102e', 'rays' => self::LIGHT, 'gem' => self::LIGHT, 'ghost' => 0.14, 'near' => 0.34],
+        ['color' => '#9d9d9d', 'deep' => null, 'frame' => null, 'field' => 0, 'plain' => 0, 'glyph' => '#9d9d9d', 'crown' => null, 'banner' => null, 'side' => null, 'rays' => null, 'gem' => null, 'ghost' => 0, 'near' => 0],
+        ['color' => '#1eff00', 'deep' => '#14b800', 'frame' => 'steel', 'field' => 0.22, 'plain' => 0.55, 'glyph' => self::LIGHT, 'crown' => null, 'banner' => null, 'side' => null, 'rays' => null, 'gem' => null, 'ghost' => 0.12, 'near' => 0.3],
+        ['color' => '#0070dd', 'deep' => '#004f9e', 'frame' => 'steel', 'field' => 0.45, 'plain' => 1, 'glyph' => self::LIGHT, 'crown' => 'steel', 'banner' => null, 'side' => null, 'rays' => null, 'gem' => '#0070dd', 'ghost' => 0.3, 'near' => 0.55],
+        ['color' => '#a335ee', 'deep' => '#7220b0', 'frame' => 'steel', 'field' => 0.45, 'plain' => 1, 'glyph' => self::LIGHT, 'crown' => 'steel', 'banner' => 'parchment', 'side' => null, 'rays' => null, 'gem' => '#a335ee', 'ghost' => 0.3, 'near' => 0.55],
+        ['color' => '#ff8000', 'deep' => '#c75a00', 'frame' => 'steel', 'field' => 1, 'plain' => 1, 'glyph' => self::INK, 'crown' => 'steel', 'banner' => 'parchment', 'side' => 'pewter', 'rays' => null, 'gem' => '#ff8000', 'ghost' => 0.16, 'near' => 0.36],
+        ['color' => '#ff2d55', 'deep' => '#c4123a', 'frame' => 'gold', 'field' => 1, 'plain' => 1, 'glyph' => self::INK, 'crown' => 'gold', 'banner' => 'parchment', 'side' => 'pewter', 'rays' => 'gold', 'gem' => '#ff2d55', 'ghost' => 0.14, 'near' => 0.34],
     ];
+
+    private const array BAND = [15, 69.9, 81, 73.1];
+
+    private const array GEM_AT = [48, 24.6];
+
+    private const float GEM_SETTING = 1.5;
 
     private const float NEAR_AT = 0.9;
 
@@ -54,8 +73,15 @@ final class Crest
 
     private const float GLYPH = 28;
 
+    private static int $made = 0;
+
+    private static ?string $salt = null;
+
     /** @var list<string> */
     private array $defs = [];
+
+    /** @var array<string, true> */
+    private array $paints = [];
 
     private function __construct(
         private readonly string $id,
@@ -91,8 +117,8 @@ final class Crest
         $outline = $state === 'next';
         $drawn = $outline ? min(5, $held + 1) : $held;
         $p = max(0, min(1, $progress));
-        $id = 'cr'.substr(md5(implode('|', [$glyph, $scope, $held, $p, $size, $state, $icon ?? ''])), 0, 8);
-        $crest = new self($id, $scope, $drawn, $p, $size < 44, $size < 22, $outline, $state === 'earned');
+        self::$salt ??= bin2hex(random_bytes(3));
+        $crest = new self('cr'.self::$salt.++self::$made, $scope, $drawn, $p, $size < 44, $size < 22, $outline, $state === 'earned');
 
         return '<svg viewBox="'.($crest->compact ? '13 8.5 70 70' : '6 5 84 84').'" width="'.$size.'" height="'.$size.'" role="img" aria-label="'.e($label).'">'.$crest->layers($glyph, $icon).'</svg>';
     }
@@ -122,31 +148,34 @@ final class Crest
         $hidden = $this->compact && ($want === 'side' || $want === 'rays');
         $out = '';
         if ($tier >= 4 && ! $this->compact) {
-            $out .= $this->group('side', $this->path($side, ['fill' => $q['side']]).$this->flash($side));
+            $out .= $this->group('side', $this->path($side, ['fill' => $this->made((string) $q['side'])]).$this->flash($side));
         }
         if ($next !== null && $want === 'side' && ! $hidden) {
             $out .= $this->group('side ghost', $this->ghost($side, $next['color'], false, $next));
         }
         if ($tier === 5 && ! $this->compact) {
-            $out .= $this->group('rays', $this->backed('rays', ['fill' => $q['rays']]).$this->flash('rays'));
+            $out .= $this->group('rays', $this->backed('rays', ['fill' => $this->made((string) $q['rays'])]).$this->flash('rays'));
         }
         if ($next !== null && $want === 'rays' && ! $hidden) {
-            $out .= $this->group('rays ghost', $this->ghost('rays', $next['rays'], true, $next));
+            $out .= $this->group('rays ghost', $this->ghost('rays', self::MATERIAL['gold']['flat'], true, $next));
         }
         $out .= $this->group('shield', $this->shield($q, $next));
         if (! $this->tiny) {
             $out .= $this->glyph($glyph, $icon, $q);
         }
         if ($tier >= 3) {
-            $out .= $this->group('banner', $this->backed('banner', ['fill' => $q['color']]).$this->flash('banner'));
+            $clip = $this->id.'band';
+            [$x0, $y0, $x1, $y1] = self::BAND;
+            $this->defs[] = '<clipPath id="'.$clip.'"><rect x="'.self::n($x0).'" y="'.self::n($y0).'" width="'.self::n($x1 - $x0).'" height="'.self::n($y1 - $y0).'"/></clipPath>';
+            $out .= $this->group('banner', $this->backed('banner', ['fill' => $this->made((string) $q['banner'])]).$this->path('banner', ['fill' => $q['color'], 'clip-path' => 'url(#'.$clip.')']).$this->flash('banner'));
         }
         if ($next !== null && $want === 'banner') {
             $out .= $this->group('banner ghost', $this->ghost('banner', $next['color'], true, $next));
         }
         if ($tier >= 2) {
             $key = $tier === 5 ? 'great-crown' : 'crown';
-            $gem = $tier === 5 ? $this->path('gem', ['fill' => $q['gem'], 'stroke' => self::INK, 'stroke-width' => 1.2]) : '';
-            $out .= $this->group('crown', $this->backed($key, ['fill' => $q['color']]).$gem.$this->flash($key));
+            $setting = 'translate('.self::GEM_AT[0].' '.self::GEM_AT[1].') scale('.self::GEM_SETTING.') translate('.-self::GEM_AT[0].' '.-self::GEM_AT[1].')';
+            $out .= $this->group('crown', $this->backed($key, ['fill' => $this->made((string) $q['crown'])]).$this->path('gem', ['fill' => self::INK, 'transform' => $setting]).$this->path('gem', ['fill' => $q['gem']]).$this->flash($key));
         }
         if ($next !== null && $want === 'crown') {
             $out .= $this->group('crown ghost', $this->ghost('crown', $next['color'], true, $next));
@@ -161,12 +190,11 @@ final class Crest
      */
     private function shield(array $q, ?array $next): string
     {
-        $tier = $this->tier;
         $shield = self::SHIELD[$this->scope];
         $ring = $this->scope === 'account' ? 'ring-account' : null;
         $color = $q['color'];
         $out = '';
-        if ($tier === 0) {
+        if ($this->tier === 0) {
             if (! $this->tiny && $next !== null) {
                 $out .= $this->ghost($shield, $next['color'], false, ['ghost' => 0, 'near' => $next['near']], self::UNEARNED_FILL);
             }
@@ -177,7 +205,10 @@ final class Crest
 
             return $out;
         }
-        $rim = $q['rim'];
+        $rim = $this->made((string) $q['frame']);
+        $solid = $q['field'] == 1 || $this->tiny;
+        $inset = $this->compact ? 0.86 : 0.9;
+        $inner = $solid ? ($this->compact ? 0.8 : 0.84) : ($this->compact ? 0.78 : 0.85);
         if (! $this->compact) {
             $out .= $this->path($shield, ['fill' => self::INK, 'transform' => $this->about($ring !== null ? 1.3 : 1.09)]);
         }
@@ -185,11 +216,12 @@ final class Crest
             $out .= $this->path($ring, ['fill' => $rim]);
         }
         $out .= $this->path($shield, ['fill' => $rim]);
-        $out .= $this->path($shield, ['fill' => self::INK, 'transform' => $this->about($this->compact ? 0.86 : 0.9)]);
-        $solid = $q['field'] == 1 || $this->tiny;
+        $out .= $this->path($shield, ['fill' => $solid ? self::INK : $color, 'transform' => $this->about($inset)]);
+        if (! $solid) {
+            $out .= $this->path($shield, ['fill' => self::INK, 'transform' => $this->about($inner)]);
+        }
         if (! $this->outline) {
-            $scale = $solid ? ($this->compact ? 0.8 : 0.84) : ($this->compact ? 0.86 : 0.9);
-            $out .= $this->path($shield, ['fill' => $color, 'fill-opacity' => $this->tiny ? $q['plain'] : $q['field'], 'transform' => $this->about($scale)]);
+            $out .= $this->path($shield, ['fill' => $this->gradient('enamel', $color, (string) $q['deep']), 'fill-opacity' => $this->tiny ? $q['plain'] : $q['field'], 'transform' => $this->about($inner)]);
         }
 
         return $out.$this->flash($shield);
@@ -199,7 +231,7 @@ final class Crest
     private function glyph(string $glyph, ?string $icon, array $q): string
     {
         $tier = $this->tier;
-        $ink = $this->outline ? $q['rim'] : $q['glyph'];
+        $ink = $this->outline ? $q['color'] : $q['glyph'];
         $scale = ($this->compact ? 1.12 : 1) * (self::GLYPH / 24);
         $y = self::GLYPH_Y[$this->scope] + ($this->compact && $tier < 3 ? 1.5 : 0);
         $attrs = [
@@ -237,6 +269,23 @@ final class Crest
         $out = $back ? $this->path($key, ['fill' => self::INK, 'stroke' => self::INK, 'stroke-width' => 3.6, 'stroke-linejoin' => 'round']) : '';
 
         return $out.$this->path($key, ['fill' => $color, 'opacity' => $dim]).$this->path($key, ['fill' => $color, 'opacity' => $strength, 'clip-path' => 'url(#'.$clip.')', 'class' => 'cr-fill']);
+    }
+
+    /** The paint of a MATERIAL: a vertical gradient from its `top` to its `bottom`, defined once for the crest. */
+    private function made(string $material): string
+    {
+        return $this->gradient($material, self::MATERIAL[$material]['top'], self::MATERIAL[$material]['bottom']);
+    }
+
+    private function gradient(string $name, string $top, string $bottom): string
+    {
+        $id = $this->id.$name;
+        if (! isset($this->paints[$name])) {
+            $this->paints[$name] = true;
+            $this->defs[] = '<linearGradient id="'.$id.'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'.$top.'"/><stop offset="1" stop-color="'.$bottom.'"/></linearGradient>';
+        }
+
+        return 'url(#'.$id.')';
     }
 
     /** @param  array<string, string|int|float|null>  $attrs */
