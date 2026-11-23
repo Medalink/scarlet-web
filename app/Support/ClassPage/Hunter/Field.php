@@ -62,14 +62,14 @@ final readonly class Field
 
     public function tracking(): ?Module
     {
-        $states = $this->rows->states(StateKind::Tracking)->of(StateKind::Tracking);
+        $states = array_values(array_filter($this->rows->states(StateKind::Tracking)->of(StateKind::Tracking), fn ($state): bool => $state->refId > 0));
         if ($states === []) {
             return null;
         }
-        $names = $this->rows->spellNames(array_values(array_filter(array_map(fn ($state): int => $state->refId, $states))));
+        $names = $this->rows->spellNames(array_map(fn ($state): int => $state->refId, $states));
         $hours = [];
         foreach ($states as $state) {
-            $label = $state->refId > 0 ? ($names[$state->refId] ?? $state->name) : $state->name;
+            $label = $names[$state->refId] ?? $state->name;
             $hours[$label] = ($hours[$label] ?? 0) + $state->hours();
         }
         arsort($hours);

@@ -1851,7 +1851,8 @@ out. "Beasts tamed" is Tame Beast casts, since no row says a taming worked. The 
 that ran out of ammo are replaced by shots a fight and ammo bought, because no row prices an item or says a fight began
 without ammo. The quiver is a bag of stacks of 200 counted from the changes the addon saw, since `BC` does not say which
 bag is a quiver. A pet of any other family than the four with a model is "Another pet" in the level chart and keeps its
-name in the list. Tracking comes from `MP`, whose numeric names are resolved by spell id. Auto Shot is found by the
+name in the list. Tracking lists the `MP` types that are spells, named by spell id; the minimap's own filters, such as an innkeeper or a
+flight master, carry no spell and are left out. Auto Shot is found by the
 name of the spell id the `r` rows carry, as they hold no name. "Auras for the group" and the traps are hours up and
 casts: no row holds group time, so "in dungeons" is left out. Bestial Wrath and Intimidation read casts, the share
 used in a fight and casts a fight, in place of the boss fights, since no row holds an encounter; Aimed Shot reads its

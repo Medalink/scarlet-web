@@ -136,8 +136,8 @@ export function readLines(lines) {
       const hours = new Map();
       tracks.forEach((one, at) => {
         const until = tracks[at + 1]?.t ?? end;
-        for (const type of one.types) {
-          const label = /^[0-9]+$/.test(type) ? spells.get(Number(type)) : type;
+        for (const type of one.types.filter((type) => /^[0-9]+$/.test(type))) {
+          const label = spells.get(Number(type));
           hours.set(label, (hours.get(label) ?? 0) + until - one.t);
         }
       });
