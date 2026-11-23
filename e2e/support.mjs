@@ -24,6 +24,8 @@ export const WARLOCK = "Shard-Keeper";
 export const MAGE = "Frost-Weaver";
 /** A Druid of the stranger install with six hours played over levels 50 to 52, whose lines make every module of the Druid class page. */
 export const DRUID = "Moon-Walker";
+/** A Warrior of the first install with six hours played over levels 50 to 52, whose lines make every module of the Warrior class page. */
+export const WARRIOR = "Iron-Vanguard";
 export const LOCAL_HOSTS = ["127.0.0.1", "localhost", "[::1]"];
 /** A remember cookie makes EdgeCacheable treat the reader as signed in, so a page read reaches the origin, not the 60 s page cache. */
 export const ORIGIN_COOKIE = { name: "remember_web_e2e", value: "lane" };
@@ -33,6 +35,12 @@ const MAX_REDIRECTS = 5;
 export const ORIGIN_HEADERS = { Cookie: `${ORIGIN_COOKIE.name}=${ORIGIN_COOKIE.value}` };
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
+
+/** The characters of the stranger install: the only ones whose fixture folder is not the first install's. */
+export const STRANGER_CHARACTERS = [STRANGER, LEDGER, MAGE, DRUID];
+
+/** The characters of the first install: every folder of e2e/fixture the stranger install does not hold, so a new class fixture needs no list to join. */
+export const INSTALL_CHARACTERS = fs.readdirSync(FIXTURES).filter((name) => !STRANGER_CHARACTERS.includes(name)).sort();
 
 export class Skip extends Error {}
 

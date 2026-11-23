@@ -1827,6 +1827,27 @@ Balance talent in this client, and its procs are the Clearcasting auras. The com
 time in a form of played time, Travel Form of travel, the shifts back into the form just left, Rebirths and Innervates in
 ten played hours, and the fight time in Bear or Cat Form.
 
+**Where the Warrior page differs from the comp.** Built by `WarriorBuilder`: a head of a target dummy, a weapon rack and
+an armour stand with a callout each (the attack cast most, the weapon type held longest in the main hand, the shield);
+six figures (Charges with Intercept, Executes, Sunder Armors, Battle Shouts, Taunts, Deaths); damage dealt and taken a
+fight by level; the stance held, as a share of fight time and by level; how fights open; attacks; Execute; shouts;
+weapons in the main hand; damage by spell; a module for each of Mortal Strike, Sweeping Strikes, Enrage, Death Wish,
+Flurry, Last Stand and Shield Slam that the build holds (at most three, in the build's order); and what the warrior
+does for the party. The comp's modules the rows cannot answer are replaced or left out. Execute: "within a second" of
+a cast reads "within 3 seconds", which is what the `kill_blow` tally counts. Charge and the other casts: "in dungeons"
+is dropped, since `spell_casts` has no place, and Holding the pull says casts are counted in every place. Stances:
+"Most in one fight" and "Fights with it" are replaced by "Changed in a fight" and the share of fight time. Mortal Strike
+and Shield Slam: "Fights with it" is replaced by "Killed within 3 seconds". Sweeping Strikes, Enrage, Flurry and Death
+Wish: "Attacks under it" comes from the `cast_under` tally. Interrupts: "Interrupts landed" is the client's meter, which
+counts every interrupt of yours, so "Landed of casts" can pass the casts of Pummel and Shield Bash and is capped at
+100%. Battle Shout: no figure counts the hours a party stood next to the warrior, so the rate is casts a played hour
+and the share of fight time the buff was up. Weapons: the time before the first gear change of a session is not
+known, so the module says it counts from there. The fixture is Iron-Vanguard (`e2e/warrior-lines.mjs`, three clusters
+of fights at levels 50, 51 and 52); `e2e/warrior-expected.mjs` works its figures out from the lines with
+`e2e/lines-facts.mjs` and `e2e/checks/class-page-warrior.mjs` reads the page against them. The fixture holds three
+talents, so the Death Wish, Flurry, Last Stand and Shield Slam modules were run against its rows with those talents
+held and not stored as a page check. The comparison with other warriors waits for 20 of them, as for the Warlock.
+
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
 the character's page is. `/c/{name}`, the class page and `/c/{name}/battlegrounds` share one line of navigation under

@@ -12,7 +12,7 @@ const CLASS_SLUGS = ["druid", "hunter", "mage", "paladin", "priest", "rogue", "s
 const BAND_WAIT_MS = 60_000;
 const BAND_POLL_MS = 500;
 
-function tokensOf(html) {
+export function tokensOf(html) {
   return html
     .replace(/<(script|style)[\s\S]*?<\/\1>/g, " ")
     .replace(/<[^>]+>/g, "|")
@@ -24,15 +24,15 @@ function tokensOf(html) {
     .filter((token) => token !== "");
 }
 
-function shows(tokens, [label, value]) {
+export function shows(tokens, [label, value]) {
   return tokens.some((token, at) => token === label && [tokens[at + 1], tokens[at + 2]].some((next) => next === value || next?.startsWith(`${value} `)));
 }
 
-function showsLines(tokens, [first, ...rest]) {
+export function showsLines(tokens, [first, ...rest]) {
   return tokens.some((token, at) => token === first && rest.every((line, offset) => tokens[at + 1 + offset] === line));
 }
 
-function missing(tokens, pairs) {
+export function missing(tokens, pairs) {
   return pairs.filter((pair) => !shows(tokens, pair)).map(([label, value]) => `${label} ${value}`);
 }
 

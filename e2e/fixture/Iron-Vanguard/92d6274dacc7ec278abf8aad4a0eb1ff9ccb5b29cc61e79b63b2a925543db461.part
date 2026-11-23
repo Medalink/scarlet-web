@@ -1,0 +1,47 @@
+scarlet-part	1	Iron-Vanguard	1795630000	names
+100	SN	11578	Charge
+1	SN	20252	Intercept
+1	SN	20662	Execute
+1	SN	11597	Sunder Armor
+1	SN	11551	Battle Shout
+1	SN	11556	Demoralizing Shout
+1	SN	5246	Intimidating Shout
+1	SN	1161	Challenging Shout
+1	SN	12323	Piercing Howl
+1	SN	355	Taunt
+1	SN	20560	Mocking Blow
+1	SN	11567	Heroic Strike
+1	SN	21553	Mortal Strike
+1	SN	23881	Bloodthirst
+1	SN	11574	Rend
+1	SN	11601	Revenge
+1	SN	11585	Overpower
+1	SN	11581	Thunder Clap
+1	SN	9080	Hamstring
+1	SN	11608	Cleave
+1	SN	11605	Slam
+1	SN	1680	Whirlwind
+1	SN	2565	Shield Block
+1	SN	6552	Pummel
+1	SN	72	Shield Bash
+1	SN	2687	Bloodrage
+1	SN	2764	Throw
+1	SN	12292	Sweeping Strikes
+1	SN	12328	Death Wish
+1	SN	12880	Enrage
+1	SN	2457	Battle Stance
+1	SN	71	Defensive Stance
+1	SN	2458	Berserker Stance
+1	SN	12294	Mortal Strike
+1	SN	12317	Enrage
+366	TY	161	Arms
+10	TY	164	Fury
+10	TY	163	Protection
+480	IN	12784	Arcanite Reaper
+1	IN	12940	Dal'Rend's Sacred Charge
+1	IN	13361	Skullforge Reaver
+1	IN	12602	Draconian Deflector
+497	II	12784	2	1	INVTYPE_2HWEAPON	50	40	100	1	1
+1	II	12940	2	7	INVTYPE_WEAPON	50	40	100	1	1
+1	II	13361	2	8	INVTYPE_2HWEAPON	50	40	100	1	1
+1	II	12602	4	6	INVTYPE_SHIELD	50	40	100	1	1

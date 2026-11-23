@@ -1,6 +1,6 @@
 /**
  * Checks before a ship: the Scarlet website and API driven over HTTP, and a headless browser for the pages, in under
- * 30 seconds. It uploads six invented characters (e2e/fixture), reads them back through the API, the pages and the
+ * 30 seconds. It uploads the invented characters of e2e/fixture, reads them back through the API, the pages and the
  * browser, and removes them again.
  *
  *   node e2e/run.mjs [--url http://127.0.0.1:8557] [--only upload|api|pages|browser|owner] [--keep <dir>] [--browser <path>]
@@ -15,11 +15,12 @@ import os from "node:os";
 import path from "node:path";
 import { InstallClient } from "./client.mjs";
 import { Gate } from "./gate.mjs";
-import { DRUID, ECHO, Http, Jar, LEDGER, LOCAL_HOSTS, MAGE, NAME, PROBE, STRANGER, WARLOCK, Skip } from "./support.mjs";
+import { DRUID, ECHO, Http, INSTALL_CHARACTERS, Jar, LOCAL_HOSTS, MAGE, STRANGER_CHARACTERS, WARLOCK, WARRIOR, Skip } from "./support.mjs";
 import * as upload from "./checks/upload.mjs";
 import * as api from "./checks/api.mjs";
 import * as pages from "./checks/pages.mjs";
 import * as classPage from "./checks/class-page.mjs";
+import * as warriorPage from "./checks/class-page-warrior.mjs";
 import * as professions from "./checks/professions.mjs";
 import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
@@ -42,7 +43,7 @@ const REGISTRY = [
   { lane: "upload", name: "installs/me refuses an unsigned request", run: upload.meUnsigned },
   { lane: "upload", name: "installs/me refuses a wrong signature", run: upload.meWrongSignature },
   { lane: "upload", name: "what an earlier run left is removed", run: upload.leftoversRemoved },
-  { lane: "upload", name: `${NAME}, ${PROBE}, ${ECHO} and ${WARLOCK} upload side by side, and ${STRANGER} and ${LEDGER} and ${MAGE} and ${DRUID} from another install: sync, manifest, parts, sync`, run: upload.bothUpload },
+  { lane: "upload", name: `${INSTALL_CHARACTERS.join(", ")} upload side by side, and ${STRANGER_CHARACTERS.join(", ")} from another install: sync, manifest, parts, sync`, run: upload.bothUpload },
   { lane: "upload", name: "the same manifest needs nothing", run: upload.sameManifestNeedsNothing },
   { lane: "upload", name: "the upload is decoded", run: upload.decoded },
   { lane: "api", name: "every public endpoint answers data and meta", run: api.everyEndpointAnswers },
@@ -75,6 +76,8 @@ const REGISTRY = [
   { lane: "pages", name: `${WARLOCK}'s class page shows the figures worked out from its lines and no comparison under twenty warlocks`, run: classPage.warlockPageShowsItsFigures },
   { lane: "pages", name: `${MAGE}'s class page shows the figures worked out from its lines and no comparison under twenty mages`, run: classPage.magePageShowsItsFigures },
   { lane: "pages", name: `${DRUID}'s class page shows the figures worked out from its lines and no comparison under twenty druids`, run: classPage.druidPageShowsItsFigures },
+  { lane: "pages", name: `${WARRIOR}'s class page shows the figures worked out from its lines and no comparison under twenty warriors`, run: warriorPage.warriorPageShowsItsFigures },
+  { lane: "pages", name: "the Warrior's character page links its class page and shows its band", run: warriorPage.warriorBandLinksItsClassPage },
   { lane: "pages", name: "a character's page links its class page and draws its band from the stored row, and a class with no page has neither", run: classPage.characterPageLinksItsClassPage },
   { lane: "pages", name: "a character with no class rows has no band and no link to a class page", run: classPage.characterWithNoClassRowsHasNoBand },
   { lane: "pages", name: "another class's slug, an unknown slug and an unknown character are 404 pages", run: classPage.otherAddressesAre404 },

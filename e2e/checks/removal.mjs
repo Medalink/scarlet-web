@@ -1,11 +1,11 @@
-import { DRUID, ECHO, LEDGER, MAGE, NAME, PROBE, STRANGER, WARLOCK, expectJson, expectStatus, loadFixture } from "../support.mjs";
+import { INSTALL_CHARACTERS, NAME, STRANGER_CHARACTERS, expectJson, expectStatus, loadFixture } from "../support.mjs";
 
 export async function removalAnswersAndEmptiesStatus(ctx) {
   const answer = expectStatus(await ctx.client.remove(), 200, "DELETE /api/v1/upload");
   const removed = expectJson(answer, "DELETE /api/v1/upload");
-  const parts = loadFixture(NAME).ids.length + loadFixture(PROBE).ids.length + loadFixture(ECHO).ids.length + loadFixture(WARLOCK).ids.length;
-  if (removed.characters_removed !== 4 || removed.parts_removed !== parts || typeof removed.rows_removed !== "number") {
-    throw new Error(`the removal should report 4 characters and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
+  const parts = INSTALL_CHARACTERS.reduce((sum, name) => sum + loadFixture(name).ids.length, 0);
+  if (removed.characters_removed !== INSTALL_CHARACTERS.length || removed.parts_removed !== parts || typeof removed.rows_removed !== "number") {
+    throw new Error(`the removal should report ${INSTALL_CHARACTERS.length} characters and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
   }
   const status = expectStatus(await ctx.client.status(), 200, "GET /api/v1/upload/status after the removal");
   const left = expectJson(status, "the status after the removal").characters ?? [];
@@ -15,9 +15,9 @@ export async function removalAnswersAndEmptiesStatus(ctx) {
 export async function strangerIsRemoved(ctx) {
   const answer = expectStatus(await ctx.stranger.remove(), 200, "DELETE /api/v1/upload of the stranger install");
   const removed = expectJson(answer, "DELETE /api/v1/upload of the stranger install");
-  const parts = loadFixture(STRANGER).ids.length + loadFixture(LEDGER).ids.length + loadFixture(MAGE).ids.length + loadFixture(DRUID).ids.length;
-  if (removed.characters_removed !== 4 || removed.parts_removed !== parts) {
-    throw new Error(`the removal of the stranger install should report 4 characters and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
+  const parts = STRANGER_CHARACTERS.reduce((sum, name) => sum + loadFixture(name).ids.length, 0);
+  if (removed.characters_removed !== STRANGER_CHARACTERS.length || removed.parts_removed !== parts) {
+    throw new Error(`the removal of the stranger install should report ${STRANGER_CHARACTERS.length} characters and ${parts} parts, saw ${answer.text.slice(0, 300)}`);
   }
 }
 

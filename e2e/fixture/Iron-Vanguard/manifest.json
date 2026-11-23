@@ -1,0 +1,34 @@
+{
+  "character": "Iron-Vanguard",
+  "parts": [
+    {
+      "group": "core",
+      "id": "a1fe8417cd4c334d44f582eb4eaf3b28c4a40e5e7c550704daf1644c7a84668e",
+      "lines": 5,
+      "raw_bytes": 212,
+      "session": 1795630000
+    },
+    {
+      "group": "build",
+      "id": "ad876e07ef248069a9d96fc177ba54cd312cd389cdf22f895de7643c134da01a",
+      "lines": 13,
+      "raw_bytes": 483,
+      "session": 1795630000
+    },
+    {
+      "group": "combat",
+      "id": "8ac37ac5aba91947b538ab5241e15af1d3d8bc8b9b38384ecb922addd1ec7e69",
+      "lines": 246,
+      "raw_bytes": 3913,
+      "session": 1795630000
+    },
+    {
+      "group": "names",
+      "id": "92d6274dacc7ec278abf8aad4a0eb1ff9ccb5b29cc61e79b63b2a925543db461",
+      "lines": 46,
+      "raw_bytes": 1174,
+      "session": 1795630000
+    }
+  ],
+  "set_digest": "146cb79825064644d2abccd532fa84ebba9b3a75e6fef7582f368388ec180c9c"
+}

@@ -22,6 +22,7 @@ import { DRUID_LINES } from "./druid-lines.mjs";
 import { LEDGER_LINES } from "./ledger-lines.mjs";
 import { MAGE_LINES } from "./mage-lines.mjs";
 import { WARLOCK_LINES } from "./warlock-lines.mjs";
+import { WARRIOR_LINES } from "./warrior-lines.mjs";
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture");
 
@@ -78,7 +79,7 @@ const GROUP_OF = {
   R: "combat", U: "combat", SH: "combat", SR: "combat", DM: "combat", DP: "combat", DS: "combat",
   LO: "loot", I: "loot", DI: "loot",
   SL: "professions", TS: "professions", CB: "professions", RD: "professions", CR: "professions", CS: "professions",
-  IN: "names", SN: "names", TY: "names", SD: "names",
+  IN: "names", SN: "names", TY: "names", SD: "names", II: "names",
 };
 const GROUP_ORDER = ["core", "movement", "build", "combat", "loot", "professions", "names"];
 
@@ -241,6 +242,7 @@ const BUILDS = [
   { character: "Shard-Keeper", session: 1795540000, lines: WARLOCK_LINES },
   { character: "Frost-Weaver", session: 1795630000, lines: MAGE_LINES },
   { character: "Moon-Walker", session: 1795720000, lines: DRUID_LINES },
+  { character: "Iron-Vanguard", session: 1795630000, lines: WARRIOR_LINES },
 ];
 
 function partsOf(character, session, lines) {
