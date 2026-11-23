@@ -2,7 +2,7 @@
 <div class="wrap">
   <x-page-head :title="$d['title']">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
-    <x-slot:filters><x-scope-filters :filters="$filters" /></x-slot:filters>
+    <x-slot:filters><x-scope-switch :choice="$scope['choice']" path="/professions" :names="$scope['names']" :query="$scope['query']" :compare="false" /><x-scope-filters :filters="$filters" /></x-slot:filters>
   </x-page-head>
   <x-sheet>
     <x-module span="w12" :first="true" :last="true">

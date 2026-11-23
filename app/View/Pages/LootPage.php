@@ -49,9 +49,9 @@ final class LootPage
                 ['label' => 'Characters', 'value' => Format::number($figures['characters'])],
             ],
             'heading' => $items ? 'Items' : 'Sources',
-            'views' => array_map(fn (LootView $view): array => [
+            'views' => [...array_map(fn (LootView $view): array => [
                 'label' => $view->label(), 'href' => self::url(['view' => $view === LootView::Creatures ? null : $view->value, ...array_intersect_key($filter->params(), array_flip(['zone', 'q', 'quality']))]), 'on' => $view === $filter->view,
-            ], LootView::cases()),
+            ], LootView::cases()), ['label' => 'Group loot', 'href' => '/loot?view=groups', 'on' => false]],
             'form' => self::form($filter, $zones),
             'columns' => $items
                 ? [['label' => 'Item'], ['label' => 'Dropped', 'numeric' => true], ['label' => 'Sources', 'numeric' => true], ['label' => 'Best source'], ['label' => 'Zone']]
@@ -67,7 +67,7 @@ final class LootPage
                 'value' => Format::number($zone['windows']), 'share' => $zone['windows'] / $top * 100,
             ], array_slice($zones, 0, self::ZONES)),
             'rules' => array_map(fn (array $rule): array => [
-                'label' => self::ruleWords($rule['rule'], $rule['size']), 'href' => '/loot/groups', 'value' => Format::number($rule['windows']), 'share' => $rule['windows'] / $mostRule * 100,
+                'label' => self::ruleWords($rule['rule'], $rule['size']), 'href' => '/loot?view=groups', 'value' => Format::number($rule['windows']), 'share' => $rule['windows'] / $mostRule * 100,
             ], $rules),
         ];
     }

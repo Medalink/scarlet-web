@@ -12,6 +12,9 @@ use Illuminate\Validation\Rule;
 /** The table, the filters, the order and the page of `/loot`, as query parameters. */
 class LootRequest extends FormRequest
 {
+    /** The `view` of the tab that is not a table of sources: loot rules and group size. */
+    public const string GROUPS = 'groups';
+
     public function authorize(): bool
     {
         return true;
@@ -21,7 +24,7 @@ class LootRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'view' => ['nullable', Rule::enum(LootView::class)],
+            'view' => ['nullable', Rule::in([...array_column(LootView::cases(), 'value'), self::GROUPS])],
             'zone' => ['nullable', 'integer', 'between:-100000,1000000'],
             'min' => ['nullable', 'integer', 'between:-1,80'],
             'max' => ['nullable', 'integer', 'between:-1,80'],
@@ -32,6 +35,11 @@ class LootRequest extends FormRequest
         ];
     }
 
+    public function groups(): bool
+    {
+        return $this->validated('view') === self::GROUPS;
+    }
+
     public function filter(): LootFilter
     {
         $view = $this->validated('view');
@@ -39,7 +47,7 @@ class LootRequest extends FormRequest
         $text = $this->validated('q');
 
         return new LootFilter(
-            is_string($view) ? LootView::from($view) : LootView::Creatures,
+            is_string($view) ? LootView::tryFrom($view) ?? LootView::Creatures : LootView::Creatures,
             $this->whole('zone'),
             $this->whole('min'),
             $this->whole('max'),

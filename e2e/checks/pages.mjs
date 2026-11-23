@@ -10,7 +10,7 @@ const PAGES = [
   { path: "/", shows: heading("(?:[\\d,]+ )?WoW Forever characters?, recorded by their players") },
   { path: "/stats", shows: heading("All characters") },
   { path: "/loot", shows: heading("Loot") },
-  { path: "/loot/groups", shows: heading("Loot rules and group size") },
+  { path: "/loot?view=groups", shows: heading("Loot rules and group size") },
   { path: "/map", shows: heading("World map") },
   { path: "/camps", shows: heading("Camps") },
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
@@ -63,6 +63,7 @@ export async function everyPageShowsItself(ctx) {
 export async function oldAddressesRedirect(ctx) {
   const moved = [
     ["/demo", "/"],
+    ["/loot/groups?source=c1", "/loot?source=c1&view=groups"],
     ["/rulesets", "/stats/compare"],
     ["/rulesets/unidentified", "/stats/unidentified"],
     ["/hardcore-deaths", /^\/stats(\/[a-z0-9-]+#deaths)?$/],

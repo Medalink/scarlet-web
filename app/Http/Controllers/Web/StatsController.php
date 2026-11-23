@@ -11,6 +11,7 @@ use App\Actions\Rollups\RulesetSummaries;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\ScopeRequest;
 use App\Models\Character;
+use App\Models\RulesetKind;
 use App\Support\PageScope;
 use App\Support\Server;
 use App\Support\WorldLayer;
@@ -54,7 +55,7 @@ class StatsController extends Controller
             return $character === null ? null : StatsCompare::character($sessions->handle($id), (int) $character->recorded_seconds);
         });
 
-        $hardcore = $scope->ruleset !== null && array_any($rulesets, fn (array $ruleset): bool => $ruleset['slug'] === $scope->ruleset->slug() && $ruleset['kind'] === 'hardcore');
+        $hardcore = $scope->ruleset !== null && array_any($rulesets, fn (array $ruleset): bool => $ruleset['slug'] === $scope->ruleset->slug() && $ruleset['kind'] === RulesetKind::Hardcore->value);
 
         return view('pages.stats', [
             'deaths' => $hardcore ? HardcoreDeathsPage::data($deaths->handle()) : null,

@@ -10,9 +10,10 @@ final class ProfessionsIndex
 {
     /**
      * @param  list<array<string, mixed>>  $skills  kind, skill, skill_id, ups, best_rank, characters
+     * @param  string  $query  the query every row link keeps, with its leading ?
      * @return array{title: string, sub: string, columns: list<array<string, mixed>>, rows: list<array<string, mixed>>}
      */
-    public static function data(array $skills): array
+    public static function data(array $skills, string $query = ''): array
     {
         $byLine = [];
         foreach ($skills as $skill) {
@@ -22,7 +23,7 @@ final class ProfessionsIndex
         foreach (Profession::withPages() as $profession) {
             $skill = $byLine[(int) $profession->skillLine()] ?? null;
             $rows[] = ['cells' => [
-                ['text' => $profession->value, 'href' => '/professions/'.$profession->slug()],
+                ['text' => $profession->value, 'href' => '/professions/'.$profession->slug().$query],
                 $skill === null ? Format::TOO_FEW : Format::number((int) $skill['characters']),
                 $skill === null ? '–' : Format::number((int) $skill['best_rank']),
                 $skill === null ? '–' : Format::number((int) $skill['ups']),
