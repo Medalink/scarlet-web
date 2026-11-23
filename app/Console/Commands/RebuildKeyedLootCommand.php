@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 
 #[Signature('loot:rebuild-keyed')]
-#[Description('Rebuilds the five keyed loot tables for every day, under the lock the aggregate refreshes hold')]
+#[Description('Rebuilds the five keyed loot tables and the group share receipts for every day, under the lock the aggregate refreshes hold')]
 class RebuildKeyedLootCommand extends Command
 {
     private const int WAIT_SECONDS = 600;

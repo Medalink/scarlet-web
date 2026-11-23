@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\DB;
 
 class RebuildKeyedLoot
 {
-    private const array TABLES = ['loot_windows_keyed_daily', 'loot_items_keyed_daily', 'loot_windows_character_keyed_daily', 'loot_kills_keyed_daily', 'loot_kill_items_keyed_daily'];
+    private const array TABLES = ['loot_windows_keyed_daily', 'loot_items_keyed_daily', 'loot_windows_character_keyed_daily', 'loot_kills_keyed_daily', 'loot_kill_items_keyed_daily', 'group_share_receipts'];
+
+    public function __construct(private readonly GroupShareReceipts $receipts) {}
 
     /**
      * Fill the five keyed loot tables from the windows that carry a corpse key (docs/LOOT.md, Units of counting, rule 7),
@@ -32,7 +34,8 @@ class RebuildKeyedLoot
      * is kept, since that read counts nowhere. The
      * `characters` of a row are the characters whose window the table kept. Kills of a corpse are one row each by `(npc_id,
      * corpse_key)`, from a session with a `loot` part, whoever got the credit, with the corpse's loot window when one was
-     * kept.
+     * kept. The receipts of the share of group loot are refilled for the same days (`GroupShareReceipts`), from the rows
+     * of those days and any roll that won one.
      *
      * `$from` and `$until` (epoch seconds, `$until` excluded) name the days that changed; both null rebuilds everything.
      * Rows read days a corpse can reach, so the days rebuilt are those of the range and the day before and after it (a
@@ -56,6 +59,8 @@ class RebuildKeyedLoot
             foreach ($this->inserts() as $insert) {
                 DB::statement($insert);
             }
+            $days = DB::selectOne('select b_from::text as since, b_until::text as until from loot_range');
+            $this->receipts->handle($days->since, $days->until);
         });
     }
 
