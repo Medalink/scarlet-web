@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Support\Database\Conflict;
 use App\Support\DecodedSession;
 use App\Support\FactTable;
 use App\Support\WorldPlacement;
@@ -98,13 +99,19 @@ class InsertFactRows
             DB::transaction(fn (): bool => DB::table($table->value)->insert($batch));
 
             return count($batch);
-        } catch (QueryException) {
+        } catch (QueryException $e) {
+            if (Conflict::lost($e)) {
+                throw $e;
+            }
             $inserted = 0;
             foreach ($batch as $row) {
                 try {
                     DB::transaction(fn (): bool => DB::table($table->value)->insert($row));
                     $inserted++;
                 } catch (QueryException $e) {
+                    if (Conflict::lost($e)) {
+                        throw $e;
+                    }
                     Log::warning('Fact row skipped.', ['table' => $table->value, 'error' => $e->getMessage()]);
                 }
             }

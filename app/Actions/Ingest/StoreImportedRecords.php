@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Support\Database\Conflict;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -63,11 +64,17 @@ class StoreImportedRecords
     {
         try {
             DB::transaction(fn (): bool => DB::table('imported_records')->insert($chunk));
-        } catch (QueryException) {
+        } catch (QueryException $e) {
+            if (Conflict::lost($e)) {
+                throw $e;
+            }
             foreach ($chunk as $record) {
                 try {
                     DB::transaction(fn (): bool => DB::table('imported_records')->insert($record));
                 } catch (QueryException $e) {
+                    if (Conflict::lost($e)) {
+                        throw $e;
+                    }
                     Log::warning('Imported record skipped.', ['character_id' => $record['character_id'], 'day_start' => $record['day_start'], 'error' => $e->getMessage()]);
                 }
             }
