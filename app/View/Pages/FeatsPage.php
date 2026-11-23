@@ -136,20 +136,13 @@ final class FeatsPage
             'tiles' => $tiles,
             'score' => $character['score'],
             'max' => self::scoreMax(),
-            'place' => $character['place'] === null ? null : self::ordinal($character['place']).' of '.Format::number((int) $character['of']),
+            'place' => $character['place'] === null ? null : Format::ordinal($character['place']).' of '.Format::number((int) $character['of']),
         ];
     }
 
-    private static function scoreMax(): int
+    public static function scoreMax(): int
     {
         return count(array_filter(Feat::cases(), fn (Feat $feat): bool => $feat->scores())) * count(Feat::TIERS);
-    }
-
-    private static function ordinal(int $n): string
-    {
-        $suffix = in_array($n % 100, [11, 12, 13], true) ? 'th' : ([1 => 'st', 2 => 'nd', 3 => 'rd'][$n % 10] ?? 'th');
-
-        return Format::number($n).$suffix;
     }
 
     /**
@@ -169,7 +162,7 @@ final class FeatsPage
      * @param  array<string, mixed>  $feat
      * @return array<string, mixed>
      */
-    private static function closestCard(array $feat): array
+    public static function closestCard(array $feat): array
     {
         $kind = Feat::from($feat['key']);
 

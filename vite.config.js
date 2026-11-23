@@ -11,6 +11,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/game.css',
                 'resources/css/class.css',
+                'resources/css/class-section.css',
                 'resources/css/landing.css',
                 'resources/css/tailwind.css',
                 'resources/js/app.js',

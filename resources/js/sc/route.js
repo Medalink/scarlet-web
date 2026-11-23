@@ -6,6 +6,32 @@ function grid(canvas, W, H) {
     for (let gy = 40; gy < H; gy += 40) canvas.append(svg('rect', { x: 0, y: gy, width: W, height: 1, fill: 'rgba(255,255,255,0.035)' }));
 }
 
+function trail(canvas, spec, { scale, left, top, sheetH }) {
+    const cells = spec.cells;
+    const count = cells.length / 2;
+    const size = Math.max(1.6, spec.cell * scale);
+    const chunks = 6;
+    const per = Math.ceil(count / chunks);
+    for (let c = 0; c < chunks; c++) {
+        const group = svg('g', { fill: '#ff2d55', opacity: 0.32 + (c / (chunks - 1)) * 0.68 });
+        for (let i = c * per; i < Math.min(count, (c + 1) * per); i++) {
+            group.append(svg('rect', { x: left + cells[i * 2] * scale - size / 2, y: top + (sheetH - cells[i * 2 + 1]) * scale - size / 2, width: size, height: size }));
+        }
+        canvas.append(group);
+    }
+    for (const [dx, dy] of spec.deaths || []) {
+        const px = left + dx * scale;
+        const py = top + (sheetH - dy) * scale;
+        canvas.append(svg('circle', { cx: px, cy: py, r: 8.5, fill: '#141416', stroke: 'rgba(255,255,255,0.3)' }));
+        const glyph = svg('g', { transform: `translate(${px - 6.6} ${py - 6.8}) scale(0.55)`, fill: 'none', stroke: '#f0f1f3', 'stroke-width': 2.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+        glyph.innerHTML = DEATH_GLYPH;
+        canvas.append(glyph);
+    }
+    for (const [label, px, py] of spec.places || []) {
+        canvas.append(text({ x: left + px * scale, y: top + (sheetH - py) * scale, 'font-style': 'italic' }, label));
+    }
+}
+
 export function route(element) {
     const spec = JSON.parse(element.dataset.route);
     const W = element.clientWidth || 400;
@@ -19,6 +45,11 @@ export function route(element) {
     const scale = Math.min((W - 2 * pad) / sheetW, (H - 2 * pad) / sheetH);
     const left = (W - sheetW * scale) / 2;
     const top = (H - sheetH * scale) / 2;
+    if (spec.cells) {
+        trail(canvas, spec, { scale, left, top, sheetH });
+        element.replaceChildren(canvas);
+        return;
+    }
     const points = [];
     for (let i = 0; i < spec.points.length; i += 2) points.push([left + spec.points[i] * scale, top + (sheetH - spec.points[i + 1]) * scale]);
     const n = points.length;

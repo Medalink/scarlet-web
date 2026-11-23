@@ -17,6 +17,14 @@ final class Format
     public const TOO_FEW = 'Too few characters';
 
     /** 1284 → "1,284"; with decimals, 23.8 → "23.8". */
+    /** 1 → "1st", 2,140 → "2,140th". */
+    public static function ordinal(int $n): string
+    {
+        $suffix = in_array($n % 100, [11, 12, 13], true) ? 'th' : ([1 => 'st', 2 => 'nd', 3 => 'rd'][$n % 10] ?? 'th');
+
+        return self::number($n).$suffix;
+    }
+
     public static function number(int|float $value, int $decimals = 0): string
     {
         return number_format($value, $decimals);

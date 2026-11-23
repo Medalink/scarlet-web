@@ -4,17 +4,13 @@ namespace App\View\Pages;
 
 use App\Models\Character;
 use App\View\Format;
+use App\View\Sc\ClassColor;
 use App\View\Sc\RecapView;
 use Illuminate\Support\HtmlString;
 
 /** The data of /c/{name}/sessions/{start} (design/final/session-web.html) from the answer of App\Actions\Sessions\ShowSession. */
 final class SessionPage
 {
-    private const array CLASS_COLORS = [
-        'WARRIOR' => '#c69b6d', 'PALADIN' => '#f48cba', 'HUNTER' => '#aad372', 'ROGUE' => '#fff468', 'PRIEST' => '#ffffff', 'SHAMAN' => '#0070dd',
-        'MAGE' => '#3fc7eb', 'WARLOCK' => '#8788ee', 'DRUID' => '#ff7c0a', 'DEATHKNIGHT' => '#c41e3a', 'DEMONHUNTER' => '#a330c9',
-    ];
-
     private const array OWN_ROWS = [
         'xp_h' => 'XP an hour', 'kills_h' => 'Kills an hour', 'quests_h' => 'Quests an hour', 'miles_h' => 'Miles an hour', 'deaths' => 'Deaths', 'played' => 'Played',
     ];
@@ -38,7 +34,7 @@ final class SessionPage
             'name' => $name,
             'first' => explode(' ', $name)[0],
             'href' => $base,
-            'color' => self::CLASS_COLORS[strtoupper((string) $recap['class'])] ?? '#c3c7cf',
+            'color' => ClassColor::of($recap['class']),
             'line' => Format::character($recap['level'][1] ?: null, $character->race, $recap['class']),
             'recap' => $recap,
             'title' => $recap['title']['text'],

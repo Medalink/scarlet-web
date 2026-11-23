@@ -1,4 +1,4 @@
-@props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => '', 'canonical' => null, 'index' => true, 'brand' => true])
+@props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => '', 'canonical' => null, 'index' => true, 'brand' => true, 'styles' => [], 'scripts' => []])
 @php
     $signedIn = $signedIn || auth()->check();
     $links = App\View\Sc\Nav::LINKS;
@@ -6,7 +6,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/tailwind.css', 'resources/js/sc.js']" :canonical="$canonical" :index="$index" :brand="$brand" />
+<x-layouts.head :title="$title" :description="$description" :entries="['resources/css/tailwind.css', 'resources/js/sc.js', ...$styles, ...$scripts]" :canonical="$canonical" :index="$index" :brand="$brand" />
 </head>
 <body class="bg-bg font-body text-copy">
 <a class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-card focus:px-3 focus:py-2" href="#main">Skip to main content</a>

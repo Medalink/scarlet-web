@@ -15,14 +15,11 @@ class ShowFeatsHub
 {
     public const array SCOPES = ['everyone', 'compare', 'mine'];
 
-    private const int CLOSEST = 3;
-
     private const int WEEK = 7;
 
     public function __construct(
         private readonly ShowFeatCatalog $catalog,
-        private readonly ShowCharacterFeats $rows,
-        private readonly ShowFeatCardFields $fields,
+        private readonly BuildCharacterFeats $built,
     ) {}
 
     /**
@@ -44,15 +41,16 @@ class ShowFeatsHub
             }
         }
         $catalog = $this->catalog->handle();
-        $feats = $character === null ? $this->everyone($catalog['feats']) : $this->ofCharacter($character, $catalog['feats'], $mode === 'compare');
+        $of = $character === null ? null : $this->built->handle($character, $catalog['feats'], $mode === 'compare');
+        $feats = $of === null ? $this->everyone($catalog['feats']) : $of['feats'];
 
         return [
             'mode' => $character === null ? 'everyone' : $mode,
             'names' => $names,
-            'character' => $character === null ? null : $this->summary($character, $feats),
+            'character' => $of['character'] ?? null,
             'catalog' => count($catalog['feats']),
             'feats' => $feats,
-            'closest' => $character === null ? [] : $this->closest($feats),
+            'closest' => $of['closest'] ?? [],
             'rarest' => $this->rarest(),
         ];
     }
@@ -67,91 +65,6 @@ class ShowFeatsHub
             'tier' => 0, 'value' => null, 'progress' => 0.0, 'counted' => null, 'to_next' => null, 'next' => null, 'left' => null, 'spell' => null,
             'share' => $feat['shares'][0] ?? null,
         ], $catalog);
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $catalog
-     * @return list<array<string, mixed>>
-     */
-    private function ofCharacter(Character $character, array $catalog, bool $shares): array
-    {
-        $rows = $this->rows->handle($character, (bool) $character->show_economy);
-        $fields = $this->fields->handle($character, $rows);
-        $byKey = [];
-        foreach ($rows as $row) {
-            $byKey[$row['key']] = $row;
-        }
-        $feats = [];
-        foreach ($catalog as $feat) {
-            $row = $byKey[$feat['key']] ?? null;
-            if ($row === null) {
-                continue;
-            }
-            $field = $fields[$row['key']];
-            $at = $feat['shares'][max($row['tier'], 1) - 1] ?? null;
-            $feats[] = $feat + [
-                'tier' => $row['tier'], 'value' => $row['value'], 'progress' => $field['progress'], 'counted' => $field['counted'], 'to_next' => $field['to_next'],
-                'next' => $row['next'], 'left' => $field['left'], 'spell' => $field['spell'], 'share' => $shares ? $at : null,
-            ];
-        }
-
-        return $feats;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $feats
-     * @return array<string, mixed>
-     */
-    private function summary(Character $character, array $feats): array
-    {
-        $tiers = [0, 0, 0, 0, 0];
-        $general = $classes = $roleFeats = 0;
-        $roles = [];
-        foreach ($feats as $feat) {
-            if ($feat['tier'] > 0) {
-                $tiers[$feat['tier'] - 1]++;
-            }
-            if ($feat['scope'] === 'general') {
-                $general++;
-            }
-            if ($feat['scope'] === 'class' || $feat['scope'] === 'tree') {
-                $classes++;
-            }
-            if ($feat['scope'] === 'role') {
-                $roleFeats++;
-                $roles[(string) $feat['collection']] = (string) $feat['collection'];
-            }
-        }
-        $public = DB::table('characters')->where('is_public', true)->where('feat_score', '>', 0);
-
-        return [
-            'name' => $character->name,
-            'class' => (string) $character->class,
-            'race' => $character->race,
-            'level' => $character->level,
-            'held' => array_sum($tiers),
-            'total' => count($feats),
-            'tiers' => $tiers,
-            'score' => (int) $character->feat_score,
-            'place' => $character->is_public && $character->feat_score > 0 ? 1 + (clone $public)->where('feat_score', '>', $character->feat_score)->count() : null,
-            'of' => $character->is_public ? $public->count() : null,
-            'general' => $general,
-            'class_feats' => $classes,
-            'role_feats' => $roleFeats,
-            'roles' => array_values($roles),
-        ];
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $feats
-     * @return list<array<string, mixed>>
-     */
-    private function closest(array $feats): array
-    {
-        $open = array_values(array_filter($feats, fn (array $feat): bool => $feat['tier'] < 5 && $feat['value'] > 0));
-        usort($open, fn (array $a, array $b): int => [$b['progress'], $a['key']] <=> [$a['progress'], $b['key']]);
-
-        return array_slice($open, 0, self::CLOSEST);
     }
 
     /** @return array<string, mixed>|null the tier of the week reached by a public character that fewest characters hold */

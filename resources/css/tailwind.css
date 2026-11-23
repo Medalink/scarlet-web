@@ -12,6 +12,8 @@
 @source '../views/pages/session.blade.php';
 @source '../views/pages/feats.blade.php';
 @source '../views/pages/feat.blade.php';
+@source '../views/character';
+@source '../../app/View/Character';
 @source '../views/design/feats.blade.php';
 @source '../js/sc';
 @source '../../app/View/Sc';
