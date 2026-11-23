@@ -14,14 +14,11 @@ use App\Actions\Public\ClassPage\WarriorBuilder;
 use App\Contracts\ClassBuilder;
 use App\Support\PlayerClass;
 
-/**
- * The builder of each class's page. A class with no builder yet has no page: its address answers 404 and no link or
- * band points to it.
- */
+/** The builder of each class's page: every class of the game has one. */
 final class ClassBuilders
 {
-    /** @return class-string<ClassBuilder>|null */
-    public static function for(PlayerClass $class): ?string
+    /** @return class-string<ClassBuilder> */
+    public static function for(PlayerClass $class): string
     {
         return match ($class) {
             PlayerClass::Hunter => HunterBuilder::class,
@@ -33,18 +30,6 @@ final class ClassBuilders
             PlayerClass::Warlock => WarlockBuilder::class,
             PlayerClass::Mage => MageBuilder::class,
             PlayerClass::Druid => DruidBuilder::class,
-            default => null,
         };
-    }
-
-    public static function has(PlayerClass $class): bool
-    {
-        return self::for($class) !== null;
-    }
-
-    /** @return list<PlayerClass> the classes that have a page */
-    public static function classes(): array
-    {
-        return array_values(array_filter(PlayerClass::cases(), self::has(...)));
     }
 }

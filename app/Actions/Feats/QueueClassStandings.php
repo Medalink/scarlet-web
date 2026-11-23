@@ -4,17 +4,16 @@ namespace App\Actions\Feats;
 
 use App\Jobs\RefreshClassStandings;
 use App\Models\Character;
-use App\Support\ClassPage\ClassBuilders;
 use App\Support\PlayerClass;
 
-/** Queues the class standings of one character when its class has a page. */
+/** Queues the class standings of one character whose class the game has. */
 class QueueClassStandings
 {
     /** @return bool whether a job was queued */
     public function handle(int $characterId): bool
     {
         $class = PlayerClass::tryFrom(strtoupper((string) Character::query()->whereKey($characterId)->value('class')));
-        if ($class === null || ! ClassBuilders::has($class)) {
+        if ($class === null) {
             return false;
         }
         RefreshClassStandings::dispatch($characterId);

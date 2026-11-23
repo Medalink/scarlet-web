@@ -17,13 +17,12 @@ class ReadClassParts
     public function handle(Character $character): ?ClassRead
     {
         $class = PlayerClass::tryFrom(strtoupper((string) $character->class));
-        $builder = $class === null ? null : ClassBuilders::for($class);
-        if ($class === null || $builder === null || ! $this->has->handle($character)) {
+        if ($class === null || ! $this->has->handle($character)) {
             return null;
         }
         $rows = ClassRows::of($character, $this->names);
         $facts = $this->facts->handle($character, $class);
 
-        return new ClassRead($character, $class, $rows, $facts, resolve($builder)->handle($rows, $facts));
+        return new ClassRead($character, $class, $rows, $facts, resolve(ClassBuilders::for($class))->handle($rows, $facts));
     }
 }

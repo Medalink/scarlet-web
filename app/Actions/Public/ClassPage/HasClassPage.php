@@ -3,14 +3,13 @@
 namespace App\Actions\Public\ClassPage;
 
 use App\Models\Character;
-use App\Support\ClassPage\ClassBuilders;
 use App\Support\PlayerClass;
 use Illuminate\Support\Facades\DB;
 
 class HasClassPage
 {
     /**
-     * Whether a character has a class page: its class has a builder and its sessions counted at least one cast (a
+     * Whether a character has a class page: its class is one of the nine and its sessions counted at least one cast (a
      * row with `casts` above 0: a channel or an interrupted cast alone writes a row with none). The route, the stored
      * band and the navigation all ask this, so a link never leads to a 404.
      */
@@ -18,7 +17,7 @@ class HasClassPage
     {
         $class = PlayerClass::tryFrom(strtoupper((string) $character->class));
 
-        return $class !== null && ClassBuilders::has($class)
+        return $class !== null
             && DB::table('spell_casts')->where('character_id', $character->id)->where('counted', true)->where('casts', '>', 0)->exists();
     }
 }
