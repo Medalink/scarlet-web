@@ -73,6 +73,10 @@
 @media (max-width: 560px) { .cls-page .cls-cols, .cls-page .cls-cols[data-n] { grid-template-columns: minmax(0, 1fr); } }
 
 .cls-page .recs { margin-top: 2.6rem; }
-.cls-band { margin-top: 0; }
+.cls-band { margin-top: 0; grid-template-columns: minmax(0, 1.25fr) repeat(var(--n, 5), minmax(0, 1fr)); }
+@media (max-width: 820px) {
+  .cls-band { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cls-band:is([data-n="2"], [data-n="4"]) > :last-child { grid-column: auto; padding-left: 0.9rem; border-left: 1px solid var(--line) !important; }
+}
 .cls-band h2 { color: var(--class); }
 .cls-band dd { font-size: 2.1rem; }

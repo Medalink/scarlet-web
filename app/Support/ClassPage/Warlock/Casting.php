@@ -49,11 +49,11 @@ final readonly class Casting
     {
         $meters = $this->rows->meters();
         $listed = array_slice($meters->spells(Meter::Damage), 0, self::DAMAGE);
-        if ($listed === []) {
-            return null;
-        }
         $shown = array_sum(array_map(fn (MeterSpell $spell): int => $spell->amount, $listed));
         $whole = max($meters->total(Meter::Damage), $shown);
+        if ($listed === [] || $whole === 0) {
+            return null;
+        }
         $rows = array_map(fn (MeterSpell $spell): RankRow => new RankRow($spell->name, $spell->amount / $whole * 100, Icon::spell($spell->iconId)), $listed);
         $rows[] = new RankRow('Every other spell', ($whole - $shown) / $whole * 100);
 

@@ -8,7 +8,11 @@ use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
 use App\Support\StateKind;
 
-/** The six figures a warlock is compared on, each a number a stranger's page computes the same way. */
+/**
+ * The six figures a warlock is compared on, each a number a stranger's page computes the same way. A figure whose
+ * rows the character does not share (no item flows, no pet rows) or whose whole is 0 (no time played, no fight) is
+ * left out, so it is neither stored nor drawn as a place.
+ */
 final readonly class Standings
 {
     private const float HOUR_MS = 3_600_000;
@@ -23,13 +27,13 @@ final readonly class Standings
         $made = $this->shards->made();
         $demon = $this->demons->top();
 
-        return [
-            new StandingFigure('shards_hour', 'Soul shards a played hour', $played === 0 ? 0 : $made / ($played / self::HOUR_MS), Unit::Decimal, $this->shards->icon),
-            new StandingFigure('taps_fight_hour', 'Life Taps an hour in combat', $fight === 0 ? 0 : $this->spells->lifeTap->fightCasts / ($fight / self::HOUR_MS), icon: Spells::icon($this->spells->lifeTap)),
-            new StandingFigure('demon_time', 'Time with a demon out', $played === 0 ? 0 : min(100, $this->demons->withMs() / $played * 100), Unit::Percent, $this->demons->icon($demon)),
-            new StandingFigure(Drinking::FIGURE, 'Time spent drinking', Drinking::share($this->rows), Unit::PercentTenth, Drinking::icon($this->rows)),
-            new StandingFigure('stones_out', 'Healthstones handed out', $this->party->handedOut(), icon: Spells::icon($this->spells->healthstones)),
-            new StandingFigure('shards_destroyed', 'Shards destroyed', $made === 0 ? 0 : min(100, $this->shards->destroyed() / $made * 100), Unit::Percent, $this->shards->icon),
-        ];
+        return array_values(array_filter([
+            $this->shards->shared && $played > 0 ? new StandingFigure('shards_hour', 'Soul shards a played hour', $made / ($played / self::HOUR_MS), Unit::Decimal, $this->shards->icon) : null,
+            $fight > 0 ? new StandingFigure('taps_fight_hour', 'Life Taps an hour in combat', $this->spells->lifeTap->fightCasts / ($fight / self::HOUR_MS), icon: Spells::icon($this->spells->lifeTap)) : null,
+            $this->demons->shared() && $played > 0 ? new StandingFigure('demon_time', 'Time with a demon out', min(100, $this->demons->withMs() / $played * 100), Unit::Percent, $this->demons->icon($demon)) : null,
+            Drinking::figure($this->rows),
+            $this->party->shared() ? new StandingFigure('stones_out', 'Healthstones handed out', $this->party->handedOut(), icon: Spells::icon($this->spells->healthstones)) : null,
+            $this->shards->shared && $made > 0 ? new StandingFigure('shards_destroyed', 'Shards destroyed', min(100, $this->shards->destroyed() / $made * 100), Unit::Percent, $this->shards->icon) : null,
+        ]));
     }
 }

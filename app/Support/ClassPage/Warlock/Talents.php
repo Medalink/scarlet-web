@@ -50,55 +50,64 @@ final readonly class Talents
         $trances = $this->rows->states(StateKind::OwnBuff)->of(StateKind::OwnBuff, 'Shadow Trance');
         $procs = array_sum(array_map(fn (StateTotals $state): int => $state->starts, $trances));
         $bolts = $this->rows->tallies()->count(Tally::CastUnder, array_map(fn (StateTotals $state): int => $state->refId, $trances), $this->spells->shadowBolt->ids());
-        $used = $procs === 0 ? 0 : min(100, $bolts / $procs * 100);
-        $blocks = [new Pair([new PairRow('Shadow Trances', $procs), new PairRow('Used', $used, Unit::Percent), new PairRow('Shadow Bolts under it', $bolts)])];
+        $cells = [new PairRow('Shadow Trances', $procs)];
+        $blocks = [];
         if ($procs > 0) {
+            $used = min(100, $bolts / $procs * 100);
+            $cells[] = new PairRow('Used', $used, Unit::Percent);
             $blocks[] = self::split($used, 'Spent on an instant Shadow Bolt', 'Ran out');
         }
+        $cells[] = new PairRow('Shadow Bolts under it', $bolts);
 
-        return ['blocks' => $blocks, 'note' => null];
+        return ['blocks' => [new Pair($cells), ...$blocks], 'note' => null];
     }
 
     /** @return array{blocks: list<Block>, note: string|null} */
     private function shadowburn(): array
     {
         $burn = $this->spells->shadowburn;
-        $killed = $this->rows->tallies()->count(Tally::KillBlow, $burn->ids());
-        $share = $burn->casts === 0 ? 0 : min(100, $killed / $burn->casts * 100);
-        $blocks = [new Pair([
-            new PairRow('Casts', $burn->casts),
-            new PairRow('Killed within 3 seconds', $share, Unit::Percent),
-            new PairRow('Shards spent', $this->shards->flow->bySpells(FlowDirection::Out, $burn->ids())),
-        ])];
+        $cells = [new PairRow('Casts', $burn->casts)];
+        $blocks = [];
         if ($burn->casts > 0) {
+            $share = min(100, $this->rows->tallies()->count(Tally::KillBlow, $burn->ids()) / $burn->casts * 100);
+            $cells[] = new PairRow('Killed within 3 seconds', $share, Unit::Percent);
             $blocks[] = self::split($share, 'The target died within 3 seconds', 'It lived');
         }
+        if ($this->shards->shared) {
+            $cells[] = new PairRow('Shards spent', $this->shards->flow->bySpells(FlowDirection::Out, $burn->ids()));
+        }
 
-        return ['blocks' => $blocks, 'note' => null];
+        return ['blocks' => [new Pair($cells), ...$blocks], 'note' => null];
     }
 
     /** @return array{blocks: list<Block>, note: string|null} */
     private function siphon(): array
     {
         $meters = $this->rows->meters();
-        $share = function (Meter $meter) use ($meters): int|float {
+        $share = function (Meter $meter) use ($meters): int|float|null {
             $total = $meters->total($meter);
+            if ($total === 0) {
+                return null;
+            }
             foreach ($meters->spells($meter) as $spell) {
                 if ($spell->name === $this->spells->siphon->name) {
-                    return $total === 0 ? 0 : min(100, $spell->amount / $total * 100);
+                    return min(100, $spell->amount / $total * 100);
                 }
             }
 
             return 0;
         };
+        $cells = [new PairRow('Casts', $this->spells->siphon->casts)];
+        foreach ([['Of your healing', Meter::Healing], ['Of your damage', Meter::Damage]] as [$label, $meter]) {
+            $value = $share($meter);
+            if ($value !== null) {
+                $cells[] = new PairRow($label, $value, Unit::Percent);
+            }
+        }
 
         return [
-            'blocks' => [new Pair([
-                new PairRow('Casts', $this->spells->siphon->casts),
-                new PairRow('Of your healing', $share(Meter::Healing), Unit::Percent),
-                new PairRow('Of your damage', $share(Meter::Damage), Unit::Percent),
-            ])],
-            'note' => 'The meter lists the five largest spells of each fight, so these shares count the fights where it listed Siphon Life.',
+            'blocks' => [new Pair($cells)],
+            'note' => count($cells) === 1 ? null : 'The meter lists the five largest spells of each fight, so these shares count the fights where it listed Siphon Life.',
         ];
     }
 

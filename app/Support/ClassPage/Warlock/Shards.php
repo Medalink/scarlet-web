@@ -15,6 +15,7 @@ use App\Support\ClassPage\Span;
 use App\Support\ClassPage\Tone;
 use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\FlowDirection;
 use App\Support\ClassRows\ItemFlow;
 use App\Support\ClassRows\SpellTotals;
@@ -25,14 +26,15 @@ final readonly class Shards
     /** The bag slots the page draws. */
     public const int SLOTS = 32;
 
-    public function __construct(public ItemFlow $flow, public ?Icon $icon, private Spells $spells) {}
+    /** @param  bool  $shared  whether the character has any item flow rows at all; without them every shard figure is withheld, not 0 */
+    public function __construct(public ItemFlow $flow, public ?Icon $icon, private Spells $spells, public bool $shared = true) {}
 
     public static function of(ClassRows $rows, Spells $spells): self
     {
         $items = $rows->items('Soul Shard');
         $ids = $items->idsNamed('Soul Shard');
 
-        return new self($items->named('Soul Shard'), $ids === [] ? null : Icon::item($ids[0]), $spells);
+        return new self($items->named('Soul Shard'), $ids === [] ? null : Icon::item($ids[0]), $spells, $rows->holds(ClassTable::Items));
     }
 
     /** Every shard that came into the bags. */
@@ -48,7 +50,7 @@ final readonly class Shards
 
     public function row(): ?Row
     {
-        if ($this->made() === 0) {
+        if (! $this->shared || $this->made() === 0) {
             return null;
         }
 

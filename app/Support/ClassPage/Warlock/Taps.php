@@ -127,17 +127,18 @@ final readonly class Taps
 
     private function drinking(ClassFacts $facts): ?Titled
     {
+        $own = Drinking::measure($this->rows);
         $warlocks = $facts->peers->mean(Drinking::FIGURE);
-        $every = $facts->peers->mean(Drinking::FIGURE, true);
-        if ($warlocks === null || $every === null) {
+        if ($own === null || $warlocks === null) {
             return null;
         }
+        $every = $facts->peers->mean(Drinking::FIGURE, true);
+        $rows = [new RankRow(Format::characterName($facts->name), $own, tone: Tone::Own), new RankRow('Warlocks', $warlocks)];
+        if ($every !== null) {
+            $rows[] = new RankRow('Every class', $every);
+        }
 
-        return new Titled('Time spent drinking, of played time', [new Rank([
-            new RankRow(Format::characterName($facts->name), Drinking::share($this->rows), tone: Tone::Own),
-            new RankRow('Warlocks', $warlocks),
-            new RankRow('Every class', $every),
-        ], Unit::PercentTenth, true)], Drinking::icon($this->rows));
+        return new Titled('Time spent drinking, of played time', [new Rank($rows, Unit::PercentTenth, true)], Drinking::icon($this->rows));
     }
 
     private static function number(string $text, string $word): ?int

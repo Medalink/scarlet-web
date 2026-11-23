@@ -39,24 +39,30 @@ final class WarlockBuilder implements ClassBuilder
         $top = $demons->top();
         $sheet = array_values(array_filter([$shards->row(), $taps->row($facts), $demons->row(), (new Casting($rows))->row()]));
 
+        $made = $shards->shared ? new Figure('Soul shards made', $shards->made(), icon: $shards->icon) : null;
+        $lifeTaps = new Figure('Life Taps', $spells->lifeTap->casts, icon: Spells::icon($spells->lifeTap));
+        $healthstones = new Figure('Healthstones made', $spells->healthstones->casts, icon: Spells::icon($spells->healthstones));
+        $summoned = new Figure('Players summoned', $spells->ritual->casts, icon: Spells::icon($spells->ritual));
+        $demon = $demons->shared() ? $top ?? ($demons->withMs() > 0 ? 'Another demon' : 'None') : null;
+
         return new ClassParts(
             Spells::icon($spells->lifeTap),
             $demons->callouts(),
-            [
-                new Figure('Soul shards made', $shards->made(), icon: $shards->icon),
-                new Figure('Life Taps', $spells->lifeTap->casts, icon: Spells::icon($spells->lifeTap)),
-                new Figure('Hours with a demon', $demons->withHours(), Unit::Hours, 'of '.Unit::Hours->say($facts->hours), $demons->icon($top)),
-                new Figure('Healthstones made', $spells->healthstones->casts, icon: Spells::icon($spells->healthstones)),
+            array_values(array_filter([
+                $made,
+                $lifeTaps,
+                $demons->shared() ? new Figure('Hours with a demon', $demons->withHours(), Unit::Hours, 'of '.Unit::Hours->say($facts->hours), $demons->icon($top)) : null,
+                $healthstones,
                 new Figure('Soulstones made', $spells->soulstones->casts, icon: Spells::icon($spells->soulstones)),
-                new Figure('Players summoned', $spells->ritual->casts, icon: Spells::icon($spells->ritual)),
-            ],
-            [
-                new Figure('Soul shards made', $shards->made(), icon: $shards->icon),
-                new Figure('Life Taps', $spells->lifeTap->casts, icon: Spells::icon($spells->lifeTap)),
-                new Figure('Demon out most', $top ?? 'None', icon: $demons->icon($top)),
-                new Figure('Healthstones made', $spells->healthstones->casts, icon: Spells::icon($spells->healthstones)),
-                new Figure('Players summoned', $spells->ritual->casts, icon: Spells::icon($spells->ritual)),
-            ],
+                $summoned,
+            ])),
+            array_values(array_filter([
+                $made,
+                $lifeTaps,
+                $demon === null ? null : new Figure('Demon out most', $demon, icon: $demons->icon($top)),
+                $healthstones,
+                $summoned,
+            ])),
             $sheet,
             (new Talents($rows, $spells, $shards))->of($facts),
             $party->rows(),

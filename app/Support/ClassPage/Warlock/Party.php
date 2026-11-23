@@ -11,6 +11,7 @@ use App\Support\ClassPage\RankRow;
 use App\Support\ClassPage\Row;
 use App\Support\ClassPage\Tone;
 use App\Support\ClassRows\ClassRows;
+use App\Support\ClassRows\ClassTable;
 use App\Support\ClassRows\FlowDirection;
 use App\Support\ClassRows\FlowPlace;
 use App\Support\ClassRows\ItemFlow;
@@ -33,6 +34,12 @@ final readonly class Party
     public function __construct(private ClassRows $rows, private Spells $spells)
     {
         $this->healthstones = $rows->items('*Healthstone')->named('*Healthstone');
+    }
+
+    /** Whether the character shares item flows at all, which the stones eaten and handed out are read from. */
+    public function shared(): bool
+    {
+        return $this->rows->holds(ClassTable::Items);
     }
 
     /** Healthstones that left the bags in a trade. */

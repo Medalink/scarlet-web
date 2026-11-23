@@ -45,12 +45,13 @@ final readonly class Demons
      * @param  array<string, StateTotals>  $families  by the pet's family
      * @param  array<string, string>  $pets  the name the character gave the demon of each family it kept longest
      */
-    private function __construct(private ClassRows $rows, private array $families, private array $pets, private int $others, private Spells $spells) {}
+    private function __construct(private ClassRows $rows, private array $families, private array $pets, private int $others, private Spells $spells, private bool $shared) {}
 
     public static function of(ClassRows $rows, Spells $spells): self
     {
         $by = $pets = $longest = [];
-        foreach ($rows->states(StateKind::Pet)->of(StateKind::Pet) as $pet) {
+        $spans = $rows->states(StateKind::Pet)->of(StateKind::Pet);
+        foreach ($spans as $pet) {
             if ($pet->name === '' && $pet->extra === '') {
                 continue;
             }
@@ -73,7 +74,13 @@ final readonly class Demons
             $others += $merged->ms;
         }
 
-        return new self($rows, $families, $pets, $others, $spells);
+        return new self($rows, $families, $pets, $others, $spells, $spans !== []);
+    }
+
+    /** Whether the character shares any pet rows at all; without them every demon figure is withheld, not 0. */
+    public function shared(): bool
+    {
+        return $this->shared;
     }
 
     /** Milliseconds a demon of any family was out. */
