@@ -20,10 +20,10 @@ class StoreImportedRecords
      * is locked while this runs, as for a session. Safe to run twice. A row whose columns cannot
      * keep it is skipped with a note in the log, never fatal to the day.
      *
-     * @param  list<array<string, mixed>>  $rows  `imported` rows of `scarlet-part decode --imports`
+     * @param  iterable<array<string, mixed>>  $rows  `imported` rows of `scarlet-part decode --imports`, read a row at a time
      * @param  list<string>  $partIds  lower-case hex ids of the parts `$rows` came from, marked decoded
      */
-    public function handle(int $characterId, int $dayStart, array $rows, array $partIds): void
+    public function handle(int $characterId, int $dayStart, iterable $rows, array $partIds): void
     {
         DB::transaction(function () use ($characterId, $dayStart, $rows, $partIds): void {
             if (! DB::table('characters')->where('id', $characterId)->lockForUpdate()->exists()) {
@@ -34,6 +34,10 @@ class StoreImportedRecords
 
             $records = [];
             foreach ($rows as $row) {
+                if (count($records) >= self::ROWS_PER_INSERT) {
+                    $this->insert($records);
+                    $records = [];
+                }
                 $records[] = [
                     'character_id' => $characterId,
                     'day_start' => $dayStart,
@@ -46,8 +50,8 @@ class StoreImportedRecords
                     'copper' => (int) $row['copper'],
                 ];
             }
-            foreach (array_chunk($records, self::ROWS_PER_INSERT) as $chunk) {
-                $this->insert($chunk);
+            if ($records !== []) {
+                $this->insert($records);
             }
 
             $this->markDecoded->handle($characterId, $dayStart, $partIds);

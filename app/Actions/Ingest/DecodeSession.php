@@ -135,7 +135,7 @@ class DecodeSession
         $this->fishing->handle($characterId, $sessionStart, $fishingInput === [] ? [] : $this->tool->decodeFishing($fishingInput), $fishingIds);
 
         if ($imported !== [] || $parts->isEmpty()) {
-            $this->imports->handle($characterId, $sessionStart, $imported === [] ? [] : $this->tool->decodeImports($imported), $importedIds);
+            $this->imports->handle($characterId, $sessionStart, $imported === [] ? [] : $this->tool->importRows($imported), $importedIds);
         }
         if ($counts !== [] || AddonDay::query()->where('character_id', $characterId)->where('day_key', $sessionStart)->exists()) {
             $this->claims->handle($characterId, $sessionStart, $counts === [] ? [] : $this->tool->decodeCounts($counts), $countsIds);
