@@ -28,10 +28,11 @@ return [
         'max_body_bytes' => 4 << 20,
         'max_inflated_bytes' => 64 << 20,
         'max_parts_per_request' => 20_000,
-        'max_bytes_per_install_per_day' => 200 << 20,
+        'max_bytes_per_install_per_day' => 2 << 30,
         'max_characters_per_install' => 50,
         'clock_window_seconds' => 300,
-        // The most that sync, manifest and status answer in one response.
+        'max_manifest_bytes' => 32 << 20,
+        'max_manifest_values' => 6_000_000,
         'max_manifest_parts' => 200_000,
         'link_code_minutes' => 10,
     ],
@@ -79,6 +80,9 @@ return [
         'sweep_after_seconds' => 300,
         'sweep_give_up_hours' => 72,
         'sweep_limit' => 500,
+        'max_parts_per_session' => 64,
+        'max_session_bytes' => 128 << 20,
+        'max_session_lines' => 4_000_000,
     ],
     // The Forever Armory names the ruleset of a character (docs/DESIGN.md, Rulesets). One request at a time.
     'armory' => [

@@ -17,9 +17,9 @@ const USAGE: &str = "usage:
   scarlet-part groups --json
   scarlet-part pack --out-dir <dir> --payloads <dir> [--addon-payloads <dir>] [--groups a,b,c] [--name-key-hex <64 hex>]
   scarlet-part batch --parts-dir <dir> --out <file> [--split]
-  scarlet-part unbatch --in <file> --out-dir <dir> [--stored]
+  scarlet-part unbatch --in <file> --out-dir <dir> [--stored] [--accept <id file>] [--max-inflated <bytes>]
   scarlet-part inflate < <zstd frame> > <bytes>
-  scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin [--imports | --fishing | --counts]
+  scarlet-part decode <part file>... | --parts-dir <dir> [--session <n>] | --stdin [--out <file>] [--imports | --fishing | --counts]
   scarlet-part check-overview --parts-dir <dir> --overview <overview.json>
   scarlet-part decoder-version
   scarlet-part reconcile [--explain] < <json: kind, now, character, rows, others>
@@ -323,27 +323,44 @@ fn inflate() -> Result<(), String> {
 }
 
 fn unbatch(args: Vec<OsString>) -> Result<(), String> {
-    let (f, _) = flags(args, &["in", "out-dir"], &["stored"])?;
+    let (f, _) = flags(
+        args,
+        &["in", "out-dir", "accept", "max-inflated"],
+        &["stored"],
+    )?;
     let path = need(&f, "in")?;
     let bytes = fs::read(path).map_err(|e| format!("{path}: {e}"))?;
-    let parts = wire::decode_batch(&bytes, None::<&HashSet<[u8; 32]>>)?;
+    let max = f
+        .get("max-inflated")
+        .map_or(Ok(wire::MAX_DECOMPRESSED), |v| {
+            v.parse().map_err(|_| "bad --max-inflated".to_string())
+        })?;
+    let accept = match f.get("accept") {
+        Some(path) => Some(read_ids(Path::new(path))?),
+        None => None,
+    };
+    let parts = wire::decode_batch(&bytes, max)?;
     let out = PathBuf::from(need(&f, "out-dir")?);
     fs::create_dir_all(&out).map_err(|e| e.to_string())?;
     for p in &parts {
-        let id = hex(&p.id);
-        if !f.contains_key("stored") {
-            fs::write(out.join(format!("{id}.part")), p.text.as_bytes())
-                .map_err(|e| e.to_string())?;
-        } else {
-            // The storage form (the part alone, zstd level 19) and one JSON line per part on stdout.
-            fs::write(out.join(format!("{id}.zst")), wire::compress_part(&p.text)?)
-                .map_err(|e| e.to_string())?;
+        let stored = f.contains_key("stored");
+        if accept.as_ref().is_none_or(|a| a.contains(&p.id)) {
+            let id = hex(&p.id);
+            if !stored {
+                fs::write(out.join(format!("{id}.part")), p.text.as_bytes())
+                    .map_err(|e| e.to_string())?;
+            } else {
+                fs::write(out.join(format!("{id}.zst")), wire::compress_part(&p.text)?)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        if stored {
             let (character, session, group) =
                 scarlet_part::build::parse_header(&p.text).ok_or("a part has no valid header")?;
             println!(
                 "{}",
                 json!({
-                    "id": id,
+                    "id": hex(&p.id),
                     "character": character,
                     "session": session,
                     "group": group,
@@ -355,6 +372,17 @@ fn unbatch(args: Vec<OsString>) -> Result<(), String> {
     }
     eprintln!("{} parts written to {}", parts.len(), out.display());
     Ok(())
+}
+
+fn read_ids(path: &Path) -> Result<HashSet<[u8; 32]>, String> {
+    fs::read_to_string(path)
+        .map_err(|e| format!("{}: {e}", path.display()))?
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            unhex::<32>(line.trim()).ok_or_else(|| format!("{}: not a part id", path.display()))
+        })
+        .collect()
 }
 
 /// A part file: plain text, or the storage form (zstd).
@@ -381,7 +409,7 @@ fn decode(args: Vec<OsString>) -> Result<(), String> {
     use std::io::{Read, Write};
     let (f, files) = flags(
         args,
-        &["parts-dir", "session"],
+        &["parts-dir", "session", "out"],
         &["stdin", "imports", "fishing", "counts"],
     )?;
     let mut texts: Vec<String> = Vec::new();
@@ -449,6 +477,7 @@ fn decode(args: Vec<OsString>) -> Result<(), String> {
         .transpose()
         .map_err(|_| "bad --session")?;
     let sessions = by_session(texts)?;
+    let sink = f.get("out");
     let mut out = String::new();
     let stdout = std::io::stdout();
     let mut lock = stdout.lock();
@@ -459,7 +488,17 @@ fn decode(args: Vec<OsString>) -> Result<(), String> {
         let refs: Vec<&str> = parts.iter().map(String::as_str).collect();
         out.clear();
         scarlet_part::decode::decode_session(&refs, &mut out)?;
-        lock.write_all(out.as_bytes()).map_err(|e| e.to_string())?;
+        match sink {
+            Some(path) => {
+                let mut file = fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(path)
+                    .map_err(|e| format!("{path}: {e}"))?;
+                file.write_all(out.as_bytes()).map_err(|e| e.to_string())?;
+            }
+            None => lock.write_all(out.as_bytes()).map_err(|e| e.to_string())?,
+        }
     }
     Ok(())
 }

@@ -2,7 +2,6 @@
 //! (docs/DESIGN.md, Upload protocol).
 
 use crate::build::{PART_MAGIC, part_id};
-use std::collections::HashSet;
 use std::io::{Read, Write};
 
 pub const MAX_COMPRESSED: usize = 4 << 20;
@@ -42,13 +41,13 @@ pub fn encode_batch(parts: &[&str]) -> Result<Vec<u8>, String> {
     enc.finish().map_err(err)
 }
 
-/// Decode a batch under the limits of the protocol. When `wanted` is given, a
-/// part whose id is not in it is refused.
-pub fn decode_batch(
-    bytes: &[u8],
-    wanted: Option<&HashSet<[u8; 32]>>,
-) -> Result<Vec<WirePart>, String> {
+/// Decode a batch under the limits of the protocol: at most `max_raw` inflated bytes, checked
+/// before the caller touches the parts.
+pub fn decode_batch(bytes: &[u8], max_raw: usize) -> Result<Vec<WirePart>, String> {
     let raw = inflate(bytes)?;
+    if raw.len() > max_raw {
+        return Err(format!("batch inflates to more than {max_raw} bytes"));
+    }
     let mut out = Vec::new();
     let mut pos = 0;
     while pos < raw.len() {
@@ -70,12 +69,6 @@ pub fn decode_batch(
             return Err(format!("a part has no valid {PART_MAGIC} header"));
         }
         let id = part_id(text);
-        if wanted.is_some_and(|w| !w.contains(&id)) {
-            return Err(format!(
-                "part {} was not asked for",
-                crate::pseudo::hex(&id)
-            ));
-        }
         out.push(WirePart {
             id,
             text: text.to_string(),

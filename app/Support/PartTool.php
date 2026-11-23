@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Support\Exceptions\ApiException;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use RuntimeException;
 
@@ -16,18 +17,31 @@ class PartTool
 
     /**
      * Open a batch (one zstd frame of length-prefixed parts) under the protocol limits: the parts
-     * go into $directory in their storage form, one `<id>.zst` each.
+     * named by `wanted` go into $directory in their storage form, one `<id>.zst` each. The
+     * child checks every part against `wanted` before it recompresses anything, so a batch of
+     * parts the caller never stores costs the inflate alone. The answer counts the work the
+     * request did: the inflated bytes and the lines of every part it accepted.
      *
-     * @return list<array{id: string, character: string, session: int, group: string, lines: int, raw_bytes: int}>
+     * @param  array<string, int>  $wanted  the accepted ids as keys, lower-case hex
+     * @return array{parts: list<array{id: string, character: string, session: int, group: string, lines: int, raw_bytes: int}>, work: array{bytes: int, rows: int}}
      */
-    public function unbatch(string $batchFile, string $directory): array
+    public function unbatch(string $batchFile, string $directory, array $wanted, ?int $maxInflated = null): array
     {
-        $run = Process::timeout(120)->run([$this->binary(), 'unbatch', '--stored', '--in', $batchFile, '--out-dir', $directory]);
+        $ids = $directory.DIRECTORY_SEPARATOR.'wanted';
+        File::put($ids, implode("\n", array_keys($wanted)));
+        $command = [$this->binary(), 'unbatch', '--stored', '--in', $batchFile, '--out-dir', $directory, '--accept', $ids];
+        if ($maxInflated !== null) {
+            $command[] = '--max-inflated';
+            $command[] = (string) $maxInflated;
+        }
+        $run = Process::timeout(120)->run($command);
         if (! $run->successful()) {
             throw ApiException::invalidBatch($this->message($run->errorOutput()));
         }
 
         $parts = [];
+        $bytes = 0;
+        $rows = 0;
         foreach (explode("\n", trim($run->output())) as $line) {
             if ($line === '') {
                 continue;
@@ -35,9 +49,13 @@ class PartTool
             /** @var array{id: string, character: string, session: int, group: string, lines: int, raw_bytes: int} $part */
             $part = json_decode($line, associative: true, flags: JSON_THROW_ON_ERROR);
             $parts[] = $part;
+            if (isset($wanted[$part['id']])) {
+                $bytes += $part['raw_bytes'];
+                $rows += $part['lines'];
+            }
         }
 
-        return $parts;
+        return ['parts' => $parts, 'work' => ['bytes' => $bytes, 'rows' => $rows]];
     }
 
     /** The bytes of one zstd frame, under the protocol limits. */
@@ -52,23 +70,25 @@ class PartTool
     }
 
     /**
-     * Decode the stored parts of one session into newline-delimited JSON (docs/ROWS.md).
+     * Decode the stored parts of one session into newline-delimited JSON (docs/ROWS.md), written
+     * to `$outputFile` by the child itself: the worker reads it back a line at a time instead of
+     * holding the whole output.
      *
      * @param  list<string>  $bodies  the `body` column of each part
      */
-    public function decode(array $bodies): string
+    public function decode(array $bodies, string $outputFile): void
     {
         $input = '';
         foreach ($bodies as $body) {
             $input .= pack('V', strlen($body)).$body;
         }
 
-        $run = Process::timeout((int) config('scarlet.ingest.timeout') - 30)->input($input)->run([$this->binary(), 'decode', '--stdin']);
+        $run = Process::timeout((int) config('scarlet.ingest.timeout') - 30)
+            ->input($input)
+            ->run([$this->binary(), 'decode', '--stdin', '--out', $outputFile]);
         if (! $run->successful()) {
             throw new RuntimeException('scarlet-part decode failed: '.$this->message($run->errorOutput()));
         }
-
-        return $run->output();
     }
 
     /**

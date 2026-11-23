@@ -102,6 +102,11 @@ class ApiException extends RuntimeException
         return new self(429, 'daily_limit', 'This install reached its upload limit for today (UTC).', ['limit_bytes' => $limit, 'used_bytes' => $used]);
     }
 
+    public static function sessionTooLarge(string $what, int $limit): self
+    {
+        return new self(422, 'session_too_large', "A session's {$what} is over the limit of {$limit}.", ['limit' => $limit]);
+    }
+
     public static function nameHeld(string $character): self
     {
         return new self(409, 'name_held', 'Another install holds this character name.', ['character' => $character]);
