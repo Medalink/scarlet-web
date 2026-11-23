@@ -27,7 +27,7 @@ final class FeatsSection
 
         return [
             'summary' => $summary,
-            'hidden' => $character->show_economy ? null : 'gold feats hidden by the owner',
+            'hidden' => $owner || $character->show_economy ? null : 'gold feats hidden by the owner',
             'pinned' => array_map(self::pinned(...), self::pinnedFeats($feats, $character)),
             'closest' => $owner ? array_map(FeatsPage::closestCard(...), $hub['closest']) : [],
             'wall' => self::wall($feats, $character->pinned_feats ?? []),
