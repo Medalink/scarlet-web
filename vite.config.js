@@ -14,6 +14,7 @@ export default defineConfig({
                 'resources/css/landing.css',
                 'resources/css/tailwind.css',
                 'resources/js/app.js',
+                'resources/js/sc.js',
                 'resources/js/landing.js',
                 'resources/js/demo.js',
                 'resources/js/map/design.js',

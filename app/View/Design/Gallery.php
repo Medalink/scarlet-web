@@ -37,6 +37,7 @@ final class Gallery
         'class' => 'class.html',
         'class-rogue' => 'the Rogue mock',
         'class-shaman' => 'the Shaman mock',
+        'system' => 'system.html',
     ];
 
     /** Gallery page → its view. */
@@ -58,6 +59,7 @@ final class Gallery
         'class' => 'design.class',
         'class-rogue' => 'design.class',
         'class-shaman' => 'design.class',
+        'system' => 'design.system',
     ];
 
     /** Where a gallery page lives. */

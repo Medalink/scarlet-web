@@ -7,6 +7,7 @@
 
 @source '../views/components/sc';
 @source '../views/sc';
+@source '../views/components/layouts/sc.blade.php';
 @source '../views/design/system.blade.php';
 @source '../views/design/feats.blade.php';
 @source '../js/sc';
