@@ -1,7 +1,7 @@
 <section class="grid grid-cols-[minmax(0,1fr)] items-start gap-8 lg:grid-cols-[minmax(0,1fr)_470px]">
   <div>
     <h1 class="sc-name">{{ $head['name'] }}</h1>
-    <p class="mt-3 text-[16px]">{{ $head['line'] }}@if ($d['claim']) · <a href="/download">Is this yours? Link the app to manage it</a>@endif @if ($d['asVisitor'] && $d['owner'] === false) · <a href="{{ $d['path'] }}">Back to your view</a>@endif</p>
+    <p class="mt-3 text-[16px]">{{ $head['line'] }}@if ($d['claim']) · <a href="/download">Is this yours? Link the app to manage it</a>@endif @if ($d['ownerSeesVisitorView']) · <a href="{{ $d['path'] }}">Back to your view</a>@endif</p>
     @if ($head['rule'])
       <div class="sc-rule60" style="--at:{{ $head['rule']['at'] }}%" aria-hidden="true"><i></i><u></u>@foreach ($head['rule']['ticks'] as $tick)<span style="left:{{ $tick['at'] }}%">{{ $tick['n'] }}</span>@endforeach</div>
     @endif

@@ -16,6 +16,6 @@ class CharacterPageController extends Controller
         $bundle = $show->handle($name, $request->asVisitor() ? null : $request->viewerAccountId(), $request->sessions(), (bool) config('scarlet.addon_counts_pages'));
         abort_if($bundle === null, 404);
 
-        return view('character.page', ['d' => Page::data($bundle, $request->asVisitor())]);
+        return view('character.page', ['d' => Page::data($bundle, $request->asVisitor(), $request->viewerAccountId())]);
     }
 }

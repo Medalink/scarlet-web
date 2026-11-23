@@ -21,7 +21,7 @@ final class Page
      * @param  array<string, mixed>  $bundle
      * @return array<string, mixed>
      */
-    public static function data(array $bundle, bool $asVisitor): array
+    public static function data(array $bundle, bool $asVisitor, ?int $viewerAccountId): array
     {
         $r = $bundle['overview'];
         /** @var Character $character */
@@ -54,7 +54,7 @@ final class Page
         return [
             'id' => $character->id,
             'owner' => $r['owner'],
-            'asVisitor' => $asVisitor,
+            'ownerSeesVisitorView' => $asVisitor && $viewerAccountId !== null && $character->account_id === $viewerAccountId,
             'path' => $base,
             'title' => $head['name'].', '.mb_strtolower(Format::character($character->level, $character->race, $character->class)).' · Scarlet',
             'description' => $head['line'].'. Recorded by Scarlet in WoW Forever.',
