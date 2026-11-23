@@ -2,7 +2,6 @@
 
 namespace App\Actions\Feats;
 
-use App\Models\Character;
 use App\Support\AccountRule;
 use App\Support\Feat;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +13,7 @@ class ShowFeatPage
         private readonly ShowFeat $feat,
         private readonly ShowFeatCatalog $catalog,
         private readonly ShowAccountFeats $account,
+        private readonly ListAccountCharacterIds $owned,
     ) {}
 
     /**
@@ -38,8 +38,7 @@ class ShowFeatPage
     /** @return array<string, mixed>|null the account's card of the feat, null when no character of the account has feats */
     private function ofAccount(string $key, int $accountId): ?array
     {
-        $ids = array_values(array_map(fn ($id): int => (int) $id, Character::query()->where('account_id', $accountId)->pluck('id')->all()));
-        $cards = array_column($this->account->handle($ids)['cards'] ?? [], null, 'key');
+        $cards = array_column($this->account->handle($this->owned->handle($accountId))['cards'] ?? [], null, 'key');
 
         return $cards[$key] ?? null;
     }

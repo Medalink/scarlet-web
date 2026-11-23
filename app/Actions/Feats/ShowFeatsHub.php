@@ -21,6 +21,7 @@ class ShowFeatsHub
         private readonly ShowFeatCatalog $catalog,
         private readonly BuildCharacterFeats $built,
         private readonly ShowAccountFeats $account,
+        private readonly ListAccountCharacterIds $owned,
     ) {}
 
     /**
@@ -51,7 +52,7 @@ class ShowFeatsHub
             'character' => $of['character'] ?? null,
             'catalog' => count($catalog['feats']),
             'feats' => $feats,
-            'account' => $character === null ? null : $this->account->handle(array_values(array_map(fn (Character $owned): int => $owned->id, $characters))),
+            'account' => $character === null ? null : $this->account->handle($this->owned->handle((int) $accountId)),
             'closest' => $of['closest'] ?? [],
             'rarest' => $this->rarest(),
         ];

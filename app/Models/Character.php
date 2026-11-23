@@ -86,6 +86,22 @@ class Character extends Model
     }
 
     /**
+     * The characters of an account as `ownedBy` counts them for one install, over all the account's installs: those of the account and
+     * those any of its installs sent.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeOwnedByAccount(Builder $query, int $accountId): Builder
+    {
+        return $query->where(function (Builder $owned) use ($accountId): void {
+            $owned->where('characters.account_id', $accountId)
+                ->orWhereIn('characters.id', fn ($ids) => $ids->select('install_character.character_id')->from('install_character')
+                    ->join('installs', 'installs.id', '=', 'install_character.install_id')->where('installs.account_id', $accountId));
+        });
+    }
+
+    /**
      * Lock the rows, lowest id first, for the rest of the transaction. This is the lock a decode takes in
      * StoreDecodedSession, so a removal that holds it cannot deadlock with a decode on the fact rows.
      *
