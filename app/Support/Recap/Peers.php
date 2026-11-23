@@ -35,7 +35,7 @@ final class Peers
             $cuts = json_decode((string) $row->cuts, true, flags: JSON_THROW_ON_ERROR);
             $value = (float) ($you[$row->metric] ?? 0);
             $metrics[$row->metric] = [...array_map(fn (int $i): float => round($cuts[$i], 2), self::CUTS), 'you' => round($value, 2), 'percent' => self::percent($cuts, $value)];
-            $sessions = max($sessions, (int) $row->n);
+            $sessions = $sessions === 0 ? (int) $row->n : min($sessions, (int) $row->n);
         }
         if ($metrics === []) {
             return null;

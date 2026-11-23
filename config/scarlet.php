@@ -128,6 +128,7 @@ return [
         'tries' => 2,
         'memory_mb' => 256,
         'holders_seconds' => 900,
+        'event_days' => 90,
     ],
     'standings' => [
         'timeout' => 120,
