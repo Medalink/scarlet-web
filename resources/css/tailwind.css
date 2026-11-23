@@ -13,6 +13,8 @@
 @source '../views/pages/feats.blade.php';
 @source '../views/pages/feat.blade.php';
 @source '../views/character';
+@source '../views/pages/hub.blade.php';
+@source '../../app/View/Hub';
 @source '../views/account';
 @source '../views/livewire/account';
 @source '../../app/View/Account';

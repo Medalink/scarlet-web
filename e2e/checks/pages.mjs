@@ -7,7 +7,7 @@ export const ERROR_PAGE = /Server Error|Whoops|Stack Trace|Illuminate\\|laravel-
 export const heading = (text) => new RegExp(`<h1[^>]*>\\s*${text}`);
 
 const PAGES = [
-  { path: "/", shows: heading("Scarlet records what you do in WoW Forever") },
+  { path: "/", shows: heading("(?:[\\d,]+ )?WoW Forever characters?, recorded by their players") },
   { path: "/demo", shows: heading("Maren Ashlow") },
   { path: "/stats", shows: heading("All characters") },
   { path: "/loot", shows: heading("Loot") },
