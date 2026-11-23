@@ -5,12 +5,30 @@ namespace App\Support\ClassRows;
 /**
  * What went into and out of the bags for a set of items: the rows summed by direction, place and the spell tied to the
  * change. A destroyed item (`FlowPlace::Destroyed`) counts as out.
+ *
+ * A count of things made (soul shards, conjured water and food, stones) is `made()`: what came in at place `o`, where
+ * a spell put it. A withdrawal from the bank, a trade, mail, a vendor, loot or the auction house is a change in the
+ * bags and not a making, so it is in `in()` and `held()` and never in `made()`. What a spell used is `spent()`, the same
+ * rule on the way out; a deposit, a trade, a sale or mail are not spent.
  */
 final readonly class ItemFlow
 {
     /** @param  list<array{dir: FlowDirection, place: FlowPlace, spell: int|null, quantity: int}>  $rows */
     public function __construct(public array $rows) {}
 
+    /** Units a spell made: into the bags at place `o` only. */
+    public function made(): int
+    {
+        return $this->sum(FlowDirection::In, FlowPlace::Other);
+    }
+
+    /** Units a spell used: out of the bags at place `o` only, destroyed units not included. */
+    public function spent(): int
+    {
+        return $this->sum(FlowDirection::Out, FlowPlace::Other);
+    }
+
+    /** Units into the bags in any way, a withdrawal or a trade included. */
     public function in(): int
     {
         return $this->sum(FlowDirection::In);

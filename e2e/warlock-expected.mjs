@@ -2,10 +2,15 @@
  * What the class page of the Warlock fixture (e2e/warlock-lines.mjs) must show, worked out from the lines the fixture
  * writes and compared with the rows the decoder made of them, before the page was read. Each entry is a label and the
  * value written next to it.
+ *
+ * Soul shards made are the `I` lines at place `o` that bring a shard in: 14, 12 and 10 Drain Souls and the 2 Shadowburn
+ * kills, 38. The 2 shards looted (place `l`) are in the bags but not made, so the bags end at 40 in, 37 out, 3 held.
+ * The 21 kills with a credit line are 8 with a Shadow Bolt before them, 2 with a Shadowburn, 7 with no cast in the 3
+ * seconds before, and 4 by the party: 10 of 21 is 48%, 7 of 21 is 33%, 4 of 21 is 19%.
  */
 
 export const HEAD = [
-  ["Soul shards made", "40"],
+  ["Soul shards made", "38"],
   ["Life Taps", "18"],
   ["Hours with a demon", "5.9"],
   ["Healthstones made", "7"],
@@ -14,7 +19,7 @@ export const HEAD = [
 ];
 
 export const BAND = [
-  ["Soul shards made", "40"],
+  ["Soul shards made", "38"],
   ["Life Taps", "18"],
   ["Demon out most", "Voidwalker"],
   ["Healthstones made", "7"],
@@ -31,7 +36,6 @@ export const CALLOUTS = [
 export const SHARDS = [
   ["Drain Soul", "36"],
   ["Shadowburn", "2"],
-  ["Other", "2"],
   ["Summoning a demon", "4"],
   ["Soul Fire", "3"],
   ["Healthstones", "7"],
@@ -68,6 +72,7 @@ export const CASTING = [
   ["Immolate", "2%"],
   ["Every other spell", "9%"],
   ["Your killing blow", "48%"],
+  ["No cast in the 3 seconds before", "33%"],
   ["A party member", "19%"],
 ];
 

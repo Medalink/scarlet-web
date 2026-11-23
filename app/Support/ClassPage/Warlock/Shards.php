@@ -34,10 +34,10 @@ final readonly class Shards
         return new self($items->named('Soul Shard'), $ids === [] ? null : Icon::item($ids[0]), $spells, $rows->holds(ClassTable::Items));
     }
 
-    /** Every shard that came into the bags. */
+    /** Every shard a spell made: what came in at place `o`, never a withdrawal, a trade, loot or mail (`ItemFlow::made()`). */
     public function made(): int
     {
-        return $this->flow->in();
+        return $this->flow->made();
     }
 
     public function destroyed(): int
@@ -79,7 +79,7 @@ final readonly class Shards
         ];
         $listed = array_sum(array_map(fn (FlowItem $item): int => (int) $item->count, $right));
         $right[] = new FlowItem('Destroyed to make room', $this->destroyed(), $this->icon, Tone::Lost);
-        $right[] = new FlowItem('Other spells', max(0, $this->flow->out() - $this->destroyed() - $listed));
+        $right[] = new FlowItem('Other spells', max(0, $this->flow->spent() - $listed));
         $right[] = new FlowItem('In the bags now', $this->flow->held(), $this->icon, Tone::Held);
 
         return new Flow(

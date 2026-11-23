@@ -79,8 +79,8 @@ final readonly class Casting
 
         return new Module('What finished the kill', [new Rank([
             new RankRow('Your killing blow', $own / $all * 100),
-            new RankRow('A curse, a bane or the demon, after you looked away', $after / $all * 100),
+            new RankRow('No cast in the 3 seconds before', $after / $all * 100),
             new RankRow('A party member', $party / $all * 100),
-        ], Unit::Percent, true)], note: $after === 0 ? null : Format::count($after, 'creature').' died to a curse, a bane or the demon with no killing blow of yours.');
+        ], Unit::Percent, true)], note: $after === 0 ? null : Format::count($after, 'creature').' died with no cast of yours in the 3 seconds before: a wand, a melee swing, a pet or a damage-over-time spell.');
     }
 }
