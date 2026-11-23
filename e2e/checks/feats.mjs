@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
-import { ECHO, NAME, WARRIOR, expectError, expectJson, expectStatus, sleep, uncached } from "../support.mjs";
+import { ECHO, Jar, NAME, SHOWN, WARRIOR, expectError, expectJson, expectStatus, sleep, uncached } from "../support.mjs";
+import { ERROR_PAGE, heading, linkToAccount, signIn } from "./pages.mjs";
 
 const SPEC_WAIT_MS = 20_000;
 const SPEC_POLL_MS = 250;
@@ -160,4 +161,38 @@ export async function publicFeatsAreServed(ctx) {
     await sleep(SPEC_POLL_MS);
   }
   expectError(await ctx.http.api("/api/v1/public/feats/not-a-feat"), 404, "not_found", "GET /api/v1/public/feats/not-a-feat");
+}
+
+/** /feats: a visitor sees the whole catalog with no character, the owner sees one character's tiers on `compare` and `mine`, and `everyone` shows the catalog again. */
+export async function featsHubFollowsTheScope(ctx) {
+  const visitor = expectStatus(await ctx.http.page("/feats"), 200, "GET /feats as a visitor");
+  if (!heading("241 feats, five tiers each").test(visitor.text) || / holds [0-9]+ feats?/.test(visitor.text)) {
+    throw new Error(`/feats as a visitor should be the catalog of 241 feats with no character, saw ${visitor.text.slice(0, 400)}`);
+  }
+  const jar = new Jar();
+  await signIn(ctx.http, jar);
+  const me = expectJson(expectStatus(await ctx.client.me(), 200, "GET /api/v1/installs/me"), "installs/me");
+  if (me.linked !== true) await linkToAccount(ctx.http, jar, ctx.client);
+  const first = SHOWN.split(" ")[0];
+  const read = async (route) => {
+    const answer = await ctx.http.request(route, { jar, headers: { Accept: "text/html" } });
+    expectStatus(answer, 200, `GET ${route} as the owner`);
+    if (ERROR_PAGE.test(answer.text)) throw new Error(`${route}: the body carries the markers of an error page: ${answer.text.slice(0, 300)}`);
+    return answer.text;
+  };
+  for (const scope of ["compare", "mine"]) {
+    const text = await read(`/feats?as=${NAME}&scope=${scope}`);
+    if (!new RegExp(`${first} holds [0-9]+ feats?`).test(text) || !text.includes("Closest to the next tier")) {
+      throw new Error(`/feats on ${scope} should say how many feats ${first} holds and list the ones closest to the next tier, saw ${text.slice(0, 400)}`);
+    }
+  }
+  const everyone = await read(`/feats?as=${NAME}&scope=everyone`);
+  if (!heading("241 feats, five tiers each").test(everyone) || new RegExp(`${first} holds`).test(everyone)) {
+    throw new Error("/feats on everyone should show the catalog without the character's head");
+  }
+  const page = expectStatus(await ctx.http.page("/feats/slayer"), 200, "GET /feats/slayer");
+  if (!heading("Slayer").test(page.text) || !page.text.includes("Reached a tier last")) {
+    throw new Error(`/feats/slayer should show the feat, its tiers and who reached one last, saw ${page.text.slice(0, 400)}`);
+  }
+  expectStatus(await ctx.http.page("/feats/not-a-feat"), 404, "GET /feats/not-a-feat");
 }

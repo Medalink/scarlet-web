@@ -1,8 +1,8 @@
-@props(['current' => 'everyone', 'url', 'characters' => [], 'as' => null, 'signedIn' => true])
+@props(['current' => 'everyone', 'url', 'characters' => [], 'as' => null, 'signedIn' => true, 'everyoneParam' => false])
 @php
     $as = $as ?? ($characters[0] ?? null);
     $modes = [
-        'everyone' => ['Everyone', $url],
+        'everyone' => ['Everyone', $everyoneParam ? $url.'?scope=everyone' : $url],
         'compare' => ['You vs everyone', $url.'?'.http_build_query(array_filter(['scope' => 'compare', 'as' => $as]))],
         'mine' => ['Only you', $url.'?scope=mine'],
     ];

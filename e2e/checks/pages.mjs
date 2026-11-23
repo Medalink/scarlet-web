@@ -21,6 +21,8 @@ const PAGES = [
   { path: "/leaderboards", shows: heading("Leaderboards") },
   { path: "/leaderboards/most-quests", shows: heading("Most quests turned in") },
   { path: "/leaderboards/feat-score", shows: heading("Highest feat score") },
+  { path: "/feats", shows: heading("241 feats, five tiers each") },
+  { path: "/feats/slayer", shows: heading("Slayer") },
   { path: "/talents", shows: heading("Talents") },
   { path: "/rulesets", shows: heading("Rulesets compared") },
   { path: "/hardcore-deaths", shows: heading("Hardcore deaths") },

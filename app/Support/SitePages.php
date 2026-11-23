@@ -41,6 +41,7 @@ final class SitePages
                 $pages[] = self::page($ruleset['label'], '/rulesets/'.$ruleset['slug'], 'Dashboard of one ruleset', []);
             }
         }
+        $pages[] = self::page('Feats', '/feats', 'Every feat of five tiers and the share of characters that hold each tier', ['feat', 'achievement', 'achievements', 'tier', 'copper', 'silver', 'gold', 'legend']);
         $pages[] = self::page('Leaderboards', '/leaderboards', 'The boards of public characters', ['board', 'ranking', 'rankings', 'top', 'best']);
         foreach (Board::cases() as $board) {
             $pages[] = self::page($board->title(), '/leaderboards/'.$board->value, 'Leaderboard of public characters', []);

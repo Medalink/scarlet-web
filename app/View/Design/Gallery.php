@@ -38,6 +38,7 @@ final class Gallery
         'class-rogue' => 'the Rogue mock',
         'class-shaman' => 'the Shaman mock',
         'system' => 'system.html',
+        'feats' => 'feats-web.html',
     ];
 
     /** Gallery page → its view. */
@@ -60,6 +61,7 @@ final class Gallery
         'class-rogue' => 'design.class',
         'class-shaman' => 'design.class',
         'system' => 'design.system',
+        'feats' => 'design.feats',
     ];
 
     /** Where a gallery page lives. */
@@ -84,6 +86,7 @@ final class Gallery
             'account', 'login', 'link' => AccountPages::data($page),
             'developers' => DevelopersPage::data(),
             'system' => SystemPage::data(),
+            'feats' => FeatsDemo::data(),
             'class', 'class-rogue', 'class-shaman' => ClassGallery::data($page),
             default => [],
         };

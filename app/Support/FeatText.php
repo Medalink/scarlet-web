@@ -12,15 +12,21 @@ final class FeatText
     {
         $shown = self::unitValue($feat, $n);
 
-        return is_int($shown) || floor($shown) === (float) $shown || $shown >= 10 ? Format::number($shown) : Format::number($shown, 1);
+        return floor($shown) == $shown || $shown >= 10 ? Format::number($shown) : Format::number($shown, 1);
     }
 
     /** "9,912 kills", from the catalog's words for one and many. */
     public static function counted(Feat $feat, int|float $value): string
     {
+        return self::amount($feat, $value).' '.self::noun($feat, $value);
+    }
+
+    /** What a count is of: the catalog's word for one or for many. */
+    public static function noun(Feat $feat, int|float $value): string
+    {
         $row = FeatRows::row($feat);
 
-        return self::amount($feat, $value).' '.(self::unitValue($feat, $value) == 1 ? $row[1] : $row[2]);
+        return self::unitValue($feat, $value) == 1 ? $row[1] : $row[2];
     }
 
     /** "88 to Gold": what is left to the tier above `$tier`, null at Legend. */

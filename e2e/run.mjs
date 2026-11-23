@@ -95,6 +95,7 @@ const REGISTRY = [
   { lane: "owner", name: "the admin opens the admin pages privately, /admin/api counts the upload and a character asked for by name, /admin/clients shows the install clients, and /admin/characters finds the characters", run: admin.adminSeesTheApiCalls },
   { lane: "owner", name: "a character the owner made private has no class page, world map or trails for a visitor, and has them again once public", run: classPage.hiddenCharacterHidesItsClassPage },
   { lane: "owner", name: "the owner turns the session pages off and a visitor gets a 404 while the owner keeps the page", run: session.sessionSwitchHidesThePage },
+  { lane: "owner", name: "the feats page shows the catalog to a visitor and one character on compare and mine, and a feat has its own page", run: feats.featsHubFollowsTheScope },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },

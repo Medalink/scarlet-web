@@ -3,6 +3,7 @@
 namespace App\Actions\Public;
 
 use App\Support\Board;
+use App\Support\Feat;
 use App\Support\Profession;
 use App\Support\SearchKind;
 use App\Support\Server;
@@ -41,7 +42,10 @@ class SitemapUrls
         foreach (Profession::withPages() as $profession) {
             $paths[] = '/professions/'.$profession->slug();
         }
-        array_push($paths, '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/talents', '/rulesets', '/hardcore-deaths');
+        array_push($paths, '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/feats', '/talents', '/rulesets', '/hardcore-deaths');
+        foreach (Feat::cases() as $feat) {
+            $paths[] = '/feats/'.$feat->value;
+        }
         foreach ($this->rulesets->handle() as $ruleset) {
             $paths[] = '/rulesets/'.$ruleset['slug'];
         }
