@@ -22,7 +22,7 @@ class LinkConfirmController extends Controller
             return redirect('/link');
         }
 
-        $state = $link->handle($account, $code);
+        $state = $link->handle($account, $code, (string) $request->redeem());
         if ($state !== LinkState::Linked) {
             return redirect('/link?code='.$code);
         }

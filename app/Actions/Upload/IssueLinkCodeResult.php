@@ -6,5 +6,6 @@ use Carbon\CarbonImmutable;
 
 final readonly class IssueLinkCodeResult
 {
-    public function __construct(public string $code, public CarbonImmutable $expiresAt) {}
+    /** @param string $redeemMessage the line the install signs so its holder can redeem the code */
+    public function __construct(public string $code, public CarbonImmutable $expiresAt, public string $redeemMessage) {}
 }

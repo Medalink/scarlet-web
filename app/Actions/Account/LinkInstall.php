@@ -12,6 +12,7 @@ use App\Models\RefusedGroup;
 use App\Support\Database\BinaryValue;
 use App\Support\LinkCodeHash;
 use App\Support\LinkJudge;
+use App\Support\LinkRedeem;
 use Illuminate\Support\Facades\DB;
 
 class LinkInstall
@@ -20,20 +21,25 @@ class LinkInstall
 
     /**
      * Redeem a link code for the account: the install and the characters it first held now belong to the
-     * account, and the sharing groups the install had refused become the account's refusals. A code works once.
-     * Characters that now share an account can hold one record twice, so the addon days of those that hold claims
-     * are marked as not reconciled in the same transaction and their claims are reconciled again.
+     * account, and the sharing groups the install had refused become the account's refusals. A code works once,
+     * and only a redemption the install's own key signed counts: the `redeem` token comes from the app, so the
+     * code string alone binds nothing. Characters that now share an account can hold one record twice, so the
+     * addon days of those that hold claims are marked as not reconciled in the same transaction and their claims
+     * are reconciled again.
      */
-    public function handle(Account $account, string $code): LinkState
+    public function handle(Account $account, string $code, string $redeem): LinkState
     {
         $linked = [];
-        $state = DB::transaction(function () use ($account, $code, &$linked): LinkState {
+        $state = DB::transaction(function () use ($account, $code, $redeem, &$linked): LinkState {
             $link = LinkCode::query()->where('code_hash', BinaryValue::bind(LinkCodeHash::of($code)))->lockForUpdate()->first();
             $link?->setRelation('install', Install::query()->whereKey($link->install_id)->lockForUpdate()->first());
 
             $state = LinkJudge::state($account, $link);
             if ($state !== LinkState::Ready || $link === null || $link->install === null) {
                 return $state;
+            }
+            if (! LinkRedeem::valid($link->install->publicKey(), $redeem, $code)) {
+                return LinkState::Unsigned;
             }
 
             $linked = $this->own($account, $link->install);

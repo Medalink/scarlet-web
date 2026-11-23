@@ -7,6 +7,7 @@ use App\Models\LinkCode;
 use App\Support\Database\BinaryValue;
 use App\Support\Exceptions\ApiException;
 use App\Support\LinkCodeHash;
+use App\Support\LinkRedeem;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -39,7 +40,7 @@ class IssueLinkCode
             ]);
         });
 
-        return new IssueLinkCodeResult($code, $expires);
+        return new IssueLinkCodeResult($code, $expires, LinkRedeem::message($code));
     }
 
     private function code(): string
