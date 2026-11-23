@@ -26,7 +26,7 @@ final readonly class Talents
         foreach ($facts->talents as $held) {
             $blocks = match ($held->name) {
                 'Blade Flurry', 'Adrenaline Rush', 'Cold Blood' => $this->procs->buffed($this->spell($held->name), $held->name),
-                'Remorseless Attacks' => $this->procs->proc('Remorseless', 'an attack'),
+                'Remorseless Attacks' => $this->procs->comes('Remorseless'),
                 'Riposte', 'Ghostly Strike' => $this->procs->cast($this->spell($held->name)),
                 'Premeditation' => $this->procs->castUnder($this->spell($held->name), Spells::STEALTH, 'from stealth'),
                 default => null,

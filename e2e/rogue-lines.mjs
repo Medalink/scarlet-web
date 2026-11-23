@@ -38,6 +38,9 @@ const DISARM = 1842;
 const FLURRY = 13877;
 const RUSH = 13750;
 const RIPOSTE = 14251;
+const COLD_BLOOD = 14177;
+const REMORSELESS = 14143;
+const PREMEDITATION = 14183;
 const FLURRY_TALENT = 13877;
 const RUSH_TALENT = 13750;
 const RIPOSTE_TALENT = 14251;
@@ -272,6 +275,22 @@ const PLANS = [
   },
 ];
 
+function otherTalents(start) {
+  const k = new Track(start);
+  buffed(k, COLD_BLOOD, 2, STEALTH);
+  for (let at = 0; at < 2; at += 1) {
+    k.at(30, "A", 1, REMORSELESS, 1, 20, 1, "");
+    k.at(20, "A", 0, REMORSELESS, 20);
+  }
+  for (let at = 0; at < 2; at += 1) {
+    k.at(30, "A", 1, STEALTH, 1, "", 1, "");
+    k.at(3, "C", PREMEDITATION, "");
+    k.at(5, "A", 0, STEALTH, 8);
+  }
+  k.at(10, "C", PREMEDITATION, "");
+  return k.lines;
+}
+
 const SPELL_NAMES = [
   [STEALTH, "Stealth"], [OPENERS.C, "Cheap Shot"], [OPENERS.A, "Ambush"], [OPENERS.G, "Garrote"], [OPENERS.S, "Sap"],
   [EVISCERATE[0], "Eviscerate"], [EVISCERATE[1], "Eviscerate"], [EVISCERATE[2], "Eviscerate"], [SLICE, "Slice and Dice"],
@@ -280,6 +299,7 @@ const SPELL_NAMES = [
   [GHOSTLY, "Ghostly Strike"], [GOUGE, "Gouge"], [FEINT, "Feint"], [SPRINT, "Sprint"], [EVASION, "Evasion"], [BLIND, "Blind"],
   [VANISH, "Vanish"], [KICK, "Kick"], [PICK_POCKET, "Pick Pocket"], [PICK_LOCK, "Pick Lock"], [DISTRACT, "Distract"],
   [DETECT, "Detect Traps"], [DISARM, "Disarm Trap"], [FLURRY, "Blade Flurry"], [RUSH, "Adrenaline Rush"], [RIPOSTE, "Riposte"],
+  [COLD_BLOOD, "Cold Blood"], [REMORSELESS, "Remorseless"], [PREMEDITATION, "Premeditation"],
 ];
 
 const ITEM_NAMES = [
@@ -308,6 +328,7 @@ export const ROGUE_LINES = [
   ...ITEM_NAMES.map(([id, name], at) => [200 + at, "IN", id, name]),
   ...talentLines(),
   ...PLANS.flatMap((plan, c) => cluster(plan.start, plan, c)),
+  ...otherTalents(18_000_000),
   [2 * HOUR, "L", 51],
   [4 * HOUR, "L", 52],
   [SESSION_END, "ES"],

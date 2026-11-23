@@ -108,6 +108,24 @@ final readonly class Procs
     }
 
     /**
+     * A buff that comes up on its own and that no cast the rows watch spends: how often it came up and for how long.
+     *
+     * @return list<Block>|null null when it never came up
+     */
+    public function comes(string $aura): ?array
+    {
+        $buff = $this->aura($aura);
+        if ($buff['starts'] === 0) {
+            return null;
+        }
+
+        return [
+            new Pair([new PairRow('Times it came up', $buff['starts']), new PairRow('Time up', self::time($buff['ms'] / 1000))]),
+            self::split(Casts::share($buff['fightMs'], $buff['ms']), 'Time up in a fight', 'Time up out of a fight'),
+        ];
+    }
+
+    /**
      * A spell cast under an aura of its own: how many of its casts were made under it.
      *
      * @return list<Block>|null null when the spell was never cast

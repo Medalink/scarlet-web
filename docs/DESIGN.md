@@ -1886,6 +1886,21 @@ against synthetic talents and are not a page check. The fixture is Pack-Warden (
 ammo and aspects are scripted per fight; `e2e/hunter-expected.mjs` works its figures out from the lines and
 `e2e/checks/class-page-hunter.mjs` reads the page against them. The comparison with other hunters waits for 20 of them.
 
+**Where the Rogue page differs from the comp.** Built by `RogueBuilder` and the classes in
+`App\Support\ClassPage\Rogue`. The rows hold no money or items from a pocket, no dungeon split and no kills by
+fight, so Pick Pocket reads "A played hour" and "Most in a row" where the comp has "Gold lifted", "Items taken" and
+"What came out most". Locks read "Lockboxes opened" and "A played hour" instead of "Lockpicking skill". The poisons
+are items, so each row carries the item's name and icon, and the counts of the ranks of one poison are added.
+Blade Flurry and Adrenaline Rush read "Time up" and "Casts under it" instead of kills by fight and boss fights; Riposte
+reads "Cast in a fight" and "Most in a row"; Sap reads "Fights opened with one" and "Of all fights" instead of
+dungeons; Scouting is a rank of Distract, Detect Traps and Disarm Trap instead of hours in stealth inside dungeons.
+"Kicks on bosses" is left out, since the rows do not split casts by encounter. The other talents with a module are Cold
+Blood (casts, time up, casts under it), Ghostly Strike (casts, share in a fight, most in a row), Premeditation (casts,
+casts from stealth) and Remorseless Attacks. The decoder does not watch the Remorseless proc for the casts that spend
+it, so that module reads "Times it came up" and "Time up" and nothing about what spent it. The six figures kept for the
+comparison are the share of fights opened from stealth, the share of played time in stealth, pockets and locks a played
+hour, the share of Kicks that landed and the share of fights with a Vanish.
+
 **Where it lives.** `/c/{name}/{class}` with the class's slug (`warrior`, `paladin`, `hunter`, `rogue`, `priest`,
 `shaman`, `mage`, `warlock`, `druid`); any other slug, and a class the character is not, is 404. Visible exactly when
 the character's page is. `/c/{name}`, the class page and `/c/{name}/battlegrounds` share one line of navigation under

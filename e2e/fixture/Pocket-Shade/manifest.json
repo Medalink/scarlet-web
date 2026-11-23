@@ -17,9 +17,9 @@
     },
     {
       "group": "combat",
-      "id": "30639d0c8dbaf077ffe2ba4441f88dd57539ca537fa1aae007266e72f031ef7b",
-      "lines": 337,
-      "raw_bytes": 4769,
+      "id": "53607d8a2535c768a39c44367d4279bc479a046a3a443101b900992c39d42f37",
+      "lines": 353,
+      "raw_bytes": 5056,
       "session": 1795630000
     },
     {
@@ -31,11 +31,11 @@
     },
     {
       "group": "names",
-      "id": "e289905970767f0cb1656887cfc9102287207b73234334e5c3c02f8faade8607",
-      "lines": 42,
-      "raw_bytes": 938,
+      "id": "79dc234c3b960b776c9296535b8ea43a44401696a3e46357fe75e459a4ee9061",
+      "lines": 45,
+      "raw_bytes": 1008,
       "session": 1795630000
     }
   ],
-  "set_digest": "d8ac90ccf948ecf83ba6272355846ac82bfd36963880addf1aecb157145a51b6"
+  "set_digest": "20fac35f1a27af9cba2f2785fd792ab9da3e954afdc2618c997f8ddfd38f879c"
 }
