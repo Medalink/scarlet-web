@@ -17,6 +17,6 @@ enum AddonKind: string
 
     public function hasRows(): bool
     {
-        return $this === self::Fishing;
+        return in_array($this, [self::Fishing, self::Kill, self::Run, self::Xp], true);
     }
 }

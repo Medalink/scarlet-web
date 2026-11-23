@@ -2,15 +2,16 @@
 
 namespace App\Actions\Ingest;
 
+use App\Actions\Public\QuestRecord;
 use App\Support\AddonKind;
 use App\Support\ClaimStatus;
 use App\Support\GatherKind;
+use App\Support\JoinedDungeonRuns;
+use App\Support\XpSource;
 use Illuminate\Support\Facades\DB;
 
 class ExplainAddonClaims
 {
-    private const array METRICS = ['casts', 'landed', 'items'];
-
     /**
      * The table that explains each character's total of a kind (docs/DESIGN.md, Addon counts, Checks): one line per
      * status with its claims, what they claimed, what counts and the rule most of them name, and for a kind Scarlet
@@ -64,7 +65,8 @@ class ExplainAddonClaims
         foreach ($heads as $key => $head) {
             $lines = array_values($statuses[$key]);
             usort($lines, fn (array $a, array $b): int => $this->order($a['status']) <=> $this->order($b['status']));
-            $scarlet = AddonKind::from($head['kind'])->hasRows() ? $this->scarlet($head['id']) : null;
+            $kind = AddonKind::from($head['kind']);
+            $scarlet = $kind->hasRows() ? $this->scarlet($head['id'], $kind) : null;
             $explained[] = [
                 'character' => $head['character'],
                 'kind' => $head['kind'],
@@ -89,9 +91,30 @@ class ExplainAddonClaims
         return str_contains($value, '.') ? (float) $value : (int) $value;
     }
 
-    /** @return array<string, int> */
-    private function scarlet(int $characterId): array
+    /**
+     * Scarlet's own term of the kind: the figure the counted claims add to. Fishing: attempts, looted attempts and
+     * the quantity of the item rows. Kill: the kills that are not players. Xp: the experience of the quests turned
+     * in, the larger of what `quest_events` and `xp_gains` of source quest hold, since the two sharing groups are
+     * on or off apart. Run: the dungeon runs, joined.
+     *
+     * @return array<string, int>
+     */
+    private function scarlet(int $characterId, AddonKind $kind): array
     {
+        if ($kind === AddonKind::Kill) {
+            return ['kills' => DB::table('kills')->where('character_id', $characterId)->where('player', false)->count()];
+        }
+        if ($kind === AddonKind::Xp) {
+            $events = (int) DB::table('quest_events')->where('character_id', $characterId)->where('event', QuestRecord::TURNED_IN)->sum('xp');
+            $gains = (int) DB::table('xp_gains')->where('character_id', $characterId)->where('source', XpSource::Quest->value)->sum('amount');
+
+            return ['xp' => max($events, $gains)];
+        }
+        if ($kind === AddonKind::Run) {
+            $joined = DB::selectOne('with '.JoinedDungeonRuns::cte('r.character_id = ?').' select count(*) as runs from joined', [$characterId]);
+
+            return ['runs' => (int) ($joined->runs ?? 0)];
+        }
         $fish = GatherKind::Fish->value;
         $gathers = DB::table('gathers')->where('character_id', $characterId)->where('kind', $fish)
             ->selectRaw('count(*) as casts, count(*) filter (where looted) as landed')->first();
@@ -110,7 +133,7 @@ class ExplainAddonClaims
         $total = $scarlet;
         foreach ($statuses as $status) {
             if (in_array($status['status'], ClaimStatus::adding(), true)) {
-                foreach (self::METRICS as $metric) {
+                foreach (array_keys($scarlet) as $metric) {
                     $total[$metric] += $status['counted'][$metric] ?? 0;
                 }
             }

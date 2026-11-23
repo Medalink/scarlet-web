@@ -2,8 +2,11 @@
 
 namespace App\Actions\Ingest;
 
+use App\Actions\Public\QuestRecord;
 use App\Support\AddonKind;
 use App\Support\GatherKind;
+use App\Support\JoinedDungeonRuns;
+use App\Support\XpSource;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -35,11 +38,16 @@ class ReadReconcileInput
         $others = [];
         foreach ($siblingIds as $id) {
             if ($id !== $characterId) {
+                $theirs = array_values(array_filter($claims[$id] ?? [], fn (array $claim): bool => $claim['scope'] === self::SCOPE_CHARACTER));
                 $others[] = [
                     'id' => $id,
                     'name' => (string) $names[$id],
-                    'claims' => array_values(array_filter($claims[$id] ?? [], fn (array $claim): bool => $claim['scope'] === self::SCOPE_CHARACTER)),
-                    'rows' => $kind->hasRows() ? $this->rowsBeside($id, $kind) : [],
+                    'claims' => $theirs,
+                    'rows' => match (true) {
+                        $kind === AddonKind::Fishing => $this->rowsBeside($id, $kind),
+                        $kind->hasRows() => $this->rowsOf($id, $kind, $theirs),
+                        default => [],
+                    },
                 ];
             }
         }
@@ -49,7 +57,7 @@ class ReadReconcileInput
             'kind' => $kind->value,
             'now' => $now,
             'character' => ['id' => $characterId, 'name' => (string) ($names[$characterId] ?? ''), 'claims' => $own],
-            'rows' => $kind->hasRows() ? $this->rows($characterId, $own) : [],
+            'rows' => $kind->hasRows() ? $this->rowsOf($characterId, $kind, $own) : [],
             'others' => $others,
         ], JSON_THROW_ON_ERROR);
     }
@@ -110,18 +118,145 @@ class ReadReconcileInput
     }
 
     /**
-     * Scarlet's fishing rows near the claims: each `gathers` row with the quantity of the loot window that followed
-     * it (the `gather_items` rows of its session from its cast to the next one, left out when they came from opening
-     * a container) and the ids of those items. Their sums are the Scarlet term of the character's totals.
+     * Scarlet's rows of the kind that its rule reads for the claims (docs/DESIGN.md, Addon counts, Reconcile).
      *
      * @param  list<array<string, mixed>>  $claims
      * @return list<array<string, mixed>>
      */
-    private function rows(int $characterId, array $claims): array
+    private function rowsOf(int $characterId, AddonKind $kind, array $claims): array
     {
         if ($claims === []) {
             return [];
         }
+
+        if ($kind === AddonKind::Kill) {
+            return $this->killRows($characterId, $claims);
+        }
+        if ($kind === AddonKind::Xp) {
+            return $this->questRows($characterId, $claims);
+        }
+        if ($kind === AddonKind::Run) {
+            return $this->runRows($characterId);
+        }
+
+        return $this->fishRows($characterId, $claims);
+    }
+
+    /**
+     * The whole numbers one dimension of the claims holds, written the way the rule reads them.
+     *
+     * @param  list<array<string, mixed>>  $claims
+     */
+    private function dimension(array $claims, string $key): string
+    {
+        $values = [];
+        foreach ($claims as $claim) {
+            $value = ((array) $claim['dims'])[$key] ?? null;
+            if (is_string($value) && ctype_digit($value) && (string) (int) $value === $value) {
+                $values[(int) $value] = (int) $value;
+            }
+        }
+        sort($values);
+
+        return '{'.implode(',', $values).'}';
+    }
+
+    /**
+     * Scarlet's kills as one row per level the claims name and one for the kills with no level, which the decoder
+     * writes until a session has one: the count of the character's `kills` rows that are not players, counted or
+     * not, and the time of the last of them.
+     *
+     * @param  list<array<string, mixed>>  $claims
+     * @return list<array<string, mixed>>
+     */
+    private function killRows(int $characterId, array $claims): array
+    {
+        return array_values(array_map(fn (stdClass $row): array => [
+            'at' => (int) $row->at_ms,
+            'level' => $row->level === null ? null : (int) $row->level,
+            'count' => (int) $row->kills,
+        ], DB::select(
+            <<<'SQL'
+            select level, count(*) as kills, round(extract(epoch from max(at)) * 1000)::bigint as at_ms
+            from kills
+            where character_id = ? and not player and (level is null or level = any(?::int[]))
+            group by level
+            order by level nulls first
+            SQL,
+            [$characterId, $this->dimension($claims, 'level')],
+        )));
+    }
+
+    /**
+     * Scarlet's quest turn-ins from both tables that hold them, because `quests` and `xp` are separate sharing
+     * groups: the `quest_events` rows turned in (the quest id is null when the client hid it) and the `xp_gains`
+     * rows of source quest for the quests the claims name.
+     *
+     * @param  list<array<string, mixed>>  $claims
+     * @return list<array<string, mixed>>
+     */
+    private function questRows(int $characterId, array $claims): array
+    {
+        $quests = $this->dimension($claims, 'quest');
+
+        return array_values(array_map(fn (stdClass $row): array => [
+            'at' => (int) $row->at_ms,
+            'key' => $row->quest === null ? null : (int) $row->quest,
+            'xp' => (int) $row->xp,
+            'level' => $row->level === null ? null : (int) $row->level,
+            'zone' => $row->zone_id === null ? null : (int) $row->zone_id,
+            'events' => (bool) $row->events,
+        ], DB::select(
+            <<<'SQL'
+            select round(extract(epoch from at) * 1000)::bigint as at_ms, quest_id as quest, coalesce(xp, 0) as xp, level, zone_id, true as events
+            from quest_events
+            where character_id = ? and event = ? and (quest_id is null or quest_id = any(?::int[]))
+            union all
+            select round(extract(epoch from at) * 1000)::bigint as at_ms, source_id as quest, amount as xp, level, zone_id, false as events
+            from xp_gains
+            where character_id = ? and source = ? and source_id = any(?::int[])
+            order by at_ms, events desc, quest nulls first, xp
+            SQL,
+            [$characterId, QuestRecord::TURNED_IN, $quests, $characterId, XpSource::Quest->value, $quests],
+        )));
+    }
+
+    /**
+     * Scarlet's dungeon runs joined along `continues_previous`, each with its instance, first entry and last
+     * leave: every run of the character, because a run of any instance beside a claim is the run it was in.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function runRows(int $characterId): array
+    {
+        return array_values(array_map(fn (stdClass $row): array => [
+            'at' => (int) $row->at_ms,
+            'end' => (int) $row->end_ms,
+            'key' => (int) $row->instance_id,
+            'level' => $row->level === null ? null : (int) $row->level,
+            'zone' => $row->zone_id === null ? null : (int) $row->zone_id,
+        ], DB::select(
+            'with '.JoinedDungeonRuns::cte('r.character_id = ?').<<<'SQL'
+
+            select round(extract(epoch from at) * 1000)::bigint as at_ms, round(extract(epoch from end_at) * 1000)::bigint as end_ms,
+                instance_id, level, zone_id
+            from joined
+            order by at, instance_id
+            SQL,
+            [$characterId],
+        )));
+    }
+
+    /**
+     * Scarlet's fishing rows near the claims: each `gathers` row with the quantity of the loot window that followed
+     * it (the `gather_items` rows of its session from its cast to the next one, left out when they came from opening
+     * a container) and the ids of those items. Their sums are the Scarlet term of the character's totals.
+     *
+     * @param  non-empty-list<array<string, mixed>>  $claims
+     * @return list<array<string, mixed>>
+     */
+    private function fishRows(int $characterId, array $claims): array
+    {
         $from = min(array_map(fn (array $claim): int => (int) ($claim['from'] ?? $claim['to']), $claims)) - self::REACH;
         $until = max(array_map(fn (array $claim): int => (int) $claim['to'], $claims)) + self::REACH;
         $fish = GatherKind::Fish->value;

@@ -66,13 +66,15 @@ any host that is not 127.0.0.1, localhost or [::1], because it deletes what it u
   process and stops it unless it is 0. It loads the key pages at 1280 and 390 wide and types into the search box.
 - Last, it removes the upload.
 
-`node e2e/boot.mjs -- node e2e/addon-counts.mjs` is a second lane, not part of the default one (about 2.5 minutes). It uploads an
+`node e2e/boot.mjs -- node e2e/addon-counts.mjs` is a second lane, not part of the default one (about 6 minutes). It uploads an
 invented character with 12 fishing sessions and the counts another addon made of them, then checks the totals
 (343, 334 and 356), the same state after a group is removed and restored or the parts arrive in another order, a second
 reconcile that changes nothing, and `php artisan addons:audit`. Then one small invented character per case a verdict can
 get wrong (a cast at a seam between two claims, a session uploaded in halves, a claim a catch started, an `ff` claim a
 `fl` claim covers in part, cancelled casts inside a session, two characters with one record, two installs an account
-links) is checked against the totals its history has. It waits until the character has no null `reconcile_version`,
+links) is checked against the totals its history has. Last, one invented character per case of the level, quest and run
+claims of RXPGuides and ForeverDungeonJournal (docs/DESIGN.md, Addon counts, the e2e paragraph) is checked the same way;
+`levels` after the file name runs only those, in about 2.5 minutes. It waits until the character has no null `reconcile_version`,
 so it needs the app's job queue running, and compares hashes after that. It needs the app's database settings, which
 `boot.mjs` gives its command, `psql` and the development sign-in (`SCARLET_DEV_LOGIN=true`) for the account link.
 

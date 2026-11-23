@@ -4,16 +4,18 @@
 //! exactly one status, the amounts that count and the evidence for both. Nothing here reads a database
 //! or a clock: `now` is an input, so the same input always gives the same output.
 
+mod levels;
 mod rules;
+mod runs;
 
-use rules::Event;
+use rules::{Event, Kind};
 use serde_json::{Map, Value, json};
 use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 /// The version of the rules below. The scheduled pass reconciles a character again when its claims carry an
 /// older one.
-pub const RECONCILE_VERSION: u32 = 5;
+pub const RECONCILE_VERSION: u32 = 6;
 
 const EPOCH_FLOOR: i64 = 1_566_777_600;
 const FUTURE_SLACK: i64 = 86_400;
@@ -127,8 +129,12 @@ impl Claim {
     }
 }
 
-/// One of Scarlet's own rows of the kind: for fishing a `gathers` row of kind fish, with the quantity of the
-/// `gather_items` rows of its loot window.
+/// One of Scarlet's own rows of the kind, in the shape the kind's rule reads. Fishing: a `gathers` row of kind
+/// fish, with the quantity of the `gather_items` rows of its loot window. Kill: the tally of one level, the
+/// non-player `kills` rows there (`count`, `level`) or, with no `level`, the rows the decoder wrote before the
+/// session had one; `at` is the last of them. Xp: one turn-in (`at`, `key` the quest id or none when the client
+/// hid it, `xp`, `level`), from `quest_events` (`events`) or from `xp_gains` of source `q`. Run: one joined
+/// `dungeon_runs` row (`key` the instance, `at` its first entry, `end` its last leave).
 #[derive(Clone, Debug)]
 pub struct Row {
     pub at: i64,
@@ -138,16 +144,22 @@ pub struct Row {
     pub zone: Option<i64>,
     pub session: i64,
     pub item_ids: Vec<i64>,
+    pub count: i64,
+    pub key: Option<i64>,
+    pub xp: i64,
+    pub end: i64,
+    pub events: bool,
 }
 
-/// A character, its claims of the kind and, for a character other than the one reconciled, the `at` (epoch
-/// milliseconds) of its Scarlet rows of the kind that lie within a minute of its claims' windows.
+/// A character, its claims of the kind and, for a character other than the one reconciled, its Scarlet rows of
+/// the kind that its claims' rule reads: for fishing only the `at` (epoch milliseconds) of the rows within a
+/// minute of its claims' windows.
 #[derive(Clone, Debug)]
 pub struct Sibling {
     pub id: i64,
     pub name: String,
     pub claims: Vec<Claim>,
-    pub rows: Vec<i64>,
+    pub rows: Vec<Row>,
 }
 
 /// Everything one reconcile reads. Times of claims are epoch seconds, `at` of a row epoch milliseconds.
@@ -253,14 +265,8 @@ fn early(input: &Input, c: &Claim) -> Option<Decision> {
 }
 
 fn twin(input: &Input, c: &Claim) -> Option<Decision> {
-    let from = c.start() * 1000 - rules::ASSIGN_SLACK_MS;
-    let until = c.to * 1000 + rules::ASSIGN_SLACK_MS;
     let own = (
-        Reverse(rules::rows_within(
-            input.rows.iter().map(|r| r.at),
-            from,
-            until,
-        )),
+        Reverse(rules::beside(&input.kind, c, &input.rows)),
         input.character.id,
     );
     let (key, holder, same) = input
@@ -268,7 +274,7 @@ fn twin(input: &Input, c: &Claim) -> Option<Decision> {
         .iter()
         .filter_map(|o| {
             let same = o.claims.iter().find(|x| rules::same_record(c, x))?;
-            let rows = rules::rows_within(o.rows.iter().copied(), from, until);
+            let rows = rules::beside(&input.kind, c, &o.rows);
             Some(((Reverse(rows), o.id), o, same))
         })
         .min_by_key(|(key, _, _)| *key)?;
@@ -540,8 +546,21 @@ pub fn reconcile(input: &Input) -> Vec<Outcome> {
             json!({"rule": 5, "same_origin": true, "with": claims[winner].natural()}),
         ));
     }
-    for origin in rules::ranking(&input.kind) {
-        dated_origin(input, &rows, &dated, origin, &mut decided);
+    let open: Vec<usize> = dated
+        .iter()
+        .copied()
+        .filter(|&i| decided[i].is_none())
+        .collect();
+    match Kind::of(&input.kind) {
+        Some(Kind::Fishing) => {
+            for origin in rules::ranking(&input.kind) {
+                dated_origin(input, &rows, &dated, origin, &mut decided);
+            }
+        }
+        Some(Kind::Kill) => levels::kills(&input.character.claims, &rows, &open, &mut decided),
+        Some(Kind::Xp) => levels::quests(&input.character.claims, &rows, &open, &mut decided),
+        Some(Kind::Run) => runs::runs(&input.character.claims, &rows, &open, &mut decided),
+        None => {}
     }
     for (&i, event) in events
         .iter()
@@ -589,7 +608,7 @@ pub fn reconcile(input: &Input) -> Vec<Outcome> {
                 status: d.status,
                 counted: d.counted,
                 evidence: d.evidence,
-                level: d.level,
+                level: rules::dim_level(c).or(d.level),
                 zone: d.zone,
             }
         })
@@ -653,19 +672,33 @@ fn claim_of(v: &Value) -> Result<Claim, String> {
 }
 
 fn row_of(v: &Value) -> Result<Row, String> {
+    let at = int(v, "at")?;
+    let number = |key: &str, none: i64| v.get(key).and_then(Value::as_i64).unwrap_or(none);
     Ok(Row {
-        at: int(v, "at")?,
+        at,
         looted: v.get("looted").and_then(Value::as_bool).unwrap_or(false),
-        items: v.get("items").and_then(Value::as_i64).unwrap_or(0),
+        items: number("items", 0),
         level: v.get("level").and_then(Value::as_i64),
         zone: v.get("zone").and_then(Value::as_i64),
-        session: v.get("session").and_then(Value::as_i64).unwrap_or(0),
+        session: number("session", 0),
         item_ids: v
             .get("item_ids")
             .and_then(Value::as_array)
             .map(|a| a.iter().filter_map(Value::as_i64).collect())
             .unwrap_or_default(),
+        count: number("count", 1),
+        key: v.get("key").and_then(Value::as_i64),
+        xp: number("xp", 0),
+        end: number("end", at),
+        events: v.get("events").and_then(Value::as_bool).unwrap_or(false),
     })
+}
+
+fn sibling_row(v: &Value) -> Result<Row, String> {
+    match v.as_i64() {
+        Some(at) => row_of(&json!({"at": at})),
+        None => row_of(v),
+    }
 }
 
 fn sibling_of(v: &Value) -> Result<Sibling, String> {
@@ -676,17 +709,21 @@ fn sibling_of(v: &Value) -> Result<Sibling, String> {
             .iter()
             .map(claim_of)
             .collect::<Result<_, _>>()?,
-        rows: v
-            .get("rows")
-            .and_then(Value::as_array)
-            .map(|a| a.iter().filter_map(Value::as_i64).collect())
-            .unwrap_or_default(),
+        rows: match v.get("rows") {
+            Some(rows) => rows
+                .as_array()
+                .ok_or("`rows` must be an array")?
+                .iter()
+                .map(sibling_row)
+                .collect::<Result<_, _>>()?,
+            None => Vec::new(),
+        },
     })
 }
 
 /// Read the JSON the server and the command line send: `kind`, `now`, `character` (`id`, `name`, `claims`),
-/// `rows` and `others` (characters like `character`, each with the `at` of its own rows in `rows`, which may be
-/// left out).
+/// `rows` and `others` (characters like `character`, each with its own rows in `rows`, which may be left out:
+/// a fishing row is the integer `at` alone, the other kinds send the rows their rule reads).
 pub fn parse(v: &Value) -> Result<Input, String> {
     Ok(Input {
         kind: text(v, "kind")?,
@@ -724,8 +761,8 @@ pub fn to_json(outcomes: &[Outcome]) -> Value {
     })
 }
 
-fn sums(claims: &[&Claim], counted: &[&Outcome]) -> (String, String) {
-    let metrics = ["casts", "landed", "items"];
+fn sums(kind: &str, claims: &[&Claim], counted: &[&Outcome]) -> (String, String) {
+    let metrics = rules::reported(kind);
     let claimed: Vec<String> = metrics
         .iter()
         .map(|m| {
@@ -750,9 +787,11 @@ fn sums(claims: &[&Claim], counted: &[&Outcome]) -> (String, String) {
 }
 
 /// The table that explains a character's total: one line per status with its claims, what they claimed and
-/// what counts (casts, landed and items for fishing), and the rule of the first claim of the status.
+/// what counts (casts, landed and items for fishing, the kind's one metric for the others), and the rule of
+/// the first claim of the status.
 pub fn explain(input: &Input, outcomes: &[Outcome]) -> String {
     let claims = &input.character.claims;
+    let metrics = rules::reported(&input.kind).join("/");
     let mut out = format!(
         "{} {}: {} claims, {} Scarlet rows\n{:<11} {:>6}  {:<22} {:<22} {}\n",
         input.character.name,
@@ -761,8 +800,8 @@ pub fn explain(input: &Input, outcomes: &[Outcome]) -> String {
         input.rows.len(),
         "status",
         "claims",
-        "claimed c/l/i",
-        "counted c/l/i",
+        format!("claimed {metrics}"),
+        format!("counted {metrics}"),
         "evidence"
     );
     for status in Status::ALL {
@@ -773,6 +812,7 @@ pub fn explain(input: &Input, outcomes: &[Outcome]) -> String {
             continue;
         }
         let (claimed, kept) = sums(
+            &input.kind,
             &picked.iter().map(|&i| &claims[i]).collect::<Vec<_>>(),
             &picked.iter().map(|&i| &outcomes[i]).collect::<Vec<_>>(),
         );
@@ -788,21 +828,14 @@ pub fn explain(input: &Input, outcomes: &[Outcome]) -> String {
     }
     let all: Vec<&Claim> = claims.iter().collect();
     let kept: Vec<&Outcome> = outcomes.iter().collect();
-    let (claimed, counted) = sums(&all, &kept);
-    let scarlet = [
-        input.rows.len() as i64,
-        input.rows.iter().filter(|r| r.looted).count() as i64,
-        input.rows.iter().map(|r| r.items).sum::<i64>(),
-    ];
+    let (claimed, counted) = sums(&input.kind, &all, &kept);
     out.push_str(&format!(
-        "{:<11} {:>6}  {:<22} {:<22}\nScarlet rows {}/{}/{}\n",
+        "{:<11} {:>6}  {:<22} {:<22}\nScarlet rows {}\n",
         "all",
         claims.len(),
         claimed,
         counted,
-        scarlet[0],
-        scarlet[1],
-        scarlet[2]
+        rules::scarlet_term(&input.kind, &input.rows)
     ));
     out
 }

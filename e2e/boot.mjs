@@ -46,7 +46,7 @@ const READY_MS = 30_000;
 const OUTPUT_KEPT = 64 * 1024;
 const EXIT_OF = { SIGINT: 130, SIGTERM: 143 };
 const OWN_SETTINGS = /^(DB|REDIS|CACHE|SESSION|QUEUE|HORIZON)_/;
-const LANE_MS = 300_000;
+const LANE_MS = 600_000;
 const EOL = "\n";
 
 const SERVERS = [

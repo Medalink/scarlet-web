@@ -11,6 +11,7 @@ class AuditAddonClaims
 {
     public function __construct(
         private readonly AuditClaimStatuses $statuses,
+        private readonly AuditCountClaims $counts,
         private readonly AuditClaimNotes $notes,
         private readonly AuditAccountCeilings $ceilings,
         private readonly ExplainAddonClaims $explain,
@@ -36,6 +37,7 @@ class AuditAddonClaims
                 ...$this->duplicateKeys($id),
                 ...$this->listed($this->claimsNamingAPlayer($id), 'holds a player name in a text field'),
                 ...$this->statuses->handle($id),
+                ...$this->counts->handle($id),
             ],
             [
                 ...$this->listed($this->claimsWithDisagreeingParts($id), 'has parts that disagree on its amounts; the highest part id wins'),

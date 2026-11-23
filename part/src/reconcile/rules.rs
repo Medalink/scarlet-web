@@ -1,6 +1,10 @@
 use super::{Claim, EPOCH_FLOOR, FUTURE_SLACK, Row, SCOPE_ACCOUNT};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
+use std::ops::RangeInclusive;
+
+pub(super) const WINDOW_LEVEL: &str = "level";
+const WINDOW_SESSION: &str = "session";
 
 pub(super) const OVERLAP_SLACK: i64 = 60;
 pub(super) const ASSIGN_SLACK_MS: i64 = 60_000;
@@ -9,9 +13,27 @@ const SERVER_CLOCK_MS: i64 = 86_400_000;
 const EVENT_TOLERANCE_MS: i64 = 2_000;
 const EVENT_SEARCH_MS: i64 = 60_000;
 const FISHING: &str = "fishing";
+const KILL: &str = "kill";
+const XP: &str = "xp";
+const RUN: &str = "run";
 const FISHING_RANK: [&str; 2] = ["fl", "ff"];
 const FISHING_METRICS: [&str; 4] = ["casts", "landed", "items", "unknown"];
+const FISHING_REPORTED: [&str; 3] = ["casts", "landed", "items"];
+const KILL_RANK: [&str; 1] = ["rxp"];
+const KILL_METRICS: [&str; 1] = ["kills"];
+const XP_METRICS: [&str; 1] = ["xp"];
+const RUN_RANK: [&str; 1] = ["fdj"];
+const RUN_METRICS: [&str; 1] = ["runs"];
 const SERVER_CLOCK: [&str; 1] = ["ff"];
+const LEVEL: &str = "level";
+const QUEST: &str = "quest";
+const INSTANCE: &str = "instance";
+const LEVELS: RangeInclusive<i64> = 1..=100;
+const MAX_KILLS: i64 = 100_000;
+const MAX_QUEST_XP: i64 = 1_000_000;
+pub(super) const RUN_BEFORE_MS: i64 = 600_000;
+pub(super) const RUN_AFTER_MS: i64 = 5_000;
+pub(super) const RUN_JOIN: i64 = 2_400;
 
 pub(super) enum Event {
     Matched { at: i64, offset: i64 },
@@ -20,11 +42,68 @@ pub(super) enum Event {
     Open,
 }
 
-pub(super) fn ranking(kind: &str) -> Vec<&'static str> {
-    match kind {
-        FISHING => FISHING_RANK.to_vec(),
-        _ => Vec::new(),
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Kind {
+    Fishing,
+    Kill,
+    Xp,
+    Run,
+}
+
+struct Shape {
+    window: &'static str,
+    dims: &'static [&'static str],
+}
+
+impl Kind {
+    pub(super) fn of(name: &str) -> Option<Kind> {
+        match name {
+            FISHING => Some(Kind::Fishing),
+            KILL => Some(Kind::Kill),
+            XP => Some(Kind::Xp),
+            RUN => Some(Kind::Run),
+            _ => None,
+        }
     }
+
+    fn ranking(self) -> &'static [&'static str] {
+        match self {
+            Kind::Fishing => &FISHING_RANK,
+            Kind::Kill | Kind::Xp => &KILL_RANK,
+            Kind::Run => &RUN_RANK,
+        }
+    }
+
+    fn metrics(self) -> &'static [&'static str] {
+        match self {
+            Kind::Fishing => &FISHING_METRICS,
+            Kind::Kill => &KILL_METRICS,
+            Kind::Xp => &XP_METRICS,
+            Kind::Run => &RUN_METRICS,
+        }
+    }
+
+    fn shape(self) -> Option<Shape> {
+        match self {
+            Kind::Fishing => None,
+            Kind::Kill => Some(Shape {
+                window: WINDOW_LEVEL,
+                dims: &[LEVEL],
+            }),
+            Kind::Xp => Some(Shape {
+                window: WINDOW_LEVEL,
+                dims: &[LEVEL, QUEST],
+            }),
+            Kind::Run => Some(Shape {
+                window: WINDOW_SESSION,
+                dims: &[INSTANCE],
+            }),
+        }
+    }
+}
+
+pub(super) fn ranking(kind: &str) -> Vec<&'static str> {
+    Kind::of(kind).map_or_else(Vec::new, |k| k.ranking().to_vec())
 }
 
 pub(super) fn rank(kind: &str, origin: &str) -> Option<usize> {
@@ -35,20 +114,71 @@ pub(super) fn server_clock(origin: &str) -> bool {
     SERVER_CLOCK.contains(&origin)
 }
 
+pub(super) fn dim_int(c: &Claim, key: &str) -> Option<i64> {
+    let text = c.dims.get(key)?;
+    text.parse::<i64>().ok().filter(|n| n.to_string() == *text)
+}
+
+pub(super) fn dim_level(c: &Claim) -> Option<i64> {
+    matches!(Kind::of(&c.kind), Some(Kind::Kill | Kind::Xp))
+        .then(|| dim_int(c, LEVEL))
+        .flatten()
+        .filter(|l| LEVELS.contains(l))
+}
+
 pub(super) fn unmapped(c: &Claim) -> Option<&'static str> {
-    if c.kind != FISHING {
+    let Some(kind) = Kind::of(&c.kind) else {
         return Some("no Scarlet rows are read for the kind yet");
-    }
+    };
     if rank(&c.kind, &c.origin).is_none() {
         return Some("no rule maps the origin on the kind");
     }
     if c.amounts
         .keys()
-        .any(|k| !FISHING_METRICS.contains(&k.as_str()))
+        .any(|k| !kind.metrics().contains(&k.as_str()))
     {
         return Some("an amount names a metric no rule maps");
     }
+    let shape = kind.shape()?;
+    if c.window != shape.window {
+        return Some("the claim is not in the window the rule reads");
+    }
+    if !c
+        .dims
+        .keys()
+        .map(String::as_str)
+        .eq(shape.dims.iter().copied())
+    {
+        return Some("the dimensions are not the ones the rule reads");
+    }
+    if shape.dims.iter().any(|key| dim_int(c, key).is_none()) {
+        return Some("a dimension the rule reads is not a whole number");
+    }
     None
+}
+
+fn kind_bounds(c: &Claim, whole: &BTreeMap<String, i64>) -> Option<String> {
+    let kind = Kind::of(&c.kind)?;
+    if let Some(level) = dim_int(c, LEVEL).filter(|_| matches!(kind, Kind::Kill | Kind::Xp))
+        && !LEVELS.contains(&level)
+    {
+        return Some(format!("level {level} is outside 1 to 100"));
+    }
+    let over = |metric: &str, most: i64| {
+        whole
+            .get(metric)
+            .filter(|&&n| n > most)
+            .map(|n| format!("{n} {metric} in one claim are more than {most}"))
+    };
+    match kind {
+        Kind::Fishing => None,
+        Kind::Kill => over("kills", MAX_KILLS),
+        Kind::Xp => over("xp", MAX_QUEST_XP),
+        Kind::Run => whole
+            .get("runs")
+            .filter(|&&n| n != 1)
+            .map(|n| format!("a run claim holds {n} runs, not 1")),
+    }
 }
 
 pub(super) fn out_of_bounds(c: &Claim, whole: &BTreeMap<String, i64>, now: i64) -> Option<String> {
@@ -78,7 +208,28 @@ pub(super) fn out_of_bounds(c: &Claim, whole: &BTreeMap<String, i64>, now: i64) 
             c.to - from
         ));
     }
-    None
+    kind_bounds(c, whole)
+}
+
+pub(super) fn reported(kind: &str) -> &'static [&'static str] {
+    match Kind::of(kind) {
+        Some(Kind::Fishing) => &FISHING_REPORTED,
+        Some(other) => other.metrics(),
+        None => &[],
+    }
+}
+
+pub(super) fn scarlet_term(kind: &str, rows: &[Row]) -> String {
+    match Kind::of(kind) {
+        Some(Kind::Fishing) => format!(
+            "{}/{}/{}",
+            rows.len(),
+            rows.iter().filter(|r| r.looted).count(),
+            rows.iter().map(|r| r.items).sum::<i64>()
+        ),
+        Some(Kind::Kill) => rows.iter().map(|r| r.count).sum::<i64>().to_string(),
+        _ => rows.len().to_string(),
+    }
 }
 
 pub(super) fn same_record(a: &Claim, b: &Claim) -> bool {
@@ -94,6 +245,74 @@ pub(super) fn same_record(a: &Claim, b: &Claim) -> bool {
 
 pub(super) fn rows_within(rows: impl Iterator<Item = i64>, from: i64, until: i64) -> usize {
     rows.filter(|&at| at >= from && at <= until).count()
+}
+
+pub(super) fn kills_split(rows: &[Row], level: i64) -> (i64, i64) {
+    let held = |wanted: Option<i64>| {
+        rows.iter()
+            .filter(|r| r.level == wanted)
+            .map(|r| r.count)
+            .sum::<i64>()
+    };
+    (held(Some(level)), held(None))
+}
+
+pub(super) fn turn_ins(rows: &[Row], quest: i64) -> Vec<&Row> {
+    let of = |events: bool| {
+        let mut held: Vec<&Row> = rows
+            .iter()
+            .filter(|r| r.events == events && r.key == Some(quest))
+            .collect();
+        held.sort_by_key(|r| r.at);
+        held
+    };
+    let (events, gains) = (of(true), of(false));
+    if events.len() >= gains.len() {
+        events
+    } else {
+        gains
+    }
+}
+
+pub(super) fn hidden_turn_ins(rows: &[Row]) -> Vec<&Row> {
+    let mut hidden: Vec<&Row> = rows
+        .iter()
+        .filter(|r| r.events && r.key.is_none())
+        .collect();
+    hidden.sort_by_key(|r| r.at);
+    hidden
+}
+
+pub(super) fn runs_over<'a>(rows: &'a [Row], c: &Claim) -> Vec<&'a Row> {
+    let (from, to) = (start(c) * 1000, c.to * 1000);
+    let instance = dim_int(c, INSTANCE);
+    let mut over: Vec<&Row> = rows
+        .iter()
+        .filter(|r| {
+            let beside =
+                r.key == instance && r.at <= to + RUN_AFTER_MS && r.end >= from - RUN_BEFORE_MS;
+            beside || (r.at <= to && r.end >= from)
+        })
+        .collect();
+    over.sort_by_key(|r| r.at);
+    over
+}
+
+pub(super) fn beside(kind: &str, c: &Claim, rows: &[Row]) -> i64 {
+    match Kind::of(kind) {
+        Some(Kind::Fishing) => rows_within(
+            rows.iter().map(|r| r.at),
+            start(c) * 1000 - ASSIGN_SLACK_MS,
+            c.to * 1000 + ASSIGN_SLACK_MS,
+        ) as i64,
+        Some(Kind::Kill) => dim_level(c).map_or(0, |level| {
+            let (at_level, unleveled) = kills_split(rows, level);
+            at_level + unleveled
+        }),
+        Some(Kind::Xp) => dim_int(c, QUEST).map_or(0, |quest| turn_ins(rows, quest).len() as i64),
+        Some(Kind::Run) => runs_over(rows, c).len() as i64,
+        None => 0,
+    }
 }
 
 pub(super) fn covers(claimed_above: i64, claimed: i64) -> bool {
@@ -123,6 +342,12 @@ pub(super) fn overlap(a: &Claim, b: &Claim) -> i64 {
     a.to.min(b.to) - start(a).max(start(b))
 }
 
+fn one_record(a: &Claim, b: &Claim) -> bool {
+    a.dims == b.dims
+        && (overlaps(a, b)
+            || (a.window == WINDOW_LEVEL && b.window == WINDOW_LEVEL && a.store == b.store))
+}
+
 pub(super) fn collapse(claims: &[Claim], dated: &[usize]) -> Vec<(usize, usize)> {
     let mut out = Vec::new();
     let mut origins: Vec<&str> = dated.iter().map(|&i| claims[i].origin.as_str()).collect();
@@ -139,11 +364,11 @@ pub(super) fn collapse(claims: &[Claim], dated: &[usize]) -> Vec<(usize, usize)>
         while !remaining.is_empty() {
             let winner = remaining.remove(0);
             remaining.retain(|&i| {
-                let overlapped = overlaps(&claims[winner], &claims[i]);
-                if overlapped {
+                let same = one_record(&claims[winner], &claims[i]);
+                if same {
                     out.push((i, winner));
                 }
-                !overlapped
+                !same
             });
         }
     }

@@ -52,8 +52,8 @@ const FISHING_SKILL_LINE = 356;
 const STONETUSK_BOAR = 113;
 const TRIPS_WITHOUT_LOOT = [0, 1];
 const LOOT_DELAY = 0.6;
-const GROUP_OF = { S: "core", Z: "core", ES: "core", K: "combat", C: "combat", CH: "combat", LO: "loot", SL: "professions" };
-const GROUP_ORDER = ["core", "combat", "loot", "professions", "counts"];
+const GROUP_OF = { S: "core", Z: "core", L: "core", ES: "core", X: "xp", Q: "quests", K: "combat", C: "combat", CH: "combat", LO: "loot", SL: "professions" };
+const GROUP_ORDER = ["core", "xp", "quests", "combat", "loot", "professions", "counts"];
 const SETTLE_MS = 120_000;
 const STEADY_POLLS = 6;
 const POLL_MS = 500;
@@ -220,11 +220,11 @@ const scarletRows = (name, session = "") => `
   (select count(*) from gathers where ${own(name)} and kind = 'fish'${session}),
   (select count(*) from gathers where ${own(name)} and kind = 'fish' and looted${session}),
   (select coalesce(sum(quantity), 0) from gather_items where ${own(name)} and kind = 'fish' and container_item_id is null${session})`;
-const claimHash = (name) => `
+const claimHash = (name, versioned = true) => `
   select coalesce(md5(string_agg(row_text, E'\\n' order by row_text)), 'none') from (
     select concat_ws('|', ch.name, c.origin, c.store, c.scope, c.window, c.kind, coalesce(c.from_at::text, ''), c.to_at, c.dims::text, c.amounts::text,
       coalesce(c.status, ''), coalesce(c.counted::text, ''), coalesce(c.evidence::text, ''), coalesce(r.key, ''), coalesce(c.counted_ok::text, ''),
-      coalesce(c.level::text, ''), coalesce(c.zone_id::text, ''), coalesce(c.reconcile_version::text, '')) as row_text
+      coalesce(c.level::text, ''), coalesce(c.zone_id::text, ''), ${versioned ? "coalesce(c.reconcile_version::text, '')" : "''"}) as row_text
     from addon_claims c join characters ch on ch.id = c.character_id left join rulesets r on r.id = c.ruleset_id
     where ch.name = '${name}') t`;
 const rowHash = (name) => `
@@ -244,12 +244,13 @@ function snapshot(name) {
       'nullDays', (select count(*) from addon_days where ${own(name)} and reconcile_version is null),
       'scarlet', (select json_build_array(${scarletRows(name)})),
       'counted', json_build_array(${counted.join(", ")}),
-      'hash', (${claimHash(name)}) || '|' || (${rowHash(name)}))`));
+      'hash', (${claimHash(name)}) || '|' || (${rowHash(name)}),
+      'verdicts', (${claimHash(name, false)}) || '|' || (${rowHash(name)}))`));
   const scarletTerm = state.scarlet.map(Number);
   const countedTerm = state.counted.map(Number);
   return {
     sessions: Number(state.sessions), gathers: scarletTerm[0], claims: Number(state.claims), unreconciled: Number(state.unreconciled), nullDays: Number(state.nullDays),
-    scarlet: scarletTerm, counted: countedTerm, total: scarletTerm.map((n, k) => n + countedTerm[k]), hash: state.hash,
+    scarlet: scarletTerm, counted: countedTerm, total: scarletTerm.map((n, k) => n + countedTerm[k]), hash: state.hash, verdicts: state.verdicts,
   };
 }
 
@@ -262,6 +263,7 @@ function claimsOf(name) {
       from addon_claims c join characters ch on ch.id = c.character_id where ch.name = '${name}') t`));
 }
 
+const md5 = (text) => crypto.createHash("md5").update(text).digest("hex");
 const client = new InstallClient(base, LABEL);
 const second = new InstallClient(base, LABEL_TWO);
 const http = new Http(base);
@@ -293,7 +295,10 @@ async function settle(names, ready, what) {
     steady = key === last ? steady + 1 : 0;
     last = key;
     const reconciled = now.every((s) => s.unreconciled === 0 && s.nullDays === 0);
-    if (steady >= STEADY_POLLS && reconciled && ready(...now) && (await waiting()) === 0) return now;
+    if (steady >= STEADY_POLLS && reconciled && ready(...now) && (await waiting()) === 0) {
+      now.forEach((s, k) => console.log(`verdicts ${what} #${k}: ${md5(s.verdicts)}`));
+      return now;
+    }
     await sleep(POLL_MS);
   }
   throw new Error(`${what}: the server did not settle in ${SETTLE_MS / 1000}s, last seen ${JSON.stringify(names.map(snapshot))}`);
@@ -697,12 +702,138 @@ async function accountReferences(jar, state) {
   check("the read of 6 Nov 2026 raises no note", !/against 2,/.test(shown));
 }
 
+const LEVEL_DAY = Date.parse("2026-11-01T12:00:00Z") / 1000;
+const RXP_STORE = "guid-quill-one";
+const METRIC_OF = { kill: "kills", xp: "xp", run: "runs" };
+const slot = (k, seconds = 0) => LEVEL_DAY + k * 86400 + seconds;
+
+function countSession(name, start, { level = 20, kills = 0, ups = [], quests = [], stays = [] }) {
+  const lines = [
+    [0, "S", "1.15.8", "WARRIOR", "Human", level, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
+    [100, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
+  ];
+  if (stays.length > 0) lines.push([1500, "K", STONETUSK_BOAR]);
+  for (let i = 0; i < kills; i += 1) lines.push([2000 + i * 400, "K", STONETUSK_BOAR]);
+  for (const [seconds, reached] of ups) lines.push([seconds * 1000, "L", reached]);
+  for (const { at, id, xp } of quests) lines.push([at * 1000, "Q", 2, id, xp, 0], [at * 1000 + 1, "X", xp, 100, 1400, "q", id]);
+  for (const [enter, leave] of stays) {
+    lines.push([enter * 1000, "Z", "", 189, "party", 1, "Scarlet Monastery", "Armory"], [leave * 1000, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"]);
+  }
+  lines.push([Math.max(...lines.map(([at]) => at)) + 50, "ES"]);
+  return partsOf(start, lines, {}, name);
+}
+
+const rxpKill = (k, from, to, level, kills) => claimOf({ origin: "rxp", store: RXP_STORE, window: "level", kind: "kill", from: slot(k, from), to: slot(k, to), dims: `level=${level}`, amounts: `kills=${kills}` });
+const rxpQuest = (k, from, to, level, quest, xp) => claimOf({ origin: "rxp", store: RXP_STORE, window: "level", kind: "xp", from: slot(k, from), to: slot(k, to), dims: `level=${level};quest=${quest}`, amounts: `xp=${xp}` });
+const fdjRun = (k, id, from, to, instance = 189) => claimOf({ origin: "fdj", store: `${id}:${slot(k, from)}`, window: "session", kind: "run", from: slot(k, from), to: slot(k, to), dims: `instance=${instance}`, amounts: "runs=1" });
+const turnIns = [{ at: 5, id: 1001, xp: 500 }, { at: 21, id: 1004, xp: 1100 }];
+const levelQuests = (k) => [[1001, 500], [1002, 700], [1003, 900], [1004, 1100]].map(([quest, xp]) => rxpQuest(k, 0, 3600, 30, quest, xp));
+const questVerdicts = ["xp level=30;quest=1001 superseded 0 r2", "xp level=30;quest=1002 counted 700 r2", "xp level=30;quest=1003 counted 900 r2", "xp level=30;quest=1004 superseded 0 r2"];
+function levelCases() {
+  const one = (k, name, spec, claims, expected) => ({ k, name, sessions: spec === null ? [] : countSession(name, slot(k), spec), claims, ...expected });
+  return [
+    one(1, "Quill-Alpha", null, [rxpKill(1, 0, 1800, 10, 120)], { scarlet: { kill: 0 }, total: { kill: 120 }, verdicts: ["kill level=10 counted 120 r3"] }),
+    one(2, "Quill-Bravo", { level: "?", kills: 100 }, [rxpKill(2, 0, 1800, 12, 150)], { scarlet: { kill: 100 }, total: { kill: 150 }, verdicts: ["kill level=12 residual 50 r3"] }),
+    one(3, "Quill-Charlie", { level: 15, kills: 60 }, [rxpKill(3, 0, 1800, 15, 100)], { scarlet: { kill: 60 }, total: { kill: 100 }, verdicts: ["kill level=15 residual 40 r3"] }),
+    one(4, "Quill-Delta", { level: 16, kills: 130 }, [rxpKill(4, 0, 1800, 16, 100)], { scarlet: { kill: 130 }, total: { kill: 130 }, verdicts: ["kill level=16 superseded 0 r3"] }),
+    one(5, "Quill-Echo", null, [rxpKill(5, 7200, 7200, 20, 50), rxpKill(5, 5400, 7200, 21, 70)], { scarlet: { kill: 0 }, total: { kill: 120 }, verdicts: ["kill level=20 counted 50 r3", "kill level=21 counted 70 r3"] }),
+    one(6, "Quill-Foxtrot", null, [rxpKill(6, 0, 1800, 22, 40), rxpKill(6, 3600, 5400, 22, 40)], { scarlet: { kill: 0 }, total: { kill: 40 }, verdicts: ["kill level=22 superseded 0 r5", "kill level=22 counted 40 r3"] }),
+    one(7, "Quill-Golf", { level: 30, ups: [[20, 31]], quests: turnIns }, levelQuests(7), { scarlet: { xp: 1600 }, total: { xp: 3200 }, verdicts: questVerdicts }),
+    one(8, "Quill-Hotel", { level: 30, ups: [[20, 31]], quests: turnIns }, levelQuests(8), { scarlet: { xp: 1600 }, total: { xp: 3200 }, verdicts: questVerdicts, without: ["quests"] }),
+    one(9, "Quill-India", { level: 25, quests: [{ at: 5, id: 9001, xp: 500 }] }, [rxpQuest(9, 0, 1800, 18, 9001, 300), rxpQuest(9, 3600, 5400, 25, 9001, 500)], { scarlet: { xp: 500 }, total: { xp: 800 }, verdicts: ["xp level=18;quest=9001 counted 300 r2", "xp level=25;quest=9001 superseded 0 r2"] }),
+    one(10, "Quill-Juliet", { stays: [[60, 1560]] }, [fdjRun(10, 1, 493, 1558)], { scarlet: { run: 1 }, total: { run: 1 }, verdicts: ["run instance=189 superseded 0 r3"] }),
+    one(11, "Quill-Kilo", { stays: [[60, 1560]] }, [fdjRun(11, 1, 200, 1000, 999)], { scarlet: { run: 1 }, total: { run: 1 }, verdicts: ["run instance=999 superseded 0 r3"] }),
+    one(12, "Quill-Lima", { stays: [[60, 1860], [3360, 6180]] }, [fdjRun(12, 1, 360, 1858), fdjRun(12, 2, 4318, 6178)], { scarlet: { run: 1 }, total: { run: 1 }, verdicts: ["run instance=189 superseded 0 r3", "run instance=189 superseded 0 r3"] }),
+    one(13, "Quill-Mike", null, [fdjRun(13, 1, 360, 1858), fdjRun(13, 2, 4198, 6000)], { scarlet: { run: 0 }, total: { run: 1 }, verdicts: ["run instance=189 counted 1 r3", "run instance=189 superseded 0 r5"] }),
+    one(14, "Quill-Nova", null, [fdjRun(14, 1, 360, 1858), fdjRun(14, 2, 4318, 6178)], { scarlet: { run: 0 }, total: { run: 2 }, verdicts: ["run instance=189 counted 1 r3", "run instance=189 counted 1 r3"] }),
+    one(15, "Quill-Oscar", null, [fdjRun(15, 1, 100, 900)], { scarlet: { run: 0 }, total: { run: 1 }, verdicts: ["run instance=189 counted 1 r3"] }),
+    one(17, "Quill-Papa", { level: 30, ups: [[20, 31]], quests: [{ at: 21, id: "", xp: 900 }] }, [rxpQuest(17, 0, 3600, 30, 2001, 500), rxpQuest(17, 0, 3600, 30, 2002, 900)], { scarlet: { xp: 900 }, total: { xp: 1400 }, verdicts: ["xp level=30;quest=2001 counted 500 r2", "xp level=30;quest=2002 superseded 0 r2"] }),
+  ];
+}
+
+const TWIN_CLAIMS = (k) => [rxpKill(k, 5400, 7200, 40, 50), rxpQuest(k, 5400, 7200, 40, 7001, 300), fdjRun(k, 1, 100, 900)];
+
+function levelTwins() {
+  const k = 16;
+  const pike = { k, name: "Quill-Pike", sessions: [], claims: TWIN_CLAIMS(k), scarlet: { kill: 0, xp: 0, run: 0 }, total: { kill: 0, xp: 0, run: 0 }, verdicts: ["kill level=40 superseded 0 r4", "xp level=40;quest=7001 superseded 0 r4", "run instance=189 superseded 0 r4"] };
+  const quest = {
+    k, name: "Quill-Quest", sessions: countSession("Quill-Quest", slot(k), { level: 40, kills: 19, quests: [{ at: 5, id: 7001, xp: 300 }], stays: [[50, 950]] }), claims: TWIN_CLAIMS(k),
+    scarlet: { kill: 20, xp: 300, run: 1 }, total: { kill: 50, xp: 300, run: 1 }, verdicts: ["kill level=40 residual 30 r3", "xp level=40;quest=7001 superseded 0 r2", "run instance=189 superseded 0 r3"],
+  };
+  return [pike, quest];
+}
+
+function tallyOf(name, kind) {
+  const scarlet = {
+    kill: `(select count(*) from kills where ${own(name)} and not player)`,
+    xp: `greatest((select coalesce(sum(xp), 0) from quest_events where ${own(name)} and event = 'turned_in'), (select coalesce(sum(amount), 0) from xp_gains where ${own(name)} and source = 'q'))`,
+    run: `(select count(*) from dungeon_runs where ${own(name)} and not continues_previous)`,
+  }[kind];
+  const added = `(select coalesce(sum((c.counted ->> '${METRIC_OF[kind]}')::numeric), 0) from addon_claims c where c.${own(name)} and c.kind = '${kind}' and c.status in ('counted', 'residual'))`;
+  const [held, counted] = db(`select ${scarlet}, ${added}`).split("|").map(Number);
+  return { scarlet: held, counted, total: held + counted };
+}
+
+function verdictsOf(name) {
+  return JSON.parse(db(`
+    select coalesce(json_agg(t.v), '[]'::json) from (
+      select c.kind || ' ' || coalesce((select string_agg(d.key || '=' || (d.value #>> '{}'), ';' order by d.key) from jsonb_each(c.dims) d), '') || ' ' || c.status || ' '
+        || coalesce(c.counted ->> (case c.kind when 'kill' then 'kills' when 'xp' then 'xp' else 'runs' end), '-') || ' r' || coalesce(c.evidence ->> 'rule', '?') as v
+      from addon_claims c where c.${own(name)}) t`)).sort();
+}
+
+async function levelsProved(cases) {
+  const held = (c) => Object.entries(c.scarlet).every(([kind, rows]) => tallyOf(c.name, kind).scarlet === rows);
+  for (const c of cases) {
+    const without = c.without ?? [];
+    const parts = [...c.sessions.filter((p) => !without.includes(p.group)), ...countsPartsOf(c.claims, c.name)];
+    await upload(known(parts), c.name);
+  }
+  const states = await settle(cases.map((c) => c.name), (...now) => now.every((s, i) => s.claims === cases[i].claims.length && held(cases[i])), "the level, quest and run cases").catch((error) => {
+    const rows = cases.map((c) => [c.name, c.scarlet, Object.fromEntries(Object.keys(c.scarlet).map((kind) => [kind, tallyOf(c.name, kind).scarlet]))]).filter(([, want, got]) => JSON.stringify(want) !== JSON.stringify(got));
+    throw new Error(`${error.message.slice(0, 80)} Scarlet rows that differ from the case (name, wanted, held): ${JSON.stringify(rows)}`);
+  });
+  cases.forEach((c, i) => {
+    const claimed = states[i].claims;
+    const totals = Object.fromEntries(Object.keys(c.total).map((kind) => [kind, tallyOf(c.name, kind).total]));
+    const verdicts = verdictsOf(c.name);
+    check(`${c.name}: ${Object.entries(c.total).map(([kind, n]) => `${n} ${METRIC_OF[kind]}`).join(", ")} in all, from Scarlet's ${Object.entries(c.scarlet).map(([kind, n]) => `${n}`).join(", ")}`, JSON.stringify(totals) === JSON.stringify(c.total), `${JSON.stringify(totals)} against ${JSON.stringify(c.total)}`);
+    check(`${c.name}: ${claimed} claims decided as ${c.verdicts.join(", ")}`, JSON.stringify(verdicts) === JSON.stringify([...c.verdicts].sort()), JSON.stringify(verdicts));
+  });
+  return states;
+}
+
+async function levels() {
+  await fresh(client, second);
+  const twins = levelTwins();
+  const cases = [...levelCases(), ...twins];
+  await levelsProved(cases);
+  const audited = artisan("addons:audit");
+  console.log(audited.stdout.split("\n").filter((line) => /^Quill-(Alpha|Echo|Golf|Hotel|India|Lima|Mike|Quest) (kill|xp|run)$/.test(line)).join("\n"));
+  check("addons:audit passes with every kill, quest and run case held at once", audited.status === 0, audited.stdout + audited.stderr);
+  check("the twins' claims: the character with no rows is superseded by rule 4 and names the one that holds them", claimCount("Quill-Pike", "c.status = 'superseded' and c.evidence ->> 'rule' = '4' and c.evidence #>> '{with,character}' = 'Quill-Quest'") === 3);
+  const before = cases.map((c) => snapshot(c.name).hash);
+  db(`update addon_claims set status = null, counted = null, evidence = null, ruleset_id = null, counted_ok = null, level = null, zone_id = null, reconcile_version = null where character_id in (select id from characters where name like 'Quill-%')`);
+  const rerun = artisan("addons:reconcile");
+  const after = cases.map((c) => snapshot(c.name).hash);
+  check("reconcile from blank columns decides every kill, quest and run claim again to the same hash", rerun.status === 0 && JSON.stringify(after) === JSON.stringify(before), `${rerun.stdout}${rerun.stderr}`);
+  const twice = artisan("addons:reconcile");
+  check("reconcile twice changes nothing: 0 claims changed for every character", twice.status === 0 && !/: [1-9]\d* claims changed/.test(twice.stdout), twice.stdout);
+  const last = artisan("addons:audit");
+  check("addons:audit passes after the claims were decided again", last.status === 0, last.stdout + last.stderr);
+}
+
 async function main() {
   for (const app of [client, second]) {
     const registered = await app.register();
     if (registered.status !== 200 && registered.status !== 201) expectStatus(registered, 201, "POST /installs");
   }
   await fresh(client, second);
+  if (process.argv[2] === "levels") {
+    await levels();
+    await fresh(client, second);
+    return;
+  }
   console.log(`fixture: ${scarlet.length} Scarlet trips in ${scarlet.flatMap((s) => s.parts).length} parts, ${COUNTS.length} counts parts, ${ALL.length} in all`);
 
   await upload(ALL);
@@ -810,6 +941,7 @@ async function main() {
   await linked();
   await addonOnly();
   await gatheredAndReturned();
+  await levels();
 
   await fresh(client, second);
 }

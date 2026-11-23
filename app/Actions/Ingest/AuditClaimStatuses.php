@@ -22,10 +22,11 @@ class AuditClaimStatuses
      * The checks of docs/DESIGN.md, Addon counts, Checks, that read what reconcile stored, as SQL over the stored
      * columns and never by running reconcile again: 1 every claim has a status and its amounts are its counted amounts
      * plus its stored difference, 2 counted stays between 0 and claimed and is 0 where the status says so, 3 a
-     * superseded or residual claim names its evidence, 4 no Scarlet row is assigned to two claims of one origin, 5 no
-     * two counted or residual dated claims of a character overlap (but a residual of rule 5 may overlap the claims
+     * superseded or residual claim names its evidence, 4 no Scarlet row is assigned to two fishing claims of one
+     * origin (`AuditCountClaims` holds it for the other kinds), 5 no two counted or residual dated claims of a
+     * character overlap, one origin's within equal dimensions (but a residual of rule 5 may overlap the claims
      * above it), and 11 no dated claim counts on two characters of
-     * one account, nor on the one with fewer Scarlet rows beside it than the other (rule 4). With no
+     * one account, nor on the one with fewer Scarlet fishing rows beside it than the other (rule 4). With no
      * character, every character is checked.
      *
      * @return list<string> one line per violation
@@ -158,7 +159,7 @@ class AuditClaimStatuses
             where a.status in (?, ?) and b.status in (?, ?) and a.window in (?, ?, ?) and b.window in (?, ?, ?)
                 and (?::bigint is null or a.character_id = ?)
                 and (
-                    (a.origin = b.origin and (a.to_at = b.to_at or (coalesce(a.from_at, a.to_at) < b.to_at and coalesce(b.from_at, b.to_at) < a.to_at)))
+                    (a.origin = b.origin and a.dims = b.dims and (a.to_at = b.to_at or (coalesce(a.from_at, a.to_at) < b.to_at and coalesce(b.from_at, b.to_at) < a.to_at)))
                     or (a.origin <> b.origin and least(a.to_at, b.to_at) - greatest(coalesce(a.from_at, a.to_at), coalesce(b.from_at, b.to_at)) > ?
                         and not (a.status = ? and a.evidence ->> 'rule' = '5') and not (b.status = ? and b.evidence ->> 'rule' = '5'))
                 )
