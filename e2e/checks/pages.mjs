@@ -80,7 +80,7 @@ export async function oldAddressesRedirect(ctx) {
   for (const [from, to] of moved) {
     const answer = await ctx.http.request(from, { redirect: "manual", headers: { Accept: "text/html" } });
     const location = answer.headers.get("location");
-    const path = location === null ? null : location.replace(/^https?:\/\/[^/]+/, "");
+    const path = location === null ? null : location.replace(/^https?:\/\/[^/]+/, "") || "/";
     const ok = to instanceof RegExp ? path !== null && to.test(path) : path === to;
     if (answer.status !== 301 || !ok) problems.push(`${from}: expected 301 to ${to}, saw ${answer.status} ${location}`);
   }

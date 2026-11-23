@@ -17,8 +17,13 @@ class LegacyRedirectController extends Controller
     public function __invoke(Request $request): RedirectResponse
     {
         $route = $request->route();
-        $defaults = $route instanceof Route ? $route->defaults : [];
-        $parameters = array_map(fn (mixed $value): string => (string) $value, $route instanceof Route ? $route->parameters() : []);
+        abort_unless($route instanceof Route, 404);
+        $defaults = $route->defaults;
+        $parameters = [];
+        foreach ($route->parameterNames() as $name) {
+            $value = $route->parameter($name);
+            $parameters[$name] = is_string($value) ? $value : '';
+        }
         $fill = function (string $text, bool $encode) use ($parameters): string {
             foreach ($parameters as $key => $value) {
                 $text = str_replace('{'.$key.'}', $encode ? rawurlencode($value) : $value, $text);
