@@ -4,13 +4,13 @@ namespace App\Jobs;
 
 use App\Actions\Ingest\DecodeSession;
 use App\Contracts\BoundedJob;
+use App\Support\Database\Conflict;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Cache;
-use App\Support\Database\Conflict;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
