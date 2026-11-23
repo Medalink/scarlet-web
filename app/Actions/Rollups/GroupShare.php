@@ -4,27 +4,20 @@ namespace App\Actions\Rollups;
 
 use App\Support\GroupLootKind;
 use App\Support\LootRule;
-use App\Support\LootSourceKind;
-use App\Support\LootVia;
 use App\Support\RateEstimate;
-use App\Support\RollOutcome;
 use App\Support\RollupRead;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class GroupShare
 {
-    private const int RECEIPT_BEFORE_ROLL_ROW_SECONDS = 5;
-
-    private const int RECEIPT_AFTER_ROLL_ROW_SECONDS = 90;
-
     public function __construct(private readonly RollupRead $read) {}
 
     /**
      * Your share of group loot (docs/LOOT.md, Metrics: Share of group loot): under each rule that owes every member an
      * equal share and at each group size of 2 or more, the items the uploaders received while grouped under the rule
      * that were looted (a receipt whose source window is a corpse or an object, which includes a skin read, or a receipt
-     * that an own roll won, since a roll win lands after the window closed) against every item their group mates received
+     * that an own roll won, since a roll win lands after the window closed; the days of them are in
+     * `group_share_receipts`, `GroupShareReceipts`) against every item their group mates received
      * by the rule, a roll win or a master looter's pick (`group_loot`, kind looted; an item the client pushed to a mate is
      * left out). A quest reward, a created item and an item the client pushed to the uploader have neither a source nor a
      * roll and are left out of "yours". It needs no dedupe: both sides are one uploader's view of its own group, so pooling
@@ -35,16 +28,9 @@ class GroupShare
      */
     public function handle(): array
     {
-        $yours = $this->read->rows(DB::table('loot_drops as d')
-            ->where('d.counted', true)->where('d.via', LootVia::Receipt->value)->where('d.group_size', '>=', 2)->whereIn('d.loot_rule', LootRule::equalShare())
-            ->where(fn (Builder $looted): Builder => $looted
-                ->whereIn('d.source_kind', [LootSourceKind::Creature->value, LootSourceKind::Object->value])
-                ->orWhereExists(fn (Builder $won): Builder => $won->selectRaw('1')->from('loot_rolls as r')
-                    ->whereColumn('r.character_id', 'd.character_id')->whereColumn('r.session_start', 'd.session_start')->whereColumn('r.item_id', 'd.item_id')
-                    ->where('r.counted', true)->where('r.mine', true)->where('r.outcome', RollOutcome::Won->value)
-                    ->whereRaw('r.at between d.at - make_interval(secs => ?) and d.at + make_interval(secs => ?)', [self::RECEIPT_AFTER_ROLL_ROW_SECONDS, self::RECEIPT_BEFORE_ROLL_ROW_SECONDS])))
-            ->selectRaw('d.loot_rule, d.group_size, count(*) as received')->groupBy('d.loot_rule', 'd.group_size')
-            ->havingRaw('count(distinct d.character_id) >= ?', [$this->read->threshold(null)]));
+        $yours = $this->read->rows(DB::table('group_share_receipts')
+            ->selectRaw('loot_rule, group_size, sum(receipts) as received')->groupBy('loot_rule', 'group_size')
+            ->havingRaw('count(distinct character_id) >= ?', [$this->read->threshold(null)]));
         $others = $this->read->rows(DB::table('group_loot')
             ->where('counted', true)->where('kind', GroupLootKind::Looted->value)->whereIn('loot_rule', LootRule::equalShare())->where('group_size', '>=', 2)
             ->selectRaw('loot_rule, group_size, count(*) as received')->groupBy('loot_rule', 'group_size')
