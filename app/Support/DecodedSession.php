@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use RuntimeException;
+
 /**
  * What `scarlet-part decode` wrote for one session (docs/ROWS.md): fact rows per table, the dictionaries, the recipes and spells,
  * the talent layouts, the pseudonyms and the session's own summary row.
@@ -44,30 +46,48 @@ final class DecodedSession
         return new self;
     }
 
-    public static function parse(string $ndjson): self
+    /**
+     * Read the decoder's output file a line at a time: the file, not a copy of it, is what the
+     * worker holds.
+     */
+    public static function parseFile(string $file): self
     {
-        $decoded = new self;
-        foreach (explode("\n", $ndjson) as $line) {
-            if ($line === '') {
-                continue;
+        $handle = fopen($file, 'rb');
+        if ($handle === false) {
+            throw new RuntimeException("cannot read {$file}");
+        }
+        try {
+            $decoded = new self;
+            while (($line = fgets($handle)) !== false) {
+                $line = rtrim($line, "\r\n");
+                if ($line === '') {
+                    continue;
+                }
+                $decoded->add($line);
             }
-            /** @var array<string, mixed> $row */
-            $row = json_decode($line, associative: true, flags: JSON_THROW_ON_ERROR);
-            $table = (string) ($row['t'] ?? '');
-            match ($table) {
-                'names' => $decoded->names[] = $row,
-                'items' => $decoded->items[] = $row,
-                'recipes' => $decoded->recipes[] = $row,
-                'spells' => $decoded->spells[] = $row,
-                'zones' => $decoded->zones[] = $row,
-                'pn' => $decoded->pseudonyms[] = $row,
-                'talent_trees' => $decoded->talentTrees[] = $row,
-                'talent_nodes' => $decoded->talentNodes[] = $row,
-                'sessions' => $decoded->summary = $row,
-                default => FactTable::tryFrom($table) !== null ? $decoded->facts[$table][] = $row : null,
-            };
+        } finally {
+            fclose($handle);
         }
 
         return $decoded;
+    }
+
+    private function add(string $line): void
+    {
+        /** @var array<string, mixed> $row */
+        $row = json_decode($line, associative: true, flags: JSON_THROW_ON_ERROR);
+        $table = (string) ($row['t'] ?? '');
+        match ($table) {
+            'names' => $this->names[] = $row,
+            'items' => $this->items[] = $row,
+            'recipes' => $this->recipes[] = $row,
+            'spells' => $this->spells[] = $row,
+            'zones' => $this->zones[] = $row,
+            'pn' => $this->pseudonyms[] = $row,
+            'talent_trees' => $this->talentTrees[] = $row,
+            'talent_nodes' => $this->talentNodes[] = $row,
+            'sessions' => $this->summary = $row,
+            default => FactTable::tryFrom($table) !== null ? $this->facts[$table][] = $row : null,
+        };
     }
 }

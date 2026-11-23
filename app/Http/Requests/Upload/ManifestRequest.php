@@ -25,7 +25,17 @@ class ManifestRequest extends UploadRequest
             throw ApiException::unsupportedType(self::CONTENT_TYPE);
         }
 
-        $data = json_decode($tool->inflate($this->getContent()), associative: true);
+        $raw = $tool->inflate($this->getContent());
+        $maxBytes = (int) config('scarlet.upload.max_manifest_bytes');
+        if (strlen($raw) > $maxBytes) {
+            throw ApiException::invalidRequest("The manifest is larger than {$maxBytes} bytes inflated.");
+        }
+        $maxValues = (int) config('scarlet.upload.max_manifest_values');
+        if (preg_match_all('/[{\[",:0-9]/', $raw) > $maxValues) {
+            throw ApiException::invalidRequest("The manifest carries more than {$maxValues} JSON values.");
+        }
+
+        $data = json_decode($raw, associative: true);
         if (! is_array($data)) {
             throw ApiException::invalidRequest('The manifest is not a JSON object.');
         }
@@ -53,6 +63,10 @@ class ManifestRequest extends UploadRequest
         }
 
         $entries = [];
+        $perSession = [];
+        $bytesPerSession = [];
+        $maxParts = (int) config('scarlet.ingest.max_parts_per_session');
+        $maxBytes = (int) config('scarlet.ingest.max_session_bytes');
         foreach ($parts as $index => $part) {
             if (! is_array($part)
                 || ! is_string($part['id'] ?? null) || preg_match('/^[0-9a-f]{64}$/', $part['id']) !== 1
@@ -61,6 +75,11 @@ class ManifestRequest extends UploadRequest
                 || ! is_int($part['lines'] ?? null) || $part['lines'] < 0
                 || ! is_int($part['raw_bytes'] ?? null) || $part['raw_bytes'] < 0) {
                 throw ApiException::invalidRequest("parts[{$index}] needs id (64 lower-case hex), session, group, lines and raw_bytes.", ['parts.'.$index => ['Not a part.']]);
+            }
+            $perSession[$part['session']] = ($perSession[$part['session']] ?? 0) + 1;
+            $bytesPerSession[$part['session']] = ($bytesPerSession[$part['session']] ?? 0) + $part['raw_bytes'];
+            if ($perSession[$part['session']] > $maxParts || $bytesPerSession[$part['session']] > $maxBytes) {
+                throw ApiException::sessionTooLarge('manifest parts', $maxParts);
             }
             $entries[$part['id']] = ['id' => $part['id'], 'session' => $part['session'], 'group' => $part['group'], 'lines' => $part['lines'], 'raw_bytes' => $part['raw_bytes']];
         }
