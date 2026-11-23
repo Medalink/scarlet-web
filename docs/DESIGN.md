@@ -322,9 +322,11 @@ The order of the work is fixed, and each step sees only the claims the steps bef
 1. Claims that fail their bounds are `rejected`; account-scope claims are `reference`; a kind with no row source
    (`fishing`, `kill`, `xp` and `run` have one), an origin outside the kind's rank list (fishing: `fl`, `ff`; `kill` and
    `xp`: `rxp`; `run`: `fdj`), a metric the kind does not know (`kills`; `xp`; `runs`) and, for the kinds with a
-   shape, a window or dimension keys other than it reads or a dimension that is not a whole number written plainly
-   (`kill`: window `level`, dim `level`; `xp`: window `level`, dims `level` and `quest`; `run`: window `session`, dim
-   `instance`) are `held` with the rule `unmapped`.
+   shape, a window or dimension keys other than it reads or a dimension that is not a whole number from 1 to
+   2,147,483,647 written plainly (`kill`: window `level`, dim `level`; `xp`: window `level`, dims `level` and `quest`;
+   `run`: window `session`, dim `instance`) are `held` with the rule `unmapped`. A `level` is inside 1 to 100 by then,
+   since the bounds run first, and the read of Scarlet's rows leaves out a dimension above 2,147,483,647, which the
+   database cannot bind as an integer.
 2. A character-scope `life` claim is `held` (rule 6).
 3. A claim equal to one of another linked character is `superseded` (rule 4) unless its character is the one that
    counts it: the one with Scarlet rows beside the claim, else the lowest id.

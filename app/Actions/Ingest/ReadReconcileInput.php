@@ -23,6 +23,9 @@ class ReadReconcileInput
 
     private const string SCOPE_CHARACTER = 'c';
 
+    /** The largest whole number a dimension can hold and still bind as an `integer`; the rule holds a larger one as `unmapped`. */
+    private const int LARGEST_DIMENSION = 2_147_483_647;
+
     /**
      * The JSON `scarlet-part reconcile` reads for one character and kind: the character's claims of the kind, the
      * claims of the characters in `$siblingIds` (rule 4) with the times of the rows each holds beside its claims, and
@@ -152,7 +155,7 @@ class ReadReconcileInput
         $values = [];
         foreach ($claims as $claim) {
             $value = ((array) $claim['dims'])[$key] ?? null;
-            if (is_string($value) && ctype_digit($value) && (string) (int) $value === $value) {
+            if (is_string($value) && ctype_digit($value) && (string) (int) $value === $value && (int) $value <= self::LARGEST_DIMENSION) {
                 $values[(int) $value] = (int) $value;
             }
         }

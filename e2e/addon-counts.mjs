@@ -285,8 +285,8 @@ async function waiting() {
   return total;
 }
 
-async function settle(names, ready, what) {
-  const deadline = Date.now() + SETTLE_MS;
+async function settle(names, ready, what, limit = SETTLE_MS) {
+  const deadline = Date.now() + limit;
   let last = null;
   let steady = 0;
   while (Date.now() < deadline) {
@@ -301,7 +301,7 @@ async function settle(names, ready, what) {
     }
     await sleep(POLL_MS);
   }
-  throw new Error(`${what}: the server did not settle in ${SETTLE_MS / 1000}s, last seen ${JSON.stringify(names.map(snapshot))}`);
+  throw new Error(`${what}: the server did not settle in ${limit / 1000}s, last seen ${JSON.stringify(names.map(snapshot))}`);
 }
 
 const settleOne = async (name, ready, what) => (await settle([name], ready, what))[0];
@@ -702,7 +702,7 @@ async function accountReferences(jar, state) {
   check("the read of 6 Nov 2026 raises no note", !/against 2,/.test(shown));
 }
 
-const LEVEL_DAY = Date.parse("2026-11-01T12:00:00Z") / 1000;
+const LEVEL_DAY = Date.parse("2026-10-01T12:00:00Z") / 1000;
 const RXP_STORE = "guid-quill-one";
 const METRIC_OF = { kill: "kills", xp: "xp", run: "runs" };
 const slot = (k, seconds = 0) => LEVEL_DAY + k * 86400 + seconds;
@@ -716,8 +716,9 @@ function countSession(name, start, { level = 20, kills = 0, ups = [], quests = [
   for (let i = 0; i < kills; i += 1) lines.push([2000 + i * 400, "K", STONETUSK_BOAR]);
   for (const [seconds, reached] of ups) lines.push([seconds * 1000, "L", reached]);
   for (const { at, id, xp } of quests) lines.push([at * 1000, "Q", 2, id, xp, 0], [at * 1000 + 1, "X", xp, 100, 1400, "q", id]);
-  for (const [enter, leave] of stays) {
-    lines.push([enter * 1000, "Z", "", 189, "party", 1, "Scarlet Monastery", "Armory"], [leave * 1000, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"]);
+  for (const [enter, leave, instance = 189] of stays) {
+    lines.push([enter * 1000, "Z", "", instance, "party", 1, "Scarlet Monastery", "Armory"]);
+    if (leave !== null) lines.push([leave * 1000, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"]);
   }
   lines.push([Math.max(...lines.map(([at]) => at)) + 50, "ES"]);
   return partsOf(start, lines, {}, name);
@@ -748,7 +749,31 @@ function levelCases() {
     one(14, "Quill-Nova", null, [fdjRun(14, 1, 360, 1858), fdjRun(14, 2, 4318, 6178)], { scarlet: { run: 0 }, total: { run: 2 }, verdicts: ["run instance=189 counted 1 r3", "run instance=189 counted 1 r3"] }),
     one(15, "Quill-Oscar", null, [fdjRun(15, 1, 100, 900)], { scarlet: { run: 0 }, total: { run: 1 }, verdicts: ["run instance=189 counted 1 r3"] }),
     one(17, "Quill-Papa", { level: 30, ups: [[20, 31]], quests: [{ at: 21, id: "", xp: 900 }] }, [rxpQuest(17, 0, 3600, 30, 2001, 500), rxpQuest(17, 0, 3600, 30, 2002, 900)], { scarlet: { xp: 900 }, total: { xp: 1400 }, verdicts: ["xp level=30;quest=2001 counted 500 r2", "xp level=30;quest=2002 superseded 0 r2"] }),
+    one(22, "Quill-Tango", { stays: [[60, 560]] }, [fdjRun(22, 1, 2000, 2400, 3000000000)], { scarlet: { run: 1 }, total: { run: 1 }, verdicts: ["run instance=3000000000 held 0 runmapped"] }),
   ];
+}
+
+const SIERRA = "Quill-Sierra";
+
+async function oversizedDims() {
+  const k = 21;
+  const claims = [
+    rxpKill(k, 0, 1800, 10, 30),
+    rxpKill(k, 0, 1800, 3000000000, 5),
+    rxpQuest(k, 0, 1800, 10, 3000000000, 400),
+    claimOf({ from: slot(k, 0), to: slot(k, 600), amounts: "casts=10;landed=8;items=8" }),
+  ];
+  const verdicts = ["fishing  counted - r3", "kill level=10 counted 30 r3", "kill level=3000000000 rejected 0 rbounds", "xp level=10;quest=3000000000 held 0 runmapped"];
+  const what = `${SIERRA}: a level, a quest and an instance above 2,147,483,647 beside a good claim`;
+  await upload(known(countsPartsOf(claims, SIERRA)), SIERRA, second);
+  const state = await settle([SIERRA], (s) => s.claims === claims.length, what, 20_000).then(([s]) => s, (error) => {
+    check(`${what}: every claim is decided and the character's days carry the reconcile version`, false, error.message);
+    return null;
+  });
+  if (state === null) return;
+  const totals = { kill: tallyOf(SIERRA, "kill").total, xp: tallyOf(SIERRA, "xp").total };
+  check(`${what}: 30 kills, 0 xp and the fishing claim's ${sum(state.counted)}`, JSON.stringify(totals) === JSON.stringify({ kill: 30, xp: 0 }) && sum(state.counted) === "10/8/8", `${JSON.stringify(totals)} and ${sum(state.counted)}`);
+  check(`${what}: ${claims.length} claims decided as ${verdicts.join(", ")}`, JSON.stringify(verdictsOf(SIERRA)) === JSON.stringify(verdicts), JSON.stringify(verdictsOf(SIERRA)));
 }
 
 const TWIN_CLAIMS = (k) => [rxpKill(k, 5400, 7200, 40, 50), rxpQuest(k, 5400, 7200, 40, 7001, 300), fdjRun(k, 1, 100, 900)];
@@ -808,14 +833,16 @@ async function levels() {
   const twins = levelTwins();
   const cases = [...levelCases(), ...twins];
   await levelsProved(cases);
+  await oversizedDims();
   const audited = artisan("addons:audit");
   console.log(audited.stdout.split("\n").filter((line) => /^Quill-(Alpha|Echo|Golf|Hotel|India|Lima|Mike|Quest) (kill|xp|run)$/.test(line)).join("\n"));
   check("addons:audit passes with every kill, quest and run case held at once", audited.status === 0, audited.stdout + audited.stderr);
   check("the twins' claims: the character with no rows is superseded by rule 4 and names the one that holds them", claimCount("Quill-Pike", "c.status = 'superseded' and c.evidence ->> 'rule' = '4' and c.evidence #>> '{with,character}' = 'Quill-Quest'") === 3);
-  const before = cases.map((c) => snapshot(c.name).hash);
+  const names = [...cases.map((c) => c.name), SIERRA];
+  const before = names.map((name) => snapshot(name).hash);
   db(`update addon_claims set status = null, counted = null, evidence = null, ruleset_id = null, counted_ok = null, level = null, zone_id = null, reconcile_version = null where character_id in (select id from characters where name like 'Quill-%')`);
   const rerun = artisan("addons:reconcile");
-  const after = cases.map((c) => snapshot(c.name).hash);
+  const after = names.map((name) => snapshot(name).hash);
   check("reconcile from blank columns decides every kill, quest and run claim again to the same hash", rerun.status === 0 && JSON.stringify(after) === JSON.stringify(before), `${rerun.stdout}${rerun.stderr}`);
   const twice = artisan("addons:reconcile");
   check("reconcile twice changes nothing: 0 claims changed for every character", twice.status === 0 && !/: [1-9]\d* claims changed/.test(twice.stdout), twice.stdout);

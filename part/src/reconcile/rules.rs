@@ -29,6 +29,7 @@ const LEVEL: &str = "level";
 const QUEST: &str = "quest";
 const INSTANCE: &str = "instance";
 const LEVELS: RangeInclusive<i64> = 1..=100;
+const IDS: RangeInclusive<i64> = 1..=2_147_483_647;
 const MAX_KILLS: i64 = 100_000;
 const MAX_QUEST_XP: i64 = 1_000_000;
 pub(super) const RUN_BEFORE_MS: i64 = 600_000;
@@ -151,8 +152,12 @@ pub(super) fn unmapped(c: &Claim) -> Option<&'static str> {
     {
         return Some("the dimensions are not the ones the rule reads");
     }
-    if shape.dims.iter().any(|key| dim_int(c, key).is_none()) {
-        return Some("a dimension the rule reads is not a whole number");
+    if shape
+        .dims
+        .iter()
+        .any(|key| dim_int(c, key).is_none_or(|n| !IDS.contains(&n)))
+    {
+        return Some("a dimension the rule reads is not a whole number from 1 to 2,147,483,647");
     }
     None
 }
