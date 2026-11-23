@@ -7,17 +7,17 @@ use Illuminate\Support\Carbon;
 /**
  * An AHledger price table (`GET /v1/pricetable/{market}`): a header `AHL1|<market slug>|<scan unix time>|<rows>`, then
  * one row per item, `item:median:minBuyout:quantity:median7d:median30d:range30Low:range30High:soldPerDayTimesTen`, in
- * copper. The units sold a day are empty until a market has enough hours of scans. A table of another version, another
- * market or a row count that does not match its header reads as null, so a change of format stores nothing rather
- * than half a scan.
+ * copper. The units sold a day are empty until a market has enough hours of scans, and the 7 and 30 day medians and
+ * range are empty for an item first listed in the latest scan. A table of another version, another market or a row
+ * count that does not match its header reads as null, so a change of format stores nothing rather than half a scan.
  */
 final readonly class PriceTable
 {
     private const string VERSION = 'AHL1';
 
-    private const string ROW = '/^\d+(:\d+){7}:\d*$/';
+    private const string ROW = '/^\d+(:\d+){3}(:\d*){5}$/';
 
-    /** @param  list<array{item_id: int, median: int, min_buyout: int, quantity: int, median_7d: int, median_30d: int, sold_x10: int|null}>  $rows */
+    /** @param  list<array{item_id: int, median: int, min_buyout: int, quantity: int, median_7d: int|null, median_30d: int|null, sold_x10: int|null}>  $rows */
     private function __construct(public Carbon $scannedAt, public array $rows) {}
 
     public static function parse(string $body, string $slug): ?self
@@ -38,8 +38,8 @@ final readonly class PriceTable
                 'median' => (int) $f[1],
                 'min_buyout' => (int) $f[2],
                 'quantity' => (int) $f[3],
-                'median_7d' => (int) $f[4],
-                'median_30d' => (int) $f[5],
+                'median_7d' => $f[4] === '' ? null : (int) $f[4],
+                'median_30d' => $f[5] === '' ? null : (int) $f[5],
                 'sold_x10' => $f[8] === '' ? null : (int) $f[8],
             ];
         }

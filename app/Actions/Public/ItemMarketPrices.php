@@ -15,7 +15,7 @@ class ItemMarketPrices
      * of each market in the last week, ordered by market id, so by ruleset and then faction. Raw select: `distinct on`
      * has no builder method.
      *
-     * @return list<array{market: string, label: string, scanned_at: string, median: int, min_buyout: int, low: int, quantity: int, median_7d: int, median_30d: int, sold_per_day: float|null}>
+     * @return list<array{market: string, label: string, scanned_at: string, median: int, min_buyout: int, low: int, quantity: int, median_7d: int|null, median_30d: int|null, sold_per_day: float|null}>
      */
     public function handle(int $itemId): array
     {
@@ -37,8 +37,8 @@ class ItemMarketPrices
             'min_buyout' => (int) $row->min_buyout,
             'low' => (int) $row->low,
             'quantity' => (int) $row->quantity,
-            'median_7d' => (int) $row->median_7d,
-            'median_30d' => (int) $row->median_30d,
+            'median_7d' => $row->median_7d === null ? null : (int) $row->median_7d,
+            'median_30d' => $row->median_30d === null ? null : (int) $row->median_30d,
             'sold_per_day' => $row->sold_x10 === null ? null : (int) $row->sold_x10 / 10,
         ], $rows->all()));
     }

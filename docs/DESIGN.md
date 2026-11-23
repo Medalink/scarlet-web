@@ -166,7 +166,8 @@ market and scan time beside each price.
   market's scan time are written in one transaction.
 - `market_price_days` (hypertable on `day`) holds one row per market, item and UTC day. Each newer scan of the day
   replaces the row's latest figures (`min_buyout`, `median`, 7 and 30 day medians, `quantity`, `scanned_at` and
-  `sold_x10`, the estimated units sold a day times ten, null until AHledger has enough hours of a market's scans) and
+  `sold_x10`, the estimated units sold a day times ten, null until AHledger has enough hours of a market's scans; the
+  7 and 30 day medians are null for an item first listed in the latest scan) and
   keeps `low`, the lowest minimum buyout of the day. Single scans are not kept, since the table already carries the 7
   and 30 day medians. About 6,800 items a market, so 8 US markets add about 20 million rows a year.
 - A market is a ruleset (`normal`, `pvp`, `rp`, `rppvp`), a faction and a region. Hardcore has no market.
