@@ -15,11 +15,12 @@ use App\Support\ClassPage\Unit;
 use App\Support\ClassRows\ClassRows;
 use App\Support\ClassRows\FlowDirection;
 use App\Support\ClassRows\Meter;
+use App\Support\ClassRows\SpellTotals;
 use App\Support\ClassRows\StateTotals;
 use App\Support\ClassRows\Tally;
 use App\Support\StateKind;
 
-/** The modules of the warlock talents the latest build holds: Nightfall, Shadowburn and Siphon Life. */
+/** The modules of the warlock talents the latest build holds: Nightfall, Shadowburn, Siphon Life, Fel Domination, Demonic Sacrifice, Soul Link and Conflagrate. */
 final readonly class Talents
 {
     public function __construct(private ClassRows $rows, private Spells $spells, private Shards $shards) {}
@@ -33,6 +34,10 @@ final readonly class Talents
                 'Nightfall' => $this->nightfall(),
                 'Shadowburn' => $this->shadowburn(),
                 'Siphon Life' => $this->siphon(),
+                'Fel Domination' => $this->cast($this->spells->felDomination),
+                'Demonic Sacrifice' => $this->cast($this->spells->sacrifice),
+                'Soul Link' => $this->link(),
+                'Conflagrate' => $this->cast($this->spells->conflagrate),
                 default => null,
             };
             if ($blocks === null) {
@@ -108,6 +113,45 @@ final readonly class Talents
         return [
             'blocks' => [new Pair($cells)],
             'note' => count($cells) === 1 ? null : 'The meter lists the five largest spells of each fight, so these shares count the fights where it listed Siphon Life.',
+        ];
+    }
+
+    /** @return array{blocks: list<Block>, note: string|null} */
+    private function cast(SpellTotals $spell): array
+    {
+        $hours = $this->rows->playedMs() / 3_600_000;
+        $share = $spell->casts === 0 ? 0 : min(100, $spell->fightCasts / $spell->casts * 100);
+
+        return [
+            'blocks' => [
+                new Pair([
+                    new PairRow('Casts', $spell->casts),
+                    new PairRow('In a fight', $share, Unit::Percent),
+                    new PairRow('Hours between casts', $spell->casts === 0 ? 0 : $hours / $spell->casts, Unit::Decimal),
+                ]),
+                self::split($share, 'Cast in a fight', 'Cast out of a fight'),
+            ],
+            'note' => null,
+        ];
+    }
+
+    /** @return array{blocks: list<Block>, note: string|null} */
+    private function link(): array
+    {
+        $up = $this->rows->states()->sum(StateKind::OwnBuff, 'Soul Link');
+        $played = $this->rows->playedMs();
+        $share = $played === 0 ? 0 : min(100, $up->ms / $played * 100);
+
+        return [
+            'blocks' => [
+                new Pair([
+                    new PairRow('Casts', $this->spells->soulLink->casts),
+                    new PairRow('Hours up', $up->hours(), Unit::Hours),
+                    new PairRow('Of played time', $share, Unit::Percent),
+                ]),
+                self::split($share, 'Played with the link up', 'Without'),
+            ],
+            'note' => null,
         ];
     }
 

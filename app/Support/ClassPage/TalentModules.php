@@ -23,7 +23,7 @@ final class TalentModules
         PlayerClass::Priest->value => ['Inner Focus', 'Spirit of Redemption', 'Lightwell'],
         PlayerClass::Shaman->value => ['Stormstrike', 'Elemental Focus', 'Flurry'],
         PlayerClass::Mage->value => ['Ice Barrier', 'Cold Snap', 'Ice Block', 'Presence of Mind', 'Arcane Power', 'Pyroblast', 'Combustion'],
-        PlayerClass::Warlock->value => ['Nightfall', 'Shadowburn', 'Siphon Life'],
+        PlayerClass::Warlock->value => ['Nightfall', 'Shadowburn', 'Siphon Life', 'Fel Domination', 'Demonic Sacrifice', 'Soul Link', 'Conflagrate'],
         PlayerClass::Druid->value => ['Feral Charge (Bear)', 'Omen of Clarity', 'Leader of the Pack', "Nature's Grasp", 'Moonkin Form', "Nature's Swiftness", 'Swiftmend'],
     ];
 

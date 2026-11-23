@@ -1895,7 +1895,10 @@ Cold Snap and Ice Block (Mage, Frost 12 / 0 / 35); Feral Charge (Bear), Omen of 
 Feral Combat 11 / 31 / 1). Each build was checked against the client's talent table (`Talent`, `TalentTab`): a talent
 on tier N needs 5 times N points in its tree before it. A talent gets a module when the character can see it work: a
 spell it casts, a buff it gains or a proc it uses. A talent that only adds a percentage gets none. The list of
-talents with a module is one table in code beside the feats, keyed by the talent's spell.
+talents with a module is one table in code beside the feats, keyed by the talent's spell. Beyond the three of the
+mock's build, a class lists at least two talents of each of its other trees, shown after them while the build holds
+them. The Warlock adds Fel Domination, Demonic Sacrifice and Soul Link (Demonology, 10, 20 and 30 points before them)
+and Conflagrate (Destruction, 30, beside Shadowburn at 10); the Mage and the Druid lists are in their sections above.
 
 **Where the numbers come from.** Every module reads lines the addon already writes; the page needs no new line.
 

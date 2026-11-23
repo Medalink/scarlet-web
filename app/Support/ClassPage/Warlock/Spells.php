@@ -26,6 +26,9 @@ final readonly class Spells
         public SpellTotals $fear,
         public SpellTotals $shadowBolt,
         public SpellTotals $siphon,
+        public SpellTotals $felDomination,
+        public SpellTotals $conflagrate,
+        public SpellTotals $soulLink,
     ) {}
 
     public static function of(SpellBook $book): self
@@ -44,6 +47,9 @@ final readonly class Spells
             $book->sum('Fear', 'Fear'),
             $book->sum('Shadow Bolt', 'Shadow Bolt'),
             $book->sum('Siphon Life', 'Siphon Life'),
+            $book->sum('Fel Domination', 'Fel Domination'),
+            $book->sum('Conflagrate', 'Conflagrate'),
+            $book->sum('Soul Link', 'Soul Link'),
         );
     }
 
