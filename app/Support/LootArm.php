@@ -8,12 +8,11 @@ use JsonSerializable;
  * One arm of a chart: the windows of one source under one loot rule, or at one group size inside a rule. `windows` is
  * the `n` its rates rest on. Windows with a corpse key count whole, each corpse once (docs/LOOT.md, Units of counting,
  * rule 7). Two characters of a free-for-all arm may both open one corpse, and a character with no keys and one with keys
- * cannot be told apart on it, so when the arm holds windows with no key and a second character contributed to it (it
- * has windows with no key from two characters, or windows with a key from another one) the arm counts one set and no more:
- * the windows with no key of the character with the most of them, together with the windows with a key when no other
- * character made those, else whichever is larger of that character's windows with no key and all the windows with a key
- * (rule 6). Then `characters` is those of the set counted and the arm carries `one_reader`. An arm with none of that sums
- * its characters and carries no `one_reader`.
+ * cannot be told apart on it, so when the arm holds windows with no key from two characters, or a day on which the
+ * character with the most of them has some and another character has windows with a key, the arm counts one reader: that
+ * character's windows with no key, with the windows with a key. On a day where both exist it counts the larger of the
+ * two sets, on every other day both (rule 6). Then `characters` is those of the sets counted and the arm carries
+ * `one_reader`. An arm with none of that sums its characters and carries no `one_reader`.
  */
 final readonly class LootArm implements JsonSerializable
 {
@@ -31,8 +30,6 @@ final readonly class LootArm implements JsonSerializable
         public int $windows,
         public array $characters,
         public ?int $reader,
-        public bool $unkeyedCounted,
-        public bool $keyedCounted,
         public array $days,
         public array $flags,
     ) {}
@@ -87,59 +84,9 @@ final readonly class LootArm implements JsonSerializable
         sort($characters);
 
         return new self(
-            $key, $label, $personal, array_sum($unkeyed) + array_sum($keyed), $windows, $characters, $oneReader ? $reader : null,
-            in_array(true, array_column($counted, 'unkeyed'), true), in_array(true, array_column($counted, 'keyed'), true), $counted,
+            $key, $label, $personal, array_sum($unkeyed) + array_sum($keyed), $windows, $characters, $oneReader ? $reader : null, $counted,
             RateFlag::tags($oneReader ? 0 : count($characters), false, $oneReader, $ruleUnknown),
         );
-    }
-
-    /**
-     * Null while fewer than `$minimumCharacters` characters contributed to the arm.
-     *
-     * @param  array<int, int>  $unkeyed  windows with no corpse key, by character id
-     * @param  array<int, int>  $keyed  windows with a corpse key, each corpse once, by the character whose window was kept
-     */
-    public static function of(string $key, string $label, array $unkeyed, array $keyed, bool $freeForAll, bool $personal, bool $ruleUnknown, int $minimumCharacters): ?self
-    {
-        $contributors = array_keys($unkeyed + $keyed);
-        if (count($contributors) < max(1, $minimumCharacters)) {
-            return null;
-        }
-        $reader = self::busiest($unkeyed);
-        $others = $reader === null ? [] : array_diff(array_keys($keyed), [$reader]);
-        $oneReader = $freeForAll && $reader !== null && (count($unkeyed) >= 2 || $others !== []);
-        $keyedCounted = ! $oneReader || $others === [] || array_sum($keyed) >= $unkeyed[$reader];
-        $unkeyedCounted = ! $oneReader || $others === [] || ! $keyedCounted;
-        $characters = $oneReader
-            ? [...($unkeyedCounted ? [$reader] : []), ...($keyedCounted ? array_keys($keyed) : [])]
-            : $contributors;
-        $characters = array_values(array_unique($characters));
-        sort($characters);
-        $windows = ($unkeyedCounted ? ($oneReader ? $unkeyed[$reader] : array_sum($unkeyed)) : 0) + ($keyedCounted ? array_sum($keyed) : 0);
-
-        return new self(
-            $key, $label, $personal, array_sum($unkeyed) + array_sum($keyed), $windows, $characters, $oneReader && $unkeyedCounted ? $reader : null, $unkeyedCounted, $keyedCounted,
-            ['' => ['unkeyed' => $unkeyedCounted, 'keyed' => $keyedCounted]],
-            RateFlag::tags($oneReader ? 0 : count($characters), false, $oneReader, $ruleUnknown),
-        );
-    }
-
-    /**
-     * The windows of the arm that listed one item, from the windows that listed it: the ones with a key, the ones with
-     * no key of every character, and the ones with no key of the one reader. A caller with the counts of its own gives
-     * the three and the arm takes the ones it counts.
-     */
-    public function drops(int $keyed, int $unkeyed, int $reader): int
-    {
-        $unkeyedDrops = $this->reader === null ? $unkeyed : $reader;
-
-        return ($this->keyedCounted ? $keyed : 0) + ($this->unkeyedCounted ? $unkeyedDrops : 0);
-    }
-
-    /** Whether the arm counts this character's windows with no corpse key: all of them, or its one reader's. */
-    public function countsUnkeyedOf(int $character): bool
-    {
-        return $this->unkeyedCounted && ($this->reader === null || $this->reader === $character);
     }
 
     /**
