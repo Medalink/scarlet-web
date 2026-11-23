@@ -4,7 +4,7 @@
 <section class="places" aria-label="{{ $heading }}">
   @foreach ($groups as $group)
   <h2>{{ $group['name'] }}</h2>
-  <x-table :columns="[['label' => 'Place', 'numeric' => true], ['label' => 'Board'], ['label' => 'Value'], ['label' => 'Of', 'numeric' => true]]" :rows="array_map(fn (array $row): array => ['class' => $row['medal'] ? 'me' : null, 'cells' => [(string) $row['place'], ['text' => $row['title'], 'href' => $row['href']], $row['value'], $row['of']]], $group['rows'])" />
+  <x-table :columns="[['label' => 'Place', 'numeric' => true], ['label' => 'Board'], ['label' => 'Value']]" :rows="array_map(fn (array $row): array => ['class' => $row['medal'] ? 'me' : null, 'cells' => [['text' => (string) $row['place'], 'note' => 'of '.$row['total']], ['text' => $row['title'], 'href' => $row['href']], $row['value']]], $group['rows'])" />
   @endforeach
 </section>
 @endif
