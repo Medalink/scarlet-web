@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use PDOException;
 use Throwable;
 
 /**
@@ -20,6 +21,9 @@ use Throwable;
 class IngestSession implements BoundedJob, ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
+
+    /** SQLSTATE deadlock_detected and serialization_failure. */
+    private const array CONFLICT_STATES = ['40P01', '40001'];
 
     public int $timeout;
 
@@ -57,10 +61,36 @@ class IngestSession implements BoundedJob, ShouldBeUniqueUntilProcessing, Should
                 $decode->handle($this->characterId, $this->sessionStart);
             });
         } catch (Throwable $e) {
+            if (self::lostConflict($e)) {
+                $this->refundAttempt();
+            }
             $this->keepError($e);
 
             throw $e;
         }
+    }
+
+    /** Whether PostgreSQL aborted the decode to break a deadlock or a serialization conflict with another one, which says nothing about the session's parts. */
+    private static function lostConflict(Throwable $e): bool
+    {
+        for ($cause = $e; $cause !== null; $cause = $cause->getPrevious()) {
+            if ($cause instanceof PDOException && in_array((string) $cause->getCode(), self::CONFLICT_STATES, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Give back the attempt `spendAttempt` took, for a run that lost a conflict and is retried by the queue. */
+    private function refundAttempt(): void
+    {
+        DB::table('parts')
+            ->where('character_id', $this->characterId)
+            ->where('session_start', $this->sessionStart)
+            ->whereNull('decoded_at')
+            ->where('failed_attempts', '>', 0)
+            ->update(['failed_attempts' => DB::raw('failed_attempts - 1')]);
     }
 
     /**

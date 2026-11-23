@@ -19,7 +19,8 @@ class VoteSharedRows
      * when the first vote reaches it keeps its served value as the vote of one voter that is none of the installs. The
      * row a write displaces is kept in `previous` where the table has one.
      *
-     * Rows are locked in id order, so two decodes that share ids wait for each other and never deadlock.
+     * Rows are locked in id order. Two decodes that create rows the other then locks can still deadlock on the insert;
+     * PostgreSQL aborts one, and `IngestSession` gives its attempt back and the queue runs it again.
      *
      * @param  list<array<string, mixed>>  $rows  decoded rows with the kind's key and fields
      */

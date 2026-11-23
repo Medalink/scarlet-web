@@ -110,7 +110,7 @@ class PartTool
         foreach ($bodies as $body) {
             $input .= pack('V', strlen($body)).$body;
         }
-        $file = rtrim((string) config('scarlet.work_dir'), '/\\').DIRECTORY_SEPARATOR.'scarlet-imports-'.uniqid().'.ndjson';
+        $file = WorkDir::file('scarlet-imports-');
 
         $run = Process::timeout(60)->input($input)->run([$this->binary(), 'decode', '--stdin', '--imports', '--out', $file]);
         $rows = new RowFile($file);

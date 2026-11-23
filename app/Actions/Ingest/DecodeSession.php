@@ -11,6 +11,7 @@ use App\Support\Database\BinaryValue;
 use App\Support\DecodedSession;
 use App\Support\PartTool;
 use App\Support\SharingGroup;
+use App\Support\WorkDir;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
@@ -165,8 +166,7 @@ class DecodeSession
     /** Decode into a work file under the ingest work dir; the caller unlinks it. */
     private function decodeInto(int $characterId, int $sessionStart): string
     {
-        $file = rtrim((string) config('scarlet.work_dir'), '/\\').DIRECTORY_SEPARATOR
-            .'scarlet-decode-'.uniqid().'.ndjson';
+        $file = WorkDir::file('scarlet-decode-');
         try {
             $this->tool->decode($this->decodeBodies, $file);
         } catch (Throwable $e) {
