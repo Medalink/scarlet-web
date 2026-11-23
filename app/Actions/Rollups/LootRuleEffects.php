@@ -4,6 +4,7 @@ namespace App\Actions\Rollups;
 
 use App\Support\LootArm;
 use App\Support\LootCounted;
+use App\Support\LootDay;
 use App\Support\LootGroupScope;
 use App\Support\LootRule;
 use App\Support\LootSourceRef;
@@ -24,7 +25,7 @@ class LootRuleEffects
      * in each, pooled with Mantel-Haenszel weights. The figure over all sources is never made: a rule is played on
      * other creatures than another. `$first` and `$second` choose the rules; without them it is the two with the most
      * corpses on sources seen under two rules. A corpse with a key counts once (docs/LOOT.md, Units of counting, rule 7); the windows with no key of a free-for-all
-     * arm of two or more characters count their one reader (`LootArm`). `more` counts the sources seen under both rules with fewer corpses in one of them.
+     * arm of two or more characters count their one reader, and the larger of two sets only on the days where both exist (`LootArm::overDays`). `more` counts the sources seen under both rules with fewer corpses in one of them.
      *
      * @return array{seen: list<array{rule: string, windows: int, sources: int}>, pair: list<string>, rows: list<array{rule: string, items: float, corpses: int}>, sources: int, windows: int, difference: array{difference: float, low: float, high: float}|null, more: int}
      */
@@ -92,7 +93,7 @@ class LootRuleEffects
 
     /**
      * @param  list<string>  $pair
-     * @return array<string, array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>> by source, rule, whether the windows have a corpse key, and character
+     * @return array<string, array<string, array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>>> by source, rule, day (`''` outside free for all), whether the windows have a corpse key, and character
      */
     private function arms(?LootSourceRef $source, array $pair): array
     {
@@ -101,18 +102,18 @@ class LootRuleEffects
         $rows = $this->read->rows(LootGroupScope::of(DB::table(LootCounted::WindowsCharacter->value.' as t'), $source, 't.')
             ->whereIn('t.loot_rule', $pair)
             ->joinSub($both, 'b', fn (JoinClause $join) => $join->on('b.source_kind', '=', 't.source_kind')->on('b.source_id', '=', 't.source_id'))
-            ->selectRaw('t.source_kind, t.source_id, t.loot_rule, t.character_id, t.keyed::int as keyed, sum(t.windows) as windows, sum(t.item_rows) as items, sum(t.item_rows_squared) as squares')
-            ->groupBy('t.source_kind', 't.source_id', 't.loot_rule', 't.character_id', 't.keyed'));
+            ->selectRaw('t.source_kind, t.source_id, t.loot_rule, t.character_id, t.keyed::int as keyed, '.LootDay::ofFreeForAll('t.loot_rule', 't.bucket').' as day, sum(t.windows) as windows, sum(t.item_rows) as items, sum(t.item_rows_squared) as squares')
+            ->groupBy('t.source_kind', 't.source_id', 't.loot_rule', 't.character_id', 't.keyed')->groupByRaw(LootDay::ofFreeForAll('t.loot_rule', 't.bucket')));
         $by = [];
         foreach ($rows as $row) {
-            $by[$row['source_kind'].$row['source_id']][(string) $row['loot_rule']][(int) $row['keyed'] === 1 ? 'keyed' : 'unkeyed'][(int) $row['character_id']] = ['windows' => (int) $row['windows'], 'items' => (int) $row['items'], 'squares' => (int) $row['squares']];
+            $by[$row['source_kind'].$row['source_id']][(string) $row['loot_rule']][(string) $row['day']][(int) $row['keyed'] === 1 ? 'keyed' : 'unkeyed'][(int) $row['character_id']] = ['windows' => (int) $row['windows'], 'items' => (int) $row['items'], 'squares' => (int) $row['squares']];
         }
 
         return $by;
     }
 
     /**
-     * @param  array<string, array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>>  $sources
+     * @param  array<string, array<string, array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>>>  $sources
      * @param  list<string>  $pair
      * @return array{0: array{difference: float, low: float, high: float, first: float, second: float, sources: int, windows: int}|null, 1: list<int>, 2: int}
      */
@@ -140,29 +141,31 @@ class LootRuleEffects
     }
 
     /**
-     * The windows, item rows and their squares of one rule's arm on one source: the corpses with a key, and of the windows
-     * with no key every character's, or its one reader's.
+     * The windows, item rows and their squares of one rule's arm on one source: each day, the corpses with a key, and of the
+     * windows with no key every character's, or its one reader's (`LootArm::overDays`).
      *
-     * @param  array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}  $parts
+     * @param  array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>  $days
      * @return array{n: int, sum: int, squares: int}|null
      */
-    private function arm(string $rule, array $parts): ?array
+    private function arm(string $rule, array $days): ?array
     {
-        $unkeyed = $parts['unkeyed'] ?? [];
-        $keyed = $parts['keyed'] ?? [];
         $windows = fn (array $row): int => $row['windows'];
-        $arm = LootArm::of($rule, LootRule::words($rule), array_map($windows, $unkeyed), array_map($windows, $keyed), $rule === LootRule::FreeForAll->value, false, false, (int) config('scarlet.min_characters'));
+        $arm = LootArm::overDays(
+            $rule, LootRule::words($rule),
+            array_map(fn (array $parts): array => ['unkeyed' => array_map($windows, $parts['unkeyed'] ?? []), 'keyed' => array_map($windows, $parts['keyed'] ?? [])], $days),
+            $rule === LootRule::FreeForAll->value, false, false, (int) config('scarlet.min_characters'),
+        );
         if ($arm === null) {
             return null;
         }
-        $counted = array_filter($unkeyed, fn (int $character): bool => $arm->countsUnkeyedOf($character), ARRAY_FILTER_USE_KEY);
+        $sum = $squares = 0;
+        foreach ($days as $day => $parts) {
+            $counted = array_filter($parts['unkeyed'] ?? [], fn (int $character): bool => $arm->countsUnkeyedOn((string) $day, $character), ARRAY_FILTER_USE_KEY);
+            $whole = $arm->countsKeyedOn((string) $day) ? $parts['keyed'] ?? [] : [];
+            $sum += array_sum(array_column($counted, 'items')) + array_sum(array_column($whole, 'items'));
+            $squares += array_sum(array_column($counted, 'squares')) + array_sum(array_column($whole, 'squares'));
+        }
 
-        $whole = $arm->keyedCounted ? $keyed : [];
-
-        return [
-            'n' => $arm->windows,
-            'sum' => array_sum(array_column($counted, 'items')) + array_sum(array_column($whole, 'items')),
-            'squares' => array_sum(array_column($counted, 'squares')) + array_sum(array_column($whole, 'squares')),
-        ];
+        return ['n' => $arm->windows, 'sum' => $sum, 'squares' => $squares];
     }
 }
