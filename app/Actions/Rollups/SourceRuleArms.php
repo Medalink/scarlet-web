@@ -39,7 +39,7 @@ class SourceRuleArms
         $windows = $data->windows;
         $rules = $this->rulesSeen($windows);
         $chosen = $split === ArmSplit::Size ? $this->sizeRule($rules, $rule) : null;
-        $arms = $this->arms($split, $windows, $chosen, $data->midnights);
+        $arms = $this->arms($split, $windows, $chosen);
         $pair = $this->pair($arms);
         $sizes = $chosen === null ? [] : $this->sizesSeen($windows, $chosen);
         $answer = ['split' => $split, 'rule' => $chosen, 'rules' => $rules, 'sizes' => $sizes, 'arms' => $arms, 'pair' => $pair, 'rows' => []];
@@ -105,10 +105,9 @@ class SourceRuleArms
 
     /**
      * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, day: string, windows: int}>  $windows
-     * @param  list<string>  $joined
      * @return list<LootArm>
      */
-    private function arms(ArmSplit $split, array $windows, ?string $chosen, array $joined): array
+    private function arms(ArmSplit $split, array $windows, ?string $chosen): array
     {
         $groups = [];
         foreach ($windows as $row) {
@@ -128,7 +127,7 @@ class SourceRuleArms
             $arm = LootArm::overDays(
                 $key, $split === ArmSplit::Rule ? LootRule::words($key) : 'Size '.$key, $days,
                 $rule === LootRule::FreeForAll->value, $split === ArmSplit::Rule && $rule === LootRule::Personal->value, $rule === LootRule::Unknown->value,
-                (int) config('scarlet.min_characters'), $joined,
+                (int) config('scarlet.min_characters'),
             );
             if ($arm !== null) {
                 $arms[] = $arm;

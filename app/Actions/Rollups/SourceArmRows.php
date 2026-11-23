@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class SourceArmRows
 {
-    public function __construct(private readonly RollupRead $read, private readonly MidnightWindows $midnights) {}
+    public function __construct(private readonly RollupRead $read) {}
 
     /**
      * The rows behind the arms of every source in the list, one read of each table for all of them: the windows by rule, size,
@@ -49,7 +49,7 @@ class SourceArmRows
         $answer = [];
         foreach ($sources as $source) {
             $one = $kept[$source->key()] ?? [];
-            $answer[$source->key()] = new SourceArmData($one['windows'] ?? [], $one['items'] ?? [], $one['readers'] ?? [], $one['midnights'] ?? []);
+            $answer[$source->key()] = new SourceArmData($one['windows'] ?? [], $one['items'] ?? [], $one['readers'] ?? []);
         }
 
         return $answer;
@@ -57,24 +57,22 @@ class SourceArmRows
 
     /**
      * @param  list<LootSourceRef>  $sources
-     * @return array<string, array{windows: list<array<string, mixed>>, items: list<array<string, mixed>>, readers: array<int, array<int, array<string, array<int, int>>>>, midnights: list<string>}>
+     * @return array<string, array{windows: list<array<string, mixed>>, items: list<array<string, mixed>>, readers: array<int, array<int, array<string, array<int, int>>>>}>
      */
     private function built(array $sources): array
     {
         $windows = $this->windows($sources);
         $items = $this->items($sources);
         $readers = $this->readers(array_values(array_filter($sources, fn (LootSourceRef $source): bool => $this->mayHaveReader($windows[$source->key()] ?? []))));
-        $midnights = $this->midnights->handle($sources);
 
         $answer = [];
         foreach ($sources as $source) {
             $key = $source->key();
-            $days = $this->merged($windows[$key] ?? [], $midnights[$key] ?? []);
+            $days = $this->merged($windows[$key] ?? []);
             $answer[$key] = [
                 'windows' => $this->sumDays($windows[$key] ?? [], $days, ['loot_rule', 'size', 'character', 'keyed', 'day'], 'windows'),
                 'items' => $this->sumDays($items[$key] ?? [], $days, ['item_id', 'item', 'bind_type', 'loot_rule', 'group_size', 'keyed', 'day'], 'drops'),
                 'readers' => $this->mergedReaders($readers[$key] ?? [], $days),
-                'midnights' => $midnights[$key] ?? [],
             ];
         }
 
@@ -88,10 +86,9 @@ class SourceArmRows
      * arise.
      *
      * @param  list<array{loot_rule: string, size: int|null, character: int, keyed: bool, day: string, windows: int}>  $windows
-     * @param  list<string>  $joined
      * @return array<string, string>
      */
-    private function merged(array $windows, array $joined): array
+    private function merged(array $windows): array
     {
         $arms = [];
         foreach ($windows as $row) {
@@ -110,7 +107,7 @@ class SourceArmRows
                 $arms[$arm][$day] = ['unkeyed' => $parts['unkeyed'] ?? [], 'keyed' => $parts['keyed'] ?? []];
             }
             $readers[$arm] = LootArm::readerOf($arms[$arm]);
-            foreach (LootArm::contestedDays($arms[$arm], $joined) as $day) {
+            foreach (LootArm::contestedDays($arms[$arm]) as $day) {
                 $contested[$day] = true;
             }
         }

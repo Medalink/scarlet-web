@@ -19,7 +19,7 @@ class FreeForAllArms
 {
     private const int BULK = 40;
 
-    public function __construct(private readonly RollupRead $read, private readonly MidnightWindows $midnights) {}
+    public function __construct(private readonly RollupRead $read) {}
 
     /**
      * The free-for-all arm of many sources at once when it counts one reader (`LootArm::overDays`, docs/LOOT.md, Units of
@@ -43,7 +43,7 @@ class FreeForAllArms
 
         $counts = [];
         foreach ($kept as $key => $parts) {
-            $arm = $this->arm($parts['days'], $parts['joined'] ?? []);
+            $arm = $this->arm($parts['days']);
             if ($arm !== null) {
                 $counts[(string) $key] = new FreeForAllCounts($arm, $parts['items'], $parts['raw']);
             }
@@ -55,26 +55,23 @@ class FreeForAllArms
     /**
      * @param  list<LootSourceRef>|null  $sources
      * @param  list<int>|null  $itemIds
-     * @return array<string, array{days: array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>, joined: list<string>, items: array<int, array{drops: int, quantity: int}>, raw: array<int, array{drops: int, quantity: int}>}>
+     * @return array<string, array{days: array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>, items: array<int, array{drops: int, quantity: int}>, raw: array<int, array{drops: int, quantity: int}>}>
      */
     private function built(?array $sources, ?array $itemIds): array
     {
         $armed = [];
-        $windows = $this->windows($sources);
-        $midnights = $windows === [] ? [] : $this->midnights->handle($sources);
-        foreach ($windows as $key => $days) {
-            $joined = $midnights[$key] ?? [];
-            $collapsed = LootArm::collapsed($days, $joined);
-            $arm = $this->arm($collapsed, $joined);
+        foreach ($this->windows($sources) as $key => $days) {
+            $collapsed = LootArm::collapsed($days);
+            $arm = $this->arm($collapsed);
             if ($arm !== null) {
-                $armed[$key] = ['days' => $collapsed, 'joined' => $joined, 'arm' => $arm];
+                $armed[$key] = ['days' => $collapsed, 'arm' => $arm];
             }
         }
         $items = $itemIds === [] || $armed === [] ? [] : $this->items(array_map(fn (array $armed): LootArm => $armed['arm'], $armed), $itemIds);
 
         $answer = [];
         foreach ($armed as $key => $one) {
-            $answer[$key] = ['days' => $one['days'], 'joined' => $one['joined'], 'items' => $items[$key]['items'] ?? [], 'raw' => $items[$key]['raw'] ?? []];
+            $answer[$key] = ['days' => $one['days'], 'items' => $items[$key]['items'] ?? [], 'raw' => $items[$key]['raw'] ?? []];
         }
 
         return $answer;
@@ -82,12 +79,11 @@ class FreeForAllArms
 
     /**
      * @param  array<string, array{unkeyed: array<int, int>, keyed: array<int, int>}>  $days
-     * @param  list<string>  $joined
      */
-    private function arm(array $days, array $joined): ?LootArm
+    private function arm(array $days): ?LootArm
     {
         $arm = LootArm::overDays(
-            LootRule::FreeForAll->value, LootRule::words(LootRule::FreeForAll->value), $days, true, false, false, (int) config('scarlet.min_characters'), $joined,
+            LootRule::FreeForAll->value, LootRule::words(LootRule::FreeForAll->value), $days, true, false, false, (int) config('scarlet.min_characters'),
         );
 
         return $arm === null || $arm->reader === null ? null : $arm;

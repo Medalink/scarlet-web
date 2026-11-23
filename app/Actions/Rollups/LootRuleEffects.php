@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 
 class LootRuleEffects
 {
-    public function __construct(private readonly RollupRead $read, private readonly CountedLoot $counted, private readonly MidnightWindows $midnights) {}
+    public function __construct(private readonly RollupRead $read, private readonly CountedLoot $counted) {}
 
     /**
      * What a corpse held under two loot rules (docs/LOOT.md, Loot rules and group size): the items per corpse under
@@ -40,7 +40,7 @@ class LootRuleEffects
             return $answer;
         }
 
-        [$pooled, $corpses, $more] = $this->pool($this->arms($source, $pair), $pair, $this->midnights->handle($source === null ? null : [$source]));
+        [$pooled, $corpses, $more] = $this->pool($this->arms($source, $pair), $pair);
         if ($pooled === null) {
             return ['more' => $more] + $answer;
         }
@@ -143,16 +143,15 @@ class LootRuleEffects
     /**
      * @param  array<string, array<string, array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>>>  $sources
      * @param  list<string>  $pair
-     * @param  array<string, list<string>>  $midnights  by source
      * @return array{0: array{difference: float, low: float, high: float, first: float, second: float, sources: int, windows: int}|null, 1: list<int>, 2: int}
      */
-    private function pool(array $sources, array $pair, array $midnights): array
+    private function pool(array $sources, array $pair): array
     {
         $pooled = [];
         $corpses = [0, 0];
         $more = 0;
-        foreach ($sources as $source => $rules) {
-            $armed = array_map(fn (string $rule): ?array => $this->arm($rule, $rules[$rule] ?? [], $midnights[(string) $source] ?? []), $pair);
+        foreach ($sources as $rules) {
+            $armed = array_map(fn (string $rule): ?array => $this->arm($rule, $rules[$rule] ?? []), $pair);
             if ($armed[0] === null || $armed[1] === null) {
                 continue;
             }
@@ -174,16 +173,15 @@ class LootRuleEffects
      * windows with no key every character's, or its one reader's (`LootArm::overDays`).
      *
      * @param  array<string, array{unkeyed?: array<int, array{windows: int, items: int, squares: int}>, keyed?: array<int, array{windows: int, items: int, squares: int}>}>  $days
-     * @param  list<string>  $joined
      * @return array{n: int, sum: int, squares: int}|null
      */
-    private function arm(string $rule, array $days, array $joined): ?array
+    private function arm(string $rule, array $days): ?array
     {
         $windows = fn (array $row): int => $row['windows'];
         $arm = LootArm::overDays(
             $rule, LootRule::words($rule),
             array_map(fn (array $parts): array => ['unkeyed' => array_map($windows, $parts['unkeyed'] ?? []), 'keyed' => array_map($windows, $parts['keyed'] ?? [])], $days),
-            $rule === LootRule::FreeForAll->value, false, false, (int) config('scarlet.min_characters'), $joined,
+            $rule === LootRule::FreeForAll->value, false, false, (int) config('scarlet.min_characters'),
         );
         if ($arm === null) {
             return null;
