@@ -12,6 +12,8 @@ class CharacterBattlegrounds
     /** Matches the page lists, the newest first. */
     public const int MATCHES = 10;
 
+    private const int NAMES_PER_QUERY = 10_000;
+
     /**
      * The matches of a character whose scoreboard its client read (`BO` rows), the newest first, each with every
      * player of the scoreboard. A player's name is in the answer for the character's owner, and for a visitor only
@@ -45,7 +47,13 @@ class CharacterBattlegrounds
                 $names[] = Character::keyFor((string) $row['name']);
             }
         }
-        $public = $owner || $names === [] ? [] : Character::query()->whereIn('name_key', array_values(array_unique($names)))->where('is_public', true)->pluck('name_key')->all();
+        $public = [];
+        if (! $owner && $names !== []) {
+            foreach (array_chunk(array_values(array_unique($names)), self::NAMES_PER_QUERY) as $chunk) {
+                $known = Character::query()->whereIn('name_key', $chunk)->where('is_public', true)->pluck('name_key')->all();
+                $public += array_fill_keys($known, 1);
+            }
+        }
 
         $matches = [];
         foreach ($stamps as $stamp) {
@@ -56,10 +64,11 @@ class CharacterBattlegrounds
                 'result' => $ended[$stamp]['result'] ?? null,
                 'arena' => $ended[$stamp]['arena'] ?? null,
                 'rows' => array_map(function (array $row) use ($owner, $public): array {
-                    $shown = $row['name'] !== null && in_array(Character::keyFor((string) $row['name']), $public, true);
+                    $key = $row['name'] === null ? null : Character::keyFor((string) $row['name']);
+                    $shown = $key !== null && isset($public[$key]);
 
                     return [
-                        'name' => $row['name'] !== null && ($owner || $shown) ? (string) $row['name'] : null,
+                        'name' => $key !== null && ($owner || $shown) ? (string) $row['name'] : null,
                         'public' => $shown,
                         'faction' => $row['faction'],
                         'class' => $row['class_file'],
