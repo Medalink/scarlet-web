@@ -1279,7 +1279,7 @@ Versioned by path: `/api/v1`. A breaking change is `/api/v2`; fields are only ev
   `PUT|DELETE /upload/groups/{key}`, `DELETE /upload`.
 - **Public**, read-only JSON, no sign-in: `GET /public/stats`, `/public/rulesets`, `/public/rulesets/{id}` and its
   series (`/levels`, `/xp`, `/deaths`, `/dungeons`, `/professions`, `/gold`, `/activity`), `/public/leaderboards/{board}`,
-  `/public/camps`, `/public/professions/{slug}`, `/public/search?q=`, `/public/characters/{name}` and its series, `/public/creatures/{id}`, `/public/items/{id}`,
+  `/public/camps`, `/public/professions/{slug}`, `/public/search?q=`, `/public/characters/{name}` and its series and sessions, `/public/feats` and `/public/feats/{key}`, `/public/creatures/{id}`, `/public/items/{id}`,
   `/public/spells/{id}`, `/public/encounters/{id}`, `/public/zones/{id}`, `/public/quests/{id}`, `/public/map/heat`. `Access-Control-Allow-Origin: *`,
   `Cache-Control: public, max-age=300` with an `ETag`, cursor pagination (`?cursor=`, `next_cursor` in the answer),
   60 requests a minute per IP, 600 with a free API key (a Sanctum token made on the account page, sent as a bearer

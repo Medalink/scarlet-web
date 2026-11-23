@@ -21,6 +21,8 @@ const SHAPES = [
   ["/search", ["characters", "creatures", "items", "objects", "zones", "quests", "pages"]],
   ["/characters/{name}", ["name", "race", "class", "faction", "level", "recorded_seconds", "ruleset", "week", "feats", "standings"]],
   ["/characters/{name}/series/{series}", ["pace"]],
+  ["/feats", ["catalog", "feats"]],
+  ["/feats/{key}", ["catalog", "key", "name", "family", "collection", "scope", "thresholds", "shares", "top", "recent"]],
   ["/characters/{name}/sessions", ["sessions", "next"]],
   ["/characters/{name}/sessions/{start}", ["v", "character", "title", "xp", "counters", "buckets", "zones", "route", "feats", "top", "compare", "links"]],
   ["/creatures/{id}", ["id", "name", "facts", "kills", "drops", "cells"]],

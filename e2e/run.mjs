@@ -61,6 +61,8 @@ const REGISTRY = [
   { lane: "api", name: "the class page request refuses an unsigned read, another install's character and a name that is not Name-Surname", run: classPageApi.classPageRefusesWhatIsNotTheInstalls },
   { lane: "api", name: "the rogue fixture's class, tree and role feats are counted, and no other class's or role's", run: feats.specFeatsAreCounted },
   { lane: "api", name: "the feat-score board lists the fixtures by tiers held, highest first", run: feats.featScoreBoardListsTheFixtures },
+  { lane: "api", name: "the app reads the catalog version, the score, the spec and the newest session, and every card carries its place, count, thresholds, progress, share, spell and live flag", run: feats.featsAnswerHasTheNewFields },
+  { lane: "api", name: "the public feats are the 241 catalog feats with their shares, and one feat lists its top characters and its latest earners, and an unknown feat is 404", run: feats.publicFeatsAreServed },
   { lane: "api", name: "the six professions with recorded lines are served with their numbers", run: professions.apiShowsTheUpload },
   { lane: "pages", name: "every public page answers and shows its own content", run: pages.everyPageShowsItself },
   { lane: "pages", name: "one death heard by two uploaders is counted once", run: pages.deathIsCountedOnce },

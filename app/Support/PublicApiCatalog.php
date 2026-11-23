@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Http\Controllers\Api\V1\Public\CampsController;
 use App\Http\Controllers\Api\V1\Public\CharacterController;
 use App\Http\Controllers\Api\V1\Public\CharacterSessionsController;
+use App\Http\Controllers\Api\V1\Public\FeatController;
 use App\Http\Controllers\Api\V1\Public\LeaderboardController;
 use App\Http\Controllers\Api\V1\Public\LootController;
 use App\Http\Controllers\Api\V1\Public\MapController;
@@ -23,7 +24,7 @@ final class PublicApiCatalog
     public const string ROUTE_PREFIX = 'public.';
 
     /** The endpoints whose answers name characters. */
-    public const array NAMES_CHARACTERS = ['leaderboard', 'camps', 'profession', 'search', 'character', 'character-series', 'character-sessions', 'character-session'];
+    public const array NAMES_CHARACTERS = ['leaderboard', 'camps', 'profession', 'search', 'character', 'character-series', 'character-sessions', 'character-session', 'feat'];
 
     /** The shared parameters, named once and referred to by the endpoints. */
     public const array PARAMS = [
@@ -86,7 +87,7 @@ final class PublicApiCatalog
             ],
             [
                 'name' => 'leaderboards', 'group' => 'Leaderboards', 'path' => '/leaderboards', 'action' => [LeaderboardController::class, 'index'],
-                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most jumps, most dungeon runs, most distance, most time by the fire, most fish caught, most herbs gathered, most ore mined, most creatures skinned and most crafts for each crafting profession.',
+                'summary' => 'The boards: fastest to level 20, 40 and 60, highest level without dying, most quests turned in, most quests completed, most kills, most jumps, most dungeon runs, most distance, most time by the fire, most fish caught, most herbs gathered, most ore mined, most creatures skinned and most crafts for each crafting profession, and the highest feat score.',
                 'params' => [],
                 'returns' => '`data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).',
                 'example' => '/leaderboards', 'where' => [],
@@ -132,6 +133,20 @@ final class PublicApiCatalog
                 'params' => [['name', 'path', 'string', 'The character name.'], ['start', 'path', 'integer', 'The `start` of a session from the list.']],
                 'returns' => '`data`: the same recap the Scarlet app and addon keep: `v`, `character`, `class`, `start`, `end`, `played`, `level`, `zone`, `title`, `xp` (`kills`, `dungeons`, `quests`, `explore`, `other`), `runs`, `counters` (a counter that is zero is left out), `buckets` (`secs`, `xp`, `combat`), `zones`, `levels`, `moments`, `route` (`legs`, and a `sheet` of points fitted to 0 to 1000 with `aspect`, `breaks` and `air`), `feats`, `bests`, `own` (the session against the 30 before it, `null` under 5), `top`, `compare` (against sessions at the same levels, `null` until 20 sessions are in the bracket) and `links`. Gold counters are in it only when `meta.economy` is true.',
                 'example' => '/characters/Tolvir-Greane/sessions/1763840520', 'where' => ['name' => '[^/]+', 'start' => '[0-9]+'],
+            ],
+            [
+                'name' => 'feats', 'group' => 'Feats', 'path' => '/feats', 'action' => [FeatController::class, 'index'],
+                'summary' => 'The feat catalog: every feat with its family, collection, scope, thresholds and how the addon counts it, and the share of characters at each tier or higher.',
+                'params' => [],
+                'returns' => '`data`: `catalog` (the catalog version) and `feats`, each with `key`, `name`, `family`, `collection`, `scope` (`general`, `class`, `tree` or `role`), `class`, `tree` or `role` where the scope has one, `glyph`, `icon` (`spell` or `tree` when the seal engraves one), `one` and `many` (what is counted), `unit` (`mi` when the thresholds are yards), `thresholds` (copper to legend), `economy` (a gold feat), `measure`, `spells`, `live` and `shares`: five percentages, copper first, of the characters with 20 recorded hours or more that hold the tier or a higher one, or `null` until 20 characters are counted for the feat.',
+                'example' => '/feats', 'where' => [],
+            ],
+            [
+                'name' => 'feat', 'group' => 'Feats', 'path' => '/feats/{key}', 'action' => [FeatController::class, 'show'],
+                'summary' => 'One feat of the catalog, the 20 public characters with the highest count and the 10 that reached a tier of it last. A gold feat lists only characters that show their economy.',
+                'params' => [['key', 'path', 'string', 'A feat key from `/feats`, such as `slayer`.']],
+                'returns' => '`data`: `catalog` and the fields of the feat in `/feats`, `top` (`character`, `value` in the units of the thresholds and `tier`, highest value first) and `recent` (`character`, the `tier` reached and `at`, newest first).',
+                'example' => '/feats/slayer', 'where' => ['key' => '[a-z-]+'],
             ],
             [
                 'name' => 'creature', 'group' => 'Records', 'path' => '/creatures/{id}', 'action' => [RecordController::class, 'creature'],

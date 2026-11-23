@@ -142,19 +142,35 @@ that already exists answers `200` with the same install, so a retry after a lost
 
 The feats of every character this install owns (uploaded by it, or on the account it is linked to) that has any,
 most recently seen first, with the economy shown. Each entry is what the character page's Feats section shows, plus
-the feats not yet shown to the owner:
+the feat score, the spec, how far the counts reach and the feats not yet shown to the owner:
 
 ```json
-{"characters": [{
+{"catalog": 2, "characters": [{
   "name": "Name-Surname", "held": 31, "total": 75,
   "tiers": [{"count": 2, "name": "gold"}, {"count": 29, "name": "copper"}],
-  "since": null, "limit": 3, "pinned": [],
+  "since": null, "limit": 3, "score": 58, "spec": "Affliction", "through": 1763840520, "pinned": [],
   "top": [{"key": "slayer", "pinned": false, "tier": 2, "icon": "kills", "name": "Slayer", "tier_name": "Silver",
-           "detail": "3,100 kills, 6,900 to gold at 10,000", "track": [100, 100, 3, 0, 0]}],
+           "detail": "3,100 kills, 6,900 to gold at 10,000", "track": [100, 100, 3, 0, 0],
+           "family": "combat", "collection": "Combat", "value": 3100, "thresholds": [100, 1000, 10000, 30000, 100000],
+           "next": 10000, "left": 6900, "progress": 0.233, "counted": "3,100 kills", "to_next": "6,900 to Gold",
+           "share": 41.2, "spell": null, "live": true}],
   "earned": ["... every card with tier 1 or more"], "unearned": ["... every card with tier 0"],
   "new": [{"key": "slayer", "name": "Slayer", "icon": "kills", "from": 1, "from_name": "Copper", "tier": 2, "tier_name": "Silver"}]
 }]}
 ```
+
+`catalog` is the catalog version the feats were counted with (`GET /public/feats`). `score` is the feat score: one point
+for each tier held on the 68 general feats that are not gold feats, 340 at most, `0` until the character is counted.
+`spec` is the talent tree of the newest counted session of level 10 or more that read talents, `null` before one did.
+`through` is the start (epoch seconds) of the newest counted session, `0` for none.
+
+A card keeps `key`, `pinned`, `tier`, `name`, `tier_name`, `icon`, `detail` and `track`, and gains:
+`family` and `collection` (as in the catalog); `value`, the count in the units of the thresholds (yards for a feat
+shown in miles); `thresholds`, the five counts of copper to legend; `next` and `left`, the threshold above the tier held
+and what is missing to it, `null` at Legend; `progress`, 0 to 1 from the threshold of the tier held to `next`, and 1 at Legend;
+`counted`, the count in words (`9,912 kills`, miles for a mile feat); `to_next` (`88 to Gold`), `null` at Legend; `share`,
+the percent of counted characters at this tier or higher, `null` for a feat not earned and until 20 characters are counted for it;
+`spell`, the id of the spell the seal engraves for a cast feat, `null` for the others; and `live`, true when the addon can advance the count.
 
 `new` lists the feats whose tier is above the tier last shown, highest tier first. `from` is 0 and `from_name` null for
 a feat earned for the first time, and above 0 for an upgrade. `since` is the date an observed count started, or null.
@@ -591,7 +607,7 @@ A public character: race, class, level, ruleset, time played, this week, distanc
 | --- | --- | --- | --- |
 | `name` | path | string | The character name, `Name-Surname`. |
 
-`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (every feat that applies to the character: those earned first, rarest first, then those not yet earned, closest first; `pinned` is true for a feat the owner pinned, which keeps its place in the list. `key` is one of `summit`, `veteran`, `devoted`, `steadfast`, `seasoned`, `regular`, `long-haul`, `longstanding`, `unbroken`, `slayer`, `bestiary`, `finisher`, `gladiator`, `rampage`, `fallen`, `flattened`, `nemesis`, `territorial`, `roamer`, `questing`, `errand-runner`, `fickle`, `cartographer`, `local-hero`, `thorough`, `delver`, `vanquisher`, `spelunker`, `raider`, `conqueror`, `deep-dweller`, `flawless`, `familiar`, `soloist`, `full-house`, `explorer`, `globetrotter`, `local`, `wayfarer`, `jumper`, `swimmer`, `runner`, `rider`, `stroller`, `tracker`, `scout`, `witness`, `naturalist`, `skullseer`, `looter`, `scavenger`, `lucky`, `collector`, `jackpot`, `curator`, `unboxer`, `angler`, `fishmonger`, `wading`, `gatherer`, `forager`, `artisan`, `master`, `practised`, `crafter`, `repertoire`, `earner`, `spender`, `tycoon`, `windfall`, `expressive`, `mime`, `signature`, `indecisive`, `battle-cry`, `charger`, `executioner`, `stance-dancer`, `mortal-striker`, `overpowering`, `bloodletter`, `weapon-master`, `bloodthirsty`, `whirling`, `seeing-red`, `berserker`, `sunderer`, `vengeful`, `blockade`, `shieldbearer`, `judicator`, `benediction`, `last-resort`, `untouchable`, `radiant`, `quickening`, `purifier`, `lightbringer`, `bastion`, `lawbringer`, `consecrator`, `templar`, `sealbearer`, `hammerfall`, `zealot`, `crusader`, `playing-dead`, `trapper`, `marked-prey`, `beast-tamer`, `unleashed`, `intimidating`, `pet-mender`, `pack-leader`, `deadeye`, `spreadshot`, `arcane-archer`, `sharpshooter`, `close-quarters`, `wing-clipper`, `escapist`, `survivalist`, `unseen`, `pickpocket`, `locksmith`, `vanishing-act`, `eviscerator`, `bleeder`, `cold-blooded`, `assassin`, `cutthroat`, `gouger`, `blade-dancer`, `swashbuckler`, `first-strike`, `sandman`, `bloodspiller`, `shadowstalker`, `fortifier`, `aegis`, `puppeteer`, `shrieker`, `inner-flame`, `dispeller`, `infuser`, `disciplinarian`, `mender`, `renewer`, `prayer-leader`, `high-priest`, `mind-flayer`, `pain-bringer`, `mind-blaster`, `voidspeaker`, `totemic`, `pack-runner`, `shock-therapy`, `twice-born`, `bolt-thrower`, `chain-reaction`, `purger`, `stormcaller`, `stormstriker`, `weapon-imbuer`, `charged`, `spiritwalker`, `wave-rider`, `chain-healer`, `tide-turner`, `tidecaller`, `sheep-herder`, `portal-master`, `quartermaster`, `blinker`, `missile-barrage`, `detonator`, `channeler`, `arcanist`, `firestarter`, `pyromaniac`, `scorcher`, `pyromancer`, `frostbinder`, `shatterer`, `iceborn`, `cryomancer`, `soul-harvester`, `life-tapper`, `fearmonger`, `summoner`, `corruptor`, `agonizer`, `leech`, `hexweaver`, `demon-caller`, `funneler`, `pactbinder`, `demonologist`, `bolt-slinger`, `immolator`, `searing`, `destroyer`, `shapeshifter`, `wild-gift`, `back-from-the-brink`, `entangler`, `wrathbringer`, `starcaller`, `moonlit`, `stargazer`, `mauler`, `shredder`, `savage`, `wildheart`, `greenthumb`, `rejuvenator`, `swiftmender`, `grovekeeper`, `caretaker`, `lifegiver`, `miracle-worker`, `field-medic`, `chaplain`, `raid-medic`, `guardian-angel`, `resurrector`, `cleanser`, `battle-medic`, `stalwart`, `damage-sponge`, `unbreakable`, `vanguard`, `bulwark`, `juggernaut`, `immovable`, `provoker`, `frontliner`, `first-to-fall`, `brawler`, `bruiser`, `onslaught`, `skirmisher`, `headhunter`, `warbringer`, `untouched`, `silencer`, `cleaver`, `duelist`, `longshot`, `artillery`, `barrage`, `backliner`, `spellslinger`, `siegebreaker`, `out-of-reach`, `warden`, `sniper`, `bombardier`; the gold feats `earner`, `spender`, `tycoon` and `windfall` are listed only when `meta.economy` is true; `name`, `value`, `tier` from 0 for none to 5 for legend, with `tier_name` one of `Copper`, `Silver`, `Gold`, `Scarlet` or `Legend`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the ranks of Cooking, First Aid, Fishing and the character's two highest primary professions), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.
+`data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (every feat that applies to the character: those earned first, rarest first, then those not yet earned, closest first; `pinned` is true for a feat the owner pinned, which keeps its place in the list. `key` is a key of `GET /public/feats` (241 feats); the gold feats `earner`, `spender`, `tycoon` and `windfall` are listed only when `meta.economy` is true; `name`, `value`, `tier` from 0 for none to 5 for legend, with `tier_name` one of `Copper`, `Silver`, `Gold`, `Scarlet` or `Legend`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the ranks of Cooking, First Aid, Fishing and the character's two highest primary professions), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.
 
 Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane`
 
@@ -635,6 +651,20 @@ One session of a public character as a recap: title, played time, levels, experi
 Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/sessions/1763840520`
 
 ### Records
+
+#### `GET /public/feats`
+
+The feat catalog, as `resources/feats/feats.json` holds it, with the share of characters at each tier.
+
+`data`: `catalog` (the version) and `feats`: `key`, `name`, `family`, `collection`, `scope` (`general`, `class`, `tree` or `role`), `class`, `tree` or `role` where the scope has one, `glyph`, `icon` (`spell` or `tree` when the seal engraves one), `one` and `many`, `unit` (`mi`: the thresholds are yards), `thresholds`, `economy` (a gold feat), `measure`, `spells`, `live` and `shares`: five percentages, copper first, of the characters with 20 recorded hours or more that hold the tier or higher, rebuilt daily; `null` until 20 characters are counted for the feat.
+
+#### `GET /public/feats/{key}`
+
+| Parameter | In | Type | Meaning |
+| --- | --- | --- | --- |
+| `key` | path | string | A feat key from `/feats`. An unknown key answers 404. |
+
+`data`: `catalog`, the fields of the feat in `/feats`, `top` (20 public characters at most, highest count first: `character`, `value` in the units of the thresholds, `tier`) and `recent` (10 at most, newest first: `character`, the `tier` reached, `at`). A gold feat lists only characters that show their economy.
 
 #### `GET /public/creatures/{id}`
 

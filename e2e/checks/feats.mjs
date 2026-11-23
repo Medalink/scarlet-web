@@ -87,3 +87,77 @@ export async function featScoreBoardListsTheFixtures(ctx) {
     await sleep(SPEC_POLL_MS);
   }
 }
+
+const CARD_NUMBERS = ["value", "progress"];
+const CARD_GROUPS = ["pinned", "top", "earned", "unearned"];
+
+function cardFaults(card, catalog) {
+  const faults = [];
+  const at = `card ${card.key}`;
+  const entry = catalog.get(card.key);
+  if (!entry) return [`${at}: not in /public/feats`];
+  for (const field of ["family", "collection", "counted", "track", "icon", "detail"]) {
+    if (card[field] === undefined || card[field] === null) faults.push(`${at}: ${field} is missing`);
+  }
+  if (card.family !== entry.family || card.collection !== entry.collection) faults.push(`${at}: family and collection differ from the catalog`);
+  for (const field of CARD_NUMBERS) {
+    if (typeof card[field] !== "number") faults.push(`${at}: ${field} is not a number`);
+  }
+  if (JSON.stringify(card.thresholds) !== JSON.stringify(entry.thresholds)) faults.push(`${at}: thresholds ${JSON.stringify(card.thresholds)} differ from the catalog's ${JSON.stringify(entry.thresholds)}`);
+  if (card.progress < 0 || card.progress > 1) faults.push(`${at}: progress ${card.progress} is outside 0 to 1`);
+  const top = card.tier === 5;
+  if (top ? card.next !== null || card.left !== null || card.to_next !== null : card.next !== card.thresholds[card.tier] || card.left !== Math.max(0, card.next - card.value) || typeof card.to_next !== "string") {
+    faults.push(`${at}: next ${card.next}, left ${card.left} and to_next ${JSON.stringify(card.to_next)} do not follow from tier ${card.tier} and value ${card.value}`);
+  }
+  if (!top && !String(card.to_next).endsWith(" to " + ["Copper", "Silver", "Gold", "Scarlet", "Legend"][card.tier])) faults.push(`${at}: to_next ${JSON.stringify(card.to_next)} should name the next tier`);
+  if (card.share !== null && typeof card.share !== "number") faults.push(`${at}: share is neither a number nor null`);
+  if (card.tier === 0 && card.share !== null) faults.push(`${at}: an unearned feat has a share`);
+  if (card.spell !== null && !Number.isInteger(card.spell)) faults.push(`${at}: spell is neither a spell id nor null`);
+  if (typeof card.live !== "boolean") faults.push(`${at}: live is not a boolean`);
+  return faults;
+}
+
+/** The new fields of GET /installs/me/feats: the catalog version, the score, spec and through of a character, and the fields of every card, beside the ones that were there. */
+export async function featsAnswerHasTheNewFields(ctx) {
+  const published = expectJson(expectStatus(await ctx.http.api("/api/v1/public" + uncached("/feats", 20)), 200, "GET /api/v1/public/feats"), "the catalog").data;
+  const catalog = new Map(published.feats.map((feat) => [feat.key, feat]));
+  const deadline = Date.now() + SPEC_WAIT_MS;
+  for (;;) {
+    const answer = expectJson(expectStatus(await ctx.client.feats(), 200, READ), READ);
+    const wall = (answer.characters ?? []).find((entry) => entry.name === NAME);
+    if (!wall) throw new Error(`${READ}: expected the feats of ${NAME}, saw ${JSON.stringify(answer).slice(0, 300)}`);
+    const faults = [];
+    if (answer.catalog !== published.catalog) faults.push(`catalog ${answer.catalog} differs from /public/feats ${published.catalog}`);
+    if (!Number.isInteger(wall.score) || wall.score < 1 || wall.score > 340) faults.push(`score ${JSON.stringify(wall.score)} should be a whole number from 1 to 340`);
+    if (!Number.isInteger(wall.through) || wall.through <= 0) faults.push(`through ${JSON.stringify(wall.through)} should be the start of the newest session`);
+    if (wall.spec !== null && typeof wall.spec !== "string") faults.push(`spec ${JSON.stringify(wall.spec)} should be a name or null`);
+    const cards = CARD_GROUPS.flatMap((group) => wall[group]);
+    if (cards.length === 0) faults.push("no card in any group");
+    for (const card of cards) faults.push(...cardFaults(card, catalog));
+    if (faults.length === 0) return;
+    if (Date.now() > deadline) throw new Error(`${READ} for ${NAME} is wrong in:\n${faults.slice(0, 12).join("\n")}`);
+    await sleep(SPEC_POLL_MS);
+  }
+}
+
+/** GET /api/v1/public/feats and /feats/{key}: the catalog with its shares, and one feat with who holds the most of it and who reached a tier last. */
+export async function publicFeatsAreServed(ctx) {
+  const list = expectJson(expectStatus(await ctx.http.api("/api/v1/public" + uncached("/feats", 30)), 200, "GET /api/v1/public/feats"), "the catalog").data;
+  const bad = list.feats.filter((feat) => !(feat.key && feat.name && feat.family && feat.collection && ["general", "class", "tree", "role"].includes(feat.scope) && feat.thresholds?.length === 5 && (feat.shares === null || feat.shares.length === 5)));
+  if (list.catalog !== 2 || list.feats.length !== 241 || bad.length > 0) {
+    throw new Error(`/public/feats should be catalog 2 with 241 feats, each with its scope, five thresholds and shares, saw catalog ${list.catalog}, ${list.feats.length} feats and ${bad.length} faulty: ${JSON.stringify(bad[0])}`);
+  }
+  const wall = (expectJson(expectStatus(await ctx.client.feats(), 200, READ), READ).characters ?? []).find((entry) => entry.name === NAME);
+  const key = wall.earned[0].key;
+  const route = `/api/v1/public/feats/${key}`;
+  const deadline = Date.now() + SPEC_WAIT_MS;
+  for (;;) {
+    const feat = expectJson(expectStatus(await ctx.http.api(uncached(route, crypto.randomInt(2, 101))), 200, `GET ${route}`), route).data;
+    const sorted = feat.top.every((row, i) => i === 0 || feat.top[i - 1].value >= row.value);
+    const listed = feat.top.some((row) => row.character === NAME && row.tier >= 1) && feat.recent.some((row) => row.character === NAME && row.tier >= 1 && row.at.endsWith("Z"));
+    if (feat.key === key && feat.top.length <= 20 && feat.recent.length <= 10 && sorted && listed) break;
+    if (Date.now() > deadline) throw new Error(`${route} should list ${NAME} in top (highest first, 20 at most) and in recent (10 at most), saw ${JSON.stringify({ top: feat.top.slice(0, 3), recent: feat.recent.slice(0, 3) })}`);
+    await sleep(SPEC_POLL_MS);
+  }
+  expectError(await ctx.http.api("/api/v1/public/feats/not-a-feat"), 404, "not_found", "GET /api/v1/public/feats/not-a-feat");
+}
