@@ -2,8 +2,9 @@
 <div class="wrap">
   <x-page-head title="Leaderboards">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
-    <x-slot:filters><x-scope-filters :filters="$d['filters']" /></x-slot:filters>
+    <x-slot:filters><x-scope-switch :choice="$scope['choice']" :path="$path" :names="$scope['names']" :as="$scope['as']" :query="$scope['query']" /><x-scope-filters :filters="$d['filters']" /></x-slot:filters>
   </x-page-head>
+  <x-places :groups="$places" heading="Your places on the boards" />
   <ol class="hall">
     @foreach ($d['boards'] as $board)
     <li>

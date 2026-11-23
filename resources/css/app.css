@@ -18,6 +18,8 @@
 .pg-head .sub { margin-top: 0.8rem; font-size: 1.08rem; color: var(--text); max-width: 60ch; }
 .filters { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: flex-end; }
 .scope-compare { max-width: 44rem; margin: 1.2rem 0; }
+.places { margin: 1.2rem 0; max-width: 44rem; }
+.places h2 { font: 600 1.1rem/1.2 var(--body); margin: 1.1rem 0 0.3rem; }
 .seg a { font: 500 0.9rem/1 var(--body); color: var(--text); padding: 0.5rem 0.8rem; text-decoration: none; }
 .seg a + a, .seg a + .off, .seg .off + a { border-left: 1px solid var(--line2); }
 .seg .off { font: 500 0.9rem/1 var(--body); color: var(--muted); padding: 0.5rem 0.8rem; cursor: not-allowed; }
