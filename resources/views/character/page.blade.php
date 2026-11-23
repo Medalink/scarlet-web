@@ -20,5 +20,6 @@
   @include('character.combat')
   @include('character.loot')
   @includeWhen($d['time'], 'character.time')
+  @includeWhen($d['imported'], 'character.imported')
 </div>
 </x-layouts.sc>

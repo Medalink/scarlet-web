@@ -11,6 +11,8 @@ final class FeatsSection
 {
     private const int PINNED = 3;
 
+    private const int TOASTS = 3;
+
     /**
      * @param  array{character: array<string, mixed>, feats: list<array<string, mixed>>, closest: list<array<string, mixed>>}  $hub  BuildCharacterFeats
      * @return array<string, mixed>|null
@@ -30,6 +32,31 @@ final class FeatsSection
             'closest' => $owner ? array_map(FeatsPage::closestCard(...), $hub['closest']) : [],
             'wall' => self::wall($feats, $character->pinned_feats ?? []),
         ];
+    }
+
+    /**
+     * The toasts of the feats whose tier the owner has not been shown, highest first, three at most.
+     *
+     * @param  list<array<string, mixed>>  $feats
+     * @param  list<array{key: string, from: int, from_name: string|null, tier: int}>  $new
+     * @return list<array{key: string, tier: int, kicker: string, feat: array<string, mixed>}>
+     */
+    public static function toasts(array $feats, array $new): array
+    {
+        $by = array_column($feats, null, 'key');
+        $toasts = [];
+        foreach (array_slice($new, 0, self::TOASTS) as $item) {
+            $feat = $by[$item['key']] ?? null;
+            if ($feat === null) {
+                continue;
+            }
+            $toasts[] = [
+                'key' => $item['key'], 'tier' => $item['tier'], 'kicker' => $item['from'] > 0 ? 'Upgraded from '.$item['from_name'] : 'Feat earned',
+                'feat' => ['name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $item['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'], 'count' => $feat['counted']],
+            ];
+        }
+
+        return $toasts;
     }
 
     /**

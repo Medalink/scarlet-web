@@ -9,6 +9,7 @@ use App\Support\Scene;
 use App\Support\SceneArt;
 use App\View\Format;
 use App\View\Pages\FeatsPage;
+use App\View\Pages\ImportedHistoryPage;
 use Illuminate\Support\Str;
 
 /** The data of /c/{name} (design/final/character-web.html) from the bundle of App\Actions\Public\ShowCharacter. */
@@ -70,7 +71,7 @@ final class Page
             'battlegrounds' => $battlegrounds,
             'loot' => Chapters::loot($r),
             'time' => $time,
-            'imported' => null,
+            'imported' => $bundle['imported'] === null ? null : ImportedHistoryPage::character($bundle['imported']),
         ];
     }
 

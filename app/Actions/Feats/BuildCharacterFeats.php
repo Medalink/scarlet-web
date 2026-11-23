@@ -18,11 +18,12 @@ class BuildCharacterFeats
     /**
      * @param  list<array<string, mixed>>  $catalog
      * @param  bool  $shares  whether each feat carries the share of the tier held
+     * @param  bool|null  $economy  whether the gold feats are in; the character's own choice when null
      * @return array{character: array<string, mixed>, feats: list<array<string, mixed>>, closest: list<array<string, mixed>>}
      */
-    public function handle(Character $character, array $catalog, bool $shares): array
+    public function handle(Character $character, array $catalog, bool $shares, ?bool $economy = null): array
     {
-        $feats = $this->ofCharacter($character, $catalog, $shares);
+        $feats = $this->ofCharacter($character, $catalog, $shares, $economy ?? (bool) $character->show_economy);
 
         return ['character' => $this->summary($character, $feats), 'feats' => $feats, 'closest' => $this->closest($feats)];
     }
@@ -31,9 +32,9 @@ class BuildCharacterFeats
      * @param  list<array<string, mixed>>  $catalog
      * @return list<array<string, mixed>>
      */
-    private function ofCharacter(Character $character, array $catalog, bool $shares): array
+    private function ofCharacter(Character $character, array $catalog, bool $shares, bool $economy): array
     {
-        $rows = $this->rows->handle($character, (bool) $character->show_economy);
+        $rows = $this->rows->handle($character, $economy);
         $fields = $this->fields->handle($character, $rows);
         $byKey = [];
         foreach ($rows as $row) {

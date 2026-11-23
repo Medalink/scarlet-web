@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public;
 
+use App\Actions\Account\ShowImportedHistory;
 use App\Actions\Feats\BuildCharacterFeats;
 use App\Actions\Feats\ShowFeatCatalog;
 use App\Actions\Public\Character\CharacterRates;
@@ -24,6 +25,7 @@ class ShowCharacter
         private readonly TimeSplits $splits,
         private readonly PlayTimeByWeekday $everyone,
         private readonly SessionsSection $sessions,
+        private readonly ShowImportedHistory $imported,
     ) {}
 
     /**
@@ -42,13 +44,14 @@ class ShowCharacter
 
         return [
             'overview' => $r,
-            'feats' => $this->feats->handle($character, $this->catalog->handle()['feats'], false),
+            'feats' => $this->feats->handle($character, $this->catalog->handle()['feats'], false, (bool) $r['economy']),
             'rates' => $this->rates->handle($character),
             'class' => $this->class->handle($character),
             'battlegrounds' => $this->battlegrounds->handle($name, $viewer),
             'splits' => $this->splits->handle($character->id),
             'everyone' => $rulesetId === null ? [] : $this->everyone->handle($rulesetId),
             'sessions' => $this->sessions->handle($character, $viewer, (bool) $r['economy'], $sessions, $r['days']),
+            'imported' => $r['owner'] ? ($this->imported->handle([$character->id])[$character->id] ?? null) : null,
         ];
     }
 }

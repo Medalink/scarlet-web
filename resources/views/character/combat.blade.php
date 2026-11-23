@@ -1,4 +1,7 @@
-@php($c = $d['combat'])
+@php
+    $c = $d['combat'];
+    $columns = App\View\Pages\BattlegroundsPage::COLUMNS;
+@endphp
 <section id="combat" class="sc-sec">
   <h2>Combat</h2>
   <div class="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3">
@@ -22,9 +25,12 @@
           <p class="sc-h3">{{ $match['heading'] }}</p>
           <p class="sc-mono mt-1"><time datetime="{{ $match['instant'] }}" data-local="j M Y H:i">{{ $match['at'] }}</time></p>
           <table class="mt-3 w-full text-[13.5px]">
-            @foreach ($match['rows'] as $row)
-              <tr class="border-t border-line">@foreach ($row as $cell)<td class="py-1.5 pr-3">{{ is_array($cell) ? ($cell['text'] ?? '') : $cell }}</td>@endforeach</tr>
-            @endforeach
+            <thead><tr>@foreach ($columns as $column)<th class="pb-1.5 pr-3 text-left text-[12px] font-normal text-muted {{ ($column['numeric'] ?? false) ? '!text-right' : '' }}">{{ $column['label'] }}</th>@endforeach</tr></thead>
+            <tbody>
+              @foreach ($match['rows'] as $row)
+                <tr class="border-t border-line">@foreach ($row['cells'] as $i => $cell)@php($cell = is_array($cell) ? $cell : ['text' => $cell])<td class="py-1.5 pr-3 {{ ($columns[$i]['numeric'] ?? false) ? 'text-right' : '' }}">@if (! empty($cell['href']))<a href="{{ $cell['href'] }}">{{ $cell['text'] }}</a>@else{{ $cell['text'] }}@endif</td>@endforeach</tr>
+              @endforeach
+            </tbody>
           </table>
         </div>
       @endforeach
