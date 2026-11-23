@@ -192,6 +192,21 @@
     </div>
   </section>
 
+  <section class="band" id="downloads" aria-labelledby="h-downloads">
+    <div class="wrap">
+      <h2 id="h-downloads">Download the Scarlet app</h2>
+      @if ($app['installer'])
+        <p class="intro">{{ $app['prerelease'] ? 'Beta version' : 'Version' }} <b>{{ $app['version'] }}</b>@if ($app['date']), published {{ \Illuminate\Support\Carbon::parse($app['date'])->format('j M Y') }}@endif. Windows only. The installer sets up the app for your user and needs no administrator rights. It installs the addon for WoW Forever and keeps it current.</p>
+        <p class="intro"><x-get-app :version="false" /></p>
+        <p class="intro">Scarlet_{{ $app['version'] }}_x64-setup.exe{{ $app['installer_size'] ? ', '.number_format($app['installer_size'] / 1048576, 1).' MB' : '' }}, signed with Authenticode.@if ($app['sums']) <a href="{{ $app['sums'] }}">SHA256SUMS.txt</a> lists its checksum.@endif</p>
+      @else
+        <p class="intro">The newest version could not be looked up just now. Every version is on the releases page.</p>
+        <p class="intro"><x-get-app /></p>
+      @endif
+      <p class="intro">@if ($app['zip'])<a href="{{ $app['zip'] }}">Scarlet-{{ $app['version'] }}.zip</a>, the addon alone: unzip the <code>Scarlet</code> folder into <code>World of Warcraft\_forever_\Interface\AddOns</code>. @endif<a href="{{ $app['releases'] }}">All releases on GitHub</a></p>
+    </div>
+  </section>
+
   <section class="close" aria-labelledby="h-close">
     <div class="wrap">
       <h2 id="h-close">The demo character Maren Ashlow has <span data-hours>96</span> hours of play on record</h2>

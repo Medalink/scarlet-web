@@ -17,7 +17,7 @@ const PAGES = [
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
   { path: "/developers", shows: heading("Public API") },
   { path: "/release-notes", shows: heading("Release notes") },
-  { path: "/download", shows: heading("Download the Scarlet app") },
+  { path: "/download", shows: heading("Scarlet records what you do in WoW Forever") },
   { path: "/leaderboards", shows: heading("Leaderboards") },
   { path: "/leaderboards/most-quests", shows: heading("Most quests turned in") },
   { path: "/leaderboards/feat-score", shows: heading("Highest feat score") },

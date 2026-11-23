@@ -1,13 +1,14 @@
 <?php
 
 use App\Http\Controllers\Web\DesignController;
+use App\Http\Controllers\Web\DownloadController;
 use App\Http\Controllers\Web\MapViewerDesignController;
 use App\Http\Controllers\Web\SceneDesignController;
 use App\Http\Middleware\RateLimitRequests;
 use App\View\Design\Gallery;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'landing')->middleware('scarlet.edge');
+Route::get('/', DownloadController::class)->middleware('scarlet.edge');
 Route::view('/demo', 'demo')->middleware('scarlet.edge');
 
 // The component gallery rebuilds every comp from invented data; it is not part of the site.
