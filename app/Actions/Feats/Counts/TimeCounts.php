@@ -4,7 +4,6 @@ namespace App\Actions\Feats\Counts;
 
 use App\Models\Character;
 use App\Support\Feat;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /** The time feats: level, play time, play days, session counts and the run without a dying level. */
@@ -24,7 +23,7 @@ class TimeCounts
         $seconds = $character->played_known ? $character->played_seconds : $character->recorded_seconds;
         $level = $character->level === null ? null : (int) $character->level;
         $sessions = DB::table('sessions')->where('character_id', $character->id)->where('counted', true)
-            ->selectRaw('count(*) as played, count(*) filter (where played_ms >= ?) as long, min(start_at) as first, max(end_at) as last', [self::LONG_SESSION_MS])->first();
+            ->selectRaw('count(*) filter (where played_ms >= ?) as long', [self::LONG_SESSION_MS])->first();
         $days = $this->days((int) $character->id);
 
         return [
@@ -33,9 +32,7 @@ class TimeCounts
             Feat::Devoted->value => count($days),
             Feat::Steadfast->value => $this->longestRun($days),
             Feat::Seasoned->value => $this->weeks($days),
-            Feat::Regular->value => (int) ($sessions->played ?? 0),
             Feat::LongHaul->value => (int) ($sessions->long ?? 0),
-            Feat::Longstanding->value => $this->span($sessions->first ?? null, $sessions->last ?? null),
             Feat::Unbroken->value => $character->whole_life ? $this->unbroken((int) $character->id, $level) : null,
         ];
     }
@@ -73,15 +70,6 @@ class TimeCounts
         }
 
         return count($weeks);
-    }
-
-    private function span(mixed $first, mixed $last): int
-    {
-        if ($first === null || $last === null) {
-            return 0;
-        }
-
-        return intdiv((int) abs(Carbon::parse((string) $last)->diffInSeconds(Carbon::parse((string) $first))), self::DAY_SECONDS);
     }
 
     /** The level the character died at first, or its level when it never died; null when the first death has no level. */

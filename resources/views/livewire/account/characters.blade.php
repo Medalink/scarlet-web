@@ -16,6 +16,9 @@
     <x-row title="Show gold and trades on the public page" :body="'Off: visitors see no balance, vendors, auctions, mail or trades for '.\App\View\Format::characterName($character->name).'.'" wire:key="e-{{ $character->id }}">
       <x-switch :label="'Show economy for '.\App\View\Format::characterName($character->name)" :checked="$character->show_economy" wire:change="setEconomy({{ $character->id }}, $event.target.checked)" />
     </x-row>
+    <x-row title="Show session pages" :body="'Off: visitors cannot open the pages of single sessions of '.\App\View\Format::characterName($character->name).'.'" wire:key="s-{{ $character->id }}">
+      <x-switch :label="'Show sessions for '.\App\View\Format::characterName($character->name)" :checked="$character->show_sessions" wire:change="setSessions({{ $character->id }}, $event.target.checked)" />
+    </x-row>
 @endif
 @endforeach
   </x-rows>

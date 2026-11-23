@@ -1,0 +1,6335 @@
+{
+    "version": 2,
+    "tiers": [
+        "Copper",
+        "Silver",
+        "Gold",
+        "Scarlet",
+        "Legend"
+    ],
+    "families": [
+        "journey",
+        "combat",
+        "quests",
+        "dungeons",
+        "world",
+        "trade",
+        "class",
+        "role"
+    ],
+    "role_classes": {
+        "Healer": [
+            "Paladin",
+            "Priest",
+            "Shaman",
+            "Druid"
+        ],
+        "Tank": [
+            "Warrior",
+            "Paladin",
+            "Druid"
+        ],
+        "Melee": [
+            "Warrior",
+            "Paladin",
+            "Rogue",
+            "Shaman",
+            "Druid"
+        ],
+        "Ranged": [
+            "Hunter",
+            "Priest",
+            "Shaman",
+            "Mage",
+            "Warlock",
+            "Druid"
+        ]
+    },
+    "spec_roles": {
+        "Warrior": {
+            "Arms": [
+                "Melee"
+            ],
+            "Fury": [
+                "Melee"
+            ],
+            "Protection": [
+                "Tank"
+            ]
+        },
+        "Paladin": {
+            "Holy": [
+                "Healer"
+            ],
+            "Protection": [
+                "Tank"
+            ],
+            "Retribution": [
+                "Melee"
+            ]
+        },
+        "Hunter": {
+            "Beast Mastery": [
+                "Ranged"
+            ],
+            "Marksmanship": [
+                "Ranged"
+            ],
+            "Survival": [
+                "Ranged"
+            ]
+        },
+        "Rogue": {
+            "Assassination": [
+                "Melee"
+            ],
+            "Combat": [
+                "Melee"
+            ],
+            "Subtlety": [
+                "Melee"
+            ]
+        },
+        "Priest": {
+            "Discipline": [
+                "Healer"
+            ],
+            "Holy": [
+                "Healer"
+            ],
+            "Shadow": [
+                "Ranged"
+            ]
+        },
+        "Shaman": {
+            "Elemental": [
+                "Ranged"
+            ],
+            "Enhancement": [
+                "Melee"
+            ],
+            "Restoration": [
+                "Healer"
+            ]
+        },
+        "Mage": {
+            "Arcane": [
+                "Ranged"
+            ],
+            "Fire": [
+                "Ranged"
+            ],
+            "Frost": [
+                "Ranged"
+            ]
+        },
+        "Warlock": {
+            "Affliction": [
+                "Ranged"
+            ],
+            "Demonology": [
+                "Ranged"
+            ],
+            "Destruction": [
+                "Ranged"
+            ]
+        },
+        "Druid": {
+            "Balance": [
+                "Ranged"
+            ],
+            "Feral": [
+                "Tank",
+                "Melee"
+            ],
+            "Restoration": [
+                "Healer"
+            ]
+        }
+    },
+    "feats": [
+        {
+            "key": "summit",
+            "name": "Summit",
+            "family": "journey",
+            "collection": "Journey",
+            "scope": "general",
+            "glyph": "level",
+            "one": "level reached",
+            "many": "levels reached",
+            "thresholds": [
+                10,
+                20,
+                40,
+                50,
+                60
+            ],
+            "live": {
+                "kind": "level"
+            }
+        },
+        {
+            "key": "veteran",
+            "name": "Veteran",
+            "family": "journey",
+            "collection": "Journey",
+            "scope": "general",
+            "glyph": "hours",
+            "one": "hour played",
+            "many": "hours played",
+            "thresholds": [
+                2,
+                20,
+                100,
+                500,
+                1500
+            ],
+            "live": {
+                "kind": "clock",
+                "per": 3600
+            }
+        },
+        {
+            "key": "devoted",
+            "name": "Devoted",
+            "family": "journey",
+            "collection": "Journey",
+            "scope": "general",
+            "glyph": "clock",
+            "one": "day played",
+            "many": "days played",
+            "thresholds": [
+                3,
+                14,
+                60,
+                150,
+                365
+            ],
+            "live": {
+                "kind": "login"
+            }
+        },
+        {
+            "key": "steadfast",
+            "name": "Steadfast",
+            "family": "journey",
+            "collection": "Journey",
+            "scope": "general",
+            "glyph": "clock",
+            "one": "day played in a row",
+            "many": "days played in a row",
+            "thresholds": [
+                2,
+                7,
+                21,
+                60,
+                180
+            ],
+            "live": {
+                "kind": "login"
+            }
+        },
+        {
+            "key": "seasoned",
+            "name": "Seasoned",
+            "family": "journey",
+            "collection": "Journey",
+            "scope": "general",
+            "glyph": "clock",
+            "one": "week played",
+            "many": "weeks played",
+            "thresholds": [
+                1,
+                4,
+                12,
+                26,
+                52
+            ],
+            "live": {
+                "kind": "login"
+            }
+        },
+        {
+            "key": "long-haul",
+            "name": "Long Haul",
+            "family": "journey",
+            "collection": "Journey",
+            "scope": "general",
+            "glyph": "hours",
+            "one": "two-hour session",
+            "many": "two-hour sessions",
+            "thresholds": [
+                1,
+                10,
+                50,
+                150,
+                500
+            ],
+            "live": {
+                "kind": "clock",
+                "once_at": 7200
+            }
+        },
+        {
+            "key": "unbroken",
+            "name": "Unbroken",
+            "family": "journey",
+            "collection": "Journey",
+            "scope": "general",
+            "glyph": "shield",
+            "one": "level reached without dying",
+            "many": "levels reached without dying",
+            "thresholds": [
+                10,
+                20,
+                35,
+                50,
+                60
+            ],
+            "live": {
+                "kind": "level",
+                "note": "while no death is recorded"
+            }
+        },
+        {
+            "key": "slayer",
+            "name": "Slayer",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "kills",
+            "one": "kill",
+            "many": "kills",
+            "thresholds": [
+                100,
+                1000,
+                10000,
+                30000,
+                100000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "kills"
+                ]
+            }
+        },
+        {
+            "key": "bestiary",
+            "name": "Bestiary",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "creature",
+            "one": "kind of creature killed",
+            "many": "kinds of creature killed",
+            "thresholds": [
+                10,
+                100,
+                400,
+                1000,
+                2000
+            ]
+        },
+        {
+            "key": "finisher",
+            "name": "Finisher",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "kills",
+            "one": "killing blow",
+            "many": "killing blows",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                15000,
+                50000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "blows"
+                ]
+            }
+        },
+        {
+            "key": "gladiator",
+            "name": "Gladiator",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "kills",
+            "one": "player killed",
+            "many": "players killed",
+            "thresholds": [
+                1,
+                10,
+                100,
+                500,
+                2500
+            ]
+        },
+        {
+            "key": "rampage",
+            "name": "Rampage",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "kills",
+            "one": "kill in one session",
+            "many": "kills in one session",
+            "thresholds": [
+                50,
+                300,
+                600,
+                1000,
+                2000
+            ],
+            "live": {
+                "kind": "session",
+                "keys": [
+                    "kills"
+                ]
+            }
+        },
+        {
+            "key": "streak",
+            "name": "Streak",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "kills",
+            "one": "kill in a row without dying",
+            "many": "kills in a row without dying",
+            "thresholds": [
+                25,
+                250,
+                1000,
+                2500,
+                5000
+            ],
+            "live": {
+                "kind": "pending",
+                "note": "kills since the last death, a counter the addon does not keep yet"
+            }
+        },
+        {
+            "key": "fallen",
+            "name": "Fallen",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "deaths",
+            "one": "death",
+            "many": "deaths",
+            "thresholds": [
+                1,
+                10,
+                40,
+                100,
+                400
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "deaths"
+                ]
+            }
+        },
+        {
+            "key": "flattened",
+            "name": "Flattened",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "deaths",
+            "one": "damage in one killing blow",
+            "many": "damage in one killing blow",
+            "thresholds": [
+                50,
+                300,
+                1000,
+                2500,
+                5000
+            ]
+        },
+        {
+            "key": "nemesis",
+            "name": "Nemesis",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "deaths",
+            "one": "death to one killer",
+            "many": "deaths to one killer",
+            "thresholds": [
+                2,
+                4,
+                8,
+                15,
+                30
+            ]
+        },
+        {
+            "key": "territorial",
+            "name": "Territorial",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "pin",
+            "one": "kill in one zone",
+            "many": "kills in one zone",
+            "thresholds": [
+                50,
+                500,
+                1500,
+                4000,
+                12000
+            ]
+        },
+        {
+            "key": "roamer",
+            "name": "Roamer",
+            "family": "combat",
+            "collection": "Combat",
+            "scope": "general",
+            "glyph": "pin",
+            "one": "zone with 100 kills",
+            "many": "zones with 100 kills",
+            "thresholds": [
+                1,
+                5,
+                12,
+                20,
+                30
+            ]
+        },
+        {
+            "key": "questing",
+            "name": "Questing",
+            "family": "quests",
+            "collection": "Quests",
+            "scope": "general",
+            "glyph": "quests",
+            "one": "quest turned in",
+            "many": "quests turned in",
+            "thresholds": [
+                10,
+                100,
+                400,
+                800,
+                1500
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "quests"
+                ]
+            }
+        },
+        {
+            "key": "errand-runner",
+            "name": "Errand Runner",
+            "family": "quests",
+            "collection": "Quests",
+            "scope": "general",
+            "glyph": "quests",
+            "one": "quest in one session",
+            "many": "quests in one session",
+            "thresholds": [
+                3,
+                10,
+                20,
+                35,
+                50
+            ],
+            "live": {
+                "kind": "session",
+                "keys": [
+                    "quests"
+                ]
+            }
+        },
+        {
+            "key": "fickle",
+            "name": "Fickle",
+            "family": "quests",
+            "collection": "Quests",
+            "scope": "general",
+            "glyph": "quests",
+            "one": "quest abandoned",
+            "many": "quests abandoned",
+            "thresholds": [
+                1,
+                10,
+                50,
+                150,
+                300
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "abandoned"
+                ]
+            }
+        },
+        {
+            "key": "cartographer",
+            "name": "Cartographer",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "zones",
+            "one": "area discovered",
+            "many": "areas discovered",
+            "thresholds": [
+                5,
+                50,
+                200,
+                400,
+                500
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "discoveries"
+                ]
+            }
+        },
+        {
+            "key": "local-hero",
+            "name": "Local Hero",
+            "family": "quests",
+            "collection": "Quests",
+            "scope": "general",
+            "glyph": "quests",
+            "one": "zone with 25 quests turned in",
+            "many": "zones with 25 quests turned in",
+            "thresholds": [
+                1,
+                4,
+                8,
+                12,
+                18
+            ]
+        },
+        {
+            "key": "thorough",
+            "name": "Thorough",
+            "family": "quests",
+            "collection": "Quests",
+            "scope": "general",
+            "glyph": "quests",
+            "one": "quest in one zone",
+            "many": "quests in one zone",
+            "thresholds": [
+                10,
+                30,
+                60,
+                90,
+                110
+            ]
+        },
+        {
+            "key": "delver",
+            "name": "Delver",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "dungeons",
+            "one": "dungeon run",
+            "many": "dungeon runs",
+            "thresholds": [
+                1,
+                10,
+                50,
+                200,
+                500
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "dungeons"
+                ],
+                "note": "the counter also counts raid runs until the next export corrects it"
+            }
+        },
+        {
+            "key": "vanquisher",
+            "name": "Vanquisher",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "crown",
+            "one": "dungeon boss killed",
+            "many": "dungeon bosses killed",
+            "thresholds": [
+                1,
+                10,
+                100,
+                500,
+                2500
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "bosses"
+                ],
+                "note": "the counter also counts raid bosses until the next export corrects it"
+            }
+        },
+        {
+            "key": "spelunker",
+            "name": "Spelunker",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "dungeons",
+            "one": "dungeon or raid entered",
+            "many": "dungeons or raids entered",
+            "thresholds": [
+                1,
+                5,
+                12,
+                18,
+                22
+            ]
+        },
+        {
+            "key": "raider",
+            "name": "Raider",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "crown",
+            "one": "raid run",
+            "many": "raid runs",
+            "thresholds": [
+                1,
+                10,
+                40,
+                100,
+                250
+            ]
+        },
+        {
+            "key": "conqueror",
+            "name": "Conqueror",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "crown",
+            "one": "raid boss killed",
+            "many": "raid bosses killed",
+            "thresholds": [
+                1,
+                10,
+                50,
+                250,
+                800
+            ]
+        },
+        {
+            "key": "deep-dweller",
+            "name": "Deep Dweller",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "dungeons",
+            "one": "hour inside dungeons",
+            "many": "hours inside dungeons",
+            "thresholds": [
+                1,
+                10,
+                50,
+                200,
+                600
+            ]
+        },
+        {
+            "key": "flawless",
+            "name": "Flawless",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "shield",
+            "one": "deathless dungeon run",
+            "many": "deathless dungeon runs",
+            "thresholds": [
+                1,
+                10,
+                40,
+                100,
+                300
+            ]
+        },
+        {
+            "key": "familiar",
+            "name": "Repeat Visitor",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "dungeons",
+            "one": "run of one dungeon",
+            "many": "runs of one dungeon",
+            "thresholds": [
+                2,
+                8,
+                20,
+                50,
+                120
+            ]
+        },
+        {
+            "key": "soloist",
+            "name": "Soloist",
+            "family": "dungeons",
+            "collection": "Dungeons",
+            "scope": "general",
+            "glyph": "dungeons",
+            "one": "dungeon run alone",
+            "many": "dungeon runs alone",
+            "thresholds": [
+                1,
+                5,
+                20,
+                50,
+                150
+            ]
+        },
+        {
+            "key": "explorer",
+            "name": "Explorer",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "zones",
+            "one": "zone entered",
+            "many": "zones entered",
+            "thresholds": [
+                5,
+                20,
+                40,
+                55,
+                65
+            ]
+        },
+        {
+            "key": "globetrotter",
+            "name": "Globetrotter",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "zones",
+            "one": "zone played for an hour",
+            "many": "zones played for an hour",
+            "thresholds": [
+                2,
+                10,
+                20,
+                30,
+                40
+            ]
+        },
+        {
+            "key": "local",
+            "name": "Resident",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "pin",
+            "one": "hour in one zone",
+            "many": "hours in one zone",
+            "thresholds": [
+                2,
+                10,
+                40,
+                100,
+                300
+            ]
+        },
+        {
+            "key": "wayfarer",
+            "name": "Wayfarer",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "distance",
+            "one": "world width walked",
+            "many": "world widths walked",
+            "thresholds": [
+                1,
+                10,
+                50,
+                150,
+                750
+            ]
+        },
+        {
+            "key": "trailblazer",
+            "name": "Trailblazer",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "distance",
+            "one": "mile in one session",
+            "many": "miles in one session",
+            "unit": "mi",
+            "thresholds": [
+                1760,
+                8800,
+                17600,
+                35200,
+                70400
+            ],
+            "live": {
+                "kind": "session",
+                "keys": [
+                    "foot",
+                    "walk",
+                    "mount",
+                    "swim"
+                ]
+            }
+        },
+        {
+            "key": "jumper",
+            "name": "Jumper",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "jumps",
+            "one": "jump",
+            "many": "jumps",
+            "thresholds": [
+                100,
+                1000,
+                10000,
+                50000,
+                250000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "jumps"
+                ]
+            }
+        },
+        {
+            "key": "frequent-flyer",
+            "name": "Frequent Flyer",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "wing",
+            "one": "flight path taken",
+            "many": "flight paths taken",
+            "thresholds": [
+                5,
+                50,
+                250,
+                1000,
+                4000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "flights"
+                ]
+            }
+        },
+        {
+            "key": "swimmer",
+            "name": "Swimmer",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "swim",
+            "one": "mile swum",
+            "many": "miles swum",
+            "unit": "mi",
+            "thresholds": [
+                500,
+                5280,
+                26400,
+                105600,
+                528000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "swim"
+                ]
+            }
+        },
+        {
+            "key": "runner",
+            "name": "Runner",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "distance",
+            "one": "mile run",
+            "many": "miles run",
+            "unit": "mi",
+            "thresholds": [
+                880,
+                8800,
+                88000,
+                880000,
+                8800000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "foot"
+                ]
+            }
+        },
+        {
+            "key": "rider",
+            "name": "Rider",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "distance",
+            "one": "mile ridden",
+            "many": "miles ridden",
+            "unit": "mi",
+            "thresholds": [
+                880,
+                8800,
+                88000,
+                880000,
+                8800000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "mount"
+                ]
+            }
+        },
+        {
+            "key": "stroller",
+            "name": "Stroller",
+            "family": "world",
+            "collection": "Travel",
+            "scope": "general",
+            "glyph": "distance",
+            "one": "mile walked",
+            "many": "miles walked",
+            "unit": "mi",
+            "thresholds": [
+                100,
+                1760,
+                8800,
+                44000,
+                220000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "walk"
+                ]
+            }
+        },
+        {
+            "key": "tracker",
+            "name": "Tracker",
+            "family": "world",
+            "collection": "Creatures",
+            "scope": "general",
+            "glyph": "pin",
+            "one": "rare creature seen",
+            "many": "rare creatures seen",
+            "thresholds": [
+                1,
+                10,
+                30,
+                60,
+                100
+            ]
+        },
+        {
+            "key": "naturalist",
+            "name": "Naturalist",
+            "family": "world",
+            "collection": "Creatures",
+            "scope": "general",
+            "glyph": "creature",
+            "one": "kind of creature seen",
+            "many": "kinds of creature seen",
+            "thresholds": [
+                25,
+                250,
+                1000,
+                2500,
+                5000
+            ]
+        },
+        {
+            "key": "skullseer",
+            "name": "Skullseer",
+            "family": "world",
+            "collection": "Creatures",
+            "scope": "general",
+            "glyph": "creature",
+            "one": "skull-level creature seen",
+            "many": "skull-level creatures seen",
+            "thresholds": [
+                1,
+                5,
+                20,
+                50,
+                100
+            ]
+        },
+        {
+            "key": "looter",
+            "name": "Looter",
+            "family": "trade",
+            "collection": "Loot",
+            "scope": "general",
+            "glyph": "item",
+            "one": "corpse looted",
+            "many": "corpses looted",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                10000,
+                50000
+            ]
+        },
+        {
+            "key": "lucky",
+            "name": "Lucky",
+            "family": "trade",
+            "collection": "Loot",
+            "scope": "general",
+            "glyph": "item",
+            "one": "uncommon item looted",
+            "many": "uncommon items looted",
+            "thresholds": [
+                1,
+                25,
+                250,
+                1000,
+                4000
+            ]
+        },
+        {
+            "key": "collector",
+            "name": "Rare Find",
+            "family": "trade",
+            "collection": "Loot",
+            "scope": "general",
+            "glyph": "item",
+            "one": "rare item looted",
+            "many": "rare items looted",
+            "thresholds": [
+                1,
+                10,
+                50,
+                150,
+                500
+            ]
+        },
+        {
+            "key": "jackpot",
+            "name": "Jackpot",
+            "family": "trade",
+            "collection": "Loot",
+            "scope": "general",
+            "glyph": "item",
+            "one": "epic item looted",
+            "many": "epic items looted",
+            "thresholds": [
+                1,
+                3,
+                10,
+                25,
+                75
+            ]
+        },
+        {
+            "key": "curator",
+            "name": "Curator",
+            "family": "trade",
+            "collection": "Loot",
+            "scope": "general",
+            "glyph": "item",
+            "one": "kind of item received",
+            "many": "kinds of item received",
+            "thresholds": [
+                25,
+                250,
+                1000,
+                2500,
+                4000
+            ]
+        },
+        {
+            "key": "unboxer",
+            "name": "Unboxer",
+            "family": "trade",
+            "collection": "Loot",
+            "scope": "general",
+            "glyph": "item",
+            "one": "container opened",
+            "many": "containers opened",
+            "thresholds": [
+                1,
+                10,
+                50,
+                250,
+                1000
+            ]
+        },
+        {
+            "key": "angler",
+            "name": "Angler",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "fish",
+            "one": "fish caught",
+            "many": "fish caught",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                15000
+            ]
+        },
+        {
+            "key": "fishmonger",
+            "name": "Fishmonger",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "fish",
+            "one": "kind of catch",
+            "many": "kinds of catch",
+            "thresholds": [
+                3,
+                15,
+                30,
+                45,
+                60
+            ]
+        },
+        {
+            "key": "wading",
+            "name": "Wading",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "fish",
+            "one": "zone fished in",
+            "many": "zones fished in",
+            "thresholds": [
+                1,
+                5,
+                10,
+                20,
+                30
+            ]
+        },
+        {
+            "key": "gatherer",
+            "name": "Gatherer",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "gather",
+            "one": "node gathered",
+            "many": "nodes gathered",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                15000
+            ]
+        },
+        {
+            "key": "forager",
+            "name": "Forager",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "gather",
+            "one": "zone gathered in",
+            "many": "zones gathered in",
+            "thresholds": [
+                1,
+                5,
+                10,
+                20,
+                30
+            ]
+        },
+        {
+            "key": "artisan",
+            "name": "Artisan",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "skills",
+            "one": "profession rank",
+            "many": "profession ranks",
+            "thresholds": [
+                75,
+                300,
+                600,
+                1200,
+                1500
+            ]
+        },
+        {
+            "key": "master",
+            "name": "Master",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "skills",
+            "one": "profession at rank 300",
+            "many": "professions at rank 300",
+            "thresholds": [
+                1,
+                2,
+                3,
+                4,
+                5
+            ]
+        },
+        {
+            "key": "crafter",
+            "name": "Crafter",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "item",
+            "one": "item crafted",
+            "many": "items crafted",
+            "thresholds": [
+                5,
+                50,
+                500,
+                5000,
+                25000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "crafted"
+                ]
+            }
+        },
+        {
+            "key": "repertoire",
+            "name": "Repertoire",
+            "family": "trade",
+            "collection": "Professions",
+            "scope": "general",
+            "glyph": "skills",
+            "one": "kind of item crafted",
+            "many": "kinds of item crafted",
+            "thresholds": [
+                3,
+                25,
+                75,
+                150,
+                300
+            ]
+        },
+        {
+            "key": "earner",
+            "name": "Earner",
+            "family": "trade",
+            "collection": "Gold",
+            "scope": "general",
+            "glyph": "gold",
+            "one": "gold earned",
+            "many": "gold earned",
+            "thresholds": [
+                1,
+                25,
+                250,
+                2500,
+                25000
+            ],
+            "economy": true,
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "earned"
+                ],
+                "per": 10000
+            }
+        },
+        {
+            "key": "spender",
+            "name": "Spender",
+            "family": "trade",
+            "collection": "Gold",
+            "scope": "general",
+            "glyph": "gold",
+            "one": "gold spent",
+            "many": "gold spent",
+            "thresholds": [
+                1,
+                25,
+                250,
+                2500,
+                25000
+            ],
+            "economy": true,
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "spent"
+                ],
+                "per": 10000
+            }
+        },
+        {
+            "key": "tycoon",
+            "name": "Tycoon",
+            "family": "trade",
+            "collection": "Gold",
+            "scope": "general",
+            "glyph": "gold",
+            "one": "gold carried at once",
+            "many": "gold carried at once",
+            "thresholds": [
+                1,
+                25,
+                250,
+                2000,
+                10000
+            ],
+            "economy": true,
+            "live": {
+                "kind": "money",
+                "per": 10000
+            }
+        },
+        {
+            "key": "windfall",
+            "name": "Windfall",
+            "family": "trade",
+            "collection": "Gold",
+            "scope": "general",
+            "glyph": "gold",
+            "one": "gold earned in one session",
+            "many": "gold earned in one session",
+            "thresholds": [
+                1,
+                10,
+                50,
+                200,
+                1000
+            ],
+            "economy": true,
+            "live": {
+                "kind": "session",
+                "keys": [
+                    "earned"
+                ],
+                "per": 10000
+            }
+        },
+        {
+            "key": "expressive",
+            "name": "Expressive",
+            "family": "journey",
+            "collection": "Company",
+            "scope": "general",
+            "glyph": "emote",
+            "one": "emote used",
+            "many": "emotes used",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "emotes"
+                ]
+            }
+        },
+        {
+            "key": "mime",
+            "name": "Mime",
+            "family": "journey",
+            "collection": "Company",
+            "scope": "general",
+            "glyph": "emote",
+            "one": "kind of emote used",
+            "many": "kinds of emote used",
+            "thresholds": [
+                3,
+                15,
+                40,
+                80,
+                120
+            ]
+        },
+        {
+            "key": "signature",
+            "name": "Signature",
+            "family": "journey",
+            "collection": "Company",
+            "scope": "general",
+            "glyph": "emote",
+            "one": "use of one emote",
+            "many": "uses of one emote",
+            "thresholds": [
+                5,
+                50,
+                500,
+                2000,
+                10000
+            ]
+        },
+        {
+            "key": "indecisive",
+            "name": "Indecisive",
+            "family": "journey",
+            "collection": "Journey",
+            "scope": "general",
+            "glyph": "talents",
+            "one": "talent respec",
+            "many": "talent respecs",
+            "thresholds": [
+                1,
+                3,
+                10,
+                25,
+                60
+            ]
+        },
+        {
+            "key": "companion",
+            "name": "Companion",
+            "family": "journey",
+            "collection": "Company",
+            "scope": "general",
+            "glyph": "characters",
+            "one": "hour in a group",
+            "many": "hours in a group",
+            "thresholds": [
+                1,
+                10,
+                50,
+                250,
+                1000
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "groupTime"
+                ],
+                "per": 3600
+            }
+        },
+        {
+            "key": "fireside",
+            "name": "Fireside",
+            "family": "journey",
+            "collection": "Company",
+            "scope": "general",
+            "glyph": "fire",
+            "one": "hour by a campfire",
+            "many": "hours by a campfire",
+            "thresholds": [
+                1,
+                5,
+                25,
+                100,
+                400
+            ],
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "camptime"
+                ],
+                "per": 3600
+            }
+        },
+        {
+            "key": "battle-cry",
+            "name": "Battle Cry",
+            "family": "class",
+            "collection": "Warrior",
+            "scope": "class",
+            "class": "Warrior",
+            "glyph": "emote",
+            "icon": "spell",
+            "one": "battle shout",
+            "many": "battle shouts",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Battle Shout"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "charger",
+            "name": "Charger",
+            "family": "class",
+            "collection": "Warrior",
+            "scope": "class",
+            "class": "Warrior",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "charge",
+            "many": "charges",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Charge",
+                "Intercept"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "executioner",
+            "name": "Executioner",
+            "family": "class",
+            "collection": "Warrior",
+            "scope": "class",
+            "class": "Warrior",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "execute",
+            "many": "executes",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Execute"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "stance-dancer",
+            "name": "Stance Dancer",
+            "family": "class",
+            "collection": "Warrior",
+            "scope": "class",
+            "class": "Warrior",
+            "glyph": "talents",
+            "icon": "spell",
+            "one": "stance change",
+            "many": "stance changes",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Battle Stance",
+                "Defensive Stance",
+                "Berserker Stance"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "mortal-striker",
+            "name": "Mortal Striker",
+            "family": "class",
+            "collection": "Warrior, Arms",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Arms",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "mortal strike",
+            "many": "mortal strikes",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Mortal Strike"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "overpowering",
+            "name": "Overpowering",
+            "family": "class",
+            "collection": "Warrior, Arms",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Arms",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "overpower",
+            "many": "overpowers",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Overpower"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "bloodletter",
+            "name": "Bloodletter",
+            "family": "class",
+            "collection": "Warrior, Arms",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Arms",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "rend",
+            "many": "rends",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Rend"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "weapon-master",
+            "name": "Weapon Master",
+            "family": "class",
+            "collection": "Warrior, Arms",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Arms",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Arms",
+            "many": "hours as Arms",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "bloodthirsty",
+            "name": "Bloodthirsty",
+            "family": "class",
+            "collection": "Warrior, Fury",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Fury",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "bloodthirst",
+            "many": "bloodthirsts",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Bloodthirst"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "whirling",
+            "name": "Whirling",
+            "family": "class",
+            "collection": "Warrior, Fury",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Fury",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "whirlwind",
+            "many": "whirlwinds",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Whirlwind"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "seeing-red",
+            "name": "Seeing Red",
+            "family": "class",
+            "collection": "Warrior, Fury",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Fury",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "rage cooldown used",
+            "many": "rage cooldowns used",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Death Wish",
+                "Recklessness",
+                "Berserker Rage"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "berserker",
+            "name": "Berserker",
+            "family": "class",
+            "collection": "Warrior, Fury",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Fury",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Fury",
+            "many": "hours as Fury",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "sunderer",
+            "name": "Sunderer",
+            "family": "class",
+            "collection": "Warrior, Protection",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Protection",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "sunder",
+            "many": "sunders",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                30000,
+                200000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Sunder Armor",
+                "Devastate"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "vengeful",
+            "name": "Vengeful",
+            "family": "class",
+            "collection": "Warrior, Protection",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Protection",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "revenge",
+            "many": "revenges",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Revenge"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "blockade",
+            "name": "Blockade",
+            "family": "class",
+            "collection": "Warrior, Protection",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Protection",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "shield ability used",
+            "many": "shield abilities used",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Shield Block",
+                "Shield Wall",
+                "Shield Slam"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "shieldbearer",
+            "name": "Shieldbearer",
+            "family": "class",
+            "collection": "Warrior, Protection",
+            "scope": "tree",
+            "class": "Warrior",
+            "tree": "Protection",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Protection",
+            "many": "hours as Protection",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "judicator",
+            "name": "Judicator",
+            "family": "class",
+            "collection": "Paladin",
+            "scope": "class",
+            "class": "Paladin",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "judgement",
+            "many": "judgements",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Judgement*"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "benediction",
+            "name": "Benediction",
+            "family": "class",
+            "collection": "Paladin",
+            "scope": "class",
+            "class": "Paladin",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "blessing given",
+            "many": "blessings given",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Blessing of *",
+                "Greater Blessing of *"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "last-resort",
+            "name": "Last Resort",
+            "family": "class",
+            "collection": "Paladin",
+            "scope": "class",
+            "class": "Paladin",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "use of Lay on Hands",
+            "many": "uses of Lay on Hands",
+            "thresholds": [
+                1,
+                10,
+                30,
+                80,
+                200
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Lay on Hands"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "untouchable",
+            "name": "Untouchable",
+            "family": "class",
+            "collection": "Paladin",
+            "scope": "class",
+            "class": "Paladin",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "divine shield raised",
+            "many": "divine shields raised",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Divine Shield",
+                "Divine Protection"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "radiant",
+            "name": "Radiant",
+            "family": "class",
+            "collection": "Paladin, Holy",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Holy",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "holy light",
+            "many": "holy lights",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Holy Light"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "quickening",
+            "name": "Quickening",
+            "family": "class",
+            "collection": "Paladin, Holy",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Holy",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "flash of light",
+            "many": "flashes of light",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Flash of Light"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "purifier",
+            "name": "Purifier",
+            "family": "class",
+            "collection": "Paladin, Holy",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Holy",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "cleanse",
+            "many": "cleanses",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Cleanse",
+                "Purify"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "lightbringer",
+            "name": "Lightbringer",
+            "family": "class",
+            "collection": "Paladin, Holy",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Holy",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Holy",
+            "many": "hours as Holy",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "bastion",
+            "name": "Bastion",
+            "family": "class",
+            "collection": "Paladin, Protection",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Protection",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "holy shield",
+            "many": "holy shields",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Holy Shield"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "lawbringer",
+            "name": "Lawbringer",
+            "family": "class",
+            "collection": "Paladin, Protection",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Protection",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "hammer of justice",
+            "many": "hammers of justice",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Hammer of Justice"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "consecrator",
+            "name": "Consecrator",
+            "family": "class",
+            "collection": "Paladin, Protection",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Protection",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "consecration",
+            "many": "consecrations",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Consecration"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "templar",
+            "name": "Templar",
+            "family": "class",
+            "collection": "Paladin, Protection",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Protection",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Protection",
+            "many": "hours as Protection",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "sealbearer",
+            "name": "Sealbearer",
+            "family": "class",
+            "collection": "Paladin, Retribution",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Retribution",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "seal",
+            "many": "seals",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Seal of *"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "hammerfall",
+            "name": "Hammerfall",
+            "family": "class",
+            "collection": "Paladin, Retribution",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Retribution",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "hammer of wrath",
+            "many": "hammers of wrath",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Hammer of Wrath"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "zealot",
+            "name": "Zealot",
+            "family": "class",
+            "collection": "Paladin, Retribution",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Retribution",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "repentance",
+            "many": "repentances",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Repentance"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "crusader",
+            "name": "Crusader",
+            "family": "class",
+            "collection": "Paladin, Retribution",
+            "scope": "tree",
+            "class": "Paladin",
+            "tree": "Retribution",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Retribution",
+            "many": "hours as Retribution",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "playing-dead",
+            "name": "Playing Dead",
+            "family": "class",
+            "collection": "Hunter",
+            "scope": "class",
+            "class": "Hunter",
+            "glyph": "deaths",
+            "icon": "spell",
+            "one": "feigned death",
+            "many": "feigned deaths",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Feign Death"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "trapper",
+            "name": "Trapper",
+            "family": "class",
+            "collection": "Hunter",
+            "scope": "class",
+            "class": "Hunter",
+            "glyph": "pin",
+            "icon": "spell",
+            "one": "trap laid",
+            "many": "traps laid",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "* Trap"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "marked-prey",
+            "name": "Marked Prey",
+            "family": "class",
+            "collection": "Hunter",
+            "scope": "class",
+            "class": "Hunter",
+            "glyph": "pin",
+            "icon": "spell",
+            "one": "hunter's mark",
+            "many": "hunter's marks",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Hunter's Mark"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "beast-tamer",
+            "name": "Beast Tamer",
+            "family": "class",
+            "collection": "Hunter",
+            "scope": "class",
+            "class": "Hunter",
+            "glyph": "pet",
+            "icon": "spell",
+            "one": "taming attempt",
+            "many": "taming attempts",
+            "thresholds": [
+                1,
+                10,
+                40,
+                120,
+                400
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Tame Beast"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "unleashed",
+            "name": "Unleashed",
+            "family": "class",
+            "collection": "Hunter, Beast Mastery",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Beast Mastery",
+            "glyph": "pet",
+            "icon": "spell",
+            "one": "bestial wrath",
+            "many": "bestial wraths",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Bestial Wrath"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "intimidating",
+            "name": "Intimidating",
+            "family": "class",
+            "collection": "Hunter, Beast Mastery",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Beast Mastery",
+            "glyph": "pet",
+            "icon": "spell",
+            "one": "intimidation",
+            "many": "intimidations",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Intimidation"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "pet-mender",
+            "name": "Pet Mender",
+            "family": "class",
+            "collection": "Hunter, Beast Mastery",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Beast Mastery",
+            "glyph": "pet",
+            "icon": "spell",
+            "one": "pet mended, fed or revived",
+            "many": "pets mended, fed or revived",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Mend Pet",
+                "Revive Pet",
+                "Feed Pet"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "pack-leader",
+            "name": "Pack Leader",
+            "family": "class",
+            "collection": "Hunter, Beast Mastery",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Beast Mastery",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Beast Mastery",
+            "many": "hours as Beast Mastery",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "deadeye",
+            "name": "Deadeye",
+            "family": "class",
+            "collection": "Hunter, Marksmanship",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Marksmanship",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "aimed shot",
+            "many": "aimed shots",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Aimed Shot"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "spreadshot",
+            "name": "Spreadshot",
+            "family": "class",
+            "collection": "Hunter, Marksmanship",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Marksmanship",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "multi-shot",
+            "many": "multi-shots",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Multi-Shot"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "arcane-archer",
+            "name": "Arcane Archer",
+            "family": "class",
+            "collection": "Hunter, Marksmanship",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Marksmanship",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "arcane shot",
+            "many": "arcane shots",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Arcane Shot"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "sharpshooter",
+            "name": "Sharpshooter",
+            "family": "class",
+            "collection": "Hunter, Marksmanship",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Marksmanship",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Marksmanship",
+            "many": "hours as Marksmanship",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "close-quarters",
+            "name": "Close Quarters",
+            "family": "class",
+            "collection": "Hunter, Survival",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Survival",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "melee strike",
+            "many": "melee strikes",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Raptor Strike",
+                "Mongoose Bite"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "wing-clipper",
+            "name": "Wing Clipper",
+            "family": "class",
+            "collection": "Hunter, Survival",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Survival",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "wing clip",
+            "many": "wing clips",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Wing Clip"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "escapist",
+            "name": "Escapist",
+            "family": "class",
+            "collection": "Hunter, Survival",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Survival",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "survival trick",
+            "many": "survival tricks",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Disengage",
+                "Deterrence",
+                "Counterattack"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "survivalist",
+            "name": "Survivalist",
+            "family": "class",
+            "collection": "Hunter, Survival",
+            "scope": "tree",
+            "class": "Hunter",
+            "tree": "Survival",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Survival",
+            "many": "hours as Survival",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "unseen",
+            "name": "Unseen",
+            "family": "class",
+            "collection": "Rogue",
+            "scope": "class",
+            "class": "Rogue",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "time stealthed",
+            "many": "times stealthed",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Stealth"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "pickpocket",
+            "name": "Pickpocket",
+            "family": "class",
+            "collection": "Rogue",
+            "scope": "class",
+            "class": "Rogue",
+            "glyph": "item",
+            "icon": "spell",
+            "one": "pocket picked",
+            "many": "pockets picked",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Pick Pocket"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "locksmith",
+            "name": "Locksmith",
+            "family": "class",
+            "collection": "Rogue",
+            "scope": "class",
+            "class": "Rogue",
+            "glyph": "skills",
+            "icon": "spell",
+            "one": "lock picked",
+            "many": "locks picked",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Pick Lock"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "vanishing-act",
+            "name": "Vanishing Act",
+            "family": "class",
+            "collection": "Rogue",
+            "scope": "class",
+            "class": "Rogue",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "vanish",
+            "many": "vanishes",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Vanish"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "eviscerator",
+            "name": "Eviscerator",
+            "family": "class",
+            "collection": "Rogue, Assassination",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Assassination",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "eviscerate",
+            "many": "eviscerates",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Eviscerate"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "bleeder",
+            "name": "Bleeder",
+            "family": "class",
+            "collection": "Rogue, Assassination",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Assassination",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "bleed applied",
+            "many": "bleeds applied",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Rupture",
+                "Garrote"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "cold-blooded",
+            "name": "Cold Blooded",
+            "family": "class",
+            "collection": "Rogue, Assassination",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Assassination",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "cold blood",
+            "many": "cold bloods",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Cold Blood"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "assassin",
+            "name": "Assassin",
+            "family": "class",
+            "collection": "Rogue, Assassination",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Assassination",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Assassination",
+            "many": "hours as Assassination",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "cutthroat",
+            "name": "Cutthroat",
+            "family": "class",
+            "collection": "Rogue, Combat",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Combat",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "sinister strike",
+            "many": "sinister strikes",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                30000,
+                200000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Sinister Strike"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "gouger",
+            "name": "Gouger",
+            "family": "class",
+            "collection": "Rogue, Combat",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Combat",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "gouge",
+            "many": "gouges",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Gouge"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "blade-dancer",
+            "name": "Blade Dancer",
+            "family": "class",
+            "collection": "Rogue, Combat",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Combat",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "combat cooldown used",
+            "many": "combat cooldowns used",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Blade Flurry",
+                "Adrenaline Rush",
+                "Evasion",
+                "Sprint"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "swashbuckler",
+            "name": "Swashbuckler",
+            "family": "class",
+            "collection": "Rogue, Combat",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Combat",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Combat",
+            "many": "hours as Combat",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "first-strike",
+            "name": "First Strike",
+            "family": "class",
+            "collection": "Rogue, Subtlety",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Subtlety",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "ambush or cheap shot",
+            "many": "ambushes and cheap shots",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Ambush",
+                "Cheap Shot"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "sandman",
+            "name": "Sandman",
+            "family": "class",
+            "collection": "Rogue, Subtlety",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Subtlety",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "sap",
+            "many": "saps",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Sap"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "bloodspiller",
+            "name": "Bloodspiller",
+            "family": "class",
+            "collection": "Rogue, Subtlety",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Subtlety",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "backstab or hemorrhage",
+            "many": "backstabs and hemorrhages",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Backstab",
+                "Hemorrhage",
+                "Ghostly Strike"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "shadowstalker",
+            "name": "Shadowstalker",
+            "family": "class",
+            "collection": "Rogue, Subtlety",
+            "scope": "tree",
+            "class": "Rogue",
+            "tree": "Subtlety",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Subtlety",
+            "many": "hours as Subtlety",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "fortifier",
+            "name": "Fortifier",
+            "family": "class",
+            "collection": "Priest",
+            "scope": "class",
+            "class": "Priest",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "fortitude given",
+            "many": "fortitudes given",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Power Word: Fortitude",
+                "Prayer of Fortitude"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "aegis",
+            "name": "Aegis",
+            "family": "class",
+            "collection": "Priest",
+            "scope": "class",
+            "class": "Priest",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "power word shield",
+            "many": "power word shields",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Power Word: Shield"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "puppeteer",
+            "name": "Puppeteer",
+            "family": "class",
+            "collection": "Priest",
+            "scope": "class",
+            "class": "Priest",
+            "glyph": "characters",
+            "icon": "spell",
+            "one": "mind control",
+            "many": "mind controls",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Mind Control"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "shrieker",
+            "name": "Shrieker",
+            "family": "class",
+            "collection": "Priest",
+            "scope": "class",
+            "class": "Priest",
+            "glyph": "emote",
+            "icon": "spell",
+            "one": "psychic scream",
+            "many": "psychic screams",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Psychic Scream"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "inner-flame",
+            "name": "Inner Flame",
+            "family": "class",
+            "collection": "Priest, Discipline",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Discipline",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "inner fire",
+            "many": "inner fires",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Inner Fire"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "dispeller",
+            "name": "Dispeller",
+            "family": "class",
+            "collection": "Priest, Discipline",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Discipline",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "dispel",
+            "many": "dispels",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Dispel Magic"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "infuser",
+            "name": "Infuser",
+            "family": "class",
+            "collection": "Priest, Discipline",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Discipline",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "discipline cooldown used",
+            "many": "discipline cooldowns used",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Power Infusion",
+                "Inner Focus"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "disciplinarian",
+            "name": "Disciplinarian",
+            "family": "class",
+            "collection": "Priest, Discipline",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Discipline",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Discipline",
+            "many": "hours as Discipline",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "mender",
+            "name": "Mender",
+            "family": "class",
+            "collection": "Priest, Holy",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Holy",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "heal cast",
+            "many": "heals cast",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Lesser Heal",
+                "Heal",
+                "Greater Heal",
+                "Flash Heal"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "renewer",
+            "name": "Renewer",
+            "family": "class",
+            "collection": "Priest, Holy",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Holy",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "renew",
+            "many": "renews",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Renew"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "prayer-leader",
+            "name": "Prayer Leader",
+            "family": "class",
+            "collection": "Priest, Holy",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Holy",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "group heal",
+            "many": "group heals",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Prayer of Healing",
+                "Holy Nova"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "high-priest",
+            "name": "High Priest",
+            "family": "class",
+            "collection": "Priest, Holy",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Holy",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Holy",
+            "many": "hours as Holy",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "mind-flayer",
+            "name": "Mind Flayer",
+            "family": "class",
+            "collection": "Priest, Shadow",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Shadow",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "mind flay",
+            "many": "mind flays",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Mind Flay"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "pain-bringer",
+            "name": "Pain Bringer",
+            "family": "class",
+            "collection": "Priest, Shadow",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Shadow",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "word of pain",
+            "many": "words of pain",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Shadow Word: Pain"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "mind-blaster",
+            "name": "Mind Blaster",
+            "family": "class",
+            "collection": "Priest, Shadow",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Shadow",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "mind blast",
+            "many": "mind blasts",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Mind Blast"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "voidspeaker",
+            "name": "Voidspeaker",
+            "family": "class",
+            "collection": "Priest, Shadow",
+            "scope": "tree",
+            "class": "Priest",
+            "tree": "Shadow",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Shadow",
+            "many": "hours as Shadow",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "totemic",
+            "name": "Totemic",
+            "family": "class",
+            "collection": "Shaman",
+            "scope": "class",
+            "class": "Shaman",
+            "glyph": "pin",
+            "icon": "spell",
+            "one": "totem dropped",
+            "many": "totems dropped",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "* Totem"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "pack-runner",
+            "name": "Pack Runner",
+            "family": "class",
+            "collection": "Shaman",
+            "scope": "class",
+            "class": "Shaman",
+            "glyph": "distance",
+            "icon": "spell",
+            "one": "ghost wolf run",
+            "many": "ghost wolf runs",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Ghost Wolf"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "shock-therapy",
+            "name": "Shock Therapy",
+            "family": "class",
+            "collection": "Shaman",
+            "scope": "class",
+            "class": "Shaman",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "shock",
+            "many": "shocks",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Earth Shock",
+                "Flame Shock",
+                "Frost Shock"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "twice-born",
+            "name": "Twice Born",
+            "family": "class",
+            "collection": "Shaman",
+            "scope": "class",
+            "class": "Shaman",
+            "glyph": "deaths",
+            "icon": "spell",
+            "one": "reincarnation",
+            "many": "reincarnations",
+            "thresholds": [
+                1,
+                5,
+                15,
+                40,
+                100
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Reincarnation"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "bolt-thrower",
+            "name": "Bolt Thrower",
+            "family": "class",
+            "collection": "Shaman, Elemental",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Elemental",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "lightning bolt",
+            "many": "lightning bolts",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                30000,
+                200000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Lightning Bolt"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "chain-reaction",
+            "name": "Chain Reaction",
+            "family": "class",
+            "collection": "Shaman, Elemental",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Elemental",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "chain lightning",
+            "many": "chain lightnings",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Chain Lightning"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "purger",
+            "name": "Purger",
+            "family": "class",
+            "collection": "Shaman, Elemental",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Elemental",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "purge",
+            "many": "purges",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Purge"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "stormcaller",
+            "name": "Stormcaller",
+            "family": "class",
+            "collection": "Shaman, Elemental",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Elemental",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Elemental",
+            "many": "hours as Elemental",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "stormstriker",
+            "name": "Stormstriker",
+            "family": "class",
+            "collection": "Shaman, Enhancement",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Enhancement",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "stormstrike",
+            "many": "stormstrikes",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Stormstrike"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "weapon-imbuer",
+            "name": "Weapon Imbuer",
+            "family": "class",
+            "collection": "Shaman, Enhancement",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Enhancement",
+            "glyph": "skills",
+            "icon": "spell",
+            "one": "weapon imbued",
+            "many": "weapons imbued",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "* Weapon"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "charged",
+            "name": "Live Wire",
+            "family": "class",
+            "collection": "Shaman, Enhancement",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Enhancement",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "lightning shield",
+            "many": "lightning shields",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Lightning Shield"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "spiritwalker",
+            "name": "Spiritwalker",
+            "family": "class",
+            "collection": "Shaman, Enhancement",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Enhancement",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Enhancement",
+            "many": "hours as Enhancement",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "wave-rider",
+            "name": "Wave Rider",
+            "family": "class",
+            "collection": "Shaman, Restoration",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Restoration",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "healing wave",
+            "many": "healing waves",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Healing Wave",
+                "Lesser Healing Wave"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "chain-healer",
+            "name": "Chain Healer",
+            "family": "class",
+            "collection": "Shaman, Restoration",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Restoration",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "chain heal",
+            "many": "chain heals",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Chain Heal"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "tide-turner",
+            "name": "Tide Turner",
+            "family": "class",
+            "collection": "Shaman, Restoration",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Restoration",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "tide cooldown used",
+            "many": "tide cooldowns used",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Mana Tide Totem",
+                "Nature's Swiftness"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "tidecaller",
+            "name": "Tidecaller",
+            "family": "class",
+            "collection": "Shaman, Restoration",
+            "scope": "tree",
+            "class": "Shaman",
+            "tree": "Restoration",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Restoration",
+            "many": "hours as Restoration",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "sheep-herder",
+            "name": "Sheep Herder",
+            "family": "class",
+            "collection": "Mage",
+            "scope": "class",
+            "class": "Mage",
+            "glyph": "creature",
+            "icon": "spell",
+            "one": "polymorph",
+            "many": "polymorphs",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Polymorph*"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "portal-master",
+            "name": "Portal Master",
+            "family": "class",
+            "collection": "Mage",
+            "scope": "class",
+            "class": "Mage",
+            "glyph": "zones",
+            "icon": "spell",
+            "one": "portal opened",
+            "many": "portals opened",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Portal: *"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "quartermaster",
+            "name": "Quartermaster",
+            "family": "class",
+            "collection": "Mage",
+            "scope": "class",
+            "class": "Mage",
+            "glyph": "item",
+            "icon": "spell",
+            "one": "conjuring",
+            "many": "conjurings",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Conjure *"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "blinker",
+            "name": "Blinker",
+            "family": "class",
+            "collection": "Mage",
+            "scope": "class",
+            "class": "Mage",
+            "glyph": "jumps",
+            "icon": "spell",
+            "one": "blink",
+            "many": "blinks",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Blink"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "missile-barrage",
+            "name": "Missile Barrage",
+            "family": "class",
+            "collection": "Mage, Arcane",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Arcane",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "volley of arcane missiles",
+            "many": "volleys of arcane missiles",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Arcane Missiles"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "detonator",
+            "name": "Detonator",
+            "family": "class",
+            "collection": "Mage, Arcane",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Arcane",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "arcane explosion",
+            "many": "arcane explosions",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Arcane Explosion"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "channeler",
+            "name": "Channeler",
+            "family": "class",
+            "collection": "Mage, Arcane",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Arcane",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "arcane cooldown used",
+            "many": "arcane cooldowns used",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Evocation",
+                "Arcane Power",
+                "Presence of Mind"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "arcanist",
+            "name": "Arcanist",
+            "family": "class",
+            "collection": "Mage, Arcane",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Arcane",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Arcane",
+            "many": "hours as Arcane",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "firestarter",
+            "name": "Firestarter",
+            "family": "class",
+            "collection": "Mage, Fire",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Fire",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "fireball",
+            "many": "fireballs",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                30000,
+                200000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Fireball"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "pyromaniac",
+            "name": "Pyromaniac",
+            "family": "class",
+            "collection": "Mage, Fire",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Fire",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "pyroblast",
+            "many": "pyroblasts",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Pyroblast"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "scorcher",
+            "name": "Scorcher",
+            "family": "class",
+            "collection": "Mage, Fire",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Fire",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "scorch or fire blast",
+            "many": "scorches and fire blasts",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Scorch",
+                "Fire Blast"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "pyromancer",
+            "name": "Pyromancer",
+            "family": "class",
+            "collection": "Mage, Fire",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Fire",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Fire",
+            "many": "hours as Fire",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "frostbinder",
+            "name": "Frostbinder",
+            "family": "class",
+            "collection": "Mage, Frost",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Frost",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "frostbolt",
+            "many": "frostbolts",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                30000,
+                200000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Frostbolt"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "shatterer",
+            "name": "Shatterer",
+            "family": "class",
+            "collection": "Mage, Frost",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Frost",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "frost nova or cone of cold",
+            "many": "frost novas and cones of cold",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Frost Nova",
+                "Cone of Cold"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "iceborn",
+            "name": "Iceborn",
+            "family": "class",
+            "collection": "Mage, Frost",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Frost",
+            "glyph": "shield",
+            "icon": "spell",
+            "one": "ice block or barrier",
+            "many": "ice blocks and barriers",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Ice Block",
+                "Ice Barrier"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "cryomancer",
+            "name": "Cryomancer",
+            "family": "class",
+            "collection": "Mage, Frost",
+            "scope": "tree",
+            "class": "Mage",
+            "tree": "Frost",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Frost",
+            "many": "hours as Frost",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "soul-harvester",
+            "name": "Soul Harvester",
+            "family": "class",
+            "collection": "Warlock",
+            "scope": "class",
+            "class": "Warlock",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "soul drained",
+            "many": "souls drained",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Drain Soul"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "life-tapper",
+            "name": "Life Tapper",
+            "family": "class",
+            "collection": "Warlock",
+            "scope": "class",
+            "class": "Warlock",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "life tap",
+            "many": "life taps",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Life Tap"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "fearmonger",
+            "name": "Fearmonger",
+            "family": "class",
+            "collection": "Warlock",
+            "scope": "class",
+            "class": "Warlock",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "fear cast",
+            "many": "fears cast",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Fear",
+                "Howl of Terror",
+                "Death Coil"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "summoner",
+            "name": "Summoner",
+            "family": "class",
+            "collection": "Warlock",
+            "scope": "class",
+            "class": "Warlock",
+            "glyph": "characters",
+            "icon": "spell",
+            "one": "summoning ritual",
+            "many": "summoning rituals",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Ritual of Summoning"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "corruptor",
+            "name": "Corruptor",
+            "family": "class",
+            "collection": "Warlock, Affliction",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Affliction",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "corruption",
+            "many": "corruptions",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Corruption"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "agonizer",
+            "name": "Agonizer",
+            "family": "class",
+            "collection": "Warlock, Affliction",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Affliction",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "bane of agony",
+            "many": "banes of agony",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Bane of Agony"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "leech",
+            "name": "Leech",
+            "family": "class",
+            "collection": "Warlock, Affliction",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Affliction",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "life drain",
+            "many": "life drains",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Drain Life",
+                "Siphon Life"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "hexweaver",
+            "name": "Hexweaver",
+            "family": "class",
+            "collection": "Warlock, Affliction",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Affliction",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Affliction",
+            "many": "hours as Affliction",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "demon-caller",
+            "name": "Demon Caller",
+            "family": "class",
+            "collection": "Warlock, Demonology",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Demonology",
+            "glyph": "pet",
+            "icon": "spell",
+            "one": "demon summoned",
+            "many": "demons summoned",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Summon Imp",
+                "Summon Voidwalker",
+                "Summon Succubus",
+                "Summon Felhunter",
+                "Inferno",
+                "Ritual of Doom"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "funneler",
+            "name": "Funneler",
+            "family": "class",
+            "collection": "Warlock, Demonology",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Demonology",
+            "glyph": "pet",
+            "icon": "spell",
+            "one": "health funnel",
+            "many": "health funnels",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Health Funnel"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "pactbinder",
+            "name": "Pactbinder",
+            "family": "class",
+            "collection": "Warlock, Demonology",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Demonology",
+            "glyph": "pet",
+            "icon": "spell",
+            "one": "demonic pact used",
+            "many": "demonic pacts used",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Demonic Sacrifice",
+                "Fel Domination",
+                "Subjugate Demon",
+                "Soul Link"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "demonologist",
+            "name": "Demonologist",
+            "family": "class",
+            "collection": "Warlock, Demonology",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Demonology",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Demonology",
+            "many": "hours as Demonology",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "bolt-slinger",
+            "name": "Bolt Slinger",
+            "family": "class",
+            "collection": "Warlock, Destruction",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Destruction",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "shadow bolt",
+            "many": "shadow bolts",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                30000,
+                200000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Shadow Bolt"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "immolator",
+            "name": "Immolator",
+            "family": "class",
+            "collection": "Warlock, Destruction",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Destruction",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "immolate",
+            "many": "immolates",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Immolate"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "searing",
+            "name": "Searing",
+            "family": "class",
+            "collection": "Warlock, Destruction",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Destruction",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "searing pain",
+            "many": "searing pains",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Searing Pain"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "destroyer",
+            "name": "Destroyer",
+            "family": "class",
+            "collection": "Warlock, Destruction",
+            "scope": "tree",
+            "class": "Warlock",
+            "tree": "Destruction",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Destruction",
+            "many": "hours as Destruction",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "shapeshifter",
+            "name": "Shapeshifter",
+            "family": "class",
+            "collection": "Druid",
+            "scope": "class",
+            "class": "Druid",
+            "glyph": "creature",
+            "icon": "spell",
+            "one": "shapeshift",
+            "many": "shapeshifts",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Bear Form",
+                "Dire Bear Form",
+                "Cat Form",
+                "Travel Form",
+                "Aquatic Form",
+                "Moonkin Form"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "wild-gift",
+            "name": "Wild Gift",
+            "family": "class",
+            "collection": "Druid",
+            "scope": "class",
+            "class": "Druid",
+            "glyph": "gather",
+            "icon": "spell",
+            "one": "mark of the wild",
+            "many": "marks of the wild",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Mark of the Wild",
+                "Gift of the Wild"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "back-from-the-brink",
+            "name": "Back from the Brink",
+            "family": "class",
+            "collection": "Druid",
+            "scope": "class",
+            "class": "Druid",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "rebirth",
+            "many": "rebirths",
+            "thresholds": [
+                1,
+                10,
+                30,
+                80,
+                200
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Rebirth"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "entangler",
+            "name": "Entangler",
+            "family": "class",
+            "collection": "Druid",
+            "scope": "class",
+            "class": "Druid",
+            "glyph": "gather",
+            "icon": "spell",
+            "one": "root or hibernate",
+            "many": "roots and hibernates",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Entangling Roots",
+                "Hibernate"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "class"
+            }
+        },
+        {
+            "key": "wrathbringer",
+            "name": "Wrathbringer",
+            "family": "class",
+            "collection": "Druid, Balance",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Balance",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "wrath",
+            "many": "wraths",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                30000,
+                200000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Wrath"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "starcaller",
+            "name": "Starcaller",
+            "family": "class",
+            "collection": "Druid, Balance",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Balance",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "starfire",
+            "many": "starfires",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Starfire"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "moonlit",
+            "name": "Moonlit",
+            "family": "class",
+            "collection": "Druid, Balance",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Balance",
+            "glyph": "spell",
+            "icon": "spell",
+            "one": "moonfire",
+            "many": "moonfires",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Moonfire"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "stargazer",
+            "name": "Stargazer",
+            "family": "class",
+            "collection": "Druid, Balance",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Balance",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Balance",
+            "many": "hours as Balance",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "mauler",
+            "name": "Mauler",
+            "family": "class",
+            "collection": "Druid, Feral",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Feral",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "bear attack",
+            "many": "bear attacks",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Maul",
+                "Swipe"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "shredder",
+            "name": "Shredder",
+            "family": "class",
+            "collection": "Druid, Feral",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Feral",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "cat attack",
+            "many": "cat attacks",
+            "thresholds": [
+                50,
+                500,
+                5000,
+                30000,
+                200000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Claw",
+                "Shred",
+                "Rake"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "savage",
+            "name": "Savage",
+            "family": "class",
+            "collection": "Druid, Feral",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Feral",
+            "glyph": "kills",
+            "icon": "spell",
+            "one": "finishing move",
+            "many": "finishing moves",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Ferocious Bite",
+                "Rip"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "wildheart",
+            "name": "Wildheart",
+            "family": "class",
+            "collection": "Druid, Feral",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Feral",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Feral",
+            "many": "hours as Feral",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "greenthumb",
+            "name": "Greenthumb",
+            "family": "class",
+            "collection": "Druid, Restoration",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Restoration",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "healing touch or regrowth",
+            "many": "healing touches and regrowths",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Healing Touch",
+                "Regrowth"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "rejuvenator",
+            "name": "Rejuvenator",
+            "family": "class",
+            "collection": "Druid, Restoration",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Restoration",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "rejuvenation",
+            "many": "rejuvenations",
+            "thresholds": [
+                25,
+                250,
+                2500,
+                15000,
+                100000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Rejuvenation"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "swiftmender",
+            "name": "Swiftmender",
+            "family": "class",
+            "collection": "Druid, Restoration",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Restoration",
+            "glyph": "heal",
+            "icon": "spell",
+            "one": "grove cooldown used",
+            "many": "grove cooldowns used",
+            "thresholds": [
+                5,
+                50,
+                300,
+                1500,
+                6000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Swiftmend",
+                "Nature's Swiftness",
+                "Tranquility",
+                "Innervate"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "grovekeeper",
+            "name": "Grovekeeper",
+            "family": "class",
+            "collection": "Druid, Restoration",
+            "scope": "tree",
+            "class": "Druid",
+            "tree": "Restoration",
+            "glyph": "talents",
+            "icon": "tree",
+            "one": "hour as Restoration",
+            "many": "hours as Restoration",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "spec"
+            }
+        },
+        {
+            "key": "caretaker",
+            "name": "Caretaker",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "clock",
+            "one": "hour as a healer",
+            "many": "hours as a healer",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "role"
+            }
+        },
+        {
+            "key": "lifegiver",
+            "name": "Lifegiver",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "heal",
+            "one": "healing done as a healer",
+            "many": "healing done as a healer",
+            "thresholds": [
+                2500,
+                100000,
+                2000000,
+                20000000,
+                150000000
+            ],
+            "measure": "Healing",
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "healing"
+                ],
+                "gate": "role"
+            }
+        },
+        {
+            "key": "miracle-worker",
+            "name": "Miracle Worker",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "heal",
+            "one": "healing in one fight",
+            "many": "healing in one fight",
+            "thresholds": [
+                500,
+                8000,
+                30000,
+                75000,
+                150000
+            ],
+            "measure": "BestHealing"
+        },
+        {
+            "key": "field-medic",
+            "name": "Field Medic",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "dungeons",
+            "one": "dungeon run as a healer",
+            "many": "dungeon runs as a healer",
+            "thresholds": [
+                1,
+                10,
+                50,
+                150,
+                400
+            ],
+            "measure": "DungeonRuns",
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "dungeons"
+                ],
+                "gate": "role"
+            }
+        },
+        {
+            "key": "chaplain",
+            "name": "Chaplain",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "crown",
+            "one": "dungeon boss killed as a healer",
+            "many": "dungeon bosses killed as a healer",
+            "thresholds": [
+                1,
+                10,
+                100,
+                500,
+                2000
+            ],
+            "measure": "DungeonBosses",
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "bosses"
+                ],
+                "gate": "role"
+            }
+        },
+        {
+            "key": "raid-medic",
+            "name": "Raid Medic",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "crown",
+            "one": "raid boss killed as a healer",
+            "many": "raid bosses killed as a healer",
+            "thresholds": [
+                1,
+                10,
+                50,
+                250,
+                650
+            ],
+            "measure": "RaidBosses"
+        },
+        {
+            "key": "guardian-angel",
+            "name": "Guardian Angel",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "shield",
+            "one": "deathless dungeon run as a healer",
+            "many": "deathless dungeon runs as a healer",
+            "thresholds": [
+                1,
+                8,
+                30,
+                80,
+                250
+            ],
+            "measure": "DeathlessRuns"
+        },
+        {
+            "key": "resurrector",
+            "name": "Resurrector",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "heal",
+            "one": "resurrection cast as a healer",
+            "many": "resurrections cast as a healer",
+            "thresholds": [
+                1,
+                10,
+                60,
+                300,
+                1500
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Resurrection",
+                "Redemption",
+                "Ancestral Spirit",
+                "Rebirth",
+                "Revive"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "role"
+            }
+        },
+        {
+            "key": "cleanser",
+            "name": "Cleanser",
+            "family": "role",
+            "collection": "Healer",
+            "scope": "role",
+            "role": "Healer",
+            "glyph": "heal",
+            "one": "cure or dispel as a healer",
+            "many": "cures and dispels as a healer",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Cleanse",
+                "Purify",
+                "Dispel Magic",
+                "Cure Disease",
+                "Abolish Disease",
+                "Cure Poison",
+                "Abolish Poison",
+                "Remove Curse"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "role"
+            }
+        },
+        {
+            "key": "stalwart",
+            "name": "Stalwart",
+            "family": "role",
+            "collection": "Tank",
+            "scope": "role",
+            "role": "Tank",
+            "glyph": "clock",
+            "one": "hour as a tank",
+            "many": "hours as a tank",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "role"
+            }
+        },
+        {
+            "key": "damage-sponge",
+            "name": "Damage Sponge",
+            "family": "role",
+            "collection": "Tank",
+            "scope": "role",
+            "role": "Tank",
+            "glyph": "shield",
+            "one": "damage taken as a tank",
+            "many": "damage taken as a tank",
+            "thresholds": [
+                5000,
+                200000,
+                3000000,
+                30000000,
+                200000000
+            ],
+            "measure": "DamageTaken",
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "damageTaken"
+                ],
+                "gate": "role"
+            }
+        },
+        {
+            "key": "unbreakable",
+            "name": "Unbreakable",
+            "family": "role",
+            "collection": "Tank",
+            "scope": "role",
+            "role": "Tank",
+            "glyph": "shield",
+            "one": "damage taken in one fight",
+            "many": "damage taken in one fight",
+            "thresholds": [
+                1000,
+                10000,
+                50000,
+                120000,
+                250000
+            ],
+            "measure": "BestDamageTaken"
+        },
+        {
+            "key": "vanguard",
+            "name": "Vanguard",
+            "family": "role",
+            "collection": "Tank",
+            "scope": "role",
+            "role": "Tank",
+            "glyph": "dungeons",
+            "one": "dungeon run as a tank",
+            "many": "dungeon runs as a tank",
+            "thresholds": [
+                1,
+                10,
+                50,
+                150,
+                400
+            ],
+            "measure": "DungeonRuns",
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "dungeons"
+                ],
+                "gate": "role"
+            }
+        },
+        {
+            "key": "bulwark",
+            "name": "Bulwark",
+            "family": "role",
+            "collection": "Tank",
+            "scope": "role",
+            "role": "Tank",
+            "glyph": "crown",
+            "one": "dungeon boss killed as a tank",
+            "many": "dungeon bosses killed as a tank",
+            "thresholds": [
+                1,
+                10,
+                100,
+                500,
+                2000
+            ],
+            "measure": "DungeonBosses",
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "bosses"
+                ],
+                "gate": "role"
+            }
+        },
+        {
+            "key": "juggernaut",
+            "name": "Juggernaut",
+            "family": "role",
+            "collection": "Tank",
+            "scope": "role",
+            "role": "Tank",
+            "glyph": "crown",
+            "one": "raid boss killed as a tank",
+            "many": "raid bosses killed as a tank",
+            "thresholds": [
+                1,
+                10,
+                50,
+                250,
+                650
+            ],
+            "measure": "RaidBosses"
+        },
+        {
+            "key": "immovable",
+            "name": "Immovable",
+            "family": "role",
+            "collection": "Tank",
+            "scope": "role",
+            "role": "Tank",
+            "glyph": "shield",
+            "one": "deathless dungeon run as a tank",
+            "many": "deathless dungeon runs as a tank",
+            "thresholds": [
+                1,
+                8,
+                30,
+                80,
+                250
+            ],
+            "measure": "DeathlessRuns"
+        },
+        {
+            "key": "provoker",
+            "name": "Provoker",
+            "family": "role",
+            "collection": "Tank",
+            "scope": "role",
+            "role": "Tank",
+            "glyph": "emote",
+            "one": "taunt or Seal of Fury as a tank",
+            "many": "taunts and Seals of Fury as a tank",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Taunt",
+                "Mocking Blow",
+                "Challenging Shout",
+                "Growl",
+                "Challenging Roar",
+                "Seal of Fury"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "role"
+            }
+        },
+        {
+            "key": "brawler",
+            "name": "Brawler",
+            "family": "role",
+            "collection": "Melee damage",
+            "scope": "role",
+            "role": "Melee",
+            "glyph": "clock",
+            "one": "hour as melee DPS",
+            "many": "hours as melee DPS",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "role"
+            }
+        },
+        {
+            "key": "bruiser",
+            "name": "Bruiser",
+            "family": "role",
+            "collection": "Melee damage",
+            "scope": "role",
+            "role": "Melee",
+            "glyph": "kills",
+            "one": "damage dealt as melee DPS",
+            "many": "damage dealt as melee DPS",
+            "thresholds": [
+                5000,
+                250000,
+                5000000,
+                50000000,
+                300000000
+            ],
+            "measure": "Damage",
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "damage"
+                ],
+                "gate": "role"
+            }
+        },
+        {
+            "key": "onslaught",
+            "name": "Onslaught",
+            "family": "role",
+            "collection": "Melee damage",
+            "scope": "role",
+            "role": "Melee",
+            "glyph": "kills",
+            "one": "damage in one fight as melee DPS",
+            "many": "damage in one fight as melee DPS",
+            "thresholds": [
+                1000,
+                10000,
+                50000,
+                120000,
+                250000
+            ],
+            "measure": "BestDamage"
+        },
+        {
+            "key": "silencer",
+            "name": "Silencer",
+            "family": "role",
+            "collection": "Melee damage",
+            "scope": "role",
+            "role": "Melee",
+            "glyph": "kills",
+            "one": "interrupt or stun as melee DPS",
+            "many": "interrupts and stuns as melee DPS",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Kick",
+                "Pummel",
+                "Shield Bash",
+                "Earth Shock",
+                "Hammer of Justice",
+                "Rebuke",
+                "Repentance",
+                "Bash",
+                "Feral Charge"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "role"
+            }
+        },
+        {
+            "key": "longshot",
+            "name": "Longshot",
+            "family": "role",
+            "collection": "Ranged damage",
+            "scope": "role",
+            "role": "Ranged",
+            "glyph": "clock",
+            "one": "hour as ranged DPS",
+            "many": "hours as ranged DPS",
+            "thresholds": [
+                2,
+                20,
+                100,
+                400,
+                1500
+            ],
+            "measure": "Hours",
+            "live": {
+                "kind": "clock",
+                "per": 3600,
+                "gate": "role"
+            }
+        },
+        {
+            "key": "artillery",
+            "name": "Artillery",
+            "family": "role",
+            "collection": "Ranged damage",
+            "scope": "role",
+            "role": "Ranged",
+            "glyph": "spell",
+            "one": "damage dealt as ranged DPS",
+            "many": "damage dealt as ranged DPS",
+            "thresholds": [
+                5000,
+                250000,
+                5000000,
+                50000000,
+                300000000
+            ],
+            "measure": "Damage",
+            "live": {
+                "kind": "counter",
+                "keys": [
+                    "damage"
+                ],
+                "gate": "role"
+            }
+        },
+        {
+            "key": "barrage",
+            "name": "Barrage",
+            "family": "role",
+            "collection": "Ranged damage",
+            "scope": "role",
+            "role": "Ranged",
+            "glyph": "spell",
+            "one": "damage in one fight as ranged DPS",
+            "many": "damage in one fight as ranged DPS",
+            "thresholds": [
+                1000,
+                10000,
+                50000,
+                120000,
+                250000
+            ],
+            "measure": "BestDamage"
+        },
+        {
+            "key": "warden",
+            "name": "Warden",
+            "family": "role",
+            "collection": "Ranged damage",
+            "scope": "role",
+            "role": "Ranged",
+            "glyph": "spell",
+            "one": "crowd control cast as ranged DPS",
+            "many": "crowd controls cast as ranged DPS",
+            "thresholds": [
+                10,
+                100,
+                1000,
+                5000,
+                25000
+            ],
+            "measure": "Casts",
+            "spells": [
+                "Polymorph*",
+                "Frost Nova",
+                "Fear",
+                "Howl of Terror",
+                "Banish",
+                "Freezing Trap",
+                "Scare Beast",
+                "Scatter Shot",
+                "Hibernate",
+                "Entangling Roots",
+                "Shackle Undead",
+                "Mind Control",
+                "Psychic Scream",
+                "Frost Shock",
+                "Earthbind Totem"
+            ],
+            "live": {
+                "kind": "cast",
+                "gate": "role"
+            }
+        }
+    ],
+    "retired": [
+        {
+            "key": "regular",
+            "name": "Regular",
+            "into": "Devoted",
+            "why": "Counts logins, which a relog inflates. Devoted counts the days"
+        },
+        {
+            "key": "longstanding",
+            "name": "Longstanding",
+            "into": "Seasoned",
+            "why": "Rises without playing. Seasoned counts the weeks with play"
+        },
+        {
+            "key": "full-house",
+            "name": "Full House",
+            "into": "Delver",
+            "why": "Nearly every dungeon run is a group of five, so it counted Delver's runs again"
+        },
+        {
+            "key": "scout",
+            "name": "Scout",
+            "into": null,
+            "why": "Elite creatures stand beside every road; the count rose without the player doing anything"
+        },
+        {
+            "key": "witness",
+            "name": "Witness",
+            "into": "Vanquisher",
+            "why": "Vanquisher and Conqueror count the bosses killed; seeing one adds nothing"
+        },
+        {
+            "key": "scavenger",
+            "name": "Scavenger",
+            "into": null,
+            "why": "Grey items are a by-product of Looter. Lucky, Rare Find and Jackpot cover the drops worth noticing"
+        },
+        {
+            "key": "practised",
+            "name": "Practised",
+            "into": "Artisan",
+            "why": "A skill-up is a rank gained, which Artisan already sums"
+        },
+        {
+            "key": "battle-medic",
+            "name": "Battle Medic",
+            "into": "Slayer",
+            "why": "Kills are not what a healer is for, and Slayer counts them"
+        },
+        {
+            "key": "frontliner",
+            "name": "Frontliner",
+            "into": "Slayer",
+            "why": "Slayer counts the same kills"
+        },
+        {
+            "key": "first-to-fall",
+            "name": "First to Fall",
+            "into": "Fallen",
+            "why": "Fallen counts the same deaths"
+        },
+        {
+            "key": "skirmisher",
+            "name": "Skirmisher",
+            "into": "Delver",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "headhunter",
+            "name": "Headhunter",
+            "into": "Vanquisher",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "warbringer",
+            "name": "Warbringer",
+            "into": "Conqueror",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "untouched",
+            "name": "Untouched",
+            "into": "Flawless",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "cleaver",
+            "name": "Cleaver",
+            "into": "Slayer",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "duelist",
+            "name": "Duelist",
+            "into": "Gladiator",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "backliner",
+            "name": "Backliner",
+            "into": "Delver",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "spellslinger",
+            "name": "Spellslinger",
+            "into": "Vanquisher",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "siegebreaker",
+            "name": "Siegebreaker",
+            "into": "Conqueror",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "out-of-reach",
+            "name": "Out of Reach",
+            "into": "Flawless",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "sniper",
+            "name": "Sniper",
+            "into": "Slayer",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        },
+        {
+            "key": "bombardier",
+            "name": "Bombardier",
+            "into": "Gladiator",
+            "why": "Every Rogue, Mage, Warlock and Hunter session is in this role, so it repeated the general feat"
+        }
+    ]
+}

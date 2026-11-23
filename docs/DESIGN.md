@@ -1279,7 +1279,7 @@ Versioned by path: `/api/v1`. A breaking change is `/api/v2`; fields are only ev
   `PUT|DELETE /upload/groups/{key}`, `DELETE /upload`.
 - **Public**, read-only JSON, no sign-in: `GET /public/stats`, `/public/rulesets`, `/public/rulesets/{id}` and its
   series (`/levels`, `/xp`, `/deaths`, `/dungeons`, `/professions`, `/gold`, `/activity`), `/public/leaderboards/{board}`,
-  `/public/camps`, `/public/professions/{slug}`, `/public/search?q=`, `/public/characters/{name}` and its series, `/public/creatures/{id}`, `/public/items/{id}`,
+  `/public/camps`, `/public/professions/{slug}`, `/public/search?q=`, `/public/characters/{name}` and its series and sessions, `/public/feats` and `/public/feats/{key}`, `/public/creatures/{id}`, `/public/items/{id}`,
   `/public/spells/{id}`, `/public/encounters/{id}`, `/public/zones/{id}`, `/public/quests/{id}`, `/public/map/heat`. `Access-Control-Allow-Origin: *`,
   `Cache-Control: public, max-age=300` with an `ETag`, cursor pagination (`?cursor=`, `next_cursor` in the answer),
   60 requests a minute per IP, 600 with a free API key (a Sanctum token made on the account page, sent as a bearer
@@ -1584,6 +1584,11 @@ renamed shows up. `feats:proof <tables>` checks every rule against the client's 
 client lets each class learn and cast, and the fastest the legend tier could be earned from them. [FEAT-PROOF.md](FEAT-PROOF.md)
 is its output.
 
+The tables on this page describe catalog version 1, 258 feats. Version 2 has 241: 22 feats are retired into others, five
+are added (Streak, Trailblazer, Frequent Flyer, Companion, Fireside), four are renamed and 195 thresholds are lower. Its
+one source is `Feat`, `FeatRows`, `FeatRules`, `FeatMeta` and `FeatRetired` in `app/Support`; `php artisan feats:export`
+writes it as `resources/feats/feats.json`, the file the app and the addon generate their catalogs from.
+
 | Feat | For | Counts | Copper | Silver | Gold | Scarlet | Legend |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Battle Cry | Warrior | casts of Battle Shout | 10 | 400 | 2,000 | 6,000 | 25,000 |
@@ -1782,6 +1787,10 @@ value with `Feat::tier()`, so a threshold change needs no recount. Values that a
 rounded down before they are stored, and Wayfarer down to one decimal, so a value never shows a tier it has
 not reached. The emote feats leave out `Emote::READ`, as the emote rankings do. The character page and the API read the stored rows. `CountHolders` counts, for every feat and tier,
 the characters whose stored value reaches it (one query, cached 15 minutes), and `ShowCharacterFeats` orders by it.
+
+**Feat events, shares and score.** `RecordFeatTiers` wraps the count in `RefreshCharacterFeats`: it reads the tier each stored feat holds, runs `StoreCharacterFeats`, reads the tiers again, writes one `feat_events` row for each feat that now holds a higher tier (`tier`, `from_tier`, the `session_start` of the character's newest session and `at`), and sets `characters.feat_score`, the tiers held over the general feats that are not gold feats (`Feat::scores()`, 68 feats, 340 at most). Only the refresh calls it, so the catalog migration, which stores counts through `StoreCharacterFeats` alone, writes no event, and a threshold change writes none because both reads use the thresholds of the day. A character's score fills when it is next counted: after a decode or at the daily `feats:refresh`. `feats:shares` (daily, 04:50) rewrites `feat_shares`: for each feat and tier, `holders` of the `of` characters with a stored count of the feat and at least 20 recorded hours (`--hours` changes it) that hold the tier or higher, and `share` as a percent to two places. The board `feat-score` lists public characters with a score above 0, highest first.
+
+**Feat pages.** `/feats` (`FeatsController`, `ShowFeatsHub`, `FeatsPage`) shows the catalog to a visitor: every feat at tier 0 with the share holding Copper, a family chip row, a name search and a sticky panel with the tier ladder (`FeatLadder`, `x-sc.ladder`) of the feat in `?feat=`. A signed-in owner with a counted character gets `?scope=compare` (default: the character's feats with the share at the tier held, three feats closest to the next tier, the ring, tier tiles and feat score), `mine` (the same without shares) or `everyone`; `?as=` picks another of their characters. Only `everyone` and the visitor view are indexed. `/feats/{key}` (`FeatController`, `ShowFeatPage`) is the public page of one feat: the ladder with shares, the top 20 characters, the last 10 tiers reached and the collection it belongs to; it takes the viewer's count from the same character choice. `/design/feats` draws the hub from `FeatsDemo` over the real catalog. Both pages are in the sitemap and in site search (`SitePages`). Shares hide below 20 characters, as on the public API.
 
 ### Class pages
 

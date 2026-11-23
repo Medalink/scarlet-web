@@ -42,11 +42,31 @@ class CombatCounts
             Feat::Finisher->value => (int) ($kills->finisher ?? 0),
             Feat::Gladiator->value => (int) ($kills->gladiator ?? 0),
             Feat::Rampage->value => (int) ($sessions->rampage ?? 0),
+            Feat::Streak->value => $this->streak($id),
             Feat::Fallen->value => (int) ($sessions->deaths ?? 0),
             Feat::Flattened->value => $blow === null ? 0 : (int) $blow['damage'],
             Feat::Nemesis->value => (int) $killers->max(),
             Feat::Territorial->value => (int) $zones->max(),
             Feat::Roamer->value => $zones->filter(fn (mixed $zoneKills): bool => (int) $zoneKills >= self::ROAMER_ZONE_KILLS)->count(),
         ];
+    }
+
+    /** The most kills in a row between two deaths (or before the first), over kills and deaths in time order; a kill and a death in one second count the kill first. */
+    private function streak(int $characterId): int
+    {
+        $row = DB::selectOne(
+            'select coalesce(max(run), 0) as best from (
+                select count(*) filter (where k = 1) as run from (
+                    select k, count(*) filter (where k = 0) over (order by at, k desc rows unbounded preceding) as deaths_so_far from (
+                        select at, 1 as k from kills where character_id = ? and counted
+                        union all
+                        select at, 0 as k from deaths where character_id = ? and counted
+                    ) as events
+                ) as numbered group by deaths_so_far
+            ) as runs',
+            [$characterId, $characterId],
+        );
+
+        return (int) ($row->best ?? 0);
     }
 }

@@ -188,8 +188,7 @@ class FeatProofCommand extends Command
     {
         return match ($measure) {
             FeatMeasure::Hours => 'played time of the sessions that logged in with this spec; no ceiling',
-            FeatMeasure::Kills, FeatMeasure::Deaths, FeatMeasure::PlayerKills, FeatMeasure::DungeonRuns,
-            FeatMeasure::DungeonBosses, FeatMeasure::RaidBosses, FeatMeasure::DeathlessRuns => 'the same count as the general feat, over the sessions played in this role; repeatable without limit',
+            FeatMeasure::DungeonRuns, FeatMeasure::DungeonBosses, FeatMeasure::RaidBosses, FeatMeasure::DeathlessRuns => 'the same count as the general feat, over the sessions played in this role; repeatable without limit',
             FeatMeasure::Damage, FeatMeasure::Healing, FeatMeasure::DamageTaken => 'the client\'s damage meter totals (`DM` lines) summed over the sessions played in this role; no ceiling',
             FeatMeasure::BestDamage, FeatMeasure::BestHealing, FeatMeasure::BestDamageTaken => 'the largest single-fight total of the client\'s damage meter; the legend is an estimate of a long raid boss fight at level 60, not measured on this server',
             default => '',

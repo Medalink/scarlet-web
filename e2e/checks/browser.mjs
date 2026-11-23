@@ -5,8 +5,8 @@ import { Browser, browserCommand } from "../cdp.mjs";
 import { CLASS_CHARACTERS, NAME, PROBE, SHOWN, Skip, WARLOCK, failOn, pool, rollupsRefreshed } from "../support.mjs";
 
 const CLASS_PAGES = Object.entries(CLASS_CHARACTERS).map(([slug, name]) => `/c/${name}/${slug}`);
-const WIDE = ["/", "/stats", "/map", "/camps", "/professions/fishing", "/professions/mining", "/professions/cooking", "/professions/tailoring", "/hardcore-deaths", "/leaderboards", "/search?q=Testa", `/c/${NAME}`, `/c/${PROBE}/battlegrounds`, `/c/${WARLOCK}`, ...CLASS_PAGES, "/spells/2660", "/encounters/1065", "/items/2862"];
-const NARROW = ["/", "/stats", "/camps", "/professions/fishing", "/professions/cooking", "/hardcore-deaths", ...CLASS_PAGES, "/spells/2660", "/encounters/1065"];
+const WIDE = ["/", "/stats", "/map", "/camps", "/professions/fishing", "/professions/mining", "/professions/cooking", "/professions/tailoring", "/hardcore-deaths", "/leaderboards", "/feats", "/feats/slayer", "/search?q=Testa", `/c/${NAME}`, `/c/${PROBE}/battlegrounds`, `/c/${WARLOCK}`, ...CLASS_PAGES, "/spells/2660", "/encounters/1065", "/items/2862"];
+const NARROW = ["/", "/stats", "/camps", "/professions/fishing", "/professions/cooking", "/hardcore-deaths", "/feats", "/feats/slayer", ...CLASS_PAGES, "/spells/2660", "/encounters/1065"];
 const TABS = 4;
 const SUGGEST_MS = 5000;
 

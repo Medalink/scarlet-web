@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { InstallClient } from "../client.mjs";
-import { NAME, PROBE, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool, rollupsRefreshed } from "../support.mjs";
+import { NAME, PROBE, SHOWN, STRICT, Skip, expectStatus, expectJson, failOn, pool, rollupsRefreshed, sleep } from "../support.mjs";
 
 const CONCURRENCY = 6;
 export const ERROR_PAGE = /Server Error|Whoops|Stack Trace|Illuminate\\|laravel-exceptions|Undefined (variable|array key)|Call to (undefined|a member)/i;
@@ -20,6 +20,9 @@ const PAGES = [
   { path: "/download", shows: heading("Download the Scarlet app") },
   { path: "/leaderboards", shows: heading("Leaderboards") },
   { path: "/leaderboards/most-quests", shows: heading("Most quests turned in") },
+  { path: "/leaderboards/feat-score", shows: heading("Highest feat score") },
+  { path: "/feats", shows: heading("241 feats, five tiers each") },
+  { path: "/feats/slayer", shows: heading("Slayer") },
   { path: "/talents", shows: heading("Talents") },
   { path: "/rulesets", shows: heading("Rulesets compared") },
   { path: "/hardcore-deaths", shows: heading("Hardcore deaths") },
@@ -170,7 +173,12 @@ export async function signIn(http, jar) {
     if (STRICT) throw new Error(`${off} (E2E_STRICT=1 means the server was started with it, so the login page lost its form)`);
     throw new Skip(off);
   }
-  const signedIn = await http.request("/auth/development", { ...form({ _token: tokenIn(login.text) }), method: "POST", jar, redirect: "manual" });
+  let signedIn = await http.request("/auth/development", { ...form({ _token: tokenIn(login.text) }), method: "POST", jar, redirect: "manual" });
+  if (signedIn.status === 429) {
+    await sleep(Math.min(Number(signedIn.headers.get("retry-after") ?? 60), 65) * 1000);
+    const again = expectStatus(await http.request("/login", { jar, headers: { Accept: "text/html" } }), 200, "GET /login");
+    signedIn = await http.request("/auth/development", { ...form({ _token: tokenIn(again.text) }), method: "POST", jar, redirect: "manual" });
+  }
   if (signedIn.status !== 302 || !(signedIn.headers.get("location") ?? "").endsWith("/account")) {
     throw new Error(`POST /auth/development: expected a redirect to /account, saw ${signedIn.status} ${signedIn.headers.get("location")}: ${signedIn.text.slice(0, 300)}`);
   }

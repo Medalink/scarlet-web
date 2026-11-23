@@ -30,6 +30,8 @@ class BoardQuery
 
     private const string BY_CRAFTED = 'g.crafts desc, c.id';
 
+    private const string BY_FEAT_SCORE = 'c.feat_score desc, c.id';
+
     /** The query of one board, public characters only (a player's own page: the player's characters), best first. A row carries `name`, `race`, `class`, `account_id`, `whole_life`, `first_seen_at`, `deaths`, `ruleset_id`, `value` and `at`. */
     public function ranked(Board $board, PageScope $scope): Builder
     {
@@ -74,6 +76,7 @@ class BoardQuery
             Board::MostFishCaught, Board::MostHerbsGathered, Board::MostOreMined, Board::MostCreaturesSkinned => self::BY_GATHERED,
             Board::MostAlchemyCrafts, Board::MostBlacksmithingCrafts, Board::MostEnchantingCrafts, Board::MostEngineeringCrafts,
             Board::MostLeatherworkingCrafts, Board::MostTailoringCrafts, Board::MostCookingCrafts, Board::MostFirstAidCrafts => self::BY_CRAFTED,
+            Board::FeatScore => self::BY_FEAT_SCORE,
         };
     }
 
@@ -97,6 +100,7 @@ class BoardQuery
             Board::MostFishCaught, Board::MostHerbsGathered, Board::MostOreMined, Board::MostCreaturesSkinned => 'row_number() over (order by '.self::BY_GATHERED.') as place, count(*) over () as total',
             Board::MostAlchemyCrafts, Board::MostBlacksmithingCrafts, Board::MostEnchantingCrafts, Board::MostEngineeringCrafts,
             Board::MostLeatherworkingCrafts, Board::MostTailoringCrafts, Board::MostCookingCrafts, Board::MostFirstAidCrafts => 'row_number() over (order by '.self::BY_CRAFTED.') as place, count(*) over () as total',
+            Board::FeatScore => 'row_number() over (order by '.self::BY_FEAT_SCORE.') as place, count(*) over () as total',
         };
     }
 
@@ -135,6 +139,7 @@ class BoardQuery
             Board::MostQuestsCompleted => $query->where('c.quests_completed', '>', 0)->addSelect('c.quests_completed as value'),
             Board::MostKills => $query->where('s.kills', '>', 0)->addSelect('s.kills as value'),
             Board::MostJumps => $query->where('s.jumps', '>', 0)->addSelect('s.jumps as value'),
+            Board::FeatScore => $query->where('c.feat_score', '>', 0)->addSelect('c.feat_score as value'),
             Board::MostDungeonRuns => $query->where('s.runs', '>', 0)->addSelect('s.runs as value'),
             Board::MostTimeByTheFire => $query->joinSub($this->campTime($scope), 'k', 'k.character_id', '=', 'c.id')->where('k.seconds', '>', 0)->addSelect('k.seconds as value'),
             Board::MostFishCaught, Board::MostHerbsGathered, Board::MostOreMined, Board::MostCreaturesSkinned => $query->joinSub($this->gathered($board, $scope), 'g', 'g.character_id', '=', 'c.id')->where('g.looted', '>', 0)->addSelect('g.looted as value'),

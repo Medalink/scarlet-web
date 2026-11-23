@@ -1,10 +1,49 @@
-/* Tailwind without its preflight, so it never changes how site.css and app.css pages render.
-   No page loads this file yet; a utility-styled fragment would add it after app.css. */
 @layer theme, base, components, utilities;
 
 @import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
 @import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@import './scarlet.css';
 
-/* The sources are listed, never detected: the repo also holds static-site/, docs/ and part/. */
-@source '../views/tailwind';
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../views/components/sc';
+@source '../views/sc';
+@source '../views/components/layouts/sc.blade.php';
+@source '../views/design/system.blade.php';
+@source '../views/pages/session.blade.php';
+@source '../views/pages/feats.blade.php';
+@source '../views/pages/feat.blade.php';
+@source '../views/design/feats.blade.php';
+@source '../js/sc';
+@source '../../app/View/Sc';
+@source '../../app/View/Pages/SessionPage.php';
+
+@theme {
+  --color-bg: #141416;
+  --color-win: #101012;
+  --color-panel: #1b1b1f;
+  --color-card: #232328;
+  --color-fg: #f0f1f3;
+  --color-copy: #cdced4;
+  --color-muted: #8a8a93;
+  --color-dim: #6e6e7a;
+  --color-line: rgb(255 255 255 / 0.07);
+  --color-line2: rgb(255 255 255 / 0.13);
+  --color-accent: #ff2d55;
+  --color-soft: #ff6b8e;
+  --color-deep: #c0102e;
+  --color-ink: #141416;
+  --color-s1: #ff2d55;
+  --color-s2: #2f9ec4;
+  --color-s3: #98721c;
+  --color-s4: #9a7df2;
+  --color-rest: #54545d;
+  --color-copper: #c58a63;
+  --color-silver: #c3c7cf;
+  --color-gold: #d9b25f;
+  --font-display: 'Sofia Sans Extra Condensed', 'Bahnschrift', 'Arial Narrow', sans-serif;
+  --font-body: 'Sofia Sans', 'Bahnschrift', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Martian Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --radius-1: 2px;
+  --radius-2: 4px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
