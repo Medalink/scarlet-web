@@ -9,9 +9,11 @@
 @source '../views/sc';
 @source '../views/components/layouts/sc.blade.php';
 @source '../views/design/system.blade.php';
+@source '../views/pages/session.blade.php';
 @source '../views/design/feats.blade.php';
 @source '../js/sc';
 @source '../../app/View/Sc';
+@source '../../app/View/Pages/SessionPage.php';
 
 @theme {
   --color-bg: #141416;

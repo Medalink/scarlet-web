@@ -204,3 +204,7 @@ a:hover { color: var(--soft); }
   .sc-states > .hd { display: none; }
 }
 }
+.sc-best { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--body); color: var(--soft); }
+.sc-best::before { content: ""; width: 6px; height: 6px; background: var(--accent); rotate: 45deg; }
+.sc-moment { display: grid; grid-template-columns: 46px 20px minmax(0, 1fr); gap: 10px; align-items: center; padding: 7px 0; font-size: 13.5px; }
+.sc-moment + .sc-moment { border-top: 1px solid var(--line); }

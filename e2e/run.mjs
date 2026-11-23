@@ -31,6 +31,7 @@ import * as own from "./checks/own.mjs";
 import * as installs from "./checks/installs.mjs";
 import * as removal from "./checks/removal.mjs";
 import * as admin from "./checks/admin.mjs";
+import * as session from "./checks/session.mjs";
 
 const LANES = ["upload", "api", "pages", "browser", "owner"];
 const SERVER_CONNECTIONS = 3;
@@ -80,6 +81,7 @@ const REGISTRY = [
   { lane: "pages", name: "a character's page links its class page and draws its band from the stored row, and a class with no page has neither", run: classPage.characterPageLinksItsClassPage },
   { lane: "pages", name: "a character with no class rows has no band and no link to a class page", run: classPage.characterWithNoClassRowsHasNoBand },
   { lane: "pages", name: "another class's slug, an unknown slug and an unknown character are 404 pages", run: classPage.otherAddressesAre404 },
+  { lane: "pages", name: "a session page shows the recap of its fixture session and answers 404 for a session, a character or a start that is not there", run: session.sessionPageShowsTheUpload },
   { lane: "browser", name: "the browser has no window", independent: true, run: browser.hasNoWindow },
   { lane: "browser", name: "the map art is installed", independent: true, run: browser.mapArtIsServed },
   { lane: "browser", name: "the key pages run clean at 1280", run: browser.pagesRunClean },
@@ -88,6 +90,7 @@ const REGISTRY = [
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
   { lane: "owner", name: "the admin opens the admin pages privately, /admin/api counts the upload and a character asked for by name, /admin/clients shows the install clients, and /admin/characters finds the characters", run: admin.adminSeesTheApiCalls },
   { lane: "owner", name: "a character the owner made private has no class page, world map or trails for a visitor, and has them again once public", run: classPage.hiddenCharacterHidesItsClassPage },
+  { lane: "owner", name: "the owner turns the session pages off and a visitor gets a 404 while the owner keeps the page", run: session.sessionSwitchHidesThePage },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },
