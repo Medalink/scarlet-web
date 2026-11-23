@@ -43,7 +43,7 @@ final class Head
                 ['label' => 'Kills', 'value' => Format::number($kills), 'sub' => self::rate($kills, $hours)],
                 ['label' => 'Quests', 'value' => Format::number($quests), 'sub' => self::rate($quests, $hours)],
                 ['label' => 'Deaths', 'value' => Format::number($totals['deaths']), 'sub' => $deathZone === null ? null : 'most in '.$deathZone],
-                $yards > 0 ? ['label' => 'Distance', 'value' => Format::number($yards / 1760, $yards >= 17600 ? 0 : 1), 'unit' => 'mi', 'sub' => $r['records']['jumps'] > 0 ? Format::number($r['records']['jumps']).' jumps on the way' : null] : null,
+                $yards > 0 ? ['label' => 'Distance', ...Format::distance($yards, $yards >= 17600 ? 0 : 1), 'sub' => $r['records']['jumps'] > 0 ? Format::number($r['records']['jumps']).' jumps on the way' : null] : null,
                 $total > 0 ? ['label' => 'Feats', 'value' => (string) $feats['held'], 'unit' => 'of '.$total, 'sub' => self::tierLine(array_values(array_map('intval', $feats['tiers'])))] : null,
             ])),
             'route' => Trail::spec($r['heat'], $r['marks']),

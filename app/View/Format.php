@@ -16,6 +16,10 @@ final class Format
     /** The marker for a bucket that too few characters contributed to. */
     public const TOO_FEW = 'Too few characters';
 
+    public const int MILE = 1760;
+
+    public const int HALF_MILE = 880;
+
     /** 1284 → "1,284"; with decimals, 23.8 → "23.8". */
     /** 1 → "1st", 2,140 → "2,140th". */
     public static function ordinal(int $n): string
@@ -36,6 +40,25 @@ final class Format
         $number = (float) $value;
 
         return self::number($number).' '.($number === 1.0 ? $singular : ($plural ?? $singular.'s'));
+    }
+
+    /**
+     * Yards under half a mile (880) stay yards, anything longer is miles: 300 → 300 yd, 16,400 → 9.3 mi.
+     *
+     * @return array{value: string, unit: string}
+     */
+    public static function distance(int|float $yards, int $decimals = 1): array
+    {
+        return $yards < self::HALF_MILE
+            ? ['value' => self::number($yards), 'unit' => 'yd']
+            : ['value' => self::number($yards / self::MILE, $decimals), 'unit' => 'mi'];
+    }
+
+    public static function distanceText(int|float $yards, int $decimals = 1): string
+    {
+        $distance = self::distance($yards, $decimals);
+
+        return $distance['value'].' '.$distance['unit'];
     }
 
     /** A share of 1 as a percentage: 0.412 → "41.2%" with one decimal. */

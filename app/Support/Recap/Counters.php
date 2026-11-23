@@ -4,6 +4,7 @@ namespace App\Support\Recap;
 
 use App\Support\MovementMode;
 use App\Support\StateKind;
+use App\Support\XpSource;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -35,6 +36,7 @@ final class Counters
             'bosses' => $scope->rows('boss_kills')->count(),
             'emotes' => $scope->rows('emotes')->count(),
             'abandoned' => $scope->rows('quest_events')->where('event', 'abandoned')->count(),
+            'discoveries' => $scope->rows('xp_gains')->where('source', XpSource::Exploring->value)->count(),
             'crafted' => (int) $scope->rows('crafts')->sum('quantity'),
             'loot' => (int) $scope->rows('loot_drops')->sum('quantity'),
             'afkTime' => intdiv((int) $scope->rows('play_spans')->sum('afk_ms'), 1000),

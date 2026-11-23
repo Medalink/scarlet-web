@@ -56,21 +56,45 @@
     <x-sc.strip :recap="$recap" />
   </section>
 
-  @if ($shown($d['own']) || $d['peers'])
-    <section class="mt-4 grid gap-4 {{ $shown($d['own']) && $d['peers'] ? 'lg:grid-cols-2' : '' }}">
-      @if ($shown($d['own']))
-        <div class="sc-panel px-5 py-4" style="--surface:var(--panel)">
-          <h2 class="sc-h">Against {{ $d['first'] }}'s last {{ $d['ownCount'] }} sessions</h2>
-          <div class="sc-key mt-2" style="--surface:var(--panel)"><span style="--c:var(--accent)">This session</span><span style="--c:var(--s-0)">Middle half</span></div>
-          <x-sc.compare class="mt-4 max-w-[640px]" :rows="$d['own']" :n="$d['ownCount']" :min="1" :label="118" />
+  @php($hasFeats = $shown($d['feats']['earned']) || $shown($d['feats']['near']))
+  @if ($hasFeats || $shown($d['own']) || $d['peers'])
+    <section class="mt-4 grid gap-4 {{ $hasFeats && ($shown($d['own']) || $d['peers']) ? 'lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)]' : '' }}">
+      @if ($hasFeats)
+        <div class="sc-panel px-5 py-4">
+          <h2 class="sc-h">Feats this session</h2>
+          @foreach ($d['feats']['earned'] as $feat)
+            <x-sc.feat class="mt-4" :feat="$feat" :size="104" />
+          @endforeach
+          @if ($shown($d['feats']['near']))
+            @if ($shown($d['feats']['earned']))<hr class="sc-rule my-4">@endif
+            <p class="sc-label mb-3 {{ $shown($d['feats']['earned']) ? '' : 'mt-4' }}">Closest when the session ended</p>
+            <div class="grid gap-3">
+              @foreach ($d['feats']['near'] as $feat)
+                <x-sc.feat :feat="$feat" :size="48" />
+              @endforeach
+            </div>
+          @endif
         </div>
       @endif
-      @if ($d['peers'])
+      @if ($shown($d['own']) || $d['peers'])
         <div class="sc-panel px-5 py-4" style="--surface:var(--panel)">
-          <h2 class="sc-h">{{ $d['peers']['heading'] }}</h2>
-          <div class="sc-key mt-2" style="--surface:var(--panel)"><span style="--c:var(--accent)">This session</span><span style="--c:var(--s-0)">{{ $d['peers']['note'] }}</span></div>
-          <x-sc.compare class="mt-4 max-w-[640px]" :rows="$d['peers']['rows']" :n="$d['recap']['compare']['sessions']" :label="118" />
-          <p class="sc-note mt-4">The number at the right is the share of sessions this one beats.</p>
+          <div class="grid gap-8 {{ $shown($d['own']) && $d['peers'] ? 'lg:grid-cols-2' : '' }}">
+            @if ($shown($d['own']))
+              <div>
+                <h2 class="sc-h">Against {{ $d['first'] }}'s last {{ $d['ownCount'] }} sessions</h2>
+                <div class="sc-key mt-2" style="--surface:var(--panel)"><span style="--c:var(--accent)">This session</span><span style="--c:var(--s-0)">Middle half</span></div>
+                <x-sc.compare class="mt-4 max-w-[640px]" :rows="$d['own']" :n="$d['ownCount']" :min="1" :label="118" />
+              </div>
+            @endif
+            @if ($d['peers'])
+              <div>
+                <h2 class="sc-h">{{ $d['peers']['heading'] }}</h2>
+                <div class="sc-key mt-2" style="--surface:var(--panel)"><span style="--c:var(--accent)">This session</span><span style="--c:var(--s-0)">{{ $d['peers']['note'] }}</span></div>
+                <x-sc.compare class="mt-4 max-w-[640px]" :rows="$d['peers']['rows']" :n="$d['recap']['compare']['sessions']" :label="118" />
+                <p class="sc-note mt-4">The number at the right is the share of sessions this one beats.</p>
+              </div>
+            @endif
+          </div>
         </div>
       @endif
     </section>
@@ -115,11 +139,11 @@
   <section class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
     @if ($shown($d['moments']))
       <div class="sc-panel px-5 py-4">
-        <h2 class="sc-h">Levels, deaths and bosses</h2>
+        <h2 class="sc-h">Levels, deaths and feats</h2>
         <div class="mt-3">
           @foreach ($d['moments'] as $moment)
             <div class="sc-moment">
-              <time class="sc-mono" datetime="{{ gmdate('c', $recap['start'] + $moment['at']) }}" data-local="H:i">{{ gmdate('H:i', $recap['start'] + $moment['at']) }}</time>
+              @if ($moment['at'] === null)<span class="sc-mono"></span>@else<time class="sc-mono" datetime="{{ gmdate('c', $recap['start'] + $moment['at']) }}" data-local="H:i">{{ gmdate('H:i', $recap['start'] + $moment['at']) }}</time>@endif
               <x-sc.glyph :name="$moment['glyph']" :size="16" />
               <span>{{ $moment['text'] }}</span>
             </div>

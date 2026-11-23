@@ -2,7 +2,10 @@
 
 namespace App\View\Pages;
 
+use App\Support\Feat;
+use App\Support\FeatText;
 use App\View\Format;
+use App\View\Sc\Seal;
 
 /** The lower blocks of the session page: where the time went, experience by source, the counts and the moments. */
 final class SessionBlocks
@@ -23,6 +26,7 @@ final class SessionBlocks
             'killed' => array_map(fn (array $row): array => [$row['name'], $row['n']], $top['killed'] ?? []),
             'counts' => self::counts($counters, $miles),
             'moments' => self::moments($recap),
+            'feats' => self::feats($recap['feats'] ?? ['earned' => [], 'near' => []]),
             'questZones' => array_map(fn (array $row): array => [$row['zone'], $row['n']], $top['quests_by_zone'] ?? []),
             'looted' => array_map(fn (array $row): array => [$row['name'], $row['n']], $top['looted'] ?? []),
         ];
@@ -39,8 +43,8 @@ final class SessionBlocks
         $moves = [
             ['Swimming', $counters['swimTime'] ?? 0, '--m-swim'],
             ['On foot', ($counters['footTime'] ?? 0) + ($counters['walkTime'] ?? 0), '--m-foot'],
-            ['Mounted', $counters['mountTime'] ?? 0, '--m-mount'],
-            ['Flying', ($counters['flyTime'] ?? 0) + ($counters['taxiTime'] ?? 0), '--m-flight'],
+            ['Mounted', ($counters['mountTime'] ?? 0) + ($counters['flyTime'] ?? 0), '--m-mount'],
+            ['Flight paths', $counters['taxiTime'] ?? 0, '--m-flight'],
         ];
         $moving = array_sum(array_column($moves, 1));
         $moves[] = ['Standing still', max(0, $played - $moving), '--m-still'];
@@ -121,12 +125,10 @@ final class SessionBlocks
             ['Damage done', $damage, $perMinute($damage)],
             ['Damage taken', $counters['damageTaken'] ?? 0, $damage > 0 ? Format::percent(($counters['damageTaken'] ?? 0) / $damage).' of the damage done' : ''],
             ['Healing done', $counters['healing'] ?? 0, ''],
+            ['Quests turned in', $counters['quests'] ?? 0, ''],
             ['Items looted', $counters['loot'] ?? 0, ''],
-            ['Items crafted', $counters['crafted'] ?? 0, ''],
-            ['Bosses killed', $counters['bosses'] ?? 0, ''],
-            ['Flight paths', $counters['flights'] ?? 0, ''],
+            ['Places discovered', $counters['discoveries'] ?? 0, ''],
             ['Interrupts', $counters['interrupts'] ?? 0, ''],
-            ['Time at camps', $counters['camptime'] ?? 0, '', true],
             ['Time AFK', $counters['afkTime'] ?? 0, '', true],
         ];
 
@@ -137,8 +139,10 @@ final class SessionBlocks
     }
 
     /**
+     * Levels, deaths, bosses and places in the order they happened, then the feats, which carry no minute.
+     *
      * @param  array<string, mixed>  $recap
-     * @return list<array{at: int, glyph: string, text: string}>
+     * @return list<array{at: int|null, glyph: string, text: string}>
      */
     private static function moments(array $recap): array
     {
@@ -156,7 +160,45 @@ final class SessionBlocks
             $rows[] = ['at' => (int) $moment['at'], 'glyph' => $glyph, 'text' => (string) $moment['text']];
         }
         usort($rows, fn (array $a, array $b): int => $a['at'] <=> $b['at']);
+        foreach ($recap['feats']['earned'] ?? [] as $earned) {
+            $feat = Feat::from($earned['key']);
+            $rows[] = ['at' => null, 'glyph' => 'crown', 'text' => $feat->label().', '.Seal::TIER_NAMES[$earned['tier']].': '.FeatText::counted($feat, $earned['value'])];
+        }
 
         return $rows;
+    }
+
+    /**
+     * @param  array{earned: list<array<string, mixed>>, near: list<array<string, mixed>>}  $feats
+     * @return array{earned: list<array<string, mixed>>, near: list<array<string, mixed>>}
+     */
+    private static function feats(array $feats): array
+    {
+        return [
+            'earned' => array_map(function (array $row): array {
+                $feat = Feat::from($row['key']);
+
+                return [...self::card($feat, $row['tier'], $row['value']), 'count' => FeatText::counted($feat, $row['value']), 'to' => $row['from'] > 0 ? 'Earned, up from '.Seal::TIER_NAMES[$row['from']] : 'Earned'];
+            }, $feats['earned']),
+            'near' => array_map(function (array $row): array {
+                $feat = Feat::from($row['key']);
+
+                return [...self::card($feat, $row['tier'], $row['value']), 'count' => FeatText::counted($feat, $row['value']).' · '.FeatText::toNext($feat, $row['left'], $row['tier'])];
+            }, $feats['near']),
+        ];
+    }
+
+    /** @return array{key: string, name: string, glyph: string, family: string, tier: int, progress: float, href: string} */
+    private static function card(Feat $feat, int $tier, int|float $value): array
+    {
+        $thresholds = $feat->thresholds();
+        $next = $thresholds[$tier] ?? null;
+        $from = $thresholds[$tier - 1] ?? 0;
+
+        return [
+            'key' => $feat->value, 'name' => $feat->label(), 'glyph' => $feat->icon(), 'family' => $feat->family(), 'tier' => $tier,
+            'progress' => $next === null ? 1.0 : round(max(0, min(1, ($value - $from) / ($next - $from))), 3),
+            'href' => '/feats/'.$feat->value,
+        ];
     }
 }

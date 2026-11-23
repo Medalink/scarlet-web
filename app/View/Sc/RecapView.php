@@ -87,7 +87,7 @@ final class RecapView
             [Format::number($xp), 'XP', $xp],
             [Format::number($counters['kills'] ?? 0), 'kills', $counters['kills'] ?? 0],
             [Format::number($counters['quests'] ?? 0), 'quests', $counters['quests'] ?? 0],
-            [Format::number(self::miles($recap), 1), 'mi', self::miles($recap)],
+            [Format::distance(self::yards($recap))['value'], Format::distance(self::yards($recap))['unit'], self::yards($recap)],
             [Format::number($counters['deaths'] ?? 0), ($counters['deaths'] ?? 0) === 1 ? 'death' : 'deaths', $counters['deaths'] ?? 0],
         ];
 
@@ -95,12 +95,14 @@ final class RecapView
     }
 
     /**
+     * The yards of a session on foot, mounted (flying counts as mounted) and swimming.
+     *
      * @param  array<string, mixed>  $recap
      */
-    public static function miles(array $recap): float
+    public static function yards(array $recap): int
     {
         $c = $recap['counters'];
 
-        return round((($c['foot'] ?? 0) + ($c['walk'] ?? 0) + ($c['mount'] ?? 0) + ($c['swim'] ?? 0)) / 1760, 1);
+        return ($c['foot'] ?? 0) + ($c['walk'] ?? 0) + ($c['mount'] ?? 0) + ($c['fly'] ?? 0) + ($c['swim'] ?? 0);
     }
 }

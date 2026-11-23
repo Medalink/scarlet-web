@@ -26,7 +26,8 @@ final class SessionPage
         $name = Format::characterName($character->name);
         $counters = $recap['counters'];
         $hours = max(1, $recap['played']) / 3600;
-        $miles = RecapView::miles($recap);
+        $yards = RecapView::yards($recap);
+        $miles = $yards / Format::MILE;
         $links = $recap['links'];
         $base = '/c/'.rawurlencode($character->name);
 
@@ -42,7 +43,7 @@ final class SessionPage
             'earlierAt' => $links['earlier'],
             'later' => $links['later'] === null ? null : $base.'/sessions/'.$links['later'],
             'map' => '/map?character='.rawurlencode($character->name),
-            'tiles' => self::tiles($recap, $counters, $hours, $miles, $answer['economy']),
+            'tiles' => self::tiles($recap, $counters, $hours, $yards, $answer['economy']),
             'distance' => self::distance($counters),
             'own' => self::own($recap['own'] ?? null),
             'ownCount' => $recap['own']['n'] ?? 0,
@@ -57,7 +58,7 @@ final class SessionPage
      * @param  array<string, int>  $counters
      * @return list<array{label: string, value: mixed, unit?: string, sub: string, best: bool}>
      */
-    private static function tiles(array $recap, array $counters, float $hours, float $miles, bool $economy): array
+    private static function tiles(array $recap, array $counters, float $hours, int $yards, bool $economy): array
     {
         $bests = $recap['bests'];
         $xp = $counters['xp'] ?? array_sum($recap['xp']);
@@ -70,7 +71,7 @@ final class SessionPage
             ['label' => 'Experience', 'value' => Format::number($xp), 'sub' => self::rate($xp, $hours), 'best' => in_array('xp', $bests, true) || in_array('xp_h', $bests, true), 'n' => $xp],
             ['label' => 'Kills', 'value' => Format::number($kills), 'sub' => self::rate($kills, $hours), 'best' => in_array('kills', $bests, true), 'n' => $kills],
             $third,
-            ['label' => 'Distance', 'value' => Format::number($miles, 1), 'unit' => 'mi', 'sub' => self::distanceLine($counters), 'best' => in_array('distance', $bests, true), 'n' => $miles],
+            [...Format::distance($yards), 'label' => 'Distance', 'sub' => self::distanceLine($counters, $yards), 'best' => in_array('distance', $bests, true), 'n' => $yards],
         ];
 
         return array_values(array_filter($tiles, fn (array $tile): bool => $tile['n'] > 0));
@@ -116,12 +117,14 @@ final class SessionPage
     }
 
     /** @param  array<string, int>  $counters */
-    private static function distanceLine(array $counters): string
+    private static function distanceLine(array $counters, int $total): string
     {
+        $unit = Format::distance($total)['unit'];
         $parts = [];
-        foreach ([['On foot', ($counters['foot'] ?? 0) + ($counters['walk'] ?? 0)], ['mounted', $counters['mount'] ?? 0], ['flown', $counters['fly'] ?? 0], ['swum', $counters['swim'] ?? 0]] as [$label, $yards]) {
+        foreach ([['on foot', ($counters['foot'] ?? 0) + ($counters['walk'] ?? 0)], ['mounted', ($counters['mount'] ?? 0) + ($counters['fly'] ?? 0)], ['swum', $counters['swim'] ?? 0]] as [$label, $yards]) {
             if ($yards > 0) {
-                $parts[] = Format::number($yards / 1760, 1).' '.($label === 'On foot' ? 'on foot' : $label);
+                $part = Format::distance($yards);
+                $parts[] = $part['value'].($part['unit'] === $unit ? '' : ' '.$part['unit']).' '.$label;
             }
         }
 
@@ -135,9 +138,9 @@ final class SessionPage
     private static function distance(array $counters): array
     {
         $rows = [];
-        foreach ([['Swimming', $counters['swim'] ?? 0, '--m-swim'], ['On foot', ($counters['foot'] ?? 0) + ($counters['walk'] ?? 0), '--m-foot'], ['Mounted', $counters['mount'] ?? 0, '--m-mount'], ['Flying', $counters['fly'] ?? 0, '--m-flight']] as [$label, $yards, $var]) {
+        foreach ([['Swimming', $counters['swim'] ?? 0, '--m-swim'], ['On foot', ($counters['foot'] ?? 0) + ($counters['walk'] ?? 0), '--m-foot'], ['Mounted', ($counters['mount'] ?? 0) + ($counters['fly'] ?? 0), '--m-mount']] as [$label, $yards, $var]) {
             if ($yards > 0) {
-                $rows[] = [$label, $yards / 1760, $var, Format::number($yards / 1760, 1).' mi'];
+                $rows[] = [$label, $yards / Format::MILE, $var, Format::distanceText($yards)];
             }
         }
 

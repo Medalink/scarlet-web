@@ -18,12 +18,14 @@ use stdClass;
 
 /**
  * The SessionRecap of one session of one character (CONTRACTS.md, "Session recap"), built from the session row and the fact tables the way the app's recap.rs builds it
- * from the log. `buckets.combat` is zero until the decoder keeps fight times with a time, `feats` is empty because `feat_events` holds when the refresh ran, not the minute of the session, `compare` is null while the bracket
+ * from the log. `buckets.combat` is zero until the decoder keeps fight times with a time, `feats` comes from `feat_events` (ShowSessionFeats), `compare` is null while the bracket
  * has fewer than 20 sessions, and `links` is left to ShowSession. `$economy` false leaves out what a public page may not show without the owner's say.
  */
 class BuildRecap
 {
     private const array ECONOMY_COUNTERS = ['earned', 'spent', 'sold', 'repairs'];
+
+    public function __construct(private readonly ShowSessionFeats $feats) {}
 
     /** @return array<string, mixed>|null null when the character has no session that starts at `$start` */
     public function handle(Character $character, int $start, bool $economy): ?array
@@ -37,7 +39,7 @@ class BuildRecap
         $played = intdiv((int) $session->played_ms, 1000);
         $level = [(int) $session->level_start, max((int) $session->level_start, (int) $session->level_end)];
         $stretches = Stretches::read($scope);
-        $miles = (($counters['foot'] ?? 0) + ($counters['walk'] ?? 0) + ($counters['mount'] ?? 0) + ($counters['swim'] ?? 0)) / 1760;
+        $miles = (($counters['foot'] ?? 0) + ($counters['walk'] ?? 0) + ($counters['mount'] ?? 0) + ($counters['fly'] ?? 0) + ($counters['swim'] ?? 0)) / 1760;
         $history = History::read($scope, History::totals([
             'played' => $played,
             'xp' => $counters['xp'] ?? 0,
@@ -67,7 +69,7 @@ class BuildRecap
             'levels' => $levels,
             'moments' => Timeline::moments($scope),
             'route' => Route::read($scope),
-            'feats' => ['earned' => [], 'near' => []],
+            'feats' => $this->feats->handle($character->id, $start, $played, $economy),
             'bests' => $history['bests'],
             'own' => $history['own'],
             'top' => Top::read($scope),
