@@ -1464,6 +1464,17 @@ the deploy is announced; a row inserted later starts at 0, so a new character's 
 `POST /installs/me/feats/seen` and `MarkOwnedFeatsSeen` call it. `GET /public/characters/{name}` carries neither
 `seen_tier` nor `new`.
 
+**Account crests.** A general feat is also counted across the characters of an account (`Feat::account()`: `sum` adds the
+characters' counts, `max` takes the highest and names its holder, `none` for class, talent-tree and role feats; 39, 33
+and 169 feats). Its account tiers read the feat's `accountThresholds()`: the character's, times 1, 2, 2, 2, 2 for a `sum`
+feat (Summit is 20, 60, 120, 180 and 300 levels), the character's for a `max` feat. `ShowAccountFeats` computes them on
+every read from `character_feats`, with no stored account row: for a signed-in account over the characters with its
+`account_id` (the same set as the wall), for an install over `Character::ownedBy`. The gold feats follow the economy switch:
+on the site the account row shows them when any of the account's characters shows its economy, and the install API shows
+them. `/feats` signed in and `/account` open on an `Account` row of crests, earned first, then the started ones; a feat page
+shows the account ladder beside the character's when the feat has one. The install API's `account` block carries the
+cards and the account feats not yet shown, and `install_account_feats` (install, feat, seen tier) records what the app showed.
+
 **Feat toasts.** The signed-in owner of a character sees a toast on that character's page for each new feat, in the
 order of `new`. The stack is part of the owner's Livewire feat wall, so a visitor, a signed-out viewer and `?as=visitor`
 get no toast markup and no script work. About 600 ms after the page has loaded, and only while the tab is visible

@@ -7,7 +7,7 @@ use App\Support\Feat;
 /** The feat crest of design/crests/CRESTS.md as one inline SVG, laid out layer by layer as `crest(el)` in crests.js lays it out. */
 final class Crest
 {
-    public const array TIER_NAMES = ['', 'Copper', 'Silver', 'Gold', 'Scarlet', 'Legend'];
+    public const array TIER_NAMES = ['', ...Feat::TIERS];
 
     public const array SCOPES = ['character', 'class', 'account'];
 

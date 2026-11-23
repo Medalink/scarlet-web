@@ -196,3 +196,42 @@ export async function featsHubFollowsTheScope(ctx) {
   }
   expectStatus(await ctx.http.page("/feats/not-a-feat"), 404, "GET /feats/not-a-feat");
 }
+
+/** The account block of GET /installs/me/feats: every card read against the catalog's account thresholds, and what the app showed is not new again. */
+export async function accountCrestsAreServed(ctx) {
+  const published = expectJson(expectStatus(await ctx.http.api("/api/v1/public" + uncached("/feats", 21)), 200, "GET /api/v1/public/feats"), "the catalog").data;
+  const catalog = new Map(published.feats.map((feat) => [feat.key, feat]));
+  const general = published.feats.filter((feat) => feat.account !== "none");
+  const answer = expectJson(expectStatus(await ctx.client.feats(), 200, READ), READ);
+  const account = answer.account;
+  if (!account) throw new Error(`${READ}: expected an account block for the install's characters, saw ${JSON.stringify(answer).slice(0, 200)}`);
+  const faults = [];
+  if (account.total !== general.length) faults.push(`total ${account.total} should be the ${general.length} feats with an account crest`);
+  if (account.cards.length !== account.total) faults.push(`${account.cards.length} cards for a total of ${account.total}`);
+  const held = account.cards.filter((card) => card.tier > 0).length;
+  if (account.held !== held) faults.push(`held ${account.held} but ${held} cards have a tier`);
+  const counted = [1, 2, 3, 4, 5].map((tier) => account.cards.filter((card) => card.tier === tier).length);
+  if ([1, 2, 3, 4, 5].some((tier, i) => account.tiers[tier] !== counted[i])) faults.push(`tiers ${JSON.stringify(account.tiers)} differ from the cards ${JSON.stringify(counted)}`);
+  for (const card of account.cards) {
+    const entry = catalog.get(card.key);
+    if (!entry || entry.account === "none") {
+      faults.push(`${card.key}: not a feat with an account crest`);
+      continue;
+    }
+    const reached = entry.account_thresholds.filter((at) => card.value >= at).length;
+    if (card.tier !== reached) faults.push(`${card.key}: tier ${card.tier} for ${card.value} against ${entry.account_thresholds.join(", ")} is ${reached}`);
+    if (JSON.stringify(card.thresholds) !== JSON.stringify(entry.account_thresholds)) faults.push(`${card.key}: thresholds ${JSON.stringify(card.thresholds)} are not the catalog's account thresholds`);
+    if (entry.account === "sum" && card.holder !== null) faults.push(`${card.key}: a sum feat has a holder`);
+    if (entry.account === "max" && card.value > 0 && typeof card.holder !== "string") faults.push(`${card.key}: a max feat with a count has no holder`);
+    if (card.progress < 0 || card.progress > 1) faults.push(`${card.key}: progress ${card.progress}`);
+  }
+  if (account.new.length !== held) faults.push(`${account.new.length} new account feats for ${held} held on a fresh install`);
+  if (faults.length > 0) throw new Error(`${READ} account block is wrong in:\n${faults.slice(0, 12).join("\n")}`);
+
+  const shown = account.cards.find((card) => card.tier > 0);
+  expectStatus(await ctx.client.request("POST", "/api/v1/installs/me/feats/seen", { body: JSON.stringify({ account: true, feats: { [shown.key]: shown.tier, "not-a-feat": 1 } }) }), 204, `${SEEN} for the account`);
+  const after = expectJson(expectStatus(await ctx.client.feats(), 200, READ), READ).account;
+  if (after.new.some((item) => item.key === shown.key) || after.new.length !== held - 1) throw new Error(`${READ} after ${shown.key} was shown for the account: expected ${held - 1} new and not ${shown.key}, saw ${JSON.stringify(after.new).slice(0, 200)}`);
+  expectError(await ctx.client.request("POST", "/api/v1/installs/me/feats/seen", { body: JSON.stringify({ feats: { slayer: 1 } }) }), 422, "invalid_request", `${SEEN} with neither a character nor the account`);
+  expectError(await ctx.client.request("POST", "/api/v1/installs/me/feats/seen", { body: JSON.stringify({ account: true, character: NAME, feats: { slayer: 1 } }) }), 422, "invalid_request", `${SEEN} with a character and the account`);
+}

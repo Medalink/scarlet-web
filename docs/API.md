@@ -175,11 +175,32 @@ the percent of counted characters at this tier or higher, `null` for a feat not 
 `new` lists the feats whose tier is above the tier last shown, highest tier first. `from` is 0 and `from_name` null for
 a feat earned for the first time, and above 0 for an upgrade. `since` is the date an observed count started, or null.
 
+`account` is the account crests of the characters listed, `null` when no character is listed. The 72 general feats are
+counted across those characters again: a `sum` feat adds their counts, a `max` feat takes the highest count of one
+character and names its character in `holder` (the lowest character id on a tie); `thresholds` are the account's (the
+catalog's `account_thresholds`). It is computed on every read, with the economy shown:
+
+```json
+"account": {
+  "held": 14, "total": 72, "tiers": {"1": 6, "2": 4, "3": 3, "4": 1, "5": 0},
+  "cards": [{"key": "slayer", "tier": 3, "value": 21480, "next": 40000, "prev": 20000, "holder": null,
+             "counted": "21,480 kills on 4 characters", "to_next": "18,520 to Scarlet", "...": "the other fields of a card"}],
+  "new": [{"key": "slayer", "tier": 3, "from": 2}]
+}
+```
+
+A card has the fields of a character's card, with `prev` (the threshold of the tier held, 0 below Copper) and `holder` added;
+`share`, `spell` and `live` are `null`, `null` and false. `new` lists the account feats above the tier this install was last
+shown, highest tier first, with `from` 0 for a first earn.
+
 ### `POST /installs/me/feats/seen`
 
 ```json
 {"character": "Name-Surname", "feats": {"slayer": 2}}
 ```
+
+or, for the account crests, `{"account": true, "feats": {"slayer": 2}}`. A request carries one of `character` and `account`,
+not both: `422 invalid_request` otherwise. The tiers shown for the account are kept per install (`install_account_feats`).
 
 Records the tier shown for each feat, so `new` stops listing it. `204` with no body. A tier above the one the
 character holds is lowered to it, a tier below the one recorded changes nothing, a key that is not a feat is ignored, and sending it twice is safe. `404
