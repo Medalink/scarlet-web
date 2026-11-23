@@ -206,14 +206,32 @@ Rules the design follows:
    keys and one with keys may have opened the same corpses and nothing tells which, so that day counts the larger
    of the reader's windows with no key and all the windows with a key. A day on which only one of the two exists
    counts it whole: windows with no key from before the keys and windows with a key from after them are all
-   counted. `characters` are those of the sets counted. An overlapping day loses up to half its sample and cannot
-   double count. 37% of free-for-all windows have another uploader's window on the same source inside 300 s, past
+   counted. Two days with a free-for-all window within 300 s of the midnight between them are one day to this test and
+   to the choice of the larger set, so a corpse that the reader read at 23:59:58 with no key and another character at
+   00:00:03 with a key counts once; a key rollout, where the windows with no key end one day and the windows with a key
+   begin on the next, has none near its midnight and counts both. `characters` are those of the sets counted. An
+   overlapping day loses up to half its sample and cannot double count. 37% of free-for-all windows have another uploader's window on the same source inside 300 s, past
    the 5% that triggers it. An arm whose windows all have a key, or whose windows with no key are one character's
    own and never share a day with another character's windows with a key, has neither one reader nor the tag.
    The arms of the rule and size charts, the rows of `/public/creatures/{id}` `drops`, the items per corpse by rule on
    `/loot/groups` and the Drops tables of the creature and object pages count the arm this way: a table under free
    for all alone has the arm's windows and tags, and one under every rule adds the arm's windows to those of the
    other rules.
+
+   Every other table that shows a drop rate or a count of windows over all loot rules takes its free-for-all windows and
+   drops from that arm too: the sources and zones of the item page, the index of `/loot` (its rows, tops, zones, rule
+   sizes and header figures), its items view and the corpses of `/loot/groups`. The Drops row of a creature on the item
+   page equals the Drops row of the creature page, and the corpses of `/loot` equal the sum of the creature pages it
+   lists. The arm of a source is read once for the sources a page lists, in three queries however many they are
+   (`FreeForAllArms`, kept for the seconds a read is fresh; `FreeForAllArm` is the one-source form), and has one total
+   for the source, while the counted views split a total by zone and group size. A table that groups by them takes the
+   difference between the arm and the view's rows, shared over the source's free-for-all rows in proportion to what
+   each holds, the larger remainders taking what is left (`FreeForAllDeltas`, `Apportion`), so the zones and sizes of
+   a source add up to its arm (`CountedLoot`). A table that sums every row adds the difference for the page's sources
+   in PHP (`windowShift`, `dropShift`). A source with no one-reader arm keeps the aggregate figures, as does any count of
+   distinct items or characters (a source's Items, an item's Sources, the Items and Uncommon of the header, a
+   character count), since the arm holds windows and drops and not sets; the quality filter and the text match on `/loot`
+   read the aggregate item rows.
 7. **The corpse key (phase 7, decoder version 12).** `K`, `LO` and `LW` carry a key that is the same on every client
    for one corpse, stored as `corpse_key` on `kills`, `loot_opens`, `loot_drops`, `peer_opens` and `peer_drops`. A
    window with a key counts once per corpse, however many characters read it or were sent it. A window without one (a
@@ -227,8 +245,9 @@ Rules the design follows:
    counts as `skin` when it lists a skin item (a window with no item is `loot`), else as `loot`; an object's takes the
    read its own windows have most (`loot`, `herb` or `ore`), and an object nobody opened for itself counts nowhere. A
    skin item is an item that a `gather_items` row of kind `skin` has and that no loot window of a character lists
-   (`loot_drops` via `window`, read `loot`): `gather_items` holds the whole list of a skinning read, so the meat of a
-   corpse nobody had looted joins it, and a mate's loot window of meat alone is loot. A mate's skin window that still
+   (`loot_drops` via `window`, read `loot`) nor a window a member sent for a corpse that no character skinned (a member's
+   window is `skin` or `loot` by its items, so its own class cannot say it is loot): `gather_items` holds the whole list
+   of a skinning read, so the meat of a corpse nobody had looted joins it, and a mate's loot window of meat alone is loot. A mate's skin window that still
    lists meat is skin by its leather. The set is read from every row at each rebuild, so a corpse a member skinned
    counts as loot until some character has skinned that item, and the days outside a range rebuilt keep the set of
    their own rebuild until the next whole one (`loot:rebuild-keyed`, daily). An unkeyed window a member
@@ -237,7 +256,10 @@ Rules the design follows:
    one, so a kept window a member sent is left out of the three window tables when it pairs with a window with no
    key: the nearest one, from any character, that was read within 5 s of it with the same items and the same loot
    rule, each of the two in one pair at most, so a duo's second corpse of the same creature stays counted (it still
-   joins its kill). A kill is not a window:
+   joins its kill). Under free for all with windows with no key from two characters or more, only the one reader's
+   count (rule 6), so a window a member sent that pairs with another character's read is kept: that read counts nowhere.
+   On a day where the reader has windows with no key and another character has windows with a key, the larger set
+   still counts and the other is dropped, kept window or not. A kill is not a window:
    `kills` joins the windows by key, and a keyed kill with no window is a corpse nobody looted or that held nothing,
    so kills never go into the count of looted corpses. Every kill with a key counts, whoever got the credit, and a
    kill read for skinning only is not looted. Where the counts live is under Developer and agent experience.
@@ -325,8 +347,10 @@ Notes on the definitions:
   `mine` and outcome `won`, the same item, a row time from 90 s before the receipt to 5 s after it, since a roll win
   arrives after the window closed), as the `LT` rows of the mates are the looted ones (`LT` kind `p` is left out). An
   `O` line from a quest reward, a created item, an item the client pushed, a container opened from the bags or a
-  purchase has neither and is not counted. The sourced half is read from `loot_drops` directly: 1.3 s at 600,000
-  receipts, held by the read cache.
+  purchase has neither and is not counted. The uploader's side is read from `group_share_receipts`: the receipts that
+  pass this test by day, rule, group size and character, which `RebuildKeyedLoot` refills for the days it rebuilds
+  (`GroupShareReceipts`). A roll is looked up on any day, so a range's edge cannot cut the 90 s from its receipt. The
+  sum over 51,000 receipts reads in 28 ms cold, where the join of every receipt in a group to the rolls took 169 ms.
 - **Quest items** (`items.bind_type = 4`) keep their rate and carry the tag `quest item`: the denominator includes
   readers who were not on the quest.
 
@@ -525,7 +549,24 @@ object is labelled by what it gives.
 - **One Action per question**, as the house rules say: `LootSources`, `LootItems`, `SourceDrops`,
   `SourceRuleArms`, `LootRuleEffects`, `ObjectRecord`. `DropRates` and `ItemSources` stay until their callers
   move, then go (three ships). `SourceArmRows` reads the rows behind the arms of any number of sources in one
-  query for each table, so `LootMarks` checks its candidates in 6 queries and not 5 or more for each.
+  query for each table, so `LootMarks` checks its candidates in 6 queries and not 5 or more for each. It keeps the
+  rows as plain arrays for the read-fresh seconds and sums the free-for-all days that no arm of the source contests
+  (the days where a reader's windows with no key and another character's windows with a key never meet) into a few
+  days that count the same, so a source read over a long history has the days that matter.
+- **One arm for every table (rule 6).** `FreeForAllArms` reads the arms of any list of sources in three queries
+  (windows by character and day, items by day, the reader's windows with no key by item), and `LootArm::collapsed`
+  sums the days that are not contested, so the cost follows the sources and not the days. `FreeForAllDeltas` turns the
+  arms into rows of the counted views' shape (`Apportion::split` shares a total over zones and sizes), and
+  `CountedLoot` gives each table those rows beside the view (`windows`, `items`), or the sum of them for a table that
+  adds every row (`windowShift`, `dropShift`). Tables that aggregate everything read the plain view and add the shift in
+  PHP, since a function scan inside the union stops TimescaleDB's parallel aggregate plan. `MidnightWindows` reads the
+  days whose midnight has a window within 300 s on each side. A read of more than 40 arms turns nested loops off in
+  its transaction: with them the planner took 14.5 s for all the arm's items, and 0.54 s without. Cold page times
+  (cache cleared, median of 5) before and after, on the 10x seed (300 creature sources) and the 150x seed (2,000):
+  `/loot` 0.43 s to 0.49 s and 1.07 s to 1.87 s; its items view 0.47 s to 1.00 s and 1.39 s to 3.61 s; `/loot/groups`
+  1.68 s to 1.61 s and 4.45 s to 5.21 s, with marks 1.83 s to 1.65 s and 4.76 s to 5.40 s; an item page 0.36 s to 0.44 s
+  and 0.67 s to 1.21 s; a creature page 0.38 s to 0.34 s and 0.15 s to 0.16 s. The cost is the arms of every source the
+  page lists, read once and kept, so a warm page costs what it did.
 - **Two aggregates**: `loot_windows_daily` (source, `read`, rule, size, zone; windows, item
   rows, characters) and `loot_items_daily` (the same keys and item; windows with the item, quantity). The old
   `opens_daily` and `drops_daily` are dropped, and so is `loot_windows_daily`, which the counted views of phase 7 replaced. Phase 4 adds three beside them: `loot_windows_character_daily` (windows
@@ -534,14 +575,16 @@ object is labelled by what it gives.
   and `loot_receipts_daily` (receipts that came from a corpse). These count one character's first reads, which is what the pages that pair a
   character's windows with its own receipts read (What the looter kept). `loot_received_daily` (every receipt in a
   group of 2 or more, by rule and size, with no source) counted quest rewards and pushed items and is dropped
-  (`2026_12_29`); Your share of group loot reads `loot_drops` itself.
+  (`2026_12_29`); Your share of group loot reads `group_share_receipts`, the receipts by day, rule, size and character
+  that `RebuildKeyedLoot` fills beside the keyed tables (`GroupShareReceipts`, `2026_12_21_000100`, named before the
+  migrations that run the rebuild so a new database has the table when they delete from it).
 - **Corpses counted once (phase 7).** Windows without a key are the same aggregates over `corpse_key is null`:
   `loot_windows_unkeyed_daily`, `loot_items_unkeyed_daily`, `loot_windows_character_unkeyed_daily`,
   `loot_freeforall_items_unkeyed_daily` and `kills_solo_attributed_daily`. Windows with a key cannot be a sum of daily
   buckets, since one corpse is in the days of every character that read it, so `RebuildKeyedLoot` fills five plain
   tables (`loot_windows_keyed_daily`, `loot_items_keyed_daily`, `loot_windows_character_keyed_daily`,
-  `loot_kills_keyed_daily`, `loot_kill_items_keyed_daily`) in one transaction at the end of every aggregate refresh,
-  under the same lock, so every ingest, re-decode and removal reaches them. It rebuilds the days of the refreshed range
+  `loot_kills_keyed_daily`, `loot_kill_items_keyed_daily`) and, with them, `group_share_receipts` in one transaction at
+  the end of every aggregate refresh, under the same lock, so every ingest, re-decode and removal reaches them. It rebuilds the days of the refreshed range
   and a day on each side (a window a member sent can be read up to a day before it was sent, which can move a corpse to
   the day before), deleting and inserting only those days, from the windows and kills of a day beyond them on each side.
   Two rows of one corpse more than a day apart would be two corpses in a range and one in a whole rebuild; rows of one
