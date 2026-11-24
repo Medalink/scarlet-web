@@ -71,6 +71,7 @@ db_server() {
   tar -C "$here" -cf - deploy | dsrv 'sudo install -d -o ops -g ops -m 750 /srv/scarlet-db && tar -C /srv/scarlet-db --no-same-owner -xf -'
   {
     printf 'DB_PASSWORD=%s\n' "$(srv "sed -n 's/^DB_PASSWORD=//p' /srv/scarlet-web/.env")"
+    printf 'APP_USER=%s\n' "$(srv "sed -n 's/^DB_USERNAME=//p' /srv/scarlet-web/.env" | tail -n 1)"
     printf 'PGBR_PASS=%s\n' "$(tr -d '\r\n' < "$pass_file")"
   } | dsrv "sudo sh /srv/scarlet-db/deploy/server-setup-db.sh $pgbr_name $clients"
   dsrv 'cat /srv/scarlet-db/etc/tls/server.crt' | srv 'mkdir -p /srv/scarlet-web/dbtls && cat > /srv/scarlet-web/dbtls/db-ca.crt && chmod 644 /srv/scarlet-web/dbtls/db-ca.crt'

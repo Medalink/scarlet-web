@@ -411,18 +411,21 @@ bin/deploy ssh 'cd /srv/scarlet-web && h=$(sed -n "s/^DB_HOST=//p" .env) && dock
 droplet's `.env` as `DB_PASSWORD` and run `bin/deploy db-server` and then `bin/deploy` back to back: the old containers
 cannot open new connections between the two.
 
-An install from before the role existed switches to it once, on the machine with the checkout. The `.env` line takes
-effect at the next deploy. `bin/deploy db-server` creates the role on the database host and gives `postgres` its own
-password, so the running containers, which still log in as `postgres`, cannot open new connections until `bin/deploy`
-replaces them: run the last two back to back.
+An install from before the role existed switches to it once, on the machine with the checkout, with no failed request.
+`bin/deploy db-server` reads `DB_USERNAME` of the app droplet's `.env`: while it is `postgres`, the database host makes
+`scarlet_app` the owner of every object but leaves the password of `postgres` and its `pg_hba.conf` row alone, so the
+running containers keep working. Run `bin/deploy db-server` from a checkout at the release you deploy, since it copies
+that checkout's `deploy/`.
 
 ```sh
+bin/deploy db-server           # creates scarlet_app with DB_PASSWORD and hands it every object; postgres keeps its password and its remote row
 bin/deploy ssh "cd /srv/scarlet-web && sed -i s/^DB_USERNAME=.*/DB_USERNAME=scarlet_app/ .env"
-bin/deploy db-server           # creates scarlet_app with DB_PASSWORD, sets DB_ADMIN_PASSWORD on postgres, drops the remote postgres row
 bin/deploy                     # the new containers connect as scarlet_app
+bin/deploy db-server           # the app is on scarlet_app now: sets DB_ADMIN_PASSWORD on postgres, drops the remote postgres row
 ```
 
-Then run the `no pg_hba.conf entry` check above. On one droplet whose `DB_HOST` is `postgres`, every rollout runs
+Then run the `no pg_hba.conf entry` check above. The ownership move holds every table's lock until it commits and gives
+up after 10 s waiting for one; a long refresh can make it fail, and running `bin/deploy db-server` again finishes it. On one droplet whose `DB_HOST` is `postgres`, every rollout runs
 `deploy/db-app-role.sh` before it migrates, so the `.env` line and `bin/deploy` are enough. The restore (above) reassigns
 every object to `postgres`, so it ends with one more line: `deploy/db-app-role.sh`.
 

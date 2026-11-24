@@ -20,6 +20,7 @@ while IFS='=' read -r key value; do
     DB_PASSWORD) DB_PASSWORD=$value ;;
     DB_ADMIN_PASSWORD) DB_ADMIN_PASSWORD=$value ;;
     PGBR_PASS) PGBR_PASS=$value ;;
+    APP_USER) APP_USER=$value ;;
   esac
 done
 [ -f .env ] && [ -z "${DB_PASSWORD:-}" ] && DB_PASSWORD=$(sed -n 's/^DB_PASSWORD=//p' .env)
@@ -48,10 +49,15 @@ chown 1000:1000 etc/tls/server.key etc/tls/server.crt
 chmod 600 etc/tls/server.key
 chmod 644 etc/tls/server.crt
 
-sh deploy/db-hba.sh $clients
+keep_postgres=
+if [ "${APP_USER:-scarlet_app}" = postgres ]; then
+  keep_postgres=1
+  echo "server-db: the app still logs in as postgres, so postgres keeps its password and its row in pg_hba.conf; run bin/deploy db-server again once bin/deploy has moved the app to scarlet_app"
+fi
+SCARLET_HBA_POSTGRES_HOSTS=$keep_postgres sh deploy/db-hba.sh $clients
 
 if deploy/dc-db ps --status running --services 2>/dev/null | grep -qx postgres; then
-  SCARLET_BASE=/srv/scarlet-db bash deploy/db-app-role.sh deploy/dc-db
+  SCARLET_BASE=/srv/scarlet-db SCARLET_KEEP_POSTGRES_PASSWORD=$keep_postgres bash deploy/db-app-role.sh deploy/dc-db
 fi
 
 if [ -n "${PGBR_PASS:-}" ]; then

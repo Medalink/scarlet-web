@@ -7,6 +7,10 @@
 # password of its own: DB_ADMIN_PASSWORD of the local .env, which must differ from DB_PASSWORD. Safe to run again: the
 # role and the objects it already owns are kept, and both passwords always follow the local .env. It never connects to
 # another host: the app droplet holds no superuser password, and pg_hba.conf lets `postgres` in from the machine only.
+# SCARLET_KEEP_POSTGRES_PASSWORD=1 leaves the password of `postgres` alone, for an app that still logs in as it.
+# Ownership moves object by object in one transaction: `reassign owned by postgres` cannot work, because the bootstrap
+# superuser owns the system catalogs, and timescaledb.restoring lets the owner of a continuous aggregate's internal
+# tables and of every chunk change the way a restore does. Objects of an extension stay with `postgres`.
 set -euo pipefail
 cd "${SCARLET_BASE:-/srv/scarlet-web}"
 dc=${1:-deploy/dc}
@@ -34,7 +38,44 @@ alter role scarlet_app password :'pw';
 alter role postgres password :'admin';
 \endif
 alter database :"db" owner to scarlet_app;
-reassign owned by postgres to scarlet_app;
+begin;
+set local lock_timeout = '10s';
+set local timescaledb.restoring = on;
+do $$
+declare
+  stmt text;
+begin
+  for stmt in
+    with app_schemas as (
+      select n.oid, n.nspname from pg_namespace n
+      where n.nspname not like 'pg\_%' and n.nspname <> 'information_schema'
+        and not exists (select from pg_depend d where d.classid = 'pg_namespace'::regclass and d.objid = n.oid and d.deptype = 'e')
+    )
+    select format('alter schema %I owner to scarlet_app', s.nspname) from app_schemas s join pg_namespace n on n.oid = s.oid
+    where n.nspowner = 'postgres'::regrole
+    union all
+    select format('alter table %I.%I owner to scarlet_app', n.nspname, c.relname)
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where c.relowner = 'postgres'::regrole and c.relkind in ('r', 'p', 'f', 'v', 'm', 'S')
+      and n.nspname not like 'pg\_%' and n.nspname <> 'information_schema'
+      and not exists (select from pg_depend d where d.classid = 'pg_class'::regclass and d.objid = c.oid and d.deptype = 'e')
+      and not (c.relkind = 'S' and exists (select from pg_depend d where d.classid = 'pg_class'::regclass and d.objid = c.oid and d.deptype in ('a', 'i')))
+    union all
+    select format('alter routine %s owner to scarlet_app', p.oid::regprocedure) from pg_proc p join app_schemas s on s.oid = p.pronamespace
+    where p.proowner = 'postgres'::regrole
+      and not exists (select from pg_depend d where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e')
+    union all
+    select format('alter %s %s owner to scarlet_app', case t.typtype when 'd' then 'domain' else 'type' end, t.oid::regtype)
+    from pg_type t join app_schemas s on s.oid = t.typnamespace
+    where t.typowner = 'postgres'::regrole and t.typtype in ('e', 'd', 'r', 'c')
+      and (t.typtype <> 'c' or (select c.relkind from pg_class c where c.oid = t.typrelid) = 'c')
+      and not exists (select from pg_depend d where d.classid = 'pg_type'::regclass and d.objid = t.oid and d.deptype = 'e')
+  loop
+    execute stmt;
+  end loop;
+end $$;
+update _timescaledb_config.bgw_job set owner = 'scarlet_app' where owner = 'postgres'::regrole and hypertable_id is not null;
+commit;
 SQL
 )
 
@@ -45,7 +86,7 @@ if [ -n "$host" ] && [ "$host" != postgres ]; then
 fi
 if "$dc" ps --status running --services 2>/dev/null | grep -qx postgres; then
   args=(-v db="$db" -v pw="$password")
-  [ -z "$admin" ] || args+=(-v admin="$admin")
+  [ -z "$admin" ] || [ "${SCARLET_KEEP_POSTGRES_PASSWORD:-}" = 1 ] || args+=(-v admin="$admin")
   "$dc" exec -T postgres psql -X -v ON_ERROR_STOP=1 "${args[@]}" -U postgres -d "$db" <<<"$sql"
 elif [ -z "$host" ]; then
   exit 0
