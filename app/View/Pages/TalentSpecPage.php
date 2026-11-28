@@ -4,7 +4,9 @@ namespace App\View\Pages;
 
 use App\Support\LevelBracket;
 use App\Support\PageScope;
+use App\Support\PlayerClass;
 use App\Support\Server;
+use App\Support\TalentTree;
 use App\View\Format;
 
 /** The talent pages from the answers of App\Actions\Public\TalentSpecs and TalentSpec. */
@@ -68,6 +70,7 @@ final class TalentSpecPage
         $nodes = $a['nodes'];
         /** @var array{spell: array<int, string>, tab: array<int, string>} $names */
         $names = $a['names'];
+        $names['tab'] = self::inGameOrder((string) $a['class'], $names['tab']);
 
         return [
             'title' => $a['spec'].' '.Format::className((string) $a['class']),
@@ -149,19 +152,36 @@ final class TalentSpecPage
                 'title' => Format::number($pick['taken']).' of '.Format::count($n, 'character').', average rank '.Format::number($pick['rank'], 1),
             ];
         }
-        ksort($columns);
+        $position = array_flip(array_keys($names['tab']));
+        uksort($columns, fn (int $a, int $b): int => $position[$a] <=> $position[$b]);
 
         return array_values($columns);
     }
 
     /**
-     * A build as points in each tree: "Beast Mastery 4, Marksmanship 2" becomes "4 / 2 / 0".
+     * The tabs of a class in the order the game lists its trees, which the columns and every build split follow.
+     * A tab that matches none of the class's trees goes last.
+     *
+     * @param  array<int, string>  $tabs
+     * @return array<int, string>
+     */
+    private static function inGameOrder(string $class, array $tabs): array
+    {
+        $class = PlayerClass::tryFrom(strtoupper($class));
+        $place = array_flip(array_map(fn (TalentTree $tree): string => $tree->value, TalentTree::cases()));
+        $rank = fn (string $name): int => $class === null || ($tree = TalentTree::of($class, $name)) === null ? PHP_INT_MAX : $place[$tree->value];
+        uksort($tabs, fn (int $a, int $b): int => [$rank($tabs[$a]), $a] <=> [$rank($tabs[$b]), $b]);
+
+        return $tabs;
+    }
+
+    /**
+     * A build as points in each tree, in the order of `$tabs`: "Beast Mastery 4, Marksmanship 2" becomes "4 / 2 / 0".
      *
      * @param  array<int, string>  $tabs
      */
     private static function split(string $build, array $tabs): string
     {
-        ksort($tabs);
         $points = [];
         foreach ($tabs as $name) {
             $points[] = preg_match('/(?:^|, )'.preg_quote($name, '/').' (\d+)(?:,|$)/', $build, $match) === 1 ? $match[1] : '0';
