@@ -9,6 +9,8 @@
  * must show are in e2e/mage-expected.mjs, written from the plan below before the page was read.
  */
 
+import { ARCANE_POWER, COLD_SNAP, COMBUSTION, ICE_BARRIER, ICE_BLOCK, PRESENCE_OF_MIND, PYROBLAST, TREE_SPELL_NAMES, talentLines } from "./mage-tree.mjs";
+
 const ELWYNN = 1429;
 
 const CONJURE_WATER = 5504;
@@ -27,7 +29,6 @@ const POLYMORPH_PIG = 28272;
 const BLINK = 1953;
 const FROST_NOVA = 122;
 const COUNTERSPELL = 2139;
-const ICE_BLOCK = 11958;
 const MANA_SHIELD = 1463;
 const EVOCATION = 12051;
 const BLIZZARD = 10;
@@ -40,24 +41,14 @@ const CONE_OF_COLD = 120;
 const SCORCH = 2948;
 const ARCANE_EXPLOSION = 1449;
 const FLAMESTRIKE = 2120;
-const PYROBLAST = 11366;
 const INTELLECT = 1459;
 const BRILLIANCE = 23028;
 const REMOVE_CURSE = 475;
-const ICE_BARRIER = 11426;
-const COLD_SNAP = 12472;
-const PRESENCE_OF_MIND = 12043;
-const ARCANE_POWER = 12042;
-const COMBUSTION = 11129;
 
 const WATER = 5350;
 const MUFFIN = 5349;
 const GEM = 8007;
 
-const TREE = 1020;
-const ARCANE = 301;
-const FIRE = 302;
-const FROST = 303;
 
 const HOUR = 3_600_000;
 const SESSION_END = 6 * HOUR;
@@ -303,32 +294,17 @@ const SPELL_NAMES = [
   [SCORCH, "Scorch"], [ARCANE_EXPLOSION, "Arcane Explosion"], [FLAMESTRIKE, "Flamestrike"], [PYROBLAST, "Pyroblast"], [INTELLECT, "Arcane Intellect"],
   [BRILLIANCE, "Arcane Brilliance"], [REMOVE_CURSE, "Remove Lesser Curse"], [ICE_BARRIER, "Ice Barrier"], [COLD_SNAP, "Cold Snap"],
   [PRESENCE_OF_MIND, "Presence of Mind"], [ARCANE_POWER, "Arcane Power"], [COMBUSTION, "Combustion"],
+  ...TREE_SPELL_NAMES,
 ];
 
 const ITEM_NAMES = [[WATER, "Conjured Water"], [MUFFIN, "Conjured Muffin"], [GEM, "Mana Citrine"]];
-
-const TALENTS = [
-  ["Ice Barrier", ICE_BARRIER, FROST, 2001, 3001],
-  ["Cold Snap", COLD_SNAP, FROST, 2002, 3002],
-  ["Ice Block", ICE_BLOCK, FROST, 2003, 3003],
-];
-
-const talentLines = () => [
-  [500, "TY", ARCANE, "Arcane"],
-  [510, "TY", FIRE, "Fire"],
-  [520, "TY", FROST, "Frost"],
-  [800, "TV", TREE, 8, TALENTS.length, "5b7e19c3"],
-  ...TALENTS.map(([, spell, tab, node, entry], at) => [810 + at * 10, "TD", TREE, node, 100 + at * 100, 200, "single", 1, tab, `${entry}:${spell}:1`, ""]),
-  ...TALENTS.map(([, spell, tab, node, entry], at) => [1500 + at * 10, "TA", 1, node, entry, 1, "", 1, spell, tab, "s"]),
-  [2000, "TG", "s", 1, 1, "", "Frost", TREE, `${ARCANE}:12:0,${FIRE}:0:0,${FROST}:35:0`, 0, 0, 1, ""],
-];
 
 export const MAGE_LINES = [
   [0, "S", "1.15.8", "MAGE", "Human", 50, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 300, 1400, 120, 60],
   [1000, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
   ...SPELL_NAMES.map(([id, name], at) => [100 + at, "SN", id, name]),
   ...ITEM_NAMES.map(([id, name], at) => [200 + at, "IN", id, name]),
-  ...talentLines(),
+  ...talentLines({ held: [[2001, 1], [2002, 1], [2003, 1]], spent: [12, 0, 35] }),
   ...PLANS.flatMap((plan) => cluster(plan.start, plan)),
   [2 * HOUR, "L", 51],
   [4 * HOUR, "L", 52],
