@@ -5,7 +5,8 @@
  * and keeps the answer as pretty JSON. An endpoint the fixture has no data for is left without an example. It exits
  * 1, and writes nothing, when the site lists a character, or an answer holds a Name-Realm style value, that is not
  * one of the fixture folders of e2e/fixture or a character the e2e line files define, so a real player's name never
- * gets in.
+ * gets in. The reads need an API key, which it makes through the development sign-in, its Battle.net identity and the
+ * API keys module of /account/settings, and deletes again at the end.
  *
  *   node e2e/run.mjs --url http://127.0.0.1:8612 --leave
  *   node scripts/api-examples.mjs --url http://127.0.0.1:8612
@@ -16,6 +17,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { deleteKeys, keyFor, visitor } from "../e2e/keys-client.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -49,8 +51,12 @@ const MAX_CHARACTERS = 2600;
 const LISTED_ROWS = 100;
 const NAME = /\b[A-Z][a-z]+-[A-Z][a-z]+\b/g;
 
+const KEY_NAME = "api examples";
+const who = visitor(base);
+const key = await keyFor(who, KEY_NAME);
+
 const get = async (url) => {
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  const response = await fetch(url, { headers: { Accept: "application/json", Authorization: `Bearer ${key}` } });
   return { status: response.status, text: await response.text() };
 };
 
@@ -75,6 +81,7 @@ const listed = async () => {
 
 const strangers = [...(await listed())].filter((name) => !ALLOWED.has(name));
 if (strangers.length) {
+  await deleteKeys(who, KEY_NAME);
   console.error(`the site lists characters that are not fixture characters, so nothing was written:\n${strangers.join("\n")}`);
   process.exit(1);
 }
@@ -82,7 +89,7 @@ if (strangers.length) {
 const page = await get(`${base}/developers`);
 if (page.status !== 200) throw new Error(`/developers answered ${page.status}`);
 const decode = (text) => text.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&#039;", "'");
-const lines = [...page.text.matchAll(/<section class="ep" id="ep-([a-z0-9-]+)">[\s\S]*?<pre class="json">curl ([^<\s]+)<\/pre>/g)].map(([, name, url]) => [name, decode(url)]);
+const lines = [...page.text.matchAll(/<section class="ep" id="ep-([a-z0-9-]+)">[\s\S]*?<pre class="json">curl (?:-H &quot;[^&]*&quot; )?([^<\s]+)<\/pre>/g)].map(([, name, url]) => [name, decode(url)]);
 if (lines.length === 0) throw new Error("the developers page lists no curl line");
 
 const examples = {};
@@ -107,6 +114,7 @@ for (const [name, url] of lines) {
   examples[name] = text.replaceAll(base, "https://scarlet.example");
 }
 
+await deleteKeys(who, KEY_NAME);
 if (foreign.size) {
   console.error(`Name-Realm values that are not fixture characters, so nothing was written:\n${[...foreign].join("\n")}`);
   process.exit(1);

@@ -35,10 +35,10 @@
     </x-module>
     <x-module span="w7" :first="true" id="h-k" heading="API keys">
       <x-rows>
-        <x-row title="guild dashboard" body="Made Nov 19 · last used today · 600 requests a minute"><x-btn kind="danger">Delete</x-btn></x-row>
+        <x-row title="guild dashboard" body="Made Nov 19 · last used today · expires Dec 19"><x-btn kind="danger">Delete</x-btn></x-row>
       </x-rows>
       <p style="margin-top:1rem"><x-btn kind="quiet" href="#">Make a key</x-btn></p>
-      <x-note>The <a href="{{ $base }}/developers">public API</a> needs no key at 60 requests a minute.</x-note>
+      <x-note>API keys need a Battle.net sign-in. <a href="{{ $base }}/developers">API reference</a></x-note>
     </x-module>
     <x-module span="w5" :last="true" id="h-x" heading="Delete everything you uploaded">
       <p class="sub">Removes every character, session and number that came from your installs, and takes them out of the totals. Your recordings on your PC are not touched.</p>

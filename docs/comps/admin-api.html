@@ -25,17 +25,17 @@
 
 <div class="wrap">
   <section class="pg-head" aria-labelledby="h1">
-    <div><h1 id="h1">API use</h1><p class="sub">Requests that reached the origin in the last 30 days. An anonymous answer served from the edge cache never reaches the origin, so it is not counted here. Addresses are kept for 30 days.</p></div>
+    <div><h1 id="h1">API use</h1><p class="sub">Requests in the last 30 days. Addresses are kept for 30 days.</p></div>
     <div class="filters"><div class="seg" role="group" aria-label="Admin pages"><a href="admin.html">Overview</a><a href="admin-api.html" aria-current="true">API</a><a href="admin-database.html">Database</a><a href="admin-ingest.html">Ingest</a></div></div>
   </section>
-  <section class="week n6" aria-label="Totals"><dl><dt>Anonymous requests</dt><dd>218,440</dd></dl><dl><dt>Requests with a key</dt><dd>96,112</dd></dl><dl><dt>Upload requests</dt><dd>71,905</dd></dl><dl><dt>Addresses</dt><dd>1,906</dd></dl><dl><dt>Accounts using a key</dt><dd>41</dd></dl><dl><dt>Installs uploading</dt><dd>2,951</dd></dl></section>
+  <section class="week n6" aria-label="Totals"><dl><dt>Requests without a valid key</dt><dd>218,440</dd></dl><dl><dt>Requests with a key</dt><dd>96,112</dd></dl><dl><dt>Upload requests</dt><dd>71,905</dd></dl><dl><dt>Addresses</dt><dd>1,906</dd></dl><dl><dt>Accounts using a key</dt><dd>41</dd></dl><dl><dt>Installs uploading</dt><dd>2,951</dd></dl></section>
 
   <div class="sheet">
     <section class="mod w8 first" aria-labelledby="h-public">
       <h2 id="h-public">Public API requests per day</h2>
-      <div class="plot"><svg id="public" role="img" aria-label="Requests to the public read API on each of the last 30 days, anonymous and with an API key"></svg></div>
-      <ul class="key"><li><i class="c-s1"></i>Anonymous</li><li><i class="c-s5"></i>With an API key</li></ul>
-      <p class="readout"><b>21 Nov</b>: 15,200 requests, 10,708 anonymous and 4,492 with a key.</p>
+      <div class="plot"><svg id="public" role="img" aria-label="Requests to the public read API on each of the last 30 days, without a valid key and with an API key"></svg></div>
+      <ul class="key"><li><i class="c-s1"></i>Without a valid key</li><li><i class="c-s5"></i>With an API key</li></ul>
+      <p class="readout"><b>21 Nov</b>: 15,200 requests, 10,708 without a valid key and 4,492 with a key.</p>
     </section>
     <section class="mod last" aria-labelledby="h-upload">
       <h2 id="h-upload">Upload API requests per day</h2>
@@ -76,21 +76,21 @@
       <p class="note">An IPv6 caller is counted as its /64 prefix.</p>
     </section>
 
-    <section class="mod w7 first" aria-labelledby="h-keys">
-      <h2 id="h-keys">Accounts by API key use</h2>
+    <section class="mod w12 first last" aria-labelledby="h-keys">
+      <h2 id="h-keys">Accounts with API keys</h2>
       <div class="scroll-x"><table class="data" style="margin-top:1.1rem">
-        <thead><tr><th>Account</th><th class="n">Keys</th><th class="n">Requests</th><th class="n">Last used</th></tr></thead>
+        <thead><tr><th>Account</th><th class="n">Keys</th><th class="n">Newest key made</th><th class="n">Soonest expiry</th><th class="n">Last used</th><th class="n">Today</th><th class="n">7 days</th><th class="n">All days</th><th class="n">Busiest minute</th><th class="n">Answered 429</th></tr></thead>
         <tbody>
-          <tr><td>#1042</td><td class="n">2</td><td class="n"><i class="bar" style="width:9.0rem"></i>43,300</td><td class="n">22 Nov 14:02</td></tr>
-          <tr><td>#2231</td><td class="n">1</td><td class="n"><i class="bar" style="width:4.8rem"></i>22,870</td><td class="n">22 Nov 13:58</td></tr>
-          <tr><td>#871</td><td class="n">1</td><td class="n"><i class="bar" style="width:1.6rem"></i>7,702</td><td class="n">22 Nov 14:04</td></tr>
-          <tr><td>#1630</td><td class="n">3</td><td class="n"><i class="bar" style="width:1.3rem"></i>6,118</td><td class="n">21 Nov 19:20</td></tr>
-          <tr><td>#402</td><td class="n">1</td><td class="n"><i class="bar" style="width:1.0rem"></i>4,905</td><td class="n">22 Nov 02:14</td></tr>
-          <tr><td>#2790</td><td class="n">1</td><td class="n"><i class="bar" style="width:0.5rem"></i>2,204</td><td class="n">17 Nov 10:45</td></tr>
+          <tr><td>#1042</td><td class="n">2</td><td class="n">Nov 2</td><td class="n">Dec 2</td><td class="n">2 minutes ago</td><td class="n">912</td><td class="n"><i class="bar" style="width:6.0rem"></i>43,300</td><td class="n">120,420</td><td class="n">84 of 600</td><td class="n">0</td></tr>
+          <tr><td>#2231</td><td class="n">1</td><td class="n">Nov 12</td><td class="n">Dec 12</td><td class="n">6 minutes ago</td><td class="n">520</td><td class="n"><i class="bar" style="width:3.2rem"></i>22,870</td><td class="n">61,210</td><td class="n">412 of 600</td><td class="n">3</td></tr>
+          <tr><td>#871</td><td class="n">1</td><td class="n">Nov 18</td><td class="n">Dec 18</td><td class="n">1 minute ago</td><td class="n">140</td><td class="n"><i class="bar" style="width:1.1rem"></i>7,702</td><td class="n">14,100</td><td class="n">31 of 600</td><td class="n">0</td></tr>
+          <tr><td>#1630</td><td class="n">3</td><td class="n">Nov 1</td><td class="n">Nov 30</td><td class="n">yesterday</td><td class="n">0</td><td class="n"><i class="bar" style="width:0.8rem"></i>6,118</td><td class="n">40,200</td><td class="n">96 of 600</td><td class="n">0</td></tr>
+          <tr><td>#402</td><td class="n">1</td><td class="n">Oct 20</td><td class="n">Jan 18</td><td class="n">3 hours ago</td><td class="n">88</td><td class="n"><i class="bar" style="width:0.7rem"></i>4,905</td><td class="n">9,970</td><td class="n">22 of 600</td><td class="n">0</td></tr>
+          <tr><td>#2790</td><td class="n">1</td><td class="n">Oct 28</td><td class="n">Nov 27</td><td class="n">Nov 17</td><td class="n">0</td><td class="n"><i class="bar" style="width:0.3rem"></i>2,204</td><td class="n">5,160</td><td class="n">9 of 600</td><td class="n">0</td></tr>
         </tbody></table></div>
-      <p class="note">35 more accounts sent 9,013 requests with a key.</p>
+      <p class="note">Busiest minute is the most requests the account made in one minute, against the limit for a minute.</p>
     </section>
-    <section class="mod w5 last" aria-labelledby="h-endpoints">
+    <section class="mod w12 first last" aria-labelledby="h-endpoints">
       <h2 id="h-endpoints">Endpoints by requests</h2>
       <ol class="rank"><li><span class="who mono">GET /public/characters/{name}</span><span class="val">96,410 requests</span><span class="track"><i style="width:100%"></i></span></li><li><span class="who mono">GET /public/stats</span><span class="val">61,208</span><span class="track"><i style="width:63.5%"></i></span></li><li><span class="who mono">POST /upload/parts</span><span class="val">48,930</span><span class="track"><i style="width:50.8%"></i></span></li><li><span class="who mono">GET /public/search</span><span class="val">44,871</span><span class="track"><i style="width:46.5%"></i></span></li><li><span class="who mono">GET /public/creatures/{id}</span><span class="val">38,112</span><span class="track"><i style="width:39.5%"></i></span></li><li><span class="who mono">GET /public/leaderboards/{board}</span><span class="val">27,560</span><span class="track"><i style="width:28.6%"></i></span></li><li><span class="who mono">POST /upload/manifest</span><span class="val">14,204</span><span class="track"><i style="width:14.7%"></i></span></li><li><span class="who mono">GET /public/map/heat</span><span class="val">12,930</span><span class="track"><i style="width:13.4%"></i></span></li></ol>
       <p class="note">19 more endpoints took 42,232 requests.</p>
@@ -118,7 +118,7 @@
 </div>
 </main>
 <footer class="foot">
-  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">API</a></span></div>
 </footer>
 <script src="assets/map.js"></script>
 <script src="assets/comp.js"></script>

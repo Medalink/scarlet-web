@@ -37,7 +37,7 @@ ${sheets.map((href) => `<link rel="stylesheet" href="${href}">`).join("\n")}
 ${body}
 </main>
 <footer class="foot">
-  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">Public API</a></span></div>
+  <div class="wrap"><span>Scarlet</span><span>Numbers come from players who chose to upload. <a href="developers.html">API</a></span></div>
 </footer>
 <script src="assets/map.js"></script>
 <script src="assets/comp.js"></script>
@@ -1212,9 +1212,9 @@ page("account.html", "Your Scarlet account", "", `
       <div class="rows">${GROUPS.map(([n, d, on, lock]) => `<div class="row"><b>${n}</b><p>${d}</p><div class="act">${on ? "" : '<button class="btn danger" type="button">Remove from server</button>'}<label class="sw"><input type="checkbox"${on ? " checked" : ""}${lock ? " disabled" : ""} aria-label="Share ${n}"><i></i></label></div></div>`).join("")}</div>
     </section>
     <section class="mod w7 first" aria-labelledby="h-k"><h2 id="h-k">API keys</h2>
-      <div class="rows"><div class="row"><b>guild dashboard</b><p>Made 19 Nov 2026 · last used today · 600 requests a minute</p><div class="act"><button class="btn danger" type="button">Delete</button></div></div></div>
+      <div class="rows"><div class="row"><b>guild dashboard</b><p>Made Nov 19 · last used today · expires Dec 19</p><div class="act"><button class="btn danger" type="button">Delete</button></div></div></div>
       <p style="margin-top:1rem"><a class="btn quiet" href="#">Make a key</a></p>
-      <p class="note">The <a href="developers.html">public API</a> needs no key at 60 requests a minute.</p></section>
+      <p class="note">API keys need a Battle.net sign-in. <a href="developers.html">API reference</a></p></section>
     <section class="mod w5 last" aria-labelledby="h-x"><h2 id="h-x">Delete everything you uploaded</h2>
       <p class="sub">Removes every character, session and number that came from your installs, and takes them out of the totals. Your recordings on your PC are not touched.</p>
       <p style="margin-top:1.1rem"><button class="btn danger" type="button">Delete everything I uploaded</button></p></section>
@@ -1263,15 +1263,15 @@ const eps = [
   ["GET", "/api/v1/public/maps/{id}/heat", "Path and death counts per map cell.", [["layer", "paths or deaths"]]],
 ];
 const slug = (p) => p.replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
-page("developers.html", "Scarlet public API reference", "developers", `
+page("developers.html", "Scarlet API reference", "developers", `
 <div class="wrap">
-  <section class="pg-head" aria-labelledby="h1"><div><h1 id="h1">Public API</h1><p class="sub">Everything public on this site is readable as JSON. Read-only, no sign-up, version 1.</p></div></section>
+  <section class="pg-head" aria-labelledby="h1"><div><h1 id="h1">API</h1><p class="sub">Everything public on this site is readable as JSON with an API key. Read-only, version 1.</p></div></section>
   <div class="ref">
     <nav class="ref-nav" aria-label="Endpoints"><div><h3>Basics</h3><a href="#use">Using the API</a><a href="#limits">Limits and keys</a><a href="#pages">Pagination</a></div><div><h3>Endpoints</h3>${eps.map((e) => `<a href="#${slug(e[1])}">${e[1].replace("/api/v1/public", "")}</a>`).join("")}</div></nav>
     <div>
       <section class="ep" id="use"><h2>Using the API</h2><p>The base is <code>https://&lt;host&gt;/api/v1/public</code>. Answers are JSON in UTF-8. Times are ISO 8601 in UTC, durations are seconds, money is copper. Any origin may call it from a browser. Answers can be cached for five minutes and carry an <code>ETag</code>.</p>
         <pre class="json">curl https://&lt;host&gt;/api/v1/public/stats?ruleset=3</pre></section>
-      <section class="ep" id="limits"><h2>Limits and keys</h2><p>60 requests a minute per IP address without a key. A free key from your account page raises that to 600. Send it as <code>Authorization: Bearer &lt;key&gt;</code>. Over the limit the answer is <code>429</code> with <code>Retry-After</code>.</p></section>
+      <section class="ep" id="limits"><h2>Limits and keys</h2><p>Sign in with Battle.net and make a key on your account page. It expires after 30 days by default, 90 at most. Send it as <code>Authorization: Bearer &lt;key&gt;</code>. 600 requests a minute per account. Over the limit the answer is <code>429</code> with <code>Retry-After</code>.</p></section>
       <section class="ep" id="pages"><h2>Pagination</h2><p>Lists return <code>data</code> and <code>next_cursor</code>. Pass it back as <code>?cursor=</code>. A null cursor is the end. Numbers a bucket cannot show because too few characters contributed come back as <code>null</code>.</p></section>
       ${eps.map((e) => `<section class="ep" id="${slug(e[1])}"><h2><b>${e[0]}</b>${e[1]}</h2><p>${e[2]}</p>${e[3].length ? `<table class="data"><thead><tr><th>Parameter</th><th>Meaning</th></tr></thead><tbody>${e[3].map((p) => `<tr><td><code>${p[0]}</code></td><td>${p[1]}</td></tr>`).join("")}</tbody></table>` : ""}${e[1].endsWith("/stats") ? `<pre class="json">{
   <b>"characters"</b>: 1284,
@@ -1709,22 +1709,22 @@ const keyAccountDaily = daily(30, 45, ramp(9, 20, 1, 0.3, 0));
 const uploaderDaily = activeInstalls.slice(60).map(([, v], i) => [i, v]);
 const endpointCounts = [["GET /public/characters/{name}", 96410], ["GET /public/stats", 61208], ["POST /upload/parts", 48930], ["GET /public/search", 44871], ["GET /public/creatures/{id}", 38112], ["GET /public/leaderboards/{board}", 27560], ["POST /upload/manifest", 14204], ["GET /public/map/heat", 12930]];
 const addressRows = [["203.0.113.48", 31204, 6, "23 Oct", "22 Nov 14:02", "#1042"], ["2001:db8:4a1c:7::/64", 22870, 4, "2 Nov", "22 Nov 13:58", "#2231"], ["198.51.100.17", 18441, 11, "23 Oct", "22 Nov 14:05", ""], ["192.0.2.201", 12096, 2, "9 Nov", "21 Nov 23:40", "#1042"], ["2001:db8:91:c300::/64", 9318, 3, "30 Oct", "22 Nov 11:12", ""], ["198.51.100.230", 7702, 1, "18 Nov", "22 Nov 14:04", "#871"], ["203.0.113.9", 6015, 8, "26 Oct", "20 Nov 08:31", ""], ["192.0.2.77", 4480, 5, "12 Nov", "22 Nov 09:50", ""]];
-const keyRows = [["#1042", 2, 43300, "22 Nov 14:02"], ["#2231", 1, 22870, "22 Nov 13:58"], ["#871", 1, 7702, "22 Nov 14:04"], ["#1630", 3, 6118, "21 Nov 19:20"], ["#402", 1, 4905, "22 Nov 02:14"], ["#2790", 1, 2204, "17 Nov 10:45"]];
+const keyRows = [["#1042", 2, "Nov 2", "Dec 2", "2 minutes ago", 912, 43300, 120420, "84 of 600", 0], ["#2231", 1, "Nov 12", "Dec 12", "6 minutes ago", 520, 22870, 61210, "412 of 600", 3], ["#871", 1, "Nov 18", "Dec 18", "1 minute ago", 140, 7702, 14100, "31 of 600", 0], ["#1630", 3, "Nov 1", "Nov 30", "yesterday", 0, 6118, 40200, "96 of 600", 0], ["#402", 1, "Oct 20", "Jan 18", "3 hours ago", 88, 4905, 9970, "22 of 600", 0], ["#2790", 1, "Oct 28", "Nov 27", "Nov 17", 0, 2204, 5160, "9 of 600", 0]];
 const lookedUp = [["Maren-Ashlow", 8204], ["Tolvir-Greane", 6118], ["Ysolde-Harrowick", 4470], ["Bram-Coldwater", 3902], ["Senna-Vale", 3316], ["Dorrin-Ashby", 2240], ["Liss-Underhill", 1871], ["Corwen-Pike", 1402]];
 const character = (name) => `<a href="character.html">${name}</a>`;
 const uploadRows = [["a41f09c2", "#1042", `${character("Maren-Ashlow")}, ${character("Tolvir-Greane")}`, "1.84 GB", 2960], ["7be2d410", "#318", character("Hesk-Brannoch"), "1.41 GB", 2204], ["0c93f7aa", "", `${character("Ysolde-Varr")} and 2 more`, "1.12 GB", 1918], ["e5d18b36", "#2231", character("Dunmar-Keel"), "904 MB", 1502], ["31aa60fe", "#1907", `${character("Senna-Vale")}, ${character("Bram-Coldwater")}`, "877 MB", 1377], ["9d04c2b1", "", character("Dorrin-Ashby"), "640 MB", 1090]];
 
 page("admin-api.html", "Scarlet admin: who uses the API", "", `
 <div class="wrap">
-  ${adminHead("admin-api", "API use", "Requests that reached the origin in the last 30 days. An anonymous answer served from the edge cache never reaches the origin, so it is not counted here. Addresses are kept for 30 days.")}
-  ${figures([["Anonymous requests", num(API_TOTALS.anonymous)], ["Requests with a key", num(API_TOTALS.keyed)], ["Upload requests", num(API_TOTALS.upload)], ["Addresses", "1,906"], ["Accounts using a key", "41"], ["Installs uploading", "2,951"]])}
+  ${adminHead("admin-api", "API use", "Requests in the last 30 days. Addresses are kept for 30 days.")}
+  ${figures([["Requests without a valid key", num(API_TOTALS.anonymous)], ["Requests with a key", num(API_TOTALS.keyed)], ["Upload requests", num(API_TOTALS.upload)], ["Addresses", "1,906"], ["Accounts using a key", "41"], ["Installs uploading", "2,951"]])}
 
   <div class="sheet">
     <section class="mod w8 first" aria-labelledby="h-public">
       <h2 id="h-public">Public API requests per day</h2>
-      <div class="plot"><svg id="public" role="img" aria-label="Requests to the public read API on each of the last 30 days, anonymous and with an API key"></svg></div>
-      ${key([["c-s1", "Anonymous"], ["c-s5", "With an API key"]])}
-      <p class="readout"><b>${dayName(29, 30)}</b>: ${num(anonymousDaily[29][1] + keyedDaily[29][1])} requests, ${num(anonymousDaily[29][1])} anonymous and ${num(keyedDaily[29][1])} with a key.</p>
+      <div class="plot"><svg id="public" role="img" aria-label="Requests to the public read API on each of the last 30 days, without a valid key and with an API key"></svg></div>
+      ${key([["c-s1", "Without a valid key"], ["c-s5", "With an API key"]])}
+      <p class="readout"><b>${dayName(29, 30)}</b>: ${num(anonymousDaily[29][1] + keyedDaily[29][1])} requests, ${num(anonymousDaily[29][1])} without a valid key and ${num(keyedDaily[29][1])} with a key.</p>
     </section>
     <section class="mod last" aria-labelledby="h-upload">
       <h2 id="h-upload">Upload API requests per day</h2>
@@ -1754,12 +1754,12 @@ page("admin-api.html", "Scarlet admin: who uses the API", "", `
       <p class="note">An IPv6 caller is counted as its /64 prefix.</p>
     </section>
 
-    <section class="mod w7 first" aria-labelledby="h-keys">
-      <h2 id="h-keys">Accounts by API key use</h2>
-      ${dataTable([["Account"], ["Keys", "n"], ["Requests", "n"], ["Last used", "n"]], keyRows.map(([account, keys, requests, last]) => [account, keys, barCell(((requests / keyRows[0][2]) * 9).toFixed(1), num(requests)), last]))}
-      <p class="note">35 more accounts sent ${num(API_TOTALS.keyed - keyRows.reduce((sum, row) => sum + row[2], 0))} requests with a key.</p>
+    <section class="mod w12 first last" aria-labelledby="h-keys">
+      <h2 id="h-keys">Accounts with API keys</h2>
+      ${dataTable([["Account"], ["Keys", "n"], ["Newest key made", "n"], ["Soonest expiry", "n"], ["Last used", "n"], ["Today", "n"], ["7 days", "n"], ["All days", "n"], ["Busiest minute", "n"], ["Answered 429", "n"]], keyRows.map(([account, keys, made, expires, last, today, week, all, busiest, limited]) => [account, keys, made, expires, last, num(today), barCell(((week / keyRows[0][6]) * 6).toFixed(1), num(week)), num(all), busiest, limited]))}
+      <p class="note">Busiest minute is the most requests the account made in one minute, against the limit for a minute.</p>
     </section>
-    <section class="mod w5 last" aria-labelledby="h-endpoints">
+    <section class="mod w12 first last" aria-labelledby="h-endpoints">
       <h2 id="h-endpoints">Endpoints by requests</h2>
       ${rankList(endpointCounts.map(([path, n], i) => [path, `${num(n)}${i ? "" : " requests"}`, (n / endpointCounts[0][1]) * 100, "mono"]))}
       <p class="note">19 more endpoints took ${num(API_TOTALS.anonymous + API_TOTALS.keyed + API_TOTALS.upload - endpointCounts.reduce((sum, row) => sum + row[1], 0))} requests.</p>
