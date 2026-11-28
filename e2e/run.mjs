@@ -92,6 +92,7 @@ const REGISTRY = [
   { lane: "browser", name: "the key pages run clean at 1280", run: browser.pagesRunClean },
   { lane: "browser", name: "the narrow pages fit at 390", run: browser.narrowPagesFit },
   { lane: "browser", name: "search suggests while typing", run: browser.searchSuggestsWhileTyping },
+  { lane: "browser", name: "every date on a character page and a session page is rewritten into the contract's form with an exact hover text", run: browser.datesReadInTheBrowser },
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
   { lane: "owner", name: "the admin opens the admin pages privately, /admin/api counts the upload and a character asked for by name, /admin/clients shows the install clients, and /admin/characters finds the characters", run: admin.adminSeesTheApiCalls },
   { lane: "owner", name: "a character the owner made private has no class page, world map or trails for a visitor, and has them again once public", run: classPage.hiddenCharacterHidesItsClassPage },

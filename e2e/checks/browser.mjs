@@ -78,6 +78,32 @@ function cleanPages(routes, width, strict) {
 export const pagesRunClean = cleanPages(WIDE, 1280, true);
 export const narrowPagesFit = cleanPages(NARROW, 390, false);
 
+const TITLE = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2} \d{4}( \d{1,2}:\d{2}:\d{2} (AM|PM))?$/;
+const TEXT = [
+  /^(just now|\d+ seconds? ago|\d+ minutes? ago|\d+ hours? ago|yesterday|\d+ days ago|in \d+ (seconds?|minutes?|hours?|days?))$/,
+  /^((Mon|Tue|Wed|Thu|Fri|Sat|Sun) )?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2}( \d{4})?( \d{1,2}:\d{2}(:\d{2})? (AM|PM))?$/,
+  /^\d{1,2}:\d{2}(:\d{2})? (AM|PM)$/,
+];
+
+export async function datesReadInTheBrowser(ctx) {
+  const browser = browserOf(ctx);
+  const faults = [];
+  for (const route of [`/c/${NAME}`, `/c/${NAME}/sessions/1795000000`]) {
+    const tab = await browser.open(ctx.base + route, { width: 1280, height: 800 });
+    try {
+      const dates = await tab.evaluate(`[...document.querySelectorAll("time[datetime][data-when]")].map((node) => [node.textContent, node.title])`);
+      if (dates.length === 0) faults.push(`${route} has no dated element`);
+      for (const [text, title] of dates) {
+        if (!TEXT.some((shape) => shape.test(text))) faults.push(`${route}: "${text}" is not one of the date forms`);
+        if (!TITLE.test(title)) faults.push(`${route}: the hover text "${title}" is not an exact date`);
+      }
+    } finally {
+      await tab.close();
+    }
+  }
+  if (faults.length > 0) throw new Error(faults.join("\n  "));
+}
+
 export async function searchSuggestsWhileTyping(ctx) {
   const browser = browserOf(ctx);
   const tab = await browser.open(ctx.base + "/search", { width: 1280, height: 800 });
