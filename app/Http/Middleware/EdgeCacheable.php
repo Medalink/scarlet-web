@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PackedAnswer;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -56,26 +57,31 @@ class EdgeCacheable
         return $response;
     }
 
-    /** Keeps the body and headers of an answer, which serialise; the response object holds the view and its closures and does not. */
+    /**
+     * Keeps the packed body (PackedAnswer, so an answer over its cap is not kept) and headers of an answer, which
+     * serialise; the response object holds the view and its closures and does not.
+     */
     private static function keep(string $key, Response $response, int $seconds): void
     {
         $content = $response->getContent();
-        if (! is_string($content)) {
+        $packed = is_string($content) ? PackedAnswer::pack($content) : null;
+        if ($packed === null) {
             return;
         }
         $headers = $response->headers->allPreserveCaseWithoutCookies();
         unset($headers['Date']);
-        Cache::put($key, ['content' => $content, 'headers' => $headers], $seconds);
+        Cache::put($key, ['content' => $packed, 'headers' => $headers], $seconds);
     }
 
     /** The answer `keep()` stored, or null when the cache holds none. */
     private static function restored(mixed $kept): ?Response
     {
-        if (! is_array($kept) || ! is_string($kept['content'] ?? null) || ! is_array($kept['headers'] ?? null)) {
+        $content = is_array($kept) ? PackedAnswer::unpack($kept['content'] ?? null) : null;
+        if ($content === null || ! is_array($kept['headers'] ?? null)) {
             return null;
         }
 
-        return new HttpResponse($kept['content'], Response::HTTP_OK, $kept['headers']);
+        return new HttpResponse($content, Response::HTTP_OK, $kept['headers']);
     }
 
     /**

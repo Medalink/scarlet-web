@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\V1\Public\MapController as MapDensityController;
 use App\Http\Controllers\Web\CampsController;
 use App\Http\Controllers\Web\CharacterPageController;
 use App\Http\Controllers\Web\CharacterSectionRedirectController;
@@ -14,6 +13,7 @@ use App\Http\Controllers\Web\LeaderboardController;
 use App\Http\Controllers\Web\LegacyRedirectController;
 use App\Http\Controllers\Web\LootController;
 use App\Http\Controllers\Web\MapController;
+use App\Http\Controllers\Web\MapDensityController;
 use App\Http\Controllers\Web\MapTrailsController;
 use App\Http\Controllers\Web\ProfessionController;
 use App\Http\Controllers\Web\ProfessionsController;
@@ -53,7 +53,7 @@ Route::get('/c/{name}/{class}', CharacterSectionRedirectController::class)->wher
 Route::get('/c/{name}/heat', LegacyRedirectController::class)->where('name', '[^/]+')->defaults('to', '/map')->defaults('with', ['character' => '{name}']);
 Route::get('/c/{name}/trails', LegacyRedirectController::class)->where('name', '[^/]+')->defaults('to', '/map')->defaults('with', ['character' => '{name}']);
 Route::get('/map/trails', MapTrailsController::class);
-Route::get('/map/density', [MapDensityController::class, 'density']);
+Route::get('/map/density', MapDensityController::class);
 Route::get('/creatures/{id}', [RecordController::class, 'creature'])->where('id', RecordId::pattern());
 Route::get('/objects/{id}', [RecordController::class, 'object'])->where('id', RecordId::pattern());
 Route::get('/items/{id}', [RecordController::class, 'item'])->where('id', RecordId::pattern());
