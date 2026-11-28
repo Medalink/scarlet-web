@@ -369,7 +369,7 @@ lower-case letters.
 
 ## API keys
 
-A player who signs in with Battle.net makes API keys on the account settings page (`/account/settings`, API keys). A
+A player who signs in with Battle.net makes API keys on the API keys page (`/account/api-keys`). A
 key is a Sanctum personal access token with one ability, `public:read`, and the public read API under `/api/v1/public`
 answers only a request that sends one as `Authorization: Bearer <key>`. The text of a key is shown once when it is
 made; the server stores only its hash. A key expires 30 days after it is made unless its maker picks 60 or 90 days
@@ -401,7 +401,7 @@ Take the slugs from `GET /public/rulesets`.
 
 ## Limits, keys and caching
 
-- Every request sends a key: a personal access token with the `public:read` ability, made on the account settings page
+- Every request sends a key: a personal access token with the `public:read` ability, made on the API keys page
   (see "API keys" above) and sent as `Authorization: Bearer <key>`. A key in the query string is not read. The limit is
   600 requests a minute for the account, shared by all its keys.
 - A request with no key is `401 missing_key`. A key that is unknown, expired, lacks the ability or belongs to an account without Battle.net is

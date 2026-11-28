@@ -1,16 +1,30 @@
-<x-layouts.sc title="Your characters · Scarlet" current="account" :signed-in="true" :index="false" :brand="false">
-<div class="wrap pb-20 pt-10">
-  <div class="flex flex-wrap items-end gap-x-6 gap-y-2"><h1 class="sc-title" style="font-size:60px">{{ $d['title'] }}</h1><a href="/account/settings" class="sc-btn quiet small mb-2 ml-auto">Settings</a></div>
-@if (session('notice'))
-  <p class="sc-note mt-4" role="status">{{ session('notice') }}</p>
+<x-account.shell title="Account" current="/account" :heading="$d['title']">
+@if (! $d['empty'])
+  <section class="mt-10" id="characters">
+    <h2 class="sc-h" style="font-size:30px">Characters</h2>
+    <livewire:account.characters />
+    <p class="mt-4 text-[14px]"><a href="/stats?scope=compare">Your stats against everyone</a> · <a href="/professions?scope=mine">Your professions</a> · <a href="/camps?scope=mine">Your camps</a> · <a href="/map?scope=mine">Your map</a></p>
+  </section>
 @endif
 
+  <section class="mt-12 grid grid-cols-[minmax(0,1fr)] gap-x-12 gap-y-10 lg:grid-cols-2">
+    <div id="sign-in">
+      <h2 class="sc-h" style="font-size:30px">Sign-in methods</h2>
+      <p class="sc-note mt-2">Scarlet stores the sign-in's id and nothing else about you: no email, no name.</p>
+      <livewire:account.sign-in-methods />
+    </div>
+    <div id="installs">
+      <h2 class="sc-h" style="font-size:30px">Linked installs</h2>
+      <livewire:account.installs />
+    </div>
+  </section>
+
 @if ($d['empty'])
-  <section class="mt-8">
+  <section class="mt-12">
     <x-sc.link-row dot="off" action="Get the app" href="/download">No characters yet. Open Scarlet on your PC and choose Link to my account.</x-sc.link-row>
   </section>
 @else
-  <section class="mt-8 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+  <section class="mt-12 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
     @if ($d['latest'])
       <div>
         <p class="sc-label mb-2"><span class="sc-cls" style="--cls:{{ $d['latest']['color'] }}"></span> <b class="font-semibold text-fg">{{ $d['latest']['name'] }}</b> · latest session</p>
@@ -25,22 +39,6 @@
         </x-sc.tile>
       @endforeach
     </div>
-  </section>
-
-  <section class="mt-12">
-    <h2 class="sc-h" style="font-size:30px">Characters</h2>
-    <div class="sc-panel mt-4">
-      @foreach ($d['rows'] as $row)
-        <a href="{{ $row['href'] }}" class="sc-char" style="--cls:{{ $row['color'] }}">
-          <span><span class="nm">{{ $row['name'] }}</span><span class="sc-sub mt-1 block" style="color:var(--muted)">{{ $row['line'] }}</span></span>
-          <span><span class="flex items-baseline justify-between"><b class="sc-num sc-num-md">{{ $row['level'] }}</b><span class="sc-label">of 60</span></span><span class="sc-lvl mt-1.5 block"><i style="width:{{ $row['width'] }}%"></i></span></span>
-          <span class="flex items-center gap-2"><x-sc.ring :value="$row['ring']" :size="40" /><span class="text-[13px]"><b class="text-fg">{{ $row['feats'] }}</b> {{ $row['feats'] === 1 ? 'feat' : 'feats' }}</span></span>
-          <span><span class="block text-[13px] text-muted">{{ $row['seen'] }}</span>@if ($row['place'])<span class="sc-say mt-1 block" style="font-size:15px">{{ $row['place'] }}</span>@endif</span>
-          <x-sc.glyph name="arrow" :size="18" />
-        </a>
-      @endforeach
-    </div>
-    @if ($d['more'])<p class="mt-3 text-[14px]">{{ ucfirst($d['more']) }} not shown.</p>@endif<p class="mt-3 text-[14px]"><a href="/stats?scope=compare">Your stats against everyone</a> · <a href="/professions?scope=mine">Your professions</a> · <a href="/camps?scope=mine">Your camps</a> · <a href="/map?scope=mine">Your map</a></p>
   </section>
 
   @if ($d['accountFeats'])
@@ -129,13 +127,4 @@
     </div>
   </section>
 @endif
-
-  <section class="mt-14">
-    @if ($d['link']['linked'])
-      <x-sc.link-row dot="on" action="Settings" href="/account/settings">{{ $d['link']['text'] }}</x-sc.link-row>
-    @else
-      <x-sc.link-row dot="off" action="Get the app" href="/download">{{ $d['link']['text'] }}</x-sc.link-row>
-    @endif
-  </section>
-</div>
-</x-layouts.sc>
+</x-account.shell>

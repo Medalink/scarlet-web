@@ -6,7 +6,7 @@
  * 1, and writes nothing, when the site lists a character, or an answer holds a Name-Realm style value, that is not
  * one of the fixture folders of e2e/fixture or a character the e2e line files define, so a real player's name never
  * gets in. The reads need an API key, which it makes through the development sign-in, its Battle.net identity and the
- * API keys module of /account/settings, and deletes again at the end.
+ * API keys module of /account/api-keys, and deletes again at the end.
  *
  *   node e2e/run.mjs --url http://127.0.0.1:8612 --leave
  *   node scripts/api-examples.mjs --url http://127.0.0.1:8612

@@ -26,6 +26,7 @@ import './site/tally.js';
 import './site/floors.js';
 import './site/search.js';
 import './site/copy.js';
+import './site/dialog.js';
 if (document.querySelector('[data-chart]')) {
     import('./charts.js');
 }

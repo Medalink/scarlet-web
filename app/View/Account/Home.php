@@ -2,7 +2,6 @@
 
 namespace App\View\Account;
 
-use App\View\Dates;
 use App\View\Format;
 use App\View\Pages\AccountFeatWall;
 use App\View\Pages\CharacterStandings;
@@ -13,8 +12,6 @@ use App\View\Sc\Compare;
 /** The data of /account (design/final/account-web.html) from the bundle of App\Actions\Account\ShowAccountHome. */
 final class Home
 {
-    private const int LEVELS = 60;
-
     private const int MEDIAN_FROM = 2;
 
     private const int REACH = 3;
@@ -39,9 +36,7 @@ final class Home
             'empty' => $characters === [],
             'latest' => self::latest($b['latest'], $by),
             'week' => Week::tiles($b, $by),
-            'rows' => self::rows($b),
             'accountFeats' => AccountFeatWall::row($b['accountFeats']),
-            'more' => count($characters) > count($b['shown']) ? Format::count(count($characters) - count($b['shown']), 'more character') : null,
             'play' => Play::days($characters, $b['days']),
             'gold' => Play::gold($characters, $b['gold'], $b['days']),
             'compare' => $main === null ? null : self::compare($b['rates'], $main),
@@ -49,7 +44,6 @@ final class Home
             'reach' => self::reach($b, $by),
             'places' => self::places($b, $by),
             'heat' => Play::heat($b['buckets']),
-            'link' => self::link($b),
         ];
     }
 
@@ -66,35 +60,6 @@ final class Home
         $row = $by[$latest['character_id']];
 
         return ['recap' => $latest['recap'], 'name' => Format::characterName($row['name']), 'color' => ClassColor::of($row['class']), 'href' => '/c/'.rawurlencode($row['name']).'/sessions/'.$latest['recap']['start']];
-    }
-
-    /**
-     * @param  array<string, mixed>  $b
-     * @return list<array<string, mixed>>
-     */
-    private static function rows(array $b): array
-    {
-        $rows = [];
-        $max = FeatsPage::scoreMax();
-        foreach ($b['shown'] as $c) {
-            $summary = $b['feats'][$c['id']]['character'];
-            $place = CharacterStandings::rows($b['places'][$c['id']])[0] ?? null;
-            $level = (int) $c['level'];
-            $rows[] = [
-                'href' => '/c/'.rawurlencode($c['name']),
-                'color' => ClassColor::of($c['class']),
-                'name' => Format::characterName($c['name']),
-                'line' => trim(Format::raceName($c['race']).' '.Format::className($c['class'])).' · '.Format::hours($c['played_seconds'] ?? $c['recorded_seconds'], false).' played',
-                'level' => $level,
-                'width' => round(min(1, $level / self::LEVELS) * 100, 1),
-                'ring' => $max === 0 ? 0 : round($summary['score'] / $max, 3),
-                'feats' => (int) $summary['held'],
-                'seen' => $c['last_seen_at'] === null ? 'Nothing recorded yet' : Dates::join('Last played ', Dates::moment($c['last_seen_at'])),
-                'place' => $place === null ? ($c['is_public'] ? null : 'Private page') : Format::ordinal($place['place']).' of '.$place['of'].' on '.$place['title'],
-            ];
-        }
-
-        return $rows;
     }
 
     /**
@@ -209,28 +174,5 @@ final class Home
         usort($all, fn (array $x, array $y): int => $x['place'] <=> $y['place']);
 
         return array_slice($all, 0, self::PLACES);
-    }
-
-    /**
-     * @param  array<string, mixed>  $b
-     * @return array<string, mixed>
-     */
-    private static function link(array $b): array
-    {
-        $live = array_values(array_filter($b['installs'], fn ($install): bool => ! $install->isRevoked()));
-        if ($live === []) {
-            return ['linked' => false, 'text' => 'No app is linked to this account. Open Scarlet on your PC and choose Link to my account.'];
-        }
-        $last = null;
-        foreach ($live as $install) {
-            $last = $last === null || ($install->last_seen_at !== null && $install->last_seen_at->gt($last)) ? $install->last_seen_at : $last;
-        }
-        $parts = ['Scarlet app linked on '.Format::count(count($live), 'computer'), $last === null ? 'nothing uploaded yet' : Dates::join('last upload ', Dates::moment($last))];
-        $private = $b['private'];
-        if ($private !== []) {
-            $parts[] = count($private) === 1 ? Format::characterName($private[0])."'s page is private" : Format::count(count($private), 'page').' are private';
-        }
-
-        return ['linked' => true, 'text' => Dates::implode(' · ', $parts)];
     }
 }

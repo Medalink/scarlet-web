@@ -17,6 +17,6 @@ class AuthDevelopmentExpireKeysController extends Controller
         abort_unless($account instanceof Account, 403);
         $expire->handle($account, $request->keyName());
 
-        return redirect('/account/settings');
+        return redirect('/account/api-keys');
     }
 }

@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\Web\AccountApiKeysController;
 use App\Http\Controllers\Web\AccountController;
-use App\Http\Controllers\Web\AccountSettingsController;
+use App\Http\Controllers\Web\AccountPrivacyController;
+use App\Http\Controllers\Web\AccountStorageController;
+use App\Http\Controllers\Web\AccountUploadHistoryController;
 use App\Http\Controllers\Web\AuthCallbackController;
 use App\Http\Controllers\Web\AuthDevelopmentController;
 use App\Http\Controllers\Web\AuthDevelopmentDropBattlenetController;
@@ -29,6 +32,7 @@ if (IdentityProvider::developmentAllowed()) {
 }
 
 Route::get('/account/characters', LegacyRedirectController::class)->defaults('to', '/account');
+Route::get('/account/settings', LegacyRedirectController::class)->defaults('to', '/account');
 Route::get('/account/professions', LegacyRedirectController::class)->defaults('to', '/professions')->defaults('with', ['scope' => 'mine']);
 Route::get('/account/professions/{slug}', LegacyRedirectController::class)->where('slug', '[a-z-]+')->defaults('to', '/professions/{slug}')->defaults('with', ['scope' => 'mine']);
 Route::get('/account/camps', LegacyRedirectController::class)->defaults('to', '/camps')->defaults('with', ['scope' => 'mine']);
@@ -37,7 +41,10 @@ Route::get('/account/map/trails', LegacyRedirectController::class)->defaults('to
 
 Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account', AccountController::class);
-    Route::get('/account/settings', AccountSettingsController::class);
+    Route::get('/account/privacy', AccountPrivacyController::class);
+    Route::get('/account/api-keys', AccountApiKeysController::class);
+    Route::get('/account/storage', AccountStorageController::class);
+    Route::get('/account/storage/history', AccountUploadHistoryController::class);
     Route::get('/link', LinkShowController::class);
     Route::post('/link', LinkConfirmController::class)->middleware('throttle:20,1,link-confirm');
 });

@@ -71,6 +71,7 @@ export async function oldAddressesRedirect(ctx) {
     ["/account/map", "/map?scope=mine"],
     ["/account/map/trails", "/map?scope=mine"],
     ["/account/characters", "/account"],
+    ["/account/settings", "/account"],
     ["/account/professions", "/professions?scope=mine"],
     ["/account/professions/fishing", "/professions/fishing?scope=mine"],
     [`/c/${NAME}/heat`, `/map?character=${NAME}`],
@@ -171,7 +172,7 @@ export async function publicPagesStayPublic(ctx) {
 }
 
 export async function accountIsClosedToVisitors(ctx) {
-  for (const route of ["/account", "/account/settings", "/link"]) {
+  for (const route of ["/account", "/account/privacy", "/account/api-keys", "/account/storage", "/account/storage/history", "/link"]) {
     const answer = await ctx.http.page(route, { redirect: "manual" });
     const location = answer.headers.get("location") ?? "";
     if (answer.status !== 302 || new URL(location, ctx.base).pathname !== "/login") {
@@ -237,8 +238,6 @@ export async function appLinksToAccount(ctx) {
 
   const me = expectJson(expectStatus(await app.me(), 200, "GET /api/v1/installs/me after the link"), "installs/me after the link");
   if (me.linked !== true) throw new Error(`after the link the install should say linked: true, saw ${JSON.stringify(me)}`);
-  expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
-  const settings = expectStatus(await http.request("/account/settings", { jar, headers: { Accept: "text/html" } }), 200, "GET /account/settings");
-  if (!settings.text.includes(label)) throw new Error(`/account/settings should list the linked install ${label}, saw ${settings.text.slice(0, 300)}`);
-  expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
+  const account = expectStatus(await http.request("/account", { jar, headers: { Accept: "text/html" } }), 200, "GET /account");
+  if (!account.text.includes(label)) throw new Error(`/account should list the linked install ${label}, saw ${account.text.slice(0, 300)}`);
 }

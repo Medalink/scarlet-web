@@ -1,12 +1,12 @@
 /**
  * How a script gets an API key from a local site the way a person does: the development sign-in, its Battle.net
  * identity (`as=battlenet`, which exists only where the development sign-in does) and the API keys module of
- * /account/settings, called over Livewire's own HTTP endpoint. Every function takes `request(path, { method, headers,
+ * /account/api-keys, called over Livewire's own HTTP endpoint. Every function takes `request(path, { method, headers,
  * body })`, which answers `{ status, headers, text }` and keeps the cookies of one visitor.
  */
 
 const FORM = { "Content-Type": "application/x-www-form-urlencoded", Accept: "text/html" };
-const SETTINGS = "/account/settings";
+const SETTINGS = "/account/api-keys";
 const COMPONENT = "account.api-keys";
 
 const tokenIn = (html) => {

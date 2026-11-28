@@ -17,6 +17,6 @@ class AuthDevelopmentDropBattlenetController extends Controller
         abort_unless($account instanceof Account, 403);
         $drop->handle($account);
 
-        return redirect('/account/settings');
+        return redirect('/account/api-keys');
     }
 }

@@ -7,12 +7,24 @@ use App\Actions\Account\SetCharacterSwitch;
 use App\Actions\Account\ShowCharacters;
 use App\Livewire\Concerns\ActsForAccount;
 use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
-/** The Characters module of /account: the public switch of each character and, when public, its economy and session switches. */
+/**
+ * The characters of the account, as cards on /account or as rows with their switches' states on /account/privacy.
+ * Either way each character has a modal with its three switches (public page, gold and trades, session pages), and
+ * each switch saves when it changes.
+ */
 class Characters extends Component
 {
     use ActsForAccount;
+
+    public const string CARDS = 'cards';
+
+    public const string PRIVACY = 'privacy';
+
+    #[Locked]
+    public string $mode = self::CARDS;
 
     public function setPublic(int $characterId, bool $on, SetCharacterSwitch $set): void
     {

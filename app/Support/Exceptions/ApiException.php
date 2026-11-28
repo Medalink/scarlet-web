@@ -99,7 +99,7 @@ class ApiException extends RuntimeException
 
     public static function missingKey(): self
     {
-        $settings = rtrim((string) config('app.url'), '/').'/account/settings';
+        $settings = rtrim((string) config('app.url'), '/').'/account/api-keys';
 
         return new self(401, 'missing_key', 'Send an API key as "Authorization: Bearer <key>". Sign in with Battle.net on '.$settings.' and create a key there.');
     }

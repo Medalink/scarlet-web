@@ -6,7 +6,7 @@ const EXPIRING = "e2e expiring key";
 const SIXTY = "e2e sixty days";
 const NINETY = "e2e ninety days";
 const LOST = "e2e lost battlenet";
-const SETTINGS = "/account/settings";
+const SETTINGS = "/account/api-keys";
 const DAY_MS = 86_400_000;
 const NO_KEY_WORDS = ["Authorization: Bearer", "Battle.net"];
 const RATE_LIMIT_HEADERS = ["x-ratelimit-limit", "x-ratelimit-remaining"];
@@ -18,7 +18,7 @@ function expiryDays(html) {
 }
 
 /**
- * The development account has no Battle.net sign-in yet: its settings page shows the one line that links Battle.net in
+ * The development account has no Battle.net sign-in yet: its API keys page shows the one line that links Battle.net in
  * place of the form, and a call to make a key, sent anyway, makes none.
  */
 export async function noBattlenetMakesNoKey(ctx) {
@@ -80,9 +80,9 @@ export async function publicApiNeedsAKey(ctx) {
   expectError(missing, 401, "missing_key", `GET ${route} with no key`);
   const message = expectJson(missing, "the missing_key answer").error.message;
   for (const word of NO_KEY_WORDS) if (!message.includes(word)) throw new Error(`the missing_key message should mention ${JSON.stringify(word)}, saw ${JSON.stringify(message)}`);
-  const settings = message.match(/https?:\/\/\S+\/account\/settings/)?.[0];
+  const settings = message.match(/https?:\/\/\S+\/account\/api-keys/)?.[0];
   if (settings === undefined || !/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\//.test(settings)) {
-    throw new Error(`the missing_key message should link this server's own /account/settings, built from APP_URL, saw ${JSON.stringify(message)}`);
+    throw new Error(`the missing_key message should link this server's own /account/api-keys, built from APP_URL, saw ${JSON.stringify(message)}`);
   }
   noRateLimitHeaders(missing, "a 401 missing_key");
   if (!(missing.headers.get("cache-control") ?? "").includes("no-store")) throw new Error("a refusal should be Cache-Control no-store");

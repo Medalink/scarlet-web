@@ -26,7 +26,6 @@ class ShowAccountHome
         private readonly ShowCharacterLevelTimes $levelTimes,
         private readonly ShowAccountPlayBuckets $buckets,
         private readonly ShowWeekOfPlay $week,
-        private readonly ShowInstalls $installs,
         private readonly ShowFeatCatalog $catalog,
         private readonly BuildCharacterFeats $feats,
         private readonly ShowAccountFeats $accountFeats,
@@ -68,7 +67,6 @@ class ShowAccountHome
             'gold' => $this->gold->handle($ids),
             'buckets' => $this->buckets->handle($ids),
             'week' => $this->week->handle($ids),
-            'installs' => $this->installs->handle($account),
             'catalog' => $catalog,
             'feats' => $feats,
             'accountFeats' => $this->accountFeats->handle($this->owned->handle($account->id)),
@@ -77,7 +75,6 @@ class ShowAccountHome
             'rates' => $main === null ? null : $this->rates->handle($main),
             'levelTimes' => $mainRow === null ? null : ($this->levelTimes->handle([$mainRow])[$mainRow['id']] ?? null),
             'latest' => $latest === null || $main === null ? null : ['character_id' => $latest['character_id'], 'recap' => $this->recap->handle($main, $latest['start'], true)],
-            'private' => array_values(array_map(fn (array $row): string => $row['name'], array_filter($characters, fn (array $row): bool => ! $row['is_public']))),
         ];
     }
 
