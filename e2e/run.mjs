@@ -34,6 +34,7 @@ import * as admin from "./checks/admin.mjs";
 import * as session from "./checks/session.mjs";
 import * as goals from "./checks/goals.mjs";
 import * as talents from "./checks/talents.mjs";
+import * as keys from "./checks/keys.mjs";
 
 const LANES = ["upload", "api", "pages", "browser", "owner"];
 const SERVER_CONNECTIONS = 3;
@@ -41,6 +42,8 @@ const INSTALL_LABEL = "scarlet-web e2e install";
 const STRANGER_LABEL = "scarlet-web e2e stranger install";
 
 const REGISTRY = [
+  { lane: "keys", name: "an account without Battle.net sees one line that links it, and a key it asks for is refused", run: keys.noBattlenetMakesNoKey },
+  { lane: "keys", name: "an account with Battle.net makes keys of 30 days by default, 60 and 90, and the expiry is stored and shown, and 91 days or more is refused", run: keys.expiryChoiceIsStoredAndShown },
   { lane: "upload", name: "/up answers 200", run: upload.healthy },
   { lane: "upload", name: "an install registers", run: upload.register },
   { lane: "upload", name: "installs/me answers a signed request", run: upload.meSigned },
@@ -50,6 +53,8 @@ const REGISTRY = [
   { lane: "upload", name: `${INSTALL_CHARACTERS.join(", ")} upload side by side, and ${STRANGER_CHARACTERS.join(", ")} from another install: sync, manifest, parts, sync`, run: upload.bothUpload },
   { lane: "upload", name: "the same manifest needs nothing", run: upload.sameManifestNeedsNothing },
   { lane: "upload", name: "the upload is decoded", run: upload.decoded },
+  { lane: "api", name: "the public API answers 401 missing_key with no key, 401 invalid_token with a wrong, expired or query-string key", run: keys.publicApiNeedsAKey },
+  { lane: "api", name: "every public API answer is private, carries its tag and limit, and a preflight for the Authorization header is answered", run: keys.answersArePrivateAndPreflightIsAnswered },
   { lane: "api", name: "every public endpoint answers data and meta", run: api.everyEndpointAnswers },
   { lane: "api", name: "the uploaded character is served with the fixture's facts", run: api.characterIsServed },
   { lane: "api", name: "the records of the fixture are served", run: api.recordsAreServed },
@@ -93,6 +98,7 @@ const REGISTRY = [
   { lane: "pages", name: "the talents list leads each spec with its most common tree split", run: talents.talentsListLeadsWithTheSplit },
   { lane: "browser", name: "the browser has no window", independent: true, run: browser.hasNoWindow },
   { lane: "browser", name: "the map art is installed", independent: true, run: browser.mapArtIsServed },
+  { lane: "browser", name: "the map page draws density without a key, from /map/density, and sends nothing to the public API", run: keys.mapDensityNeedsNoKey },
   { lane: "browser", name: "the key pages run clean at 1280", run: browser.pagesRunClean },
   { lane: "browser", name: "the narrow pages fit at 390", run: browser.narrowPagesFit },
   { lane: "browser", name: "the download page loads the two app screenshots under its button", run: talents.downloadStripLoads },
@@ -116,6 +122,7 @@ const REGISTRY = [
   { lane: "removal", name: "the owner of a character sees its Highest balance until the economy group is removed, though the opening balance rows stay stored", run: goals.ownerHighestBalanceFollowsEconomy },
   { lane: "removal", name: "an account with no character sees its profession page in the plain state", run: own.accountWithNoCharacterSeesThePlainState },
   { lane: "removal", name: "an account with no character sees its camps page in the plain state", run: own.accountWithNoCharacterSeesTheCampsPlainState },
+  { lane: "removal", name: "the lane's API keys are deleted again", run: keys.keysAreDeleted },
 ];
 
 function usage(message) {
@@ -162,6 +169,7 @@ const ctx = {
   client: new InstallClient(gate.origin, INSTALL_LABEL, http.fetch),
   stranger: new InstallClient(gate.origin, STRANGER_LABEL, http.fetch),
   jar: new Jar(),
+  keyJar: new Jar(),
   keepDir: options.keep ?? path.join(os.tmpdir(), "scarlet-web-e2e-shots"),
   browserPath: options.browser ?? null,
   browser: null,
@@ -169,7 +177,7 @@ const ctx = {
 
 const EOL = "\n";
 const indented = (message) => String(message).split(EOL).map((line) => `  ${line}`).join(EOL);
-const STAGES = [["upload", "api", "pages", "browser"], ["owner"], ["removal"]];
+const STAGES = [["keys"], ["upload", "api", "pages", "browser"], ["owner"], ["removal"]];
 const uploaded = Promise.withResolvers();
 let failed = 0;
 let skipped = 0;
@@ -182,7 +190,7 @@ async function runLane(lane) {
     const took = () => `${(performance.now() - at).toFixed(0).padStart(5)}ms`;
     total += 1;
     try {
-      if (lane !== "upload" && lane !== "removal" && !check.independent) {
+      if (lane !== "keys" && lane !== "upload" && lane !== "removal" && !check.independent) {
         const ready = await uploaded.promise;
         if (!ready) throw new Skip("the upload lane did not finish cleanly");
         at = performance.now();
@@ -208,7 +216,7 @@ process.on("SIGTERM", () => process.exit(143));
 const started = performance.now();
 try {
   for (const stage of STAGES) {
-    const lanes = stage.filter((lane) => lane === "upload" || (lane === "removal" && !options.leave) || only.includes(lane));
+    const lanes = stage.filter((lane) => lane === "keys" || lane === "upload" || (lane === "removal" && !options.leave) || only.includes(lane));
     for (const lines of await Promise.all(lanes.map(runLane))) console.log(lines.join(EOL));
   }
 } finally {

@@ -14,7 +14,7 @@ const PAGES = [
   { path: "/map", shows: heading("World map") },
   { path: "/camps", shows: heading("Camps") },
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
-  { path: "/developers", shows: heading("Public API") },
+  { path: "/developers", shows: heading("API") },
   { path: "/download", shows: heading("Scarlet for Windows") },
   { path: "/leaderboards", shows: heading("Leaderboards") },
   { path: "/leaderboards/most-quests", shows: heading("Most quests turned in") },

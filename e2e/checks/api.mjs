@@ -47,7 +47,7 @@ function templateExpression(template) {
 export async function listedEndpoints(ctx) {
   const page = expectStatus(await ctx.http.page("/developers"), 200, "GET /developers");
   const templates = [...page.text.matchAll(/<h2><b>GET<\/b>\/api\/v1\/public(\/[^<]*)<\/h2>/g)].map((match) => match[1]);
-  const examples = [...new Set([...page.text.matchAll(/curl\s+\S*?\/api\/v1\/public(\/[^\s<]*)</g)].map((match) => match[1].replaceAll("&amp;", "&")))];
+  const examples = [...new Set([...page.text.matchAll(/curl\s+(?:-H\s+&quot;[^&]*&quot;\s+)?\S*?\/api\/v1\/public(\/[^\s<]*)</g)].map((match) => match[1].replaceAll("&amp;", "&")))];
   return { templates, examples };
 }
 

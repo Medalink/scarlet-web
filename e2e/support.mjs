@@ -79,7 +79,7 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * The limiter a path counts against, or null when none applies. Pages are limited per address, the public API per
- * address, registration per address and hour, signed requests per address and install, the account routes by
+ * account, registration per address and hour, signed requests per address and install, the account routes by
  * `throttle:60,1` and the link confirm on top of that by `throttle:20,1` per account.
  */
 export function limiterOf(pathname) {
@@ -139,6 +139,8 @@ async function waitForRefresh(http) {
 export class Http {
   base;
   counts = new Map();
+  /** The API key every read of /api/v1/public sends, once the lane has made one; `key: false` in a request's options sends none. */
+  key = null;
 
   constructor(base) {
     this.base = base.replace(/\/+$/, "");
@@ -175,9 +177,10 @@ export class Http {
     }
   };
 
-  async request(route, { method = "GET", headers = {}, body, redirect = "follow", jar } = {}) {
+  async request(route, { method = "GET", headers = {}, body, redirect = "follow", jar, key } = {}) {
     const sent = { ...headers };
     if (jar) sent.Cookie = jar.header();
+    if (this.key !== null && key !== false && route.startsWith("/api/v1/public") && !("Authorization" in sent)) sent.Authorization = `Bearer ${this.key}`;
     const response = await this.fetch(this.base + route, { method, headers: sent, body, redirect });
     if (jar) jar.store(response);
     const text = await response.text();
@@ -225,7 +228,7 @@ export function parseJson(text) {
 export function expectStatus(answer, status, what) {
   if (answer.status === 429) {
     const wait = answer.headers?.get("retry-after") ?? "unknown";
-    throw new Error(`${what}: the server's rate limit refused the lane (retry after ${wait}s): set SCARLET_RATE_REGISTRATION_PER_IP and SCARLET_RATE_PUBLIC_ANONYMOUS in the server's .env, see DEV.md, "Checks before a ship"`);
+    throw new Error(`${what}: the server's rate limit refused the lane (retry after ${wait}s): set SCARLET_RATE_REGISTRATION_PER_IP and SCARLET_RATE_PUBLIC_TOKEN in the server's .env, see DEV.md, "Checks before a ship"`);
   }
   if (answer.status !== status) {
     throw new Error(`${what}: expected ${status}, saw ${answer.status}: ${answer.text.slice(0, 300)}`);

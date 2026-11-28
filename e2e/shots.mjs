@@ -9,6 +9,7 @@ import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { deleteKeys, keyFor, visitor } from "./keys-client.mjs";
 
 const bin = (process.env.PATH || "").split(path.delimiter).find((p) => /_npx/.test(p) && /node_modules[\\/]\.bin[\\/]?$/.test(p));
 if (!bin) throw new Error('playwright is not on PATH; run this through: npx -y -p playwright@1.64.0 -c "node e2e/shots.mjs"');
@@ -18,6 +19,7 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const arg = (name, fallback) => { const i = process.argv.indexOf("--" + name); return i > 0 ? process.argv[i + 1] : fallback; };
 const base = arg("url", "http://127.0.0.1:8478");
 const out = arg("out", "E:\\Dev\\scratch\\scarlet-api\\shots");
+const KEY_NAME = "e2e shots";
 const only = arg("only", "") ? arg("only", "").split(",") : null;
 
 // name, path on the server, the comp it is compared with
@@ -73,7 +75,9 @@ async function shoot(context, url, file) {
 // Output page-<name>-<width>.png; the report has no comp diff, only overflow, console errors and page errors.
 async function realPages() {
   const api = "/api/v1/public";
-  const get = async (route) => (await fetch(base + api + route, { headers: { Accept: "application/json" } })).json();
+  const who = visitor(base);
+  const key = await keyFor(who, KEY_NAME);
+  const get = async (route) => (await fetch(base + api + route, { headers: { Accept: "application/json", Authorization: "Bearer " + key } })).json();
   // The ruleset with the most characters, a record of each kind that has data, and the top character of a board.
   const rulesets = (await get("/rulesets")).data ?? [];
   const busiest = [...rulesets].sort((a, b) => (b.characters ?? 0) - (a.characters ?? 0))[0]?.slug;
@@ -94,6 +98,7 @@ async function realPages() {
     ["zone", zone === undefined ? null : "/zones/" + zone],
   ];
   for (const [name, route] of found) if (route) pages.push([name, route]);
+  await deleteKeys(who, KEY_NAME);
   return pages.filter(([name]) => !only || only.includes(name));
 }
 

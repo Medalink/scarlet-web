@@ -17,7 +17,7 @@ function browserOf(ctx) {
 
 export async function hasNoWindow(ctx) {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "scarlet-web-e2e-browser-"));
-  ctx.browser = await Browser.start(scratch, browserCommand(ctx.browserPath), (url) => ctx.http.count(url));
+  ctx.browser ??= await Browser.start(scratch, browserCommand(ctx.browserPath), (url) => ctx.http.count(url));
   if (process.platform !== "win32") {
     throw new Skip(`the window check reads the Windows window handle; on ${process.platform} the browser starts headless and is not asked`);
   }

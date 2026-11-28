@@ -79,14 +79,14 @@ export async function copyButtonsCopyTheirBlock(ctx) {
     await tab.evaluate(`document.querySelector(".json-box > [data-copy]").click()`);
     await tab.until(`window.__selected.length === 1 && document.querySelector(".json-box > [data-copy]").textContent === "Copied"`, BROWSER_MS, "the first copy button did not fall back to selecting its text when the clipboard refused");
     const [fallback, left] = await tab.evaluate(`[window.__selected[0], document.querySelectorAll("textarea[readonly]").length + window.__copied.length]`);
-    if (fallback[0] !== "copy" || !/^curl http\S+\/api\/v1\/public\/stats$/.test(fallback[1] ?? "") || left !== 0) throw new Error(`the fallback should copy the first block's curl line and leave no textarea behind: ${JSON.stringify([fallback, left])}`);
+    if (fallback[0] !== "copy" || !/^curl -H "Authorization: Bearer \$SCARLET_API_KEY" http\S+\/api\/v1\/public\/stats$/.test(fallback[1] ?? "") || left !== 0) throw new Error(`the fallback should copy the first block's curl line and leave no textarea behind: ${JSON.stringify([fallback, left])}`);
     await tab.until(`document.querySelector(".json-box > [data-copy]").textContent === "Copy"`, BROWSER_MS, "the first copy button did not reset its label");
     await tab.evaluate(`document.querySelector(".json-box > [data-copy]").click()`);
     await tab.until(`window.__copied.length === 1 && document.querySelector(".json-box > [data-copy]").textContent === "Copied"`, BROWSER_MS, "the first copy button copied nothing");
     await tab.evaluate(`(() => { const details = document.querySelector("details[data-example]"); details.open = true; details.querySelector("[data-copy]").click(); })()`);
     await tab.until(`window.__copied.length === 2`, BROWSER_MS, "the copy button of an example response copied nothing");
     const [curl, example] = await tab.evaluate(`window.__copied`);
-    if (!/^curl http\S+\/api\/v1\/public\/stats$/.test(curl)) throw new Error(`the first block should copy its curl line, copied ${JSON.stringify(curl.slice(0, 120))}`);
+    if (!/^curl -H "Authorization: Bearer \$SCARLET_API_KEY" http\S+\/api\/v1\/public\/stats$/.test(curl)) throw new Error(`the first block should copy its curl line, copied ${JSON.stringify(curl.slice(0, 120))}`);
     if (!example.startsWith('{\n  "data"') || JSON.parse(example) === null) throw new Error(`an example response should copy as JSON, copied ${JSON.stringify(example.slice(0, 120))}`);
   } finally {
     await tab.close();

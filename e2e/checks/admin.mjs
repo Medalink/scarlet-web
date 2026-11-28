@@ -5,6 +5,26 @@ import { signIn } from "./pages.mjs";
 const PAGES = ["/admin", "/admin/characters", "/admin/api", "/admin/clients", "/admin/limits", "/admin/database", "/admin/ingest"];
 const ADMIN = "development:development-1";
 
+const text = (html) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+const number = (value) => Number(value.replaceAll(",", ""));
+
+function accountsWithKeysAreListed(page) {
+  const section = page.slice(page.indexOf('id="h-keys"'), page.indexOf('id="h-endpoints"'));
+  const headers = [...section.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)].map(([, label]) => text(label));
+  if (headers.join("|") !== "Account|Keys|Newest key made|Soonest expiry|Last used|Today|7 days|All days|Busiest minute|Answered 429") {
+    throw new Error(`/admin/api: "Accounts with API keys" should have its ten columns, saw ${JSON.stringify(headers)}`);
+  }
+  const row = section.match(/<tbody>\s*<tr[^>]*>([\s\S]*?)<\/tr>/)?.[1];
+  if (row === undefined) throw new Error('/admin/api: "Accounts with API keys" lists no account, though the lane\'s account made keys and read with one');
+  const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(([, cell]) => text(cell));
+  const [account, keys, , soonest, , today, week, all, busiest] = cells;
+  const minute = busiest?.match(/^([\d,]+) of ([\d,]+)/);
+  if (!/^#\d+$/.test(account) || number(keys) < 1 || soonest === "" || !minute) throw new Error(`/admin/api: the first account should show #id, keys, a soonest expiry and "N of limit", saw ${JSON.stringify(cells)}`);
+  if (number(today) < 1 || number(week) < number(today) || number(all) < number(week) || number(minute[1]) < 1 || number(minute[1]) > number(minute[2])) {
+    throw new Error(`/admin/api: the account's requests and busiest minute do not add up, saw ${JSON.stringify(cells)}`);
+  }
+}
+
 /** Every admin page answers a visitor like a path that does not exist: 404 and no cookie. */
 export async function adminIsHiddenFromVisitors(ctx) {
   for (const route of PAGES) {
@@ -41,6 +61,7 @@ export async function adminSeesTheApiCalls(ctx) {
     const uploads = Number((answer.text.match(/Upload requests<\/span>\s*<span[^>]*>([\d,]+)/)?.[1] ?? "0").replaceAll(",", ""));
     if (uploads === 0) throw new Error("/admin/api: expected the upload requests of the lane to be counted, saw none");
     if (!answer.text.includes(`>${NAME}</a>`)) throw new Error(`/admin/api: expected it to list ${NAME} among the characters looked up`);
+    accountsWithKeysAreListed(answer.text);
   }
   for (const name of [NAME, STRANGER]) {
     const part = name.slice(0, 5).toLowerCase();
