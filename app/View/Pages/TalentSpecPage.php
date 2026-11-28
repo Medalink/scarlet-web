@@ -18,21 +18,38 @@ final class TalentSpecPage
 
     /**
      * @param  list<array{class: string, class_slug: string, tab_id: int, name: string, slug: string, characters: int}>  $specs
+     * @param  array{splits: array<string, array<int, int>>, tabs: array<int, string>}|null  $splits  the most common split of each spec, which puts a column of splits first
      * @return array<string, mixed>
      */
-    public static function index(array $specs): array
+    public static function index(array $specs, ?array $splits = null): array
     {
         $total = array_sum(array_column($specs, 'characters'));
         $top = max([1, ...array_column($specs, 'characters')]);
+        $lead = $splits === null ? [] : [['label' => 'Most common split']];
 
         return [
             'title' => 'Talents',
             'sub' => $specs === [] ? 'No talent builds recorded yet.' : Format::count($total, 'character').' with a talent build, in '.Format::count(count($specs), 'spec').'.',
-            'columns' => [['label' => 'Spec'], ['label' => 'Class'], ['label' => 'Characters', 'numeric' => true]],
+            'columns' => [...$lead, ['label' => 'Spec'], ['label' => 'Class'], ['label' => 'Characters', 'numeric' => true]],
             'rows' => array_map(fn (array $spec): array => ['cells' => [
+                ...($splits === null ? [] : [self::specSplit($spec, $splits)]),
                 ['text' => $spec['name'].' →', 'href' => '/talents/'.$spec['class_slug'].'/'.$spec['slug'], 'dot' => true, 'characterClass' => strtoupper($spec['class'])], Format::className($spec['class']), ['text' => Format::number($spec['characters']), ...self::bar($spec['characters'], $top)],
             ]], $specs),
         ];
+    }
+
+    /**
+     * The points of a spec's most common build in each tree, in the order the game lists the trees: "31 / 20 / 0".
+     *
+     * @param  array{class_slug: string, class: string, tab_id: int}  $spec
+     * @param  array{splits: array<string, array<int, int>>, tabs: array<int, string>}  $splits
+     */
+    private static function specSplit(array $spec, array $splits): string
+    {
+        $points = $splits['splits'][$spec['class_slug'].':'.$spec['tab_id']] ?? [];
+        $tabs = self::inGameOrder($spec['class'], array_intersect_key($splits['tabs'], $points) + array_map(fn (int $id): string => 'Tab '.$id, array_diff_key($points, $splits['tabs'])));
+
+        return implode(' / ', array_map(fn (int $id): string => (string) $points[$id], array_keys($tabs)));
     }
 
     /** @return array{bar?: string} */

@@ -6,6 +6,7 @@ use App\Actions\Public\ListRulesets;
 use App\Actions\Public\ResolveScope;
 use App\Actions\Public\TalentSpec;
 use App\Actions\Public\TalentSpecs;
+use App\Actions\Public\TalentSplits;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\ScopeRequest;
 use App\Http\Requests\Web\TalentSpecRequest;
@@ -16,13 +17,13 @@ use Illuminate\Contracts\View\View;
 /** The talent pages: every spec with its characters at /talents, one spec at /talents/{class}/{spec}. Both are public. */
 class TalentsController extends Controller
 {
-    public function index(ScopeRequest $request, ResolveScope $scopes, TalentSpecs $specs, ListRulesets $rulesets): View
+    public function index(ScopeRequest $request, ResolveScope $scopes, TalentSpecs $specs, TalentSplits $splits, ListRulesets $rulesets): View
     {
         $scope = $scopes->handle($request->rulesetSlug(), $request->serverFilter());
         abort_if($scope === null, 404);
 
         return view('pages.talents', [
-            'd' => TalentSpecPage::index($specs->handle($scope)),
+            'd' => TalentSpecPage::index($specs->handle($scope), $splits->handle($scope)),
             'filters' => Filters::onPage($scope, $rulesets->handle(), '/talents'),
         ]);
     }
