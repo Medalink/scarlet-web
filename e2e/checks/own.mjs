@@ -110,7 +110,7 @@ export async function accountWithNoCharacterSeesThePlainState(ctx) {
 
 const OWN_CAMPS = "/camps?scope=mine";
 const CAMP_SHOWS = [
-  "Visits 1", "Characters 1", "Median visit 1m 30s", "Earn Camp Benefits 100%", "Camp Benefits you leave with",
+  "Visits 1", "Characters 1", "Median visit 1m 30s", "Visits that earned Camp Benefits 100%",
   "Basic Campfire 100% of visits", "Elwynn Forest 1 visit", `1 of your ${INSTALL_CHARACTERS.length} characters`, "Your characters by time by the fire", ECHO.replace("-", " "), "Everyone's camps", "When you camp",
 ];
 const CAMP_STRANGER = ["Visits 2", "Characters 2"];
