@@ -5,6 +5,10 @@ namespace App\View;
 /** Item class, subclass and equip slot ids as the words a player uses: "mail feet", "two-handed axe". */
 final class ItemTypes
 {
+    public const int WEAPON = 2;
+
+    public const int FISHING_POLE = 20;
+
     private const array CLASSES = [
         0 => 'consumable', 1 => 'container', 2 => 'weapon', 3 => 'gem', 4 => 'armor', 5 => 'reagent', 6 => 'projectile', 7 => 'trade good',
         9 => 'recipe', 11 => 'quiver', 12 => 'quest item', 13 => 'key', 15 => 'miscellaneous item',

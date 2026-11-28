@@ -89,13 +89,13 @@ final class LootRows
 
                 return ['cells' => [$item, Format::number($row['dropped']), $source]];
             }
-            $named = $best === null || $kind === null ? null : ($best['source'] === null && $zone !== null
+            $named = $kind === null ? null : ($best['source'] === null && $zone !== null
                 ? $kind->kindIn($zone['name'] ?? 'Zone '.$zone['id'])
                 : $kind->title($best['source'], $best['source_id']));
 
             return ['cells' => [
                 $item, Format::number($row['dropped']), Format::number($row['sources']),
-                $named === null || $best === null || $kind === null ? '–' : ['text' => $named, 'href' => $kind->page($best['source_id'])],
+                $named === null ? '–' : ['text' => $named, 'href' => $kind->page($best['source_id'])],
                 $best === null ? '–' : ['rate' => $best['estimate'], 'counts' => true],
                 $zone === null ? '–' : self::zone($zone),
             ]];

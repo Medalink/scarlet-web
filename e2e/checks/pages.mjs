@@ -24,7 +24,7 @@ const PAGES = [
   { path: "/talents", shows: heading("Talents") },
   { path: "/stats/compare", shows: heading("Rulesets compared") },
   { path: "/stats/unidentified", shows: heading("(?:[\\d,]+ hours of WoW Forever, )?Not identified") },
-  { path: "/professions", shows: heading("Twelve professions") },
+  { path: "/professions", shows: heading("Professions") },
   { path: "/rulesets", shows: heading("Rulesets compared") },
   { path: "/rulesets/unidentified", shows: heading("(?:[\\d,]+ hours of WoW Forever, )?Not identified") },
   { path: `/c/${NAME}`, shows: heading(SHOWN) },

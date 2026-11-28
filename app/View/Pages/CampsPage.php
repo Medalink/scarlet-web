@@ -167,7 +167,7 @@ final class CampsPage
      * @param  array<string, int|float|null>  $t
      * @return array{fires: list<array<string, mixed>>, placed: list<array<string, mixed>>}|null
      */
-    private static function setup(array $fires, array $t, int $visits): array
+    private static function setup(array $fires, array $t, int $visits): ?array
     {
         $top = max([1, ...array_column($fires, 'visits')]);
         $rows = fn (array $items, callable $share): array => array_map(fn (array $item, int $i): array => [

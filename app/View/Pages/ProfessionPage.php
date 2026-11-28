@@ -56,6 +56,17 @@ final class ProfessionPage
         return ['modules' => $modules, 'layout' => $layout];
     }
 
+    /**
+     * The figures that have a number: a tile that reads a dash or zero is left out.
+     *
+     * @param  list<array<string, mixed>>  $figures
+     * @return list<array<string, mixed>>
+     */
+    public static function shown(array $figures): array
+    {
+        return array_values(array_filter($figures, fn (array $figure): bool => preg_match('/[1-9]/', (string) $figure['value']) === 1 || isset($figure['unit'])));
+    }
+
     /** @return array{label: string, value: string, icon: string} a figure, with a dash while the scope is under the character threshold or the number is unknown */
     public static function figure(bool $few, string $label, ?string $value, string $icon): array
     {

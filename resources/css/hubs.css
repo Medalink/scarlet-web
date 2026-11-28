@@ -634,3 +634,7 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .back { display: inline-block; margin-top: 28px; font-size: 13.5px; color: var(--muted); }
 .back:hover { color: var(--fg); }
 }
+
+@layer components {
+.sc-group { margin-top: 40px; font: 750 28px/1 var(--display); color: var(--fg); }
+}

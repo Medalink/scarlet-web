@@ -7,10 +7,15 @@ use App\Support\Board;
 use App\Support\GatherKind;
 use App\Support\ItemIcons;
 use App\View\Format;
+use App\View\ItemTypes;
+use Illuminate\Support\Facades\DB;
 
 /** The data of docs/comps/fishing.html from the answer of App\Actions\Public\GatheringDashboard, in the shape of ProfessionPage. */
 final class GatheringPage
 {
+    /** The trips a trip summary needs before it says anything. */
+    private const int MIN_TRIPS = 10;
+
     /** The width of the longest bar in the catches table, in rem. */
     private const float BAR_REM = 5.6;
 
@@ -217,7 +222,12 @@ final class GatheringPage
             'share' => $part / $attempts * 100,
             'href' => $href,
         ];
-        $ends = [$row($w['gave'], (int) $t['looted'], true), $row($w['none'], $attempts - (int) $t['looted']), $row('In combat', (int) $t['in_combat'])];
+        $ends = [$row($w['gave'], (int) $t['looted'], true)];
+        foreach ([[$w['none'], $attempts - (int) $t['looted']], ['In combat', (int) $t['in_combat']]] as [$label, $part]) {
+            if ($part > 0) {
+                $ends[] = $row($label, $part);
+            }
+        }
         if ($kind === GatherKind::Ore && (int) $t['first_strikes'] > 0) {
             $ends[] = $row('First strike on a vein', (int) $t['first_strikes']);
             $ends[] = $row('Later strike on the same vein', $attempts - (int) $t['first_strikes']);
@@ -237,7 +247,7 @@ final class GatheringPage
      */
     private static function trip(array $t, array $w): ?array
     {
-        if ($t['median_trip_seconds'] === null) {
+        if ($t['median_trip_seconds'] === null || (int) $t['trips'] < self::MIN_TRIPS || (float) ($t['median_trip_attempts'] ?? 0) < 2) {
             return null;
         }
 
@@ -277,6 +287,13 @@ final class GatheringPage
     private static function poles(array $rows, int $casts): ?array
     {
         if ($rows === [] || $casts === 0) {
+            return null;
+        }
+        $others = DB::table('items')->whereIn('item_id', array_map(fn (array $row): int => (int) $row['item_id'], $rows))->whereNotNull('class_id')
+            ->where(fn ($query) => $query->where('class_id', '<>', ItemTypes::WEAPON)->orWhere('subclass_id', '<>', ItemTypes::FISHING_POLE))
+            ->pluck('item_id')->map(fn (mixed $id): int => (int) $id)->all();
+        $rows = array_values(array_filter($rows, fn (array $row): bool => ! in_array((int) $row['item_id'], $others, true)));
+        if ($rows === []) {
             return null;
         }
         $icons = ItemIcons::icons(array_map(fn (array $row): int => (int) $row['item_id'], $rows));
