@@ -4,34 +4,44 @@
   <p class="text-[14.5px]"><a href="/feats">Feats</a> <span class="text-muted">· {{ $d['collection'] }}</span></p>
   <div class="mt-4 flex items-center gap-6">
     <x-crest :glyph="$d['glyph']" :feat-key="$d['key']" :tier="$d['tier']" :size="104" :label="$d['name']" />
-    @if ($d['account'])<x-crest :glyph="$d['glyph']" scope="account" :tier="$d['account']['tier']" :size="104" :label="$d['name'].' on the account'" />@endif
     <div class="min-w-0">
       <h1 class="sc-title text-[40px] md:text-[60px]">{{ $d['name'] }}</h1>
       <p class="mt-3 text-[15px]">{{ $d['line'] }}@if ($d['mine']) {{ $d['mine']['name'] }} has {{ $d['mine']['count'] }}.@endif</p>
     </div>
   </div>
 
-  <section class="mt-10 grid gap-10 lg:grid-cols-[400px_minmax(0,1fr)]">
+  <section class="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
     <div class="sc-panel self-start px-5 py-5">
-      <h2 class="sc-h text-[24px]">Tiers</h2>
-      <x-sc.ladder class="mt-5" :rows="$d['ladder']" :feat="['glyph' => $d['glyph'], 'key' => $d['key'], 'family' => $family]" />
-      <p class="sc-label mt-5">{{ $d['shares'] ? 'Share of characters holding each tier or higher' : 'Shares appear once 20 characters are counted' }}</p>
-      @if ($d['account'])
-        <h2 class="sc-h mt-8 text-[24px]">Account tiers</h2>
-        @if ($d['account']['card'])<x-sc.feat class="mt-5" :feat="$d['account']['card']" />@endif
-        <x-sc.ladder class="mt-5" :rows="$d['account']['ladder']" :feat="['glyph' => $d['glyph'], 'key' => $d['key']]" scope="account" />
-      @endif
+      @php($sideBySide = ! $d['shares'] && $d['account'])
+      <div @class(['grid gap-8', 'sm:grid-cols-2' => $sideBySide])>
+        <div>
+          <h2 class="sc-h text-[24px]">{{ $d['account'] ? 'Character tiers' : 'Tiers' }}</h2>
+          <x-sc.ladder class="mt-5" :rows="$d['ladder']" :feat="['glyph' => $d['glyph'], 'key' => $d['key'], 'family' => $family]" />
+          @if ($d['shares'])<p class="sc-label mt-5">Share of characters holding each tier or higher</p>@endif
+        </div>
+        @if ($d['account'])
+          <div>
+            <h2 class="sc-h text-[24px]">Account tiers</h2>
+            @if ($d['account']['card'])<x-sc.feat class="mt-5" :feat="$d['account']['card']" />@endif
+            <x-sc.ladder class="mt-5" :rows="$d['account']['ladder']" :feat="['glyph' => $d['glyph'], 'key' => $d['key']]" scope="account" />
+          </div>
+        @endif
+      </div>
     </div>
     <div class="grid gap-10">
       <div>
         <h2 class="sc-h text-[30px]">Highest counts</h2>
+        @php($most = max(1, ...array_column($d['top'], 'value')))
         @forelse ($d['top'] as $row)
-          @if ($loop->first)<ol class="mt-4 grid gap-px border-t border-line">@endif
-          <li class="flex items-baseline gap-3 border-b border-line py-2.5 text-[14.5px]">
-            <span class="w-6 text-muted">{{ $loop->iteration }}</span>
-            <a href="{{ $row['href'] }}" class="font-semibold">{{ $row['name'] }}</a>
-            @if ($row['tierName'])<span class="sc-chip t{{ $row['tier'] }}">{{ $row['tierName'] }}</span>@endif
-            <span class="ml-auto text-muted">{{ $row['count'] }}</span>
+          @if ($loop->first)<p class="mt-4 flex border-b border-line pb-1.5 text-[12.5px] text-muted"><span>Character</span><span class="ml-auto">{{ $d['unit'] }}</span></p><ol class="grid">@endif
+          <li class="border-b border-line py-2.5 text-[14.5px]">
+            <div class="flex items-baseline gap-3">
+              <span class="w-6 text-muted">{{ $loop->iteration }}</span>
+              <a href="{{ $row['href'] }}" class="font-semibold">{{ $row['name'] }}</a>
+              @if ($row['tierName'])<span class="sc-chip t{{ $row['tier'] }}">{{ $row['tierName'] }}</span>@endif
+              <span class="ml-auto text-fg">{{ $row['count'] }}</span>
+            </div>
+            <span class="sc-bar3 mt-2" style="--w:{{ round($row['value'] / $most * 100, 1) }}%"></span>
           </li>
           @if ($loop->last)</ol>@endif
         @empty
@@ -39,7 +49,7 @@
         @endforelse
       </div>
       <div>
-        <h2 class="sc-h text-[30px]">Reached a tier last</h2>
+        <h2 class="sc-h text-[30px]">Recent tier completions</h2>
         @forelse ($d['recent'] as $row)
           @if ($loop->first)<ul class="mt-4 grid gap-px border-t border-line">@endif
           <li class="flex items-baseline gap-3 border-b border-line py-2.5 text-[14.5px]">
@@ -57,7 +67,7 @@
 
   @if ($d['others'] !== [])
     <section class="mt-12">
-      <x-sc.collection :name="$d['collection']" :family="$family" :feats="$d['others']" :counts="false" class="!border-t-0" />
+      <x-sc.collection :name="'Other '.$d['collection'].' feats'" :family="$family" :feats="$d['others']" :counts="false" class="!border-t-0" />
     </section>
   @endif
 </div>

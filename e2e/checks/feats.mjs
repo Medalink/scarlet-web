@@ -191,7 +191,7 @@ export async function featsHubFollowsTheScope(ctx) {
     throw new Error("/feats on everyone should show the catalog without the character's head");
   }
   const page = expectStatus(await ctx.http.page("/feats/slayer"), 200, "GET /feats/slayer");
-  if (!heading("Slayer").test(page.text) || !page.text.includes("Reached a tier last")) {
+  if (!heading("Slayer").test(page.text) || !page.text.includes("Recent tier completions")) {
     throw new Error(`/feats/slayer should show the feat, its tiers and who reached one last, saw ${page.text.slice(0, 400)}`);
   }
   expectStatus(await ctx.http.page("/feats/not-a-feat"), 404, "GET /feats/not-a-feat");

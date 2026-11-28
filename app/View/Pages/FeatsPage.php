@@ -41,6 +41,7 @@ final class FeatsPage
             'tierChips' => $keep ? self::tierChips($query) : [],
             'familyChips' => self::familyChips($feats, $query, $keep),
             'search' => $query['q'] ?? '',
+            'family' => $query['family'] ?? null,
             'hidden' => self::hidden($query),
             'wall' => self::wall($shown, $query, $picked['key'] ?? null),
             'count' => count($shown),

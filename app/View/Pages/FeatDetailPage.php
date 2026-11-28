@@ -28,13 +28,14 @@ final class FeatDetailPage
             'line' => self::line($feat),
             'ladder' => FeatLadder::rows($kind, $feat['thresholds'], $feat['shares'], $mine['tier'] ?? null, $you),
             'shares' => $feat['shares'] !== null,
+            'unit' => ucfirst($feat['many']),
             'top' => array_map(fn (array $row): array => [
                 'name' => Format::characterName($row['character']), 'href' => '/c/'.rawurlencode($row['character']), 'tier' => $row['tier'],
-                'tierName' => $row['tier'] > 0 ? Crest::TIER_NAMES[$row['tier']] : null, 'count' => FeatText::counted($kind, $row['value']),
+                'tierName' => $row['tier'] > 0 ? Crest::TIER_NAMES[$row['tier']] : null, 'count' => FeatText::amount($kind, $row['value']), 'value' => (float) $row['value'],
             ], $feat['top']),
             'recent' => array_map(fn (array $row): array => [
                 'name' => Format::characterName($row['character']), 'href' => '/c/'.rawurlencode($row['character']), 'tier' => $row['tier'],
-                'tierName' => Crest::TIER_NAMES[$row['tier']], 'when' => Dates::day($row['at']),
+                'tierName' => Crest::TIER_NAMES[$row['tier']], 'when' => Dates::moment($row['at']),
             ], $feat['recent']),
             'others' => array_map(fn (array $other): array => [
                 'key' => $other['key'], 'name' => $other['name'], 'glyph' => $other['glyph'], 'family' => $other['family'], 'tier' => $answer['held'][$other['key']]['tier'] ?? 0, 'progress' => $answer['held'][$other['key']]['progress'] ?? 0,

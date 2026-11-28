@@ -61,23 +61,38 @@
 
   <section class="mt-14 grid gap-10 lg:grid-cols-[minmax(0,1fr)_330px]">
     <div>
-      <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
-        <h2 class="sc-h text-[30px]">{{ $d['who'] }}</h2>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+        @if ($d['tierChips'] !== [])
+          <nav class="flex flex-wrap gap-2" aria-label="Tier">@foreach ($d['tierChips'] as $chip)<a href="{{ $chip['href'] }}" @class(['sc-chipbtn no-underline', 'on' => $chip['on']])>{{ $chip['label'] }}</a>@endforeach</nav>
+        @endif
         <form class="sc-field ml-auto" method="get" action="/feats" role="search">
           @foreach ($d['hidden'] as $key => $value)<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endforeach
           <input type="search" name="q" value="{{ $d['search'] }}" placeholder="Find a feat" aria-label="Find a feat" maxlength="40">
         </form>
       </div>
-      @if ($d['tierChips'] !== [])
-        <nav class="mt-4 flex flex-wrap gap-2" aria-label="Tier">@foreach ($d['tierChips'] as $chip)<a href="{{ $chip['href'] }}" @class(['sc-chipbtn no-underline', 'on' => $chip['on']])>{{ $chip['label'] }}</a>@endforeach</nav>
-      @endif
       <nav class="mt-2 flex flex-wrap gap-2" aria-label="Family">@foreach ($d['familyChips'] as $chip)<a href="{{ $chip['href'] }}" @class(['sc-chipbtn no-underline', 'on' => $chip['on']])>{{ $chip['label'] }}</a>@endforeach</nav>
       <div class="mt-6" id="wall">
         @if ($d['account'])
           <x-sc.collection :name="$d['account']['name']" :family="$d['account']['family']" :feats="$d['account']['feats']" :count="$d['account']['held'].' of '.$d['account']['total']" />
         @endif
-        @forelse ($d['wall'] as $collection)
-          <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :counts="$d['mode'] !== 'everyone'" />
+        @php
+          $grouped = [];
+          foreach ($d['wall'] as $collection) {
+            $by = in_array($collection['family'], ['class', 'role'], true) ? $collection['family'].':'.trim(explode(',', $collection['name'])[0]) : 'loose:'.$collection['name'];
+            $grouped[$by][] = $collection;
+          }
+        @endphp
+        @forelse ($grouped as $key => $collections)
+          @if (str_starts_with($key, 'loose:'))
+            <x-sc.collection :name="$collections[0]['name']" :family="$collections[0]['family']" :feats="$collections[0]['feats']" :counts="$d['mode'] !== 'everyone'" />
+          @else
+            <details class="sc-coll-group" @if (in_array($d['family'], ['class', 'role'], true) || $d['search'] !== '') open @endif>
+              <summary><span class="sc-coll-h">{{ trim(explode(',', $collections[0]['name'])[0]) }}</span> <span class="sc-coll-n">{{ array_sum(array_map(fn ($c) => count($c['feats']), $collections)) }} feats</span></summary>
+              @foreach ($collections as $collection)
+                <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :counts="$d['mode'] !== 'everyone'" />
+              @endforeach
+            </details>
+          @endif
         @empty
           <p class="sc-note">No feat matches.</p>
         @endforelse
@@ -88,7 +103,7 @@
       <aside id="feat" class="sc-aside sc-panel self-start px-5 py-5 lg:sticky lg:top-6">
         <x-sc.feat :feat="['key' => $aside['key'], 'glyph' => $aside['glyph'], 'family' => $aside['family'], 'tier' => $aside['tier'], 'progress' => $aside['progress'], 'spell' => $aside['spell'], 'name' => $aside['name'], 'count' => $aside['count'], 'to' => $aside['to']]" :size="64" />
         <x-sc.ladder class="mt-6" :rows="$aside['ladder']" :feat="$aside" />
-        <p class="sc-label mt-5">{{ $aside['shares'] ? 'Share of characters holding each tier or higher' : 'Shares appear once 20 characters are counted' }}</p>
+        @if ($aside['shares'])<p class="sc-label mt-5">Share of characters holding each tier or higher</p>@endif
         <hr class="sc-rule my-4">
         <p class="flex items-center gap-3 text-[13.5px]"><a href="{{ $aside['href'] }}">Open {{ $aside['name'] }}</a></p>
       </aside>
