@@ -19,12 +19,16 @@ class SignIn
     /** The fixed identity of the development sign-in. */
     public const string DEVELOPMENT_SUBJECT = 'development-1';
 
+    /** The fixed Battle.net identity the development sign-in can make, so a local account can hold an API key. */
+    public const string DEVELOPMENT_BATTLENET_SUBJECT = 'development-battlenet-1';
+
     private const int SUBJECT_LENGTH = 128;
 
     /** @throws AuthorizationException when the development sign-in is asked for where it must not exist */
     public function handle(IdentityProvider $provider, string $subject, ?Account $signedIn = null): SignInResult
     {
-        if ($provider === IdentityProvider::Development && ! IdentityProvider::developmentAllowed()) {
+        $development = $provider === IdentityProvider::Development || $subject === self::DEVELOPMENT_BATTLENET_SUBJECT;
+        if ($development && ! IdentityProvider::developmentAllowed()) {
             throw new AuthorizationException('The development sign-in does not exist here.');
         }
 

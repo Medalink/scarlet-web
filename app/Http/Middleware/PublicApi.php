@@ -17,13 +17,12 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * What every /api/v1/public answer shares: the rate limit (per client address, or per account when a personal access
- * token with the `public:read` ability is sent as a bearer token), open CORS, and HTTP caching with an ETag. An answer
- * to an anonymous caller may sit in a shared cache (Cloudflare) for `scarlet.edge.api_seconds`, or `NAMED_MAX_AGE` when
- * it names characters; one to a caller with credentials is private. The origin keeps each successful answer for
- * `ANSWER_SECONDS`, keyed by the endpoint and the parameters PublicRequest validates, so callers that miss the edge
- * (keys, unknown query parameters, another spelling of a name) do not each run its queries.
- * Every answer says `X-Robots-Tag: noindex`, which keeps the JSON out of search results while pages may still fetch it.
+ * What every /api/v1/public answer shares: an API key (a personal access token with the `public:read` ability, sent as
+ * a bearer token and never read from the query string), the rate limit per account, open CORS, and private HTTP caching
+ * with an ETag, so no answer sits in a shared cache. A request with no key is `401 missing_key`. The origin keeps each
+ * successful answer for `ANSWER_SECONDS`, keyed by the endpoint and the parameters PublicRequest validates, so keys
+ * that ask the same thing (unknown query parameters, another spelling of a name) do not each run its queries.
+ * Every answer says `X-Robots-Tag: noindex`, which keeps the JSON out of search results.
  */
 class PublicApi
 {
@@ -32,6 +31,9 @@ class PublicApi
 
     /** The request attribute that holds the id of the account whose API key was accepted. */
     public const string ACCOUNT_ATTRIBUTE = 'api-account';
+
+    /** The request attribute that holds the requests the key's account had counted in the current rate-limit window. */
+    public const string WINDOW_ATTRIBUTE = 'api-window-hits';
 
     public const int MAX_AGE = 300;
 
@@ -58,13 +60,15 @@ class PublicApi
         try {
             [$key, $max] = $this->budget($request, $address);
         } catch (ApiException $refusal) {
-            return $this->headers($request, $endpoint, self::refusal($refusal), (int) config('scarlet.rate.public.anonymous'), 0);
+            return $this->headers($request, $endpoint, self::refusal($refusal), (int) config('scarlet.rate.public.token'), 0);
         }
 
         if ($this->limiter->tooManyAttempts($key, $max)) {
+            $request->attributes->set(self::WINDOW_ATTRIBUTE, $this->limiter->attempts($key));
+
             return $this->headers($request, $endpoint, self::refusal(ApiException::rateLimited($this->limiter->availableIn($key))), $max, 0);
         }
-        $this->limiter->hit($key, 60);
+        $request->attributes->set(self::WINDOW_ATTRIBUTE, $this->limiter->hit($key, 60));
 
         $response = $this->answer($request, $endpoint, $next);
 
@@ -80,13 +84,13 @@ class PublicApi
     /**
      * @return array{0: string, 1: int} the limiter key and the requests allowed per minute
      *
-     * @throws ApiException when the bearer token is unknown, expired or lacks the ability, or the address sent too many such tokens
+     * @throws ApiException when there is no bearer token, it is unknown, expired or lacks the ability, or the address sent too many such tokens
      */
     private function budget(Request $request, string $address): array
     {
         $bearer = $request->bearerToken();
         if ($bearer === null) {
-            return ['api-public-ip:'.$address, (int) config('scarlet.rate.public.anonymous')];
+            throw ApiException::missingKey();
         }
 
         $refused = 'api-public-bad-token:'.$address;
@@ -189,9 +193,7 @@ class PublicApi
         $maxAge = self::maxAge($endpoint);
         $etag = '"'.md5((string) $response->getContent()).'"';
         $response->headers->set('ETag', $etag);
-        $response->headers->set('Cache-Control', $request->headers->has('Authorization')
-            ? 'private, max-age='.$maxAge
-            : 'public, max-age='.$maxAge.', s-maxage='.min($maxAge, (int) config('scarlet.edge.api_seconds')));
+        $response->headers->set('Cache-Control', 'private, max-age='.$maxAge);
         if ($request->headers->get('If-None-Match') === $etag) {
             $response->setNotModified();
         }

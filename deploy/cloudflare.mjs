@@ -7,7 +7,7 @@
 //   node deploy/cloudflare.mjs settings                     always use https, minimum TLS 1.2, TLS 1.3, HSTS untouched
 //   node deploy/cloudflare.mjs ssl off|flexible|full|strict the zone's SSL mode
 //   node deploy/cloudflare.mjs aop on|off                   Authenticated Origin Pulls for the zone
-//   node deploy/cloudflare.mjs cache-rules                  the Cache Rules: the public API, the public art and the public pages, for visitors without a session
+//   node deploy/cloudflare.mjs cache-rules                  the Cache Rules: the public art and the public pages, for visitors without a session
 //   node deploy/cloudflare.mjs origin-cert <csr> <out.pem>  an Origin CA certificate for the apex and *.scarletweb.io
 //   node deploy/cloudflare.mjs status                       the settings above, as the zone has them
 //
@@ -62,13 +62,9 @@ async function record(type, name, content) {
 
 const HOST = `http.host eq "${ZONE}"`;
 const NO_CREDENTIALS = 'not any(lower(http.request.headers.names[*])[*] eq "authorization") and not http.cookie contains "scarlet_session" and not http.cookie contains "remember_web_"';
-const PAGES = ['/', '/demo', '/stats', '/map', '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/talents', '/rulesets'];
+const PAGES = ['/', '/demo', '/stats', '/map', '/map/density', '/search', '/developers', '/release-notes', '/download', '/leaderboards', '/talents', '/rulesets'];
 const PAGE_PREFIXES = ['/c/', '/creatures/', '/items/', '/spells/', '/encounters/', '/zones/', '/quests/', '/leaderboards/', '/talents/', '/rulesets/'];
 const CACHE_RULES = [
-  {
-    description: 'Public API for callers without credentials',
-    expression: `${HOST} and starts_with(http.request.uri.path, "/api/v1/public/") and ${NO_CREDENTIALS}`,
-  },
   {
     description: 'Map tile manifest',
     expression: `${HOST} and http.request.uri.path eq "/map-tiles/manifest.json"`,

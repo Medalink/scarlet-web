@@ -1,5 +1,5 @@
 // Page glue for the world map viewer: mounts every canvas that carries a `data-world-map` spec, wires the pointer
-// readout, the layer buttons (which read the public API), the zone picker, the list that moves the map to a zone
+// readout, the layer buttons (which read /map/density), the zone picker, the list that moves the map to a zone
 // (`a[data-map-sheet]`) and, on a personal map, the travel and flight path switches over the trails its spec names.
 // The drawing is resources/js/map.
 // Text the readout shows comes in the spec already formatted, so nothing is formatted here.

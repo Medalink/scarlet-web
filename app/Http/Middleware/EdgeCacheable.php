@@ -23,7 +23,7 @@ class EdgeCacheable
     private const string CACHE_KEY = 'page:';
 
     /** The query parameters any public page reads; every other parameter is dropped from the cache key. */
-    private const array QUERY = ['a', 'as', 'b', 'character', 'class', 'cursor', 'family', 'feat', 'kind', 'layer', 'level', 'marks', 'max', 'min', 'only', 'q', 'quality', 'rule', 'ruleset', 'scope', 'server', 'sessions', 'sort', 'source', 'tier', 'v', 'view', 'zone'];
+    private const array QUERY = ['a', 'as', 'b', 'character', 'class', 'creature', 'cursor', 'family', 'feat', 'kind', 'layer', 'level', 'marks', 'max', 'min', 'only', 'q', 'quality', 'rule', 'ruleset', 'scope', 'server', 'sessions', 'sort', 'source', 'tier', 'v', 'view', 'zone'];
 
     public function handle(Request $request, Closure $next): Response
     {

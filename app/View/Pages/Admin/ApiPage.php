@@ -25,23 +25,23 @@ final class ApiPage
         $daily = $a['daily'];
         $days = AdminCharts::days($keep);
         $column = fn (string $key): array => AdminCharts::over($days, array_map(fn (array $day): int => $day[$key], $daily));
-        [$anonymous, $keyed, $upload] = [$column('anonymous'), $column('keyed'), $column('upload')];
+        [$keyless, $keyed, $upload] = [$column('keyless'), $column('keyed'), $column('upload')];
         [$addresses, $accounts, $installs] = [$column('addresses'), $column('accounts'), $column('installs')];
         $sum = fn (string $key): int => array_sum(array_column($daily, $key));
-        $say = array_map(fn (int $i): array => Format::line(Dates::text($days[$i]), ': '.Format::count($anonymous[$i] + $keyed[$i], 'request').', '.Format::number($anonymous[$i]).' anonymous and '.Format::number($keyed[$i]).' with a key.'), array_keys($days));
+        $say = array_map(fn (int $i): array => Format::line(Dates::text($days[$i]), ': '.Format::count($keyless[$i] + $keyed[$i], 'request').', '.Format::number($keyless[$i]).' without a valid key and '.Format::number($keyed[$i]).' with a key.'), array_keys($days));
 
         return [
             'nav' => AdminCharts::nav('/admin/api'),
-            'sub' => 'Requests that reached the origin in the last '.$keep.' days. An anonymous answer served from the edge cache never reaches the origin, so it is not counted here. Addresses are kept for '.$keep.' days.',
+            'sub' => 'Requests in the last '.$keep.' days. Addresses are kept for '.$keep.' days.',
             'figures' => [
-                ['label' => 'Anonymous requests', 'value' => Format::number($sum('anonymous')), 'icon' => null],
+                ['label' => 'Requests without a valid key', 'value' => Format::number($sum('keyless')), 'icon' => null],
                 ['label' => 'Requests with a key', 'value' => Format::number($sum('keyed')), 'icon' => null],
                 ['label' => 'Upload requests', 'value' => Format::number($sum('upload')), 'icon' => null],
                 ['label' => 'Addresses', 'value' => Format::number($t['addresses']), 'icon' => null],
                 ['label' => 'Accounts using a key', 'value' => Format::number($t['accounts']), 'icon' => null],
                 ['label' => 'Installs uploading', 'value' => Format::number($t['installs']), 'icon' => null],
             ],
-            'public' => AdminCharts::stack($days, [$anonymous, $keyed], ['s1', 's5'], $say),
+            'public' => AdminCharts::stack($days, [$keyless, $keyed], ['s1', 's5'], $say),
             'upload' => AdminCharts::bars($days, $upload, AdminCharts::THIRD, 't'),
             'addresses' => AdminCharts::lines($days, [['cls' => 'a', 'values' => $addresses]], AdminCharts::THIRD),
             'addressesNote' => AdminCharts::most($days, $addresses, 'addresses'),
@@ -50,7 +50,7 @@ final class ApiPage
             'installs' => AdminCharts::lines($days, [['cls' => 'a', 'values' => $installs]], AdminCharts::THIRD),
             'installsNote' => AdminCharts::most($days, $installs, 'installs'),
             'addressRows' => self::addresses($a['addresses']),
-            'accountRows' => self::accounts($a['accounts']),
+            'accountRows' => self::accounts($a['accounts'], (int) $a['perMinute']),
             'endpoints' => self::endpoints($a['endpoints']),
             'installRows' => self::installs($a['installs']),
             'characters' => self::characters($a['characters']),
@@ -77,18 +77,24 @@ final class ApiPage
     }
 
     /**
-     * @param  list<array{account_id: int, keys: int, requests: int, addresses: int, last_at: string|null}>  $rows
+     * @param  list<array{account_id: int, keys: int, expired: int, newest: string|null, soonest: string|null, last_at: string|null, today: int, week: int, requests: int, busiest: int, limited: int}>  $rows
      * @return list<array<string, mixed>>
      */
-    private static function accounts(array $rows): array
+    private static function accounts(array $rows, int $perMinute): array
     {
-        $top = max([1, ...array_column($rows, 'requests')]);
+        $top = max([1, ...array_column($rows, 'week')]);
 
         return array_map(fn (array $row): array => ['cells' => [
             '#'.$row['account_id'],
-            Format::number($row['keys']),
-            ['text' => Format::number($row['requests']), 'bar' => round($row['requests'] / $top * 9, 1).'rem'],
+            $row['keys'] === 0 ? ['text' => '0', 'note' => 'deleted'] : ['text' => Format::number($row['keys']), ...($row['expired'] > 0 ? ['note' => Format::number($row['expired']).' expired'] : [])],
+            $row['newest'] === null ? '' : ['date' => Dates::day($row['newest'])],
+            $row['soonest'] !== null ? ['date' => Dates::day($row['soonest'])] : ['text' => '', 'note' => $row['keys'] === 0 ? '' : 'All expired'],
             $row['last_at'] === null ? ['text' => '', 'note' => 'Never'] : self::when($row['last_at']),
+            Format::number($row['today']),
+            ['text' => Format::number($row['week']), 'bar' => round($row['week'] / $top * 6, 1).'rem'],
+            Format::number($row['requests']),
+            ['text' => Format::number($row['busiest']).' of '.Format::number($perMinute), ...($row['busiest'] >= $perMinute ? ['tag' => 'At the limit'] : [])],
+            Format::number($row['limited']),
         ]], $rows);
     }
 

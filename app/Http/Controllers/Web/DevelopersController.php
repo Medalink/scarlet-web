@@ -7,7 +7,7 @@ use App\View\Pages\DevelopersPage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
-/** The public API reference, read from App\Support\PublicApiCatalog. Public. */
+/** The API reference, read from App\Support\PublicApiCatalog. Public. */
 class DevelopersController extends Controller
 {
     public function __invoke(Request $request): View

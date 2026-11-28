@@ -13,12 +13,15 @@ final class DevelopersPage
     /** The path every endpoint sits under. */
     public const string BASE = '/api/v1/public';
 
+    /** The header every example sends: the reader's key in the environment variable `SCARLET_API_KEY`. */
+    public const string KEY_HEADER = '-H "Authorization: Bearer $SCARLET_API_KEY"';
+
     private const int COLLAPSE_FROM = 320;
 
     /** @return array<string, mixed> */
     public static function data(string $host): array
     {
-        $basics = [['#use', 'Using the API'], ['#limits', 'Limits and keys'], ['#pages', 'Pagination'], ['#errors', 'Errors']];
+        $basics = [['#use', 'Using the API'], ['#keys', 'API keys'], ['#limits', 'Limits'], ['#pages', 'Pagination'], ['#errors', 'Errors']];
         $groups = [];
         $endpoints = [];
         $examples = self::examples();
@@ -32,7 +35,7 @@ final class DevelopersPage
                 'returns' => self::inline($endpoint['returns']),
                 'long' => mb_strlen($endpoint['returns']) > self::COLLAPSE_FROM,
                 'params' => array_map(fn (array $param): array => [$param[0], new HtmlString(e(ucfirst($param[1] === 'path' ? 'in the path' : 'query')).', '.e($param[2]).'. '.self::inline($param[3]))], PublicApiCatalog::params($endpoint['params'])),
-                'curl' => 'curl '.$host.self::BASE.$endpoint['example'],
+                'curl' => 'curl '.self::KEY_HEADER.' '.$host.self::BASE.$endpoint['example'],
                 'example' => $examples[$endpoint['name']] ?? null,
             ];
         }
@@ -44,9 +47,12 @@ final class DevelopersPage
                 ...array_map(fn (string $title, array $links): array => ['title' => $title, 'links' => $links], array_keys($groups), array_values($groups)),
             ],
             'endpoints' => $endpoints,
-            'anonymous' => (int) config('scarlet.rate.public.anonymous'),
             'token' => (int) config('scarlet.rate.public.token'),
             'ability' => Account::API_ABILITY,
+            'keyDays' => Account::API_KEY_DAYS,
+            'keyMaxDays' => Account::API_KEY_MAX_DAYS,
+            'maxKeys' => Account::MAX_API_KEYS,
+            'keyHeader' => self::KEY_HEADER,
             'maxAge' => PublicApi::MAX_AGE,
             'namedMaxAge' => PublicApi::NAMED_MAX_AGE,
             'badTokens' => PublicApi::BAD_TOKENS_PER_MINUTE,

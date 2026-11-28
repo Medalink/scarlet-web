@@ -56,6 +56,7 @@ class RecordApiCall
                 $found && is_string($name) ? Character::keyFor($name) : '',
                 $status >= Response::HTTP_BAD_REQUEST && $status !== Response::HTTP_NOT_FOUND,
                 $status === Response::HTTP_TOO_MANY_REQUESTS,
+                (int) $request->attributes->get(PublicApi::WINDOW_ATTRIBUTE, 0),
             );
         } catch (QueryException $e) {
             report($e);

@@ -42,7 +42,6 @@ class ApiLimits
     private static function budgets(): array
     {
         return [
-            'public_anonymous' => (int) config('scarlet.rate.public.anonymous'),
             'public_token' => (int) config('scarlet.rate.public.token'),
             'bad_tokens' => PublicApi::BAD_TOKENS_PER_MINUTE,
             'upload_install' => (int) config('scarlet.rate.upload.per_install'),

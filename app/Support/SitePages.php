@@ -57,7 +57,7 @@ final class SitePages
             $pages[] = self::page($spec['name'].' '.$class, $path, 'Talent picks of '.$spec['name'].' '.$class.' characters', []);
         }
         $pages[] = self::page('Download', '/download', 'The Scarlet app and the addon', ['app', 'install', 'installer', 'addon', 'windows']);
-        $pages[] = self::page('API reference', '/developers', 'The public API: every path, its parameters and its answer', ['api', 'developers', 'developer', 'endpoints', 'json', 'documentation']);
+        $pages[] = self::page('API reference', '/developers', 'The API: how to get a key, every path, its parameters and its answer', ['api', 'developers', 'developer', 'endpoints', 'json', 'documentation']);
 
         return $pages;
     }

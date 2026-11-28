@@ -2,7 +2,7 @@
 
 namespace App\View\Design;
 
-/** The data of docs/comps/developers.html: the endpoints of the public API. */
+/** The data of docs/comps/developers.html: the endpoints of the API. */
 final class DevelopersPage
 {
     private const PREFIX = '/api/v1/public';

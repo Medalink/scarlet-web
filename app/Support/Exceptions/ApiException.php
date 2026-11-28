@@ -97,6 +97,11 @@ class ApiException extends RuntimeException
         return new self(401, 'invalid_token', 'The bearer token is unknown, expired, or lacks the public:read ability.');
     }
 
+    public static function missingKey(): self
+    {
+        return new self(401, 'missing_key', 'Send an API key as "Authorization: Bearer <key>". Sign in with Battle.net on scarletweb.io/account/settings and create a key there.');
+    }
+
     public static function notFound(string $what): self
     {
         return new self(404, 'not_found', $what.' was not found.');

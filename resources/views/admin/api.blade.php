@@ -7,8 +7,8 @@
   <x-figures :items="$d['figures']" />
   <x-sheet>
     <x-module span="w8" :first="true" id="h-public" heading="Public API requests per day">
-      <x-plot id="public" label="Requests to the public read API on each of the last 30 days, anonymous and with an API key" :spec="$d['public']" />
-      <x-key :items="[['label' => 'Anonymous', 'class' => 'c-s1'], ['label' => 'With an API key', 'class' => 'c-s5']]" />
+      <x-plot id="public" label="Requests to the public read API on each of the last 30 days, without a valid key and with an API key" :spec="$d['public']" />
+      <x-key :items="[['label' => 'Without a valid key', 'class' => 'c-s1'], ['label' => 'With an API key', 'class' => 'c-s5']]" />
     </x-module>
     <x-module :last="true" id="h-upload" heading="Upload API requests per day">
       <x-plot id="upload" label="Requests to the upload API on each of the last 30 days" :spec="$d['upload']" />
@@ -37,14 +37,16 @@
 @endif
     </x-module>
 
-    <x-module span="w7" :first="true" id="h-keys" heading="Accounts by API key use">
+    <x-module span="w12" :first="true" :last="true" id="h-keys" heading="Accounts with API keys">
 @if ($d['accountRows'] === [])
-      <x-note>No account has made an API key.</x-note>
+      <x-note>No account holds an API key or has called with one in these days.</x-note>
 @else
-      <x-table style="margin-top:1.1rem" :columns="[['label' => 'Account'], ['label' => 'Keys', 'numeric' => true], ['label' => 'Requests', 'numeric' => true], ['label' => 'Last used', 'numeric' => true]]" :rows="$d['accountRows']" />
+      <x-table style="margin-top:1.1rem" :columns="[['label' => 'Account'], ['label' => 'Keys', 'numeric' => true], ['label' => 'Newest key made', 'numeric' => true], ['label' => 'Soonest expiry', 'numeric' => true], ['label' => 'Last used', 'numeric' => true], ['label' => 'Today', 'numeric' => true], ['label' => '7 days', 'numeric' => true], ['label' => 'All days', 'numeric' => true], ['label' => 'Busiest minute', 'numeric' => true], ['label' => 'Answered 429', 'numeric' => true]]" :rows="$d['accountRows']" />
+      <x-note>Busiest minute is the most requests the account made in one minute, against the limit for a minute.</x-note>
 @endif
     </x-module>
-    <x-module span="w5" :last="true" id="h-endpoints" heading="Endpoints by requests">
+
+    <x-module span="w12" :first="true" :last="true" id="h-endpoints" heading="Endpoints by requests">
 @if ($d['endpoints'] === [])
       <x-note>No request has reached the API in these days.</x-note>
 @else

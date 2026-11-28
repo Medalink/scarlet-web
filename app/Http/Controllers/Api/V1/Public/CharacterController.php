@@ -7,7 +7,7 @@ use App\Http\Requests\Api\PublicRequest;
 use App\Models\Character;
 use Illuminate\Http\JsonResponse;
 
-/** A public character and its series. Private characters answer 404 to everyone, their owner included: the API has no sign-in. */
+/** A public character and its series. Private characters answer 404 to everyone, their owner included: a key does not tell the API whose character it is. */
 class CharacterController extends PublicController
 {
     /** The series of a character and the keys of the overview each one answers. */

@@ -7,7 +7,7 @@ use App\Actions\Sessions\ShowSession;
 use App\Http\Requests\Api\PublicRequest;
 use Illuminate\Http\JsonResponse;
 
-/** The sessions of a public character whose owner keeps its session pages on. Any other character answers 404, its owner included: the API has no sign-in. */
+/** The sessions of a public character whose owner keeps its session pages on. Any other character answers 404, its owner included: a key does not tell the API whose character it is. */
 class CharacterSessionsController extends PublicController
 {
     public function index(PublicRequest $request, ListSessions $list, string $name): JsonResponse

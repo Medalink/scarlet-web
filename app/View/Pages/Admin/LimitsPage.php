@@ -50,8 +50,7 @@ final class LimitsPage
             'requests' => AdminCharts::bars($days, $requests, AdminCharts::THIRD, 't'),
             'requestsNote' => AdminCharts::most($days, $requests, 'requests'),
             'budgets' => [
-                ['Public API without a key', Format::number($b['public_anonymous']).' a minute per address'],
-                ['Public API with a key', Format::number($b['public_token']).' a minute per account'],
+                ['Public API', Format::number($b['public_token']).' a minute per account, with a key'],
                 ['Bad API keys', Format::number($b['bad_tokens']).' a minute per address, then 429'],
                 ['Uploads per install', Format::number($b['upload_install']).' per '.$b['upload_seconds'].'s'],
                 ['Uploads per address', Format::number($b['upload_ip']).' per '.$b['upload_seconds'].'s'],
@@ -61,7 +60,7 @@ final class LimitsPage
                 ['Characters per install', Format::number($b['characters_per_install'])],
             ],
             'limited' => self::limited($l['limited']),
-            'busiest' => self::busiest($l['busiest'], $b['public_anonymous']),
+            'busiest' => self::busiest($l['busiest'], $b['public_token']),
             'uploads' => self::uploads($l['uploads'], $b['bytes_per_day']),
             'characters' => self::characters($l['characters'], $b['characters_per_install']),
         ];
@@ -90,13 +89,13 @@ final class LimitsPage
      * @param  list<array<string, mixed>>  $rows
      * @return list<array<string, mixed>>
      */
-    private static function busiest(array $rows, int $anonymousPerMinute): array
+    private static function busiest(array $rows, int $perMinute): array
     {
-        return array_map(function (array $row) use ($anonymousPerMinute): array {
+        return array_map(function (array $row) use ($perMinute): array {
             $minutes = max(1, (int) ceil(Carbon::parse((string) $row['first_at'])->diffInSeconds(Carbon::parse((string) $row['last_at'])) / 60));
             $rate = (int) $row['requests'] / $minutes;
 
-            return ['class' => $rate >= $anonymousPerMinute ? 'me' : null, 'cells' => [
+            return ['class' => $rate >= $perMinute ? 'me' : null, 'cells' => [
                 ['text' => ClientAddress::shown((string) $row['address']), 'code' => true],
                 Format::number((int) $row['requests']),
                 Format::number($rate, 1),

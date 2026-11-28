@@ -47,7 +47,6 @@ return [
             'seconds' => 60,
         ],
         'public' => [
-            'anonymous' => (int) env('SCARLET_RATE_PUBLIC_ANONYMOUS', 60),
             'token' => (int) env('SCARLET_RATE_PUBLIC_TOKEN', 600),
         ],
     ],
@@ -111,7 +110,6 @@ return [
     ],
     'edge' => [
         'page_seconds' => 60,
-        'api_seconds' => 300,
     ],
     'storage' => [
         'chunk_dense' => env('SCARLET_CHUNK_DENSE', '1 day'),

@@ -12,7 +12,6 @@ use App\Models\ApiSurface;
 use App\Support\PublicApiCatalog;
 use Illuminate\Support\Facades\Route;
 
-// The public read API under /api/v1/public: open data, no sign-in, listed once in PublicApiCatalog.
 Route::prefix('v1/public')->middleware([RecordApiCall::class.':'.ApiSurface::Public->value, PublicApi::class])->group(function (): void {
     foreach (PublicApiCatalog::endpoints() as $endpoint) {
         Route::get($endpoint['path'], $endpoint['action'])->where($endpoint['where'])->name(PublicApiCatalog::ROUTE_PREFIX.$endpoint['name']);

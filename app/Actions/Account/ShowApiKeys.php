@@ -11,6 +11,6 @@ class ShowApiKeys
     public function handle(Account $account): array
     {
         /** @var list<PersonalAccessToken> */
-        return $account->tokens()->select(['id', 'name', 'created_at', 'last_used_at'])->orderByDesc('created_at')->get()->all();
+        return $account->tokens()->select(['id', 'name', 'created_at', 'last_used_at', 'expires_at'])->orderByDesc('created_at')->get()->all();
     }
 }

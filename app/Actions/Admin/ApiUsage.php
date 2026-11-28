@@ -24,6 +24,8 @@ class ApiUsage
 
     private const int TOP = 15;
 
+    private const int WEEK = 7;
+
     /** @return array<string, mixed> */
     public function handle(): array
     {
@@ -35,6 +37,7 @@ class ApiUsage
             'endpoints' => $this->endpoints(),
             'addresses' => $this->addresses(),
             'accounts' => $this->accounts(),
+            'perMinute' => (int) config('scarlet.rate.public.token'),
             'characters' => $this->characters(),
             'installs' => $this->installs(),
             'at' => now()->toIso8601String(),
@@ -65,12 +68,12 @@ class ApiUsage
         ];
     }
 
-    /** @return array<string, array{anonymous: int, keyed: int, upload: int, addresses: int, accounts: int, installs: int}> per UTC day that has a row */
+    /** @return array<string, array{keyless: int, keyed: int, upload: int, addresses: int, accounts: int, installs: int}> per UTC day that has a row */
     private function daily(): array
     {
         $rows = self::callers()->toBase()->groupBy('day')->orderBy('day')->selectRaw(
             "day::text as day,
-            coalesce(sum(requests) filter (where surface = ? and account_id = 0), 0) as anonymous,
+            coalesce(sum(requests) filter (where surface = ? and account_id = 0), 0) as keyless,
             coalesce(sum(requests) filter (where surface = ? and account_id > 0), 0) as keyed,
             coalesce(sum(requests) filter (where surface = ?), 0) as upload,
             count(distinct address) as addresses, count(distinct account_id) filter (where account_id > 0) as accounts,
@@ -81,7 +84,7 @@ class ApiUsage
         $daily = [];
         foreach ($rows as $row) {
             $daily[(string) $row->day] = [
-                'anonymous' => (int) $row->anonymous, 'keyed' => (int) $row->keyed, 'upload' => (int) $row->upload,
+                'keyless' => (int) $row->keyless, 'keyed' => (int) $row->keyed, 'upload' => (int) $row->upload,
                 'addresses' => (int) $row->addresses, 'accounts' => (int) $row->accounts, 'installs' => (int) $row->installs,
             ];
         }
@@ -106,25 +109,37 @@ class ApiUsage
         ), ['requests', 'refused', 'endpoints', 'installs']);
     }
 
-    /** @return list<array{account_id: int, keys: int, requests: int, addresses: int, last_at: string|null}> accounts with an API key, by the keyed requests they made */
+    /**
+     * @return list<array{account_id: int, keys: int, expired: int, newest: string|null, soonest: string|null, last_at: string|null, today: int, week: int, requests: int, busiest: int, limited: int}> every account that holds a key or called with one in the kept days, by requests over 7 days
+     */
     private function accounts(): array
     {
-        $calls = self::callers()->where('surface', ApiSurface::Public->value)->where('account_id', '>', 0)->toBase()->groupBy('account_id')
-            ->selectRaw('account_id, sum(requests) as requests, count(distinct address) as addresses')->get()->keyBy('account_id');
-        $keys = PersonalAccessToken::query()->where('tokenable_type', (new Account)->getMorphClass())->toBase()->groupBy('tokenable_id')
-            ->selectRaw('tokenable_id, count(*) as n, max(last_used_at)::text as last_at')->get();
+        $today = now()->toDateString();
+        $calls = self::callers()->where('surface', ApiSurface::Public->value)->where('account_id', '>', 0)->toBase()->groupBy('account_id')->selectRaw(
+            'account_id, coalesce(sum(requests) filter (where day = ?), 0) as today, coalesce(sum(requests) filter (where day >= ?), 0) as week,
+            sum(requests) as requests, max(busiest_minute) as busiest, sum(limited) as limited, max(last_at)::text as last_at',
+            [$today, now()->subDays(self::WEEK - 1)->toDateString()],
+        )->get()->keyBy('account_id');
+        $keys = PersonalAccessToken::query()->where('tokenable_type', (new Account)->getMorphClass())->toBase()->groupBy('tokenable_id')->selectRaw(
+            'tokenable_id, count(*) as n, count(*) filter (where expires_at <= now()) as expired, max(created_at)::text as newest,
+            min(expires_at) filter (where expires_at > now())::text as soonest, max(last_used_at)::text as last_used',
+        )->get()->keyBy('tokenable_id');
 
         $accounts = [];
-        foreach ($keys as $key) {
-            $call = $calls->get($key->tokenable_id);
+        foreach ($calls->keys()->merge($keys->keys())->unique() as $id) {
+            $call = $calls->get($id);
+            $key = $keys->get($id);
             $accounts[] = [
-                'account_id' => (int) $key->tokenable_id, 'keys' => (int) $key->n,
-                'requests' => (int) ($call->requests ?? 0), 'addresses' => (int) ($call->addresses ?? 0), 'last_at' => $key->last_at,
+                'account_id' => (int) $id, 'keys' => (int) ($key->n ?? 0), 'expired' => (int) ($key->expired ?? 0),
+                'newest' => $key->newest ?? null, 'soonest' => $key->soonest ?? null,
+                'last_at' => $call->last_at ?? $key->last_used ?? null,
+                'today' => (int) ($call->today ?? 0), 'week' => (int) ($call->week ?? 0), 'requests' => (int) ($call->requests ?? 0),
+                'busiest' => (int) ($call->busiest ?? 0), 'limited' => (int) ($call->limited ?? 0),
             ];
         }
-        usort($accounts, fn (array $a, array $b): int => [$b['requests'], $b['keys']] <=> [$a['requests'], $a['keys']]);
+        usort($accounts, fn (array $a, array $b): int => [$b['week'], $b['requests'], $b['keys']] <=> [$a['week'], $a['requests'], $a['keys']]);
 
-        return array_slice($accounts, 0, self::TOP);
+        return $accounts;
     }
 
     /** @return list<array{name: string, known: bool, requests: int}> characters asked for by name through the public API; one deleted since is not known */

@@ -27,7 +27,7 @@
 {{ $slot }}
 </main>
 <footer class="wrap border-t border-line py-6 text-[13px] text-muted">
-  <span>Numbers come from players who chose to upload. <a href="{{ $base }}/developers">Public API</a> · <x-version :base="$base" /></span>
+  <span>Numbers come from players who chose to upload. <a href="{{ $base }}/developers">API</a> · <x-version :base="$base" /></span>
 </footer>
 </body>
 </html>

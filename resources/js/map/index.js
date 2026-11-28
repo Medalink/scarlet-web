@@ -12,7 +12,7 @@
 //                 columns by two thirds as many rows, or { grid: [columns], remote: url } for those cells read from url
 //                 after the first paint; dots [[u, v], ...]; paths [{ points: [[u, v], ...], mode }];
 //                 marks [{ kind: kill|death|quest|level, u, v }]
-//   densityUrl    where a heat source is read (default /api/v1/public/map/density)
+//   densityUrl    where a heat source is read (default /map/density)
 //   zones         [{ id, name, u0, v0, u1, v1, href? }]: the zone rectangles, for the pointer readout, `fit(id)` and
 //                 the zone names drawn on the map; a zone with an href is a link
 //   reveal        { cells, marks }: draw only the heat of that many cells and that many marks, from the first, as a replay does; default all
@@ -72,7 +72,7 @@ function saveLook(look) {
     }
 }
 
-const DENSITY_URL = '/api/v1/public/map/density';
+const DENSITY_URL = '/map/density';
 
 const area = (z) => (z.u1 - z.u0) * (z.v1 - z.v0);
 
