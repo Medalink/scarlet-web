@@ -2,6 +2,8 @@
 
 namespace App\View;
 
+use App\Support\TalentTabOrder;
+
 /**
  * A class talent tree as the in-game window draws it: square slots on a grid with arrows between them. `cells()` places
  * each node of a layout (App\Actions\Public\TalentLayout) on the grid the way the app's talent view does
@@ -27,12 +29,12 @@ final class TalentFrame
     private const int HEAD = 7;
 
     /**
-     * Every node of the layout on a grid cell, a tree for each talent tab, leftmost tab first. A coordinate that is ten
+     * Every node of the layout on a grid cell, a tree for each talent tab, in the order of `App\Support\TalentTabOrder`. A coordinate that is ten
      * times too large for its tab is read back as the client meant it. Nodes without a spell entry or a tab are left out,
      * and so are tabs outside `$shown` when it is not empty. A node keeps only the edges that end in its own tab.
      *
      * @param  array{nodes: array<int, array{id: int, x: int, y: int, max: int|null, tab: int|null, entries: list<array{entry: int, spell: int|null, max: int|null}>, edges: list<array{to: int, type: string}>}>}  $layout
-     * @param  list<int>  $shown  the tab ids the build shows
+     * @param  list<int>  $shown  the tab ids the build shows, in the order the game lists them
      * @return list<array{tab: int, nodes: list<array{id: int, col: int, row: int, spells: list<int|null>, max: int, to: list<int>}>}>
      */
     public static function cells(array $layout, array $shown = []): array
@@ -58,7 +60,6 @@ final class TalentFrame
         $ids = array_map('strval', array_keys($nodes));
         sort($ids, SORT_STRING);
         $trees = [];
-        $rawLeft = [];
         foreach ($ids as $key) {
             $id = (int) $key;
             $node = $nodes[$id];
@@ -72,7 +73,6 @@ final class TalentFrame
                     $to[] = $edge['to'];
                 }
             }
-            $rawLeft[$tab] = min($rawLeft[$tab] ?? PHP_INT_MAX, $node['x']);
             $trees[$tab][] = [
                 'id' => $id,
                 'col' => self::cell($at[$id][0], $left[$tab], self::COLS),
@@ -83,8 +83,8 @@ final class TalentFrame
             ];
         }
 
-        $tabs = array_keys($trees);
-        usort($tabs, fn (int $a, int $b): int => [$rawLeft[$a], $a] <=> [$rawLeft[$b], $b]);
+        $order = TalentTabOrder::of($shown !== [] ? $shown : array_keys($trees), $layout);
+        $tabs = [...array_filter($order, fn (int $tab): bool => isset($trees[$tab])), ...array_diff(array_keys($trees), $order)];
         $out = [];
         foreach ($tabs as $tab) {
             $placed = $trees[$tab];

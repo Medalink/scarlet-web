@@ -4,10 +4,9 @@ namespace App\View\Pages;
 
 use App\Support\LevelBracket;
 use App\Support\PageScope;
-use App\Support\PlayerClass;
 use App\Support\Server;
 use App\Support\SpellIcons;
-use App\Support\TalentTree;
+use App\Support\TalentTabOrder;
 use App\View\Format;
 use App\View\TalentFrame;
 
@@ -18,7 +17,7 @@ final class TalentSpecPage
 
     /**
      * @param  list<array{class: string, class_slug: string, tab_id: int, name: string, slug: string, characters: int}>  $specs
-     * @param  array{splits: array<string, array<int, int>>, tabs: array<int, string>}|null  $splits  the most common split of each spec, which puts a column of splits first
+     * @param  array{splits: array<string, array<int, int>>, tabs: array<int, string>, order: array<string, list<int>>}|null  $splits  the most common split of each spec and the order of its trees, which puts a column of splits first
      * @return array<string, mixed>
      */
     public static function index(array $specs, ?array $splits = null): array
@@ -39,17 +38,18 @@ final class TalentSpecPage
     }
 
     /**
-     * The points of a spec's most common build in each tree, in the order the game lists the trees: "31 / 20 / 0".
+     * The points of a spec's most common build in each tree, in the order of its frames: "31 / 20 / 0".
      *
      * @param  array{class_slug: string, class: string, tab_id: int}  $spec
-     * @param  array{splits: array<string, array<int, int>>, tabs: array<int, string>}  $splits
+     * @param  array{splits: array<string, array<int, int>>, tabs: array<int, string>, order: array<string, list<int>>}  $splits
      */
     private static function specSplit(array $spec, array $splits): string
     {
-        $points = $splits['splits'][$spec['class_slug'].':'.$spec['tab_id']] ?? [];
-        $tabs = self::inGameOrder($spec['class'], array_intersect_key($splits['tabs'], $points) + array_map(fn (int $id): string => 'Tab '.$id, array_diff_key($points, $splits['tabs'])));
+        $key = $spec['class_slug'].':'.$spec['tab_id'];
+        $points = $splits['splits'][$key] ?? [];
+        $order = array_values(array_unique([...($splits['order'][$key] ?? []), ...array_keys($points)]));
 
-        return implode(' / ', array_map(fn (int $id): string => (string) $points[$id], array_keys($tabs)));
+        return implode(' / ', array_map(fn (int $id): string => (string) ($points[$id] ?? 0), array_values(array_filter($order, fn (int $id): bool => isset($points[$id])))));
     }
 
     /** @return array{bar?: string} */
@@ -89,7 +89,7 @@ final class TalentSpecPage
         $nodes = $a['nodes'];
         /** @var array{spell: array<int, string>, tab: array<int, string>} $names */
         $names = $a['names'];
-        $names['tab'] = self::inGameOrder((string) $a['class'], $names['tab']);
+        $names['tab'] = self::inTreeOrder($names['tab'], TalentTabOrder::of($a['shown'], $a['layout']));
         $cells = $a['layout'] === null || $n === 0 ? [] : TalentFrame::cells($a['layout'], $a['shown']);
 
         return [
@@ -229,18 +229,16 @@ final class TalentSpecPage
     }
 
     /**
-     * The tabs of a class in the order the game lists its trees, which the frames and every build split follow.
-     * A tab that matches none of the class's trees goes last.
+     * The tabs in the order of `$order`, which is the order of the frames and of every build split; a tab outside it goes last, by id.
      *
      * @param  array<int, string>  $tabs
+     * @param  list<int>  $order
      * @return array<int, string>
      */
-    private static function inGameOrder(string $class, array $tabs): array
+    private static function inTreeOrder(array $tabs, array $order): array
     {
-        $class = PlayerClass::tryFrom(strtoupper($class));
-        $place = array_flip(array_map(fn (TalentTree $tree): string => $tree->value, TalentTree::cases()));
-        $rank = fn (string $name): int => $class === null || ($tree = TalentTree::of($class, $name)) === null ? PHP_INT_MAX : $place[$tree->value];
-        uksort($tabs, fn (int $a, int $b): int => [$rank($tabs[$a]), $a] <=> [$rank($tabs[$b]), $b]);
+        $place = array_flip($order);
+        uksort($tabs, fn (int $a, int $b): int => [$place[$a] ?? PHP_INT_MAX, $a] <=> [$place[$b] ?? PHP_INT_MAX, $b]);
 
         return $tabs;
     }
