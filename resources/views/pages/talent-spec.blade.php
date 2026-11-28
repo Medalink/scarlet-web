@@ -30,20 +30,17 @@
       @endif
       @endif
     </x-module>
+    @if ($d['order']['rows'])
     <x-module span="w5" :first="true" id="h-order" heading="Most common order">
-      @if ($d['order']['rows'])
       <x-table :rows="$d['order']['rows']" :columns="$d['order']['columns']" />
-      @else
-      <x-note>No talent picks seen live yet.</x-note>
-      @endif
     </x-module>
-    <x-module span="w7" :last="true" id="h-brackets" heading="Builds by level bracket">
+    @endif
+    <x-module :span="$d['order']['rows'] ? 'w7' : 'w12'" :first="! $d['order']['rows']" :last="true" id="h-brackets" heading="Builds by level bracket">
       <x-table :rows="$d['builds']['rows']" :columns="$d['builds']['columns']" />
     </x-module>
     <x-module span="w12" :first="true" :last="true" id="h-outcomes" heading="Builds and outcomes">
       @if ($d['outcomes']['rows'])
       <x-table :rows="$d['outcomes']['rows']" :columns="$d['outcomes']['columns']" />
-      <x-note>Each event counts for the build its character held at the time, from one build change to the next.</x-note>
       @else
       <x-note>No build recorded at these levels yet.</x-note>
       @endif
