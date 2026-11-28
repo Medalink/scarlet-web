@@ -31,7 +31,7 @@
     <div class="grid gap-10">
       <div>
         <h2 class="sc-h text-[30px]">Highest counts</h2>
-        @php($most = max(1, ...array_column($d['top'], 'value')))
+        @php($most = max([1, ...array_column($d['top'], 'value')]))
         @forelse ($d['top'] as $row)
           @if ($loop->first)<p class="mt-4 flex border-b border-line pb-1.5 text-[12.5px] text-muted"><span>Character</span><span class="ml-auto">{{ $d['unit'] }}</span></p><ol class="grid">@endif
           <li class="border-b border-line py-2.5 text-[14.5px]">
