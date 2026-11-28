@@ -3,6 +3,7 @@
 namespace App\View\Character;
 
 use App\Models\Character;
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
 
@@ -64,7 +65,7 @@ final class PlayTime
         if ($busiest === null) {
             return null;
         }
-        $sentence = 'The busiest hour is <b>'.self::WEEKDAYS[intdiv($busiest, 24)].' '.str_pad((string) ($busiest % 24), 2, '0', STR_PAD_LEFT).':00</b> UTC.';
+        $sentence = 'The busiest hour is <b>'.self::WEEKDAYS[intdiv($busiest, 24)].' '.Dates::hour($busiest % 24).'</b> UTC.';
         $top = null;
         foreach ($everyone as $row) {
             $top = $top === null || $row['seconds'] > $top['seconds'] ? $row : $top;
@@ -74,7 +75,7 @@ final class PlayTime
         }
         $weekday = self::WEEKDAYS[((int) $top['weekday'] + 6) % 7];
 
-        return $sentence.' Everyone\'s is '.$weekday.' '.str_pad((string) $top['hour'], 2, '0', STR_PAD_LEFT).':00.';
+        return $sentence.' Everyone\'s is '.$weekday.' '.Dates::hour((int) $top['hour']).'.';
     }
 
     /**

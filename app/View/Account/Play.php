@@ -3,6 +3,7 @@
 namespace App\View\Account;
 
 use App\View\Character\PlayTime;
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
 
@@ -50,14 +51,14 @@ final class Play
             $total = array_sum($seconds);
             $dayCount += $total > 0 ? 1 : 0;
             $longest = $total > $longest[1] ? [$day, $total] : $longest;
-            $rows[] = [$day->format('j M'), $stack];
+            $rows[] = [Dates::text($day->toDateString()), $stack];
         }
         $top = max([0.0, ...array_map('array_sum', array_column($rows, 1))]);
 
         return [
             'spec' => ['unit' => 'h', 'ymax' => max(1, (int) ceil($top)), 'series' => $names, 'rows' => $rows],
             'key' => array_map(fn (array $name, float $sum): array => [$name[0], Format::hours($sum), 'var('.$name[1].')'], $names, $sums),
-            'sentence' => Format::hours(array_sum($sums)).' on '.$dayCount.' of '.$count.' days. The longest day was <b>'.e($longest[0]->format('l j F')).'</b>: '.Format::hours($longest[1]).'.',
+            'sentence' => Format::hours(array_sum($sums)).' on '.$dayCount.' of '.$count.' days. The longest day was <b>'.Dates::weekday($longest[0]->toDateString()).'</b>: '.Format::hours($longest[1]).'.',
         ];
     }
 
@@ -90,7 +91,7 @@ final class Play
         $diff = $now - $start;
 
         return [
-            'spec' => ['name' => 'All characters', 'unit' => 'g', 'ymax' => max(1, (int) ceil(max($points) * 1.1)), 'xlabels' => [[0, $first->format('j M')], [14, $first->copy()->addDays(14)->format('j M')], [self::SPAN - 1, $last->format('j M')]], 'points' => $points],
+            'spec' => ['name' => 'All characters', 'unit' => 'g', 'ymax' => max(1, (int) ceil(max($points) * 1.1)), 'xlabels' => [[0, Dates::text($first->toDateString())], [14, Dates::text($first->copy()->addDays(14)->toDateString())], [self::SPAN - 1, Dates::text($last->toDateString())]], 'points' => $points],
             'sentence' => Format::number($now).'g across '.Format::count(count($held), 'character').($diff === 0 ? ', the same as '.self::SPAN.' days ago.' : ', <b>'.Format::number(abs($diff)).'g '.($diff > 0 ? 'more' : 'less').'</b> than '.self::SPAN.' days ago.'),
         ];
     }
@@ -108,6 +109,6 @@ final class Play
         $weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         $busiest = $grid['busiest'];
 
-        return ['cells' => $grid['cells'], 'say' => $busiest === null ? null : 'Your busiest hour is '.$weekdays[intdiv($busiest, 24)].' '.str_pad((string) ($busiest % 24), 2, '0', STR_PAD_LEFT).':00 UTC.'];
+        return ['cells' => $grid['cells'], 'say' => $busiest === null ? null : 'Your busiest hour is '.$weekdays[intdiv($busiest, 24)].' '.Dates::hour($busiest % 24).' UTC.'];
     }
 }

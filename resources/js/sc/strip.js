@@ -1,14 +1,11 @@
 import { svg, text } from './dom.js';
+import { clock as localClock } from '../local-time.js';
 import { tip } from './tip.js';
 
 export const DEATH_GLYPH = '<path d="M12 3.2a7.3 7.3 0 0 0-7.3 7.3c0 2.5 1.2 4.4 2.8 5.6v2.7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-2.7c1.6-1.2 2.8-3.1 2.8-5.6A7.3 7.3 0 0 0 12 3.2z"/><circle cx="9.2" cy="11.2" r="1.5"/><circle cx="14.8" cy="11.2" r="1.5"/>';
 
 const METAL = [null, '#c58a63', '#c3c7cf', '#d9b25f', '#ff2d55', '#ff2d55'];
-const pad = (n) => String(n).padStart(2, '0');
-const clock = (epoch) => {
-    const date = new Date(epoch * 1000);
-    return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
+const clock = (epoch) => localClock(new Date(epoch * 1000));
 
 const PLATES = {
     journey: 'M32 10a22 22 0 1 0 0 44a22 22 0 1 0 0-44Z',
@@ -103,6 +100,6 @@ function drawClock(canvas, spec, x, total) {
     const first = new Date(spec.t0 * 1000);
     const startMin = first.getHours() * 60 + first.getMinutes();
     for (let hm = Math.ceil(startMin / 60) * 60; hm < startMin + spec.mins - 8; hm += 60) {
-        if (hm - startMin > 14) label(hm - startMin, `${pad(Math.floor(hm / 60) % 24)}:00`);
+        if (hm - startMin > 14) label(hm - startMin, localClock(new Date(first.getTime() + (hm - startMin) * 60000)));
     }
 }

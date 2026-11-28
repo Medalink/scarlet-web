@@ -87,7 +87,7 @@ final class ListPages
                 Format::exact($d * 86400 + $h * 3600 + $m * 60),
                 ['text' => $ruleset, 'tag' => $hc ? 'HC' : null],
                 Format::number($hc ? 0 : 20 + $i * 7),
-                (18 + $i).' Nov',
+                'Nov '.(18 + $i),
             ]];
         }
 

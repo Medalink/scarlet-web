@@ -6,8 +6,9 @@ use App\Support\Board;
 use App\Support\Cursor;
 use App\Support\PageScope;
 use App\Support\Server;
+use App\View\Dates;
 use App\View\Format;
-use Illuminate\Support\Carbon;
+use Illuminate\Contracts\Support\Htmlable;
 
 /** The data of docs/comps/leaderboards.html from the answer of App\Actions\Public\Leaderboard. */
 final class LeaderboardPage
@@ -28,8 +29,7 @@ final class LeaderboardPage
         $link = fn (array $change = []): string => self::link($board, ['ruleset' => $slug, 'server' => $scope->server === Server::All ? null : $scope->server->value, 'class' => $class, ...$change]);
 
         [$shown, $next] = Cursor::page($r['rows'], $offset, $page);
-        $day = fn (mixed $at): string => Carbon::parse((string) $at)->utc()->format('j M');
-        $since = fn (array $row): string => $row['since'] === null ? '' : ' since '.$day($row['since']);
+        $since = fn (array $row): string|Htmlable => $row['since'] === null ? '' : Dates::join(' since ', Dates::day($row['since']));
         $podium = $offset === 0 ? array_slice($shown, 0, self::PODIUM) : [];
         $rows = array_map(fn (array $row): array => [
             'class' => $row['mine'] ? 'me' : null,
@@ -37,10 +37,10 @@ final class LeaderboardPage
                 (string) $row['rank'],
                 ['text' => Format::characterName((string) $row['name']), 'href' => '/c/'.rawurlencode((string) $row['name']), 'dot' => true, 'characterClass' => (string) $row['class']],
                 Format::character(null, $row['race'], $row['class']),
-                $board->format($row['value']).($board->level() === null ? $since($row) : ''),
+                Dates::join($board->format($row['value']), $board->level() === null ? $since($row) : ''),
                 ['text' => (string) ($row['ruleset_label'] ?? ''), 'tag' => $row['hardcore'] ? 'HC' : null],
-                Format::number($row['deaths']).$since($row),
-                $row['at'] === null ? '' : $day($row['at']),
+                Dates::join(Format::number($row['deaths']), $since($row)),
+                $row['at'] === null ? '' : Dates::moment($row['at']),
             ],
         ], array_slice($shown, count($podium)));
 
@@ -61,7 +61,7 @@ final class LeaderboardPage
                 ['label' => '#', 'class' => 'rk'], ['label' => 'Character'], ['label' => 'Class'], ['label' => $board->column(), 'numeric' => true],
                 ['label' => 'Ruleset'], ['label' => 'Deaths', 'numeric' => true], ['label' => $board->dateColumn(), 'numeric' => true],
             ],
-            'podium' => array_map(fn (array $row): array => self::place($board, $row, $day), $podium),
+            'podium' => array_map(fn (array $row): array => self::place($board, $row), $podium),
             'rows' => $rows,
             'total' => $r['total'],
             'count' => self::count($board, $r['total']),
@@ -83,14 +83,13 @@ final class LeaderboardPage
      * character was first recorded; a fastest board names the day the level was reached instead.
      *
      * @param  array<string, mixed>  $row
-     * @param  callable(mixed): string  $day
-     * @return array{rank: int, mine: bool, name: string, href: string, class: string, what: string, value: string, unit: string, tag: string|null}
+     * @return array{rank: int, mine: bool, name: string, href: string, class: string, what: string, value: string, unit: Htmlable, tag: string|null}
      */
-    private static function place(Board $board, array $row, callable $day): array
+    private static function place(Board $board, array $row): array
     {
         $unit = $board->level() === null
-            ? strtolower($board->column()).($row['since'] === null ? '' : ' since '.$day($row['since']))
-            : ($row['at'] === null ? '' : 'reached '.$day($row['at']));
+            ? Dates::join(strtolower($board->column()), ...($row['since'] === null ? [] : [' since ', Dates::day($row['since'])]))
+            : Dates::join(...($row['at'] === null ? [] : ['reached ', Dates::moment($row['at'])]));
 
         return [
             'rank' => (int) $row['rank'],

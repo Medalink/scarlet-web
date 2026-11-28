@@ -2,6 +2,8 @@
 
 namespace App\View\Pages;
 
+use App\View\DateForm;
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
 
@@ -54,16 +56,16 @@ final class CharacterPlay
         $columns = $say = [];
         foreach ($seconds as $i => $value) {
             $day = $first->copy()->addDays($i);
-            $line = Format::line($day->format('D j M'), $value > 0 ? ': '.Format::duration($value).' played.' : ': not played.');
+            $line = Format::line(Dates::text($day->toDateString(), DateForm::Weekday), $value > 0 ? ': '.Format::duration($value).' played.' : ': not played.');
             $say[] = $line;
             $columns[] = ['height' => (string) round($value / max(1, $top) * 100, 1), 'class' => $value <= 0 ? 'z' : ($i === $busiest ? 'peak' : ''), 'title' => $line[0].$line[1]];
         }
 
         return [
             'columns' => $columns,
-            'labels' => [$first->format('j M'), $first->copy()->addDays(intdiv(self::DAYS - 1, 2))->format('j M'), $today->format('j M')],
+            'labels' => [Dates::text($first->toDateString()), Dates::text($first->copy()->addDays(intdiv(self::DAYS - 1, 2))->toDateString()), Dates::text($today->toDateString())],
             'max' => $top > 0 ? Format::duration($top) : null,
-            'line' => $busiest === null ? Format::line('No play in the last '.self::DAYS.' days') : Format::line('Busiest day', ': '.$first->copy()->addDays($busiest)->format('D j M').', '.Format::duration($top)),
+            'line' => $busiest === null ? Format::line('No play in the last '.self::DAYS.' days') : Format::line('Busiest day', ': '.Dates::text($first->copy()->addDays($busiest)->toDateString(), DateForm::Weekday).', '.Format::duration($top)),
         ];
     }
 
@@ -92,7 +94,7 @@ final class CharacterPlay
 
         return [
             'rows' => $rows,
-            'line' => Format::line('Busiest hour', ': '.self::WEEKDAYS[intdiv($busiest, 24)].' '.str_pad((string) ($busiest % 24), 2, '0', STR_PAD_LEFT).':00 UTC'),
+            'line' => Format::line('Busiest hour', ': '.self::WEEKDAYS[intdiv($busiest, 24)].' '.Dates::hour($busiest % 24).' UTC'),
         ];
     }
 }

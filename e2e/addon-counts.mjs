@@ -678,7 +678,8 @@ async function linked() {
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const shownDay = (epoch) => {
   const d = new Date(epoch * 1000);
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  const year = d.getUTCFullYear() === new Date().getUTCFullYear() ? "" : ` ${d.getUTCFullYear()}`;
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}${year}`;
 };
 
 async function accountReferences(jar, state) {
@@ -710,8 +711,8 @@ async function accountReferences(jar, state) {
   check(`the characters page shows "${heading}" once`, shown.split(heading).length === 2, module);
   check(`its two reads show what Mastercraft counted beside Scarlet and the counted addons, ${state.total.join("/")}`, expected.every((row) => shown.includes(row)), module);
   check("each read shows once though two characters carry it", shown.split("2,488").length === 2 && shown.split("2,254").length === 2);
-  check("the ceiling note shows for the read of 17 Nov 2026 and for no other", notes.length === 3 && notes.every((note) => shown.includes(note)), notes.join(" | "));
-  check("the read of 6 Nov 2026 raises no note", !/against 2,/.test(shown));
+  check("the ceiling note shows for the read of Nov 17 2026 and for no other", notes.length === 3 && notes.every((note) => shown.includes(note)), notes.join(" | "));
+  check("the read of Nov 6 2026 raises no note", !/against 2,/.test(shown));
 }
 
 const LEVEL_DAY = Date.parse("2026-10-01T12:00:00Z") / 1000;

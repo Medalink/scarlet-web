@@ -3,7 +3,9 @@
 namespace App\View\Pages;
 
 use App\Models\Character;
+use App\View\Dates;
 use App\View\Format;
+use Illuminate\Support\HtmlString;
 
 /** The data of the battlegrounds page from the answer of App\Actions\Public\CharacterBattlegrounds. */
 final class BattlegroundsPage
@@ -36,7 +38,7 @@ final class BattlegroundsPage
 
     /**
      * @param  array<string, mixed>  $match
-     * @return array{heading: string, at: string, instant: string, rows: list<array{cells: list<mixed>}>}
+     * @return array{heading: string, at: HtmlString, rows: list<array{cells: list<mixed>}>}
      */
     private static function match(array $match): array
     {
@@ -45,8 +47,7 @@ final class BattlegroundsPage
 
         return [
             'heading' => $place.($result === null ? '' : ', '.$result),
-            'at' => $match['at']->format('j M Y H:i').' UTC',
-            'instant' => $match['at']->toIso8601String(),
+            'at' => Dates::dayTime($match['at']),
             'rows' => array_values(array_map(self::row(...), $match['rows'])),
         ];
     }

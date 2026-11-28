@@ -4,6 +4,7 @@ namespace App\View\Pages;
 
 use App\Actions\Rollups\RulesetSummaries;
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
 
@@ -63,10 +64,10 @@ final class HardcoreDeathsPage
         for ($day = $first->copy(); $day->lte($last); $day->addDay()) {
             $count = $days[$day->toDateString()] ?? 0;
             $data[] = [count($data), $count];
-            $say[] = Format::line($day->format('j M'), ': '.Format::count($count, 'death'));
+            $say[] = Format::line(Dates::text($day->toDateString()), ': '.Format::count($count, 'death'));
         }
         $axis = Axis::nice((float) max([0, ...array_column($data, 1)]), 3);
-        $ticks = array_map(fn (int $index): array => [$index, $first->copy()->addDays($index)->format('j M')], Axis::spread(0, count($data) - 1, 4));
+        $ticks = array_map(fn (int $index): array => [$index, Dates::text($first->copy()->addDays($index)->toDateString())], Axis::spread(0, count($data) - 1, 4));
 
         return Charts::bars(['w' => 760, 'h' => 250, 'x0' => -1, 'x1' => count($data), 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks']), 'xt' => $ticks], $data, 't', $say, null, 'days-out');
     }

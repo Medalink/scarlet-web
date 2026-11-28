@@ -23,7 +23,7 @@
       @foreach ($d['battlegrounds'] as $match)
         <div class="sc-panel overflow-x-auto px-5 py-4">
           <p class="sc-h3">{{ $match['heading'] }}</p>
-          <p class="sc-mono mt-1"><time datetime="{{ $match['instant'] }}" data-local="j M Y H:i">{{ $match['at'] }}</time></p>
+          <p class="sc-mono mt-1">{{ $match['at'] }}</p>
           <table class="mt-3 w-full text-[13.5px]">
             <thead><tr>@foreach ($columns as $column)<th class="pb-1.5 pr-3 text-left text-[12px] font-normal text-muted {{ ($column['numeric'] ?? false) ? '!text-right' : '' }}">{{ $column['label'] }}</th>@endforeach</tr></thead>
             <tbody>

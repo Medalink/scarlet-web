@@ -2,13 +2,13 @@
 
 namespace App\View\Account;
 
+use App\View\Dates;
 use App\View\Format;
 use App\View\Pages\AccountFeatWall;
 use App\View\Pages\CharacterStandings;
 use App\View\Pages\FeatsPage;
 use App\View\Sc\ClassColor;
 use App\View\Sc\Compare;
-use Illuminate\Support\Carbon;
 
 /** The data of /account (design/final/account-web.html) from the bundle of App\Actions\Account\ShowAccountHome. */
 final class Home
@@ -89,7 +89,7 @@ final class Home
                 'width' => round(min(1, $level / self::LEVELS) * 100, 1),
                 'ring' => $max === 0 ? 0 : round($summary['score'] / $max, 3),
                 'feats' => (int) $summary['held'],
-                'seen' => $c['last_seen_at'] === null ? 'Nothing recorded yet' : 'Last played '.Carbon::parse($c['last_seen_at'])->format('j M'),
+                'seen' => $c['last_seen_at'] === null ? 'Nothing recorded yet' : Dates::join('Last played ', Dates::moment($c['last_seen_at'])),
                 'place' => $place === null ? ($c['is_public'] ? null : 'Private page') : Format::ordinal($place['place']).' of '.$place['of'].' on '.$place['title'],
             ];
         }
@@ -225,12 +225,12 @@ final class Home
         foreach ($live as $install) {
             $last = $last === null || ($install->last_seen_at !== null && $install->last_seen_at->gt($last)) ? $install->last_seen_at : $last;
         }
-        $parts = ['Scarlet app linked on '.Format::count(count($live), 'computer'), $last === null ? 'nothing uploaded yet' : 'last upload '.$last->utc()->format('j M H:i').' UTC'];
+        $parts = ['Scarlet app linked on '.Format::count(count($live), 'computer'), $last === null ? 'nothing uploaded yet' : Dates::join('last upload ', Dates::moment($last))];
         $private = $b['private'];
         if ($private !== []) {
             $parts[] = count($private) === 1 ? Format::characterName($private[0])."'s page is private" : Format::count(count($private), 'page').' are private';
         }
 
-        return ['linked' => true, 'text' => implode(' · ', $parts)];
+        return ['linked' => true, 'text' => Dates::implode(' · ', $parts)];
     }
 }

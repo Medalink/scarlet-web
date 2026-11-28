@@ -6,6 +6,7 @@ use App\Actions\Rollups\Roster;
 use App\Support\KillerKind;
 use App\Support\Profession;
 use App\Support\XpSource;
+use App\View\Dates;
 use App\View\Format;
 
 /**
@@ -200,7 +201,7 @@ final class StatsGame
         $peak = StatsPage::busiest($rows);
 
         return $peak === null ? null : self::record(
-            'clock', self::DAYS[$peak['day']].' '.str_pad((string) $peak['hour'], 2, '0', STR_PAD_LEFT).':00', null, 'Busiest hour, UTC',
+            'clock', self::DAYS[$peak['day']].' '.Dates::hour((int) $peak['hour']), null, 'Busiest hour, UTC',
             Format::duration($peak['seconds']).' played', class: null, week: $peak['day'] * 24 + $peak['hour'], local: 'Busiest hour',
         );
     }

@@ -14,7 +14,7 @@
   </div>
   <div class="pg">
     <h4 class="chart-name">Hour of the week</h4>
-    <div class="hours" role="group" aria-label="Play time by weekday and hour of day, in UTC"><span></span>@for ($h = 0; $h < 24; $h++)<span class="h">{{ $h % 3 ? '' : $h }}</span>@endfor
+    <div class="hours" role="group" aria-label="Play time by weekday and hour of day, in UTC"><span></span>@for ($h = 0; $h < 24; $h++)<span class="h">{{ $h % 3 ? '' : \App\View\Dates::hourMark($h) }}</span>@endfor
 @foreach ($grid['rows'] as $name => $cells)<span>{{ $name }}</span>@foreach ($cells as [$level, $title])<i data-l="{{ $level }}" title="{{ $title }}"></i>@endforeach
 @endforeach</div>
     <x-readout id="hours-out" :line="$grid['line']" />

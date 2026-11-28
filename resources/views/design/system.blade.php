@@ -16,7 +16,7 @@
         ['<p class="sc-h">Experience every five minutes</p>', 'Section heading · 24 to 32 · 19 addon'],
         ['<p class="text-[15px] text-copy">Life Taps more often than 91% of Warlocks at these levels, and earns XP faster than 78% of them.</p>', 'Body · Sofia Sans 15 · 13 addon'],
         ['<p class="sc-label">Played since Monday</p>', 'Label and note · 12.5 muted · 11.5 addon'],
-        ['<p class="sc-mono">19:42 to 22:06 · 2h 24m</p>', 'Clock times · Martian Mono 11.5 · Sofia Sans SemiBold in the addon'],
+        ['<p class="sc-mono">7:42 PM to 10:06 PM · 2h 24m</p>', 'Clock times · Martian Mono 11.5 · Sofia Sans SemiBold in the addon'],
     ];
 @endphp
 <x-layouts.sc title="Scarlet design system" :base="$base">
@@ -110,7 +110,7 @@
             ['name' => 'Soloist', 'glyph' => 'dungeons', 'tier' => 0, 'count' => 'No dungeon run alone yet', 'to' => '1 to Uncommon', 'share' => '6% hold Uncommon or higher'],
             ['name' => 'Slayer', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.99, 'count' => '9,912 kills', 'to' => '88 to Epic', 'share' => '64% hold Rare or higher'],
             ['name' => 'Rampage', 'glyph' => 'kills', 'tier' => 2, 'progress' => 0.04, 'count' => '312 kills in one session', 'to' => '288 to Epic', 'new' => true],
-            ['name' => 'Flawless', 'glyph' => 'shield', 'family' => 'dungeons', 'tier' => 5, 'progress' => 1, 'count' => '100 dungeon runs with no deaths in the party', 'to' => 'Scarlet since 4 November', 'share' => '<1% hold Scarlet'],
+            ['name' => 'Flawless', 'glyph' => 'shield', 'family' => 'dungeons', 'tier' => 5, 'progress' => 1, 'count' => '100 dungeon runs with no deaths in the party', 'to' => 'Scarlet since Nov 4', 'share' => '<1% hold Scarlet'],
         ];
     @endphp
     <div class="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
@@ -225,9 +225,9 @@
       <div><p>On the character's page, one line in the head:</p><p class="mt-2 text-muted">Is this yours? <a href="#">Link the app to manage it</a></p><p class="mt-3">On /account with no app linked, the first module:</p><x-sc.link-row class="mt-2">In the Scarlet app, open Settings, Website and choose Link. It opens this site to confirm.</x-sc.link-row></div>
 
       <div class="st">Linked</div>
-      <div><div class="wow"><p class="foot">Website: linked</p><p>Your page:</p><span class="sc-addr">scarletweb.io/c/Sable-Varrow</span><p class="mt-2 text-muted">Last upload today 22:07.</p></div></div>
+      <div><div class="wow"><p class="foot">Website: linked</p><p>Your page:</p><span class="sc-addr">scarletweb.io/c/Sable-Varrow</span><p class="mt-2 text-muted">Last upload 12 minutes ago.</p></div></div>
       <div><p class="text-[12px]"><span class="sc-dot"></span>&nbsp; Linked to scarletweb.io</p><p class="none mt-2">No rows anywhere.</p></div>
-      <div><x-sc.link-row dot="on" action="Settings">Scarlet app linked on 1 computer · last upload today 22:07</x-sc.link-row></div>
+      <div><x-sc.link-row dot="on" action="Settings">Scarlet app linked on 1 computer · last upload 12 minutes ago</x-sc.link-row></div>
     </div>
     <p class="sc-cap">One line, in one fixed place per surface. It never opens by itself and no toast, nudge or login message mentions it. The addon cannot open a browser, so the address sits in a read-only box, selected for Ctrl+C.</p>
   </section>

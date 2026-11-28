@@ -59,7 +59,7 @@ final class ResultPages
         return [
             'figures' => [
                 ['label' => 'Dropped', 'value' => '214'], ['label' => 'Sources', 'value' => '3'], ['label' => 'Best drop rate', 'value' => Format::percent(0.0034, 2)],
-                ['label' => 'Won by need', 'value' => Format::percent(0.61)], ['label' => 'Median looter level', 'value' => '24'], ['label' => 'First recorded', 'value' => '15 Nov'],
+                ['label' => 'Won by need', 'value' => Format::percent(0.61)], ['label' => 'Median looter level', 'value' => '24'], ['label' => 'First recorded', 'value' => 'Nov 15'],
             ],
             'sources' => array_map(fn (array $r): array => ['cells' => [
                 ['text' => $r[0], 'href' => $creature], $r[1], ['text' => Format::percent($r[3], 2), 'bar' => $r[2]], Format::number($r[4]), Format::number($r[5]),

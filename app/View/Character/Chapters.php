@@ -4,6 +4,7 @@ namespace App\View\Character;
 
 use App\Models\Character;
 use App\Support\ClassPage\Unit;
+use App\View\Dates;
 use App\View\Format;
 use App\View\Pages\BattlegroundsPage;
 use Illuminate\Support\HtmlString;
@@ -182,7 +183,7 @@ final class Chapters
             return null;
         }
         $last = count($gold) - 1;
-        $day = fn (array $row): string => gmdate('j M', (int) strtotime($row['at']));
+        $day = fn (array $row): string => Dates::text($row['at']);
 
         return [
             'spec' => ['points' => array_map(fn (array $row): float => round($row['balance'] / 10000, 1), $gold), 'unit' => 'g', 'name' => 'Gold held', 'days' => array_map($day, $gold), 'xlabels' => [[0, $day($gold[0])], [$last, $day($gold[$last])]]],

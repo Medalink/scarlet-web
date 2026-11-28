@@ -4,9 +4,12 @@ namespace App\View\Character;
 
 use App\Actions\Rollups\RulesetSummaries;
 use App\Models\Character;
+use App\View\Dates;
 use App\View\Format;
 use App\View\Sc\ClassColor;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\HtmlString;
 
 /** The top of /c/{name} (design/final/character-web.html): the name, one line, the level on a 1 to 60 rule, six tiles and the route. */
 final class Head
@@ -66,10 +69,10 @@ final class Head
             $parts[] = self::played($character->last_seen_at);
         }
         if ($character->first_seen_at !== null && ! $character->whole_life) {
-            $parts[] = 'recorded since '.$character->first_seen_at->utc()->format('j F');
+            $parts[] = Dates::join('recorded since ', Dates::day($character->first_seen_at));
         }
 
-        return implode(' · ', array_filter($parts, fn (string $part): bool => $part !== ''));
+        return Dates::implode(' · ', array_values(array_filter($parts, fn (string|Htmlable $part): bool => $part !== '')));
     }
 
     /** @param  array<string, mixed>|null  $talents */
@@ -90,15 +93,9 @@ final class Head
         return $best['name'] ?? null;
     }
 
-    private static function played(CarbonInterface $at): string
+    private static function played(CarbonInterface $at): HtmlString
     {
-        $days = (int) $at->copy()->utc()->startOfDay()->diffInDays(now()->utc()->startOfDay());
-
-        return match (true) {
-            $days <= 0 => 'played today',
-            $days === 1 => 'played yesterday',
-            default => 'played '.$days.' days ago',
-        };
+        return Dates::join('played ', Dates::moment($at));
     }
 
     /** @return array{at: string, ticks: list<array{at: string, n: int}>}|null */

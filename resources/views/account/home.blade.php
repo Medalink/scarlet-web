@@ -123,7 +123,7 @@
       <h2 class="sc-h" style="font-size:26px">When you play</h2>
       @if ($d['heat'])
         <div class="sc-heat mt-4">@foreach ($d['heat']['cells'] as $cell)<i data-v="{{ $cell['level'] }}" data-tip="{{ $cell['tip'] }}"></i>@endforeach</div>
-        <div class="sc-label mt-1.5 flex justify-between"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+        <div class="sc-label mt-1.5 flex justify-between"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span></div>
         @if ($d['heat']['say'])<p class="mt-3 text-[14px]">{{ $d['heat']['say'] }}</p>@endif
       @else
         <p class="sc-note mt-4">Nothing recorded in the last 12 weeks.</p>

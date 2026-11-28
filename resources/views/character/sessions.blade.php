@@ -6,7 +6,7 @@
     @if ($s['rows'] !== [])
       <div class="mt-3">
         @foreach ($s['rows'] as $row)
-          <a href="{{ $row['href'] }}" class="sc-sess"><time class="sc-mono" datetime="{{ $row['at'] }}">{{ $row['day'] }}</time><b>{{ $row['title'] }}</b><span>{{ $row['played'] }}</span><span>{{ $row['kills'] }}</span><span class="text-right">{{ $row['level'] }}</span></a>
+          <a href="{{ $row['href'] }}" class="sc-sess"><span class="sc-mono">{{ $row['when'] }}</span><b>{{ $row['title'] }}</b><span>{{ $row['played'] }}</span><span>{{ $row['kills'] }}</span><span class="text-right">{{ $row['level'] }}</span></a>
         @endforeach
       </div>
     @endif

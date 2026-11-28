@@ -3,6 +3,8 @@
 namespace App\View\Design;
 
 use App\View\Charts;
+use App\View\DateForm;
+use App\View\Dates;
 use App\View\Design\ClassPages\ClassGallery;
 use App\View\Format;
 use App\View\Pages\Filters;
@@ -106,7 +108,7 @@ final class Gallery
     }
 
     /**
-     * The day heatmap, which no comp uses on its own: 19 weeks of invented play time up to 20 Nov 2026.
+     * The day heatmap, which no comp uses on its own: 19 weeks of invented play time up to Nov 20 2026.
      *
      * @return array<string, mixed>
      */
@@ -134,7 +136,7 @@ final class Gallery
                 default => 4,
             };
             $days[] = [$level, $day > $today ? 1 : 0];
-            $say[] = Format::line($day->format('D j M'), $played > 0 ? ' · '.Format::duration($played).' in '.Format::number($sessions).($sessions === 1 ? ' session' : ' sessions') : ' · not played');
+            $say[] = Format::line(Dates::text($day->format('Y-m-d'), DateForm::Weekday), $played > 0 ? ' · '.Format::duration($played).' in '.Format::number($sessions).($sessions === 1 ? ' session' : ' sessions') : ' · not played');
         }
 
         return ['spec' => Charts::days($days, $months, $say, 'days-out'), 'line' => $say[131]];

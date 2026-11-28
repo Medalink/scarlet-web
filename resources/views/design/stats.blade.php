@@ -7,7 +7,7 @@
 <x-layouts.sc title="Scarlet stats: how characters level in WoW Forever" current="stats" :base="Gallery::BASE">
 <div class="wrap">
   <x-page-head title="All characters">
-    <x-slot:sub>1,284 characters, 41,907 hours of play, recorded since 14 Nov 2026. Updated 6 minutes ago.</x-slot:sub>
+    <x-slot:sub>1,284 characters, 41,907 hours of play, recorded since Nov 14. Updated 6 minutes ago.</x-slot:sub>
     <x-slot:filters><x-ruleset-filters :rulesets="$f['rulesets']" :servers="$f['servers']" :classes="$f['classes']" /></x-slot:filters>
   </x-page-head>
 

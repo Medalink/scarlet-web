@@ -4,6 +4,7 @@ namespace App\View\Pages;
 
 use App\Models\Market;
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
 
@@ -33,7 +34,7 @@ final class ItemPriceHistory
                 'name' => $market['realm'] === null ? $market['ruleset'] : $market['ruleset'].', '.$market['realm'],
                 'spec' => self::chart($market['days']),
                 'rows' => array_map(fn (array $day): array => ['cells' => [
-                    Carbon::parse($day['day'])->format('j M Y'),
+                    ['date' => Dates::day($day['day'])],
                     Format::money($day['price']),
                     $day['browse'] ? 'Browse row' : 'Search',
                 ]], array_reverse(array_slice($market['days'], -self::TABLE_DAYS))),
@@ -58,7 +59,7 @@ final class ItemPriceHistory
             Format::money($p['min_buyout']),
             Format::number($p['quantity']),
             $p['sold_per_day'] === null ? '–' : Format::number($p['sold_per_day'], $p['sold_per_day'] < self::WHOLE_SALES ? 1 : 0),
-            ['text' => Carbon::parse($p['scanned_at'])->format('j M H:i'), 'instant' => $p['scanned_at'], 'format' => 'j M H:i'],
+            ['date' => Dates::moment($p['scanned_at'])],
         ]], $prices);
     }
 
@@ -84,12 +85,12 @@ final class ItemPriceHistory
         foreach ($days as $day) {
             $at = Carbon::parse($day['day']);
             $points[] = [(int) $first->diffInDays($at), $day['price'] / $divisor];
-            $say[] = Format::line($at->format('j M Y'), ': '.Format::moneyText($day['price']).($day['browse'] ? ' (browse row)' : ''));
+            $say[] = Format::line(Dates::text($day['day']), ': '.Format::moneyText($day['price']).($day['browse'] ? ' (browse row)' : ''));
         }
         $last = count($points) - 1;
         $span = max(1, $points[$last][0]);
         $axis = Axis::nice(max(array_column($points, 1)));
-        $ticks = array_map(fn (int $x): array => [$x, $first->copy()->addDays($x)->format('j M')], Axis::spread(0, $span, 4));
+        $ticks = array_map(fn (int $x): array => [$x, Dates::text($first->copy()->addDays($x)->toDateString())], Axis::spread(0, $span, 4));
 
         return Charts::line(
             ['w' => 1100, 'h' => 240, 'x0' => 0, 'x1' => $span, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], $suffix), 'xt' => $ticks],

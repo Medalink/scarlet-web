@@ -9,6 +9,7 @@ use App\Support\LootFilter;
 use App\Support\LootRule;
 use App\Support\LootSort;
 use App\Support\LootView;
+use App\View\Dates;
 use App\View\Format;
 
 /** The data of the loot index (docs/comps/loot.html) from the answer of App\Actions\Public\LootIndex. */
@@ -99,7 +100,7 @@ final class LootPage
     }
 
     /**
-     * `1,284 corpses looted and 412 skinned by 17 characters, 5 Nov to 22 Nov 2026.`
+     * `1,284 corpses looted and 412 skinned by 17 characters, Nov 5 to Nov 22.`
      *
      * @param  array{corpses: int, skinned: int, sources: int, items: int, uncommon: int, characters: int, first_at: string|null, last_at: string|null, fishing: int}  $figures
      * @param  list<array{id: int, name: string|null, windows: int}>  $zones
@@ -113,7 +114,7 @@ final class LootPage
 
         return Format::count($figures['corpses'], 'corpse').' looted'.($figures['skinned'] > 0 ? ' and '.Format::number($figures['skinned']).' skinned' : '')
             .($zone === null ? '' : ' in '.$zone).' by '.Format::count($figures['characters'], 'character').', '
-            .date('j M', (int) strtotime($figures['first_at'])).' to '.date('j M Y', (int) strtotime($figures['last_at'])).'.';
+            .Dates::rangeText($figures['first_at'], $figures['last_at']).'.';
     }
 
     /**

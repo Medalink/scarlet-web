@@ -7,6 +7,7 @@ use App\Support\ClassPage\ClassIcons;
 use App\Support\ClassPage\ClassPage;
 use App\Support\Scene;
 use App\Support\SceneArt;
+use App\View\Dates;
 use App\View\Format;
 use App\View\Pages\FeatsPage;
 use App\View\Pages\ImportedHistoryPage;
@@ -57,7 +58,7 @@ final class Page
             'ownerSeesVisitorView' => $asVisitor && $viewerAccountId !== null && $character->account_id === $viewerAccountId,
             'path' => $base,
             'title' => $head['name'].', '.mb_strtolower(Format::character($character->level, $character->race, $character->class)).' · Scarlet',
-            'description' => $head['line'].'. Recorded by Scarlet in WoW Forever.',
+            'description' => Dates::plain($head['line']).'. Recorded by Scarlet in WoW Forever.',
             'head' => $head,
             'claim' => $character->account_id === null && ! $r['owner'],
             'sections' => $sections,

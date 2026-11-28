@@ -2,6 +2,7 @@
 
 namespace App\View\Pages;
 
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
@@ -70,7 +71,7 @@ final class ReleaseNotesPage
     {
         return [
             'version' => $release->version,
-            'date' => $release->published_at?->format('j M Y'),
+            'date' => $release->published_at === null ? null : Dates::day($release->published_at),
             'total' => count($release->changes()),
             'current' => $current,
         ];
@@ -104,7 +105,7 @@ final class ReleaseNotesPage
 
         return [
             'version' => $release->version,
-            'date' => $release->published_at?->format('j M Y'),
+            'date' => $release->published_at === null ? null : Dates::day($release->published_at),
             'since' => $release->previous_version,
             'title' => self::title(count($changes), self::busiest($changes)),
             'total' => count($changes),

@@ -3,8 +3,8 @@
 namespace App\View\Pages;
 
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
-use Illuminate\Support\Carbon;
 
 /** The owner's view of imported history (docs/DESIGN.md, Imported history), formatted from App\Actions\Account\ShowImportedHistory. */
 final class ImportedHistoryPage
@@ -126,6 +126,6 @@ final class ImportedHistoryPage
 
     private static function day(int $epoch): string
     {
-        return Carbon::createFromTimestampUTC($epoch)->format('j M Y');
+        return Dates::text($epoch);
     }
 }

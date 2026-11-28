@@ -15,13 +15,13 @@
     </x-module>
     <x-module span="w5" :last="true" id="h-i" heading="Installs">
       <x-rows>
-        <x-row title="Windows PC, linked 20 Nov 2026" body="Last upload 12 minutes ago · 2 characters"><x-btn kind="danger">Revoke</x-btn></x-row>
-        <x-row title="Windows PC, linked 2 Nov 2026" body="Last upload 18 days ago · 1 character"><x-btn kind="danger">Revoke</x-btn></x-row>
+        <x-row title="Windows PC, linked Nov 20" body="Last upload 12 minutes ago · 2 characters"><x-btn kind="danger">Revoke</x-btn></x-row>
+        <x-row title="Windows PC, linked Nov 2" body="Last upload 18 days ago · 1 character"><x-btn kind="danger">Revoke</x-btn></x-row>
       </x-rows>
       <x-note>A revoked install can no longer upload. What it uploaded stays until you remove it.</x-note>
       <h2 style="margin-top:2rem;font-size:1.9rem">Sign-in methods</h2>
       <x-rows>
-        <x-row title="Google" body="Linked 2 Nov 2026"><x-state :on="true">Linked</x-state></x-row>
+        <x-row title="Google" body="Linked Nov 2"><x-state :on="true">Linked</x-state></x-row>
         <x-row title="Battle.net" body="Not linked. Your BattleTag is never stored."><x-btn kind="quiet" href="#">Link</x-btn></x-row>
       </x-rows>
     </x-module>
@@ -35,7 +35,7 @@
     </x-module>
     <x-module span="w7" :first="true" id="h-k" heading="API keys">
       <x-rows>
-        <x-row title="guild dashboard" body="Made 19 Nov 2026 · last used today · 600 requests a minute"><x-btn kind="danger">Delete</x-btn></x-row>
+        <x-row title="guild dashboard" body="Made Nov 19 · last used today · 600 requests a minute"><x-btn kind="danger">Delete</x-btn></x-row>
       </x-rows>
       <p style="margin-top:1rem"><x-btn kind="quiet" href="#">Make a key</x-btn></p>
       <x-note>The <a href="{{ $base }}/developers">public API</a> needs no key at 60 requests a minute.</x-note>

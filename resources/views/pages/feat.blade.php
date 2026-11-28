@@ -45,7 +45,7 @@
           <li class="flex items-baseline gap-3 border-b border-line py-2.5 text-[14.5px]">
             <a href="{{ $row['href'] }}" class="font-semibold">{{ $row['name'] }}</a>
             <span class="sc-chip t{{ $row['tier'] }}">{{ $row['tierName'] }}</span>
-            <time class="ml-auto text-muted" datetime="{{ $row['at'] }}" data-local="D j M Y">{{ $row['day'] }}</time>
+            <span class="ml-auto text-muted">{{ $row['when'] }}</span>
           </li>
           @if ($loop->last)</ul>@endif
         @empty

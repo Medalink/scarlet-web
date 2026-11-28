@@ -2,7 +2,9 @@
 
 namespace App\View\Account;
 
+use App\View\Dates;
 use App\View\Format;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Carbon;
 
 /** The four tiles of the week on /account: time played, days in a row, levels gained and feats earned since Monday UTC. */
@@ -49,7 +51,7 @@ final class Week
     }
 
     /** @param  array<string, float>  $totals */
-    private static function streakNote(array $totals): string
+    private static function streakNote(array $totals): string|Htmlable
     {
         $played = array_keys(array_filter($totals, fn (float $seconds): bool => $seconds > 0));
         if ($played === []) {
@@ -61,7 +63,7 @@ final class Week
         return match (true) {
             $last->equalTo($today) => 'Played today',
             $last->equalTo($today->copy()->subDay()) => 'Played yesterday',
-            default => 'Last played '.$last->format('j M'),
+            default => Dates::join('Last played ', Dates::day($last->toDateString())),
         };
     }
 

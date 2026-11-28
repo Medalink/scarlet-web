@@ -6,6 +6,8 @@ use App\Actions\Sessions\BuildRecap;
 use App\Actions\Sessions\ListCharacterSessions;
 use App\Http\Requests\Web\CharacterRequest;
 use App\Models\Character;
+use App\View\DateForm;
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
 
@@ -60,8 +62,7 @@ final class SessionsSection
 
         return [
             'href' => $base.'/sessions/'.$row['start'],
-            'at' => gmdate('c', $row['start']),
-            'day' => gmdate('j M', $row['start']),
+            'when' => Dates::moment($row['start']),
             'title' => $row['title']['text'],
             'played' => Format::duration($row['played']),
             'kills' => $row['kills'] === null ? '' : Format::number($row['kills']).' kills',
@@ -93,7 +94,7 @@ final class SessionsSection
             $played += $hours > 0 ? 1 : 0;
             $run = $hours > 0 ? $run + 1 : 0;
             $longest = max($longest, $run);
-            $cells[] = ['level' => $level, 'tip' => $day->format('D j M').'|'.($hours > 0 ? Format::hours($hours * 3600).' played' : 'Not played')];
+            $cells[] = ['level' => $level, 'tip' => Dates::text($day->toDateString(), DateForm::Weekday).'|'.($hours > 0 ? Format::hours($hours * 3600).' played' : 'Not played')];
         }
 
         return ['cells' => $cells, 'played' => $played, 'longest' => $longest];

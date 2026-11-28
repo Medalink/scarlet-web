@@ -1,13 +1,11 @@
 // The play time band of the character page in the viewer's time zone. The page draws the band in UTC from the same hours
 // (App\View\Pages\CharacterPlay); this draws it again from them, with the same wording, so a viewer in UTC sees no change.
 
-import { WEEKDAYS, MONTHS, duration, weekGrid } from './local-time.js';
+import { duration, shortDay, weekGrid, weekdayDay } from './local-time.js';
 
 const HOUR_MS = 3600000;
 
 const dayKey = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-const dayName = (d) => `${WEEKDAYS[(d.getDay() + 6) % 7]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
-const short = (d) => `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 
 function firstMax(values) {
     const top = Math.max(...values);
@@ -39,7 +37,7 @@ function drawBars(box, spec, { reader, htmlEl }, signal) {
     const { days, seconds } = dayColumns(spec.hours, spec.days);
     const top = Math.max(...seconds);
     const busiest = firstMax(seconds);
-    const say = days.map((d, k) => [dayName(d), seconds[k] > 0 ? `: ${duration(seconds[k])} played.` : ': not played.']);
+    const say = days.map((d, k) => [weekdayDay(d), seconds[k] > 0 ? `: ${duration(seconds[k])} played.` : ': not played.']);
     const columns = seconds.map((value, k) => {
         const column = htmlEl('span', value <= 0 ? 'z' : (k === busiest ? 'peak' : ''));
         column.title = say[k][0] + say[k][1];
@@ -53,8 +51,8 @@ function drawBars(box, spec, { reader, htmlEl }, signal) {
     bars.setAttribute('aria-label', `Hours played in each of the last ${spec.days} days`);
     const max = box.querySelector('.pt-max');
     if (max) max.textContent = duration(top);
-    box.querySelector('.pt-x').replaceChildren(...[days[0], days[Math.floor((spec.days - 1) / 2)], days[spec.days - 1]].map((d) => htmlEl('span', '', short(d))));
-    const summary = busiest === null ? [`No play in the last ${spec.days} days`, ''] : ['Busiest day', `: ${dayName(days[busiest])}, ${duration(top)}`];
+    box.querySelector('.pt-x').replaceChildren(...[days[0], days[Math.floor((spec.days - 1) / 2)], days[spec.days - 1]].map((d) => htmlEl('span', '', shortDay(d))));
+    const summary = busiest === null ? [`No play in the last ${spec.days} days`, ''] : ['Busiest day', `: ${weekdayDay(days[busiest])}, ${duration(top)}`];
     bars.setAttribute('tabindex', '0');
     reader(bars, { out: 'days-out', say, summary, rest: busiest ?? 0 }, {
         count: spec.days,

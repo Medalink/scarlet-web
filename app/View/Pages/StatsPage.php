@@ -6,8 +6,10 @@ use App\Support\KillerKind;
 use App\Support\PageScope;
 use App\Support\XpSource;
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 /** The data of the stats dashboard (docs/comps/stats.html) from the answer of App\Actions\Public\StatsDashboard. */
 final class StatsPage
@@ -76,10 +78,10 @@ final class StatsPage
     /**
      * @param  array<string, int|float|null>  $totals
      */
-    private static function sub(array $totals, mixed $coverage): string
+    private static function sub(array $totals, mixed $coverage): HtmlString
     {
         if ($totals['characters'] === null) {
-            return Format::TOO_FEW.'.';
+            return new HtmlString(e(Format::TOO_FEW.'.'));
         }
         $characters = (int) $totals['characters'];
         $text = Format::count($characters, 'character');
@@ -89,9 +91,9 @@ final class StatsPage
         $coverage = is_array($coverage) ? $coverage : [];
         $since = $coverage['since'] ?? null;
         $updated = $coverage['updated_at'] ?? null;
-        $text .= $since instanceof Carbon ? ($totals['played_seconds'] === null ? ', recorded' : '').' since '.$since->format('j M Y').'.' : '.';
+        $text .= $since instanceof Carbon ? ($totals['played_seconds'] === null ? ', recorded' : '').' since '.Dates::text($since).'.' : '.';
 
-        return $text.($updated instanceof Carbon ? ' Updated '.$updated->diffForHumans().'.' : '');
+        return Dates::join($text, ...($updated instanceof Carbon ? [' Updated ', Dates::moment($updated), '.'] : []));
     }
 
     /**
@@ -493,6 +495,6 @@ final class StatsPage
         $peak = self::busiest($rows);
         $names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-        return $peak === null ? null : Format::line('Busiest hour', ': '.$names[$peak['day']].' '.str_pad((string) $peak['hour'], 2, '0', STR_PAD_LEFT).':00 UTC');
+        return $peak === null ? null : Format::line('Busiest hour', ': '.$names[$peak['day']].' '.Dates::hour((int) $peak['hour']).' UTC');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\View\Design;
 
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
 
 /** The data of docs/comps/stats.html. */
@@ -185,7 +186,7 @@ final class StatsPage
                 $day = $d > 4 ? exp(-((($h - 15) / 4.5) ** 2)) : 0;
                 $level = (int) min(4, round(($eve + $day * 0.8) * 4 + $r->next() * 0.5));
                 $levels[$d][] = $level;
-                $say[] = Format::line($name.' '.str_pad((string) $h, 2, '0', STR_PAD_LEFT).':00', ', '.$words[$level]);
+                $say[] = Format::line($name.' '.Dates::hour($h), ', '.$words[$level]);
             }
         }
 

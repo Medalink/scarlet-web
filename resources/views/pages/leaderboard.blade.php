@@ -19,7 +19,7 @@
       <span class="place">{{ $place['rank'] }}@if ($place['rank'] === 1)<x-icon name="crown" />@endif</span>
       <a class="who" href="{{ $place['href'] }}" data-class="{{ $place['class'] }}">{{ $place['name'] }}</a>
       <span class="what" data-class="{{ $place['class'] }}"><i class="dotc" aria-hidden="true"></i>{{ $place['what'] }}@if ($place['tag'])<span class="tag hc">{{ $place['tag'] }}</span>@endif</span>
-      <span class="val">{{ $place['value'] }}@if ($place['unit'])<small>{{ $place['unit'] }}</small>@endif</span>
+      <span class="val">{{ $place['value'] }}@if ((string) $place['unit'] !== '')<small>{{ $place['unit'] }}</small>@endif</span>
       <span class="plinth"></span>
     </li>
     @endforeach

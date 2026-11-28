@@ -4,6 +4,7 @@ namespace App\View\Pages;
 
 use App\Support\Feat;
 use App\Support\FeatText;
+use App\View\Dates;
 use App\View\Format;
 use App\View\Sc\Crest;
 
@@ -33,7 +34,7 @@ final class FeatDetailPage
             ], $feat['top']),
             'recent' => array_map(fn (array $row): array => [
                 'name' => Format::characterName($row['character']), 'href' => '/c/'.rawurlencode($row['character']), 'tier' => $row['tier'],
-                'tierName' => Crest::TIER_NAMES[$row['tier']], 'at' => $row['at'], 'day' => gmdate('j M Y', (int) strtotime($row['at'])),
+                'tierName' => Crest::TIER_NAMES[$row['tier']], 'when' => Dates::day($row['at']),
             ], $feat['recent']),
             'others' => array_map(fn (array $other): array => [
                 'key' => $other['key'], 'name' => $other['name'], 'glyph' => $other['glyph'], 'family' => $other['family'], 'tier' => $answer['held'][$other['key']]['tier'] ?? 0, 'progress' => $answer['held'][$other['key']]['progress'] ?? 0,

@@ -1,23 +1,21 @@
 @php
     $recap = $d['recap'];
     $played = App\View\Format::duration($recap['played']);
-    $startAt = gmdate('c', $recap['start']);
-    $endAt = gmdate('c', $recap['end']);
     $hasRoute = App\View\Sc\RecapView::route($recap) !== null;
     $shown = fn (array $rows): bool => $rows !== [];
 @endphp
-<x-layouts.sc :title="$d['title'].' · '.$d['name'].' · Scarlet'" :description="$d['name'].', '.$d['line'].': '.$played.' played, '.gmdate('j F Y', $recap['start']).'.'" :canonical="$d['href'].'/sessions/'.$recap['start']" :index="false">
+<x-layouts.sc :title="$d['title'].' · '.$d['name'].' · Scarlet'" :description="$d['name'].', '.$d['line'].': '.$played.' played, '.App\View\Dates::text($recap['start']).'.'" :canonical="$d['href'].'/sessions/'.$recap['start']" :index="false">
 <div class="wrap pb-20 pt-8" style="--cls:{{ $d['color'] }}">
   <div class="flex flex-wrap items-start gap-6">
     <div class="min-w-0">
       <p class="text-[14.5px]"><a href="{{ $d['href'] }}" style="color:var(--cls);font-weight:700">{{ $d['name'] }}</a> @if ($d['line'])<span class="text-muted">· {{ $d['line'] }}</span>@endif</p>
       <h1 class="sc-title mt-3 text-[40px] md:text-[60px]">{{ $d['title'] }}</h1>
-      <p class="mt-3 text-[15px]"><time datetime="{{ $startAt }}" data-local="D j M Y">{{ gmdate('D j M Y', $recap['start']) }}</time> · <time datetime="{{ $startAt }}" data-local="H:i">{{ gmdate('H:i', $recap['start']) }}</time> to <time datetime="{{ $endAt }}" data-local="H:i">{{ gmdate('H:i', $recap['end']) }}</time> · {{ $played }} played</p>
+      <p class="mt-3 text-[15px]">{{ App\View\Dates::weekday($recap['start']) }} · {{ App\View\Dates::clock($recap['start']) }} to {{ App\View\Dates::clock($recap['end']) }} · {{ $played }} played</p>
       @if ($d['say'])<p class="sc-say mt-4">{{ $d['say'] }}</p>@endif
     </div>
     <div class="ml-auto flex gap-2 pt-1">
       @if ($d['earlier'])
-        <a class="sc-btn quiet small" href="{{ $d['earlier'] }}" aria-label="Earlier session">&#8592; <time datetime="{{ gmdate('c', $d['earlierAt']) }}" data-local="j M">{{ gmdate('j M', $d['earlierAt']) }}</time></a>
+        <a class="sc-btn quiet small" href="{{ $d['earlier'] }}" aria-label="Earlier session">&#8592; {{ App\View\Dates::day($d['earlierAt']) }}</a>
       @endif
       @if ($d['later'])
         <a class="sc-btn quiet small" href="{{ $d['later'] }}" aria-label="Later session">Later &#8594;</a>
@@ -143,7 +141,7 @@
         <div class="mt-3">
           @foreach ($d['moments'] as $moment)
             <div class="sc-moment">
-              @if ($moment['at'] === null)<span class="sc-mono"></span>@else<time class="sc-mono" datetime="{{ gmdate('c', $recap['start'] + $moment['at']) }}" data-local="H:i">{{ gmdate('H:i', $recap['start'] + $moment['at']) }}</time>@endif
+              @if ($moment['at'] === null)<span class="sc-mono"></span>@else<span class="sc-mono">{{ App\View\Dates::clock($recap['start'] + $moment['at']) }}</span>@endif
               <x-sc.glyph :name="$moment['glyph']" :size="16" />
               <span>{{ $moment['text'] }}</span>
             </div>

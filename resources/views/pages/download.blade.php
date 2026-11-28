@@ -15,7 +15,7 @@ $website = ['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 
   <section class="mt-8 grid gap-2 text-[15px]" aria-labelledby="h-downloads">
     <h2 id="h-downloads" class="vh">Download</h2>
     @if ($app['installer'])
-      <p class="max-w-[72ch]">{{ $app['prerelease'] ? 'Beta version' : 'Version' }} <b class="text-fg">{{ $app['version'] }}</b>@if ($app['date']), published {{ \Illuminate\Support\Carbon::parse($app['date'])->format('j M Y') }}@endif. Windows only. The installer sets up the app for your user and needs no administrator rights. It installs the addon for WoW Forever and keeps it current.</p>
+      <p class="max-w-[72ch]">{{ $app['prerelease'] ? 'Beta version' : 'Version' }} <b class="text-fg">{{ $app['version'] }}</b>@if ($app['date']), published {{ \App\View\Dates::day($app['date']) }}@endif. Windows only. The installer sets up the app for your user and needs no administrator rights. It installs the addon for WoW Forever and keeps it current.</p>
       <p class="text-muted">Scarlet_{{ $app['version'] }}_x64-setup.exe{{ $app['installer_size'] ? ', '.number_format($app['installer_size'] / 1048576, 1).' MB' : '' }}, signed with Authenticode.@if ($app['sums']) <a href="{{ $app['sums'] }}">SHA256SUMS.txt</a> lists its checksum.@endif</p>
     @else
       <p>The newest version could not be looked up just now. Every version is on the releases page.</p>

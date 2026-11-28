@@ -15,6 +15,7 @@ use App\Support\RateFlag;
 use App\Support\RateSample;
 use App\Support\WorldLayer;
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
 use App\View\ItemTypes;
 
@@ -146,7 +147,7 @@ final class RecordPages
                 $facts[] = $bind;
             }
         }
-        $first = $r['first_at'] === null ? null : date('j M', (int) strtotime((string) $r['first_at']));
+        $first = $r['first_at'] === null ? null : Dates::moment((string) $r['first_at']);
         /** @var list<array{market: string, label: string, scanned_at: string, median: int, min_buyout: int, quantity: int, sold_per_day: float|null}> $marketPrices */
         $marketPrices = $r['market_prices'];
 
