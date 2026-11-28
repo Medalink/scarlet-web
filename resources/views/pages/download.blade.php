@@ -3,24 +3,20 @@ $website = ['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 
 @endphp
 <x-layouts.sc :title="$app['installer'] ? 'Scarlet for Windows, version '.$app['version'] : 'Scarlet for Windows'" description="Scarlet is an addon and desktop app for WoW Forever. The addon writes a timestamped line for each thing you do and keeps it on your PC." current="download" :brand="false">
 <script type="application/ld+json">@json($website)</script>
-<div class="wrap pb-20">
-  <section class="grid items-end gap-x-12 gap-y-6 border-b border-line pb-8 pt-10 md:grid-cols-[minmax(0,1fr)_auto]" aria-labelledby="h1">
-    <div class="min-w-0">
-      <h1 id="h1" class="sc-title" style="font-size:clamp(44px,6vw,60px)">Scarlet for Windows{{ $app['installer'] ? ', version '.$app['version'] : '' }}</h1>
-      <p class="mt-3 max-w-[62ch] text-[15.5px]">Scarlet records what you do in WoW Forever and keeps it on your PC. Uploading to the website is optional and off until you turn it on.</p>
+<div class="wrap pb-20 dl">
+  <section class="border-b border-line pb-8 pt-10" aria-labelledby="h1">
+    <h1 id="h1" class="sc-title" style="font-size:clamp(44px,6vw,60px)">Scarlet for Windows{{ $app['installer'] ? ', version '.$app['version'] : '' }}</h1>
+    <p class="mt-3 max-w-[62ch] text-[15.5px]">Scarlet records what you do in WoW Forever and keeps it on your PC. Uploading to the website is optional and off until you turn it on.@if ($app['installer']) The installer needs no administrator rights, installs the addon for WoW Forever and keeps it current.@endif</p>
+    <div class="dl-get mt-6">
+      <x-get-app :version="false" />
+      @if ($app['installer'])
+      <p class="dl-meta">{{ $app['prerelease'] ? 'Beta version' : 'Version' }} {{ $app['version'] }}@if ($app['date']) · {{ \App\View\Dates::day($app['date']) }}@endif · Windows only{{ $app['installer_size'] ? ' · '.number_format($app['installer_size'] / 1048576, 1).' MB' : '' }} · Signed with Authenticode</p>
+      @else
+      <p class="dl-meta">The newest version could not be looked up just now.</p>
+      @endif
+      <p class="dl-links">@if ($app['zip'])<a href="{{ $app['zip'] }}">Addon zip</a>@endif @if ($app['sums'])<a href="{{ $app['sums'] }}">SHA256SUMS.txt</a>@endif <a href="{{ $app['releases'] }}">All releases on GitHub</a></p>
     </div>
-    <div class="flex flex-wrap items-center gap-3"><x-get-app :version="false" /></div>
-  </section>
-
-  <section class="mt-8 grid gap-2 text-[15px]" aria-labelledby="h-downloads">
-    <h2 id="h-downloads" class="vh">Download</h2>
-    @if ($app['installer'])
-      <p class="max-w-[72ch]">{{ $app['prerelease'] ? 'Beta version' : 'Version' }} <b class="text-fg">{{ $app['version'] }}</b>@if ($app['date']), published {{ \App\View\Dates::day($app['date']) }}@endif. Windows only. The installer sets up the app for your user and needs no administrator rights. It installs the addon for WoW Forever and keeps it current.</p>
-      <p class="text-muted">Scarlet_{{ $app['version'] }}_x64-setup.exe{{ $app['installer_size'] ? ', '.number_format($app['installer_size'] / 1048576, 1).' MB' : '' }}, signed with Authenticode.@if ($app['sums']) <a href="{{ $app['sums'] }}">SHA256SUMS.txt</a> lists its checksum.@endif</p>
-    @else
-      <p>The newest version could not be looked up just now. Every version is on the releases page.</p>
-    @endif
-    <p>@if ($app['zip'])<a href="{{ $app['zip'] }}">Scarlet-{{ $app['version'] }}.zip</a>, the addon alone: unzip the <code>Scarlet</code> folder into <code>World of Warcraft\_forever_\Interface\AddOns</code>. @endif<a href="{{ $app['releases'] }}">All releases on GitHub</a></p>
+    @if ($app['zip'])<p class="mt-4 max-w-[72ch] text-muted">The addon zip holds the addon alone: unzip the <code>Scarlet</code> folder into <code>World of Warcraft\_forever_\Interface\AddOns</code>.</p>@endif
   </section>
 
   <section class="mt-14" aria-labelledby="h-records">
@@ -54,7 +50,6 @@ $website = ['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 
 
   <section class="mt-14" id="release-notes" aria-labelledby="h-release-notes">
     <h2 id="h-release-notes" class="sc-h" style="font-size:32px">Release notes</h2>
-    <p class="mt-2">Running v{{ $notes['build']['full'] }}. {{ \App\View\Format::count($notes['count'], 'release') }} published.</p>
     <x-release-notes :d="$notes" />
   </section>
 </div>

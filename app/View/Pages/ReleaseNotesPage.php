@@ -10,8 +10,7 @@ use Medalink\AppVersion\AppVersion;
 use Medalink\AppVersion\Models\ReleaseNote;
 
 /**
- * The data of /release-notes: the releases to pick from, one release with its changes grouped by area, and the
- * build that is running. Rows come from ReleaseNote::changes().
+ * The data of /release-notes: the releases to pick from and one release with its changes grouped by area. Rows come from ReleaseNote::changes().
  */
 final class ReleaseNotesPage
 {
@@ -37,7 +36,6 @@ final class ReleaseNotesPage
         $selected = $list->get($index);
 
         return [
-            'build' => self::build(),
             'count' => $list->count(),
             'rail' => $list->map(fn (ReleaseNote $release): array => self::railEntry($release, $release->version === $selected?->version))->all(),
             'release' => $selected instanceof ReleaseNote ? self::release($selected, $list->get($index + 1), $only) : null,
@@ -45,13 +43,15 @@ final class ReleaseNotesPage
     }
 
     /**
-     * The version line of the footer: "v0.1.0.12" and the full build string with its commit.
+     * The version line of the footer: "v0.1.0.12" with the commit of the build, and the full build string.
      *
      * @return array{text: string, full: string}
      */
     public static function stamp(): array
     {
-        return ['text' => 'v'.AppVersion::version().'.'.AppVersion::build(), 'full' => AppVersion::full()];
+        $commit = (string) AppVersion::toArray()['commit'];
+
+        return ['text' => 'v'.AppVersion::version().'.'.AppVersion::build().($commit === '' ? '' : ' · '.$commit), 'full' => AppVersion::full()];
     }
 
     /**
@@ -156,41 +156,5 @@ final class ReleaseNotesPage
         }
 
         return $items;
-    }
-
-    /** @return array<string, mixed> */
-    private static function build(): array
-    {
-        $v = AppVersion::toArray();
-        $stats = $v['stats'];
-        $commits = $stats['total_commits'];
-        $span = $v['commitSpanDays'];
-        $buildDays = $v['buildSpanDays'];
-
-        return [
-            'full' => $v['full'],
-            'figures' => array_values(array_filter([
-                ['label' => 'Version', 'value' => $v['version']],
-                ['label' => 'Build', 'value' => '#'.Format::number($v['build'])],
-                ['label' => 'Commit', 'value' => $v['commit']],
-                $stats['lines'] > 0 ? ['label' => 'Lines', 'value' => Format::number($stats['lines'])] : null,
-                $stats['files'] > 0 ? ['label' => 'Files', 'value' => Format::number($stats['files'])] : null,
-            ])),
-            'rows' => [
-                ['cells' => ['Last commit', $v['commit'], '+'.Format::number($stats['commit_additions']), '−'.Format::number($stats['commit_deletions'])]],
-                ['cells' => [
-                    'This build',
-                    Format::count($v['build'], 'commit').' since v'.$v['version'].($buildDays === null ? '' : ' in '.Format::count($buildDays, 'day')),
-                    '+'.Format::number($stats['build_additions']),
-                    '−'.Format::number($stats['build_deletions']),
-                ]],
-                ['cells' => [
-                    'All time',
-                    Format::count($commits, 'commit').($span === null ? '' : ' in '.Format::count($span, 'day')),
-                    '+'.Format::number($stats['lifetime_additions']),
-                    '−'.Format::number($stats['lifetime_deletions']),
-                ]],
-            ],
-        ];
     }
 }
