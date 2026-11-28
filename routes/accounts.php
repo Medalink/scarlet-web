@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\AccountPrivacyController;
 use App\Http\Controllers\Web\AccountStorageController;
 use App\Http\Controllers\Web\AccountUploadHistoryController;
 use App\Http\Controllers\Web\AuthCallbackController;
+use App\Http\Controllers\Web\AuthDevelopmentAgeUploadsController;
 use App\Http\Controllers\Web\AuthDevelopmentController;
 use App\Http\Controllers\Web\AuthDevelopmentDropBattlenetController;
 use App\Http\Controllers\Web\AuthDevelopmentExpireKeysController;
@@ -29,6 +30,7 @@ if (IdentityProvider::developmentAllowed()) {
     Route::post('/auth/development', AuthDevelopmentController::class)->middleware('throttle:120,1');
     Route::post('/auth/development/expire-keys', AuthDevelopmentExpireKeysController::class)->middleware(['auth', 'throttle:120,1']);
     Route::post('/auth/development/drop-battlenet', AuthDevelopmentDropBattlenetController::class)->middleware(['auth', 'throttle:120,1']);
+    Route::post('/auth/development/age-uploads', AuthDevelopmentAgeUploadsController::class)->middleware(['auth', 'throttle:120,1']);
 }
 
 Route::get('/account/characters', LegacyRedirectController::class)->defaults('to', '/account');

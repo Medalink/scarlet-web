@@ -26,6 +26,7 @@ import * as browser from "./checks/browser.mjs";
 import * as feats from "./checks/feats.mjs";
 import * as classPageApi from "./checks/class-page-api.mjs";
 import * as owner from "./checks/owner.mjs";
+import * as account from "./checks/account.mjs";
 import * as map from "./checks/map.mjs";
 import * as own from "./checks/own.mjs";
 import * as installs from "./checks/installs.mjs";
@@ -110,6 +111,10 @@ const REGISTRY = [
   { lane: "owner", name: "the admin opens the admin pages privately, /admin/api counts the upload and a character asked for by name, /admin/clients shows the install clients, and /admin/characters finds the characters", run: admin.adminSeesTheApiCalls },
   { lane: "owner", name: "a character the owner made private has no class page, world map or trails for a visitor, and has them again once public", run: classPage.hiddenCharacterHidesItsClassPage },
   { lane: "owner", name: "the owner turns the session pages off and a visitor gets a 404 while the owner keeps the page", run: session.sessionSwitchHidesThePage },
+  { lane: "owner", name: "the four account pages load under one section nav and the old settings address redirects", run: account.accountPagesLoadUnderOneNav },
+  { lane: "owner", name: "a character's privacy modal opens, closes with Escape, gives focus back, and its Show economy switch changes the public page", run: account.privacyModalOpensClosesAndSaves },
+  { lane: "owner", name: "the storage page lists only the uploads of the last 24 hours and its history lists the older ones too", run: account.storageListsOnlyTheLastDay },
+  { lane: "owner", name: "the storage totals match the parts, size and sessions the install's status reports", run: account.storageTotalsMatchTheUpload },
   { lane: "owner", name: "the feats page shows the catalog to a visitor and one character on compare and mine, and a feat has its own page", run: feats.featsHubFollowsTheScope },
   { lane: "owner", name: "the account's own profession pages show its characters and stay private", run: own.ownProfessionPagesShowTheAccount },
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },

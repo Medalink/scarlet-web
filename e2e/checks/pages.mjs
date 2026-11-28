@@ -37,13 +37,13 @@ const PAGES = [
   { path: "/encounters/1065", shows: heading("Encounter 1065") },
 ];
 
-function tokenIn(html) {
+export function tokenIn(html) {
   const token = html.match(/name="_token" value="([^"]+)"/)?.[1];
   if (!token) throw new Error(`the page carries no CSRF token to send back: ${html.slice(0, 300)}`);
   return token;
 }
 
-function form(fields) {
+export function form(fields) {
   return { headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "text/html" }, body: new URLSearchParams(fields).toString() };
 }
 
