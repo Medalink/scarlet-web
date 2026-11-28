@@ -31,10 +31,13 @@ export const weekHourLabel = (i) => `${WEEKDAYS[Math.floor(i / 24)]} ${hourOfDay
 
 /** App\View\Format::duration. */
 export function duration(seconds) {
-    const minutes = Math.round(seconds / 60);
+    const whole = Math.round(Math.abs(seconds));
+    if (whole < 60) return `${whole}s`;
+    const minutes = Math.round(whole / 60);
+    const units = (major, majorUnit, minor, minorUnit) => `${major}${majorUnit}${minor === 0 ? '' : ` ${minor}${minorUnit}`}`;
     if (minutes < 60) return `${minutes}m`;
-    if (minutes < 1440) return `${Math.floor(minutes / 60)}h${minutes % 60 ? ' ' + pad(minutes % 60) + 'm' : ''}`;
-    return `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h`;
+    if (minutes < 1440) return units(Math.floor(minutes / 60), 'h', minutes % 60, 'm');
+    return units(Math.floor(minutes / 1440), 'd', Math.floor((minutes % 1440) / 60), 'h');
 }
 
 const weekdayOf = (d) => WEEKDAYS[(d.getDay() + 6) % 7];

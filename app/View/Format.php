@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 /**
  * Every number, duration and amount of money the pages show is formatted here, so a figure reads the same
- * on every page and in every chart. The formats are the comps': `1,284`, `6d 4h`, `61h 20m`, `31g40s`.
+ * on every page and in every chart: `1,284`, `40s`, `57m`, `21h 48m`, `3d 2h`, `31g 40s`.
  * Pure functions: no state, no I/O.
  */
 final class Format
@@ -67,48 +67,46 @@ final class Format
         return number_format($share * 100, $decimals).'%';
     }
 
-    /** Seconds as the comps write a played time: "42m", "1h 14m", "9h", "6d 4h". */
+    /** Seconds as one played time: "40s", "57m", "21h 48m", "3d 2h"; a zero unit is left out ("1h", "3d"). */
     public static function duration(int|float $seconds): string
     {
-        $minutes = (int) round($seconds / 60);
+        $whole = (int) round(abs($seconds));
+        if ($whole < 60) {
+            return $whole.'s';
+        }
+
+        $minutes = (int) round($whole / 60);
         if ($minutes < 60) {
             return $minutes.'m';
         }
         if ($minutes < 1440) {
-            $rest = $minutes % 60;
-
-            return intdiv($minutes, 60).'h'.($rest === 0 ? '' : ' '.str_pad((string) $rest, 2, '0', STR_PAD_LEFT).'m');
+            return self::units(intdiv($minutes, 60), 'h', $minutes % 60, 'm');
         }
 
-        return intdiv($minutes, 1440).'d '.intdiv($minutes % 1440, 60).'h';
+        return self::units(intdiv($minutes, 1440), 'd', intdiv($minutes % 1440, 60), 'h');
     }
 
-    /** Seconds as hours and minutes, with no days: "61h 20m", "96h"; without minutes, rounded to the hour: "61h". */
+    /** Seconds as a duration; without minutes the time is rounded to the hour first: "21h", "3d 2h", "4d". */
     public static function hours(int|float $seconds, bool $minutes = true): string
     {
-        if (! $minutes) {
-            return self::number(round($seconds / 3600)).'h';
+        if ($minutes) {
+            return self::duration($seconds);
         }
 
-        $total = (int) round($seconds / 60);
-        $rest = $total % 60;
+        $hours = (int) round(abs($seconds) / 3600);
 
-        return intdiv($total, 60).'h'.($rest === 0 ? '' : ' '.str_pad((string) $rest, 2, '0', STR_PAD_LEFT).'m');
+        return $hours < 24 ? $hours.'h' : self::units(intdiv($hours, 24), 'd', $hours % 24, 'h');
     }
 
-    /** Seconds down to the minute, for boards that rank by time: "3d 19h 02m". */
+    /** A time that boards rank by; it reads like every other duration. */
     public static function exact(int|float $seconds): string
     {
-        $minutes = (int) round($seconds / 60);
-
-        return intdiv($minutes, 1440).'d '
-            .str_pad((string) intdiv($minutes % 1440, 60), 2, '0', STR_PAD_LEFT).'h '
-            .str_pad((string) ($minutes % 60), 2, '0', STR_PAD_LEFT).'m';
+        return self::duration($seconds);
     }
 
     /**
-     * Copper as gold, silver and copper with the coin letters, in a `.money` span.
-     * 314000 → 31g40s, 2140 → 21s40c, 1800 → 18s. Signed amounts carry + or −.
+     * Copper as gold, silver and copper with the coin letters, in a `.money` span; a zero unit after the first is left out.
+     * 314000 → 31g 40s, 50000 → 5g, 2140 → 21s 40c, 1800 → 18s, 129 → 1s 29c, 0 → 0c. Signed amounts carry + or −.
      */
     public static function money(int|float $copper, bool $signed = false): HtmlString
     {
@@ -121,13 +119,15 @@ final class Format
         $parts = [];
         if ($gold > 0) {
             $parts[] = $coin('g', self::number($gold));
-            $parts[] = $coin('s', str_pad((string) $silver, 2, '0', STR_PAD_LEFT));
         }
-        if ($gold === 0 && $silver > 0) {
+        if ($silver > 0) {
             $parts[] = $coin('s', (string) $silver);
         }
-        if ($gold === 0 && ($bronze > 0 || $silver === 0)) {
-            $parts[] = $coin('c', $silver > 0 ? str_pad((string) $bronze, 2, '0', STR_PAD_LEFT) : (string) $bronze);
+        if ($gold === 0 && $bronze > 0) {
+            $parts[] = $coin('c', (string) $bronze);
+        }
+        if ($parts === []) {
+            $parts[] = $coin('c', '0');
         }
 
         return new HtmlString('<span class="money">'.self::sign($copper, $signed).implode('', $parts).'</span>');
@@ -231,6 +231,11 @@ final class Format
     public static function line(string $lead, string $rest = ''): array
     {
         return [$lead, $rest];
+    }
+
+    private static function units(int $major, string $majorUnit, int $minor, string $minorUnit): string
+    {
+        return $major.$majorUnit.($minor === 0 ? '' : ' '.$minor.$minorUnit);
     }
 
     private static function sign(int|float $copper, bool $signed): string
