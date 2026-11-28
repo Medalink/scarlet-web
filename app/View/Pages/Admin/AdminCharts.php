@@ -3,9 +3,9 @@
 namespace App\View\Pages\Admin;
 
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
 use App\View\Pages\Axis;
-use Illuminate\Support\Carbon;
 
 /**
  * What the four admin pages share (docs/comps/admin*.html): the page nav, the UTC days a chart spans, which end at
@@ -36,7 +36,7 @@ final class AdminCharts
 
     public static function lastDay(): string
     {
-        return now('UTC')->startOfDay()->subDay()->format('j M');
+        return Dates::text(now('UTC')->startOfDay()->subDay()->toDateString());
     }
 
     /**
@@ -133,7 +133,7 @@ final class AdminCharts
         }
         $at = (int) array_search($top, $values, true);
 
-        return 'Most in one day: '.Format::number($top).' '.$what.' on '.Carbon::parse($days[$at])->format('j M').'.';
+        return 'Most in one day: '.Format::number($top).' '.$what.' on '.Dates::text($days[$at]).'.';
     }
 
     /**
@@ -185,7 +185,7 @@ final class AdminCharts
     {
         $at = Axis::spread(0, count($days) - 1, $size['w'] < 600 ? 2 : 4);
 
-        return array_map(fn (int $i): array => [$i, Carbon::parse($days[$i])->format('j M')], $at);
+        return array_map(fn (int $i): array => [$i, Dates::text($days[$i])], $at);
     }
 
     /**

@@ -4,7 +4,7 @@
 @else
   <div class="sc-set">
 @foreach ($installs as $install)
-    <x-sc.set-row :title="($install->name ?? 'Scarlet app').', linked '.($install->linked_at ?? $install->created_at)->format('j M Y')" :body="($install->last_seen_at ? 'Last upload '.$install->last_seen_at->diffForHumans() : 'Nothing uploaded yet').' · '.\App\View\Format::count($install->characters_count, 'character')" wire:key="i-{{ $install->id }}">
+    <x-sc.set-row :title="\App\View\Dates::join(($install->name ?? 'Scarlet app').', linked ', \App\View\Dates::moment($install->linked_at ?? $install->created_at))" :body="\App\View\Dates::join(...($install->last_seen_at ? ['Last upload ', \App\View\Dates::moment($install->last_seen_at)] : ['Nothing uploaded yet']), ' · '.\App\View\Format::count($install->characters_count, 'character'))" wire:key="i-{{ $install->id }}">
 @if ($install->isRevoked())
       <span class="sc-state">Revoked</span>
 @else

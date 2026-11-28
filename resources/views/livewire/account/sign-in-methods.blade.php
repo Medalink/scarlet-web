@@ -2,7 +2,7 @@
   <div class="sc-set">
 @foreach ($providers as $provider)
 @if (isset($linked[$provider->value]))
-    <x-sc.set-row :title="$provider->label()" :body="'Linked '.$linked[$provider->value]->created_at->format('j M Y').' · '.$linked[$provider->value]->signInKey()" wire:key="m-{{ $provider->value }}">
+    <x-sc.set-row :title="$provider->label()" :body="\App\View\Dates::join('Linked ', \App\View\Dates::moment($linked[$provider->value]->created_at), ' · '.$linked[$provider->value]->signInKey())" wire:key="m-{{ $provider->value }}">
       <span class="sc-state on">Linked</span>
 @if (count($linked) > 1)
       <button type="button" class="sc-btn quiet small" wire:click="unlink('{{ $provider->value }}')" wire:confirm="Unlink {{ $provider->label() }}? You can still sign in with the other method.">Unlink</button>

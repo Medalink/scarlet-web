@@ -4,8 +4,8 @@ namespace App\View\Pages\Admin;
 
 use App\Actions\Admin\IngestPipeline;
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
-use Illuminate\Support\Carbon;
 
 /** The view of /admin/ingest from the answer of IngestPipeline (docs/comps/admin-ingest.html). */
 final class IngestPage
@@ -34,12 +34,12 @@ final class IngestPage
         $median = AdminCharts::over($days, array_map(fn (array $d): float => round($d['median'], 1), $latency));
         $p90 = AdminCharts::over($days, array_map(fn (array $d): float => round($d['p90'], 1), $latency));
         $seconds = fn (int|float $v): string => AdminCharts::short($v).'s';
-        $waitSay = array_map(fn (int $i): array => Format::line(Carbon::parse($days[$i])->format('j M'), isset($latency[$days[$i]]) ? ': median '.$seconds($median[$i]).', nine parts in ten within '.$seconds($p90[$i]).'.' : ': no part decoded.'), array_keys($days));
+        $waitSay = array_map(fn (int $i): array => Format::line(Dates::text($days[$i]), isset($latency[$days[$i]]) ? ': median '.$seconds($median[$i]).', nine parts in ten within '.$seconds($p90[$i]).'.' : ': no part decoded.'), array_keys($days));
         $slowest = $p90 === [] || max($p90) <= 0 ? null : (int) array_search(max($p90), $p90, true);
 
         return [
             'nav' => AdminCharts::nav('/admin/ingest'),
-            'sub' => 'From an uploaded part to a decoded session. Days and hours are UTC and the charts end at the last full day, '.AdminCharts::lastDay().'. Counted '.Carbon::parse((string) $p['at'])->utc()->format('j M Y \a\t H:i').' UTC.',
+            'sub' => Dates::join('From an uploaded part to a decoded session. Days and hours are UTC and the charts end at the last full day, '.AdminCharts::lastDay().'. Counted ', Dates::moment((string) $p['at']), '.'),
             'figures' => [
                 ['label' => 'Parts uploaded today', 'value' => Format::number(array_sum(array_map(fn (array $g): int => $g['day'] === $today ? $g['parts'] : 0, $groups))), 'icon' => null],
                 ['label' => 'Parts waiting to decode', 'value' => Format::number((int) $p['undecoded']), 'icon' => null],
@@ -52,7 +52,7 @@ final class IngestPage
             ...self::groups($days, $groups),
             'queues' => self::queues($queues),
             'wait' => AdminCharts::lines($days, [['cls' => 'b thin', 'values' => $p90], ['cls' => 'a', 'values' => $median]], ['w' => 660, 'h' => 250], $waitSay, $seconds),
-            'waitNote' => $slowest === null ? 'No part has been decoded in these days.' : 'Slowest day: '.Carbon::parse($days[$slowest])->format('j M').', when one part in ten waited longer than '.$seconds($p90[$slowest]).'.',
+            'waitNote' => $slowest === null ? 'No part has been decoded in these days.' : 'Slowest day: '.Dates::text($days[$slowest]).', when one part in ten waited longer than '.$seconds($p90[$slowest]).'.',
             'decoded' => AdminCharts::bars($days, $decoded, ['w' => 480, 'h' => 250]),
             'decodedNote' => AdminCharts::most($days, $decoded, 'sessions'),
             'hours' => self::hours($p['hours']),
@@ -89,7 +89,7 @@ final class IngestPage
         $labels = [...$named, 'other groups'];
         $classes = [...array_map(fn (int $i): string => 's'.($i + 1), array_keys($named)), 'o'];
         $say = array_map(fn (int $i): array => Format::line(
-            Carbon::parse($days[$i])->format('j M'),
+            Dates::text($days[$i]),
             ': '.Format::count(array_sum(array_column($parts, $i)), 'part').'. '.implode(', ', array_map(fn (int $k): string => $labels[$k].' '.Format::number($parts[$k][$i]), array_keys($labels))).'.',
         ), array_keys($days));
 
@@ -129,9 +129,9 @@ final class IngestPage
             foreach (range(0, 23) as $hour) {
                 $count = $grid[$d + 1][$hour] ?? 0;
                 $row[] = $count === 0 ? 0 : max(1, (int) ceil($count / max(1, $most) * 4));
-                $say[] = Format::line($day.' '.sprintf('%02d:00', $hour).' UTC', ': '.Format::count($count, 'part').' in the last four weeks.');
+                $say[] = Format::line($day.' '.Dates::hour($hour).' UTC', ': '.Format::count($count, 'part').' in the last four weeks.');
                 if ($count > 0 && $count === $most && $busiest === null) {
-                    $busiest = $day.' '.sprintf('%02d:00', $hour).' UTC';
+                    $busiest = $day.' '.Dates::hour($hour).' UTC';
                 }
             }
             $levels[] = $row;

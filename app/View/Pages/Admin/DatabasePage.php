@@ -2,8 +2,9 @@
 
 namespace App\View\Pages\Admin;
 
+use App\View\Dates;
 use App\View\Format;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 /** The view of /admin/database from the answer of DatabaseHealth (docs/comps/admin-database.html). */
 final class DatabasePage
@@ -53,7 +54,7 @@ final class DatabasePage
 
         return [
             'nav' => AdminCharts::nav('/admin/database'),
-            'sub' => Format::bytes((int) $server['bytes']).' in '.count($stored).' tables, '.$hypertables.' of them hypertables. PostgreSQL '.$server['version'].', TimescaleDB '.$server['timescaledb'].', up since '.self::when($server['started_at'], 'j M H:i').'. Row counts are the planner\'s estimates. Times are UTC. Read from the catalogs '.Carbon::parse((string) $h['at'])->utc()->format('j M Y \a\t H:i').' UTC.',
+            'sub' => Dates::join(Format::bytes((int) $server['bytes']).' in '.count($stored).' tables, '.$hypertables.' of them hypertables. PostgreSQL '.$server['version'].', TimescaleDB '.$server['timescaledb'].', up since ', Dates::moment((string) $server['started_at']), '. Row counts are the planner\'s estimates. Read from the catalogs ', Dates::moment((string) $h['at']), '.'),
             'figures' => [
                 ['label' => 'Size', 'value' => Format::bytes((int) $server['bytes']), 'icon' => null],
                 ['label' => 'Tables', 'value' => Format::number(count($stored)), 'icon' => null],
@@ -185,7 +186,7 @@ final class DatabasePage
             ['text' => $j['target'] === '' ? '#'.$j['id'] : (string) $j['target'], 'code' => true],
             self::JOB_KINDS[(string) $j['kind']] ?? (string) $j['kind'],
             self::every((string) $j['every']),
-            $j['last_at'] === null ? ['text' => '', 'note' => 'Not run yet'] : self::when($j['last_at'], 'j M H:i'),
+            $j['last_at'] === null ? ['text' => '', 'note' => 'Not run yet'] : self::when($j['last_at']),
             match ((string) $j['status']) {
                 'Success' => 'Succeeded',
                 'Failed' => ['text' => 'Failed', 'dot' => 'var(--accent)'],
@@ -193,7 +194,7 @@ final class DatabasePage
                 default => (string) $j['status'],
             },
             $j['seconds'] === null ? ['text' => '', 'note' => '–'] : self::runTime((float) $j['seconds']),
-            $j['next_at'] === null ? ['text' => '', 'note' => '–'] : self::when($j['next_at'], 'j M H:i'),
+            $j['next_at'] === null ? ['text' => '', 'note' => '–'] : self::when($j['next_at']),
         ]], $jobs);
     }
 
@@ -228,8 +229,8 @@ final class DatabasePage
             self::compact((int) $v['live']),
             Format::number((int) $v['dead']),
             ['text' => Format::percent($share($v), 1), 'bar' => round($share($v) / $most * 9, 1).'rem'],
-            $v['vacuumed_at'] === null ? ['text' => '', 'note' => 'Never'] : self::when($v['vacuumed_at'], 'j M H:i'),
-            $v['analyzed_at'] === null ? ['text' => '', 'note' => 'Never'] : self::when($v['analyzed_at'], 'j M H:i'),
+            $v['vacuumed_at'] === null ? ['text' => '', 'note' => 'Never'] : self::when($v['vacuumed_at']),
+            $v['analyzed_at'] === null ? ['text' => '', 'note' => 'Never'] : self::when($v['analyzed_at']),
         ]], $rows);
     }
 
@@ -278,8 +279,9 @@ final class DatabasePage
         return $seconds < 60 ? Format::number($seconds, 1).'s' : Format::duration($seconds);
     }
 
-    private static function when(mixed $instant, string $format): string
+    /** @return array{date: HtmlString} */
+    private static function when(mixed $instant): array
     {
-        return Carbon::parse((string) $instant)->utc()->format($format);
+        return ['date' => Dates::moment((string) $instant)];
     }
 }

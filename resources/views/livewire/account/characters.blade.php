@@ -7,7 +7,7 @@
     @php
         $name = \App\View\Format::characterName($character->name);
         $detail = \App\View\Format::character($character->level ?: null, $character->race, $character->class);
-        $line = collect([$detail ?: null, \App\View\Format::count($character->sessions_decoded, 'session'), $character->last_seen_at ? 'last upload '.$character->last_seen_at->diffForHumans() : 'nothing uploaded yet'])->filter()->implode(' · ');
+        $line = \App\View\Dates::implode(' · ', array_values(array_filter([$detail, \App\View\Format::count($character->sessions_decoded, 'session'), $character->last_seen_at ? \App\View\Dates::join('last upload ', \App\View\Dates::moment($character->last_seen_at)) : 'nothing uploaded yet'])));
     @endphp
     <x-sc.set-row :title="$name" :href="'/c/'.rawurlencode($character->name)" :body="$line" wire:key="c-{{ $character->id }}">
       <span @class(['sc-state', 'on' => $character->is_public])>{{ $character->is_public ? 'Public' : 'Private' }}</span>

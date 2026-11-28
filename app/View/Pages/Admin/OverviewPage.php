@@ -4,9 +4,9 @@ namespace App\View\Pages\Admin;
 
 use App\Actions\Admin\AdminOverview;
 use App\View\Charts;
+use App\View\Dates;
 use App\View\Format;
 use App\View\Pages\Axis;
-use Illuminate\Support\Carbon;
 
 /** The view of /admin from the answer of AdminOverview (docs/comps/admin.html). */
 final class OverviewPage
@@ -31,11 +31,11 @@ final class OverviewPage
         $series = array_map(fn (array $values): array => AdminCharts::over($days, $values), $daily);
         $megabytes = array_map(fn (int|float $bytes): float => round($bytes / self::MEGABYTE, 1), $series['upload_bytes']);
         $last = count($days) - 1;
-        $newSay = array_map(fn (int $i): array => Format::line(Carbon::parse($days[$i])->format('j M'), ': '.Format::count($series['accounts'][$i], 'account').', '.Format::count($series['installs'][$i], 'install').' and '.Format::count($series['characters'][$i], 'character').'.'), array_keys($days));
+        $newSay = array_map(fn (int $i): array => Format::line(Dates::text($days[$i]), ': '.Format::count($series['accounts'][$i], 'account').', '.Format::count($series['installs'][$i], 'install').' and '.Format::count($series['characters'][$i], 'character').'.'), array_keys($days));
 
         return [
             'nav' => AdminCharts::nav('/admin'),
-            'sub' => 'Days are UTC and the charts end at the last full day, '.AdminCharts::lastDay().'. Counted '.Carbon::parse((string) $o['at'])->utc()->format('j M Y \a\t H:i').' UTC.',
+            'sub' => Dates::join('Days are UTC and the charts end at the last full day, '.AdminCharts::lastDay().'. Counted ', Dates::moment((string) $o['at']), '.'),
             'figures' => [
                 ['label' => 'Accounts', 'value' => Format::number($t['accounts']), 'icon' => null],
                 ['label' => 'Installs', 'value' => Format::number($t['installs']), 'icon' => null],

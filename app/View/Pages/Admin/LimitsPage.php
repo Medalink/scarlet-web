@@ -3,8 +3,10 @@
 namespace App\View\Pages\Admin;
 
 use App\Support\ClientAddress;
+use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 /** The view data of /admin/limits from ApiLimits. */
 final class LimitsPage
@@ -31,7 +33,7 @@ final class LimitsPage
         $column = fn (string $key): array => AdminCharts::over($days, array_map(fn (array $day): int => $day[$key], $daily));
         [$requests, $refused, $limited] = [$column('requests'), $column('refused'), $column('limited')];
         $other = array_map(fn (int|float $all, int|float $over): int => (int) max(0, $all - $over), $refused, $limited);
-        $say = array_map(fn (int $i): array => Format::line(Carbon::parse($days[$i])->format('j M'), ': '.Format::count($limited[$i], 'request').' answered 429, '.Format::number($other[$i]).' refused otherwise.'), array_keys($days));
+        $say = array_map(fn (int $i): array => Format::line(Dates::text($days[$i]), ': '.Format::count($limited[$i], 'request').' answered 429, '.Format::number($other[$i]).' refused otherwise.'), array_keys($days));
 
         return [
             'nav' => AdminCharts::nav('/admin/limits'),
@@ -44,7 +46,7 @@ final class LimitsPage
                 ['label' => 'Addresses limited today', 'value' => Format::number($t['limited_addresses']), 'icon' => null],
             ],
             'refusals' => AdminCharts::stack($days, [$limited, $other], ['s1', 's5'], $say),
-            'refusalsNote' => '429 answers are counted apart from '.Carbon::parse(self::LIMITED_SINCE)->format('j M Y').'; before that day they show as refused otherwise.',
+            'refusalsNote' => '429 answers are counted apart from '.Dates::text(self::LIMITED_SINCE).'; before that day they show as refused otherwise.',
             'requests' => AdminCharts::bars($days, $requests, AdminCharts::THIRD, 't'),
             'requestsNote' => AdminCharts::most($days, $requests, 'requests'),
             'budgets' => [
@@ -147,8 +149,9 @@ final class LimitsPage
         return $ids === '' ? ['text' => '', 'note' => 'No key sent'] : '#'.str_replace(',', ', #', $ids);
     }
 
-    private static function when(string $instant): string
+    /** @return array{date: HtmlString} */
+    private static function when(string $instant): array
     {
-        return Carbon::parse($instant)->utc()->format('j M H:i');
+        return ['date' => Dates::moment($instant)];
     }
 }

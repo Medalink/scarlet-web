@@ -44,6 +44,29 @@ This file is the design. Build nothing that contradicts it; change it first. Num
 - **Store**: tells two histories of one addon apart, and is only a value the addon never rewrites while it keeps its
   records (Mastercraft's `life.since`). Session claims have none: a session is its character and its end.
 
+## Dates
+
+Every date a person reads follows one contract (owner, 2026-11-27: "Can we make dates across all surfaces more human?",
+then "use American"). American order, the year only when it is not the current year, a 12-hour clock, and times in the
+reader's time zone.
+
+- **A moment** (when one thing happened: last seen, uploaded, a session, a scan, a rank change) reads `just now`,
+  `N seconds ago`, `N minutes ago`, `N hours ago`, `yesterday`, `N days ago` up to six days, then `Nov 22`
+  (`Nov 22 2025` in another year). A future moment reads `in 2 hours`, then the date.
+- **A calendar day** (a record's day, a chart axis, a range, a UTC bucket) never goes relative: `Nov 22`, `Sat Nov 22`,
+  `Nov 22 to Nov 28`, `Nov 22 8:19 PM`. A day key (`2026-11-22`) is that day in every time zone.
+- `App\View\Dates` writes every date. `moment()`, `day()`, `weekday()`, `clock()`, `dayTime()` and `range()`
+  return a `<time datetime data-when>` holding the ISO value, the short UTC form as its no-script text and the exact UTC
+  value as its title. `text()` writes the same forms as plain UTC text for chart axes, readouts, descriptions and
+  attributes, `join()` and `implode()` put dates into a line of text, and `hour()` and `hourMark()` write an hour of
+  the day. Public pages are cached per URL, so the server never writes a relative date.
+- `resources/js/local-time.js` rewrites every `time[data-when]` in the reader's time zone, sets the exact local value
+  (`Sat Nov 22 2025 8:19:47 PM`) as its title, and refreshes moments from one timer: every second while a moment under a
+  minute old is on the page, every 30 seconds otherwise, and when the tab shows again. `play.js` and `sc/strip.js`
+  take their day and clock text from the same module.
+- API fields, stored values, day keys and filenames keep their ISO or epoch form. Only text a person reads changes.
+- Admin day buckets are UTC days and say so; every other time on the page is the reader's.
+
 ## Sharing groups
 
 `docs/groups.tsv` is the one source: `key`, `label`, `codes`. `scarlet-part check-groups <FORMAT.md>` fails when a code

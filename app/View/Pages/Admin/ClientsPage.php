@@ -3,8 +3,9 @@
 namespace App\View\Pages\Admin;
 
 use App\Actions\Admin\ClientVersions;
+use App\View\Dates;
 use App\View\Format;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 /**
  * The view data of /admin/clients from ClientVersions. A User-Agent reads `scarlet-app/1.0.4 (windows)` from the
@@ -137,14 +138,9 @@ final class ClientsPage
         ]], $rows);
     }
 
-    /** @return string|array<string, string> */
+    /** @return string|array{date: HtmlString} */
     private static function when(?string $instant): string|array
     {
-        if ($instant === null) {
-            return '';
-        }
-        $at = Carbon::parse($instant)->utc();
-
-        return ['text' => $at->format('j M H:i'), 'instant' => $at->toIso8601ZuluString(), 'format' => 'j M H:i'];
+        return $instant === null ? '' : ['date' => Dates::moment($instant)];
     }
 }

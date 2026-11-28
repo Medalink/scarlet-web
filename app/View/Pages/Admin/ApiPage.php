@@ -3,8 +3,9 @@
 namespace App\View\Pages\Admin;
 
 use App\Support\ClientAddress;
+use App\View\Dates;
 use App\View\Format;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 /** The view of /admin/api from the answer of ApiUsage (docs/comps/admin-api.html). */
 final class ApiPage
@@ -27,7 +28,7 @@ final class ApiPage
         [$anonymous, $keyed, $upload] = [$column('anonymous'), $column('keyed'), $column('upload')];
         [$addresses, $accounts, $installs] = [$column('addresses'), $column('accounts'), $column('installs')];
         $sum = fn (string $key): int => array_sum(array_column($daily, $key));
-        $say = array_map(fn (int $i): array => Format::line(Carbon::parse($days[$i])->format('j M'), ': '.Format::count($anonymous[$i] + $keyed[$i], 'request').', '.Format::number($anonymous[$i]).' anonymous and '.Format::number($keyed[$i]).' with a key.'), array_keys($days));
+        $say = array_map(fn (int $i): array => Format::line(Dates::text($days[$i]), ': '.Format::count($anonymous[$i] + $keyed[$i], 'request').', '.Format::number($anonymous[$i]).' anonymous and '.Format::number($keyed[$i]).' with a key.'), array_keys($days));
 
         return [
             'nav' => AdminCharts::nav('/admin/api'),
@@ -69,8 +70,8 @@ final class ApiPage
             ['text' => ClientAddress::shown((string) $row['address']), 'code' => true],
             ['text' => Format::number((int) $row['requests']), 'bar' => round((int) $row['requests'] / $top * 9, 1).'rem'],
             Format::number((int) $row['endpoints']),
-            self::when((string) $row['first_at'], 'j M'),
-            self::when((string) $row['last_at'], 'j M H:i'),
+            self::when((string) $row['first_at']),
+            self::when((string) $row['last_at']),
             $row['accounts'] === '' ? ['text' => '', 'note' => 'No key sent'] : '#'.str_replace(',', ', #', (string) $row['accounts']),
         ]], array_keys($rows), $rows);
     }
@@ -87,7 +88,7 @@ final class ApiPage
             '#'.$row['account_id'],
             Format::number($row['keys']),
             ['text' => Format::number($row['requests']), 'bar' => round($row['requests'] / $top * 9, 1).'rem'],
-            $row['last_at'] === null ? ['text' => '', 'note' => 'Never'] : self::when($row['last_at'], 'j M H:i'),
+            $row['last_at'] === null ? ['text' => '', 'note' => 'Never'] : self::when($row['last_at']),
         ]], $rows);
     }
 
@@ -143,8 +144,9 @@ final class ApiPage
         ], array_keys($rows), $rows);
     }
 
-    private static function when(string $instant, string $format): string
+    /** @return array{date: HtmlString} */
+    private static function when(string $instant): array
     {
-        return Carbon::parse($instant)->utc()->format($format);
+        return ['date' => Dates::moment($instant)];
     }
 }

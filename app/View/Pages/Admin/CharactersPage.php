@@ -3,8 +3,9 @@
 namespace App\View\Pages\Admin;
 
 use App\Http\Requests\Web\AdminCharactersRequest;
+use App\View\Dates;
 use App\View\Format;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 /** The view data of /admin/characters from ListCharacters (docs/comps/admin.html for the shared look). */
 final class CharactersPage
@@ -65,15 +66,10 @@ final class CharactersPage
         ]];
     }
 
-    /** @return string|array<string, string> */
+    /** @return string|array{date: HtmlString} */
     private static function when(mixed $instant): string|array
     {
-        if (! is_string($instant)) {
-            return '';
-        }
-        $at = Carbon::parse($instant)->utc();
-
-        return ['text' => $at->format('j M Y'), 'instant' => $at->toIso8601ZuluString(), 'format' => 'j M Y'];
+        return is_string($instant) ? ['date' => Dates::moment($instant)] : '';
     }
 
     private static function query(string $search, ?bool $show, int $page): string
