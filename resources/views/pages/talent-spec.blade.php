@@ -1,6 +1,6 @@
 <x-layouts.sc :title="$d['title'].' talents in WoW Forever'" current="talents" :description="'The talents '.$d['title'].' characters take in WoW Forever and how many take each. '.$d['sub']">
 <div class="wrap">
-  <x-page-head :title="$d['title']">
+  <x-page-head :title="$d['title']" :rule="false">
     <x-slot:sub><span data-class="{{ $d['classKey'] }}"><i class="dotc" aria-hidden="true"></i>{{ $d['className'] }}</span> · {{ $d['sub'] }}</x-slot:sub>
     <x-slot:filters>
       <x-scope-filters :filters="$filters" />
@@ -12,11 +12,22 @@
       @if ($d['n'] === 0)
       <x-note>No character has a build at these levels yet.</x-note>
       @else
-      @if ($d['tree'])
-      <x-talent-tree :tree="$d['tree']" :label="'Pick rate of each talent of '.$d['title'].' among '.\App\View\Format::count($d['n'], 'character')" id="spec-tree" />
-      <x-heat-key low="Few took it" high="Most took it" />
-      @endif
+      @if ($d['columns'] !== [])
+      <div class="mt-5 grid gap-x-10 gap-y-8 md:grid-cols-[repeat(var(--trees),minmax(0,1fr))]" style="--trees:{{ count($d['columns']) }}">
+        @foreach ($d['columns'] as $column)
+          <div>
+            <h3 class="sc-h" style="font-size:22px">{{ $column['name'] }}</h3>
+            <ol class="rank mt-3">
+              @foreach ($column['rows'] as $row)
+                <li title="{{ $row['title'] }}"><span class="who">@if ($row['href'])<a href="{{ $row['href'] }}">{{ $row['name'] }}</a>@else{{ $row['name'] }}@endif</span><span class="val">{{ $row['rate'] }}</span><span class="track"><i style="width:{{ $row['width'] }}%"></i></span></li>
+              @endforeach
+            </ol>
+          </div>
+        @endforeach
+      </div>
+      @else
       <x-table :rows="$d['nodes']['rows']" :columns="$d['nodes']['columns']" style="margin-top:1rem" />
+      @endif
       @endif
     </x-module>
     <x-module span="w5" :first="true" id="h-order" heading="Most common order">

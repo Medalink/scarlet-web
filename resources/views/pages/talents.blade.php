@@ -1,6 +1,6 @@
 <x-layouts.sc title="WoW Forever talent builds by spec" current="talents" :description="$d['sub']">
 <div class="wrap">
-  <x-page-head :title="$d['title']">
+  <x-page-head :title="$d['title']" :rule="false">
     <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
     <x-slot:filters><x-scope-filters :filters="$filters" /></x-slot:filters>
   </x-page-head>

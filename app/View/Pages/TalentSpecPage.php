@@ -6,14 +6,10 @@ use App\Support\LevelBracket;
 use App\Support\PageScope;
 use App\Support\Server;
 use App\View\Format;
-use App\View\TalentTree;
 
 /** The talent pages from the answers of App\Actions\Public\TalentSpecs and TalentSpec. */
 final class TalentSpecPage
 {
-    /** Pick rates at or under each of these (of 1) fall in heat 1 to 3; above the last is heat 4. */
-    private const array HEAT = [0.25, 0.5, 0.75];
-
     private const int BLOCK_ROWS = 8;
 
     /**
@@ -23,15 +19,22 @@ final class TalentSpecPage
     public static function index(array $specs): array
     {
         $total = array_sum(array_column($specs, 'characters'));
+        $top = max([1, ...array_column($specs, 'characters')]);
 
         return [
             'title' => 'Talents',
             'sub' => $specs === [] ? 'No talent builds recorded yet.' : Format::count($total, 'character').' with a talent build, in '.Format::count(count($specs), 'spec').'.',
             'columns' => [['label' => 'Spec'], ['label' => 'Class'], ['label' => 'Characters', 'numeric' => true]],
             'rows' => array_map(fn (array $spec): array => ['cells' => [
-                ['text' => $spec['name'], 'href' => '/talents/'.$spec['class_slug'].'/'.$spec['slug'], 'dot' => true, 'characterClass' => strtoupper($spec['class'])], Format::className($spec['class']), Format::number($spec['characters']),
+                ['text' => $spec['name'].' →', 'href' => '/talents/'.$spec['class_slug'].'/'.$spec['slug'], 'dot' => true, 'characterClass' => strtoupper($spec['class'])], Format::className($spec['class']), ['text' => Format::number($spec['characters']), ...self::bar($spec['characters'], $top)],
             ]], $specs),
         ];
+    }
+
+    /** @return array{bar?: string} */
+    private static function bar(int $value, int $top): array
+    {
+        return $value > 0 ? ['bar' => max(0.15, $value / $top * 5.2).'rem'] : [];
     }
 
     /**
@@ -75,24 +78,25 @@ final class TalentSpecPage
                 : Format::count($n, 'character').', each counted by its latest build'.($bracket === LevelBracket::All ? '.' : ' at '.mb_strtolower($bracket->label()).'.'),
             'n' => $n,
             'brackets' => self::control($bracket, $path, $scope),
-            'tree' => $a['layout'] === null || $n === 0 ? null : self::tree($a['layout'], $nodes, $n, $names),
+            'columns' => $a['layout'] === null || $n === 0 ? [] : self::columns($a['layout'], $nodes, $n, $names),
             'nodes' => self::nodeTable($nodes, $n),
             'order' => self::order($a['order']),
-            'builds' => self::builds($a['brackets']),
-            'outcomes' => self::outcomes($a['outcomes']),
+            'builds' => self::builds($a['brackets'], $names['tab']),
+            'outcomes' => self::outcomes($a['outcomes'], $names['tab']),
         ];
     }
 
     /**
      * @param  list<array{build: string, characters: int, levels: int, median_s: float|null, deaths: int, runs: int, bosses: int, run_deaths: int}>  $outcomes
+     * @param  array<int, string>  $tabs
      * @return array{columns: list<array<string, mixed>>, rows: list<array<string, mixed>>}
      */
-    private static function outcomes(array $outcomes): array
+    private static function outcomes(array $outcomes, array $tabs): array
     {
         return [
             'columns' => [['label' => 'Build'], ['label' => 'Characters', 'numeric' => true], ['label' => 'Timed level-ups', 'numeric' => true], ['label' => 'Median time to level', 'numeric' => true], ['label' => 'Deaths', 'numeric' => true], ['label' => 'Dungeon runs', 'numeric' => true], ['label' => 'Bosses a run', 'numeric' => true], ['label' => 'Deaths a run', 'numeric' => true]],
             'rows' => array_map(fn (array $row): array => ['cells' => [
-                $row['build'], Format::number($row['characters']), Format::number($row['levels']), $row['median_s'] === null ? '' : Format::duration($row['median_s']), Format::number($row['deaths']),
+                self::split($row['build'], $tabs), Format::number($row['characters']), Format::number($row['levels']), $row['median_s'] === null ? '' : Format::duration($row['median_s']), Format::number($row['deaths']),
                 Format::number($row['runs']), $row['runs'] === 0 ? '' : Format::number($row['bosses'] / $row['runs'], 1), $row['runs'] === 0 ? '' : Format::number($row['run_deaths'] / $row['runs'], 1),
             ]], $outcomes),
         ];
@@ -113,53 +117,57 @@ final class TalentSpecPage
     }
 
     /**
+     * One column for each talent tree: the talents characters took, with how many took each, top of the tree first.
+     *
      * @param  array<string, mixed>  $layout
      * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, name: string|null}>  $nodes
      * @param  array{spell: array<int, string>, tab: array<int, string>}  $names
-     * @return array<string, mixed>
+     * @return list<array{name: string, rows: list<array{name: string, href: string|null, rate: string, width: float, title: string}>}>
      */
-    private static function tree(array $layout, array $nodes, int $n, array $names): array
+    private static function columns(array $layout, array $nodes, int $n, array $names): array
     {
         $taken = [];
         foreach ($nodes as $node) {
             $taken[$node['node']] = $node;
         }
-        $marks = [];
-        /** @var array<int, array{id: int, entries: list<array{entry: int, spell: int|null}>, tab: int|null}> $layoutNodes */
+        /** @var array<int, array{id: int, y: int, tab: int|null, entries: list<array{entry: int, spell: int|null}>}> $layoutNodes */
         $layoutNodes = $layout['nodes'];
+        uasort($layoutNodes, fn (array $a, array $b): int => $b['y'] <=> $a['y']);
+        $columns = [];
         foreach ($layoutNodes as $id => $node) {
-            $name = implode(' or ', array_map(fn (array $entry): string => ($entry['spell'] === null ? null : ($names['spell'][$entry['spell']] ?? null)) ?? 'Talent '.$entry['entry'], $node['entries'])) ?: 'Talent '.$id;
-            $rate = $taken[$id]['rate'] ?? 0.0;
-            $marks[$id] = [
-                'title' => $name.': '.Format::percent($rate).' of '.Format::count($n, 'character').' ('.Format::number($taken[$id]['taken'] ?? 0).')',
-                'text' => $rate > 0 ? (string) (int) round($rate * 100) : '',
-                'class' => self::heat($rate),
-                'on' => $rate > 0,
+            $pick = $taken[$id] ?? null;
+            if ($pick === null || $pick['rate'] <= 0 || $node['tab'] === null || ! isset($names['tab'][$node['tab']])) {
+                continue;
+            }
+            $spell = $pick['spell'] ?? ($node['entries'][0]['spell'] ?? null);
+            $columns[$node['tab']]['name'] = $names['tab'][$node['tab']];
+            $columns[$node['tab']]['rows'][] = [
+                'name' => $pick['name'] ?? 'Talent '.$id,
+                'href' => $spell === null ? null : '/spells/'.$spell,
+                'rate' => Format::percent($pick['rate']),
+                'width' => round($pick['rate'] * 100, 1),
+                'title' => Format::number($pick['taken']).' of '.Format::count($n, 'character').', average rank '.Format::number($pick['rank'], 1),
             ];
         }
-        $tabs = [];
-        foreach ($layoutNodes as $node) {
-            if ($node['tab'] !== null && isset($names['tab'][$node['tab']])) {
-                $tabs[$node['tab']] = $names['tab'][$node['tab']];
-            }
-        }
+        ksort($columns);
 
-        /** @var array{nodes: array<int, array{id: int, x: int, y: int, tab: int|null, edges: list<array{to: int, type: string}>}>} $layout */
-        return TalentTree::geometry($layout, $marks, $tabs);
+        return array_values($columns);
     }
 
-    private static function heat(float $rate): string
+    /**
+     * A build as points in each tree: "Beast Mastery 4, Marksmanship 2" becomes "4 / 2 / 0".
+     *
+     * @param  array<int, string>  $tabs
+     */
+    private static function split(string $build, array $tabs): string
     {
-        if ($rate <= 0) {
-            return 'off';
-        }
-        foreach (self::HEAT as $level => $limit) {
-            if ($rate <= $limit) {
-                return 'h'.($level + 1);
-            }
+        ksort($tabs);
+        $points = [];
+        foreach ($tabs as $name) {
+            $points[] = preg_match('/(?:^|, )'.preg_quote($name, '/').' (\d+)(?:,|$)/', $build, $match) === 1 ? $match[1] : '0';
         }
 
-        return 'h4';
+        return $tabs === [] || array_sum(array_map('intval', $points)) === 0 ? $build : implode(' / ', $points);
     }
 
     /**
@@ -198,14 +206,17 @@ final class TalentSpecPage
 
     /**
      * @param  list<array{bracket: LevelBracket, characters: int, builds: int, top: string|null, share: float}>  $brackets
+     * @param  array<int, string>  $tabs
      * @return array{columns: list<array<string, mixed>>, rows: list<array<string, mixed>>}
      */
-    private static function builds(array $brackets): array
+    private static function builds(array $brackets, array $tabs): array
     {
+        $brackets = array_values(array_filter($brackets, fn (array $row): bool => $row['characters'] > 0 || $row['bracket'] === LevelBracket::All));
+
         return [
             'columns' => [['label' => 'Levels'], ['label' => 'Characters', 'numeric' => true], ['label' => 'Different builds', 'numeric' => true], ['label' => 'Most common build'], ['label' => 'Share', 'numeric' => true]],
             'rows' => array_map(fn (array $row): array => ['cells' => [
-                $row['bracket']->label(), Format::number($row['characters']), $row['characters'] === 0 ? '' : Format::number($row['builds']), $row['top'] ?? '', $row['top'] === null ? '' : Format::percent($row['share']),
+                $row['bracket']->label(), Format::number($row['characters']), $row['characters'] === 0 ? '' : Format::number($row['builds']), $row['top'] === null ? '' : self::split($row['top'], $tabs), $row['top'] === null ? '' : Format::percent($row['share']),
             ]], $brackets),
         ];
     }
