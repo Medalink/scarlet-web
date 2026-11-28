@@ -1,6 +1,16 @@
+const numberPause = 700;
+const pendingForms = new WeakMap();
+
 document.addEventListener('change', (event) => {
-    const select = event.target.closest?.('[data-autosubmit]');
-    if (select?.form) select.form.requestSubmit();
+    const control = event.target.closest?.('[data-autosubmit]');
+    const form = control?.form;
+    if (!form) return;
+    if (control.type !== 'number') {
+        form.requestSubmit();
+        return;
+    }
+    clearTimeout(pendingForms.get(form));
+    pendingForms.set(form, setTimeout(() => form.requestSubmit(), numberPause));
 });
 
 document.addEventListener('change', (event) => {
