@@ -1756,7 +1756,7 @@ page("admin-api.html", "Scarlet admin: who uses the API", "", `
 
     <section class="mod w12 first last" aria-labelledby="h-keys">
       <h2 id="h-keys">Accounts with API keys</h2>
-      ${dataTable([["Account"], ["Keys", "n"], ["Newest key made", "n"], ["Soonest expiry", "n"], ["Last used", "n"], ["Today", "n"], ["7 days", "n"], ["All days", "n"], ["Busiest minute", "n"], ["Answered 429", "n"]], keyRows.map(([account, keys, made, expires, last, today, week, all, busiest, limited]) => [account, keys, made, expires, last, num(today), barCell(((week / keyRows[0][6]) * 6).toFixed(1), num(week)), num(all), busiest, limited]))}
+      ${dataTable([["Account"], ["Keys", "n"], ["Newest key made", "n"], ["Soonest expiry", "n"], ["Last used", "n"], ["Today", "n"], ["7 days", "n"], ["All days", "n"], ["Busiest minute (30 days)", "n"], ["Answered 429", "n"]], keyRows.map(([account, keys, made, expires, last, today, week, all, busiest, limited]) => [account, keys, made, expires, last, num(today), barCell(((week / keyRows[0][6]) * 6).toFixed(1), num(week)), num(all), busiest, limited]))}
       <p class="note">Busiest minute is the most requests the account made in one minute, against the limit for a minute.</p>
     </section>
     <section class="mod w12 first last" aria-labelledby="h-endpoints">

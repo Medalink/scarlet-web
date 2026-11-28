@@ -41,7 +41,7 @@
 @if ($d['accountRows'] === [])
       <x-note>No account holds an API key or has called with one in these days.</x-note>
 @else
-      <x-table style="margin-top:1.1rem" :columns="[['label' => 'Account'], ['label' => 'Keys', 'numeric' => true], ['label' => 'Newest key made', 'numeric' => true], ['label' => 'Soonest expiry', 'numeric' => true], ['label' => 'Last used', 'numeric' => true], ['label' => 'Today', 'numeric' => true], ['label' => '7 days', 'numeric' => true], ['label' => 'All days', 'numeric' => true], ['label' => 'Busiest minute', 'numeric' => true], ['label' => 'Answered 429', 'numeric' => true]]" :rows="$d['accountRows']" />
+      <x-table style="margin-top:1.1rem" :columns="[['label' => 'Account'], ['label' => 'Keys', 'numeric' => true], ['label' => 'Newest key made', 'numeric' => true], ['label' => 'Soonest expiry', 'numeric' => true], ['label' => 'Last used', 'numeric' => true], ['label' => 'Today', 'numeric' => true], ['label' => '7 days', 'numeric' => true], ['label' => 'All days', 'numeric' => true], ['label' => 'Busiest minute ('.$d['days'].' days)', 'numeric' => true], ['label' => 'Answered 429', 'numeric' => true]]" :rows="$d['accountRows']" />
       <x-note>Busiest minute is the most requests the account made in one minute, against the limit for a minute.</x-note>
 @endif
     </x-module>

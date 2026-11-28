@@ -32,6 +32,7 @@ final class ApiPage
 
         return [
             'nav' => AdminCharts::nav('/admin/api'),
+            'days' => $keep,
             'sub' => 'Requests in the last '.$keep.' days. Addresses are kept for '.$keep.' days.',
             'figures' => [
                 ['label' => 'Requests without a valid key', 'value' => Format::number($sum('keyless')), 'icon' => null],

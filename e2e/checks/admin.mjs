@@ -11,7 +11,7 @@ const number = (value) => Number(value.replaceAll(",", ""));
 function accountsWithKeysAreListed(page) {
   const section = page.slice(page.indexOf('id="h-keys"'), page.indexOf('id="h-endpoints"'));
   const headers = [...section.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)].map(([, label]) => text(label));
-  if (headers.join("|") !== "Account|Keys|Newest key made|Soonest expiry|Last used|Today|7 days|All days|Busiest minute|Answered 429") {
+  if (headers.join("|") !== "Account|Keys|Newest key made|Soonest expiry|Last used|Today|7 days|All days|Busiest minute (30 days)|Answered 429") {
     throw new Error(`/admin/api: "Accounts with API keys" should have its ten columns, saw ${JSON.stringify(headers)}`);
   }
   const row = section.match(/<tbody>\s*<tr[^>]*>([\s\S]*?)<\/tr>/)?.[1];
