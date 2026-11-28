@@ -1267,12 +1267,12 @@ sign-in can make one (`CreateApiKey` refuses otherwise, and `/account` shows one
 the form); unlinking Battle.net deletes the account's keys. An account holds at most 10 keys. A key expires after 30
 days unless its maker picks 60 or 90 (`personal_access_tokens.expires_at`, at most `Account::API_KEY_MAX_DAYS`);
 `/account` lists each key's expiry, shows an expired one as expired and lets the account delete it, and `PublicApi`
-refuses an expired key like an unknown one. Keys that predate expiry were given 30 days from the migration that added
-it. The local development sign-in can make a Battle.net identity (`POST /auth/development` with `as=battlenet`) and
-expire the account's keys of one name (`POST /auth/development/expire-keys`), under the same gate as the sign-in itself (a local
-environment with `SCARLET_DEV_LOGIN` on), so the end-to-end lane can make keys without Battle.net. The site's own
+refuses an expired key, and a key whose account has no Battle.net sign-in (one indexed lookup on `identities`), like an unknown one. The migration that added expiry deleted the keys of accounts without Battle.net and gave the other keys that predate it 30 days from the migration. The local development sign-in can make a Battle.net identity (`POST /auth/development` with `as=battlenet`) and
+expire the account's keys of one name (`POST /auth/development/expire-keys`) or drop its Battle.net identity and keep its keys (`POST /auth/development/drop-battlenet`), under the same gate as the sign-in itself (a local
+environment with `SCARLET_DEV_LOGIN` on), so the end-to-end lane can make keys, and check that a key of an account without Battle.net is refused. The site's own
 pages never use a key: the world map reads its heat from `GET /map/density`, a route of `routes/pages.php` that runs
-the same `WorldDensity` Action under the page limit and the page cache.
+the same `WorldDensity` Action under the page limit and the page cache, says `X-Robots-Tag: noindex`, and keeps its answer
+gzipped and only up to 1 MB packed (`PackedAnswer`, which `PublicApi` uses for its own answers too).
 
 **Linking the app.** In Settings the player presses "Link to my account". The app asks the API for a link code
 (a signed request), shows it and opens `/link?redeem=<signature>` in the browser. The player signs in and types the

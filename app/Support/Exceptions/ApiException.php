@@ -99,7 +99,9 @@ class ApiException extends RuntimeException
 
     public static function missingKey(): self
     {
-        return new self(401, 'missing_key', 'Send an API key as "Authorization: Bearer <key>". Sign in with Battle.net on scarletweb.io/account/settings and create a key there.');
+        $settings = rtrim((string) config('app.url'), '/').'/account/settings';
+
+        return new self(401, 'missing_key', 'Send an API key as "Authorization: Bearer <key>". Sign in with Battle.net on '.$settings.' and create a key there.');
     }
 
     public static function notFound(string $what): self

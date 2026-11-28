@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\AccountController;
 use App\Http\Controllers\Web\AccountSettingsController;
 use App\Http\Controllers\Web\AuthCallbackController;
 use App\Http\Controllers\Web\AuthDevelopmentController;
+use App\Http\Controllers\Web\AuthDevelopmentDropBattlenetController;
 use App\Http\Controllers\Web\AuthDevelopmentExpireKeysController;
 use App\Http\Controllers\Web\AuthLoginController;
 use App\Http\Controllers\Web\AuthLogoutController;
@@ -24,6 +25,7 @@ Route::post('/logout', AuthLogoutController::class);
 if (IdentityProvider::developmentAllowed()) {
     Route::post('/auth/development', AuthDevelopmentController::class)->middleware('throttle:120,1');
     Route::post('/auth/development/expire-keys', AuthDevelopmentExpireKeysController::class)->middleware(['auth', 'throttle:120,1']);
+    Route::post('/auth/development/drop-battlenet', AuthDevelopmentDropBattlenetController::class)->middleware(['auth', 'throttle:120,1']);
 }
 
 Route::get('/account/characters', LegacyRedirectController::class)->defaults('to', '/account');

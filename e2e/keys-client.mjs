@@ -62,6 +62,13 @@ export async function expireKeys(request, name) {
   if (answer.status !== 302) throw new Error(`POST /auth/development/expire-keys: expected a redirect, saw ${answer.status}: ${answer.text.slice(0, 200)}`);
 }
 
+/** Removes the signed-in account's Battle.net identity and leaves its keys (development sign-in only). */
+export async function dropBattlenet(request) {
+  const page = await request(SETTINGS, { headers: { Accept: "text/html" } });
+  const answer = await request("/auth/development/drop-battlenet", form({ _token: tokenIn(page.text) }));
+  if (answer.status !== 302) throw new Error(`POST /auth/development/drop-battlenet: expected a redirect, saw ${answer.status}: ${answer.text.slice(0, 200)}`);
+}
+
 /** The HTML the API keys module draws after `calls` ran with `updates` set on its properties. */
 export async function callKeys(request, updates = {}, calls = []) {
   const page = await request(SETTINGS, { headers: { Accept: "text/html" } });

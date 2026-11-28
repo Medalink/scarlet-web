@@ -404,11 +404,11 @@ Take the slugs from `GET /public/rulesets`.
 - Every request sends a key: a personal access token with the `public:read` ability, made on the account settings page
   (see "API keys" above) and sent as `Authorization: Bearer <key>`. A key in the query string is not read. The limit is
   600 requests a minute for the account, shared by all its keys.
-- A request with no key is `401 missing_key`. A key that is unknown, expired or lacks the ability is
+- A request with no key is `401 missing_key`. A key that is unknown, expired, lacks the ability or belongs to an account without Battle.net is
   `401 invalid_token`. After 10 of those from one address in a minute, the answer is `429 rate_limited` until the
   minute is over.
 - Over the limit the answer is `429 rate_limited` with `Retry-After` in seconds and `retry_after` in the body.
-  `X-RateLimit-Limit` and `X-RateLimit-Remaining` are on every answer.
+  `X-RateLimit-Limit` and `X-RateLimit-Remaining` are on every answer to a request with an accepted key; a `401` has neither.
 - `Cache-Control: private, max-age=300` and an `ETag` on every successful answer, so no shared cache keeps one; `max-age=30` on the answers that name
   characters (leaderboards, camps, professions, search and characters). Send the tag back as `If-None-Match`: an unchanged answer is `304`
   with no body. `Vary: Authorization`.

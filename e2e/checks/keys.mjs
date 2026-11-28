@@ -1,13 +1,15 @@
 import { Skip, expectError, expectJson, expectStatus } from "../support.mjs";
-import { callKeys, deleteKeys, expireKeys, linkBattlenet, makeKey, signInDevelopment } from "../keys-client.mjs";
+import { callKeys, deleteKeys, dropBattlenet, expireKeys, linkBattlenet, makeKey, signInDevelopment } from "../keys-client.mjs";
 
 export const KEY_NAME = "e2e key";
 const EXPIRING = "e2e expiring key";
 const SIXTY = "e2e sixty days";
 const NINETY = "e2e ninety days";
+const LOST = "e2e lost battlenet";
 const SETTINGS = "/account/settings";
 const DAY_MS = 86_400_000;
-const NO_KEY_WORDS = ["Authorization: Bearer", "Battle.net", "scarletweb.io/account"];
+const NO_KEY_WORDS = ["Authorization: Bearer", "Battle.net"];
+const RATE_LIMIT_HEADERS = ["x-ratelimit-limit", "x-ratelimit-remaining"];
 
 const requestOf = (ctx) => (route, options = {}) => ctx.http.request(route, { ...options, jar: ctx.keyJar });
 
@@ -78,9 +80,16 @@ export async function publicApiNeedsAKey(ctx) {
   expectError(missing, 401, "missing_key", `GET ${route} with no key`);
   const message = expectJson(missing, "the missing_key answer").error.message;
   for (const word of NO_KEY_WORDS) if (!message.includes(word)) throw new Error(`the missing_key message should mention ${JSON.stringify(word)}, saw ${JSON.stringify(message)}`);
+  const settings = message.match(/https?:\/\/\S+\/account\/settings/)?.[0];
+  if (settings === undefined || !/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\//.test(settings)) {
+    throw new Error(`the missing_key message should link this server's own /account/settings, built from APP_URL, saw ${JSON.stringify(message)}`);
+  }
+  noRateLimitHeaders(missing, "a 401 missing_key");
   if (!(missing.headers.get("cache-control") ?? "").includes("no-store")) throw new Error("a refusal should be Cache-Control no-store");
 
-  expectError(await ctx.http.api(route, { key: false, headers: { Authorization: "Bearer 1|not-a-key-of-this-site" } }), 401, "invalid_token", "GET with a wrong key");
+  const wrong = await ctx.http.api(route, { key: false, headers: { Authorization: "Bearer 1|not-a-key-of-this-site" } });
+  expectError(wrong, 401, "invalid_token", "GET with a wrong key");
+  noRateLimitHeaders(wrong, "a 401 invalid_token");
   expectError(await ctx.http.api(`${route}&token=${ctx.http.key}&api_key=${ctx.http.key}&key=${ctx.http.key}`, { key: false }), 401, "missing_key", "GET with the key in the query string");
 
   const request = requestOf(ctx);
@@ -95,6 +104,41 @@ export async function publicApiNeedsAKey(ctx) {
   if (!row.includes('<span class="sc-state">Expired</span>')) throw new Error("the module should mark the expired key Expired");
   if (!row.includes('wire:click="delete(')) throw new Error("the module should keep the expired key deletable");
   await deleteKeys(request, EXPIRING);
+}
+
+function noRateLimitHeaders(answer, what) {
+  for (const name of RATE_LIMIT_HEADERS) {
+    if (answer.headers.has(name)) throw new Error(`${what} should carry no ${name}, saw ${answer.headers.get(name)}`);
+  }
+  if ((answer.headers.get("x-robots-tag") ?? "") !== "noindex") throw new Error(`${what} should still say X-Robots-Tag: noindex`);
+}
+
+/**
+ * A key is good only while its account signs in with Battle.net. The development account loses its Battle.net identity
+ * with its keys kept, which is the state a key must be refused in, and gets it back: the same key reads again, so the
+ * refusal came from the identity and nothing else. It runs in the keys lane, before any other lane sends a key.
+ */
+export async function keyOfAccountWithoutBattlenetIsRefused(ctx) {
+  const route = "/api/v1/public/stats?limit=3";
+  const request = requestOf(ctx);
+  await linkBattlenet(request);
+  const made = await makeKey(request, LOST, 30);
+  if (made.key === null) throw new Error("the module made no key to keep after Battle.net is dropped");
+  const bearer = { headers: { Authorization: `Bearer ${made.key}` } };
+  expectStatus(await ctx.http.api(route, bearer), 200, "GET with the key while Battle.net is linked");
+
+  await dropBattlenet(request);
+  try {
+    const page = expectStatus(await request(SETTINGS, { headers: { Accept: "text/html" } }), 200, `GET ${SETTINGS}`);
+    if (!page.text.includes('id="key-battlenet"')) throw new Error(`${SETTINGS} should show the account without Battle.net again, with the line that links it`);
+    const refused = await ctx.http.api(route, bearer);
+    expectError(refused, 401, "invalid_token", "GET with the key of an account without Battle.net");
+    noRateLimitHeaders(refused, "the refusal of the key of an account without Battle.net");
+  } finally {
+    await linkBattlenet(request);
+  }
+  expectStatus(await ctx.http.api(route, bearer), 200, "GET with the same key once Battle.net is linked again");
+  await deleteKeys(request, LOST);
 }
 
 /** Every answer is private to the caller, carries the key's tag and limit, and a browser's preflight for the header is answered. */
@@ -125,6 +169,11 @@ export async function mapDensityNeedsNoKey(ctx) {
   const data = expectJson(answer, route).data;
   if (data?.level !== 1 || typeof data?.columns !== "number" || !Array.isArray(data?.cells)) throw new Error(`${route} should answer the level's columns, rows and cells, saw ${answer.text.slice(0, 200)}`);
   if (!(answer.headers.get("cache-control") ?? "").includes("s-maxage")) throw new Error(`${route} should be cached like a page, saw ${answer.headers.get("cache-control")}`);
+  if (answer.headers.get("x-robots-tag") !== "noindex") throw new Error(`${route} should say X-Robots-Tag: noindex, saw ${answer.headers.get("x-robots-tag")}`);
+  const again = expectStatus(await ctx.http.api(route, { key: false }), 200, `GET ${route} a second time`);
+  if (again.text !== answer.text || again.headers.get("x-robots-tag") !== "noindex" || !(again.headers.get("content-type") ?? "").includes("json")) {
+    throw new Error(`${route} read again from the origin's kept answer should be the same JSON with the same headers`);
+  }
   expectError(await ctx.http.api("/map/density?layer=nonsense", { key: false }), 422, "invalid_request", "GET /map/density?layer=nonsense");
   if (ctx.browser === null) throw new Skip("no browser is running, so the map page is not loaded");
 

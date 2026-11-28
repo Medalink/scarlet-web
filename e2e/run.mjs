@@ -44,6 +44,7 @@ const STRANGER_LABEL = "scarlet-web e2e stranger install";
 const REGISTRY = [
   { lane: "keys", name: "an account without Battle.net sees one line that links it, and a key it asks for is refused", run: keys.noBattlenetMakesNoKey },
   { lane: "keys", name: "an account with Battle.net makes keys of 30 days by default, 60 and 90, and the expiry is stored and shown, and 91 days or more is refused", run: keys.expiryChoiceIsStoredAndShown },
+  { lane: "keys", name: "a key of an account that lost its Battle.net sign-in is refused like an unknown key, and reads again once Battle.net is linked", run: keys.keyOfAccountWithoutBattlenetIsRefused },
   { lane: "upload", name: "/up answers 200", run: upload.healthy },
   { lane: "upload", name: "an install registers", run: upload.register },
   { lane: "upload", name: "installs/me answers a signed request", run: upload.meSigned },

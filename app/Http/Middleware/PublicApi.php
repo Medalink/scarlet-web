@@ -5,8 +5,11 @@ namespace App\Http\Middleware;
 use App\Http\Requests\Api\PublicRequest;
 use App\Models\Account;
 use App\Models\Character;
+use App\Models\Identity;
+use App\Models\IdentityProvider;
 use App\Support\ClientAddress;
 use App\Support\Exceptions\ApiException;
+use App\Support\PackedAnswer;
 use App\Support\PublicApiCatalog;
 use Closure;
 use Illuminate\Cache\RateLimiter;
@@ -42,11 +45,6 @@ class PublicApi
 
     public const int ANSWER_SECONDS = 30;
 
-    /** Gzipped, so the whole densest map level (150,000 cells, about 540 KB packed) is kept too. */
-    private const int ANSWER_MAX_BYTES = 1048576;
-
-    private const string GZIP_MAGIC = "\x1f\x8b";
-
     private const int STATEMENT_TIMEOUT_MS = 10000;
 
     private const int LAST_USED_EVERY_SECONDS = 3600;
@@ -60,7 +58,9 @@ class PublicApi
         try {
             [$key, $max] = $this->budget($request, $address);
         } catch (ApiException $refusal) {
-            return $this->headers($request, $endpoint, self::refusal($refusal), (int) config('scarlet.rate.public.token'), 0);
+            $limited = $refusal->status === Response::HTTP_TOO_MANY_REQUESTS;
+
+            return $this->headers($request, $endpoint, self::refusal($refusal), $limited ? (int) config('scarlet.rate.public.token') : null, 0);
         }
 
         if ($this->limiter->tooManyAttempts($key, $max)) {
@@ -98,7 +98,7 @@ class PublicApi
             throw ApiException::rateLimited($this->limiter->availableIn($refused));
         }
         $token = PersonalAccessToken::findToken($bearer);
-        if ($token === null || ! $token->can(Account::API_ABILITY) || ($token->expires_at !== null && $token->expires_at->isPast())) {
+        if ($token === null || ! $token->can(Account::API_ABILITY) || ($token->expires_at !== null && $token->expires_at->isPast()) || ! self::battlenetAccount((int) $token->tokenable_id)) {
             $this->limiter->hit($refused, 60);
             throw ApiException::invalidToken();
         }
@@ -110,12 +110,17 @@ class PublicApi
         return ['api-public-account:'.$token->tokenable_id, (int) config('scarlet.rate.public.token')];
     }
 
+    /** One lookup on the unique (account_id, provider) index: a key counts only while its account signs in with Battle.net. */
+    private static function battlenetAccount(int $account): bool
+    {
+        return Identity::query()->where('account_id', $account)->where('provider', IdentityProvider::Battlenet)->exists();
+    }
+
     private function answer(Request $request, ?string $endpoint, Closure $next): Response
     {
         $key = $endpoint === null ? null : self::answerKey($request, $endpoint);
-        $kept = $key === null ? null : Cache::get($key);
-        $body = is_string($kept) && str_starts_with($kept, self::GZIP_MAGIC) ? gzdecode($kept) : false;
-        if (is_string($body)) {
+        $body = $key === null ? null : PackedAnswer::unpack(Cache::get($key));
+        if ($body !== null) {
             return response($body, Response::HTTP_OK, ['Content-Type' => 'application/json']);
         }
 
@@ -126,8 +131,8 @@ class PublicApi
         if ($key === null || $response->getStatusCode() !== Response::HTTP_OK || ! is_string($content)) {
             return $response;
         }
-        $packed = gzencode($content, 1);
-        if (is_string($packed) && strlen($packed) <= self::ANSWER_MAX_BYTES) {
+        $packed = PackedAnswer::pack($content);
+        if ($packed !== null) {
             Cache::put($key, $packed, self::ANSWER_SECONDS);
         }
 
@@ -175,12 +180,15 @@ class PublicApi
         return $response;
     }
 
-    private function headers(Request $request, ?string $endpoint, Response $response, int $max, int $remaining): Response
+    /** @param  int|null  $max  the limit of the key's account; null for an answer to a request with no accepted key, which has no limit to report */
+    private function headers(Request $request, ?string $endpoint, Response $response, ?int $max, int $remaining): Response
     {
         $response->headers->set('Access-Control-Allow-Origin', '*');
         $response->headers->set('Access-Control-Expose-Headers', 'ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining');
-        $response->headers->set('X-RateLimit-Limit', (string) $max);
-        $response->headers->set('X-RateLimit-Remaining', (string) max(0, $remaining));
+        if ($max !== null) {
+            $response->headers->set('X-RateLimit-Limit', (string) $max);
+            $response->headers->set('X-RateLimit-Remaining', (string) max(0, $remaining));
+        }
         $response->headers->set('Vary', 'Authorization');
         $response->headers->set('X-Robots-Tag', 'noindex');
 
