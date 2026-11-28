@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 /** The `#time` section of /c/{name}: when the character plays, and where its recorded time went. */
 final class PlayTime
 {
-    private const array WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    private const array WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     private const int STEPS = 5;
 
@@ -53,7 +53,7 @@ final class PlayTime
         $cells = [];
         foreach ($seconds as $i => $value) {
             $level = $top === 0 || $value === 0 ? 0 : max(1, (int) ceil($value / $top * self::STEPS));
-            $cells[] = ['level' => $level, 'tip' => substr(self::WEEKDAYS[intdiv($i, 24)], 0, 3).' '.str_pad((string) ($i % 24), 2, '0', STR_PAD_LEFT).':00|'.($value > 0 ? Format::hours($value).' played' : 'Not played')];
+            $cells[] = ['level' => $level, 'tip' => self::WEEKDAYS[intdiv($i, 24)].' '.Dates::hour($i % 24).'|'.($value > 0 ? Format::hours($value).' played' : 'Not played')];
         }
 
         return ['cells' => $cells, 'busiest' => $top > 0 ? (int) array_search($top, $seconds, true) : null];

@@ -55,7 +55,7 @@ final class Head
     }
 
     /** @param  array<string, mixed>  $r */
-    private static function line(Character $character, array $r): string
+    private static function line(Character $character, array $r): HtmlString
     {
         $parts = [Format::character($character->level, $character->race, $character->class)];
         $spec = self::tree($r['talents']);
