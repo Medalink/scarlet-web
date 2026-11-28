@@ -304,7 +304,7 @@ export const MAGE_LINES = [
   [1000, "Z", ELWYNN, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
   ...SPELL_NAMES.map(([id, name], at) => [100 + at, "SN", id, name]),
   ...ITEM_NAMES.map(([id, name], at) => [200 + at, "IN", id, name]),
-  ...talentLines({ held: [[2001, 1], [2002, 1], [2003, 1]], spent: [12, 0, 35] }),
+  ...talentLines({ held: [[2001, 1], [2002, 1], [2003, 1], [2208, 1]], spent: [12, 0, 35] }),
   ...PLANS.flatMap((plan) => cluster(plan.start, plan)),
   [2 * HOUR, "L", 51],
   [4 * HOUR, "L", 52],

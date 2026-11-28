@@ -85,7 +85,7 @@ final class TalentSpecPage
         /** @var LevelBracket $bracket */
         $bracket = $a['bracket'];
         $n = (int) $a['characters'];
-        /** @var list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, name: string|null}> $nodes */
+        /** @var list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, picks: array<int, int>, name: string|null}> $nodes */
         $nodes = $a['nodes'];
         /** @var array{spell: array<int, string>, tab: array<int, string>} $names */
         $names = $a['names'];
@@ -145,7 +145,7 @@ final class TalentSpecPage
      * took it. A node nobody took is drawn dimmed at 0%.
      *
      * @param  list<array{tab: int, nodes: list<array{id: int, col: int, row: int, spells: list<int|null>, max: int, to: list<int>}>}>  $cells
-     * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, name: string|null}>  $nodes
+     * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, picks: array<int, int>, name: string|null}>  $nodes
      * @param  array{spell: array<int, string>, tab: array<int, string>}  $names
      * @return list<array{name: string, width: int, height: int, nodes: list<array<string, mixed>>, arrows: list<array<string, mixed>>}>
      */
@@ -174,9 +174,12 @@ final class TalentSpecPage
                 $name = $called($spell);
                 $rate = $pick['rate'] ?? 0.0;
                 $rates[$cell['id']] = $rate;
-                $choices = count($cell['spells']) > 1 ? array_map($called, $cell['spells']) : [];
+                $choice = count($cell['spells']) > 1;
                 $count = $pick === null ? 0 : $pick['taken'];
-                $title = $name.', '.Format::number($count).' of '.Format::count($n, 'character').($pick === null ? '' : ', average rank '.Format::number($pick['rank'], 1)).($choices === [] ? '' : '. Choice of '.implode(' or ', $choices));
+                $head = $choice
+                    ? implode(' · ', array_map(fn (?int $of): string => $called($of).' '.Format::number(($pick['picks'] ?? [])[$of ?? 0] ?? 0), $cell['spells']))
+                    : $name.', '.Format::number($count);
+                $title = $head.' of '.Format::count($n, 'character').($pick === null ? '' : ', average rank '.Format::number($pick['rank'], 1));
                 $drawn[] = [
                     'id' => $cell['id'],
                     'left' => $frame['slots'][$cell['id']]['left'],
@@ -188,7 +191,7 @@ final class TalentSpecPage
                     'rate' => $count === 0 ? '0%' : ($rate < 0.005 ? '<1%' : Format::percent($rate)),
                     'share' => round($rate, 3),
                     'taken' => $count > 0,
-                    'choice' => $choices !== [],
+                    'choice' => $choice,
                     'title' => $title,
                 ];
             }
@@ -207,7 +210,7 @@ final class TalentSpecPage
      * The talents characters held that the layout does not place, as bars, most taken first.
      *
      * @param  list<array{tab: int, nodes: list<array{id: int}>}>  $cells
-     * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, name: string|null}>  $nodes
+     * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, picks: array<int, int>, name: string|null}>  $nodes
      * @return list<array{name: string, href: string|null, rate: string, width: float, title: string}>
      */
     private static function outside(array $cells, array $nodes, int $n): array
@@ -259,7 +262,7 @@ final class TalentSpecPage
     }
 
     /**
-     * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, name: string|null}>  $nodes
+     * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, picks: array<int, int>, name: string|null}>  $nodes
      * @return array{columns: list<array<string, mixed>>, rows: list<array<string, mixed>>}
      */
     private static function nodeTable(array $nodes, int $n): array

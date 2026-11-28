@@ -20,7 +20,9 @@ class TalentSpec
      * What the characters of one class and spec picked. Every character counts once, by its latest counted build read
      * at a level inside the bracket, so `characters` is the n of every share on the page.
      *
-     * - `nodes`: for each talent, how many of those characters had a point in it and their average rank.
+     * - `nodes`: for each talent, how many of those characters had a point in it and their average rank. A node with
+     *   several entries (a choice) counts each spell in `picks`; its `spell` is the one most characters took, the first
+     *   of the layout's entries among equals.
      * - `brackets`: the same count for each level bracket: characters, different builds, the most common build.
      * - `order`: for each point of the build the talent the most characters took with it, from the picks the addon
      *   saw (the points held when the addon first read a build have no order, so this holds the characters that
@@ -48,7 +50,7 @@ class TalentSpec
         $rows = $this->latest($scope, $classSlug, $tabs, $bracket);
         $tree = $this->commonTree($rows);
         $layout = $tree === null ? null : $this->layouts->handle($tree);
-        $nodes = $this->nodes($rows);
+        $nodes = $this->nodes($rows, $layout);
         $order = $this->order($scope, $classSlug, $tabs);
         $everyone = $bracket === LevelBracket::All ? $rows : $this->latest($scope, $classSlug, $tabs, LevelBracket::All);
         $names = $this->names($nodes, $order, $layout, $everyone);
@@ -118,26 +120,46 @@ class TalentSpec
 
     /**
      * @param  list<\stdClass>  $rows
-     * @return list<array{node: int, spell: int|null, taken: int, rate: float, rank: float}> most taken first
+     * @param  array{nodes: array<int, array{entries: list<array{spell: int|null}>}>}|null  $layout
+     * @return list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, picks: array<int, int>}> most taken first
      */
-    private function nodes(array $rows): array
+    private function nodes(array $rows, ?array $layout): array
     {
-        /** @var array<int, array{node: int, spell: int|null, taken: int, ranks: int}> $nodes */
+        /** @var array<int, array{node: int, taken: int, ranks: int, picks: array<int, int>}> $nodes */
         $nodes = [];
         foreach ($rows as $row) {
             foreach (TalentRanks::parse((string) $row->ranks) as $held) {
-                $node = $nodes[$held['node']] ?? ['node' => $held['node'], 'spell' => null, 'taken' => 0, 'ranks' => 0];
-                $node['spell'] ??= $held['spell'];
+                $node = $nodes[$held['node']] ?? ['node' => $held['node'], 'taken' => 0, 'ranks' => 0, 'picks' => []];
                 $node['taken']++;
                 $node['ranks'] += $held['rank'];
+                $node['picks'][$held['spell'] ?? 0] = ($node['picks'][$held['spell'] ?? 0] ?? 0) + 1;
                 $nodes[$held['node']] = $node;
             }
         }
         $total = max(1, count($rows));
-        $list = array_map(fn (array $node): array => ['node' => $node['node'], 'spell' => $node['spell'], 'taken' => $node['taken'], 'rate' => $node['taken'] / $total, 'rank' => $node['ranks'] / $node['taken']], array_values($nodes));
+        $list = array_map(fn (array $node): array => [
+            'node' => $node['node'], 'spell' => $this->topSpell($node['picks'], array_column($layout['nodes'][$node['node']]['entries'] ?? [], 'spell')),
+            'taken' => $node['taken'], 'rate' => $node['taken'] / $total, 'rank' => $node['ranks'] / $node['taken'], 'picks' => $node['picks'],
+        ], array_values($nodes));
         usort($list, fn (array $a, array $b): int => [$b['taken'], $a['node']] <=> [$a['taken'], $b['node']]);
 
         return $list;
+    }
+
+    /**
+     * @param  array<int, int>  $picks  the characters that took each spell of a node, 0 for a spell the build did not name
+     * @param  list<int|null>  $entries  the spells of the node's entries in the layout's order
+     */
+    private function topSpell(array $picks, array $entries): ?int
+    {
+        $place = [];
+        foreach ($entries as $index => $spell) {
+            $place[$spell ?? 0] ??= $index;
+        }
+        uksort($picks, fn (int $a, int $b): int => [$picks[$b], $place[$a] ?? PHP_INT_MAX, $a] <=> [$picks[$a], $place[$b] ?? PHP_INT_MAX, $b]);
+        $top = array_key_first($picks);
+
+        return $top === null || $top === 0 ? null : $top;
     }
 
     /**

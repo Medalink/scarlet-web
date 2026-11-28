@@ -35,8 +35,10 @@ export async function specDrawsItsTrees(ctx) {
   if (half.classes.includes("off") || half.rate !== "50%") throw new Error(`Cold Snap, which one of two mages took, should read 50%: ${JSON.stringify(half)}`);
   const whole = nodeOf(html, "Ice Barrier, 2 of 2 characters, average rank 1.0");
   if (whole.rate !== "100%") throw new Error(`Ice Barrier, which both mages took, should read 100%: ${JSON.stringify(whole)}`);
-  const choice = nodeOf(html, "Dragon's Breath, 1 of 2 characters, average rank 1.0. Choice of Blast Wave or Dragon's Breath");
-  if (!choice.classes.includes("choice") || choice.rate !== "50%") throw new Error(`the choice node should name both spells and read 50%: ${JSON.stringify(choice)}`);
+  const choice = nodeOf(html, "Blast Wave 1 · Dragon's Breath 1 of 2 characters, average rank 1.0");
+  if (!choice.classes.includes("choice") || choice.rate !== "100%") throw new Error(`the choice node should count each spell once and read 100% of the characters that took either: ${JSON.stringify(choice)}`);
+  const first = html.match(/<a [^>]*href="([^"]*)"[^>]*title="Blast Wave 1 · Dragon&#039;s Breath 1 of 2 characters[^"]*"/)?.[1];
+  if (first !== "/spells/12207") throw new Error(`a tie on a choice node links the first entry of the layout (Blast Wave, /spells/12207), saw ${first}`);
 }
 
 export async function talentsListLeadsWithTheSplit(ctx) {
