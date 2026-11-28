@@ -32,6 +32,7 @@ import * as installs from "./checks/installs.mjs";
 import * as removal from "./checks/removal.mjs";
 import * as admin from "./checks/admin.mjs";
 import * as session from "./checks/session.mjs";
+import * as goals from "./checks/goals.mjs";
 
 const LANES = ["upload", "api", "pages", "browser", "owner"];
 const SERVER_CONNECTIONS = 3;
@@ -102,6 +103,7 @@ const REGISTRY = [
   { lane: "owner", name: "the account's own Tailoring page holds nothing of a character from another install, which everyone's page shows", run: own.ownPagesLeaveOutOtherInstalls },
   { lane: "owner", name: "the account's own camps page shows its campfire visit and sits among its thirteen own pages", run: own.ownCampsPageShowsTheAccount },
   { lane: "owner", name: "the account's own world map shows its characters' rides and flights and stays private", run: map.ownMapShowsTheAccount },
+  { lane: "owner", name: "a character page shows the Skills, Reputation and Records of the app from the lines uploaded, drops each with its sharing group and shows it again once the group is back", run: goals.goalsPageShowsSkillsReputationAndRecords },
   { lane: "removal", name: `${ECHO} on two installs of one account: a sync of one keeps the other's parts, and a part only one lists goes when it drops it`, run: installs.twoInstallsKeepEachOthersParts },
   { lane: "removal", name: "removal answers and empties the status", run: removal.removalAnswersAndEmptiesStatus },
   { lane: "removal", name: "the stranger install's upload is removed too", run: removal.strangerIsRemoved },

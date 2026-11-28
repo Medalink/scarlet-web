@@ -19,6 +19,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { xorDigest } from "./client.mjs";
 import { DRUID_LINES } from "./druid-lines.mjs";
+import { GOALS_SESSIONS } from "./goals-lines.mjs";
 import { LEDGER_LINES } from "./ledger-lines.mjs";
 import { HUNTER_LINES } from "./hunter-lines.mjs";
 import { MAGE_LINES } from "./mage-lines.mjs";
@@ -85,9 +86,10 @@ const GROUP_OF = {
   R: "combat", U: "combat", SH: "combat", SR: "combat", DM: "combat", DP: "combat", DS: "combat",
   LO: "loot", I: "loot", DI: "loot",
   SL: "professions", TS: "professions", CB: "professions", RD: "professions", CR: "professions", CS: "professions",
-  IN: "names", SN: "names", TY: "names", SD: "names", II: "names",
+  IN: "names", SN: "names", TY: "names", SD: "names", II: "names", KN: "names", FN: "names",
+  X: "xp", Q: "quests", M: "economy", O: "loot", RF: "collections",
 };
-const GROUP_ORDER = ["core", "movement", "build", "combat", "loot", "professions", "names"];
+const GROUP_ORDER = ["core", "movement", "build", "combat", "loot", "professions", "names", "xp", "quests", "economy", "collections"];
 
 const crafted = (item, recipe, enchant) => ["CR", item, 1, 0, 0, recipe, "", "", "", "", "", "", enchant];
 const LURE = crafted(FISHING_POLE, "", 1);
@@ -269,6 +271,7 @@ const BUILDS = [
   { character: "Candle-Warden", session: 1795720000, lines: PRIEST_LINES },
   { character: "Totem-Caller", session: 1795810000, lines: SHAMAN_LINES },
   { character: "Quiet-Walker", session: 1795900000, lines: QUIET_LINES },
+  ...GOALS_SESSIONS.map(({ session, lines }) => ({ character: "Vale-Reader", session, lines })),
 ];
 
 function partsOf(character, session, lines) {

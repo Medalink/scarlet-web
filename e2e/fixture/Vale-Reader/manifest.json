@@ -1,0 +1,174 @@
+{
+  "character": "Vale-Reader",
+  "parts": [
+    {
+      "group": "core",
+      "id": "1bd90e457fc6d522f3144f9b00676a20c0af005def2fb281bb004361cdd166c5",
+      "lines": 4,
+      "raw_bytes": 195,
+      "session": 1794800000
+    },
+    {
+      "group": "combat",
+      "id": "ae20475b0d25e193364e1810e1b21e0ffcf979873e93786a311f987403e8ae40",
+      "lines": 60,
+      "raw_bytes": 1065,
+      "session": 1794800000
+    },
+    {
+      "group": "loot",
+      "id": "2eafc19f14b94918a0d193ca19dcf32e01ed28f201df9c03ff6edbce152001fb",
+      "lines": 8,
+      "raw_bytes": 211,
+      "session": 1794800000
+    },
+    {
+      "group": "professions",
+      "id": "3d4f7b7bc463e108d1cf01802567cc62d0d430b7a4e3d5c42e2ac6f3153c0752",
+      "lines": 6,
+      "raw_bytes": 180,
+      "session": 1794800000
+    },
+    {
+      "group": "names",
+      "id": "4c2774153ca085bdee194041b190b8b12f3caf4c5daa1a28a9bb81638427e9fd",
+      "lines": 16,
+      "raw_bytes": 387,
+      "session": 1794800000
+    },
+    {
+      "group": "xp",
+      "id": "f641daeba6720660018c0f5b3daaa44e8361ba17550333a4356c012a5add2e24",
+      "lines": 6,
+      "raw_bytes": 201,
+      "session": 1794800000
+    },
+    {
+      "group": "quests",
+      "id": "2cac7abb8d10937d8b27630e37312ae7383257ff05016a2bfbb195f4e2b755d9",
+      "lines": 3,
+      "raw_bytes": 101,
+      "session": 1794800000
+    },
+    {
+      "group": "economy",
+      "id": "66a8745e0f94aa6faa9e25cb190372e7d18bdb3e3f0b07c050a6d3d8f1d3e98e",
+      "lines": 2,
+      "raw_bytes": 91,
+      "session": 1794800000
+    },
+    {
+      "group": "collections",
+      "id": "ac84003b2b72b87c520e1e75d5ae5105c3018821280b225ca5e8e0b2badb51d4",
+      "lines": 9,
+      "raw_bytes": 349,
+      "session": 1794800000
+    },
+    {
+      "group": "core",
+      "id": "9c9058f52d4c320ffecd2a2eb0ee0b6edf9675cdae2eaf32c870ad95adb8b492",
+      "lines": 3,
+      "raw_bytes": 184,
+      "session": 1794900000
+    },
+    {
+      "group": "combat",
+      "id": "fc0679f2be355a0468b7e0cd661ac417f960a3289206cc42c4230f72f473be08",
+      "lines": 48,
+      "raw_bytes": 861,
+      "session": 1794900000
+    },
+    {
+      "group": "loot",
+      "id": "cd5177d43f5dcc5e01b317077304da84e918dffe951d0987f53531584f97a589",
+      "lines": 4,
+      "raw_bytes": 127,
+      "session": 1794900000
+    },
+    {
+      "group": "names",
+      "id": "1767adc4f49e363ef711006be8ece5e69a92f7552c75bb982d3c3e668c977c60",
+      "lines": 16,
+      "raw_bytes": 387,
+      "session": 1794900000
+    },
+    {
+      "group": "xp",
+      "id": "85f8a0da9dab32dc7787b30835daa31a9c56b1a6e555e976f55ef10bf3fcfe43",
+      "lines": 4,
+      "raw_bytes": 147,
+      "session": 1794900000
+    },
+    {
+      "group": "quests",
+      "id": "9054e87b76a07e35a9af17e050e5f97ca67cf45eb0cfc31cc8af040f0ed4efc5",
+      "lines": 5,
+      "raw_bytes": 139,
+      "session": 1794900000
+    },
+    {
+      "group": "economy",
+      "id": "9c0caf36698df1633ebf7ef313afec96c5ad0a4e93767c4ceeb7ae62ca1e55a5",
+      "lines": 2,
+      "raw_bytes": 92,
+      "session": 1794900000
+    },
+    {
+      "group": "collections",
+      "id": "44723eec7370d6180dc8be139cd11129aab1ab9404dea897795a7814f30607d0",
+      "lines": 1,
+      "raw_bytes": 89,
+      "session": 1794900000
+    },
+    {
+      "group": "core",
+      "id": "787ccafd78355363459c005ebd6699109a023c4ef188267aa37a4d92711a6885",
+      "lines": 3,
+      "raw_bytes": 183,
+      "session": 1795000000
+    },
+    {
+      "group": "combat",
+      "id": "37db85f2d088a5d7b089e283ffcc8f662f4c38b469fa79bf2ed08591b1a46fd3",
+      "lines": 500,
+      "raw_bytes": 8046,
+      "session": 1795000000
+    },
+    {
+      "group": "loot",
+      "id": "40ed4e960f9d873116d63a2f7e3d64c83c2ef9960abcad296a34372e9a76476e",
+      "lines": 11,
+      "raw_bytes": 330,
+      "session": 1795000000
+    },
+    {
+      "group": "names",
+      "id": "8961728d7a69f1f6c370d093e8f6ece929724b48035ff8613349c66ff8e6ea80",
+      "lines": 16,
+      "raw_bytes": 387,
+      "session": 1795000000
+    },
+    {
+      "group": "xp",
+      "id": "bf6abb5c8ecc8c95b1c5518c40dd322070a1d88f707d817bbba2f2ce9db09d9d",
+      "lines": 4,
+      "raw_bytes": 155,
+      "session": 1795000000
+    },
+    {
+      "group": "quests",
+      "id": "5536c45772bd75c5b824c07c491b7694da1890591cc838465905c651da8aab46",
+      "lines": 20,
+      "raw_bytes": 405,
+      "session": 1795000000
+    },
+    {
+      "group": "economy",
+      "id": "64f2a545035ba3982d83764a71ebd6b6f7c5028f53e4a79c78394921217c3496",
+      "lines": 2,
+      "raw_bytes": 91,
+      "session": 1795000000
+    }
+  ],
+  "set_digest": "8508d8ec1a32bd50a1308437a1d9050e96ae9635879adee5f97c2aa823f3dc03"
+}

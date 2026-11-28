@@ -89,6 +89,9 @@ any host that is not 127.0.0.1, localhost or [::1], because it deletes what it u
   pages are the plain state.
 - browser: one headless Edge (chromium on Linux), never a window. Its first check reads the window handle of its
   process and stops it unless it is 0. It loads the key pages at 1280 and 390 wide and types into the search box.
+- goals (owner lane): a third install uploads Vale-Reader (`e2e/goals-lines.mjs`, three sessions, one under 900 seconds), the
+  page shows the Level, Skills, Reputation and Records of the app in that order, and removing the `collections` or
+  `professions` group takes the Reputation or the Skills away until the group and its parts are sent again.
 - Last, it removes the upload.
 
 `node e2e/boot.mjs -- node e2e/addon-counts.mjs` is a second lane, not part of the default one (about 6 minutes). It uploads an
