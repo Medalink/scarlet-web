@@ -67,10 +67,17 @@ export async function downloadStripLoads(ctx) {
 export async function copyButtonsCopyTheirBlock(ctx) {
   const tab = await browserOf(ctx).open(ctx.base + "/developers", { width: 1280, height: 800 });
   try {
-    await tab.evaluate(`window.__copied = []; Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: (text) => { window.__copied.push(text); return Promise.resolve(); } } })`);
+    await tab.evaluate(`window.__copied = []; window.__selected = []; window.__denied = false;
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: (text) => { if (!window.__denied) { window.__denied = true; return Promise.reject(new Error("denied")); } window.__copied.push(text); return Promise.resolve(); } } });
+      document.execCommand = (command) => { window.__selected.push([command, document.querySelector("textarea[readonly]")?.value]); return true; }`);
     const counts = await tab.evaluate(`({ blocks: document.querySelectorAll("pre.json").length, buttons: document.querySelectorAll(".json-box > [data-copy]").length, examples: document.querySelectorAll("details[data-example] pre.json").length })`);
     if (counts.blocks < 20 || counts.buttons !== counts.blocks) throw new Error(`every code block needs a copy button: ${JSON.stringify(counts)}`);
     if (counts.examples < 20) throw new Error(`the endpoints show ${counts.examples} example responses, far fewer than the ${counts.blocks} code blocks suggest`);
+    await tab.evaluate(`document.querySelector(".json-box > [data-copy]").click()`);
+    await tab.until(`window.__selected.length === 1 && document.querySelector(".json-box > [data-copy]").textContent === "Copied"`, BROWSER_MS, "the first copy button did not fall back to selecting its text when the clipboard refused");
+    const [fallback, left] = await tab.evaluate(`[window.__selected[0], document.querySelectorAll("textarea[readonly]").length + window.__copied.length]`);
+    if (fallback[0] !== "copy" || !/^curl http\S+\/api\/v1\/public\/stats$/.test(fallback[1] ?? "") || left !== 0) throw new Error(`the fallback should copy the first block's curl line and leave no textarea behind: ${JSON.stringify([fallback, left])}`);
+    await tab.until(`document.querySelector(".json-box > [data-copy]").textContent === "Copy"`, BROWSER_MS, "the first copy button did not reset its label");
     await tab.evaluate(`document.querySelector(".json-box > [data-copy]").click()`);
     await tab.until(`window.__copied.length === 1 && document.querySelector(".json-box > [data-copy]").textContent === "Copied"`, BROWSER_MS, "the first copy button copied nothing");
     await tab.evaluate(`(() => { const details = document.querySelector("details[data-example]"); details.open = true; details.querySelector("[data-copy]").click(); })()`);

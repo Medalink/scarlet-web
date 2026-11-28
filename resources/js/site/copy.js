@@ -1,17 +1,24 @@
 const RESET_MS = 1600;
 
-function copyText(text) {
-  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+function copyBySelection(text) {
   const area = document.createElement('textarea');
   area.value = text;
   area.setAttribute('readonly', '');
   area.style.position = 'fixed';
   area.style.opacity = '0';
   document.body.append(area);
-  area.select();
-  const done = document.execCommand('copy');
-  area.remove();
-  return done ? Promise.resolve() : Promise.reject(new Error('copy refused'));
+  try {
+    area.select();
+    if (!document.execCommand('copy')) throw new Error('copy refused');
+  } finally {
+    area.remove();
+  }
+}
+
+function copyText(text) {
+  return Promise.resolve()
+    .then(() => navigator.clipboard.writeText(text))
+    .catch(() => copyBySelection(text));
 }
 
 document.addEventListener('click', (event) => {
