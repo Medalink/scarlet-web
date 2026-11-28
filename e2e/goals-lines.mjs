@@ -74,7 +74,6 @@ function session({ level, minutes, kills, xp, quests, gathers, missed = 0, chest
   ];
 }
 
-/** A first session at level 24 that reaches 25, with the skills, the reputation baseline and the most items, gathers and experience in a session. */
 const FIRST = session({
   level: 24,
   minutes: 30,
@@ -99,7 +98,6 @@ const FIRST = session({
   ],
 });
 
-/** A second session at level 25 with the best rates and most quests, and Everlook rising from Honored to Revered. */
 const SECOND = session({
   level: 25,
   minutes: 20,
@@ -112,7 +110,6 @@ const SECOND = session({
   extra: [...names(), read(600_000, FACTIONS[8], "")],
 });
 
-/** A ten minute session, under the 900 seconds a record needs, whose every figure would beat the other two. */
 const SHORT = session({
   level: 25,
   minutes: 10,
