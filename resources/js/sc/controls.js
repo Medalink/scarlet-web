@@ -1,5 +1,4 @@
 const changedForms = new WeakSet();
-const numberBox = (node) => node?.closest?.('input[type="number"][data-autosubmit]');
 
 document.addEventListener('change', (event) => {
     const control = event.target.closest?.('[data-autosubmit]');
@@ -9,13 +8,15 @@ document.addEventListener('change', (event) => {
         changedForms.add(form);
         return;
     }
+    changedForms.delete(form);
     form.requestSubmit();
 });
 
 document.addEventListener('focusout', (event) => {
-    const box = numberBox(event.target);
-    const form = box?.form;
-    if (!form || !changedForms.has(form) || numberBox(event.relatedTarget)?.form === form) return;
+    const form = event.target.closest?.('[data-autosubmit]')?.form;
+    if (!form || !changedForms.has(form)) return;
+    const next = event.relatedTarget;
+    if (next?.form === form && next.matches?.('[data-autosubmit]')) return;
     changedForms.delete(form);
     form.requestSubmit();
 });
