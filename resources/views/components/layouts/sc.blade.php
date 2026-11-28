@@ -1,4 +1,4 @@
-@props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => '', 'canonical' => null, 'index' => true, 'brand' => true, 'styles' => [], 'scripts' => []])
+@props(['title', 'description' => null, 'current' => '', 'signedIn' => false, 'base' => '', 'canonical' => null, 'index' => true, 'brand' => true, 'styles' => [], 'scripts' => [], 'search' => true])
 @php
     $signedIn = $signedIn || auth()->check();
     $links = App\View\Sc\Nav::LINKS;
@@ -18,7 +18,7 @@
       <summary class="sc-btn quiet small list-none">Menu</summary>
       <nav class="absolute left-0 top-10 z-40 grid w-48 gap-px border border-line2 bg-card p-2 shadow-[0_6px_18px_rgb(0_0_0/0.45)]" aria-label="Site">@foreach ($links as $key => [$label, $path])<a class="px-2 py-1.5" href="{{ $base.$path }}"@if ($key === $current) aria-current="page"@endif>{{ $label }}</a>@endforeach</nav>
     </details>
-    <form class="search top-find ml-auto" role="search" action="{{ $base }}/search"@if ($base === '') data-suggest="/search/suggest"@endif><x-sc.glyph name="search" :size="15" /><label class="sr-only" for="sc-q">Search</label><input id="sc-q" name="q" type="search" placeholder="Search" class="w-full bg-transparent text-fg outline-none placeholder:text-muted">@if ($base === '')<template data-search-icons>@foreach (\App\View\Pages\SearchSuggest::glyphs() as $glyph)<x-icon :name="$glyph" :data-glyph="$glyph" />@endforeach</template>@endif</form>
+    @if ($search)<form class="search top-find ml-auto" role="search" action="{{ $base }}/search"@if ($base === '') data-suggest="/search/suggest"@endif><x-sc.glyph name="search" :size="15" /><label class="sr-only" for="sc-q">Search</label><input id="sc-q" name="q" type="search" placeholder="Search" class="w-full bg-transparent text-fg outline-none placeholder:text-muted">@if ($base === '')<template data-search-icons>@foreach (\App\View\Pages\SearchSuggest::glyphs() as $glyph)<x-icon :name="$glyph" :data-glyph="$glyph" />@endforeach</template>@endif</form>@else<span class="ml-auto"></span>@endif
     @unless ($signedIn)<a href="{{ $base }}/download" class="sc-btn quiet small max-sm:hidden">Get the app</a>@endunless
     <a href="{{ $base }}{{ $signedIn ? '/account' : '/login' }}" class="text-[15px]"@if ($current === 'account') aria-current="page"@endif>{{ $signedIn ? 'Account' : 'Sign in' }}</a>
   </div>

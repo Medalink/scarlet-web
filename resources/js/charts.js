@@ -114,7 +114,19 @@ const draw = {
                 const dn = s.band.map(([a, lo]) => `${f.x(a)},${f.y(lo)}`).reverse();
                 svg.append(svgEl('polygon', { class: 'band', points: up.concat(dn).join(' ') }));
             }
-            svg.append(svgEl('polyline', { class: 'ln ' + s.cls, points: s.pts.map(([a, b]) => `${f.x(a)},${f.y(b)}`).join(' ') }));
+            const sparse = new Set(s.dash ?? []);
+            const segments = [];
+            s.pts.forEach((point, i) => {
+                if (i === 0) return;
+                const before = s.pts[i - 1];
+                const dashed = sparse.has(point[0]) || sparse.has(before[0]);
+                const last = segments[segments.length - 1];
+                if (last && last.dashed === dashed) last.pts.push(point);
+                else segments.push({ dashed, pts: [before, point] });
+            });
+            for (const { dashed, pts } of segments.length ? segments : [{ dashed: false, pts: s.pts }]) {
+                svg.append(svgEl('polyline', { class: 'ln ' + s.cls + (dashed ? ' dashed' : ''), points: pts.map(([x, y]) => `${f.x(x)},${f.y(y)}`).join(' ') }));
+            }
             if (s.mark != null) {
                 const p = s.pts[s.mark];
                 svg.append(svgEl('circle', { class: 'dot', cx: f.x(p[0]), cy: f.y(p[1]), r: 4.5 }));

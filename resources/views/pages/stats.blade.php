@@ -1,7 +1,7 @@
 <x-layouts.sc :title="$d['title'].': WoW Forever levelling stats'" current="stats" description="How characters level in WoW Forever: time to each level, deaths, dungeons, skills and where people play." :canonical="$canonical">
 <div class="wrap pb-20">
   <x-page-head :title="$d['headline'] ?? $d['title']">
-    <x-slot:sub>{{ $d['title'] }}. {{ $d['sub'] }}</x-slot:sub>
+    <x-slot:sub>{{ $d['sub'] }}</x-slot:sub>
     <x-slot:filters><x-scope-switch :choice="$scope['choice']" :path="$path" :names="$scope['names']" :as="$scope['as']" :query="$scope['query']" :mine="false" /><x-scope-filters :filters="$filters" /><a class="text-[14px]" href="/stats/compare">Compare rulesets</a></x-slot:filters>
   </x-page-head>
   <x-tally :items="$d['game']['tally']" />
@@ -14,7 +14,7 @@
     </x-module>
     @endif
     @if ($d['game']['rules'])
-    <x-module span="w12" :first="true" :last="true" id="h-rules" heading="The next round numbers">
+    <x-module span="w12" :first="true" :last="true" id="h-rules" heading="Totals and the next milestone">
       <x-rules :rows="$d['game']['rules']" />
     </x-module>
     @endif
@@ -23,14 +23,13 @@
     @if ($d['game']['ascent'])
     <x-module span="w12" :first="true" :last="true" class="plate" id="h-climb" :heading="'Where every character stands on the way to '.$d['game']['cap']">
       <x-ascent :spec="$d['game']['ascent']" />
-      <p class="note">The ridge is the median played time to reach each level. A flag marks a level where characters are now, with how many.</p>
     </x-module>
     @endif
 
     <x-module span="w8" :first="true" id="h-curve" heading="Played time to reach each level">
       @if ($d['curve'])
       <x-plot id="curve" label="Median played hours to reach each level, with the middle half of characters as a band" :spec="$d['curve']['spec']" />
-      <x-key :items="[['label' => 'Median', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Middle half of characters', 'style' => 'background:rgba(255,45,85,.3)'], ['label' => 'Fastest tenth', 'class' => 'k-line', 'style' => 'background:var(--fg)']]" />
+      <x-key :items="[['label' => 'Median', 'class' => 'k-line', 'style' => 'background:var(--accent)'], ['label' => 'Middle half of characters', 'style' => 'background:rgba(255,255,255,.18)'], ['label' => 'Fastest tenth', 'class' => 'k-line', 'style' => 'background:var(--fg)']]" />
       <x-readout id="curve-out" :line="$d['curve']['line']" />
       @else
       <x-note>No levelling recorded yet.</x-note>
@@ -98,7 +97,7 @@
       @if ($deaths['days'])
       <x-plot id="days" label="Hardcore deaths on each of the last {{ \App\View\Pages\HardcoreDeathsPage::DAYS }} days, in UTC" :spec="$deaths['days']" />
       @else
-      <x-note>No hardcore deaths recorded yet.</x-note>
+      <x-note>No death notices recorded yet.</x-note>
       @endif
     </x-module>
     @endif
@@ -145,7 +144,6 @@
       @if ($d['gold'])
       <x-plot id="gold" label="Gold a character earned and spent at each level" :spec="$d['gold']" />
       <x-key :items="[['label' => 'Earned', 'class' => 'k-line', 'style' => 'background:var(--gold)'], ['label' => 'Spent', 'class' => 'k-line', 'style' => 'background:var(--fg)']]" />
-      <x-note>Characters who shared their economy data only.</x-note>
       @else
       <x-note>No economy data shared yet.</x-note>
       @endif

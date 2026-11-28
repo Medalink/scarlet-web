@@ -17,6 +17,10 @@ final class StatsPage
     /** A level's deaths an hour is shown once characters spent this long at it; less is noise. */
     private const int MIN_RATE_SECONDS = 600;
 
+    private const int SPARSE = 5;
+
+    private const int MIDDLE_HALF = 3;
+
     /** The skill kind of the decoder that holds the named skills. */
     private const string SKILL_KIND = 'SK';
 
@@ -39,7 +43,7 @@ final class StatsPage
             'title' => $scope->ruleset?->label() ?? ($scope->server->warMode() === null ? 'All characters' : 'All characters, '.$scope->server->label()),
             'sub' => self::sub($totals, $r['coverage']),
             'game' => StatsGame::data($r, $levels, $reached, $target),
-            'cap' => self::cap($r, $reached, $target),
+            'cap' => StatsCap::of($r, $reached, $target),
             'curve' => self::curve($levels, $top),
             'reach' => self::reach($reached, $top),
             'xp' => self::xp(self::rows($r['xp_sources']), $top),
@@ -93,7 +97,7 @@ final class StatsPage
         $updated = $coverage['updated_at'] ?? null;
         $recorded = $since instanceof Carbon ? [$text.($totals['played_seconds'] === null ? ', recorded' : '').' since ', Dates::day($since), '.'] : [$text.'.'];
 
-        return Dates::join(...$recorded, ...($updated instanceof Carbon ? [' Updated ', Dates::moment($updated), '.'] : []));
+        return Dates::join(...$recorded, ...($updated instanceof Carbon ? [' ', new HtmlString('<span class="whitespace-nowrap">Updated '.Dates::moment($updated)->toHtml().'.</span>')] : []));
     }
 
     /**
@@ -112,40 +116,6 @@ final class StatsPage
     }
 
     /**
-     * @param  array<string, mixed>  $r
-     * @param  list<array<string, mixed>>  $reached
-     * @return array{heading: string, rows: list<array{cells: list<string>}>, note: string|null}
-     */
-    private static function cap(array $r, array $reached, int $target): array
-    {
-        $totals = self::totals($r['totals']);
-        $at = (int) (array_column($reached, 'characters', 'level')[$target] ?? 0);
-        $since = ', since first seen';
-        $row = fn (string $label, string $value, string $basis): array => ['cells' => [$label, $value, $basis]];
-        $figure = function (string $label, ?array $data, callable $value) use ($row): array {
-            return $data === null ? $row($label, '–', Format::TOO_FEW) : $row($label, $value($data), Format::count((int) $data['characters'], 'character'));
-        };
-        $cap = is_array($r['at_cap'] ?? null) ? $r['at_cap'] : [];
-        $money = $cap['money'] ?? null;
-        $purse = fn (string $label, string $key): array => $money === null
-            ? $row($label, '–', 'No economy data shared')
-            : $row($label, Format::moneyText((float) $money[$key]), Format::count((int) $money['characters'], 'character'));
-
-        return [
-            'heading' => 'At the level cap',
-            'rows' => $at === 0 ? [] : [
-                $row('Characters at level '.$target, Format::number($at), $totals['characters'] === null ? Format::TOO_FEW : 'of '.Format::count((int) $totals['characters'], 'character')),
-                $figure('Recorded time at level '.$target.$since, $cap['seconds'] ?? null, fn (array $d): string => Format::duration((float) $d['seconds'])),
-                $purse('Gold earned at level '.$target.$since, 'earned'),
-                $purse('Gold spent at level '.$target.$since, 'spent'),
-                $figure('Dungeon runs at level '.$target.$since, $cap['runs'] ?? null, fn (array $d): string => Format::number((int) $d['runs'])),
-                $figure('Deaths at level '.$target.$since, $cap['deaths'] ?? null, fn (array $d): string => Format::number((int) $d['deaths'])),
-            ],
-            'note' => $at === 0 ? 'No character is at level '.$target.' yet.' : null,
-        ];
-    }
-
-    /**
      * @param  list<array<string, mixed>>  $levels
      * @return array{spec: array<string, mixed>, line: array{0: string, 1: string}}|null
      */
@@ -154,14 +124,17 @@ final class StatsPage
         if (count($levels) < 2) {
             return null;
         }
-        $median = $band = $fast = $say = [];
+        $median = $band = $fast = $say = $sparse = [];
         foreach ($levels as $row) {
             $level = (int) $row['level'];
             $hours = fn (string $key): float => (float) $row[$key] / 3600;
             $median[] = [$level, $hours('median')];
             $band[] = [$level, $hours('q1'), $hours('q3')];
             $fast[] = [$level, $hours('p10')];
-            $say[] = Format::line('Level '.$level, ' is reached after a median of '.Format::hours((float) $row['median']).' played, from '.Format::count((int) $row['characters'], 'character').'. The middle half is '.Format::hours((float) $row['q1'], false).' to '.Format::hours((float) $row['q3'], false).'.');
+            if ((int) $row['characters'] < self::SPARSE) {
+                $sparse[] = $level;
+            }
+            $say[] = Format::line('Level '.$level, ' is reached after a median of '.Format::hours((float) $row['median']).' played, from '.Format::count((int) $row['characters'], 'character').'.'.((int) $row['characters'] >= self::MIDDLE_HALF ? ' The middle half is '.Format::hours((float) $row['q1'], false).' to '.Format::hours((float) $row['q3'], false).'.' : ''));
         }
         $axis = Axis::nice((float) max([0, ...array_column($band, 2)]));
         $last = count($levels) - 1;
@@ -169,7 +142,7 @@ final class StatsPage
         return [
             'spec' => Charts::line(
                 ['x0' => 1, 'x1' => $top, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], 'h'), 'xt' => Charts::ticks(Axis::spread(1, $top))],
-                [['cls' => 'a', 'pts' => $median, 'band' => $band, 'mark' => $last], ['cls' => 'b thin', 'pts' => $fast]],
+                [['cls' => 'a', 'pts' => $median, 'band' => $band, 'mark' => $last, 'dash' => $sparse], ['cls' => 'b thin', 'pts' => $fast, 'dash' => $sparse]],
                 $say, $last, 'curve-out',
             ),
             'line' => $say[$last],

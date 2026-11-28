@@ -11,8 +11,6 @@ final class Page
 {
     private const int LEVELS = 60;
 
-    private const int TOP_CLASSES = 5;
-
     private const string DEADLY = '#ff2d55';
 
     private const string DEATH_BAR = 'rgba(255,45,85,0.55)';
@@ -35,11 +33,12 @@ final class Page
                 $totals['played_seconds'] === null ? null : ['label' => 'Hours recorded', 'value' => Format::number(round($totals['played_seconds'] / 3600)), 'unit' => null, 'sub' => null],
                 $totals['kills'] === null ? null : ['label' => 'Kills', 'value' => self::short((float) $totals['kills'])[0], 'unit' => self::short((float) $totals['kills'])[1], 'sub' => null],
                 $characters === null ? null : ['label' => 'Characters at level '.self::LEVELS, 'value' => Format::number($cap), 'unit' => null, 'sub' => $characters > 0 ? Format::percent($cap / $characters).' of all' : null],
-                $b['feats']['tiers'] > 0 ? ['label' => 'Feat tiers earned', 'value' => Format::number($b['feats']['tiers']), 'unit' => null, 'sub' => Format::number($b['feats']['week']).' this week'] : null,
+                $b['feats']['tiers'] > 0 ? ['label' => 'Feat tiers earned', 'value' => Format::number($b['feats']['tiers']), 'unit' => null, 'sub' => $b['feats']['week'] === $b['feats']['tiers'] ? null : Format::number($b['feats']['week']).' this week'] : null,
             ])),
             'curve' => $curve,
             'deaths' => self::deaths($b['deaths'], $b['played']),
             'classes' => self::classes($b['roster']['classes']),
+            'classTotal' => max(1, array_sum(array_column($b['roster']['classes'], 'characters'))),
             'directory' => self::directory($b),
             'fastest' => self::podium($b['fastest']),
             'clean' => self::podium($b['clean']),
@@ -106,9 +105,9 @@ final class Page
     private static function classes(array $classes): array
     {
         $total = max(1, array_sum(array_column($classes, 'characters')));
-        usort($classes, fn (array $a, array $b): int => $b['characters'] <=> $a['characters']);
+        usort($classes, fn (array $a, array $b): int => [$b['characters'], $a['class']] <=> [$a['characters'], $b['class']]);
 
-        return array_map(fn (array $row): array => [Format::className($row['class']), (int) $row['characters'], Format::percent($row['characters'] / $total)], array_slice($classes, 0, self::TOP_CLASSES));
+        return array_map(fn (array $row): array => [Format::className($row['class']), (int) $row['characters'], Format::number($row['characters']).' · '.Format::percent($row['characters'] / $total)], $classes);
     }
 
     /**
@@ -120,16 +119,11 @@ final class Page
         $lead = $b['fastest'][0] ?? null;
         $feats = $b['feats'];
 
-        return [
-            ['name' => 'Stats', 'href' => '/stats', 'fact' => 'Levelling, danger, dungeons, gold and play time, by ruleset.', 'bold' => $b['rulesets'] > 1 ? Format::count($b['rulesets'], 'ruleset').' compared.' : null, 'aside' => null],
-            ['name' => 'Feats', 'href' => '/feats', 'fact' => Format::number($feats['kinds']).' feats in five tiers.', 'bold' => $feats['week'] > 0 ? Format::count($feats['week'], 'tier').' earned this week.' : null, 'aside' => null],
-            ['name' => 'Leaderboards', 'href' => '/leaderboards', 'fact' => Format::number($b['boards']).' boards.', 'bold' => $lead === null ? null : 'Fastest to 60: '.$lead['value'].'.', 'aside' => null],
-            ['name' => 'Map', 'href' => '/map', 'fact' => 'Every walked path, kill and death on one map.', 'bold' => null, 'aside' => null],
-            ['name' => 'Loot', 'href' => '/loot', 'fact' => 'Drop rates for creatures and objects, with 95% ranges and loot rules.', 'bold' => null, 'aside' => null],
-            ['name' => 'Professions', 'href' => '/professions', 'fact' => 'Fishing, mining, herbalism, cooking and the other crafts, with what each one yields.', 'bold' => null, 'aside' => null],
-            ['name' => 'Talents', 'href' => '/talents', 'fact' => 'Every spec and who plays it.', 'bold' => null, 'aside' => null],
-            ['name' => 'Camps', 'href' => '/camps', 'fact' => 'Campfires, tents and chairs, and how deaths split with and without them.', 'bold' => null, 'aside' => null],
-        ];
+        return array_values(array_filter([
+            $b['rulesets'] > 1 ? ['name' => 'Stats', 'href' => '/stats', 'fact' => Format::count($b['rulesets'], 'ruleset').' compared'] : null,
+            $feats['kinds'] > 0 ? ['name' => 'Feats', 'href' => '/feats', 'fact' => Format::count($feats['kinds'], 'feat').($feats['week'] > 0 ? ', '.Format::count($feats['week'], 'tier').' earned this week' : '')] : null,
+            $b['boards'] > 0 ? ['name' => 'Leaderboards', 'href' => '/leaderboards', 'fact' => Format::count($b['boards'], 'board').($lead === null ? '' : ', fastest to 60: '.$lead['value'])] : null,
+        ]));
     }
 
     /**

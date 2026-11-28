@@ -10,7 +10,9 @@ use App\View\Format;
 final class RulesetsPage
 {
     /** The comparison chart draws the busiest rulesets, in the order of these chart classes. */
-    private const array LINES = ['a' => 'var(--accent)', 'b' => 'var(--fg)', 'c' => 'var(--s-dungeon)'];
+    private const array LINES = ['a' => 'var(--accent)', 'b' => 'var(--fg)', 'c' => 'var(--s-dungeon)', 'p1' => 'var(--p1)'];
+
+    private const int SPARSE = 5;
 
     /** The width of the widest bar of a table column, as on the record pages. */
     private const float BAR_REM = 5.2;
@@ -45,11 +47,22 @@ final class RulesetsPage
 
         return [
             'unidentified' => array_any($rows, $unidentified),
-            'kinds' => array_map(fn (RulesetKind $kind): array => ['name' => $kind->label().($kind->available() ? '' : ' (not out yet)'), 'summary' => $kind->summary()], RulesetKind::cases()),
+            'kinds' => array_map(fn (RulesetKind $kind): array => ['name' => $kind->label().($kind->available() || self::hasCharacters($kind, $rulesets, $counted) ? '' : ' (not out yet)'), 'summary' => $kind->summary()], RulesetKind::cases()),
             'rows' => $table,
             'compare' => self::compare($rows, $byId, $curves),
             'survival' => self::survival($r['hardcore']),
         ];
+    }
+
+    /**
+     * @param  list<array{id: int, slug: string, label: string, kind: string|null, hardcore: bool, war_mode: string}>  $rulesets
+     * @param  array<int, array<string, mixed>>  $counted
+     */
+    private static function hasCharacters(RulesetKind $kind, array $rulesets, array $counted): bool
+    {
+        $ids = array_column(array_filter($rulesets, fn (array $ruleset): bool => $ruleset['kind'] === $kind->value), 'id');
+
+        return array_any($counted, fn (array $row): bool => in_array($row['ruleset_id'], $ids, true) && (int) $row['characters'] > 0);
     }
 
     /**
@@ -60,7 +73,7 @@ final class RulesetsPage
      */
     private static function row(array $row, array $ruleset, array $top): array
     {
-        $name = ['text' => $ruleset['label'], 'href' => '/stats/'.$ruleset['slug']];
+        $name = ['text' => $ruleset['label'].' →', 'href' => '/stats/'.$ruleset['slug']];
         if ($row['characters'] === null) {
             return ['cells' => [$name, Format::TOO_FEW, '–', '–', '–', '–', '–']];
         }
@@ -104,7 +117,7 @@ final class RulesetsPage
 
     /**
      * @param  list<array<string, mixed>>  $rows
-     * @param  array<int, array{id: int, slug: string, label: string}>  $byId
+     * @param  array<int, array{id: int, slug: string, label: string, hardcore: bool}>  $byId
      * @param  array<int, list<array{level: int, seconds: float, characters: int}>>  $curves
      * @return array{spec: array<string, mixed>, key: list<array<string, string>>}|null
      */
@@ -112,13 +125,14 @@ final class RulesetsPage
     {
         $series = $key = [];
         $classes = array_keys(self::LINES);
+        usort($rows, fn (array $a, array $b): int => ($byId[$b['ruleset_id']]['hardcore'] ?? false) <=> ($byId[$a['ruleset_id']]['hardcore'] ?? false));
         foreach ($rows as $row) {
             $curve = $curves[$row['ruleset_id']] ?? [];
             if (count($curve) < 2 || count($series) === count($classes)) {
                 continue;
             }
             $class = $classes[count($series)];
-            $series[] = ['cls' => $class, 'pts' => array_map(fn (array $p): array => [$p['level'], $p['seconds'] / 3600], $curve)];
+            $series[] = ['cls' => $class, 'pts' => array_map(fn (array $p): array => [$p['level'], $p['seconds'] / 3600], $curve), 'dash' => array_values(array_map(fn (array $p): int => $p['level'], array_filter($curve, fn (array $p): bool => $p['characters'] < self::SPARSE)))];
             $key[] = ['label' => $byId[$row['ruleset_id']]['label'], 'class' => 'k-line', 'style' => 'background:'.self::LINES[$class]];
         }
         if ($series === []) {

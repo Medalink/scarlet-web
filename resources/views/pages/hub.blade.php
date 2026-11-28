@@ -1,4 +1,4 @@
-<x-layouts.sc title="Scarlet: WoW Forever in numbers" description="Characters, levelling, deaths, feats and loot of WoW Forever, from players who recorded their own play with Scarlet." current="" canonical="/">
+<x-layouts.sc title="Scarlet: WoW Forever in numbers" description="Characters, levelling, deaths, feats and loot of WoW Forever, from players who recorded their own play with Scarlet." current="" canonical="/" :search="false">
 <div class="wrap pb-20 pt-12">
   <section class="grid grid-cols-[minmax(0,1fr)] items-end gap-10 lg:grid-cols-[minmax(0,1fr)_430px]">
     <div>
@@ -41,21 +41,12 @@
           <p class="sc-say mt-3">{!! $d['deaths']['sentence'] !!}</p>
         @endif
         @if ($d['classes'] !== [])
-          <h3 class="sc-h mt-9" style="font-size:24px">Most played classes</h3>
-          <x-sc.bars class="mt-3" :rows="$d['classes']" />
+          <h3 class="sc-h mt-9" style="font-size:24px">Characters by class</h3>
+          <x-sc.bars class="mt-3" :rows="$d['classes']" :of="$d['classTotal']" />
         @endif
       </div>
     </section>
   @endif
-
-  <section class="mt-16">
-    <h2 class="sc-h" style="font-size:32px">Everything on the site</h2>
-    <div class="mt-5">
-      @foreach ($d['directory'] as $row)
-        <a class="sc-dir" href="{{ $row['href'] }}"><span class="nm">{{ $row['name'] }}</span><span class="fact">{{ $row['fact'] }}@if ($row['bold']) <b>{{ $row['bold'] }}</b>@endif</span><x-sc.glyph name="arrow" :size="18" /></a>
-      @endforeach
-    </div>
-  </section>
 
   <section class="mt-16 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-3">
     @foreach ([['Fastest to 60', $d['fastest'], '/leaderboards/fastest-to-60'], ['Highest level without dying', $d['clean'], '/leaderboards/highest-level-without-dying']] as [$title, $rows, $href])
@@ -81,6 +72,14 @@
       @endif
     </div>
   </section>
+
+  @if ($d['directory'] !== [])
+    <section class="mt-16">
+      @foreach ($d['directory'] as $row)
+        <a class="sc-dir" href="{{ $row['href'] }}"><span class="nm">{{ $row['name'] }}</span><span class="fact">{{ $row['fact'] }}</span><x-sc.glyph name="arrow" :size="18" /></a>
+      @endforeach
+    </section>
+  @endif
 
   @unless ($signedIn)
     <section class="sc-panel mt-16 grid grid-cols-[minmax(0,1fr)] items-center gap-6 px-7 py-6 md:grid-cols-[minmax(0,1fr)_auto]">

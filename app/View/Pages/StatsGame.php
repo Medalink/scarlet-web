@@ -296,7 +296,6 @@ final class StatsGame
             RoundNumbers::rule('kills', 'Kills', $totals['kills'] ?? null),
             RoundNumbers::rule('hours', 'Hours recorded', $played === null ? null : round($played / 3600)),
             RoundNumbers::rule('quests', 'Quests turned in', $totals['quests'] ?? null),
-            RoundNumbers::rule('deaths', 'Deaths', $totals['deaths'] ?? null),
             RoundNumbers::rule('dungeons', 'Dungeon runs', $runs),
             RoundNumbers::rule('jumps', 'Jumps', $totals['jumps'] ?? null),
             RoundNumbers::rule('gold', 'Gold earned', $copper === null ? null : floor($copper / self::COPPER_PER_GOLD), 'g'),

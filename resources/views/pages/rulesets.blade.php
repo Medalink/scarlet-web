@@ -1,7 +1,6 @@
 <x-layouts.sc title="WoW Forever rulesets compared" current="stats" canonical="/stats/compare" :description="'Characters, hours, time to level '.$target.' and deaths for each ruleset.'">
 <div class="wrap">
   <x-page-head title="Rulesets compared">
-    <x-slot:sub>A ruleset is a permanent choice for each character. Each row links to its own dashboard.@if ($d['unidentified']) "Not identified" holds characters whose ruleset Scarlet cannot tell yet, because the game does not report it.@endif</x-slot:sub>
   </x-page-head>
   <x-sheet>
     <x-module span="w12" :first="true" :last="true" id="h-k" heading="The rulesets">
