@@ -3,6 +3,8 @@ import { sessionStart } from "./lines-kit.mjs";
 const LINEN_CLOTH = 2589;
 const WOOL_CLOTH = 2592;
 const HERB_NODE = 1617;
+const CHEST = 2843;
+const HERB_GATHERING = 2366;
 const QUEST = 101;
 
 const JEWELCRAFTING = 755;
@@ -53,7 +55,7 @@ const names = () => [
 
 const spread = (count, from, to, make) => Array.from({ length: count }, (_, n) => make(Math.round(from + ((to - from) * n) / count), n));
 
-function session({ level, minutes, kills, xp, quests, gathers, items, balance, extra = [] }) {
+function session({ level, minutes, kills, xp, quests, gathers, missed = 0, chests = 0, items, balance, extra = [] }) {
   const end = minutes * 60_000;
   const bar = level === 24 ? 31_700 : 34_000;
   return [
@@ -61,7 +63,9 @@ function session({ level, minutes, kills, xp, quests, gathers, items, balance, e
     ...spread(kills, 20_000, end - 20_000, (at, n) => [at, "K", 990000 + n, 1]),
     ...spread(xp.length, 30_000, end - 30_000, (at, n) => [at, "X", xp[n], xp.slice(0, n + 1).reduce((a, b) => a + b, 0), bar, "k", ""]),
     ...spread(quests, 40_000, end - 40_000, (at) => [at, "Q", 2, QUEST, 0, 0]),
-    ...spread(gathers, 50_000, end - 50_000, (at) => [at, "LO", "g", HERB_NODE, 1, `${LINEN_CLOTH}x1`, 0]),
+    ...spread(gathers, 50_000, end - 50_000, (at) => [at, "C", HERB_GATHERING, 1.5]).flatMap((cast) => [cast, [cast[0] + 500, "LO", "g", HERB_NODE, 1, `${LINEN_CLOTH}x1`, 0]]),
+    ...spread(missed, 55_000, end - 55_000, (at) => [at + 7000, "C", HERB_GATHERING, 1.5]),
+    ...spread(chests, 58_000, end - 58_000, (at) => [at + 13_000, "LO", "g", CHEST, 1, `${WOOL_CLOTH}x1`, 0]),
     ...items.map(([id, count], n) => [60_000 + n * 1000, "O", id, count]),
     [70_000, "M", 40_000, "", balance - 60_000],
     [end - 70_000, "M", 60_000, "", balance],
@@ -78,6 +82,8 @@ const FIRST = session({
   xp: [500, 500, 500, 500, 500, 500],
   quests: 3,
   gathers: 4,
+  missed: 3,
+  chests: 3,
   items: [[LINEN_CLOTH, 4], [LINEN_CLOTH, 4], [LINEN_CLOTH, 4], [WOOL_CLOTH, 2]],
   balance: 150_000,
   extra: [

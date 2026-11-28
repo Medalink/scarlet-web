@@ -3,7 +3,6 @@
 namespace App\Actions\Public\Character;
 
 use App\Actions\Rollups\RulesetSummaries;
-use App\Support\LootSourceKind;
 use App\Support\LootVia;
 use App\Support\NameKind;
 use Illuminate\Support\Carbon;
@@ -50,19 +49,15 @@ class SessionRecords
     public function handle(int $characterId, bool $economy): array
     {
         $sessions = DB::table('sessions as s')->where('s.character_id', $characterId)->where('s.counted', true)->orderBy('s.start_at')
-            ->selectRaw('s.session_start, s.start_at, s.end_at, s.played_ms, s.level_start, s.level_end, s.xp_total, s.kills, s.quests_done, s.copper_earned, s.copper_spent, s.money_end')->get();
+            ->selectRaw('s.session_start, s.start_at, s.end_at, s.played_ms, s.level_start, s.level_end, s.xp_total, s.kills, s.quests_done, s.copper_earned, s.copper_spent')->get();
         $looted = $this->looted($characterId);
-        $gathered = DB::table('loot_opens')->where('character_id', $characterId)->where('counted', true)->where('source_kind', LootSourceKind::Object->value)
+        $gathered = DB::table('gathers')->where('character_id', $characterId)->where('counted', true)->where('looted', true)
             ->groupBy('session_start')->selectRaw('session_start, count(*) as gathers')->pluck('gathers', 'session_start');
 
         $best = [];
-        $balance = null;
         foreach ($sessions as $s) {
             $level = [$s->level_start === null ? null : (int) $s->level_start, $s->level_end === null ? null : (int) $s->level_end];
             $own = fn (string $key, int|float $value, ?string $item = null): array => ['key' => $key, 'value' => $value, 'at' => Carbon::parse((string) $s->start_at)->utc()->toIso8601ZuluString(), 'from' => $level[0], 'to' => $level[1], 'item' => $item];
-            if ($economy && $s->money_end !== null && ($balance === null || (int) $s->money_end > $balance['value'])) {
-                $balance = $own(self::BALANCE, (int) $s->money_end);
-            }
             if ((int) $s->played_ms < self::MIN_PLAYED * 1000) {
                 continue;
             }
@@ -90,12 +85,27 @@ class SessionRecords
                 }
             }
         }
+        $balance = $economy ? $this->peakBalance($characterId) : null;
         if ($balance !== null && $balance['value'] > 0) {
             $best[self::BALANCE] = $balance;
         }
         $order = [self::XP_HOUR, self::GOLD_HOUR, self::KILLS_HOUR, self::GATHERS_HOUR, self::XP, self::KILLS, self::GATHERS, self::ITEM, self::QUESTS, self::LOOT, self::PLAYED, self::BALANCE];
 
         return array_values(array_filter(array_map(fn (string $key): ?array => $best[$key] ?? null, $order)));
+    }
+
+    /** @return array{key: string, value: int, at: string, from: int|null, to: int|null, item: null}|null the highest balance any money event of a counted session carried, the first time it was reached */
+    private function peakBalance(int $characterId): ?array
+    {
+        $peak = DB::table('money_changes as m')
+            ->join('sessions as s', fn ($join) => $join->on('s.character_id', '=', 'm.character_id')->on('s.session_start', '=', 'm.session_start'))
+            ->where('m.character_id', $characterId)->where('m.counted', true)->where('s.counted', true)->whereNotNull('m.balance')
+            ->orderByDesc('m.balance')->orderBy('m.at')->select('m.balance', 's.start_at', 's.level_start', 's.level_end')->first();
+
+        return $peak === null ? null : [
+            'key' => self::BALANCE, 'value' => (int) $peak->balance, 'at' => Carbon::parse((string) $peak->start_at)->utc()->toIso8601ZuluString(),
+            'from' => $peak->level_start === null ? null : (int) $peak->level_start, 'to' => $peak->level_end === null ? null : (int) $peak->level_end, 'item' => null,
+        ];
     }
 
     /** @return array<int, array{total: int, top: array{quantity: int, name: string}}> the items received in each session and the one received most */

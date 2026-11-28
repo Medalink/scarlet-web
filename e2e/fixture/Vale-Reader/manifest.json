@@ -10,16 +10,16 @@
     },
     {
       "group": "combat",
-      "id": "ae20475b0d25e193364e1810e1b21e0ffcf979873e93786a311f987403e8ae40",
-      "lines": 60,
-      "raw_bytes": 1065,
+      "id": "38ac7b749225c9e08381e1a6b3ac6dada999d5c8ea34cd5b93c6919773c35727",
+      "lines": 67,
+      "raw_bytes": 1177,
       "session": 1794800000
     },
     {
       "group": "loot",
-      "id": "2eafc19f14b94918a0d193ca19dcf32e01ed28f201df9c03ff6edbce152001fb",
-      "lines": 8,
-      "raw_bytes": 211,
+      "id": "dab39962167ed695d312c785636b9d518b9dd35a77981a533236c31171f5fe89",
+      "lines": 11,
+      "raw_bytes": 292,
       "session": 1794800000
     },
     {
@@ -73,16 +73,16 @@
     },
     {
       "group": "combat",
-      "id": "fc0679f2be355a0468b7e0cd661ac417f960a3289206cc42c4230f72f473be08",
-      "lines": 48,
-      "raw_bytes": 861,
+      "id": "adda59efb690859da9e4d5aeb8f07d007099842c0862175b38cfd49c3ef16523",
+      "lines": 50,
+      "raw_bytes": 890,
       "session": 1794900000
     },
     {
       "group": "loot",
-      "id": "cd5177d43f5dcc5e01b317077304da84e918dffe951d0987f53531584f97a589",
+      "id": "e0edd2a0d2db11b1a1553a2c1d95fe66e4e04ff25a3f8df1bd4fa1832cd917ed",
       "lines": 4,
-      "raw_bytes": 127,
+      "raw_bytes": 126,
       "session": 1794900000
     },
     {
@@ -129,16 +129,16 @@
     },
     {
       "group": "combat",
-      "id": "37db85f2d088a5d7b089e283ffcc8f662f4c38b469fa79bf2ed08591b1a46fd3",
-      "lines": 500,
-      "raw_bytes": 8046,
+      "id": "9eb9fb044a8c89a2b1121cea5262425f9dd119634b5a98705fa7ddc6c1c1edac",
+      "lines": 510,
+      "raw_bytes": 8185,
       "session": 1795000000
     },
     {
       "group": "loot",
-      "id": "40ed4e960f9d873116d63a2f7e3d64c83c2ef9960abcad296a34372e9a76476e",
+      "id": "b34861bc56348b3828194427f9cdf6c8c617b3c38faa0106343e18b21f894e2f",
       "lines": 11,
-      "raw_bytes": 330,
+      "raw_bytes": 329,
       "session": 1795000000
     },
     {
@@ -170,5 +170,5 @@
       "session": 1795000000
     }
   ],
-  "set_digest": "8508d8ec1a32bd50a1308437a1d9050e96ae9635879adee5f97c2aa823f3dc03"
+  "set_digest": "c13f688ba17b28a439ddb1e71355da1f851b1d58d78aff0b0d16076a6b5b3867"
 }
