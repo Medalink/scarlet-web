@@ -6,6 +6,7 @@
 @import './crest-tiers.css';
 @import './scarlet.css';
 @import './hubs.css';
+@import './talent-frame.css';
 
 @source '../views/components';
 @source '../views/pages';

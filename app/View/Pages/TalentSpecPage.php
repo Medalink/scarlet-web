@@ -6,8 +6,10 @@ use App\Support\LevelBracket;
 use App\Support\PageScope;
 use App\Support\PlayerClass;
 use App\Support\Server;
+use App\Support\SpellIcons;
 use App\Support\TalentTree;
 use App\View\Format;
+use App\View\TalentFrame;
 
 /** The talent pages from the answers of App\Actions\Public\TalentSpecs and TalentSpec. */
 final class TalentSpecPage
@@ -71,6 +73,7 @@ final class TalentSpecPage
         /** @var array{spell: array<int, string>, tab: array<int, string>} $names */
         $names = $a['names'];
         $names['tab'] = self::inGameOrder((string) $a['class'], $names['tab']);
+        $cells = $a['layout'] === null || $n === 0 ? [] : TalentFrame::cells($a['layout'], $a['shown']);
 
         return [
             'title' => $a['spec'].' '.Format::className((string) $a['class']),
@@ -81,7 +84,8 @@ final class TalentSpecPage
                 : Format::count($n, 'character').', each counted by its latest build'.($bracket === LevelBracket::All ? '.' : ' at '.mb_strtolower($bracket->label()).'.'),
             'n' => $n,
             'brackets' => self::control($bracket, $path, $scope),
-            'columns' => $a['layout'] === null || $n === 0 ? [] : self::columns($a['layout'], $nodes, $n, $names),
+            'trees' => $cells === [] ? [] : self::trees($cells, $nodes, $n, $names),
+            'outside' => $cells === [] ? [] : self::outside($cells, $nodes, $n),
             'nodes' => self::nodeTable($nodes, $n),
             'order' => self::order($a['order']),
             'builds' => self::builds($a['brackets'], $names['tab']),
@@ -120,46 +124,95 @@ final class TalentSpecPage
     }
 
     /**
-     * One column for each talent tree: the talents characters took, with how many took each, top of the tree first.
+     * One frame for each talent tree, in the in-game layout: each node with its icon and the share of characters that
+     * took it. A node nobody took is drawn dimmed at 0%.
      *
-     * @param  array<string, mixed>  $layout
+     * @param  list<array{tab: int, nodes: list<array{id: int, col: int, row: int, spells: list<int|null>, max: int, to: list<int>}>}>  $cells
      * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, name: string|null}>  $nodes
      * @param  array{spell: array<int, string>, tab: array<int, string>}  $names
-     * @return list<array{name: string, rows: list<array{name: string, href: string|null, rate: string, width: float, title: string}>}>
+     * @return list<array{name: string, width: int, height: int, nodes: list<array<string, mixed>>, arrows: list<array<string, mixed>>}>
      */
-    private static function columns(array $layout, array $nodes, int $n, array $names): array
+    private static function trees(array $cells, array $nodes, int $n, array $names): array
     {
         $taken = [];
         foreach ($nodes as $node) {
             $taken[$node['node']] = $node;
         }
-        /** @var array<int, array{id: int, y: int, tab: int|null, entries: list<array{entry: int, spell: int|null}>}> $layoutNodes */
-        $layoutNodes = $layout['nodes'];
-        uasort($layoutNodes, fn (array $a, array $b): int => $b['y'] <=> $a['y']);
-        $columns = [];
-        foreach ($layoutNodes as $id => $node) {
-            $pick = $taken[$id] ?? null;
-            if ($pick === null || $pick['rate'] <= 0 || $node['tab'] === null || ! isset($names['tab'][$node['tab']])) {
-                continue;
+        $spells = [];
+        foreach ($cells as $tree) {
+            foreach ($tree['nodes'] as $cell) {
+                array_push($spells, ...$cell['spells']);
             }
-            $spell = $pick['spell'] ?? ($node['entries'][0]['spell'] ?? null);
-            $columns[$node['tab']]['name'] = $names['tab'][$node['tab']];
-            $columns[$node['tab']]['rows'][] = [
-                'name' => $pick['name'] ?? 'Talent '.$id,
-                'href' => $spell === null ? null : '/spells/'.$spell,
-                'rate' => Format::percent($pick['rate']),
-                'width' => round($pick['rate'] * 100, 1),
-                'title' => Format::number($pick['taken']).' of '.Format::count($n, 'character').', average rank '.Format::number($pick['rank'], 1),
-            ];
         }
-        $position = array_flip(array_keys($names['tab']));
-        uksort($columns, fn (int $a, int $b): int => $position[$a] <=> $position[$b]);
+        $icons = SpellIcons::icons(array_values(array_unique(array_filter($spells, fn (?int $spell): bool => $spell !== null))));
 
-        return array_values($columns);
+        return array_map(function (array $tree) use ($taken, $icons, $names, $n): array {
+            $frame = TalentFrame::frame($tree['nodes']);
+            $rates = [];
+            $drawn = [];
+            foreach ($tree['nodes'] as $cell) {
+                $pick = $taken[$cell['id']] ?? null;
+                $spell = $pick['spell'] ?? $cell['spells'][0];
+                $called = fn (?int $of): string => $of === null ? 'Talent '.$cell['id'] : ($names['spell'][$of] ?? 'Talent '.$cell['id']);
+                $name = $called($spell);
+                $rate = $pick['rate'] ?? 0.0;
+                $rates[$cell['id']] = $rate;
+                $choices = count($cell['spells']) > 1 ? array_map($called, $cell['spells']) : [];
+                $count = $pick === null ? 0 : $pick['taken'];
+                $title = $name.', '.Format::number($count).' of '.Format::count($n, 'character').($pick === null ? '' : ', average rank '.Format::number($pick['rank'], 1)).($choices === [] ? '' : '. Choice of '.implode(' or ', $choices));
+                $drawn[] = [
+                    'id' => $cell['id'],
+                    'left' => $frame['slots'][$cell['id']]['left'],
+                    'top' => $frame['slots'][$cell['id']]['top'],
+                    'name' => $name,
+                    'initial' => mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $name) ?? '', 0, 1)) ?: '?',
+                    'icon' => $spell === null ? null : ($icons[$spell] ?? null),
+                    'href' => $spell === null ? null : '/spells/'.$spell,
+                    'rate' => $count === 0 ? '0%' : ($rate < 0.005 ? '<1%' : Format::percent($rate)),
+                    'share' => round($rate, 3),
+                    'taken' => $count > 0,
+                    'choice' => $choices !== [],
+                    'title' => $title,
+                ];
+            }
+
+            return [
+                'name' => $names['tab'][$tree['tab']] ?? 'Tab '.$tree['tab'],
+                'width' => $frame['width'],
+                'height' => $frame['height'],
+                'nodes' => $drawn,
+                'arrows' => array_map(fn (array $arrow): array => [...$arrow, 'lit' => ($rates[$arrow['from']] ?? 0.0) > 0], $frame['arrows']),
+            ];
+        }, $cells);
     }
 
     /**
-     * The tabs of a class in the order the game lists its trees, which the columns and every build split follow.
+     * The talents characters held that the layout does not place, as bars, most taken first.
+     *
+     * @param  list<array{tab: int, nodes: list<array{id: int}>}>  $cells
+     * @param  list<array{node: int, spell: int|null, taken: int, rate: float, rank: float, name: string|null}>  $nodes
+     * @return list<array{name: string, href: string|null, rate: string, width: float, title: string}>
+     */
+    private static function outside(array $cells, array $nodes, int $n): array
+    {
+        $placed = [];
+        foreach ($cells as $tree) {
+            foreach ($tree['nodes'] as $cell) {
+                $placed[$cell['id']] = true;
+            }
+        }
+
+        return array_values(array_map(fn (array $node): array => [
+            'name' => $node['name'] ?? 'Talent '.$node['node'],
+            'href' => $node['spell'] === null ? null : '/spells/'.$node['spell'],
+            'rate' => Format::percent($node['rate']),
+            'width' => round($node['rate'] * 100, 1),
+            'title' => Format::number($node['taken']).' of '.Format::count($n, 'character').', average rank '.Format::number($node['rank'], 1),
+        ], array_filter($nodes, fn (array $node): bool => $node['rate'] > 0 && ! isset($placed[$node['node']]))));
+    }
+
+    /**
+     * The tabs of a class in the order the game lists its trees, which the frames and every build split follow.
      * A tab that matches none of the class's trees goes last.
      *
      * @param  array<int, string>  $tabs

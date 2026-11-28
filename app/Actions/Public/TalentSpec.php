@@ -26,6 +26,7 @@ class TalentSpec
      *   saw (the points held when the addon first read a build have no order, so this holds the characters that
      *   levelled with it on).
      * - `layout`: the layout of the tree, or null while no session sent one.
+     * - `shown`: the ids of the talent tabs the builds list.
      * - `outcomes`: for the most held builds, the levelling, deaths and dungeon runs that happened while they were held.
      *
      * @return array<string, mixed>|null null when no character plays the spec
@@ -61,6 +62,7 @@ class TalentSpec
             'characters' => count($rows),
             'tree_id' => $tree,
             'layout' => $layout,
+            'shown' => $this->shownTabs($rows),
             'nodes' => array_map(fn (array $node): array => [...$node, 'name' => $node['spell'] === null ? null : ($names['spell'][$node['spell']] ?? null)], $nodes),
             'order' => array_map(fn (array $point): array => [...$point, 'name' => $point['spell'] === null ? null : ($names['spell'][$point['spell']] ?? null)], $order),
             'brackets' => $this->brackets($scope, $classSlug, $tabs, $names['tab']),
@@ -84,6 +86,22 @@ class TalentSpec
             ->when($scope->ids !== null, fn ($query) => $query->whereIn('s.ruleset_id', (array) $scope->ids))
             ->selectRaw('distinct on (s.character_id) s.character_id, s.level, s.tree_id, s.build_hash, s.tab_points, s.ranks')
             ->orderBy('s.character_id')->orderByDesc('s.at')->get()->all());
+    }
+
+    /**
+     * The talent tabs the builds list, which are the trees the game shows for the spec.
+     *
+     * @param  list<\stdClass>  $rows
+     * @return list<int>
+     */
+    private function shownTabs(array $rows): array
+    {
+        $tabs = [];
+        foreach ($rows as $row) {
+            array_push($tabs, ...array_column(TalentRanks::tabs((string) $row->tab_points), 'id'));
+        }
+
+        return array_values(array_unique($tabs));
     }
 
     /** @param  list<\stdClass>  $rows */
