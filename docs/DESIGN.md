@@ -866,6 +866,7 @@ Decoding a session first deletes that session's rows, so it can run any number o
 | `quest_baselines` | `QB` | quests | one read of the quests the client says the character completed: the total and the ids. The latest read's total is `characters.quests_completed`, which the lifetime quests board ranks |
 | `title_baselines` | `KT` | collections | one read of the titles the character knows: total and ids. The latest total is `characters.titles_known` |
 | `explored_baselines` | `EB` | world | one read of the explored overlays of each zone map. The latest count of maps with something uncovered is `characters.zones_explored` |
+| `reputation_standings` | `RF` | collections | a faction's standing when it changed (decoder version 19). The latest row of each faction is the standing the character page's Reputation section draws, with the faction's name from `names` |
 | `instance_locks` | `IS` | combat | one instance or world boss lock line: reset time, bosses done, locked, extended. The character page lists the latest line of each lock whose reset is still ahead |
 | `talent_changes` | `TA` | build | a point picked, refunded or swapped: node, ranks, the ordinal of the point in the build, the respec it belongs to |
 | `talent_snapshots` | `TG`, `TA` | build | the build as ranks, tab points, build hash and loadout, one row per change of it |

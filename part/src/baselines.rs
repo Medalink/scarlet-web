@@ -1,5 +1,6 @@
 //! Lifetime baseline rows of the decoder (docs/ROWS.md): `quest_baselines` (`QB`), `title_baselines` (`KT`),
-//! `explored_baselines` (`EB`) and `instance_locks` (`IS`). A read that spans several lines of one code is one row.
+//! `explored_baselines` (`EB`), `instance_locks` (`IS`) and `reputation_standings` (`RF`). A read that spans several
+//! lines of one code is one row.
 
 use crate::decode::{num, prefix};
 use crate::rows::Rows;
@@ -71,6 +72,23 @@ impl Baselines {
         };
         prefix(w, "title_baselines", c.session, c.at, c.level, c.zone_id);
         w.int("total", total).str("ids", &joined(&ids(field(f, 1))));
+        w.end();
+    }
+
+    pub fn on_rf(&mut self, c: Ctx, w: &mut Rows, f: &[&str]) {
+        let Some(faction_id) = num(f, 0) else {
+            return;
+        };
+        let flag = |i: usize| field(f, i) == "1";
+        prefix(w, "reputation_standings", c.session, c.at, c.level, c.zone_id);
+        w.int("faction_id", faction_id)
+            .opt("reaction", num(f, 1))
+            .opt("standing", num(f, 2))
+            .opt("floor", num(f, 3))
+            .opt("ceiling", num(f, 4))
+            .bool("at_war", flag(5))
+            .bool("account_wide", flag(6))
+            .bool("baseline", field(f, 7) == "s");
         w.end();
     }
 

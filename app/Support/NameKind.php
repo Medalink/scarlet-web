@@ -10,6 +10,7 @@ enum NameKind: string
     case Quest = 'quest';
     case Spell = 'spell';
     case Skill = 'skill';
+    case Faction = 'faction';
     case TalentTab = 'talenttab';
     case Object = 'object';
 }

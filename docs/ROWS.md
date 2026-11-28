@@ -808,6 +808,21 @@ first line of the read.
 | `zones` | int | the maps of the read with at least one explored overlay |
 | `maps` | string | `uiMapID:overlays` for each map, comma-separated, in map order; a map named twice keeps its larger count |
 
+### `reputation_standings` (collections: `RF`)
+
+One row per `RF` line: the character's standing with one faction, written when it differs from the last line for that
+faction (decoder version 19). The latest row of a faction is its current standing. Faction names are in `names`, kind
+`faction`, from the `FN` lines.
+
+| Key | Type | |
+| --- | --- | --- |
+| `faction_id` | int | the client's factionID |
+| `reaction` | int or null | the client's tier: `1` hated up to `8` exalted |
+| `standing` | int or null | the client's number |
+| `floor`, `ceiling` | int or null | the bounds of the tier; equal for a tier the client gives no bounds |
+| `at_war`, `account_wide` | bool | `RF` fields atWar and accountWide |
+| `baseline` | bool | why is `s`: the first read of the session |
+
 ### `instance_locks` (combat: `IS`)
 
 One row per `IS` line: an instance lock from the client's raid info list, or a world boss lock. Keys after the common ones:

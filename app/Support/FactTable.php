@@ -52,6 +52,7 @@ enum FactTable: string
     case TitleBaselines = 'title_baselines';
     case ExploredBaselines = 'explored_baselines';
     case InstanceLocks = 'instance_locks';
+    case ReputationStandings = 'reputation_standings';
     case GroupSpans = 'group_spans';
     case GroupLoot = 'group_loot';
     case LootRolls = 'loot_rolls';
@@ -77,7 +78,7 @@ enum FactTable: string
             self::StateTimes, self::ClassTallies,
             self::DungeonRuns, self::BossKills, self::CampStays, self::CampBenefits, self::InstanceLocks => SharingGroup::COMBAT,
             self::QuestEvents, self::QuestBaselines => SharingGroup::QUESTS,
-            self::TitleBaselines => SharingGroup::COLLECTIONS,
+            self::TitleBaselines, self::ReputationStandings => SharingGroup::COLLECTIONS,
             self::ExploredBaselines => SharingGroup::WORLD,
             self::MoneyChanges, self::AuctionPrices => SharingGroup::ECONOMY,
             self::LootOpens, self::LootDrops, self::BossLoot, self::GroupLoot, self::LootRolls, self::PeerOpens, self::PeerDrops, self::ItemFlows => SharingGroup::LOOT,

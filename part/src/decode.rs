@@ -27,7 +27,7 @@ pub const RUN_REJOIN_MS: i64 = 30 * 60 * 1000;
 /// The rule version of the decoded rows: bumped on any change to the rows the
 /// decoder writes, so the stored rows are decoded again (`scarlet-part
 /// decoder-version`).
-pub const DECODER_VERSION: u32 = 18;
+pub const DECODER_VERSION: u32 = 19;
 
 const HOUR_MS: i64 = 3_600_000;
 const COPPER_MAX: i64 = 1_000_000_000_000_000;
@@ -695,6 +695,10 @@ impl Dec<'_> {
             "EB" => {
                 let ctx = self.baseline_ctx(t);
                 self.baselines.on_eb(ctx, &mut self.w, &f);
+            }
+            "RF" => {
+                let ctx = self.baseline_ctx(t);
+                self.baselines.on_rf(ctx, &mut self.w, &f);
             }
             "IS" => {
                 let ctx = self.baseline_ctx(t);
