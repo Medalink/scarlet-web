@@ -57,19 +57,37 @@ final class RecordPages
         $killItems = array_column($looted['rows'], 'estimate', 'item_id');
         $base = '/creatures/'.$r['id'];
         $query = fn (?string $value): string => $base.'?'.http_build_query(array_filter(['ruleset' => $scope->ruleset?->slug(), 'rule' => $value]));
+        $dropRows = array_map(fn (array $row): array => ['cells' => [
+            ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id'], 'tag' => in_array(RateFlag::QuestItem, $row['estimate']->flags, true) ? RateFlag::QuestItem->label() : null],
+            ['rate' => $row['estimate']],
+            $row['estimate']->stated() ? $row['estimate']->range() : '–',
+            $row['estimate']->counts(),
+            Format::number($row['per_drop'], 1),
+            LootRows::value($row['value']),
+            ...($ofKills ? [($killItems[$row['item_id']] ?? RateEstimate::of(0, $looted['kills'], unit: RateEstimate::UNIT_KILL))->counts()] : []),
+        ]], $table['rows']);
+        $drops = LootRows::withoutEmpty([['label' => 'Item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Per drop', 'numeric' => true], ['label' => 'Value', 'numeric' => true], ...($ofKills ? [['label' => 'Of all kills', 'numeric' => true]] : [])], $dropRows, [5]);
+        $skinRows = array_map(fn (array $row): array => ['cells' => [
+            ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id']],
+            ['rate' => $row['estimate']],
+            $row['estimate']->stated() ? $row['estimate']->range() : '–',
+            $row['estimate']->counts(),
+            LootRows::value($row['value']),
+        ]], $skin['rows']);
+        $skinning = LootRows::withoutEmpty([['label' => 'Item'], ['label' => 'Share of skins', 'numeric' => true], ['label' => 'Range', 'numeric' => true], ['label' => 'Skins', 'numeric' => true], ['label' => 'Value', 'numeric' => true]], $skinRows, [4]);
 
         return [
             'name' => $r['name'],
             'sub' => self::creatureSub($facts, $zones),
             'filters' => Filters::onPage($scope, self::rulesets($r), $base),
-            'figures' => [
+            'figures' => array_values(array_filter([
                 ['label' => 'Kills', 'value' => $kills['kills'] === null ? '–' : Format::number($kills['kills']), 'unit' => $kills['kills'] === null ? Format::TOO_FEW : null],
                 ['label' => 'Characters killed', 'value' => $deaths['characters'] === null ? '0' : Format::number($deaths['characters'])],
                 ['label' => 'Deaths per 1,000 kills', 'value' => $kills['kills'] && $deaths['deaths'] !== null ? Format::number($deaths['deaths'] / $kills['kills'] * 1000, 1) : '–'],
                 ['label' => 'Corpses looted', 'value' => $opens === null ? '–' : Format::number($opens), 'unit' => $chosen === null ? null : LootRule::words($chosen)],
                 ...self::lootedOfKills($looted['estimate']),
                 LootRows::worthFigure($table, 'a corpse'),
-            ],
+            ], fn (array $tile): bool => ! in_array($tile['value'], ['–', '0'], true) || isset($tile['unit']))),
             'threat' => RecordThreat::creature($kills['kills'], $deaths['deaths']),
             'rules' => $table['rules'] === [] ? [] : [
                 ['label' => 'All rules', 'href' => $query(null), 'on' => $chosen === null],
@@ -80,25 +98,12 @@ final class RecordPages
             ],
             'tags' => $table['rows'] === [] ? [] : array_map(fn (RateFlag $flag): string => $flag->label(), array_values(array_filter($table['rows'][0]['estimate']->flags, fn (RateFlag $flag): bool => $flag !== RateFlag::QuestItem))),
             'unread' => $table['unread'] === 0 ? null : 'Left out: '.Format::count($table['unread'], 'corpse').' from sessions that do not record what a corpse was read for.',
-            'drops' => array_map(fn (array $row): array => ['cells' => [
-                ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id'], 'tag' => in_array(RateFlag::QuestItem, $row['estimate']->flags, true) ? RateFlag::QuestItem->label() : null],
-                ['rate' => $row['estimate']],
-                $row['estimate']->stated() ? $row['estimate']->range() : '–',
-                $row['estimate']->counts(),
-                Format::number($row['per_drop'], 1),
-                LootRows::value($row['value']),
-                ...($ofKills ? [($killItems[$row['item_id']] ?? RateEstimate::of(0, $looted['kills'], unit: RateEstimate::UNIT_KILL))->counts()] : []),
-            ]], $table['rows']),
-            'ofKills' => $ofKills,
+            'drops' => $drops['rows'],
+            'dropColumns' => $drops['columns'],
             'ruleArms' => ArmChart::rules($r['rule_arms'], '/loot/groups?source=c'.$r['id']),
             'sizeArms' => ArmChart::sizes($r['size_arms']),
-            'skinning' => array_map(fn (array $row): array => ['cells' => [
-                ['text' => (string) ($row['item'] ?? 'Item '.$row['item_id']), 'href' => '/items/'.$row['item_id']],
-                ['rate' => $row['estimate']],
-                $row['estimate']->stated() ? $row['estimate']->range() : '–',
-                $row['estimate']->counts(),
-                LootRows::value($row['value']),
-            ]], $skin['rows']),
+            'skinning' => $skinning['rows'],
+            'skinColumns' => $skinning['columns'],
             'dropWorth' => LootRows::worth($table),
             'skinWorth' => LootRows::worth($skin),
             'map' => MapSpec::density(WorldLayer::Creatures, $scope->ruleset?->slug(), $r['map_zones'], $r['points'] === null ? ($zones[0]['id'] ?? null) : null, creature: (int) $r['id'], dots: $r['points']),
@@ -333,11 +338,14 @@ final class RecordPages
     {
         $low = $facts['level_min'];
         $high = $facts['level_max'];
-        $level = Format::creatureLevel($low, $high) ?: 'Creature';
+        $level = Format::creatureLevel($low, $high);
         $kind = trim(strtolower(implode(' ', array_filter([(string) ($facts['type'] ?? ''), $facts['family'] ? '('.strtolower((string) $facts['family']).')' : '']))));
         $class = $facts['classification'] && $facts['classification'] !== 'normal' ? ', '.(CreatureClass::tryFrom((string) $facts['classification'])?->label() ?? strtolower((string) $facts['classification'])) : '';
 
-        return $level.($kind === '' ? '' : ' '.$kind).$class.'.'.($zones === [] ? '' : ' Seen in '.implode(', ', array_map(fn (array $zone): string => $zone['name'], array_slice($zones, 0, 2))).'.');
+        $what = trim($level.' '.$kind).$class;
+        $seen = $zones === [] ? '' : 'Seen in '.implode(', ', array_map(fn (array $zone): string => $zone['name'], array_slice($zones, 0, 2))).'.';
+
+        return trim(($what === '' ? '' : ucfirst(ltrim($what, ', ')).'.').' '.$seen);
     }
 
     /**

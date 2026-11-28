@@ -61,7 +61,7 @@ final class ArmChart
         $listed = self::sentence(array_map(fn (array $seen, int $position): string => ($position === 0 ? 'size ' : '').$seen['size'].(count($sizes) === 1 ? '' : ' ('.$seen['windows'].')'), $sizes, array_keys($sizes)));
         $empty = count($drawn) < 2 ? LootRule::words($rule).' recorded at '.$listed.(count($sizes) === 1 ? ' only.' : '.') : null;
 
-        return ['heading' => 'Drop rate by group size under '.strtolower(LootRule::words($rule))] + self::chart($answer, $empty, self::undrawn($arms, fn (LootArm $arm): string => 'size '.$arm->key.' with '.$arm->windows));
+        return ['heading' => 'Drop rate by group size'.($rule === LootRule::Unknown->value ? '' : ' under '.strtolower(LootRule::words($rule)))] + self::chart($answer, $empty, self::undrawn($arms, fn (LootArm $arm): string => 'size '.$arm->key.' with '.$arm->windows));
     }
 
     /**
