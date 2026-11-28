@@ -1244,9 +1244,9 @@ design says so plainly instead of pretending:
 **Limits.** Registration: 5 installs per address per hour. Upload: 4 MiB per request, 64 MiB decompressed, 200 MiB per
 install per day, 50 characters per install, and the zstd window is capped so a small body cannot expand without
 bound. Requests are rate limited per install and per address with Laravel's limiter; an IPv6 address counts by its
-/64. The public read API allows 60 requests a minute per address, or 600 per account with a key, caps bad keys at 10 a
-minute per address, keeps each answer 30 seconds at the origin and cancels a query after 10 seconds (docs/API.md).
-Revoking an install on the account page stops its key at once.
+/64. The public read API needs an API key: it allows 600 requests a minute per account, answers a request with no key
+`401 missing_key`, caps bad keys at 10 a minute per address, keeps each answer 30 seconds at the origin and cancels a
+query after 10 seconds (docs/API.md). Revoking an install on the account page stops its key at once.
 
 **Public pages.** The pages run the same reads as the public API, so a client looping over them would reach the
 database through php-fpm's few workers. They carry their own protection: 240 requests a minute per address bucket
@@ -1259,6 +1259,20 @@ parameters the pages read, so a junk parameter such as `?x=1` cannot bypass the 
 check. Stored per identity: provider and the provider's subject id. Not stored: email, name, picture, BattleTag. No
 feature needs an email address, so the scopes ask for none (`openid` only). An account can hold both providers.
 Sessions are Laravel's own, cookie based. Client ids and secrets come from the environment.
+
+**API keys.** The public read API (`/api/v1/public`) answers only a request that carries a key. A key is a Sanctum
+personal access token with the one ability `public:read` (`Account::API_ABILITY`), made on `/account` (API keys) and
+sent as `Authorization: Bearer <key>`; a key in the query string is never read. Only an account with a Battle.net
+sign-in can make one (`CreateApiKey` refuses otherwise, and `/account` shows one line that links Battle.net instead of
+the form); unlinking Battle.net deletes the account's keys. An account holds at most 10 keys. A key expires after 30
+days unless its maker picks 60 or 90 (`personal_access_tokens.expires_at`, at most `Account::API_KEY_MAX_DAYS`);
+`/account` lists each key's expiry, shows an expired one as expired and lets the account delete it, and `PublicApi`
+refuses an expired key like an unknown one. Keys that predate expiry were given 30 days from the migration that added
+it. The local development sign-in can make a Battle.net identity (`POST /auth/development` with `as=battlenet`) and
+expire the account's keys of one name (`POST /auth/development/expire-keys`), under the same gate as the sign-in itself (a local
+environment with `SCARLET_DEV_LOGIN` on), so the end-to-end lane can make keys without Battle.net. The site's own
+pages never use a key: the world map reads its heat from `GET /map/density`, a route of `routes/pages.php` that runs
+the same `WorldDensity` Action under the page limit and the page cache.
 
 **Linking the app.** In Settings the player presses "Link to my account". The app asks the API for a link code
 (a signed request), shows it and opens `/link?redeem=<signature>` in the browser. The player signs in and types the
@@ -1323,12 +1337,19 @@ refusal loses the session and XSRF cookies. The account page shows each linked s
 answer is sent, into `api_calls`: one row per UTC day, surface (`public` or `upload`), endpoint (method and route path),
 address bucket (`ClientAddress::bucket`), account (from the API key, or the install's account) and install. A row holds
 the requests, the refused ones (status 400 and above, except 404), the limited ones (status 429, counted as refused
-too) and the first and last time. A `200` or `304` answer
+too), `busiest_minute` (the most requests the caller's key had counted in one rate-limit window when one of the day's
+requests was answered, kept with `greatest()`; 0 for an upload row) and the first and last time. A `200` or `304` answer
 that names a character also counts on that character's row of the day, which has no address, account or install, so
 walking many characters adds one row per character, not one per caller and character. Both writes run in one
 transaction capped at two seconds, and a failed write is reported without touching the answer, which has already gone.
-Answers the edge cache serves never reach the origin, so the counts are the origin's. `api-calls:prune` keeps today and
-the 30 full days before it, daily.
+Every public API answer is `private`, so none is served from a shared cache and the counts are every request made.
+`api-calls:prune` keeps today and the 30 full days before it, daily.
+
+**Accounts with API keys.** `/admin/api` lists every account that holds a key or made calls with one in the days
+`api_calls` keeps (`ApiUsage`, `ApiPage`), by requests over 7 days: the account, the keys it holds, its newest key's
+creation and its soonest expiry, when a key was last used, requests today, over 7 days and over the kept days, the
+busiest minute against the per-minute limit ("84 of 600") and the 429 answers. A request with no key is counted on
+its address's row with account 0 and shows in the addresses list.
 
 **Numbers.** Each page reads one Action under `app/Actions/Admin` and keeps its answer 60 seconds. Row counts of big
 tables come from the planner's estimate (`approximate_row_count` for hypertables, `reltuples` for the rest), never
@@ -1342,13 +1363,13 @@ Versioned by path: `/api/v1`. A breaking change is `/api/v2`; fields are only ev
 - **Upload**, signed by an install: `POST /installs`, `GET /installs/me`, `POST /installs/link-code`,
   `POST /upload/sync`, `POST /upload/manifest`, `POST /upload/parts`, `GET /upload/status`,
   `PUT|DELETE /upload/groups/{key}`, `DELETE /upload`.
-- **Public**, read-only JSON, no sign-in: `GET /public/stats`, `/public/rulesets`, `/public/rulesets/{id}` and its
+- **Public**, read-only JSON, an API key on every request (Accounts, API keys): `GET /public/stats`, `/public/rulesets`, `/public/rulesets/{id}` and its
   series (`/levels`, `/xp`, `/deaths`, `/dungeons`, `/professions`, `/gold`, `/activity`), `/public/leaderboards/{board}`,
   `/public/camps`, `/public/professions/{slug}`, `/public/search?q=`, `/public/characters/{name}` and its series and sessions, `/public/feats` and `/public/feats/{key}`, `/public/creatures/{id}`, `/public/items/{id}`,
   `/public/spells/{id}`, `/public/encounters/{id}`, `/public/zones/{id}`, `/public/quests/{id}`, `/public/map/heat`. `Access-Control-Allow-Origin: *`,
-  `Cache-Control: public, max-age=300` with an `ETag`, cursor pagination (`?cursor=`, `next_cursor` in the answer),
-  60 requests a minute per IP, 600 with a free API key (a Sanctum token made on the account page, sent as a bearer
-  token). The reference is the `/developers` page, written from the same route table.
+  `Cache-Control: private, max-age=300` with an `ETag`, cursor pagination (`?cursor=`, `next_cursor` in the answer),
+  600 requests a minute per account, `Authorization` allowed in a cross-origin request and its preflight answered.
+  The reference is the `/developers` page, written from the same route table.
 
 The signed-in pages read the same Actions as the public API, with the owner's private data added.
 
@@ -1383,11 +1404,11 @@ comps and is specified here, not in them.
 | `/encounters/{id}` | Public. The items a boss encounter dropped, from `boss_loot`. A drop is counted once per uploader group: rows of one encounter and item within 10 minutes are one drop, and the uploader who saw most of them gives the count. An encounter has no name in the data, so the page says `Encounter <id>` |
 | `/map` | The world map: one seamless map, zoomable down to a zone, with heat from paths, deaths and kills (see Maps). `?character=Name-Surname` is one character's own map (Personal maps), for every viewer who may see that character's page and a 404 for everyone else, noindex |
 | `/account/map` | Private, signed in only: the personal map of every character of the account, private ones included (Personal maps). Declared with `->defaults(ScopeRequest::OWN, true)` and `cache.headers:private;no_store`, noindex, not in the sitemap |
-| `/developers` | The public API reference |
+| `/developers` | The API reference: how to get and send a key, then every endpoint |
 | `/download` | Public. The newest build of the Windows app: the installer as the main button, the addon zip, `SHA256SUMS.txt` and the GitHub releases page. The build is read server side from the GitHub releases of `Medalink/scarlet-app` (the newest stable release with an installer, else the newest pre-release; drafts and `beta-channel` are skipped) and cached for 10 minutes, so a page view never reaches GitHub. When GitHub does not answer, the last good answer is shown, and before there is one a link to the releases page. The landing page and the header link to it |
 | `/release-notes` | Public. The running build (version, build number, commit, lines, files, and the lines added and removed by the last commit, this build and all time), a rail of released versions, and one release with its changes grouped by area. Filters by New, Improved or Fixed are query parameters (`?v=0.1.0&only=fixed`), so the page needs no script. The footer of every page shows `v<version>.<build>` and links here |
 | `/login`, `/link` | Sign in, link the app |
-| `/account` | Characters and their public switches, installs and revoking them, recent uploads and when each install last contacted the site, sharing groups, removals, API keys |
+| `/account` | Characters and their public switches, installs and revoking them, recent uploads and when each install last contacted the site, sharing groups, removals, API keys (a line linking Battle.net until the account has it, then the keys with their expiry and the form with a 30, 60 or 90 day choice) |
 | `/account/professions`, `/account/professions/{slug}` | Private, signed in only. The twelve profession pages over only the account's characters (A player's own numbers, Rollups): the same view, scene, modules, filters and `ProfessionController` as `/professions/{slug}`, with the head saying whose numbers they are ("1 of your 3 characters") and linking everyone's page, the trades nav staying under `/account`, "you" for "players" in the module headings, "Your characters by catches" for the board, and no figure of characters who work the profession, since the head says it. `noindex`, no canonical link, no meta description, never edge cached (it is not in `routes/pages.php`, and `cache.headers:private;no_store` on the route sends `max-age=0, must-revalidate, no-cache, no-store, private`), not in the sitemap or in search. A route is a player's own when it is declared with `->defaults(ScopeRequest::OWN, true)`, which `ScopeRequest::ownCharacters()` reads; no controller tests a route name. An account with no character, or none with rows, gets the head ("0 of your 3 characters", or "No play recorded for your characters yet") and one line that Scarlet records this once a character of theirs has recorded the profession's attempts. `/account/professions` goes to the profession with the most attempts or crafts, Fishing when there are none, and carries `?ruleset=` and `?server=`. `/account` and `/account/characters` link it |
 | `/account/camps` | Private, signed in only. The camps page over only the account's characters, through the same `CampsController`, view and scene as `/camps`, declared on its route with `->defaults(ScopeRequest::OWN, true)` and read through `ScopeRequest::ownCharacters()`, with the title "Your camps", no meta description, the head saying "1 of your 3 characters" (the characters with camp stays of the account's played characters, from `ScopePlay`; "No play recorded for your characters yet" before any has played), linking everyone's camps, "you" for "players" in the module headings, "Your characters by time by the fire" for the board, and the trades nav of the own profession pages with Camps beside the twelve. Private in the same way as `/account/professions`: no index, no canonical, `Cache-Control: private, no-store`. The answer carries `scope_characters` only for a player's own, so the public API answer is unchanged. With no character, or none with a camp stay, one line says Scarlet records this once a character of yours has camped. `/account` and `/account/characters` link it |
 | `/account/characters` | Private, signed in only. The account's characters side by side: totals, a table of the characters, play time by day stacked by character (last 30 days), gold with copper moved between your own characters kept apart, time two characters were online together (sessions overlapping by 60 s or more), time in each level against the median of the character's ruleset, and profession ranks. Alts exist only here and in the owner bar of `/c/{name}`, which links the account's other characters. No public page, board, rollup or API response groups, dedupes or weights by account: each character is its own player there, and `characters.account_id` and `first_install_id` are hidden from the model's serialization |
@@ -2417,7 +2438,8 @@ the levels nest exactly, and the minimum-characters rule applies to each cell of
 once a second, 0.16 world units apart at the median, so the 1536 grid (0.65 units a cell) joins them into lines.
 `GET /api/v1/public/map/density?layer&level&ruleset&creature` answers one whole level: `columns`, `rows` and `cells`, a
 flat list of pairs (cell index minus the previous cell's index, counter), cells in index order with `index = j * columns
-+ i`. It is cached at the edge for `scarlet.edge.api_seconds`. Pages carry no heat cells: the viewer asks for the level
++ i`. It needs an API key; the map page reads the same answer from `GET /map/density`, which takes the same parameters
+and is cached like a page. Pages carry no heat cells: the viewer asks for the level
 that suits its zoom (the finest one whose cells are at least 2.4 CSS px wide; it keeps the coarser one on screen while
 the finer one loads, and switches back only when a cell falls under 1.9 px).
 

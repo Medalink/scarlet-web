@@ -122,13 +122,13 @@ fixture (`e2e/ledger-lines.mjs`, a rogue of the second install: seven fights, tw
 Build the binary first (`cargo build --release` in `part/`) or pass `--bin`. After a change to `ledger-lines.mjs`, run
 `node e2e/build-fixture.mjs` and change the expected rows to match.
 
-`node scripts/api-examples.mjs --url http://127.0.0.1:<port>` rewrites `resources/api-examples.json`, the example answers of `/developers`, from a site that holds the fixture: run `node e2e/run.mjs --url ... --leave` first, because the run removes its upload at the end otherwise. It refuses an answer with a character name that is not a folder of `e2e/fixture`.
+`node scripts/api-examples.mjs --url http://127.0.0.1:<port>` rewrites `resources/api-examples.json`, the example answers of `/developers`, from a site that holds the fixture: run `node e2e/run.mjs --url ... --leave` first, because the run removes its upload at the end otherwise. It signs in with the development sign-in, links its Battle.net identity, makes an API key on `/account/settings` in a headless browser (`--browser <path>`, or `BROWSER`) and sends it with every read. It refuses an answer with a character name that is not a folder of `e2e/fixture`.
 
-Public API answers are cached for 30 seconds at the origin, so every read adds a random `limit` to its address and a rerun never reads the last run's answer.
+Every read of `/api/v1/public` sends the lane's API key, which the lane makes after signing in with the development sign-in (`SCARLET_DEV_LOGIN=true`), which can link a development Battle.net identity (`POST /auth/development` with `as=battlenet`) and expire an account's keys (`POST /auth/development/expire-keys`). Public API answers are cached for 30 seconds at the origin, so every read adds a random `limit` to its address and a rerun never reads the last run's answer.
 
 The server needs Horizon running, the zone rectangles (`bin/artisan maps:load-rects`, which `boot.mjs` runs; without them no path point has a world position and the world map checks fail), `SCARLET_DEV_LOGIN=true` for the link check (skipped without it), and more than
 the default rate limits for repeated runs: `SCARLET_RATE_REGISTRATION_PER_IP=100` and
-`SCARLET_RATE_PUBLIC_ANONYMOUS=600`. One run makes 3 registrations (the third is the install of a character no account is
+`SCARLET_RATE_PUBLIC_TOKEN=600`. One run makes 3 registrations (the third is the install of a character no account is
 linked to), about 30 public API requests, about 160 page requests and about 40 requests on the `throttle:60,1` routes,
 which no setting lifts: wait a minute between two runs.
 

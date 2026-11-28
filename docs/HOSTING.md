@@ -208,7 +208,7 @@ e2e, docs or other tooling is skipped (the `paths` list on the ring in roster's 
 | Stage | What it does | When it fails |
 |---|---|---|
 | `deploy` | Sends the droplet the map art it lacks of medaware's art store (Map art), builds the image, pushes its new layers to the droplet's registry, brings the files a rollout reads to the commit's copies (see below) and runs `deploy/rollout.sh`, as `bin/deploy` does | The old release keeps serving |
-| `pages` | Reads the release that serves and requests `/up`, `/stats`, `/leaderboards`, `/rulesets`, `/talents`, `/map`, `/search` and the public API with a `v=<release>` parameter no cache has seen, so each answer is rendered by the new release | The ring rolls back |
+| `pages` | Reads the release that serves and requests `/up`, `/stats`, `/leaderboards`, `/rulesets`, `/talents`, `/map`, `/search` and the public API (which answers `401 missing_key` with no key, and the ring counts that as serving) with a `v=<release>` parameter no cache has seen, so each answer is rendered by the new release | The ring rolls back |
 | `rollback` | `rollout.sh --rollback`, only when the failed commit is the release that serves | The failure is posted with the log |
 
 The ring uses a key of its own, `~/.config/scarlet-web/ring_ed25519` on medaware. Its line in
@@ -753,7 +753,7 @@ until `bin/deploy` has carried `deploy/nginx/nginx.conf` there. A scene's `model
 
 ## Edge cache
 
-Cloudflare caches three kinds of answer, each only for a visitor with no credentials. A request with an `Authorization`
+Cloudflare caches the answers below, each only for a visitor with no credentials. A request with an `Authorization`
 header, a `scarlet_session` cookie or a `remember_web_*` cookie is never cached and never served from cache; the rules
 and the origin use the same test.
 
@@ -761,14 +761,13 @@ and the origin use the same test.
 | --- | --- | --- |
 | `/map-tiles/`, `/item-icons/`, `/spell-icons/`, a scene's `tex/` and `icons/` | nginx from disk, `public, immutable`, no cookie | cached for a year |
 | `/scene-art/<scene>/models.json` and `/dungeon-maps/` | `App\Http\Middleware\PublicArt`: PHP with no session and no cookie; `public, max-age=300` for the models, `public, immutable` for a floor map | cached 5 minutes, or a year |
-| `/api/v1/public/*` | `App\Http\Middleware\PublicApi`: `public, max-age=300, s-maxage=300`, 30 for the answers that name characters (`private` with an `Authorization` header) | cached 5 minutes, or 30 seconds |
+| `/api/v1/public/*` | `App\Http\Middleware\PublicApi`: every answer needs an API key and is `private, max-age=300` (30 for the answers that name characters) | never cached at the edge |
 | The public pages (`routes/pages.php`, `/`, `/demo`) | `App\Http\Middleware\EdgeCacheable`: no session, no cookie, `s-maxage=60` | cached 1 minute |
 
-`node deploy/cloudflare.mjs cache-rules` writes the three Cache Rules (Free plan: `http.cookie` and header names work in
+`node deploy/cloudflare.mjs cache-rules` writes the Cache Rules (Free plan: `http.cookie` and header names work in
 them) and `status` lists them. Their edge TTL is `bypass_by_default`: the origin's `Cache-Control` decides, so an
 answer with no `public` marker, an error or a `Set-Cookie` is not stored. A character who switches their page to private
-stays visible in the edge for up to a minute, and in the API for up to a minute (30 seconds in the origin's answer
-cache, 30 at the edge).
+stays visible in the edge for up to a minute, and in the API for up to 30 seconds (the origin's answer cache).
 
 ## Setting up again from nothing
 

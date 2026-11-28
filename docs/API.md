@@ -369,15 +369,17 @@ lower-case letters.
 
 ## API keys
 
-A signed-in player makes API keys on the account page (`/account`, API keys). A key is a Sanctum personal access token
-with one ability, `public:read`, for the public read API under `/api/v1/public`. Send it as `Authorization: Bearer <key>`
-for the higher rate limit. The text of a key is shown once when it is made; the server stores only its hash. An account
-holds at most 10 keys, lists them with the day each was made and last used, and deletes one at any time. Upload
+A player who signs in with Battle.net makes API keys on the account settings page (`/account/settings`, API keys). A
+key is a Sanctum personal access token with one ability, `public:read`, and the public read API under `/api/v1/public`
+answers only a request that sends one as `Authorization: Bearer <key>`. The text of a key is shown once when it is
+made; the server stores only its hash. A key expires 30 days after it is made unless its maker picks 60 or 90 days
+(90 at most). An account holds at most 10 keys, lists them with the day each was made, last used and expires, and
+deletes one at any time, an expired one too. An account that stops signing in with Battle.net loses its keys. Upload
 requests do not use keys: they are signed by the install.
 
 # Public API, version 1
 
-Everything the public pages show, as read-only JSON. No sign-in. Paths are under `https://<host>/api/v1/public`. The
+Everything the public pages show, as read-only JSON, with an API key on every request. Paths are under `https://<host>/api/v1/public`. The
 `/developers` page is written from the same list as the routes (`App\Support\PublicApiCatalog`), so the two agree.
 
 ## Answers
@@ -389,7 +391,7 @@ not exist. Money of a character is in the answer only when its owner shares the 
 shown only when that player's own character is public.
 
 A character made private or removed, or a sharing group its owner removed from the server, leaves every answer that
-names characters within a minute (30 seconds at the origin, 30 at the edge). Statistics catch up after the rollup
+names characters within 30 seconds (the origin's answer cache). Statistics catch up after the rollup
 refresh that the removal starts, within twelve minutes of it.
 
 A ruleset is addressed by slug: `normal`, `pvp`, `roleplay`, `roleplay-pvp`, `hardcore`, or `unidentified` for characters
@@ -399,17 +401,18 @@ Take the slugs from `GET /public/rulesets`.
 
 ## Limits, keys and caching
 
-- Without a key: 60 requests a minute per address; an IPv6 address counts by its /64. With a key: 600 a minute for the
-  account, shared by all its keys. A key is a personal access token with the `public:read` ability, made on the account
-  page (see "API keys" above) and sent as `Authorization: Bearer <key>`.
-- A key that is unknown, expired or lacks the ability is `401 invalid_token`; it is not treated as no key. After 10 of
-  those from one address in a minute, the answer is `429 rate_limited` until the minute is over.
+- Every request sends a key: a personal access token with the `public:read` ability, made on the account settings page
+  (see "API keys" above) and sent as `Authorization: Bearer <key>`. A key in the query string is not read. The limit is
+  600 requests a minute for the account, shared by all its keys.
+- A request with no key is `401 missing_key`. A key that is unknown, expired or lacks the ability is
+  `401 invalid_token`. After 10 of those from one address in a minute, the answer is `429 rate_limited` until the
+  minute is over.
 - Over the limit the answer is `429 rate_limited` with `Retry-After` in seconds and `retry_after` in the body.
   `X-RateLimit-Limit` and `X-RateLimit-Remaining` are on every answer.
-- `Cache-Control: public, max-age=300` and an `ETag` on every successful answer; `max-age=30` on the answers that name
+- `Cache-Control: private, max-age=300` and an `ETag` on every successful answer, so no shared cache keeps one; `max-age=30` on the answers that name
   characters (leaderboards, camps, professions, search and characters). Send the tag back as `If-None-Match`: an unchanged answer is `304`
   with no body. `Vary: Authorization`.
-- CORS is open: `Access-Control-Allow-Origin: *` for `GET` and `OPTIONS`, with `ETag`, `Retry-After` and the rate-limit
+- CORS is open: `Access-Control-Allow-Origin: *` for `GET` and `OPTIONS`, the `Authorization` header allowed in a request and its preflight answered, with `ETag`, `Retry-After` and the rate-limit
   headers exposed to scripts.
 
 ## Pagination
@@ -418,15 +421,15 @@ A list answers its rows in `data` and `meta.next_cursor`. Pass the cursor back a
 parameters. A `null` cursor is the end. The cursor is opaque; do not build one. `limit` is 1 to 100 (25 by default).
 
 ```
-curl 'https://<host>/api/v1/public/search?kind=quests&q=th&limit=40'
-curl 'https://<host>/api/v1/public/search?kind=quests&q=th&limit=40&cursor=bzQw'
+curl -H "Authorization: Bearer $SCARLET_API_KEY" 'https://<host>/api/v1/public/search?kind=quests&q=th&limit=40'
+curl -H "Authorization: Bearer $SCARLET_API_KEY" 'https://<host>/api/v1/public/search?kind=quests&q=th&limit=40&cursor=bzQw'
 ```
 
 ## Errors
 
 `{"error": {"code": "...", "message": "..."}}` with the HTTP status; codes never change within a version, messages are
 for people. `404 not_found` (also for an unknown path under `/api`), `422 invalid_request` (with `fields`),
-`401 invalid_token`, `429 rate_limited`. Errors are `Cache-Control: no-store`.
+`401 missing_key`, `401 invalid_token`, `429 rate_limited`. Errors are `Cache-Control: no-store`.
 
 ## Endpoints
 
@@ -443,7 +446,7 @@ Headline numbers: characters, experience, time recorded, kills, deaths, quests a
 
 `data.totals`, `data.coverage`, `data.rulesets`. A total is `null` while fewer than `meta.min_characters` characters contributed to it.
 
-Example: `curl https://<host>/api/v1/public/stats`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/stats`
 
 #### `GET /public/camps`
 
@@ -480,7 +483,7 @@ A figure is `null` or its row is left out while fewer than `meta.min_characters`
 that limit for the whole scope, the totals are 0 and `characters` is `null`. This answer names characters, so it is
 cached for 30 seconds.
 
-Example: `curl https://<host>/api/v1/public/camps`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/camps`
 
 #### `GET /public/professions/{slug}`
 
@@ -544,7 +547,7 @@ A figure is `null` or its row is left out while fewer than `meta.min_characters`
 that limit for the whole scope, the totals are 0 and `characters` is `null`. This answer names characters, so it is
 cached for 30 seconds.
 
-Example: `curl https://<host>/api/v1/public/professions/fishing`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/professions/fishing`
 
 #### `GET /public/rulesets`
 
@@ -552,7 +555,7 @@ Every ruleset with the numbers of the comparison table and its levelling curve.
 
 `data`: a list of rulesets with `slug`, `label`, `hardcore`, `war_mode`, `kind` (`normal`, `pvp`, `roleplay`, `roleplay-pvp` or `hardcore`, `null` while Scarlet cannot tell which ruleset a character is on), `recorded` (false for the row of characters whose ruleset is not known yet), `characters`, `seconds`, `deaths`, `xp`, `quest_xp`, `reached`, `median_to_target` and `levelling` (level, median seconds, characters).
 
-Example: `curl https://<host>/api/v1/public/rulesets`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/rulesets`
 
 #### `GET /public/rulesets/{slug}`
 
@@ -564,7 +567,7 @@ The headline numbers of one ruleset.
 
 The same as `/stats`, for this ruleset.
 
-Example: `curl https://<host>/api/v1/public/rulesets/normal`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/rulesets/normal`
 
 #### `GET /public/rulesets/{slug}/series/{series}`
 
@@ -577,7 +580,7 @@ One series of a ruleset: `levels`, `xp`, `deaths`, `dungeons`, `professions`, `g
 
 `data`: the rows of the series. Buckets with fewer than `meta.min_characters` characters are left out.
 
-Example: `curl https://<host>/api/v1/public/rulesets/all/series/levels`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/rulesets/all/series/levels`
 
 ### Leaderboards
 
@@ -587,7 +590,7 @@ The boards: fastest to level 20, 40 and 60, highest level without dying, most qu
 
 `data`: a list of boards with `board` (the name used in the path), `title`, `description` and `value` (the heading of the value column).
 
-Example: `curl https://<host>/api/v1/public/leaderboards`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/leaderboards`
 
 #### `GET /public/leaderboards/{board}`
 
@@ -606,7 +609,7 @@ One board, best first. Only public characters with counted sessions are listed.
 
 The board `feat-score` ranks the feat score: one point for each tier held on the 68 general feats that are not gold feats, 340 at most. Its `value` is the score.
 
-Example: `curl https://<host>/api/v1/public/leaderboards/most-quests?limit=2`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/leaderboards/most-quests?limit=2`
 
 ### Search
 
@@ -623,7 +626,7 @@ Characters (only those made public), creatures, items, objects, zones and quests
 
 Without `kind`: `data` has one entry per kind and a seventh, `pages`, each with `count` and `hits`. With `kind`: `data` is the list of hits, paged with `meta.next_cursor`. A hit has `kind`, `id`, `name`, `path`, `match` (`exact`, `prefix`, `word`, `contains` or `fuzzy`) and the numbers of its kind; a text of digits also finds the creature, item, object, quest or zone with that id as an `exact` hit. A page hit has `title`, `path`, `meta` and `match`.
 
-Example: `curl https://<host>/api/v1/public/search?q=ash&kind=zones`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/search?q=ash&kind=zones`
 
 ### Characters
 
@@ -637,7 +640,7 @@ A public character: race, class, level, ruleset, time played, this week, distanc
 
 `data`: `name`, `race`, `class`, `faction`, `level`, `played_seconds` (the total the game reports, `null` until Scarlet has read it), `recorded_seconds` (play Scarlet counted), `first_level`, `recorded_since`, `whole_life` (recorded from level 1), `ruleset`, `last_seen_at`, `week`, `distance`, `feats` (every feat that applies to the character: those earned first, rarest first, then those not yet earned, closest first; `pinned` is true for a feat the owner pinned, which keeps its place in the list. `key` is a key of `GET /public/feats` (241 feats); the gold feats `earner`, `spender`, `tycoon` and `windfall` are listed only when `meta.economy` is true; `name`, `value`, `tier` from 0 for none to 5 for scarlet, with `tier_name` one of `Uncommon`, `Rare`, `Epic`, `Legendary` or `Scarlet`, `threshold` of the tier held and `next`, the threshold of the tier above, `null` at the top; `artisan` counts the ranks of Cooking, First Aid, Fishing and the character's two highest primary professions), `standings` (a list, best place first, of the boards the character is on among public characters of every ruleset: `board`, `title`, `place`, `total` and `value`). `meta.economy` says whether the owner shows money.
 
-Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/characters/Tolvir-Greane`
 
 #### `GET /public/characters/{name}/series/{series}`
 
@@ -650,7 +653,7 @@ One series of a public character: `levelling` (played time before each level, wi
 
 `data`: the rows of the series.
 
-Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/series/levelling`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/characters/Tolvir-Greane/series/levelling`
 
 #### `GET /public/characters/{name}/sessions`
 
@@ -663,7 +666,7 @@ The sessions of a public character, newest first, 20 a page, for a character who
 
 `data`: `sessions`, each with `start` (the id of the session in its address: epoch seconds), `end`, `played` (seconds), `level` (`[at the start, at the end]`), `title` (`rule`, one of `level`, `dungeon`, `quests`, `kills`, `gather`, `travel` or `time`, and the English `text`), and `kills`, `quests`, `deaths` and `xp`, each `null` when the player did not share that group; and `next`, the `after` of the next page, `null` on the last.
 
-Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/sessions`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/characters/Tolvir-Greane/sessions`
 
 #### `GET /public/characters/{name}/sessions/{start}`
 
@@ -676,7 +679,7 @@ One session of a public character as a recap: title, played time, levels, experi
 
 `data`: the same recap the Scarlet app and addon keep: `v`, `character`, `class`, `start`, `end`, `played`, `level`, `zone`, `title`, `xp` (`kills`, `dungeons`, `quests`, `explore`, `other`), `runs`, `counters` (a counter that is zero is left out), `buckets` (`secs`, `xp`, `combat`), `zones`, `levels`, `moments`, `route` (`legs`, and a `sheet` of points fitted to 0 to 1000 with `aspect`, `breaks` and `air`), `feats`, `bests`, `own` (the session against the 30 before it, `null` under 5), `top`, `compare` (against sessions at the same levels, `null` until 20 sessions are in the bracket) and `links`. Gold counters are in it only when `meta.economy` is true.
 
-Example: `curl https://<host>/api/v1/public/characters/Tolvir-Greane/sessions/1763840520`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/characters/Tolvir-Greane/sessions/1763840520`
 
 ### Records
 
@@ -707,7 +710,7 @@ One creature: its level range and kind, kills, deaths to it, drops under each lo
 
 `data`: `facts`, `kills`, `deaths`, `deaths_by_level`, `drops` (item, loot rule, drops, opens, rate, `estimate` (`k` drops of `n` corpses looted for the first time, counting only windows read for loot, not for skinning; `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 corpses, `hollow` from 10 and `solid` from 30, and `flags` from `one_character`, `quest_item` and, for a free-for-all rule that counts one reader as the arm of `by_rule` does, `one_reader`; `rate`, `low` and `high` are `null` under 10 corpses)), `solo` (`kills`, the solo kills of the creature: those a character made itself (`credit` 1, its last hit, or 2, a pet or a damage-over-time spell from its threat list) with no corpse key, and every kill whose corpse has a key at a group size of 0 or 1, credit or not; `windows`, the solo windows read for loot; an `estimate` of the two with unit `kill`, and `rows` of item and an `estimate` of the windows that listed it over those kills; `estimate` is `null` while there are no solo kills), `looted` (the same shape over every kill whose corpse has a key, at any group size and however many members got credit, and the solo kills with no key; with the `rule` parameter only the kills with a key under that rule, and the solo kills only under `solo`; `estimate` is `null` while there are no such kills), `drop_value` (what the drop table is worth, under the `rule` asked for: `windows`, `per_window` (the items of an average window in copper, coin left out, `null` under 10 windows), `unpriced` (rows with no value) and `scanned_at` (the newest AHledger scan used), and `rows` of `item_id`, `quantity` and `value` (copper for one item and `from`, `market` or `vendor`, or `null` for a quest item or one with no price); an item is valued at the median of the AHledger US auction house prices or at the vendor price when that is higher, the item is poor or it binds on pickup; credit AHledger when you show them), `skinning` (`windows`, the skin windows of the creature read for the first time, `rows` of item, `quantity`, `per_drop`, an `estimate` as for `drops` and `value` (copper for one item and `from`, `market` or `vendor`, or `null` for a quest item or one with no price), over those windows and whatever the loot rule, and `value` as for `drop_value`), `by_rule` (the drop table split by loot rule: `split`, `rule` (`null`), `rules` and `sizes` (what was recorded, with `windows`), `arms` (one for each rule, with `key`, `label`, `windows`, `corpses`, `characters`, `flags` and `drawn`, true from 10 corpses; a free-for-all arm with windows with no corpse key that a second character contributed to counts one set (docs/LOOT.md, Units of counting, rule 6), and the arm carries `one_reader`), `compared` (the keys of the two drawn arms with the most corpses, never personal loot) and `rows`, one for each item with 10 drops or more, of `item_id`, `item`, `drops`, `arms` (`key` and `estimate` for each arm) and `difference` between the two compared (`difference`, `low` and `high` as shares, `marked` and `flags`; `null` while an arm is under 10 corpses, and `marked` only when both arms have 30 corpses and the range stays off zero after the number of items is taken into account)), `by_size` (the same by group size inside one loot rule: `rule` is the `rule` parameter, else the rule with the most corpses) and `cells`. Drop rates cover every ruleset.
 
-Example: `curl https://<host>/api/v1/public/creatures/257926`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/creatures/257926`
 
 #### `GET /public/items/{id}`
 
@@ -719,7 +722,7 @@ One item: what it is, where it drops by source and loot rule, where it is gather
 
 `data`: `item`, `sources` (source, `read`, loot rule, drops, opens, rate, `estimate` as for the drops of a creature), `by_source` (one row for each source and `read` over every loot rule but personal loot: source, `read` (`loot`, `skin`, `herb`, `ore`, `fish`, `bag` or `other`), `quantity`, `per_drop` and `estimate`, ranked by the low end of the range with sources under 10 corpses last; `rule` and the `rules` the item dropped under), `gathered` (where the item is gathered, the 25 sources with the most gathers: `kind`, `source_kind` (`c` creature, `i` container item, null on a row for the whole profession, such as herbs or ore), `source_id`, `source`, `gathers`, `quantity`, `characters`, `median_skill`, and `rate`, for skins the share of that creature's skins that gave the item), `prices` (one entry for each ruleset and realm: `ruleset`, `realm`, and `days` of `day`, `price` in copper and `browse`), `market_prices` (AHledger's latest price on each auction house that priced it in the last 7 days, from the scans its addon's players upload: `market`, `label`, `scanned_at`, and in copper `median`, `min_buyout`, `low` (the lowest buyout that day), `median_7d` and `median_30d`, null for an item first listed in the latest scan, plus `quantity` and `sold_per_day`, null until AHledger has enough scans of that house; credit AHledger when you show them), `dropped` and `source_count` (drop sources with a known `read`, each counted once however it was read, plus gathering sources), `gathered_count` (gathers over every source), `best_rate`, `first_at`, `encounters` (encounter, item, dropped, characters), `made_by` and `used_in` (recipes: spell, output, reagents), `rolls` (the rolls of the characters that uploaded under the rules that roll, or `null` while too few of them rolled: `rolls`, `all_passed`, the rolls everyone passed, and `need`, `greed` and `pass` as an `estimate` with unit `roll`) and `receivers` (what groups received of it by class, never a name: `class`, `received`, the `share` of all receipts as an `estimate` with unit `receipt`, `rolled` and `won`, the rolls of need or greed the class made and won, and `won_by_roll` as an `estimate` with unit `roll`; each figure is one uploader's view of its group, so a group with several uploaders counts once for each). `item` holds the item's facts (class, equip slot, levels, sell price, bind type, stack, quality) and is `null` while no upload has carried them (an `II` line): an item known only by name and drops, such as one seen in a loot line, still answers with `name` and `sources`.
 
-Example: `curl https://<host>/api/v1/public/items/1465`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/items/1465`
 
 #### `GET /public/objects/{id}`
 
@@ -732,7 +735,7 @@ One object, such as a chest, an ore vein or an herb: how often it was opened, by
 
 `data`: `id`, `name` (`null` until the addon has named it), `read` (`loot`, `herb` or `ore`: the read the drop table covers, the one the object has most windows of), `windows`, `characters`, `items`, `zones` (`id`, `name`, `windows`), `level_min` and `level_max` (the levels of the characters that opened it), `drop_table` (`rule`, `windows`, `characters`, `unread`, `rules` and `rows` of `item_id`, `item`, `quantity`, `per_drop`, `estimate` (`k` windows that held the item of `n` windows read for the first time, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 windows, `hollow` from 10 and `solid` from 30, and `flags`; `rate`, `low` and `high` are `null` under 10 windows) and `value` (copper for one item and `from`, `market` or `vendor`, or `null` for a quest item or one with no price), and `value` as for the `drop_value` of a creature) and `points` (the `[u, v]` world positions the characters stood at for the newest 600 openings, or `null`). The fishing bobber answers 404: its catches are on `/professions/fishing`.
 
-Example: `curl https://<host>/api/v1/public/objects/1731`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/objects/1731`
 
 #### `GET /public/spells/{id}`
 
@@ -744,7 +747,7 @@ One spell: what the client says about it (icon, cast time, range, cost, descript
 
 `data`: `name`, `facts` (`icon_id`, `cast_ms`, `min_range`, `max_range`, `costs` as `powerType:cost` joined by commas, `passive`, `description`) and `recipe` (`output`, `optional_slots`, `reagents`).
 
-Example: `curl https://<host>/api/v1/public/spells/133`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/spells/133`
 
 #### `GET /public/encounters/{id}`
 
@@ -756,7 +759,7 @@ One boss encounter: the items it dropped, each drop counted once however many pl
 
 `data.drops`: `item_id`, `item`, `dropped` and `characters`, most dropped first.
 
-Example: `curl https://<host>/api/v1/public/encounters/1065`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/encounters/1065`
 
 #### `GET /public/zones/{id}`
 
@@ -770,7 +773,7 @@ One zone: time played, deaths, what killed characters there and the creatures me
 
 `data`: `rect` (the zone on the world map), `played`, `deaths`, `killers`, `creatures`.
 
-Example: `curl https://<host>/api/v1/public/zones/1446`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/zones/1446`
 
 #### `GET /public/quests/{id}`
 
@@ -784,7 +787,7 @@ One quest: accepts, turn-ins, abandons, experience, and the levels and zones whe
 
 `data`: `totals`, `levels` (level, turn-ins) and `zones`.
 
-Example: `curl https://<host>/api/v1/public/quests/6521`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/quests/6521`
 
 ### Loot
 
@@ -806,7 +809,7 @@ The creatures, objects or containers that were looted, one row for each: how man
 
 `data`: a list of `source_kind` (`c` creature, `g` object, `i` container item), `source_id`, `name`, `path`, `windows` (the corpses or openings read for the first time), `items`, `characters`, `level_min`, `level_max`, `zone` (`id`, `name`) and `top` (`item_id`, `item` and the `estimate` (`k` windows that held the item of `n` windows read for the first time, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 windows, `hollow` from 10 and `solid` from 30, and `flags`; `rate`, `low` and `high` are `null` under 10 windows) of the item that was in most of them). `meta.view` and `meta.next_cursor`.
 
-Example: `curl https://<host>/api/v1/public/loot/sources`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/loot/sources`
 
 #### `GET /public/loot/items`
 
@@ -823,7 +826,7 @@ The items that dropped from creatures, objects and containers, one row for each:
 
 `data`: a list of `item_id`, `name`, `quality`, `path`, `dropped` (the corpses and openings that held the item, once each), `sources`, `best` (`source_kind`, `source_id`, `source`, `path` and the `estimate` (`k` windows that held the item of `n` windows read for the first time, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10 windows, `hollow` from 10 and `solid` from 30, and `flags`; `rate`, `low` and `high` are `null` under 10 windows) at the source where the low end of the range is highest) and `zone`. `meta.next_cursor`.
 
-Example: `curl https://<host>/api/v1/public/loot/items`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/loot/items`
 
 #### `GET /public/loot/groups`
 
@@ -838,7 +841,7 @@ What loot rules and group size change in loot: the items a corpse held under two
 
 `data`: `source` (`null`, or `source_kind`, `source_id`, `name`, `path`), `figures` (`corpses`, `rules`, `largest`, `characters`, `first_at`, `last_at`, `several`, the creatures seen under two rules, `rolls` and `groups`), `effects` (`seen`, the rules with `windows` and `sources`, `pair`, the two compared, `rows` of `rule`, `items` per corpse and `corpses`, `sources` and `windows` the difference rests on, `difference` of `difference`, `low` and `high` in items per corpse or `null`, and `more`), `kept` (rows of `rule`, `size`, `corpses`, `items`, `received` and `other`, true for a size seen only on creatures no other size has), `share` (rows of `rule`, `size`, `yours`, `others`, `equal_share` and the `estimate` of yours over both, unit `receipt`), `rolls` (`choices` of `rule`, `quality`, `rolls` and `need`, `greed` and `pass` as an `estimate` with unit `roll`, and `thresholds` of `rule`, `threshold`, `corpses`, `items` and `per_100_corpses`), `kills_by_size` (`size`, `kills`, `hours` and `per_hour`), `composition` (`need` of `class`, `armor`, `rolls` and the need `estimate`, `skins` of `uploader_skins`, `looted`, `skinned` and `per_corpse`, and `roles` of `tank`, `healer`, `kills`, `hours` and `per_hour`) and `marks`. An `estimate` has `k`, `n`, `rate`, `low` and `high` as the 95% Wilson range, `unit`, `sample` as `counts` under 10, `hollow` from 10 and `solid` from 30, and `flags`; `rate`, `low` and `high` are `null` under 10. `per_hour`, `per_corpse` and `per_100_corpses` are `null` under 10 kills or corpses. `marks` is `null` unless asked for, else every marked difference between two loot rules or two group sizes of one rule: `source_kind`, `source_id`, `name`, `path`, `split` (`rule` or `size`), `rule` (the rule a size split reads), `item_id`, `item`, `arms` (the two compared, each with `key`, `label`, `windows`, `corpses`, `characters`, `flags`, `drawn` and the item's `estimate`) and `difference` (`difference`, `low` and `high` as shares of the arms, `marked` and `flags`); a mark is a counting fault until shown otherwise, since the game's drop table depends on neither.
 
-Example: `curl https://<host>/api/v1/public/loot/groups`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/loot/groups`
 
 ### Map
 
@@ -854,7 +857,7 @@ Heat on the world grid: the cells where characters walked, died or met creatures
 
 `data.cells`: `i`, `j`, `level`, `value`, `characters`. `meta.grid` gives the grid size.
 
-Example: `curl https://<host>/api/v1/public/map/heat?layer=deaths`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/map/heat?layer=deaths`
 
 #### `GET /public/map/density`
 
@@ -870,5 +873,5 @@ One whole level of the heat grid, for drawing a density surface. Level 0 is 192 
 `data`: `level`, `columns`, `rows` and `cells`, a flat list of pairs: the cell index (`j * columns + i`) minus the previous
 cell's, then the cell's counter. Cells are in index order; a cell that too few characters contributed to is left out.
 
-Example: `curl https://<host>/api/v1/public/map/density?layer=paths&level=2`
+Example: `curl -H "Authorization: Bearer $SCARLET_API_KEY" https://<host>/api/v1/public/map/density?layer=paths&level=2`
 
