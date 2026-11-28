@@ -21,9 +21,9 @@ class ReputationGoals
      */
     public function handle(int $characterId): array
     {
-        $rows = DB::table('reputation_standings as r')->where('r.character_id', $characterId)->where('r.counted', true)
-            ->selectRaw('distinct on (r.faction_id) r.faction_id, r.reaction, r.standing, r.floor, r.ceiling, (select n.name from names n where n.kind = ? and n.id = r.faction_id order by n.votes desc, n.name limit 1) as name', [NameKind::Faction->value])
-            ->orderBy('r.faction_id')->orderByDesc('r.at')->get();
+        $latest = DB::table('reputation_standings')->where('character_id', $characterId)->where('counted', true)
+            ->selectRaw('distinct on (faction_id) faction_id, reaction, standing, floor, ceiling')->orderBy('faction_id')->orderByDesc('at');
+        $rows = DB::query()->fromSub($latest, 'r')->leftJoinLateral(NameKind::Faction->topName('r.faction_id'), 'f')->select('r.*', 'f.name')->get();
 
         $reps = [];
         foreach ($rows as $row) {

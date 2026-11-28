@@ -29,9 +29,9 @@ class SkillGoals
      */
     public function handle(int $characterId): array
     {
-        $rows = DB::table('skill_ups as u')->where('u.character_id', $characterId)->where('u.counted', true)->where('u.kind', SkillKind::Line->value)->whereNotNull('u.skill_id')
-            ->selectRaw('distinct on (u.skill_id) u.skill_rank, u.max_rank, (select n.name from names n where n.kind = ? and n.id = u.skill_id order by n.votes desc, n.name limit 1) as name', [NameKind::Skill->value])
-            ->orderBy('u.skill_id')->orderByDesc('u.at')->get();
+        $latest = DB::table('skill_ups')->where('character_id', $characterId)->where('counted', true)->where('kind', SkillKind::Line->value)->whereNotNull('skill_id')
+            ->selectRaw('distinct on (skill_id) skill_id, skill_rank, max_rank')->orderBy('skill_id')->orderByDesc('at');
+        $rows = DB::query()->fromSub($latest, 'u')->leftJoinLateral(NameKind::Skill->topName('u.skill_id'), 'k')->select('u.skill_rank', 'u.max_rank', 'k.name')->get();
 
         $skills = [];
         foreach ($rows as $row) {

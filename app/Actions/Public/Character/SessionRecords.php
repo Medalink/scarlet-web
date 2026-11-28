@@ -111,15 +111,16 @@ class SessionRecords
     /** @return array<int, array{total: int, top: array{quantity: int, name: string}}> the items received in each session and the one received most */
     private function looted(int $characterId): array
     {
-        $rows = DB::table('loot_drops as d')->where('d.character_id', $characterId)->where('d.counted', true)->where('d.via', LootVia::Receipt->value)->whereNotNull('d.item_id')
-            ->groupBy('d.session_start', 'd.item_id')
-            ->selectRaw('d.session_start, d.item_id, sum(d.quantity)::bigint as quantity, (select n.name from names n where n.kind = ? and n.id = d.item_id order by n.votes desc, n.name limit 1) as name', [NameKind::Item->value])
-            ->orderBy('d.session_start')->orderByDesc('quantity')->orderBy('d.item_id')->get();
+        $items = DB::table('loot_drops')->where('character_id', $characterId)->where('counted', true)->where('via', LootVia::Receipt->value)->whereNotNull('item_id')
+            ->groupBy('session_start', 'item_id')->selectRaw('session_start, item_id, sum(quantity)::bigint as quantity');
+        $tops = DB::query()->fromSub($items, 'g')
+            ->selectRaw('distinct on (g.session_start) g.session_start, g.item_id, g.quantity, sum(g.quantity) over (partition by g.session_start)::bigint as total')
+            ->orderBy('g.session_start')->orderByDesc('g.quantity')->orderBy('g.item_id');
+        $rows = DB::query()->fromSub($tops, 't')->leftJoinLateral(NameKind::Item->topName('t.item_id'), 'i')->select('t.session_start', 't.item_id', 't.quantity', 't.total', 'i.name')->get();
 
         $by = [];
         foreach ($rows as $row) {
-            $by[$row->session_start]['total'] = ($by[$row->session_start]['total'] ?? 0) + (int) $row->quantity;
-            $by[$row->session_start]['top'] ??= ['quantity' => (int) $row->quantity, 'name' => $row->name === null ? 'Item '.$row->item_id : (string) $row->name];
+            $by[$row->session_start] = ['total' => (int) $row->total, 'top' => ['quantity' => (int) $row->quantity, 'name' => $row->name === null ? 'Item '.$row->item_id : (string) $row->name]];
         }
 
         return $by;
