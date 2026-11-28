@@ -13,6 +13,8 @@ final class DevelopersPage
     /** The path every endpoint sits under. */
     public const string BASE = '/api/v1/public';
 
+    private const int COLLAPSE_FROM = 320;
+
     /** @return array<string, mixed> */
     public static function data(string $host): array
     {
@@ -27,6 +29,7 @@ final class DevelopersPage
                 'title' => self::BASE.$endpoint['path'],
                 'summary' => self::inline($endpoint['summary']),
                 'returns' => self::inline($endpoint['returns']),
+                'long' => mb_strlen($endpoint['returns']) > self::COLLAPSE_FROM,
                 'params' => array_map(fn (array $param): array => [$param[0], new HtmlString(e(ucfirst($param[1] === 'path' ? 'in the path' : 'query')).', '.e($param[2]).'. '.self::inline($param[3]))], PublicApiCatalog::params($endpoint['params'])),
                 'curl' => 'curl '.$host.self::BASE.$endpoint['example'],
             ];

@@ -648,3 +648,14 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .kind { justify-content: flex-start; align-items: center; gap: 0.6rem; }
 .kind .ico { width: 1.4rem; height: 1.4rem; color: var(--soft); }
 .kind > span { margin-left: auto; }
+.ref { grid-template-columns: 19rem minmax(0, 1fr); }
+.ref-nav { max-height: calc(100svh - 2.5rem); overflow-y: auto; overscroll-behavior: contain; }
+.ref-nav a { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+.ep h2, .ep > p, .ep td, .ep details p { overflow-wrap: break-word; }
+.ep code { font: inherit; font-family: var(--mono); font-size: 0.88em; font-stretch: 85%; color: var(--fg); }
+.ep td code { white-space: nowrap; }
+.ep h2 { word-break: normal; }
+.ep .fields { margin-top: 0.6rem; max-width: 68ch; }
+.ep .fields summary { cursor: pointer; color: var(--fg); font-weight: 600; }
+.ep .fields p { margin-top: 0.5rem; }
+@media (max-width: 820px) { .ref { grid-template-columns: minmax(0, 1fr); } .ref-nav { max-height: none; } .ref-nav a { white-space: normal; overflow-wrap: anywhere; } .ep h2 { overflow-wrap: anywhere; } }

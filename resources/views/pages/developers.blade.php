@@ -1,8 +1,6 @@
 <x-layouts.sc title="Scarlet public API" current="developers" description="Everything public on Scarlet as read-only JSON: statistics, camps, professions, rulesets, leaderboards, search, characters, records and map heat." :brand="false">
 <div class="wrap">
-  <x-page-head title="Public API" :single="true">
-    <x-slot:sub>Everything public on this site is readable as JSON. Read-only, no sign-up, version 1.</x-slot:sub>
-  </x-page-head>
+  <x-page-head title="Public API" :single="true" />
   <div class="ref">
     <x-api-nav :groups="$d['nav']" />
     <div>
@@ -17,7 +15,11 @@
         <p>A refusal is <code>{"error": {"code": "...", "message": "..."}}</code> with the HTTP status: <code>404 not_found</code>, <code>422 invalid_request</code> (with <code>fields</code>), <code>401 invalid_token</code>, <code>429 rate_limited</code> (with <code>retry_after</code>). Codes do not change; messages are for people.</p></section>
       @foreach ($d['endpoints'] as $endpoint)
       <x-api-section :id="$endpoint['id']" method="GET" :title="$endpoint['title']" :summary="$endpoint['summary']" :params="$endpoint['params']">
+        @if ($endpoint['long'])
+        <details class="fields"><summary>Response fields</summary><p>{{ $endpoint['returns'] }}</p></details>
+        @else
         <p>{{ $endpoint['returns'] }}</p>
+        @endif
         <x-json>{{ $endpoint['curl'] }}</x-json>
       </x-api-section>
       @endforeach
