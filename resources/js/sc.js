@@ -25,6 +25,7 @@ window.SC = { draw };
 import './site/tally.js';
 import './site/floors.js';
 import './site/search.js';
+import './site/copy.js';
 if (document.querySelector('[data-chart]')) {
     import('./charts.js');
 }

@@ -1,0 +1,27 @@
+{
+  "character": "Ice-Reader",
+  "parts": [
+    {
+      "group": "core",
+      "id": "8356f4b348b345ac6b42b356270bc304fc30529041cbdacbe76c48f29303d09f",
+      "lines": 3,
+      "raw_bytes": 178,
+      "session": 1795910000
+    },
+    {
+      "group": "build",
+      "id": "eb180ea0430f4e8ab0efd4bd01b950ce26a1349c9ac66e67b8b3166a09b74649",
+      "lines": 47,
+      "raw_bytes": 2500,
+      "session": 1795910000
+    },
+    {
+      "group": "names",
+      "id": "2e0b8ba062ed558c6bcc34f24f626896f27a9163b64f7b7594893398305a2749",
+      "lines": 3,
+      "raw_bytes": 92,
+      "session": 1795910000
+    }
+  ],
+  "set_digest": "464571b369515eaab061531969d0fb5c28ebf76f6d42cfd9cb566d00aaeeb19f"
+}

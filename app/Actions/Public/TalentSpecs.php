@@ -2,6 +2,7 @@
 
 namespace App\Actions\Public;
 
+use App\Support\LatestTalentBuilds;
 use App\Support\NameKind;
 use App\Support\PageScope;
 use Illuminate\Support\Facades\DB;
@@ -17,12 +18,7 @@ class TalentSpecs
      */
     public function handle(PageScope $scope): array
     {
-        $latest = DB::table('talent_snapshots as s')
-            ->selectRaw('distinct on (s.character_id) s.character_id, s.spec_tab_id, s.counted')
-            ->whereNotNull('s.spec_tab_id')
-            ->when($scope->ids !== null, fn ($query) => $query->whereIn('s.ruleset_id', (array) $scope->ids))
-            ->orderBy('s.character_id')->orderByDesc('s.at');
-        $rows = DB::query()->fromSub($latest, 'l')->join('characters as c', 'c.id', '=', 'l.character_id')
+        $rows = DB::query()->fromSub(LatestTalentBuilds::query($scope), 'l')->join('characters as c', 'c.id', '=', 'l.character_id')
             ->where('l.counted', true)->whereNotNull('c.class')
             ->groupBy('c.class', 'l.spec_tab_id')->selectRaw('c.class, l.spec_tab_id, count(*) as characters')
             ->orderByDesc('characters')->orderBy('c.class')->orderBy('l.spec_tab_id')->get();

@@ -12,19 +12,37 @@
       @if ($d['n'] === 0)
       <x-note>No character has a build at these levels yet.</x-note>
       @else
-      @if ($d['columns'] !== [])
-      <div class="mt-5 grid gap-x-10 gap-y-8 md:grid-cols-[repeat(var(--trees),minmax(0,1fr))]" style="--trees:{{ count($d['columns']) }}">
-        @foreach ($d['columns'] as $column)
-          <div>
-            <h3 class="sc-h" style="font-size:22px">{{ $column['name'] }}</h3>
-            <ol class="rank mt-3">
-              @foreach ($column['rows'] as $row)
-                <li title="{{ $row['title'] }}"><span class="who">@if ($row['href'])<a href="{{ $row['href'] }}">{{ $row['name'] }}</a>@else{{ $row['name'] }}@endif</span><span class="val">{{ $row['rate'] }}</span><span class="track"><i style="width:{{ $row['width'] }}%"></i></span></li>
-              @endforeach
-            </ol>
+      @if ($d['trees'] !== [])
+      <div class="tt-trees mt-5">
+        @foreach ($d['trees'] as $tree)
+          <div class="tt-tree" data-tree>
+            <h3 class="sc-h" style="font-size:22px">{{ $tree['name'] }}</h3>
+            <div class="tt-scroll">
+              <div class="tt-frame" style="width:{{ $tree['width'] }}px;height:{{ $tree['height'] }}px">
+                <svg class="tt-lines" width="{{ $tree['width'] }}" height="{{ $tree['height'] }}" aria-hidden="true">
+                  @foreach ($tree['arrows'] as $arrow)
+                    <g class="tt-arrow{{ $arrow['lit'] ? ' lit' : '' }}"><line x1="{{ $arrow['line']['x1'] }}" y1="{{ $arrow['line']['y1'] }}" x2="{{ $arrow['line']['x2'] }}" y2="{{ $arrow['line']['y2'] }}"/><polygon points="{{ $arrow['head'] }}"/></g>
+                  @endforeach
+                </svg>
+                @foreach ($tree['nodes'] as $node)
+                  <a @if ($node['href']) href="{{ $node['href'] }}" @endif class="tt-node{{ $node['taken'] ? '' : ' off' }}{{ $node['icon'] ? '' : ' plain' }}{{ $node['choice'] ? ' choice' : '' }}" style="left:{{ $node['left'] }}px;top:{{ $node['top'] }}px;--r:{{ $node['share'] }}" title="{{ $node['title'] }}" aria-label="{{ $node['title'] }}" data-node="{{ $node['id'] }}">
+                    @if ($node['icon'])<img class="tt-ico" src="{{ $node['icon'] }}" alt="" width="48" height="48" loading="lazy">@else<span class="tt-init" aria-hidden="true">{{ $node['initial'] }}</span>@endif
+                    <b class="tt-rate">{{ $node['rate'] }}</b>
+                  </a>
+                @endforeach
+              </div>
+            </div>
           </div>
         @endforeach
       </div>
+      @if ($d['outside'])
+      <h3 class="sc-h mt-8" style="font-size:22px">Talents outside the layout</h3>
+      <ol class="rank mt-3">
+        @foreach ($d['outside'] as $row)
+          <li title="{{ $row['title'] }}"><span class="who">@if ($row['href'])<a href="{{ $row['href'] }}">{{ $row['name'] }}</a>@else{{ $row['name'] }}@endif</span><span class="val">{{ $row['rate'] }}</span><span class="track"><i style="width:{{ $row['width'] }}%"></i></span></li>
+        @endforeach
+      </ol>
+      @endif
       @else
       <x-table :rows="$d['nodes']['rows']" :columns="$d['nodes']['columns']" style="margin-top:1rem" />
       @endif

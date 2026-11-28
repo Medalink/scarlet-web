@@ -25,6 +25,7 @@ import { HUNTER_LINES } from "./hunter-lines.mjs";
 import { MAGE_LINES } from "./mage-lines.mjs";
 import { PALADIN_LINES } from "./paladin-lines.mjs";
 import { PRIEST_LINES } from "./priest-lines.mjs";
+import { FROST_STUDY_LINES } from "./frost-lines.mjs";
 import { QUIET_LINES } from "./quiet-lines.mjs";
 import { ROGUE_LINES } from "./rogue-lines.mjs";
 import { SHAMAN_LINES } from "./shaman-lines.mjs";
@@ -272,6 +273,7 @@ const BUILDS = [
   { character: "Totem-Caller", session: 1795810000, lines: SHAMAN_LINES },
   { character: "Quiet-Walker", session: 1795900000, lines: QUIET_LINES },
   ...GOALS_SESSIONS.map(({ session, lines }) => ({ character: "Vale-Reader", session, lines })),
+  { character: "Ice-Reader", session: 1795910000, lines: FROST_STUDY_LINES },
 ];
 
 function partsOf(character, session, lines) {
