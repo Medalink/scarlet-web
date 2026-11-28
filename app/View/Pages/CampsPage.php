@@ -16,6 +16,9 @@ final class CampsPage
     /** A level's rate is drawn once characters spent this long at it; less is noise. */
     private const int MIN_RATE_SECONDS = 600;
 
+    /** Play with Camp Benefits is compared once the aura was held this long. */
+    private const int MIN_BUFFED_SECONDS = 3600;
+
     /** The steps of 30 seconds a visit is shorter than when it ends before Camp Benefits can arrive. */
     private const int BENEFITS_STEP = 2;
 
@@ -63,14 +66,15 @@ final class CampsPage
             'callouts' => self::callouts($benefits, $t, (int) ($camp['gains'] ?? 0), $few),
             'figures' => self::figures($t, $visits, $few),
             'benefits' => self::benefits($benefits, (int) ($camp['gains'] ?? 0)),
-            'twoHours' => $few ? null : self::share((int) ($camp['two_hour_gains'] ?? 0), (int) ($camp['gains'] ?? 0)),
+            'twoHours' => $few || (int) ($camp['two_hour_gains'] ?? 0) === 0 ? null : self::share((int) ($camp['two_hour_gains'] ?? 0), (int) ($camp['gains'] ?? 0)),
             'setup' => $visits === 0 || $few ? null : self::setup(StatsPage::rows($r['fires']), $t, $visits),
             'lengths' => $few ? null : self::lengths(StatsPage::rows($r['lengths'])),
             'visitRate' => $few ? null : self::levelRate($byLevel, 'visits', 'visits', 'visits-out'),
             'restRate' => $few ? null : self::levelRate($byLevel, 'tent_rests', 'tent rests', 'rests-out'),
             'hours' => $hours === [] ? null : self::hours($hours),
             'hoursSummary' => self::hoursSummary($hours),
-            'buffed' => $buffed === null ? null : self::buffed($buffed),
+            'buffed' => $buffed === null ? [] : self::buffed($buffed),
+            'none' => $visits === 0,
             'dots' => self::dots($heat, $rect),
             'heatName' => is_string($heat['name'] ?? null) ? $heat['name'] : null,
             'zones' => self::zones(StatsPage::rows($r['zones'])),
@@ -123,53 +127,57 @@ final class CampsPage
             $row('Hours by the fire', Format::hours((int) $t['seconds'], false), 'hours'),
             $row('Median visit', $t['median_seconds'] === null ? null : self::visitLength((float) $t['median_seconds']), 'clock'),
             $row('Visits a played hour', $played > 0 ? Format::number($visits / ($played / 3600), 2) : null, 'level'),
-            $row('Earn Camp Benefits', self::share((int) $t['earned'], $visits), 'shield'),
+            $row('Visits that earned Camp Benefits', self::share((int) $t['earned'], $visits), 'shield'),
         ];
     }
 
     /**
      * @param  list<array<string, mixed>>  $benefits
-     * @return array{rows: list<array<string, mixed>>, note: string|null}
+     * @return array{rows: list<array<string, mixed>>, icons: bool, lost: bool, note: string|null}
      */
     private static function benefits(array $benefits, int $total): array
     {
         $top = max([0.0, ...array_map(fn (array $b): float => $total > 0 ? (int) $b['gains'] / $total : 0.0, $benefits)]);
 
-        return [
-            'rows' => $total === 0 ? [] : array_map(function (array $b) use ($total, $top): array {
-                $few = $b['characters'] === null;
-                $gains = (int) $b['gains'];
+        $kept = $total === 0 ? [] : array_values(array_filter($benefits, fn (array $b): bool => $b['characters'] !== null && (int) $b['gains'] > 0));
+        $rows = array_map(function (array $b) use ($total, $top): array {
+            $gains = (int) $b['gains'];
+            $lost = (int) $b['lost_to_death'];
 
-                return [
-                    'icon' => SceneArt::icon(Scene::Camp, (int) $b['spell_id']),
-                    'label' => (string) $b['label'],
-                    'effect' => (string) $b['effect'],
-                    'share' => $few ? '–' : self::share($gains, $total),
-                    'bar' => $few || $top <= 0 ? null : round($gains / $total / $top * self::BAR_REM, 2).'rem',
-                    'lost' => $few ? null : ($gains > 0 ? self::share((int) $b['lost_to_death'], $gains) : '–'),
-                ];
-            }, $benefits),
-            'note' => $total === 0 ? 'No Camp Benefits recorded yet.' : null,
+            return [
+                'icon' => SceneArt::icon(Scene::Camp, (int) $b['spell_id']),
+                'label' => (string) $b['label'],
+                'effect' => (string) $b['effect'],
+                'share' => self::share($gains, $total),
+                'bar' => $top <= 0 ? null : round($gains / $total / $top * self::BAR_REM, 2).'rem',
+                'lost' => $lost > 0 ? self::share($lost, $gains) : null,
+            ];
+        }, $kept);
+
+        return [
+            'rows' => $rows,
+            'icons' => array_filter(array_column($rows, 'icon')) !== [],
+            'lost' => array_filter(array_column($rows, 'lost')) !== [],
+            'note' => null,
         ];
     }
 
     /**
      * @param  list<array<string, mixed>>  $fires
      * @param  array<string, int|float|null>  $t
-     * @return array{fires: list<array<string, mixed>>, placed: list<array<string, mixed>>}
+     * @return array{fires: list<array<string, mixed>>, placed: list<array<string, mixed>>}|null
      */
     private static function setup(array $fires, array $t, int $visits): array
     {
         $top = max([1, ...array_column($fires, 'visits')]);
-        $someHidden = array_sum(array_column($fires, 'visits')) < $visits;
-        $rows = fn (array $items, callable $share, bool $zeroIsUnknown): array => array_map(fn (array $item, int $i): array => [
-            'label' => $item[0], 'value' => $zeroIsUnknown && $item[1] === 0 ? '–' : (self::share($item[1], $visits) ?? '–').($i === 0 ? ' of visits' : ''), 'share' => $share($item[1]),
+        $rows = fn (array $items, callable $share): array => array_map(fn (array $item, int $i): array => [
+            'label' => $item[0], 'value' => (self::share($item[1], $visits) ?? '–').($i === 0 ? ' of visits' : ''), 'share' => $share($item[1]),
         ], $items, array_keys($items));
+        $used = fn (array $items): array => array_values(array_filter($items, fn (array $item): bool => $item[1] > 0));
+        $fires = $rows($used(array_map(fn (array $fire): array => [(string) $fire['label'], (int) $fire['visits']], $fires)), fn (int $n): float => $n / $top * 100);
+        $placed = $rows($used([['Camp Tent', (int) $t['placed_tent']], ['Camp Chair', (int) $t['placed_chair']]]), fn (int $n): float => $n / $visits * 100);
 
-        return [
-            'fires' => $rows(array_map(fn (array $fire): array => [(string) $fire['label'], (int) $fire['visits']], $fires), fn (int $n): float => $n / $top * 100, $someHidden),
-            'placed' => $rows([['Camp Tent', (int) $t['placed_tent']], ['Camp Chair', (int) $t['placed_chair']]], fn (int $n): float => $n / $visits * 100, false),
-        ];
+        return $fires === [] && $placed === [] ? null : ['fires' => $fires, 'placed' => $placed];
     }
 
     /**
@@ -197,7 +205,7 @@ final class CampsPage
                 ['w' => 400, 'h' => 250, 'x0' => -0.5, 'x1' => count(self::RANGES) - 0.5, 'y1' => $axis['max'], 'yt' => Charts::ticks($axis['ticks'], '%'), 'xt' => array_map(fn (array $range, int $i): array => [$i, $range[3]], self::RANGES, array_keys(self::RANGES))],
                 $data, 't', $say, 1, 'len-out',
             ),
-            'note' => Format::percent($short / $visits).' of visits end before the 60 seconds Camp Benefits need.',
+            'note' => $short === 0 ? null : Format::percent($short / $visits).' of visits end before the 60 seconds Camp Benefits need.',
         ];
     }
 
@@ -269,28 +277,31 @@ final class CampsPage
     }
 
     /**
+     * Experience and deaths an hour with Camp Benefits against the same levels without, once the aura was held this long.
+     *
      * @param  array<string, mixed>  $b
-     * @return list<array{label: string, value: string, tone: string|null}>
+     * @return list<array{label: string, value: string, tone: string|null, detail: string}>
      */
     private static function buffed(array $b): array
     {
-        $change = function (mixed $actual, mixed $expected): ?array {
-            if ($actual === null || $expected === null || (float) $expected <= 0) {
-                return null;
+        $rows = [];
+        foreach ([['Experience an hour', 'xp', 'expected_xp', 'xp_seconds', 0], ['Deaths an hour', 'deaths', 'expected_deaths', 'deaths_seconds', 2]] as [$label, $actual, $expected, $seconds, $places]) {
+            $held = (int) ($b[$seconds] ?? 0);
+            if ($b[$actual] === null || $b[$expected] === null || (float) $b[$expected] <= 0 || $held < self::MIN_BUFFED_SECONDS) {
+                continue;
             }
-            $delta = (float) $actual / (float) $expected - 1;
-            if (abs($delta) < 0.005) {
-                return ['No difference', null];
-            }
+            $hours = $held / 3600;
+            $delta = (float) $b[$actual] / (float) $b[$expected] - 1;
+            $same = abs($delta) < 0.005;
+            $rows[] = [
+                'label' => $label,
+                'value' => $same ? 'No difference' : ($delta >= 0 ? '+' : '−').Format::percent(abs($delta)),
+                'tone' => $same ? null : ($delta >= 0 ? 'up' : 'down'),
+                'detail' => Format::number((float) $b[$actual] / $hours, $places).' with Camp Benefits, '.Format::number((float) $b[$expected] / $hours, $places).' without',
+            ];
+        }
 
-            return [($delta >= 0 ? '+' : '−').Format::percent(abs($delta)), $delta >= 0 ? 'up' : 'down'];
-        };
-        $row = fn (string $label, ?array $change): array => ['label' => $label, 'value' => $change[0] ?? '–', 'tone' => $change[1] ?? null];
-
-        return [
-            $row('Experience an hour', $change($b['xp'], $b['expected_xp'])),
-            $row('Deaths an hour', $change($b['deaths'], $b['expected_deaths'])),
-        ];
+        return $rows;
     }
 
     /**
@@ -345,7 +356,7 @@ final class CampsPage
 
         return array_map(fn (array $row): array => [
             'label' => $row[0], 'value' => Format::percent($row[1] / $row[2]).$row[3], 'share' => $row[1] / $row[2] * 100,
-        ], $rows);
+        ], array_values(array_filter($rows, fn (array $row): bool => $row[1] > 0)));
     }
 
     /**
@@ -356,9 +367,9 @@ final class CampsPage
     {
         $out = (int) $t['logged_out'];
         $died = (int) $t['died_after'];
-        $rows = [['Walked away', max(0, $visits - $out - $died)], ['Logged out by the fire', $out], ['Died within five minutes', $died]];
+        $rows = array_filter([['Walked away', max(0, $visits - $out - $died)], ['Logged out by the fire', $out], ['Died within five minutes', $died]], fn (array $row): bool => $row[1] > 0);
 
-        return array_map(fn (array $row): array => ['label' => $row[0], 'value' => Format::percent($row[1] / $visits), 'share' => $row[1] / $visits * 100], $rows);
+        return array_map(fn (array $row): array => ['label' => $row[0], 'value' => Format::percent($row[1] / $visits), 'share' => $row[1] / $visits * 100], array_values($rows));
     }
 
     /**

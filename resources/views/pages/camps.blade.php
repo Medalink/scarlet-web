@@ -21,104 +21,112 @@
   <x-trades :items="$trades" />
   @endif
   @if ($art)<p class="sc-note mt-2">{{ $scene->credit() }}</p>@endif
-  <x-figures :items="$d['figures']" />
-  @if ($scope['versus'])<x-scope-compare :compare="$scope['versus']" />@endif
+  @unless ($d['none'])<x-figures :items="$d['figures']" />@endunless
+  @if ($scope['versus'] && ! $d['none'])<x-scope-compare :compare="$scope['versus']" />@endif
   @if ($d['note'])<x-note>{{ $d['note'] }}</x-note>@endif
+  @php
+    $ben = $d['benefits']['rows'] !== [];
+    $set = (bool) $d['setup'];
+    $charts = array_values(array_filter([$d['lengths'] ? 'len' : null, $d['visitRate'] ? 'lvl' : null, $d['restRate'] ? 'rest' : null]));
+    $chartSpan = count($charts) === 3 ? null : (count($charts) === 2 ? 'w6' : 'w12');
+    $buff = $d['buffed'] !== [];
+    $hasMap = (bool) $map;
+    $zon = (bool) $d['zones'];
+    $doing = (bool) $d['doing'];
+    $ends = (bool) $d['ends'];
+  @endphp
+  @if ($d['none'])
+  <x-note>{{ $own ? 'No camp visits of yours are recorded yet.' : 'No camp visits are recorded yet.' }}</x-note>
+  @else
   <x-sheet>
-    <x-module span="w7" :first="true" class="camp-mod" id="h-ben" :heading="'Camp Benefits '.$d['who'].' leave with'">
-      @if ($d['benefits']['rows'])
+    @if ($ben || $set)
+    @if ($ben)
+    <x-module :span="$set ? 'w7' : 'w12'" :first="true" :last="! $set" class="camp-mod" id="h-ben" :heading="'Camp Benefits '.$d['who'].' leave with'">
       <div class="scroll-x"><table class="data benefits" style="margin-top:1.1rem">
-        <thead><tr><th>Placed at the camp</th><th>Benefit</th><th class="n">Of Camp Benefits</th><th class="n">Lost to a death</th></tr></thead>
+        <thead><tr><th>Placed at the camp</th><th>Benefit</th><th class="n">Of Camp Benefits</th>@if ($d['benefits']['lost'])<th class="n">Lost to a death</th>@endif</tr></thead>
         <tbody>@foreach ($d['benefits']['rows'] as $row)
-          <tr><td><span class="buff">@if ($row['icon'])<img src="{{ $row['icon'] }}" alt="" width="26" height="26" loading="lazy">@else<i class="buff-none" aria-hidden="true"></i>@endif{{ $row['label'] }}</span></td><td>{{ $row['effect'] }}</td><td class="n">@if ($row['bar'])<i class="bar" style="width:{{ $row['bar'] }}"></i>@endif{{ $row['share'] ?? '–' }}</td><td class="n">{{ $row['lost'] ?? '–' }}</td></tr>@endforeach
+          <tr><td><span class="buff">@if ($row['icon'])<img src="{{ $row['icon'] }}" alt="" width="26" height="26" loading="lazy">@elseif ($d['benefits']['icons'])<i class="buff-none" aria-hidden="true"></i>@endif{{ $row['label'] }}</span></td><td>{{ $row['effect'] }}</td><td class="n">@if ($row['bar'])<i class="bar" style="width:{{ $row['bar'] }}"></i>@endif{{ $row['share'] }}</td>@if ($d['benefits']['lost'])<td class="n">{{ $row['lost'] ?? '–' }}</td>@endif</tr>@endforeach
         </tbody></table></div>
       @if ($d['twoHours'])<x-note>{{ $d['twoHours'] }} of Camp Benefits are given for two hours instead of one.</x-note>@endif
-      @else
-      <x-note>{{ $d['benefits']['note'] }}</x-note>
-      @endif
     </x-module>
-    <x-module span="w5" :last="true" id="h-set" heading="What gets set up">
-      @if ($d['setup'])
+    @endif
+    @if ($set)
+    <x-module :span="$ben ? 'w5' : 'w12'" :first="! $ben" :last="true" id="h-set" heading="What gets set up">
       <x-rank :rows="$d['setup']['fires']" />
       <x-rank :rows="$d['setup']['placed']" plain />
-      @else
-      <x-note>No camp visits recorded yet.</x-note>
-      @endif
     </x-module>
+    @endif
+    @endif
 
-    <x-module :first="true" id="h-len" heading="How long a visit lasts">
-      @if ($d['lengths'])
+    @foreach ($charts as $i => $chart)
+    @if ($chart === 'len')
+    <x-module :span="$chartSpan" :first="$i === 0" :last="$i === count($charts) - 1" id="h-len" heading="How long a visit lasts">
       <x-plot id="len" label="Visits by length, as a share of all visits" :spec="$d['lengths']['spec']" />
-      <x-note>{{ $d['lengths']['note'] }}</x-note>
-      @else
-      <x-note>No camp visits recorded yet.</x-note>
-      @endif
+      @if ($d['lengths']['note'])<x-note>{{ $d['lengths']['note'] }}</x-note>@endif
     </x-module>
-    <x-module id="h-lvl" heading="Visits a played hour, by level">
-      @if ($d['visitRate'])
+    @elseif ($chart === 'lvl')
+    <x-module :span="$chartSpan" :first="$i === 0" :last="$i === count($charts) - 1" id="h-lvl" heading="Visits a played hour, by level">
       <x-plot id="lvl" label="Camp visits a played hour at each level" :spec="$d['visitRate']['spec']" />
       <x-note>{{ $d['visitRate']['note'] }}</x-note>
-      @else
-      <x-note>Not enough play time recorded to rate a level.</x-note>
-      @endif
     </x-module>
-    <x-module :last="true" id="h-rest" heading="Tent rests a played hour, by level">
-      @if ($d['restRate'])
+    @else
+    <x-module :span="$chartSpan" :first="$i === 0" :last="$i === count($charts) - 1" id="h-rest" heading="Tent rests a played hour, by level">
       <x-plot id="rest" label="Tent rests a played hour at each level" :spec="$d['restRate']['spec']" />
       <x-note>{{ $d['restRate']['note'] }}</x-note>
-      @else
-      <x-note>No tent rests recorded yet.</x-note>
-      @endif
     </x-module>
+    @endif
+    @endforeach
 
-    <x-module span="w8" :first="true" id="h-when" :heading="'When '.$d['who'].' camp'">
-      @if ($d['hours'])
+    @if ($d['hours'] || $buff)
+    @if ($d['hours'])
+    <x-module :span="$buff ? 'w8' : 'w12'" :first="true" :last="! $buff" id="h-when" :heading="'When '.$d['who'].' camp'">
       <x-week-heat :spec="$d['hours']" :line="$d['hoursSummary']" label="Camp visits" />
-      @else
-      <x-note>No camp visits recorded yet.</x-note>
-      @endif
     </x-module>
-    <x-module :last="true" id="h-buffed" heading="Play with Camp Benefits">
-      @if ($d['buffed'])
-      <dl class="pair one">
-        <div><dt>{{ $d['buffed'][0]['label'] }}</dt><dd @class(['up' => $d['buffed'][0]['tone'] === 'up'])>{{ $d['buffed'][0]['value'] }}<small>against the same levels across all play</small></dd></div>
+    @endif
+    @if ($buff)
+    <x-module :span="$d['hours'] ? null : 'w12'" :first="! $d['hours']" :last="true" id="h-buffed" heading="Play with Camp Benefits">
+      @foreach ($d['buffed'] as $row)
+      <dl class="pair one" @if (! $loop->first) style="margin-top:0.9rem" @endif>
+        <div><dt>{{ $row['label'] }}</dt><dd @class(['up' => $row['tone'] === 'up'])>{{ $row['value'] }}<small>{{ $row['detail'] }}</small></dd></div>
       </dl>
-      <dl class="pair one" style="margin-top:0.9rem">
-        @foreach (array_slice($d['buffed'], 1) as $row)
-        <div><dt>{{ $row['label'] }}</dt><dd @class(['up' => $row['tone'] === 'up'])>{{ $row['value'] }}</dd></div>
-        @endforeach
-      </dl>
-      @else
-      <x-note>No play with Camp Benefits recorded yet.</x-note>
-      @endif
+      @endforeach
     </x-module>
+    @endif
+    @endif
 
-    <x-module span="w7" :first="true" id="h-where" :heading="'Where '.$d['who'].' camp'">
-      @if ($map)
+    @if ($hasMap || $zon)
+    @if ($hasMap)
+    <x-module :span="$zon ? 'w7' : 'w12'" :first="true" :last="! $zon" id="h-where" :heading="'Where '.$d['who'].' camp'">
       <div class="mapbox" style="aspect-ratio:3/2"><x-world-canvas id="map" label="Camps on the world map{{ $d['heatName'] ? ', in '.$d['heatName'] : '' }}. Drag to move, scroll to zoom." :spec="$map" /></div>
       <p class="note"><a href="/map">Open the world map</a></p>
-      @else
-      <x-note>No camps placed on a map yet.</x-note>
-      @endif
     </x-module>
-    <x-module span="w5" :last="true" id="h-zones" heading="Zones with the most camps">
-      @if ($d['zones'])<x-rank :rows="$d['zones']" />@else<x-note>No camp visits with a known zone yet.</x-note>@endif
+    @endif
+    @if ($zon)
+    <x-module :span="$hasMap ? 'w5' : 'w12'" :first="! $hasMap" :last="true" id="h-zones" heading="Zones with the most camps">
+      <x-rank :rows="$d['zones']" />
     </x-module>
+    @endif
+    @endif
 
-    <x-module span="w7" :first="true" id="h-do" :heading="'What '.$d['who'].' do by the fire'">
-      @if ($d['doing'])<x-rank :rows="$d['doing']" plain />@else<x-note>No camp activity recorded yet.</x-note>@endif
+    @if ($doing || $ends)
+    @if ($doing)
+    <x-module :span="$ends ? 'w7' : 'w12'" :first="true" :last="! $ends" id="h-do" :heading="'What '.$d['who'].' do by the fire'">
+      <x-rank :rows="$d['doing']" plain />
     </x-module>
-    <x-module span="w5" :last="true" id="h-end" heading="How a visit ends">
-      @if ($d['ends'])<x-rank :rows="$d['ends']" />@else<x-note>No camp visits recorded yet.</x-note>@endif
+    @endif
+    @if ($ends)
+    <x-module :span="$doing ? 'w5' : 'w12'" :first="! $doing" :last="true" id="h-end" heading="How a visit ends">
+      <x-rank :rows="$d['ends']" />
     </x-module>
+    @endif
+    @endif
 
+    @if ($d['board'])
     <x-module span="w12" :first="true" :last="true" class="camp-mod" id="h-top" :heading="$own ? 'Your characters by time by the fire' : 'Most time by the fire'">
-      @if ($d['board'])
       <x-table style="margin-top:1.1rem" :columns="[['label' => '#', 'class' => 'rk'], ['label' => 'Character'], ['label' => 'Class'], ['label' => 'Time by the fire', 'numeric' => true], ['label' => 'Ruleset']]" :rows="$d['board']" />
-      @else
-      <x-note>{{ $own ? 'No time by the fire recorded yet.' : 'No public characters have time by the fire yet.' }}</x-note>
-      @endif
     </x-module>
+    @endif
   </x-sheet>
+  @endif
 </div>
 </x-layouts.sc>
