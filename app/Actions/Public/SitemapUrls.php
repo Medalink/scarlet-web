@@ -57,6 +57,6 @@ class SitemapUrls
             $paths[] = '/talents/'.$spec['class_slug'].'/'.$spec['slug'];
         }
 
-        return array_map(fn (string $path): array => ['path' => $path, 'modified' => null], $paths);
+        return array_map(fn (string $path): array => ['path' => $path, 'modified' => null], array_values(array_unique($paths)));
     }
 }

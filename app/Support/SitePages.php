@@ -46,9 +46,15 @@ final class SitePages
             $pages[] = self::page($board->title(), '/leaderboards/'.$board->value, 'Leaderboard of public characters', []);
         }
         $pages[] = self::page('Talents', '/talents', 'The specs characters play', ['talent', 'specs', 'builds']);
+        $listed = [];
         foreach ($specs as $spec) {
+            $path = '/talents/'.$spec['class_slug'].'/'.$spec['slug'];
+            if (isset($listed[$path])) {
+                continue;
+            }
+            $listed[$path] = true;
             $class = Format::className($spec['class']);
-            $pages[] = self::page($spec['name'].' '.$class, '/talents/'.$spec['class_slug'].'/'.$spec['slug'], 'Talent picks of '.$spec['name'].' '.$class.' characters', []);
+            $pages[] = self::page($spec['name'].' '.$class, $path, 'Talent picks of '.$spec['name'].' '.$class.' characters', []);
         }
         $pages[] = self::page('Download', '/download', 'The Scarlet app and the addon', ['app', 'install', 'installer', 'addon', 'windows']);
         $pages[] = self::page('API reference', '/developers', 'The public API: every path, its parameters and its answer', ['api', 'developers', 'developer', 'endpoints', 'json', 'documentation']);
