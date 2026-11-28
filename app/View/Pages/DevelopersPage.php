@@ -21,6 +21,7 @@ final class DevelopersPage
         $basics = [['#use', 'Using the API'], ['#limits', 'Limits and keys'], ['#pages', 'Pagination'], ['#errors', 'Errors']];
         $groups = [];
         $endpoints = [];
+        $examples = self::examples();
         foreach (PublicApiCatalog::endpoints() as $endpoint) {
             $id = 'ep-'.$endpoint['name'];
             $groups[$endpoint['group']][] = ['href' => '#'.$id, 'label' => $endpoint['path']];
@@ -32,6 +33,7 @@ final class DevelopersPage
                 'long' => mb_strlen($endpoint['returns']) > self::COLLAPSE_FROM,
                 'params' => array_map(fn (array $param): array => [$param[0], new HtmlString(e(ucfirst($param[1] === 'path' ? 'in the path' : 'query')).', '.e($param[2]).'. '.self::inline($param[3]))], PublicApiCatalog::params($endpoint['params'])),
                 'curl' => 'curl '.$host.self::BASE.$endpoint['example'],
+                'example' => $examples[$endpoint['name']] ?? null,
             ];
         }
 
@@ -50,6 +52,19 @@ final class DevelopersPage
             'badTokens' => PublicApi::BAD_TOKENS_PER_MINUTE,
             'keepDays' => (int) config('scarlet.api_calls_days'),
         ];
+    }
+
+    /**
+     * The example answers scripts/api-examples.mjs wrote from the e2e fixture, by endpoint name.
+     *
+     * @return array<string, string>
+     */
+    private static function examples(): array
+    {
+        $file = resource_path('api-examples.json');
+        $read = is_file($file) ? json_decode((string) file_get_contents($file), true) : null;
+
+        return is_array($read) ? array_filter($read, is_string(...)) : [];
     }
 
     /** Text with `code` spans turned into code elements; everything else is escaped. */

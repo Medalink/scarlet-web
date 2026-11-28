@@ -21,6 +21,9 @@
         <p>{{ $endpoint['returns'] }}</p>
         @endif
         <x-json>{{ $endpoint['curl'] }}</x-json>
+        @if ($endpoint['example'])
+        <details class="fields" data-example><summary>Example response</summary><x-json>{{ $endpoint['example'] }}</x-json></details>
+        @endif
       </x-api-section>
       @endforeach
     </div>
