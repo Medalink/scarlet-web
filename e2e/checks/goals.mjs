@@ -1,8 +1,11 @@
+import crypto from "node:crypto";
 import { InstallClient, xorDigest } from "../client.mjs";
-import { GOALS, expectJson, expectStatus, loadFixture, sleep } from "../support.mjs";
+import { GOALS, Jar, expectJson, expectStatus, loadFixture, sleep } from "../support.mjs";
+import { linkToAccount, signIn } from "./pages.mjs";
 import { holdsWithNoDigitBeside, textOf } from "./professions.mjs";
 
 const GOALS_LABEL = "scarlet-web e2e goals install";
+const OWNER_LABEL = "scarlet-web e2e goals owner install";
 const DECODE_WAIT_MS = 30_000;
 const DECODE_POLL_MS = 250;
 const PAGE = `/c/${GOALS}`;
@@ -53,8 +56,40 @@ async function upload(client, fixture, what) {
   await settled(client, fixture, what);
 }
 
-async function goalsPage(ctx) {
-  const page = expectStatus(await ctx.http.page(PAGE), 200, `GET ${PAGE}`);
+const LATE_SESSION = 1795100000;
+const LATE_MS = 1_200_000;
+const LATE_BAR = "To level 26 777 of 34,000 XP";
+
+function withLateCoreSession(fixture) {
+  const lines = [
+    [0, "S", "1.15.8", "WARRIOR", "Human", 25, "Alliance", "0.9.0", 1, "Forever", 1, 11508, 777, 34000, 120, 60],
+    [1000, "Z", 1429, 0, "none", 0, "Elwynn Forest", "Northshire Valley"],
+    [LATE_MS, "ES"],
+  ];
+  let before = 0;
+  const rows = lines.map(([at, ...fields]) => {
+    const row = `${at - before}\t${fields.join("\t")}`;
+    before = at;
+    return row;
+  });
+  const text = [["scarlet-part", 1, fixture.name, LATE_SESSION, "core"].join("\t"), ...rows].join("\n") + "\n";
+  const id = crypto.createHash("sha256").update(text).digest("hex");
+  const kept = fixture.manifest.parts.filter((part) => part.group !== "xp");
+  const parts = new Map(kept.map((part) => [part.id, fixture.parts.get(part.id)]));
+  parts.set(id, text);
+  const added = { group: "core", id, lines: rows.length, raw_bytes: Buffer.byteLength(text), session: LATE_SESSION };
+  return {
+    ...fixture,
+    groups: fixture.groups.filter((group) => group !== "xp"),
+    manifest: { ...fixture.manifest, parts: [...kept, added] },
+    parts,
+    ids: [...parts.keys()],
+    sessions: fixture.sessions + 1,
+  };
+}
+
+async function goalsPage(ctx, jar) {
+  const page = expectStatus(await ctx.http.page(PAGE, jar ? { jar } : {}), 200, `GET ${PAGE}`);
   const start = page.text.indexOf('id="goals"');
   return { html: page.text, goals: start < 0 ? "" : textOf(page.text.slice(start, page.text.indexOf("</section>", start))) };
 }
@@ -112,6 +147,10 @@ export async function goalsPageShowsSkillsReputationAndRecords(ctx) {
     const noBar = await goalsPage(ctx);
     expectShown(noBar.goals, [LEVEL[0]], "with xp removed");
     expectHidden(noBar.goals, ["To level"], "with xp removed");
+    await upload(client, withLateCoreSession(fixture), "a session of core without xp");
+    const late = await goalsPage(ctx);
+    expectShown(late.goals, [LEVEL[0]], "with a later session that sent core and not xp");
+    expectHidden(late.goals, ["To level", LATE_BAR], "with a later session that sent core and not xp, whose S line holds a bar");
     expectStatus(await client.request("PUT", "/api/v1/upload/groups/xp"), 200, "PUT groups/xp");
     await upload(client, fixture, "xp sent again");
 
@@ -121,4 +160,36 @@ export async function goalsPageShowsSkillsReputationAndRecords(ctx) {
   }
   const gone = await ctx.http.page(PAGE);
   if (gone.status !== 404) throw new Error(`${PAGE} should be a 404 page once the goals install is removed, saw ${gone.status}`);
+}
+
+/**
+ * Vale-Reader of an install linked to the development account, which shows its owner the economy: the Records hold the
+ * "Highest balance" of its opening balance rows, and once the owner removes `economy` they do not, though the rows stay
+ * stored. It runs after the first install's removal, because removing a linked install removes every character of its account.
+ */
+export async function ownerHighestBalanceFollowsEconomy(ctx) {
+  const client = new InstallClient(ctx.base, OWNER_LABEL, ctx.http.fetch);
+  const registered = await client.register();
+  if (registered.status !== 201 && registered.status !== 200) expectStatus(registered, 201, "POST /api/v1/installs for the owner goals install");
+  const fixture = loadFixture(GOALS);
+  try {
+    const jar = new Jar();
+    await signIn(ctx.http, jar);
+    const me = expectJson(expectStatus(await client.me(), 200, "GET /api/v1/installs/me"), "installs/me");
+    if (me.linked !== true) await linkToAccount(ctx.http, jar, client);
+    await upload(client, fixture, "the owner's upload");
+    expectShown((await goalsPage(ctx, jar)).goals, [...LEVEL, "Highest balance"], "for the owner, who shows the economy");
+    expectHidden((await goalsPage(ctx)).goals, ["Highest balance"], "for a visitor");
+
+    expectStatus(await client.request("DELETE", "/api/v1/upload/groups/economy"), 200, "DELETE groups/economy");
+    const noEconomy = await goalsPage(ctx, jar);
+    expectShown(noEconomy.goals, [...LEVEL, ...RECORDS], "for the owner with economy removed");
+    expectHidden(noEconomy.goals, ["Highest balance", "Most gold"], "for the owner with economy removed, whose opening balance rows are still stored");
+
+    expectStatus(await client.request("PUT", "/api/v1/upload/groups/economy"), 200, "PUT groups/economy");
+    await upload(client, fixture, "economy sent again");
+    expectShown((await goalsPage(ctx, jar)).goals, [...LEVEL, "Highest balance"], "for the owner after economy came back");
+  } finally {
+    expectStatus(await client.remove(), 200, "DELETE /api/v1/upload of the owner goals install");
+  }
 }

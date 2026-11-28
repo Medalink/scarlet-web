@@ -48,6 +48,9 @@ export async function talentsListLeadsWithTheSplit(ctx) {
   if (rows.length === 0) throw new Error("/talents lists no spec");
   const odd = rows.filter((cells) => !/^\d+( \/ \d+)*$/.test(cells[0]));
   if (odd.length > 0) throw new Error(`a spec row does not lead with its split: ${JSON.stringify(odd[0])}`);
+  const names = rows.map((cells) => `${cells[1].replace(/\s*→$/, "")} · ${cells[2]}`);
+  const twice = names.filter((name, at) => names.indexOf(name) !== at);
+  if (twice.length > 0) throw new Error(`/talents lists ${[...new Set(twice)].join(", ")} more than once: it should hold one row for each class and spec name, as the spec page counts them`);
   const mage = rows.find((cells) => cells.includes("Mage"));
   if (mage?.[0] !== "12 / 0 / 35" || !mage[1].startsWith("Frost")) throw new Error(`the Mage row should lead with 12 / 0 / 35 and name Frost, saw ${JSON.stringify(mage)}; ${MAGE} holds 12 / 0 / 35, the other mage 7 / 1 / 15, and a tie takes the split that sorts first`);
 }

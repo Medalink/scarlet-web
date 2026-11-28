@@ -113,6 +113,7 @@ const REGISTRY = [
   { lane: "removal", name: "removal answers and empties the status", run: removal.removalAnswersAndEmptiesStatus },
   { lane: "removal", name: "the stranger install's upload is removed too", run: removal.strangerIsRemoved },
   { lane: "removal", name: "the character is no longer served", run: removal.characterIsNoLongerServed },
+  { lane: "removal", name: "the owner of a character sees its Highest balance until the economy group is removed, though the opening balance rows stay stored", run: goals.ownerHighestBalanceFollowsEconomy },
   { lane: "removal", name: "an account with no character sees its profession page in the plain state", run: own.accountWithNoCharacterSeesThePlainState },
   { lane: "removal", name: "an account with no character sees its camps page in the plain state", run: own.accountWithNoCharacterSeesTheCampsPlainState },
 ];
