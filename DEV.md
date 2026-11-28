@@ -87,6 +87,7 @@ any host that is not 127.0.0.1, localhost or [::1], because it deletes what it u
   pages, which show the fixture's numbers under "1 of your 4 characters" and leave out the second install's Tailoring
   crafts and campfire visit that the public pages count; after the removal the same account owns no character and its
   pages are the plain state.
+  The account pages are checked there too: the four pages and their section nav, the old `/account/settings` redirect, the privacy modal (open, Escape, focus back, Show economy changing the public page), the storage page showing only the last 24 hours of uploads (`POST /auth/development/age-uploads` makes one character's parts older) with the full history listing the rest, and the storage totals against the install's upload status.
 - browser: one headless Edge (chromium on Linux), never a window. Its first check reads the window handle of its
   process and stops it unless it is 0. It loads the key pages at 1280 and 390 wide and types into the search box.
 - goals (owner lane): a third install uploads Vale-Reader (`e2e/goals-lines.mjs`, three sessions, one under 900 seconds), the
