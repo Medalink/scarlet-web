@@ -64,13 +64,12 @@ final class SearchPage
             'term' => $term,
             'kind' => $kind,
             'sub' => $total === 0
-                ? 'No results for "'.$term.'". Characters appear only when their owner made them public.'
-                : Format::number($total).($total === 1 ? ' result' : ' results').' for "'.$term.'". Characters appear only when their owner made them public.',
+                ? 'No results for "'.$term.'".'
+                : Format::number($total).($total === 1 ? ' result' : ' results').' for "'.$term.'".',
             'kinds' => [['label' => 'All '.Format::number($total), 'href' => $link(null), 'on' => $kind === null], ...array_map(
                 fn (SearchKind $each): array => ['label' => $each->label().' '.Format::number($answer[$each->value]['count'] ?? 0), 'href' => $link($each), 'on' => $kind === $each],
-                SearchKind::cases(),
+                array_filter(SearchKind::cases(), fn (SearchKind $each): bool => $kind === $each || ($answer[$each->value]['count'] ?? 0) > 0),
             )],
-            'best' => $kind === null ? self::best($answer, $pages, $term) : null,
             'close' => $shown !== [] && array_all($shown, fn (array $hit): bool => $hit['fuzzy']) ? 'No name contains "'.$term.'". Close spellings:' : null,
             'groups' => $groups,
             'prev' => $prev,
@@ -107,37 +106,6 @@ final class SearchPage
         }
 
         return $groups;
-    }
-
-    /**
-     * The best hit overall: the best tier of match, and inside a tier the first hit of the first kind that has one,
-     * the site's own pages last. It is a result line with the glyph and the noun of its kind.
-     *
-     * @param  array<string, array{count: int, hits: list<array<string, mixed>>}>  $answer
-     * @param  list<array{title: string, path: string, meta: string, match: string}>  $pages
-     * @return array<string, mixed>|null
-     */
-    private static function best(array $answer, array $pages, string $term): ?array
-    {
-        $best = null;
-        $rank = PHP_INT_MAX;
-        foreach ($answer as $name => $group) {
-            $each = SearchKind::from($name);
-            foreach ($group['hits'] as $hit) {
-                if (self::tier($hit)->rank() < $rank) {
-                    $rank = self::tier($hit)->rank();
-                    $best = self::hit($each, $hit, $term) + ['icon' => self::icon($each), 'noun' => self::noun($each)];
-                }
-            }
-        }
-        foreach ($pages as $page) {
-            if (self::tier($page)->rank() < $rank) {
-                $rank = self::tier($page)->rank();
-                $best = self::page($page, $term) + ['icon' => self::PAGES_ICON, 'noun' => 'Page'];
-            }
-        }
-
-        return $best;
     }
 
     /**
@@ -179,7 +147,7 @@ final class SearchPage
             ],
             SearchKind::Items => [
                 'quality' => ItemTypes::quality($hit['quality'] ?? null),
-                'meta' => trim((($hit['item_level'] ?? null) ? 'Item level '.$hit['item_level'].' ' : '').ItemTypes::describe($hit['class_id'] ?? null, $hit['subclass_id'] ?? null, $hit['equip_loc'] ?? null)),
+                'meta' => ucfirst(trim((($hit['item_level'] ?? null) ? 'Item level '.$hit['item_level'].' ' : '').ItemTypes::describe($hit['class_id'] ?? null, $hit['subclass_id'] ?? null, $hit['equip_loc'] ?? null))),
                 'value' => is_numeric($hit['sources'] ?? null) ? 'Drops from '.Format::count($hit['sources'], 'source') : '',
             ],
             SearchKind::Objects => [

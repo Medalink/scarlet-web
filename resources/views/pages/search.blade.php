@@ -3,7 +3,7 @@
   <div class="wrap">
     <x-page-head title="Search" :single="true">
       <x-slot:body><x-search-box :value="$term" /></x-slot:body>
-      <x-slot:sub>{{ $d['sub'] ?? ($term === '' ? 'Find a character, creature, item, zone, quest or page by name. Characters appear only when their owner made them public.' : 'Type at least two letters or digits.') }}</x-slot:sub>
+      <x-slot:sub>{{ $d['sub'] ?? ($term === '' ? '' : 'Type at least two letters or digits.') }}</x-slot:sub>
     </x-page-head>
   </div>
 </section>
@@ -11,9 +11,6 @@
   @if ($d && $d['close'])<p class="srch-close">{{ $d['close'] }}</p>@endif
   @if ($d && ! $d['empty'])
   <x-sheet>
-    @if ($d['best'])
-    <x-module span="w12" :first="true" :last="true" style="padding-bottom:1rem"><x-search-top :best="$d['best']" /></x-module>
-    @endif
     <x-module span="w12" :first="true" :last="true" style="padding-bottom:1rem"><x-seg label="Kind" :items="$d['kinds']" /></x-module>
     @if ($d['kind'])
     @php($group = $d['groups'][$d['kind']->value])

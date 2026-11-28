@@ -643,3 +643,8 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .hall li:last-child:nth-child(odd) { grid-column: 1 / -1; padding-right: 0; }
 .podium .also { font-size: 0.86rem; color: var(--muted); }
 }
+.search-box .sc-btn { height: auto; padding: 0 1.4rem; font-size: 1rem; }
+.hit mark { background: rgba(255, 45, 85, 0.22); color: inherit; border-radius: 2px; }
+.kind { justify-content: flex-start; align-items: center; gap: 0.6rem; }
+.kind .ico { width: 1.4rem; height: 1.4rem; color: var(--soft); }
+.kind > span { margin-left: auto; }
