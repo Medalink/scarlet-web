@@ -11,7 +11,6 @@ const NO_KEY_WORDS = ["Authorization: Bearer", "Battle.net", "scarletweb.io/acco
 
 const requestOf = (ctx) => (route, options = {}) => ctx.http.request(route, { ...options, jar: ctx.keyJar });
 
-/** The days from now to each expiry the module lists, in the order it lists them (newest key first). */
 function expiryDays(html) {
   return [...html.matchAll(/ · expires <time datetime="([^"]+)" data-when="day"/g)].map(([, at]) => (Date.parse(at) - Date.now()) / DAY_MS);
 }
