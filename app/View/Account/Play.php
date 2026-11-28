@@ -99,7 +99,7 @@ final class Play
 
     /**
      * @param  list<array{0: int, 1: int}>  $buckets
-     * @return array{cells: list<array{level: int, tip: string}>, say: HtmlString|null}|null
+     * @return array{spec: array<string, mixed>, line: array{0: string, 1: string}|null, say: HtmlString|null}|null
      */
     public static function heat(array $buckets): ?array
     {
@@ -109,6 +109,6 @@ final class Play
         $grid = PlayTime::grid($buckets);
         $busiest = $grid['busiest'];
 
-        return ['cells' => $grid['cells'], 'say' => $busiest === null ? null : Dates::join('Your busiest hour is ', Dates::weekHour($busiest), '.')];
+        return ['spec' => $grid['spec'], 'line' => $grid['line'], 'say' => $busiest === null ? null : Dates::join('Your busiest hour is ', Dates::weekHour($busiest), '.')];
     }
 }

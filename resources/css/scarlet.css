@@ -41,9 +41,10 @@ a:hover { color: var(--soft); }
 .sc-g { color: var(--coin-gold); } .sc-s { color: var(--coin-silver); } .sc-c { color: var(--coin-copper); }
 
 .sc-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
-.sc-grid { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-.sc-grid > * { background: var(--bg); }
+.sc-grid { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.sc-grid > * { flex: 1 1 calc(50% - 0.01px); min-width: 0; background: var(--bg); box-shadow: 0 0 0 0.5px var(--line); }
 .sc-grid.on-panel > * { background: var(--panel); }
+@media (min-width: 768px) { .sc-grid[style*="--cols"] > * { flex-basis: calc(100% / var(--cols) - 0.01px); } }
 .sc-tile { padding: 14px 16px 15px; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .sc-tile .sc-sub { color: var(--muted); }
 .sc-rule { height: 1px; background: var(--line); border: 0; margin: 0; }

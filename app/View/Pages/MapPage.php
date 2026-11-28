@@ -53,7 +53,7 @@ final class MapPage
             'layers' => array_map(fn (WorldLayer $item): array => ['label' => $item->label(), 'on' => $item === $layer, 'data' => ['map-layer' => $item->value, 'map-for' => self::CANVAS]], WorldLayer::cases()),
             'rulesets' => count($ruleset) > 4 ? null : $ruleset,
             'rulesetPick' => count($ruleset) > 4 ? array_map(fn (array $item): array => empty($item['disabled']) ? [$item['label'], $item['href']] : [$item['label'], null, true], $ruleset) : null,
-            'rulesetSelected' => array_values(array_filter($ruleset, fn (array $item): bool => $item['on']))[0]['label'] ?? 'All',
+            'rulesetSelected' => array_values(array_filter($ruleset, fn (array $item): bool => $item['on']))[0]['label'] ?? 'All rulesets',
             'empty' => $heat === [] ? 'No '.self::layerWord($layer).' are recorded on the world map yet.' : null,
             'line' => Format::line('World', ', move the pointer over a zone for its totals.'),
             'zonesList' => $list['rows'],

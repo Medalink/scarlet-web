@@ -24,7 +24,7 @@
           <p class="sc-sub mt-1" style="color:var(--muted)">{{ $head['line'] }}</p>
         </div>
       </div>
-      <div class="sc-grid grid-cols-2 md:grid-cols-5">
+      <div class="sc-grid" style="--cols:5">
         @foreach ($head['tiles'] as $tile)
           <div class="sc-tile">
             <x-crest glyph="crown" :tier="$tile['tier']" :size="28" :label="$tile['name']" />

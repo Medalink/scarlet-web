@@ -60,7 +60,7 @@ final class Filters
      */
     public static function items(PageScope $scope, array $rulesets, string $allHref, callable $href): array
     {
-        $items = [['label' => 'All', 'href' => $allHref, 'on' => $scope->ruleset === null]];
+        $items = [['label' => 'All rulesets', 'href' => $allHref, 'on' => $scope->ruleset === null]];
         $hardcore = false;
         foreach ($rulesets as $ruleset) {
             $hardcore = $hardcore || $ruleset['kind'] === RulesetKind::Hardcore->value;
@@ -87,7 +87,7 @@ final class Filters
         return [
             'rulesets' => $many ? [] : $items,
             'rulesetsPick' => $many ? array_map(fn (array $item): array => empty($item['disabled']) ? [$item['label'], $item['href']] : [$item['label'], null, true], $items) : null,
-            'rulesetSelected' => $many ? (array_values(array_filter($items, fn (array $item): bool => $item['on']))[0]['label'] ?? 'All') : null,
+            'rulesetSelected' => $many ? (array_values(array_filter($items, fn (array $item): bool => $item['on']))[0]['label'] ?? 'All rulesets') : null,
             'servers' => $servers,
         ];
     }

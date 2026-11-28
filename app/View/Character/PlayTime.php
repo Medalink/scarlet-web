@@ -3,6 +3,7 @@
 namespace App\View\Character;
 
 use App\Models\Character;
+use App\View\Charts;
 use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
@@ -11,8 +12,6 @@ use Illuminate\Support\Carbon;
 final class PlayTime
 {
     private const array WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    private const int STEPS = 5;
 
     /**
      * @param  list<array{0: int, 1: int}>  $buckets  whole hours since the epoch and the seconds played in each
@@ -29,7 +28,8 @@ final class PlayTime
         $grid = self::grid($buckets);
 
         return [
-            'cells' => $grid['cells'],
+            'week' => $grid['spec'],
+            'weekLine' => $grid['line'],
             'say' => self::say($grid['busiest'], $everyone),
             'moving' => self::moving($splits['moving'], $recorded),
             'combat' => self::either($splits['combat'], $recorded, 'In combat', 'Out of combat'),
@@ -40,23 +40,23 @@ final class PlayTime
 
     /**
      * @param  list<array{0: int, 1: int}>  $buckets
-     * @return array{cells: list<array{level: int, tip: string}>, busiest: int|null}
+     * @return array{spec: array<string, mixed>, line: array{0: string, 1: string}|null, busiest: int|null}
      */
     public static function grid(array $buckets): array
     {
-        $seconds = array_fill(0, 168, 0);
+        $seconds = array_fill(0, 168, 0.0);
         foreach ($buckets as [$hour, $played]) {
             $at = Carbon::createFromTimestampUTC($hour * 3600);
             $seconds[(($at->dayOfWeekIso - 1) * 24) + $at->hour] += $played;
         }
         $top = max($seconds);
-        $cells = [];
-        foreach ($seconds as $i => $value) {
-            $level = $top === 0 || $value === 0 ? 0 : max(1, (int) ceil($value / $top * self::STEPS));
-            $cells[] = ['level' => $level, 'tip' => self::WEEKDAYS[intdiv($i, 24)].' '.Dates::hour($i % 24).'|'.($value > 0 ? Format::hours($value).' played' : 'Not played')];
-        }
+        $busiest = $top > 0 ? (int) array_search($top, $seconds, true) : null;
 
-        return ['cells' => $cells, 'busiest' => $top > 0 ? (int) array_search($top, $seconds, true) : null];
+        return [
+            'spec' => Charts::weekCells($seconds, $busiest, 'hours-out'),
+            'line' => $busiest === null ? null : Format::line('Busiest hour', ': '.self::WEEKDAYS[intdiv($busiest, 24)].' '.Dates::hour($busiest % 24).' UTC'),
+            'busiest' => $busiest,
+        ];
     }
 
     /** @param  list<array<string, mixed>>  $everyone */

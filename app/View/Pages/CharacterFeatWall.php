@@ -4,6 +4,7 @@ namespace App\View\Pages;
 
 use App\Models\Character;
 use App\Support\Feat;
+use App\View\Dates;
 use App\View\Format;
 
 /**
@@ -47,7 +48,7 @@ final class CharacterFeatWall
             'held' => count($earned),
             'total' => count($feats),
             'tiers' => $tiers,
-            'since' => $character->whole_life || $character->first_seen_at === null ? null : $character->first_seen_at->utc()->format('j M Y'),
+            'since' => $character->whole_life || $character->first_seen_at === null ? null : Dates::text($character->first_seen_at),
             'limit' => Character::MAX_PINNED_FEATS,
             'pinned' => array_map(self::card(...), $pinned),
             'top' => array_map(self::card(...), array_slice($unpinned, 0, self::TOP)),
