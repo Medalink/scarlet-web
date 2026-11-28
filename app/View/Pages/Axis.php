@@ -47,11 +47,11 @@ final class Axis
         $step = self::step(($to - $from) / max(1, $count));
         $ticks = [$from];
         for ($value = (intdiv($from, $step) + 1) * $step; $value < $to; $value += $step) {
-            if ($value - $ticks[array_key_last($ticks)] >= $step / 2) {
+            if ($value - $ticks[array_key_last($ticks)] > $step / 2) {
                 $ticks[] = $value;
             }
         }
-        if ($to - $ticks[array_key_last($ticks)] < $step / 2 && count($ticks) > 1) {
+        if ($to - $ticks[array_key_last($ticks)] <= $step / 2 && count($ticks) > 1) {
             array_pop($ticks);
         }
         $ticks[] = $to;
