@@ -25,13 +25,15 @@
 
   <section class="mt-7 grid gap-4 {{ $hasRoute ? 'lg:grid-cols-[minmax(0,1fr)_448px]' : '' }}">
     @if ($hasRoute)
-      <div class="sc-panel relative overflow-hidden" style="min-height:356px">
-        <x-sc.route :recap="$recap" :height="356" />
-        <div class="sc-key absolute bottom-3 left-4" style="--surface:var(--panel)">
+      <div>
+        <div class="sc-panel relative overflow-hidden" style="min-height:356px">
+          <x-sc.route :recap="$recap" :height="356" />
+          <a href="{{ $d['map'] }}" class="sc-btn quiet small absolute right-3 top-3" style="background:var(--panel)">Open the map</a>
+        </div>
+        <div class="sc-key mt-3">
           <span style="--c:var(--accent)">Walked, newest brightest</span>
           <span style="--c:var(--m-flight)">Flown</span>
         </div>
-        <a href="{{ $d['map'] }}" class="sc-btn quiet small absolute right-3 top-3" style="background:var(--panel)">Open the map</a>
       </div>
     @endif
     @if ($shown($d['tiles']))
@@ -49,7 +51,7 @@
   <section class="sc-panel mt-4 px-5 pb-3 pt-4" style="--surface:var(--panel)">
     <div class="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
       <h2 class="sc-h">Experience every five minutes</h2>
-      <div class="sc-key ml-auto"><span style="--c:var(--accent)">XP</span><span style="--c:var(--fg)">Level reached</span><span style="--c:var(--coin-silver)">Feat earned</span><span style="--c:var(--muted)">Quest turned in</span></div>
+      <div class="sc-key ml-auto"><span style="--c:var(--accent)">XP</span><span class="k-diamond" style="--c:var(--fg)">Level reached</span><span class="k-plate" style="--c:var(--coin-silver)">Feat earned</span><span class="k-small" style="--c:var(--muted)">Quest turned in</span></div>
     </div>
     <x-sc.strip :recap="$recap" />
   </section>
@@ -59,13 +61,17 @@
     <section class="mt-4 grid gap-4 {{ $hasFeats && ($shown($d['own']) || $d['peers']) ? 'lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)]' : '' }}">
       @if ($hasFeats)
         <div class="sc-panel px-5 py-4">
-          <h2 class="sc-h">Feats this session</h2>
+          <h2 class="sc-h">{{ $shown($d['feats']['earned']) ? 'Feats this session' : 'Closest feats' }}</h2>
           @foreach ($d['feats']['earned'] as $feat)
             <x-sc.feat class="mt-4" :feat="$feat" :size="104" />
           @endforeach
           @if ($shown($d['feats']['near']))
-            @if ($shown($d['feats']['earned']))<hr class="sc-rule my-4">@endif
-            <p class="sc-label mb-3 {{ $shown($d['feats']['earned']) ? '' : 'mt-4' }}">Closest when the session ended</p>
+            @if ($shown($d['feats']['earned']))
+              <hr class="sc-rule my-4">
+              <p class="sc-label mb-3">Closest when the session ended</p>
+            @else
+              <div class="mt-4"></div>
+            @endif
             <div class="grid gap-3">
               @foreach ($d['feats']['near'] as $feat)
                 <x-sc.feat :feat="$feat" :size="48" />

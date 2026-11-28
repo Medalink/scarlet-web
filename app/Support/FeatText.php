@@ -11,6 +11,9 @@ final class FeatText
     public static function amount(Feat $feat, int|float $n): string
     {
         $shown = self::unitValue($feat, $n);
+        if ($shown > 0 && $shown < 0.1) {
+            return 'under 0.1';
+        }
 
         return floor($shown) == $shown || $shown >= 10 ? Format::number($shown) : Format::number($shown, 1);
     }

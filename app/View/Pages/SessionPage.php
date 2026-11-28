@@ -33,7 +33,7 @@ final class SessionPage
 
         return [
             'name' => $name,
-            'first' => explode(' ', $name)[0],
+            'first' => $name,
             'href' => $base,
             'color' => ClassColor::of($recap['class']),
             'line' => Format::character($recap['level'][1] ?: null, $character->race, $recap['class']),
@@ -66,10 +66,10 @@ final class SessionPage
         $quests = $counters['quests'] ?? 0;
         $third = $economy
             ? ['label' => 'Gold', 'value' => Format::money($counters['earned'] ?? 0), 'sub' => ($counters['spent'] ?? 0) > 0 ? 'spent '.Format::moneyText($counters['spent']) : 'earned', 'best' => in_array('earned', $bests, true), 'n' => $counters['earned'] ?? 0]
-            : ['label' => 'Quests', 'value' => Format::number($quests), 'sub' => self::rate($quests, $hours).(($counters['abandoned'] ?? 0) > 0 ? ' · '.$counters['abandoned'].' abandoned' : ''), 'best' => in_array('quests', $bests, true), 'n' => $quests];
+            : ['label' => 'Quests', ...self::rate($quests, $hours), 'sub' => Format::number($quests).' in all'.(($counters['abandoned'] ?? 0) > 0 ? ' · '.$counters['abandoned'].' abandoned' : ''), 'best' => in_array('quests', $bests, true), 'n' => $quests];
         $tiles = [
-            ['label' => 'Experience', 'value' => Format::number($xp), 'sub' => self::rate($xp, $hours), 'best' => in_array('xp', $bests, true) || in_array('xp_h', $bests, true), 'n' => $xp],
-            ['label' => 'Kills', 'value' => Format::number($kills), 'sub' => self::rate($kills, $hours), 'best' => in_array('kills', $bests, true), 'n' => $kills],
+            ['label' => 'Experience', ...self::rate($xp, $hours), 'sub' => Format::number($xp).' in all', 'best' => in_array('xp', $bests, true) || in_array('xp_h', $bests, true), 'n' => $xp],
+            ['label' => 'Kills', ...self::rate($kills, $hours), 'sub' => Format::number($kills).' in all', 'best' => in_array('kills', $bests, true), 'n' => $kills],
             $third,
             [...Format::distance($yards), 'label' => 'Distance', 'sub' => self::distanceLine($counters, $yards), 'best' => in_array('distance', $bests, true), 'n' => $yards],
         ];
@@ -109,11 +109,12 @@ final class SessionPage
         ];
     }
 
-    private static function rate(int|float $n, float $hours): string
+    /** @return array{value: string, unit: string} */
+    private static function rate(int|float $n, float $hours): array
     {
         $per = $n / $hours;
 
-        return Format::number($per, $per < 10 ? 1 : 0).' an hour';
+        return ['value' => Format::number($per, $per < 10 ? 1 : 0), 'unit' => 'an hour'];
     }
 
     /** @param  array<string, int>  $counters */

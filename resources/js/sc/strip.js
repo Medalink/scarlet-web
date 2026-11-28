@@ -46,7 +46,7 @@ export function strip(element) {
     });
     canvas.append(svg('rect', { x: 0, y: paceTop + paceHeight, width: W, height: 1, fill: 'rgba(255,255,255,0.13)' }));
     for (const [from, to] of spec.combat) canvas.append(svg('rect', { x: x(from), y: combatY, width: Math.max(1.5, x(to) - x(from)), height: 3, fill: '#c0102e' }));
-    for (const event of spec.events) drawEvent(canvas, event, x(event.m), eventY);
+    for (const event of spec.events) drawEvent(canvas, event, Math.min(W - 8, Math.max(8, x(event.m))), eventY, W);
     if (!compact) drawClock(canvas, spec, x, total);
     const cross = svg('rect', { x: -9, y: 0, width: 1, height: eventY + 20, fill: '#f0f1f3', opacity: 0.5 });
     canvas.append(cross);
@@ -71,11 +71,12 @@ export function strip(element) {
     element.replaceChildren(canvas);
 }
 
-function drawEvent(canvas, event, ex, ey) {
+function drawEvent(canvas, event, ex, ey, W) {
     if (event.k === 'level') {
         canvas.append(svg('rect', { x: ex - 0.5, y: 0, width: 1, height: ey + 4, fill: 'rgba(240,241,243,0.45)' }));
         canvas.append(svg('rect', { x: ex - 5, y: ey + 3, width: 10, height: 10, fill: '#f0f1f3', transform: `rotate(45 ${ex} ${ey + 8})` }));
-        canvas.append(text({ x: ex + 11, y: ey + 12, class: 'strong' }, event.t));
+        const room = W - ex - 11 > event.t.length * 6.4;
+        canvas.append(text({ x: room ? ex + 11 : ex - 11, y: ey + 12, class: 'strong', 'text-anchor': room ? 'start' : 'end' }, event.t));
         return;
     }
     if (event.k === 'death') {
