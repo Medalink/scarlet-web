@@ -26,12 +26,13 @@ class ShowCharacter
         private readonly PlayTimeByWeekday $everyone,
         private readonly SessionsSection $sessions,
         private readonly ShowImportedHistory $imported,
+        private readonly CharacterGoals $goals,
     ) {}
 
     /**
      * Null when the character is unknown or private to this viewer. `$viewer` is the account the page is shown to, `$sessions` how many sessions the section lists.
      *
-     * @return array{overview: array<string, mixed>, feats: array<string, mixed>, rates: array<string, mixed>|null, class: ClassPage|null, battlegrounds: array<string, mixed>|null, splits: array<string, mixed>, everyone: list<array<string, mixed>>, sessions: array<string, mixed>|null}|null
+     * @return array{overview: array<string, mixed>, feats: array<string, mixed>, rates: array<string, mixed>|null, class: ClassPage|null, battlegrounds: array<string, mixed>|null, splits: array<string, mixed>, everyone: list<array<string, mixed>>, sessions: array<string, mixed>|null, goals: array<string, mixed>, imported: array<string, mixed>|null}|null
      */
     public function handle(string $name, ?int $viewer, int $sessions, bool $addons): ?array
     {
@@ -51,6 +52,7 @@ class ShowCharacter
             'splits' => $this->splits->handle($character->id),
             'everyone' => $rulesetId === null ? [] : $this->everyone->handle($rulesetId),
             'sessions' => $this->sessions->handle($character, $viewer, (bool) $r['economy'], $sessions, $r['days']),
+            'goals' => $this->goals->handle($character, (bool) $r['economy']),
             'imported' => $r['owner'] ? ($this->imported->handle([$character->id])[$character->id] ?? null) : null,
         ];
     }

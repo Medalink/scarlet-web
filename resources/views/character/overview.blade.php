@@ -3,7 +3,9 @@
     $compare = $o['compare'];
     $curve = $o['curve'];
 @endphp
-<section id="overview" @class(['mt-10 grid grid-cols-[minmax(0,1fr)] gap-10', 'lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]' => ! $compare['empty']]) style="--surface:var(--bg)">
+<section id="overview" class="mt-10" style="--surface:var(--bg)">
+@include('character.goals')
+<div @class(['grid grid-cols-[minmax(0,1fr)] gap-10', 'mt-10' => $d['goals']['level'] || $d['goals']['skills'] || $d['goals']['reputation'] || $d['goals']['records'], 'lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]' => ! $compare['empty']])>
   @unless ($compare['empty'])
     <div>
       <h2 class="sc-h" style="font-size:30px">{{ $compare['heading'] }}</h2>
@@ -32,4 +34,5 @@
       <p class="sc-say mt-3" style="font-size:15.5px">{!! $curve['sentence'] !!}</p>
     @endif
   </div>
+</div>
 </section>

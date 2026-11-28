@@ -64,6 +64,7 @@ final class Page
             'claim' => $character->account_id === null && ! $r['owner'],
             'sections' => $sections,
             'overview' => Overview::data($bundle['rates'], $bundle['class'], $r, $summary, $first),
+            'goals' => Goals::data($bundle['goals'], $character),
             'feats' => $feats,
             'sessions' => $sessions,
             'class' => $class,
