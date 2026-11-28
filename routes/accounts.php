@@ -29,7 +29,7 @@ Route::get('/account/professions', LegacyRedirectController::class)->defaults('t
 Route::get('/account/professions/{slug}', LegacyRedirectController::class)->where('slug', '[a-z-]+')->defaults('to', '/professions/{slug}')->defaults('with', ['scope' => 'mine']);
 Route::get('/account/camps', LegacyRedirectController::class)->defaults('to', '/camps')->defaults('with', ['scope' => 'mine']);
 Route::get('/account/map', LegacyRedirectController::class)->defaults('to', '/map')->defaults('with', ['scope' => 'mine']);
-Route::get('/account/map/trails', LegacyRedirectController::class)->defaults('to', '/map/trails')->defaults('with', ['scope' => 'mine']);
+Route::get('/account/map/trails', LegacyRedirectController::class)->defaults('to', '/map')->defaults('with', ['scope' => 'mine']);
 
 Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::get('/account', AccountController::class);

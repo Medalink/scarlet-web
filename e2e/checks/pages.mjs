@@ -28,7 +28,7 @@ const PAGES = [
   { path: "/rulesets", shows: heading("Rulesets compared") },
   { path: "/rulesets/unidentified", shows: heading("(?:[\\d,]+ hours of WoW Forever, )?Not identified") },
   { path: `/c/${NAME}`, shows: heading(SHOWN) },
-  { path: `/c/${NAME}/heat`, shows: /^\{"data":/ },
+  { path: `/c/${NAME}/heat`, shows: heading(SHOWN) },
   { path: "/creatures/113", shows: heading("Stonetusk Boar") },
   { path: "/items/769", shows: heading("Chunk of Boar Meat") },
   { path: "/zones/1436", shows: heading("Westfall") },
@@ -69,12 +69,12 @@ export async function oldAddressesRedirect(ctx) {
     ["/hardcore-deaths", /^\/stats(\/[a-z0-9-]+#deaths)?$/],
     ["/account/camps?ruleset=x", "/camps?ruleset=x&scope=mine"],
     ["/account/map", "/map?scope=mine"],
-    ["/account/map/trails", "/map/trails?scope=mine"],
+    ["/account/map/trails", "/map?scope=mine"],
     ["/account/characters", "/account"],
     ["/account/professions", "/professions?scope=mine"],
     ["/account/professions/fishing", "/professions/fishing?scope=mine"],
-    [`/c/${NAME}/heat`, `/map/trails?character=${NAME}`],
-    [`/c/${NAME}/trails`, `/map/trails?character=${NAME}`],
+    [`/c/${NAME}/heat`, `/map?character=${NAME}`],
+    [`/c/${NAME}/trails`, `/map?character=${NAME}`],
   ];
   const problems = [];
   for (const [from, to] of moved) {

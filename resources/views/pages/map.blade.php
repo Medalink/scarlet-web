@@ -11,7 +11,6 @@
   </x-slot:map>
   <aside class="world-side">
     <h1 id="h1">{{ $d['title'] }}</h1>
-    @unless ($d['personal'])<p class="sub">Every path, death and creature that players chose to upload, on one map. Zoom into a zone to open it.</p>@endunless
     <div class="world-ctl">
       @if ($d['whose'])@if ($d['whose']['pick'])<x-pick label="Whose map" :options="$d['whose']['pick']" :selected="$d['whose']['selected']" />@else<x-seg label="Whose map" :items="$d['whose']['items']" />@endif @endif
       @if ($d['personal'])

@@ -36,7 +36,7 @@ export function addZoomAndCredit(host, { zoomIn, zoomOut }) {
 // The Survey / Game switch, filled into `container`; returns a function that marks the active look.
 export function addLookSwitch(container, choose) {
     container.setAttribute('role', 'group');
-    container.setAttribute('aria-label', 'Look');
+    container.setAttribute('aria-label', 'Map style');
     const buttons = LOOKS.map(({ look, label }) => {
         const button = element('button', { type: 'button', 'aria-pressed': 'false' }, label);
         button.addEventListener('click', () => choose(look));
