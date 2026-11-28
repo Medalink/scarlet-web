@@ -18,7 +18,7 @@ class CharacterGoals
     ) {}
 
     /**
-     * `xp` is the experience bar of the latest session that read one, null when none did. Money is in the records only
+     * `xp` is the experience bar of the latest counted session that ended at the character's current level, null when that session read none. Money is in the records only
      * with `$economy`.
      *
      * @return array{xp: array{xp: int, max: int}|null, skills: list<array{name: string, rank: int, max: int, kind: string}>, reputation: list<array{id: int, name: string, tier: int, standing: int, from: int, to: int}>, records: list<array{key: string, value: int|float, at: string, from: int|null, to: int|null, item: string|null}>}
@@ -26,19 +26,22 @@ class CharacterGoals
     public function handle(Character $character, bool $economy): array
     {
         return [
-            'xp' => $this->xp($character->id),
+            'xp' => $this->xp($character),
             'skills' => $this->skills->handle($character->id),
             'reputation' => $this->reputation->handle($character->id),
             'records' => $this->records->handle($character->id, $economy),
         ];
     }
 
-    /** @return array{xp: int, max: int}|null */
-    private function xp(int $characterId): ?array
+    /** @return array{xp: int, max: int}|null the bar of the latest counted session that ended at the character's level, null when that session has none */
+    private function xp(Character $character): ?array
     {
-        $bar = DB::table('sessions')->where('character_id', $characterId)->whereRaw("(extra->>'xp_max') is not null")->orderByDesc('end_at')
+        if ($character->level === null) {
+            return null;
+        }
+        $bar = DB::table('sessions')->where('character_id', $character->id)->where('counted', true)->where('level_end', $character->level)->orderByDesc('end_at')
             ->selectRaw("(extra->>'xp')::bigint as xp, (extra->>'xp_max')::bigint as max")->first();
 
-        return $bar === null || (int) $bar->max <= 0 ? null : ['xp' => (int) $bar->xp, 'max' => (int) $bar->max];
+        return $bar === null || $bar->max === null || (int) $bar->max <= 0 ? null : ['xp' => (int) $bar->xp, 'max' => (int) $bar->max];
     }
 }

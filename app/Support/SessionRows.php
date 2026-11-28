@@ -28,6 +28,11 @@ class SessionRows
         SharingGroup::MOVEMENT => ['distance'],
     ];
 
+    /** The keys of `sessions.extra` each sharing group fills; removing the group takes them out. */
+    public const array GROUP_EXTRA_KEYS = [
+        SharingGroup::XP => ['xp', 'xp_max'],
+    ];
+
     /**
      * Write the session row from the decoder's summary (docs/ROWS.md, `sessions`).
      *

@@ -89,6 +89,9 @@ class RemoveGroup
         if ($counters !== []) {
             DB::table('sessions')->whereIn('character_id', $characterIds)->update(array_fill_keys($counters, null));
         }
+        foreach (SessionRows::GROUP_EXTRA_KEYS[$group] ?? [] as $key) {
+            DB::update('update sessions set extra = extra - ?::text where character_id = any(?::bigint[]) and jsonb_exists(extra, ?)', [$key, '{'.implode(',', $characterIds).'}', $key]);
+        }
         foreach (FactTable::cases() as $table) {
             $columns = $table->groupColumns()[$group] ?? [];
             if ($columns !== []) {

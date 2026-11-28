@@ -108,7 +108,14 @@ export async function goalsPageShowsSkillsReputationAndRecords(ctx) {
       expectSections((await goalsPage(ctx)).html, SECTIONS, `with ${group} sent again`);
     }
 
-    expectShown((await goalsPage(ctx)).goals, [...SKILLS, ...REPUTATION, ...RECORDS], "after both groups came back");
+    expectStatus(await client.request("DELETE", "/api/v1/upload/groups/xp"), 200, "DELETE groups/xp");
+    const noBar = await goalsPage(ctx);
+    expectShown(noBar.goals, [LEVEL[0]], "with xp removed");
+    expectHidden(noBar.goals, ["To level"], "with xp removed");
+    expectStatus(await client.request("PUT", "/api/v1/upload/groups/xp"), 200, "PUT groups/xp");
+    await upload(client, fixture, "xp sent again");
+
+    expectShown((await goalsPage(ctx)).goals, [...LEVEL, ...SKILLS, ...REPUTATION, ...RECORDS], "after the groups came back");
   } finally {
     expectStatus(await client.remove(), 200, "DELETE /api/v1/upload of the goals install");
   }
