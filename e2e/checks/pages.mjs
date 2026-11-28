@@ -16,7 +16,7 @@ const PAGES = [
   { path: "/search?q=Testa", shows: new RegExp(`<h1[^>]*>\\s*Search\\s*<[\\s\\S]*${NAME}`) },
   { path: "/developers", shows: heading("Public API") },
   { path: "/download", shows: heading("Scarlet for Windows") },
-  { path: "/leaderboards", shows: heading("\\d+ boards") },
+  { path: "/leaderboards", shows: heading("Leaderboards") },
   { path: "/leaderboards/most-quests", shows: heading("Most quests turned in") },
   { path: "/leaderboards/feat-score", shows: heading("Highest feat score") },
   { path: "/feats", shows: heading("241 feats, five tiers each") },

@@ -46,13 +46,12 @@ final class LeaderboardPage
 
         return [
             'board' => $board,
-            'title' => $board->title(),
-            'sub' => $board->description(),
+            'title' => self::name($board),
             'boards' => [
                 ['All boards', LeaderboardHallPage::link(LeaderboardHallPage::query($scope))],
-                ...array_map(fn (Board $item): array => [$item->title(), self::link($item, ['ruleset' => $slug, 'class' => $class])], Board::cases()),
+                ...array_map(fn (Board $item): array => [self::name($item), self::link($item, ['ruleset' => $slug, 'class' => $class])], Board::cases()),
             ],
-            'boardSelected' => $board->title(),
+            'boardSelected' => self::name($board),
             'rulesets' => Filters::items($scope, $rulesets, $link(['ruleset' => null]), fn (array $item): string => $link(['ruleset' => $item['slug'], 'server' => null])),
             'servers' => $slug === null ? array_map(fn (Server $server): array => ['label' => $server->label(), 'href' => $link(['server' => $server === Server::All ? null : $server->value]), 'on' => $server === $scope->server], Server::cases()) : null,
             'classes' => [['Every class', $link(['class' => null])], ...array_map(fn (string $name): array => [Format::className($name), $link(['class' => $name])], $r['classes'])],
@@ -70,6 +69,12 @@ final class LeaderboardPage
         ];
     }
 
+    /** The board's name on the pages, which tells the two quest boards apart. */
+    public static function name(Board $board): string
+    {
+        return $board === Board::MostQuestsCompleted ? 'Most quests completed, all time' : $board->title();
+    }
+
     /** @param  array<string, string|null>  $query */
     public static function link(Board $board, array $query = []): string
     {
@@ -83,7 +88,7 @@ final class LeaderboardPage
      * character was first recorded; a fastest board names the day the level was reached instead.
      *
      * @param  array<string, mixed>  $row
-     * @return array{rank: int, mine: bool, name: string, href: string, class: string, what: string, value: string, unit: Htmlable, tag: string|null}
+     * @return array{rank: int, mine: bool, name: string, href: string, class: string, what: string, also: string, value: string, unit: Htmlable, tag: string|null}
      */
     private static function place(Board $board, array $row): array
     {
@@ -98,6 +103,7 @@ final class LeaderboardPage
             'href' => '/c/'.rawurlencode((string) $row['name']),
             'class' => (string) $row['class'],
             'what' => Format::character(null, $row['race'], $row['class']),
+            'also' => trim(((string) ($row['ruleset_label'] ?? '')).' · '.Format::count((int) $row['deaths'], 'death'), ' ·'),
             'value' => $board->format($row['value']),
             'unit' => $unit,
             'tag' => $row['hardcore'] ? 'HC' : null,

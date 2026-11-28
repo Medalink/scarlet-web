@@ -638,3 +638,8 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 @layer components {
 .sc-group { margin-top: 40px; font: 750 28px/1 var(--display); color: var(--fg); }
 }
+
+@layer components {
+.hall li:last-child:nth-child(odd) { grid-column: 1 / -1; padding-right: 0; }
+.podium .also { font-size: 0.86rem; color: var(--muted); }
+}
