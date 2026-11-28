@@ -39,6 +39,7 @@ final class Page
         $class = self::classSection($class, $r);
         $battlegrounds = Chapters::battlegrounds($bundle['battlegrounds']);
         $levelling = Chapters::levelling($r, $first);
+        $loot = Chapters::loot($r);
         $time = PlayTime::data($r['playBuckets'], $bundle['splits'], $character, $bundle['everyone'], $first);
 
         $sections = array_filter([
@@ -48,7 +49,7 @@ final class Page
             'class' => $className === '' || $class['page'] === null ? null : $className,
             'levelling' => $levelling === null ? null : 'Levelling',
             'combat' => 'Combat',
-            'loot' => 'Loot and professions',
+            'loot' => $loot === null ? null : 'Loot and professions',
             'time' => $time === null ? null : 'Play time',
         ]);
 
@@ -70,7 +71,7 @@ final class Page
             'levelling' => $levelling,
             'combat' => Chapters::combat($r, $first),
             'battlegrounds' => $battlegrounds,
-            'loot' => Chapters::loot($r),
+            'loot' => $loot,
             'time' => $time,
             'imported' => $bundle['imported'] === null ? null : ImportedHistoryPage::character($bundle['imported']),
         ];

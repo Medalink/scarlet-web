@@ -18,7 +18,7 @@
   @includeWhen($class['page'], 'character.class')
   @includeWhen($d['levelling'], 'character.levelling')
   @include('character.combat')
-  @include('character.loot')
+  @includeWhen($d['loot'], 'character.loot')
   @includeWhen($d['time'], 'character.time')
   @includeWhen($d['imported'], 'character.imported')
 </div>

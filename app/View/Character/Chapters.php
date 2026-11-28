@@ -150,9 +150,9 @@ final class Chapters
 
     /**
      * @param  array<string, mixed>  $r
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null null when the character has no loot, professions or gold to show
      */
-    public static function loot(array $r): array
+    public static function loot(array $r): ?array
     {
         $items = $r['items'];
         $stack = [];
@@ -165,7 +165,7 @@ final class Chapters
         $skills = $r['skills'];
         usort($skills, fn (array $a, array $b): int => [$b['rank'], $a['skill']] <=> [$a['rank'], $b['skill']]);
 
-        return [
+        $loot = [
             'stack' => $stack,
             'line' => $total === 0 ? null : Format::number($total).' items',
             'best' => $best === null ? null : ['id' => $best['item_id'], 'name' => $best['name']],
@@ -173,6 +173,8 @@ final class Chapters
             'drops' => array_map(fn (array $row): array => [$row['name'], $row['quantity']], array_slice($items['best'], 0, self::TOP)),
             'gold' => $r['economy'] ? self::gold($r['gold']) : null,
         ];
+
+        return $loot['stack'] === [] && $loot['professions'] === [] && $loot['drops'] === [] && $loot['gold'] === null ? null : $loot;
     }
 
     /**
