@@ -17,6 +17,10 @@ $website = ['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 
       <p class="dl-links">@if ($app['zip'])<a href="{{ $app['zip'] }}">Addon zip</a>@endif @if ($app['sums'])<a href="{{ $app['sums'] }}">SHA256SUMS.txt</a>@endif <a href="{{ $app['releases'] }}">All releases on GitHub</a></p>
     </div>
     @if ($app['zip'])<p class="mt-4 max-w-[72ch] text-muted">The addon zip holds the addon alone: unzip the <code>Scarlet</code> folder into <code>World of Warcraft\_forever_\Interface\AddOns</code>.</p>@endif
+    <div class="dl-shots mt-8">
+      <figure><img src="/app-shots/character-overview.webp" width="960" height="930" alt="The Character Overview of the Scarlet app: level, records, feats within reach and the latest session" loading="lazy" decoding="async"><figcaption class="sc-label">Character Overview</figcaption></figure>
+      <figure><img src="/app-shots/session.webp" width="960" height="620" alt="A session in the Scarlet app: the route walked, the feats it earned and where the time went" loading="lazy" decoding="async"><figcaption class="sc-label">Session</figcaption></figure>
+    </div>
   </section>
 
   <section class="mt-14" aria-labelledby="h-records">
