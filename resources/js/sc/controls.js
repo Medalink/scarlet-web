@@ -1,16 +1,23 @@
-const numberPause = 700;
-const pendingForms = new WeakMap();
+const changedForms = new WeakSet();
+const numberBox = (node) => node?.closest?.('input[type="number"][data-autosubmit]');
 
 document.addEventListener('change', (event) => {
     const control = event.target.closest?.('[data-autosubmit]');
     const form = control?.form;
     if (!form) return;
-    if (control.type !== 'number') {
-        form.requestSubmit();
+    if (control.type === 'number') {
+        changedForms.add(form);
         return;
     }
-    clearTimeout(pendingForms.get(form));
-    pendingForms.set(form, setTimeout(() => form.requestSubmit(), numberPause));
+    form.requestSubmit();
+});
+
+document.addEventListener('focusout', (event) => {
+    const box = numberBox(event.target);
+    const form = box?.form;
+    if (!form || !changedForms.has(form) || numberBox(event.relatedTarget)?.form === form) return;
+    changedForms.delete(form);
+    form.requestSubmit();
 });
 
 document.addEventListener('change', (event) => {

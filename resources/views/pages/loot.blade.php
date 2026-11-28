@@ -15,6 +15,7 @@
         @if ($f['levels'])<span class="lvl" role="group" aria-label="Level"><span>Level</span><input name="min" type="number" min="-1" max="80" value="{{ $f['min'] }}" aria-label="Level from" data-autosubmit><span>to</span><input name="max" type="number" min="-1" max="80" value="{{ $f['max'] }}" aria-label="Level to" data-autosubmit></span>@endif
         <select class="pick" name="quality" aria-label="Quality" data-autosubmit><option value="">Any quality</option>@foreach ($f['qualities'] as $quality)<option value="{{ $quality['value'] }}" @selected($quality['value'] === $f['quality'])>{{ $quality['label'] }}</option>@endforeach</select>
         <label class="lvl"><span>Sort</span><select class="pick" name="sort" data-autosubmit>@foreach ($f['sorts'] as $sort)<option value="{{ $sort['value'] }}" @selected($sort['value'] === $f['sort'])>{{ $sort['label'] }}</option>@endforeach</select></label>
+        <button class="vh" type="submit" tabindex="-1">Apply</button>
         <noscript><button class="sc-btn quiet" type="submit">Apply</button></noscript>
       </form>
       @if ($d['rows'])
