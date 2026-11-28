@@ -3,6 +3,8 @@
 namespace App\View\Character;
 
 use App\Models\Character;
+use App\Support\Feat;
+use App\Support\FeatText;
 use App\View\Pages\FeatsPage;
 use App\View\Sc\Crest;
 
@@ -52,7 +54,7 @@ final class FeatsSection
             }
             $toasts[] = [
                 'key' => $item['key'], 'tier' => $item['tier'], 'kicker' => self::kicker($item['from_name']),
-                'feat' => ['key' => $item['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $item['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'], 'count' => $feat['counted']],
+                'feat' => ['key' => $item['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $item['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'], 'count' => FeatText::readableCard(Feat::from($item['key']), $feat)['counted']],
             ];
         }
 
@@ -99,7 +101,7 @@ final class FeatsSection
     {
         return [
             'key' => $feat['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
-            'tierName' => Crest::TIER_NAMES[$feat['tier']], 'counted' => $feat['counted'], 'href' => '/feats/'.$feat['key'],
+            'tierName' => Crest::TIER_NAMES[$feat['tier']], 'counted' => FeatText::readableCard(Feat::from($feat['key']), $feat)['counted'], 'href' => '/feats/'.$feat['key'],
         ];
     }
 

@@ -172,7 +172,7 @@ final class FeatsPage
             'key' => $feat['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
             'href' => '/feats/'.$feat['key'],
             'left' => FeatText::readable($kind, (int) $feat['left']).' '.FeatText::noun($kind, (int) $feat['left']).' to '.Crest::TIER_NAMES[$feat['tier'] + 1],
-            'counted' => $feat['counted'],
+            'counted' => FeatText::readableCard($kind, $feat)['counted'],
         ];
     }
 
@@ -249,13 +249,14 @@ final class FeatsPage
     private static function aside(array $feat, ?string $who, bool $owned): array
     {
         $kind = Feat::from($feat['key']);
+        $words = FeatText::readableCard($kind, $feat);
 
         return [
             'key' => $feat['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
-            'count' => $owned ? $feat['counted'] : 'Counts '.$feat['many'].'.',
-            'to' => $owned ? $feat['to_next'] : null,
+            'count' => $owned ? $words['counted'] : 'Counts '.$feat['many'].'.',
+            'to' => $owned ? $words['to_next'] : null,
             'href' => '/feats/'.$feat['key'],
-            'ladder' => FeatLadder::rows($kind, $feat['thresholds'], $feat['shares'] ?? null, $owned ? $feat['tier'] : null, $owned && $who !== null ? $who.', '.$feat['counted'] : null),
+            'ladder' => FeatLadder::rows($kind, $feat['thresholds'], $feat['shares'] ?? null, $owned ? $feat['tier'] : null, $owned && $who !== null ? $who.', '.$words['counted'] : null),
             'shares' => ($feat['shares'] ?? null) !== null,
         ];
     }

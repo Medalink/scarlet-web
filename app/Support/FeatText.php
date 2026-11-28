@@ -37,6 +37,32 @@ final class FeatText
         return $next === null ? null : self::readable($feat, $left).' to '.$next;
     }
 
+    /**
+     * A feat card's `counted` and `to_next` in the web pages' words: the API's leading amount becomes `readable`'s, and
+     * what the API appends (" on 3 characters", " · Held by …") stays.
+     *
+     * @param  array<string, mixed>  $card
+     * @return array{counted: mixed, to_next: mixed}
+     */
+    public static function readableCard(Feat $feat, array $card): array
+    {
+        $value = $card['value'] ?? null;
+        $left = $card['left'] ?? null;
+        $tier = is_int($card['tier'] ?? null) ? $card['tier'] : 0;
+        $counted = $card['counted'] ?? null;
+        $toNext = $card['to_next'] ?? null;
+
+        return [
+            'counted' => is_string($counted) && (is_int($value) || is_float($value)) ? self::swap($counted, self::counted($feat, $value), self::readableCounted($feat, $value)) : $counted,
+            'to_next' => is_string($toNext) && (is_int($left) || is_float($left)) ? self::swap($toNext, (string) self::toNext($feat, $left, $tier), (string) self::readableToNext($feat, $left, $tier)) : $toNext,
+        ];
+    }
+
+    private static function swap(string $text, string $from, string $to): string
+    {
+        return $from !== '' && str_starts_with($text, $from) ? $to.substr($text, strlen($from)) : $text;
+    }
+
     /** "9,912 kills", from the catalog's words for one and many. */
     public static function counted(Feat $feat, int|float $value): string
     {

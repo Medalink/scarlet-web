@@ -57,13 +57,14 @@ final class FeatDetailPage
             return null;
         }
         $tier = $card['tier'] ?? 0;
+        $words = FeatText::readableCard($kind, $card ?? []);
 
         return [
             'tier' => $tier,
-            'ladder' => FeatLadder::rows($kind, $feat['account_thresholds'], null, $card === null ? null : $tier, $card === null ? null : 'Account, '.$card['counted']),
+            'ladder' => FeatLadder::rows($kind, $feat['account_thresholds'], null, $card === null ? null : $tier, $card === null ? null : 'Account, '.$words['counted']),
             'card' => $card === null ? null : [
                 'key' => $card['key'], 'name' => $card['name'], 'glyph' => $card['icon'], 'scope' => 'account', 'tier' => $tier,
-                'progress' => $card['progress'], 'count' => $card['counted'], 'to' => $card['to_next'],
+                'progress' => $card['progress'], 'count' => $words['counted'], 'to' => $words['to_next'],
             ],
         ];
     }
