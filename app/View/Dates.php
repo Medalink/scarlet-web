@@ -43,13 +43,13 @@ final class Dates
         return self::tag(DateForm::DayTime, $at);
     }
 
-    /** "Nov 22 to Nov 28", "Dec 30 2025 to Jan 2". */
     /** @param  list<string|Htmlable>  $parts */
     public static function implode(string $glue, array $parts): HtmlString
     {
         return self::join(...array_merge(...array_map(fn (string|Htmlable $part, int $i): array => $i === 0 ? [$part] : [$glue, $part], $parts, array_keys($parts))));
     }
 
+    /** "Nov 22 to Nov 28", "Dec 30 2025 to Jan 2". */
     public static function range(CarbonInterface|string|int $from, CarbonInterface|string|int $to): HtmlString
     {
         return new HtmlString(self::tag(DateForm::Day, $from).' to '.self::tag(DateForm::Day, $to));
@@ -97,12 +97,6 @@ final class Dates
     public static function plain(string|Htmlable $line): string
     {
         return html_entity_decode(strip_tags($line instanceof Htmlable ? $line->toHtml() : $line), ENT_QUOTES);
-    }
-
-    /** "Nov 22 to Nov 28" as plain text. */
-    public static function rangeText(CarbonInterface|string|int $from, CarbonInterface|string|int $to): string
-    {
-        return self::text($from).' to '.self::text($to);
     }
 
     /** The hover text of a date: "Sat Nov 22 2025 8:19:47 PM", or "Sat Nov 22 2025" for a day key. */

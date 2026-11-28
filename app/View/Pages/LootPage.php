@@ -11,6 +11,7 @@ use App\Support\LootSort;
 use App\Support\LootView;
 use App\View\Dates;
 use App\View\Format;
+use Illuminate\Support\HtmlString;
 
 /** The data of the loot index (docs/comps/loot.html) from the answer of App\Actions\Public\LootIndex. */
 final class LootPage
@@ -105,16 +106,16 @@ final class LootPage
      * @param  array{corpses: int, skinned: int, sources: int, items: int, uncommon: int, characters: int, first_at: string|null, last_at: string|null, fishing: int}  $figures
      * @param  list<array{id: int, name: string|null, windows: int}>  $zones
      */
-    private static function sub(array $figures, LootFilter $filter, array $zones): string
+    private static function sub(array $figures, LootFilter $filter, array $zones): string|HtmlString
     {
         if ($figures['sources'] === 0 || $figures['first_at'] === null || $figures['last_at'] === null) {
             return 'No loot is recorded'.($filter->zone === null ? ' yet.' : ' in this zone yet.');
         }
         $zone = $filter->zone === null ? null : (array_column($zones, 'name', 'id')[$filter->zone] ?? 'zone '.$filter->zone);
 
-        return Format::count($figures['corpses'], 'corpse').' looted'.($figures['skinned'] > 0 ? ' and '.Format::number($figures['skinned']).' skinned' : '')
-            .($zone === null ? '' : ' in '.$zone).' by '.Format::count($figures['characters'], 'character').', '
-            .Dates::rangeText($figures['first_at'], $figures['last_at']).'.';
+        return Dates::join(Format::count($figures['corpses'], 'corpse').' looted'.($figures['skinned'] > 0 ? ' and '.Format::number($figures['skinned']).' skinned' : '')
+            .($zone === null ? '' : ' in '.$zone).' by '.Format::count($figures['characters'], 'character').', ',
+            Dates::range($figures['first_at'], $figures['last_at']), '.');
     }
 
     /**

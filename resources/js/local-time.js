@@ -149,7 +149,9 @@ function refresh() {
     timer = window.setTimeout(refresh, young ? NEXT_SECOND : NEXT_HALF_MINUTE);
 }
 
-const watchLivewire = () => window.Livewire.hook('morphed', ({ el }) => localize(el ?? document));
+const watchLivewire = () => window.Livewire.hook('morphed', ({ el }) => {
+    if (localize(el ?? document)) refresh();
+});
 
 if (window.Livewire) watchLivewire();
 else document.addEventListener('livewire:init', watchLivewire, { once: true });

@@ -91,9 +91,9 @@ final class StatsPage
         $coverage = is_array($coverage) ? $coverage : [];
         $since = $coverage['since'] ?? null;
         $updated = $coverage['updated_at'] ?? null;
-        $text .= $since instanceof Carbon ? ($totals['played_seconds'] === null ? ', recorded' : '').' since '.Dates::text($since).'.' : '.';
+        $recorded = $since instanceof Carbon ? [$text.($totals['played_seconds'] === null ? ', recorded' : '').' since ', Dates::day($since), '.'] : [$text.'.'];
 
-        return Dates::join($text, ...($updated instanceof Carbon ? [' Updated ', Dates::moment($updated), '.'] : []));
+        return Dates::join(...$recorded, ...($updated instanceof Carbon ? [' Updated ', Dates::moment($updated), '.'] : []));
     }
 
     /**
