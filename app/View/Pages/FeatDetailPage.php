@@ -20,7 +20,7 @@ final class FeatDetailPage
         $feat = $answer['feat'];
         $mine = $answer['mine'];
         $kind = Feat::from($feat['key']);
-        $you = $mine === null ? null : FeatsPage::first($mine['character']).', '.FeatText::counted($kind, $mine['value']);
+        $you = $mine === null ? null : FeatsPage::first($mine['character']).', '.FeatText::readableCounted($kind, $mine['value']);
 
         return [
             'key' => $feat['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'collection' => $feat['collection'],
@@ -31,7 +31,7 @@ final class FeatDetailPage
             'unit' => ucfirst($feat['many']),
             'top' => array_map(fn (array $row): array => [
                 'name' => Format::characterName($row['character']), 'href' => '/c/'.rawurlencode($row['character']), 'tier' => $row['tier'],
-                'tierName' => $row['tier'] > 0 ? Crest::TIER_NAMES[$row['tier']] : null, 'count' => FeatText::amount($kind, $row['value']), 'value' => (float) $row['value'],
+                'tierName' => $row['tier'] > 0 ? Crest::TIER_NAMES[$row['tier']] : null, 'count' => FeatText::readable($kind, $row['value']), 'value' => (float) $row['value'],
             ], $feat['top']),
             'recent' => array_map(fn (array $row): array => [
                 'name' => Format::characterName($row['character']), 'href' => '/c/'.rawurlencode($row['character']), 'tier' => $row['tier'],
@@ -41,7 +41,7 @@ final class FeatDetailPage
                 'key' => $other['key'], 'name' => $other['name'], 'glyph' => $other['glyph'], 'family' => $other['family'], 'tier' => $answer['held'][$other['key']]['tier'] ?? 0, 'progress' => $answer['held'][$other['key']]['progress'] ?? 0,
                 'share' => FeatsPage::percent($other['shares'][0] ?? null), 'href' => '/feats/'.$other['key'],
             ], $answer['collection']),
-            'mine' => $mine === null ? null : ['name' => Format::characterName($mine['character']), 'count' => FeatText::counted($kind, $mine['value'])],
+            'mine' => $mine === null ? null : ['name' => Format::characterName($mine['character']), 'count' => FeatText::readableCounted($kind, $mine['value'])],
             'account' => self::account($feat, $kind, $answer['account']),
         ];
     }

@@ -171,7 +171,7 @@ final class FeatsPage
         return [
             'key' => $feat['key'], 'name' => $feat['name'], 'glyph' => $feat['glyph'], 'family' => $feat['family'], 'tier' => $feat['tier'], 'progress' => $feat['progress'], 'spell' => $feat['spell'],
             'href' => '/feats/'.$feat['key'],
-            'left' => FeatText::amount($kind, (int) $feat['left']).' '.FeatText::noun($kind, (int) $feat['left']).' to '.Crest::TIER_NAMES[$feat['tier'] + 1],
+            'left' => FeatText::readable($kind, (int) $feat['left']).' '.FeatText::noun($kind, (int) $feat['left']).' to '.Crest::TIER_NAMES[$feat['tier'] + 1],
             'counted' => $feat['counted'],
         ];
     }

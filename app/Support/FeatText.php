@@ -11,11 +11,30 @@ final class FeatText
     public static function amount(Feat $feat, int|float $n): string
     {
         $shown = self::unitValue($feat, $n);
-        if ($shown > 0 && $shown < 0.1) {
-            return 'under 0.1';
-        }
 
         return floor($shown) == $shown || $shown >= 10 ? Format::number($shown) : Format::number($shown, 1);
+    }
+
+    /** The web pages' amount: `amount`, and "under 0.1" for a count that would read 0.0. The upload API keeps `amount`. */
+    public static function readable(Feat $feat, int|float $n): string
+    {
+        $shown = self::unitValue($feat, $n);
+
+        return $shown > 0 && $shown < 0.1 ? 'under 0.1' : self::amount($feat, $n);
+    }
+
+    /** The web pages' `counted`: "under 0.1 miles". */
+    public static function readableCounted(Feat $feat, int|float $value): string
+    {
+        return self::readable($feat, $value).' '.self::noun($feat, $value);
+    }
+
+    /** The web pages' `toNext`: "under 0.1 to Epic". */
+    public static function readableToNext(Feat $feat, int|float $left, int $tier): ?string
+    {
+        $next = Feat::TIERS[$tier] ?? null;
+
+        return $next === null ? null : self::readable($feat, $left).' to '.$next;
     }
 
     /** "9,912 kills", from the catalog's words for one and many. */

@@ -26,7 +26,7 @@ final class FeatLadder
             $share = $shares[$tier - 1] ?? null;
             $rows[] = [
                 'tier' => $tier, 'name' => Crest::TIER_NAMES[$tier], 'share' => $share === null ? '–' : FeatsPage::percent($share),
-                'width' => $share === null ? 0 : max(1, (int) round($share)), 'at' => FeatText::counted($feat, $thresholds[$tier - 1]),
+                'width' => $share === null ? 0 : max(1, (int) round($share)), 'at' => FeatText::readableCounted($feat, $thresholds[$tier - 1]),
             ];
         }
         if ($you !== null && $held === 0) {

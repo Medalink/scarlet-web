@@ -162,7 +162,7 @@ final class SessionBlocks
         usort($rows, fn (array $a, array $b): int => $a['at'] <=> $b['at']);
         foreach ($recap['feats']['earned'] ?? [] as $earned) {
             $feat = Feat::from($earned['key']);
-            $rows[] = ['at' => null, 'glyph' => 'crown', 'text' => $feat->label().', '.Crest::TIER_NAMES[$earned['tier']].': '.FeatText::counted($feat, $earned['value'])];
+            $rows[] = ['at' => null, 'glyph' => 'crown', 'text' => $feat->label().', '.Crest::TIER_NAMES[$earned['tier']].': '.FeatText::readableCounted($feat, $earned['value'])];
         }
 
         return $rows;
@@ -178,12 +178,12 @@ final class SessionBlocks
             'earned' => array_map(function (array $row): array {
                 $feat = Feat::from($row['key']);
 
-                return [...self::card($feat, $row['tier'], $row['value']), 'count' => FeatText::counted($feat, $row['value']), 'to' => $row['from'] > 0 ? 'Earned, up from '.Crest::TIER_NAMES[$row['from']] : 'Earned'];
+                return [...self::card($feat, $row['tier'], $row['value']), 'count' => FeatText::readableCounted($feat, $row['value']), 'to' => $row['from'] > 0 ? 'Earned, up from '.Crest::TIER_NAMES[$row['from']] : 'Earned'];
             }, $feats['earned']),
             'near' => array_map(function (array $row): array {
                 $feat = Feat::from($row['key']);
 
-                return [...self::card($feat, $row['tier'], $row['value']), 'count' => FeatText::counted($feat, $row['value']).' · '.FeatText::toNext($feat, $row['left'], $row['tier'])];
+                return [...self::card($feat, $row['tier'], $row['value']), 'count' => FeatText::readableCounted($feat, $row['value']).' · '.FeatText::readableToNext($feat, $row['left'], $row['tier'])];
             }, $feats['near']),
         ];
     }
