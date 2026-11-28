@@ -7,8 +7,6 @@ use App\Support\Board;
 use App\Support\GatherKind;
 use App\Support\ItemIcons;
 use App\View\Format;
-use App\View\ItemTypes;
-use Illuminate\Support\Facades\DB;
 
 /** The data of docs/comps/fishing.html from the answer of App\Actions\Public\GatheringDashboard, in the shape of ProfessionPage. */
 final class GatheringPage
@@ -287,13 +285,6 @@ final class GatheringPage
     private static function poles(array $rows, int $casts): ?array
     {
         if ($rows === [] || $casts === 0) {
-            return null;
-        }
-        $others = DB::table('items')->whereIn('item_id', array_map(fn (array $row): int => (int) $row['item_id'], $rows))->whereNotNull('class_id')
-            ->where(fn ($query) => $query->where('class_id', '<>', ItemTypes::WEAPON)->orWhere('subclass_id', '<>', ItemTypes::FISHING_POLE))
-            ->pluck('item_id')->map(fn (mixed $id): int => (int) $id)->all();
-        $rows = array_values(array_filter($rows, fn (array $row): bool => ! in_array((int) $row['item_id'], $others, true)));
-        if ($rows === []) {
             return null;
         }
         $icons = ItemIcons::icons(array_map(fn (array $row): int => (int) $row['item_id'], $rows));

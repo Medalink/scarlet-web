@@ -6,6 +6,7 @@ use App\Actions\Account\ChooseScope;
 use App\Actions\Account\OwnCharacterIds;
 use App\Actions\Public\CraftingDashboard;
 use App\Actions\Public\GatheringDashboard;
+use App\Actions\Public\KeepPoles;
 use App\Actions\Public\MapZones;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\ScopeRequest;
@@ -29,7 +30,7 @@ use Illuminate\Http\Response;
  */
 class ProfessionController extends Controller
 {
-    public function __invoke(ScopeRequest $request, GatheringDashboard $gathering, CraftingDashboard $crafting, MapZones $mapZones, OwnCharacterIds $ownIds, ChooseScope $chooseScope, string $slug): Response|RedirectResponse
+    public function __invoke(ScopeRequest $request, GatheringDashboard $gathering, KeepPoles $keepPoles, CraftingDashboard $crafting, MapZones $mapZones, OwnCharacterIds $ownIds, ChooseScope $chooseScope, string $slug): Response|RedirectResponse
     {
         $profession = Profession::fromSlug($slug);
         $scene = $profession?->scene();
@@ -41,7 +42,7 @@ class ProfessionController extends Controller
         $kind = $profession->gatherKind();
         $answer = $kind === null
             ? $crafting->handle($profession, $asked, $request->serverFilter(), $characters)
-            : $gathering->handle($kind, $asked, $request->serverFilter(), $characters, (bool) config('scarlet.addon_counts_pages'));
+            : $keepPoles->handle($gathering->handle($kind, $asked, $request->serverFilter(), $characters, (bool) config('scarlet.addon_counts_pages')));
         abort_if($answer === null, 404);
 
         /** @var PageScope $scope */
@@ -56,10 +57,10 @@ class ProfessionController extends Controller
         $map = $page['dots'] === null ? null : MapSpec::density(WorldLayer::Paths, $scope->ruleset?->slug(), $mapZones->handle($scope->rollup()), dots: $page['dots']);
         $path = '/professions/'.$slug;
         $query = array_filter(['ruleset' => $scope->ruleset?->slug(), 'server' => $scope->server === Server::All ? null : $scope->server->value]);
-        $switch = $chooseScope->handle($request->viewer(), $request->choice(), $request->comparedName(), $own, $query, $page['figures'], function (int $id) use ($kind, $profession, $gathering, $crafting, $asked, $request): ?array {
+        $switch = $chooseScope->handle($request->viewer(), $request->choice(), $request->comparedName(), $own, $query, $page['figures'], function (int $id) use ($kind, $profession, $gathering, $keepPoles, $crafting, $asked, $request): ?array {
             $yours = $kind === null
                 ? $crafting->handle($profession, $asked, $request->serverFilter(), [$id])
-                : $gathering->handle($kind, $asked, $request->serverFilter(), [$id], (bool) config('scarlet.addon_counts_pages'));
+                : $keepPoles->handle($gathering->handle($kind, $asked, $request->serverFilter(), [$id], (bool) config('scarlet.addon_counts_pages')));
             if ($yours === null) {
                 return null;
             }
