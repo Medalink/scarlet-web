@@ -7,6 +7,10 @@ use crate::rows::Rows;
 
 const EXPLORED_READ_GAP_MS: i64 = 5_000;
 
+fn within<T: TryFrom<i64>>(f: &[&str], i: usize) -> Option<i64> {
+    num(f, i).filter(|n| T::try_from(*n).is_ok())
+}
+
 #[derive(Clone, Copy)]
 pub struct Ctx {
     pub session: i64,
@@ -76,16 +80,16 @@ impl Baselines {
     }
 
     pub fn on_rf(&mut self, c: Ctx, w: &mut Rows, f: &[&str]) {
-        let Some(faction_id) = num(f, 0) else {
+        let Some(faction_id) = within::<i32>(f, 0) else {
             return;
         };
         let flag = |i: usize| field(f, i) == "1";
         prefix(w, "reputation_standings", c.session, c.at, c.level, c.zone_id);
         w.int("faction_id", faction_id)
-            .opt("reaction", num(f, 1))
-            .opt("standing", num(f, 2))
-            .opt("floor", num(f, 3))
-            .opt("ceiling", num(f, 4))
+            .opt("reaction", within::<i16>(f, 1))
+            .opt("standing", within::<i32>(f, 2))
+            .opt("floor", within::<i32>(f, 3))
+            .opt("ceiling", within::<i32>(f, 4))
             .bool("at_war", flag(5))
             .bool("account_wide", flag(6))
             .bool("baseline", field(f, 7) == "s");
