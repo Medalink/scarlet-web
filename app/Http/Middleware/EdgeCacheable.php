@@ -21,7 +21,7 @@ class EdgeCacheable
 {
     private const string REMEMBER_COOKIE_PREFIX = 'remember_web_';
 
-    private const string CACHE_KEY = 'page:';
+    private const string CACHE_KEY = 'page-packed:';
 
     /** The query parameters any public page reads; every other parameter is dropped from the cache key. */
     private const array QUERY = ['a', 'as', 'b', 'character', 'class', 'creature', 'cursor', 'family', 'feat', 'kind', 'layer', 'level', 'marks', 'max', 'min', 'only', 'q', 'quality', 'rule', 'ruleset', 'scope', 'server', 'sessions', 'sort', 'source', 'tier', 'v', 'view', 'zone'];
