@@ -31,9 +31,12 @@
   @if ($pin)
     @error('feat')<p class="sc-note mt-6" role="alert">{{ $message }}</p>@enderror
   @endif
-  <div class="mt-8">
-    @foreach ($f['wall'] as $collection)
-      <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :pin="$pin" :full="$full" />
-    @endforeach
-  </div>
+  <details class="mt-8"{{ $pin ? ' open' : '' }}>
+    <summary class="sc-btn quiet small list-none">All {{ $f['summary']['total'] }} feats</summary>
+    <div class="mt-4">
+      @foreach ($f['wall'] as $collection)
+        <x-sc.collection :name="$collection['name']" :family="$collection['family']" :feats="$collection['feats']" :pin="$pin" :full="$full" />
+      @endforeach
+    </div>
+  </details>
 </section>

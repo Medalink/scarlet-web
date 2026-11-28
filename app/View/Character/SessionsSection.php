@@ -47,6 +47,7 @@ final class SessionsSection
             'latest' => $recap === null ? null : ['recap' => $recap, 'href' => $base.'/sessions/'.$latest['start']],
             'rows' => array_map(fn (array $row): array => self::row($row, $base), array_slice($page['sessions'], 1)),
             'more' => $page['next'] === null || $limit >= CharacterRequest::MAX_HISTORY ? null : $base.'?sessions='.min($limit + self::MORE, CharacterRequest::MAX_HISTORY).'#sessions',
+            'moreCount' => $total > count($page['sessions']) ? min(self::MORE, $total - count($page['sessions'])) : self::MORE,
             'total' => $total > 0 ? Format::number($total).' sessions recorded' : null,
             'days' => self::days($days),
         ];

@@ -75,7 +75,9 @@ final class Chapters
         }
         $later = array_filter($own, fn (array $row): bool => $row['level'] > $worst['level'] && $row['level'] !== $current && isset($medians[$row['level']]));
         $slower = array_filter($later, fn (array $row): bool => $medians[$row['level']] < $row['seconds'] / 3600);
-        $text = e('Level '.$worst['level'].' took '.Format::hours($worst['hours'] * 3600).'; the median is '.Format::hours($medians[$worst['level']] * 3600).'.');
+        $took = Format::hours($worst['hours'] * 3600);
+        $median = Format::hours($medians[$worst['level']] * 3600);
+        $text = e('Level '.$worst['level'].' took '.$took.($took === $median ? ', the same as the median.' : '; the median is '.$median.'.'));
 
         return new HtmlString($text.($later !== [] && $slower === [] ? ' Every level since has been <b>faster than the median</b>.' : ''));
     }

@@ -3,12 +3,10 @@
     $compare = $o['compare'];
     $curve = $o['curve'];
 @endphp
-<section id="overview" class="mt-10 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" style="--surface:var(--bg)">
-  <div>
-    <h2 class="sc-h" style="font-size:30px">{{ $compare['heading'] }}</h2>
-    @if ($compare['empty'])
-      <p class="sc-note mt-4">{{ $compare['empty'] }}</p>
-    @else
+<section id="overview" @class(['mt-10 grid grid-cols-[minmax(0,1fr)] gap-10', 'lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]' => ! $compare['empty']]) style="--surface:var(--bg)">
+  @unless ($compare['empty'])
+    <div>
+      <h2 class="sc-h" style="font-size:30px">{{ $compare['heading'] }}</h2>
       @if ($compare['key'])
         <div class="sc-key mt-3"><span style="--c:var(--accent)">{{ $compare['name'] }}</span><span style="--c:var(--s-0)">{{ $compare['key'] }}</span><span style="--c:var(--text)">Median</span></div>
       @endif
@@ -16,8 +14,8 @@
       @if ($compare['rows'] !== [] && $compare['classRows'] !== [])<hr class="sc-rule my-4">@endif
       @if ($compare['classRows'] !== [])<x-sc.compare class="{{ $compare['rows'] === [] ? 'mt-4' : '' }}" :rows="$compare['classRows']" :n="$compare['n']" :label="150" />@endif
       @if ($compare['sentence'])<p class="sc-say mt-5">{{ $compare['sentence'] }}</p>@endif
-    @endif
-  </div>
+    </div>
+  @endunless
   <div>
     @if ($o['standings'] !== [])
       <h2 class="sc-h" style="font-size:30px">Standings</h2>

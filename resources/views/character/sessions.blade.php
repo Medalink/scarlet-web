@@ -11,7 +11,7 @@
       </div>
     @endif
     @if ($s['more'] || $s['total'])
-      <p class="mt-4">@if ($s['more'])<a href="{{ $s['more'] }}" class="sc-btn quiet small">Show 20 more</a>@endif @if ($s['total'])<span class="sc-label ml-2">{{ $s['total'] }}</span>@endif</p>
+      <p class="mt-4">@if ($s['more'])<a href="{{ $s['more'] }}" class="sc-btn quiet small">Show {{ $s['moreCount'] }} more</a>@endif @if ($s['total'])<span class="sc-label ml-2">{{ $s['total'] }}</span>@endif</p>
     @endif
   </div>
   <div class="lg:pt-[70px]">

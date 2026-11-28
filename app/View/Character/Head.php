@@ -37,7 +37,7 @@ final class Head
 
         return [
             'name' => $name,
-            'first' => explode(' ', $name)[0],
+            'first' => $name,
             'color' => ClassColor::of($character->class),
             'line' => self::line($character, $r),
             'rule' => self::rule($character->level),
