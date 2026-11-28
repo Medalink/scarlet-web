@@ -32,6 +32,7 @@ import * as installs from "./checks/installs.mjs";
 import * as removal from "./checks/removal.mjs";
 import * as admin from "./checks/admin.mjs";
 import * as session from "./checks/session.mjs";
+import * as talents from "./checks/talents.mjs";
 
 const LANES = ["upload", "api", "pages", "browser", "owner"];
 const SERVER_CONNECTIONS = 3;
@@ -87,10 +88,14 @@ const REGISTRY = [
   { lane: "pages", name: "a character with no class rows has no band and no link to a class page", run: classPage.characterWithNoClassRowsHasNoBand },
   { lane: "pages", name: "another class's slug, an unknown slug and an unknown character are 404 pages", run: classPage.otherAddressesAre404 },
   { lane: "pages", name: "a session page shows the recap of its fixture session and answers 404 for a session, a character or a start that is not there", run: session.sessionPageShowsTheUpload },
+  { lane: "pages", name: "the talent page of a spec draws each tree in the game layout with the pick rate of every talent, a dimmed 0% for one nobody took and one choice node", run: talents.specDrawsItsTrees },
+  { lane: "pages", name: "the talents list leads each spec with its most common tree split", run: talents.talentsListLeadsWithTheSplit },
   { lane: "browser", name: "the browser has no window", independent: true, run: browser.hasNoWindow },
   { lane: "browser", name: "the map art is installed", independent: true, run: browser.mapArtIsServed },
   { lane: "browser", name: "the key pages run clean at 1280", run: browser.pagesRunClean },
   { lane: "browser", name: "the narrow pages fit at 390", run: browser.narrowPagesFit },
+  { lane: "browser", name: "the download page loads the two app screenshots under its button", run: talents.downloadStripLoads },
+  { lane: "browser", name: "every code block of the developer docs has a copy button that copies its text, and the endpoints show example responses", run: talents.copyButtonsCopyTheirBlock },
   { lane: "browser", name: "search suggests while typing", run: browser.searchSuggestsWhileTyping },
   { lane: "browser", name: "every date on a character page and a session page is rewritten into the contract's form with an exact hover text", run: browser.datesReadInTheBrowser },
   { lane: "owner", name: "the owner sees a toast for a new feat once, and a visitor sees none", run: owner.ownerSeesNewFeatOnce },
