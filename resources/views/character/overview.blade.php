@@ -29,7 +29,7 @@
     @endif
     @if ($curve)
       <h2 class="sc-h {{ $o['standings'] === [] ? '' : 'mt-9' }}" style="font-size:30px">Hours played to reach each level</h2>
-      <div class="sc-key mt-3"><span style="--c:var(--accent)">{{ $head['first'] }}</span><span style="--c:var(--muted)">{{ $curve['spec']['medianLabel'] }}</span><span style="--c:rgba(255,255,255,0.14)">Middle half</span></div>
+      <div class="sc-key mt-3"><span style="--c:var(--accent)">{{ $head['first'] }}</span><span style="--c:var(--muted)">{{ $curve['spec']['medianName'] }}</span><span style="--c:rgba(255,255,255,0.14)">Middle half</span></div>
       <div class="mt-3" data-h="210" data-line="{{ json_encode($curve['spec'], JSON_THROW_ON_ERROR) }}"></div>
       <p class="sc-say mt-3" style="font-size:15.5px">{!! $curve['sentence'] !!}</p>
     @endif

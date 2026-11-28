@@ -146,7 +146,7 @@
 .hours i[data-l="4"] { background: var(--heat-5); }
 .hours span { align-self: center; }
 .hours i.on { outline: 2px solid var(--fg); outline-offset: 1px; }
-.hours .h { text-align: center; }
+.hours .h { grid-column: span 3; text-align: left; white-space: nowrap; }
 .data a { text-decoration-thickness: 1px; }
 .data .rk { color: var(--muted); width: 2.6rem; font-family: var(--mono); font-stretch: 85%; font-size: 0.82em; }
 .data .n + :not(.n) { padding-left: 1.6rem; }

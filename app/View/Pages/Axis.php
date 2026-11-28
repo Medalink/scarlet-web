@@ -21,7 +21,6 @@ final class Axis
         $step = match (true) {
             $unit <= 1 => 1,
             $unit <= 2 => 2,
-            $unit <= 2.5 => 2.5,
             $unit <= 5 => 5,
             default => 10,
         } * $magnitude;
@@ -35,7 +34,8 @@ final class Axis
     }
 
     /**
-     * Evenly spread x ticks over a range of whole numbers: the first, the last and about $count between.
+     * X ticks over a range of whole numbers: the first, the multiples of a round step ("1, 10, 20, 30" on a level axis)
+     * and the last, about $count between.
      *
      * @return list<int>
      */
@@ -44,13 +44,36 @@ final class Axis
         if ($to <= $from) {
             return [$from];
         }
+        $step = self::step(($to - $from) / max(1, $count));
         $ticks = [$from];
-        $step = max(1, (int) round(($to - $from) / $count));
-        for ($value = $from + $step; $value < $to - intdiv($step, 2); $value += $step) {
-            $ticks[] = $value;
+        for ($value = (intdiv($from, $step) + 1) * $step; $value < $to; $value += $step) {
+            if ($value - $ticks[array_key_last($ticks)] >= $step / 2) {
+                $ticks[] = $value;
+            }
+        }
+        if ($to - $ticks[array_key_last($ticks)] < $step / 2 && count($ticks) > 1) {
+            array_pop($ticks);
         }
         $ticks[] = $to;
 
         return $ticks;
+    }
+
+    /** The round step (1, 2, 5, 10, 20, 50 ...) nearest to a raw one. */
+    private static function step(float $raw): int
+    {
+        $magnitude = 10 ** floor(log10(max(1.0, $raw)));
+        $best = 1;
+        $gap = INF;
+        foreach ([1, 2, 5, 10, 20] as $unit) {
+            $candidate = (int) ($unit * $magnitude);
+            $distance = abs(log($candidate / max(1.0, $raw)));
+            if ($distance < $gap) {
+                $gap = $distance;
+                $best = max(1, $candidate);
+            }
+        }
+
+        return $best;
     }
 }

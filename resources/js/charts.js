@@ -340,7 +340,7 @@ const draw = {
             spec = { out: spec.out, ...weekGrid(localWeek(spec.cells), spec.busiest == null ? null : localWeekHour(spec.busiest), spec.count ?? null) };
         }
         box.replaceChildren(htmlEl('span'));
-        for (let h = 0; h < 24; h++) box.append(htmlEl('span', 'h', h % 3 ? '' : hourMark(h)));
+        for (let h = 0; h < 24; h += 3) box.append(htmlEl('span', 'h', hourMark(h)));
         spec.days.forEach((name, d) => {
             box.append(htmlEl('span', '', name));
             for (let h = 0; h < 24; h++) {

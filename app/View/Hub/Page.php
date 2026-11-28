@@ -71,7 +71,7 @@ final class Page
         $top = $by[self::LEVELS] ?? null;
 
         return [
-            'spec' => ['you' => $fast, 'median' => $median, 'lo' => $lo, 'hi' => $hi, 'ymax' => max(50, $ymax), 'unit' => 'h', 'youLabel' => '', 'youName' => 'Fastest tenth', 'medianLabel' => 'Median', 'xlabels' => [[0, '1'], [9, '10'], [19, '20'], [29, '30'], [39, '40'], [49, '50'], [59, '60']]],
+            'spec' => ['you' => $fast, 'median' => $median, 'lo' => $lo, 'hi' => $hi, 'ymax' => max(50, $ymax), 'unit' => 'h', 'youLabel' => '', 'youName' => 'Fastest tenth', 'youColor' => '#f0f1f3', 'medianColor' => '#ff2d55', 'medianLabel' => '', 'xlabels' => [[0, '1'], [9, '10'], [19, '20'], [29, '30'], [39, '40'], [49, '50'], [59, '60']]],
             'sentence' => $top === null ? null : 'The median character reaches '.self::LEVELS.' after <b>'.Format::duration((float) $top['median']).'</b> played. The fastest tenth need under '.Format::duration((float) $top['p10']).'.',
         ];
     }
@@ -143,25 +143,13 @@ final class Page
 
     /**
      * @param  list<array<string, mixed>>  $rows
-     * @return list<array{level: int, tip: string}>|null
+     * @return array{spec: array<string, mixed>, line: array{0: string, 1: string}|null}|null
      */
     private static function heat(array $rows): ?array
     {
-        if ($rows === []) {
-            return null;
-        }
-        $names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        $seconds = array_fill(0, 168, 0.0);
-        foreach ($rows as $row) {
-            $seconds[((int) $row['weekday'] + 6) % 7 * 24 + (int) $row['hour']] = (float) $row['seconds'];
-        }
-        $top = max($seconds);
-        $cells = [];
-        foreach ($seconds as $i => $value) {
-            $cells[] = ['level' => $top <= 0 || $value <= 0 ? 0 : max(1, (int) ceil($value / $top * 5)), 'tip' => $names[intdiv($i, 24)].' '.str_pad((string) ($i % 24), 2, '0', STR_PAD_LEFT).':00|'.($value > 0 ? Format::hours($value).' played' : 'Not played')];
-        }
+        $spec = StatsPage::hours($rows);
 
-        return $cells;
+        return $spec === null ? null : ['spec' => $spec, 'line' => StatsPage::hoursSummary($rows)];
     }
 
     /** @return array{0: string, 1: string|null} */

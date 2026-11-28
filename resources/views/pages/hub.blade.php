@@ -29,7 +29,7 @@
       @if ($d['curve'])
         <div>
           <div class="flex items-baseline"><h2 class="sc-h" style="font-size:32px">How long each level takes</h2><a href="/stats" class="ml-auto text-[14px]">Levelling stats</a></div>
-          <div class="sc-key mt-3"><span style="--c:var(--accent)">Fastest tenth</span><span style="--c:var(--muted)">Median</span><span style="--c:rgba(255,255,255,0.14)">Middle half</span></div>
+          <div class="sc-key mt-3"><span style="--c:var(--accent)">Median</span><span style="--c:var(--fg)">Fastest tenth</span><span style="--c:rgba(255,255,255,0.14)">Middle half</span></div>
           <div class="mt-3" data-line="{{ json_encode($d['curve']['spec'], JSON_THROW_ON_ERROR) }}" data-h="280" style="min-height:280px"></div>
           @if ($d['curve']['sentence'])<p class="sc-say mt-3">{!! $d['curve']['sentence'] !!}</p>@endif
         </div>
@@ -75,8 +75,7 @@
     <div>
       <h2 class="sc-h" style="font-size:26px">When everyone plays</h2>
       @if ($d['heat'])
-        <div class="sc-heat mt-4">@foreach ($d['heat'] as $cell)<i data-v="{{ $cell['level'] }}" data-tip="{{ $cell['tip'] }}"></i>@endforeach</div>
-        <div class="sc-label mt-1.5 flex justify-between"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span></div>
+        <div class="mt-4"><x-week-heat :spec="$d['heat']['spec']" :line="$d['heat']['line']" /></div>
       @else
         <p class="sc-note mt-3">Not enough play time recorded yet.</p>
       @endif

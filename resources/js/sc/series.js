@@ -12,7 +12,7 @@ export function days(element) {
     const bar = (width - left - 4) / spec.rows.length;
     const y = (value) => bottom - (value / max) * (bottom - top);
     const canvas = svg('svg', { viewBox: `0 0 ${width} ${height}`, width, height, class: 'sc-svg' });
-    gridLines(canvas, left, width, 2, y, { max, format: (value, step) => Math.round(value * 10) / 10 + (step === 2 ? spec.unit || '' : '') });
+    gridLines(canvas, left, width, 2, y, { max, format: (value, top) => Math.round(value * 10) / 10 + (top ? spec.unit || '' : '') });
     spec.rows.forEach(([label, values], i) => {
         const x0 = left + i * bar + 1.5;
         let base = 0;
@@ -46,7 +46,7 @@ export function area(element) {
     const y = (value) => bottom - (value / max) * (bottom - top);
     const color = spec.color || '#d9b25f';
     const canvas = svg('svg', { viewBox: `0 0 ${width} ${height}`, width, height, class: 'sc-svg' });
-    gridLines(canvas, left, right, 2, y, { max, format: (value, step) => fmt(value) + (step === 2 ? spec.unit || '' : '') });
+    gridLines(canvas, left, right, 2, y, { max, format: (value, top) => fmt(value) + (top ? spec.unit || '' : '') });
     for (const [i, label] of spec.xlabels || []) {
         canvas.append(text({ x: x(i), y: height - 5, 'text-anchor': i === n - 1 ? 'end' : i ? 'middle' : 'start' }, label));
     }
@@ -75,17 +75,17 @@ export function line(element) {
     const x = (i) => left + (i / (n - 1)) * (right - left);
     const y = (value) => bottom - (value / max) * (bottom - top);
     const canvas = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, class: 'sc-svg' });
-    gridLines(canvas, left, right, 4, y, { max, format: (value, step) => fmt(value) + (step === 4 ? spec.unit || '' : '') });
+    gridLines(canvas, left, right, 4, y, { max, format: (value, top) => fmt(value) + (top ? spec.unit || '' : '') });
     for (const [i, label] of spec.xlabels) canvas.append(text({ x: x(i), y: H - 4, 'text-anchor': 'middle' }, label));
     const path = (values) => values.map((value, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(value).toFixed(1)}`).join('');
     const band = spec.hi.map((value, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(value).toFixed(1)}`).join('') + spec.lo.map((_, i) => `L${x(n - 1 - i).toFixed(1)} ${y(spec.lo[n - 1 - i]).toFixed(1)}`).join('') + 'Z';
     canvas.append(svg('path', { d: band, fill: 'rgba(255,255,255,0.07)' }));
-    canvas.append(svg('path', { d: path(spec.median), fill: 'none', stroke: '#8a8a93', 'stroke-width': 1.5 }));
-    canvas.append(svg('path', { d: path(spec.you), fill: 'none', stroke: '#ff2d55', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
+    canvas.append(svg('path', { d: path(spec.median), fill: 'none', stroke: spec.medianColor || '#8a8a93', 'stroke-width': spec.medianColor ? 2.2 : 1.5, 'stroke-linejoin': 'round' }));
+    canvas.append(svg('path', { d: path(spec.you), fill: 'none', stroke: spec.youColor || '#ff2d55', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
     const last = spec.you.length - 1;
-    canvas.append(svg('circle', { cx: x(last), cy: y(spec.you[last]), r: 4.5, fill: '#ff2d55', stroke: '#141416', 'stroke-width': 2 }));
+    canvas.append(svg('circle', { cx: x(last), cy: y(spec.you[last]), r: 4.5, fill: spec.youColor || '#ff2d55', stroke: '#141416', 'stroke-width': 2 }));
     if (spec.youLabel) canvas.append(text({ x: x(last) + 9, y: y(spec.you[last]) + 14, class: 'strong' }, spec.youLabel));
-    canvas.append(text({ x: x(n - 1) - 4, y: y(spec.median[n - 1]) - 8, 'text-anchor': 'end' }, spec.medianLabel || 'Median'));
+    if (spec.medianLabel !== '') canvas.append(text({ x: x(n - 1) - 4, y: y(spec.median[n - 1]) - 8, 'text-anchor': 'end' }, spec.medianLabel || 'Median'));
     const cross = svg('rect', { x: -9, y: top, width: 1, height: bottom - top, fill: '#f0f1f3', opacity: 0.45 });
     canvas.append(cross);
     canvas.addEventListener('mousemove', (event) => {

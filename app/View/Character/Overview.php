@@ -121,7 +121,7 @@ final class Overview
         $gap = (int) round(abs($typical - $reached));
 
         return [
-            'spec' => ['you' => $you, 'median' => $median, 'lo' => $lo, 'hi' => $hi, 'ymax' => $ymax, 'unit' => 'h', 'youLabel' => $first.', level '.($level ?? $top), 'youName' => $first, 'medianLabel' => 'Median'.($ruleset === null ? '' : ' on '.$ruleset), 'xlabels' => [[0, '1'], [9, '10'], [19, '20'], [29, '30'], [39, '40'], [49, '50'], [59, '60']]],
+            'spec' => ['you' => $you, 'median' => $median, 'lo' => $lo, 'hi' => $hi, 'ymax' => $ymax, 'unit' => 'h', 'youLabel' => '', 'youName' => $first, 'medianLabel' => '', 'medianName' => 'Median'.($ruleset === null ? '' : ' on '.$ruleset), 'xlabels' => [[0, '1'], [9, '10'], [19, '20'], [29, '30'], [39, '40'], [49, '50'], [59, '60']]],
             'ruleset' => $ruleset,
             'sentence' => 'Level '.($level ?? $top).' after '.Format::number($reached).' hours played. The median character needs '.Format::number($typical).($gap === 0 ? '.' : ': <b>'.$gap.' hours '.($reached <= $typical ? 'ahead' : 'behind').'</b>.'),
         ];
