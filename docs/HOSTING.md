@@ -208,7 +208,7 @@ e2e, docs or other tooling is skipped (the `paths` list on the ring in roster's 
 | Stage | What it does | When it fails |
 |---|---|---|
 | `deploy` | Sends the droplet the map art it lacks of medaware's art store (Map art), builds the image, pushes its new layers to the droplet's registry, brings the files a rollout reads to the commit's copies (see below) and runs `deploy/rollout.sh`, as `bin/deploy` does | The old release keeps serving |
-| `pages` | Reads the release that serves and requests `/up`, `/stats`, `/leaderboards`, `/rulesets`, `/talents`, `/map`, `/search` and the public API (which answers `401 missing_key` with no key, and the ring counts that as serving) with a `v=<release>` parameter no cache has seen, so each answer is rendered by the new release | The ring rolls back |
+| `pages` | Reads the release that serves and requests `/up`, `/stats`, `/leaderboards`, `/rulesets`, `/talents`, `/map`, `/map/density` (the JSON the map reads, which runs the public API's actions with no key), `/search` and the public API with a `v=<release>` parameter no cache has seen, so each answer is rendered by the new release. The public API needs a key and the ring holds none, because only a Battle.net account can make one; its answer counts as serving only when it is a `401` whose body has the code `missing_key`, which shows the route, the key middleware and the error format of the new release at work | The ring rolls back |
 | `rollback` | `rollout.sh --rollback`, only when the failed commit is the release that serves | The failure is posted with the log |
 
 The ring uses a key of its own, `~/.config/scarlet-web/ring_ed25519` on medaware. Its line in

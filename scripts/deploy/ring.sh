@@ -152,13 +152,19 @@ check() {
   [ "$serving" = "$release" ] || { echo "ring: $serving serves, not $release" >&2; exit 1; }
   bad=0
   answers=$(mktemp)
-  trap 'rm -f "$answers"' EXIT
-  for path in /up "/stats?v=$release" "/leaderboards?v=$release" "/rulesets?v=$release" "/talents?v=$release" "/map?v=$release" "/search?q=wolf&v=$release" /api/v1/public/stats; do
+  refusal=$(mktemp)
+  trap 'rm -f "$answers" "$refusal"' EXIT
+  for path in /up "/stats?v=$release" "/leaderboards?v=$release" "/rulesets?v=$release" "/talents?v=$release" "/map?v=$release" "/map/density?layer=paths&level=1&v=$release" "/search?q=wolf&v=$release"; do
     {
       code=$(curl -s -o /dev/null --max-time 30 -w '%{http_code}' "$site$path" || true)
       printf '%s %s\n' "$code" "$path"
     } >>"$answers" &
   done
+  {
+    code=$(curl -s -o "$refusal" --max-time 30 -w '%{http_code}' "$site/api/v1/public/stats?v=$release" || true)
+    grep -q '"code":"missing_key"' "$refusal" || code="$code-without-missing_key"
+    printf '%s %s\n' "$code" /api/v1/public/stats
+  } >>"$answers" &
   wait
   while read -r code path; do
     echo "ring: $code $path"
