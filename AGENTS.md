@@ -34,13 +34,7 @@ the app. Pint, PHPStan and Vite skip it. Never push to `gh-pages`.
 - Change only the surface the report or design names. A component several pages share changes for all of them: list
   its users, make the change opt-in for the page named (a prop or a data attribute), and check one other user in the
   running app before shipping.
-- Never open a visible window or take focus on medaviper, where the owner plays while agents work. Browsers run
-  headless; the e2e lane's `hasNoWindow` check stops a browser whose window handle is not 0.
-- A backslash in a script passed inline through the Bash tool on medaviper can arrive changed: a doubled backslash
-  arrives as one, so an escape meant as text is read by the script's language as a control character (Python reads
-  `\0` as a NUL). On 2026-11-22 this put a NUL into `scripts/deploy/ring-entry.sh`, which shipped and made git show the
-  file as binary while `sh -n` still passed. Write any script or patch that holds a backslash with the file Write tool,
-  then run it. Scan an edited script for control bytes, and read a diff with `git diff --text` when git says Bin.
+- The e2e lane's `hasNoWindow` check stops a browser whose window handle is not 0.
 - The beta UI rebuild is on the branch `feat/beta-ui-parity-rebuild` and stays off main until the owner says in so many
   words to ship the rebuild (held since 2026-11-23). Push that branch only: no `ship`, no merge into main, no deploy of
   it. Approval of how one part looks is not approval to ship. The ship that lands the rebuild deletes this bullet.
