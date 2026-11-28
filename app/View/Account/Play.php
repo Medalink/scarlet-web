@@ -6,6 +6,7 @@ use App\View\Character\PlayTime;
 use App\View\Dates;
 use App\View\Format;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 /** The play time stack, the gold line and the weekday grid of /account. */
 final class Play
@@ -98,7 +99,7 @@ final class Play
 
     /**
      * @param  list<array{0: int, 1: int}>  $buckets
-     * @return array{cells: list<array{level: int, tip: string}>, say: string|null}|null
+     * @return array{cells: list<array{level: int, tip: string}>, say: HtmlString|null}|null
      */
     public static function heat(array $buckets): ?array
     {
@@ -106,9 +107,8 @@ final class Play
             return null;
         }
         $grid = PlayTime::grid($buckets);
-        $weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         $busiest = $grid['busiest'];
 
-        return ['cells' => $grid['cells'], 'say' => $busiest === null ? null : 'Your busiest hour is '.$weekdays[intdiv($busiest, 24)].' '.Dates::hour($busiest % 24).' UTC.'];
+        return ['cells' => $grid['cells'], 'say' => $busiest === null ? null : Dates::join('Your busiest hour is ', Dates::weekHour($busiest), '.')];
     }
 }

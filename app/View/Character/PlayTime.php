@@ -65,7 +65,7 @@ final class PlayTime
         if ($busiest === null) {
             return null;
         }
-        $sentence = 'The busiest hour is <b>'.self::WEEKDAYS[intdiv($busiest, 24)].' '.Dates::hour($busiest % 24).'</b> UTC.';
+        $sentence = 'The busiest hour is <b>'.Dates::weekHour($busiest).'</b>.';
         $top = null;
         foreach ($everyone as $row) {
             $top = $top === null || $row['seconds'] > $top['seconds'] ? $row : $top;
@@ -73,9 +73,8 @@ final class PlayTime
         if ($top === null) {
             return $sentence;
         }
-        $weekday = self::WEEKDAYS[((int) $top['weekday'] + 6) % 7];
 
-        return $sentence.' Everyone\'s is '.$weekday.' '.Dates::hour((int) $top['hour']).'.';
+        return $sentence.' Everyone\'s is '.Dates::weekHour((((int) $top['weekday'] + 6) % 7) * 24 + (int) $top['hour']).'.';
     }
 
     /**

@@ -81,6 +81,12 @@ final class Dates
         return ($hour % 12 === 0 ? 12 : $hour % 12).':00 '.($hour < 12 ? 'AM' : 'PM');
     }
 
+    /** An hour of the week, Monday 00:00 UTC first, in a span the browser rewrites in the reader's zone: "Sat 10:00 PM UTC" without script. */
+    public static function weekHour(int $index): HtmlString
+    {
+        return new HtmlString('<span data-week-hour="'.$index.'">'.['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][intdiv($index, 24)].' '.self::hour($index % 24).' UTC</span>');
+    }
+
     /** An axis mark for an hour of the day: 0 → "12 AM", 15 → "3 PM". */
     public static function hourMark(int $hour): string
     {
