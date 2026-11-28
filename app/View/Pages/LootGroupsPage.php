@@ -42,15 +42,17 @@ final class LootGroupsPage
 
         return [
             'sub' => self::sub($figures),
+            'tabs' => LootPage::views(null),
+            'none' => $figures['rules'] === 0,
             'source' => $source === null ? null : ['name' => $source->kind->title(is_string($r['source_name']) ? $r['source_name'] : null, $source->id), 'href' => $source->page()],
-            'figures' => [
-                ['label' => 'Corpses looted', 'value' => Format::number($figures['corpses'])],
-                ['label' => 'Loot rules seen', 'value' => Format::number($figures['rules'])],
-                ['label' => 'Largest group', 'value' => Format::number($figures['largest'])],
+            'figures' => array_map(fn (array $tile): array => ['label' => $tile[0], 'value' => Format::number($tile[1])], array_values(array_filter([
+                ['Corpses looted', $figures['corpses']],
+                ['Loot rules seen', $figures['rules']],
+                ['Largest group', $figures['largest']],
                 ...($source === null
-                    ? [['label' => 'Creatures under two rules', 'value' => Format::number($figures['several'])], ['label' => 'Rolls', 'value' => Format::number($figures['rolls'])], ['label' => 'Groups recorded', 'value' => Format::number($figures['groups'])]]
-                    : [['label' => 'Characters', 'value' => Format::number($figures['characters'])]]),
-            ],
+                    ? [['Creatures under two rules', $figures['several']], ['Rolls', $figures['rolls']], ['Groups recorded', $figures['groups']]]
+                    : [['Characters', $figures['characters']]]),
+            ], fn (array $tile): bool => $tile[1] > 0))),
             'effects' => self::effects($effects, $source),
             'kept' => self::kept($kept),
             'share' => GroupRolls::share($share, $source !== null),
@@ -72,7 +74,7 @@ final class LootGroupsPage
             return 'No corpse looted under a loot rule is recorded yet.';
         }
 
-        return Format::count($figures['corpses'], 'corpse').' looted under '.Format::count($figures['rules'], 'loot rule')
+        return Format::count($figures['corpses'], 'corpse').' looted'.($figures['rules'] > 0 ? ' under '.Format::count($figures['rules'], 'loot rule') : '')
             .($figures['largest'] > 1 ? ', in groups of up to '.Format::number($figures['largest']) : '').'.';
     }
 
@@ -133,16 +135,18 @@ final class LootGroupsPage
      */
     private static function kept(array $kept): array
     {
+        $known = array_values(array_filter($kept, fn (array $row): bool => $row['rule'] !== LootRule::Unknown->value));
+
         return [
-            'empty' => $kept === [] ? 'No corpse looted under a loot rule is recorded yet.' : null,
+            'empty' => $known === [] ? 'No corpse looted under a loot rule is recorded yet.' : null,
             'columns' => [['label' => 'Rule'], ['label' => 'Size', 'numeric' => true], ['label' => 'Corpses', 'numeric' => true], ['label' => 'Kept', 'numeric' => true], ['label' => 'Items', 'numeric' => true]],
             'rows' => array_map(fn (array $row): array => ['cells' => [
                 ['text' => LootRule::words($row['rule']), 'tag' => $row['other'] ? 'other creatures' : null, 'plainTag' => true],
                 (string) $row['size'],
                 Format::number($row['corpses']),
                 $row['items'] >= RateSample::HOLLOW_FROM ? Format::percent($row['received'] / $row['items']) : '–',
-                $row['received'].' of '.$row['items'],
-            ]], $kept),
+                Format::number($row['received']).' of '.Format::number($row['items']),
+            ]], $known),
         ];
     }
 }

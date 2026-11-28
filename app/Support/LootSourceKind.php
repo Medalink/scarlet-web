@@ -34,6 +34,17 @@ enum LootSourceKind: string
         };
     }
 
+    /** A source with no name, told by its kind and the zone it is in (`Object in Searing Gorge`). */
+    public function kindIn(string $zone): string
+    {
+        return match ($this) {
+            self::Creature => 'Creature',
+            self::Object => 'Object',
+            self::Bag => 'Container',
+            self::Other => 'Source',
+        }.' in '.$zone;
+    }
+
     /**
      * Adds `source`, the dictionary name of the row's creature, object or container, to a query over a loot aggregate
      * aliased `d`: null when the dictionary has no name for it.

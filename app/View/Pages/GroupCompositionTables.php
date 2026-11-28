@@ -33,7 +33,7 @@ final class GroupCompositionTables
                 }, $answer['need']),
             ],
             'skins' => $answer['skins'] === [] ? null : [
-                'columns' => [['label' => 'Uploader skins'], ['label' => 'Corpses looted', 'numeric' => true], ['label' => 'Corpses skinned', 'numeric' => true], ['label' => 'Skins per corpse', 'numeric' => true]],
+                'columns' => [['label' => 'Skinner in group'], ['label' => 'Corpses looted', 'numeric' => true], ['label' => 'Corpses skinned', 'numeric' => true], ['label' => 'Skins per corpse', 'numeric' => true]],
                 'rows' => array_map(fn (array $row): array => ['cells' => [
                     $yes($row['skinner']), Format::number($row['looted']), Format::number($row['skinned']),
                     $row['looted'] >= RateSample::HOLLOW_FROM ? Format::number($row['skinned'] / $row['looted'], 2) : '–',

@@ -40,39 +40,57 @@ final class LootPage
         $items = $filter->view === LootView::Items;
         $top = $zones === [] ? 1 : max(1, $zones[0]['windows']);
         $mostRule = $rules === [] ? 1 : max(1, $rules[0]['windows']);
+        $known = array_filter($byRule, fn (array $rule): bool => $rule['rule'] !== LootRule::Unknown->value);
+        $columns = $items
+            ? [['label' => 'Item'], ['label' => 'Dropped', 'numeric' => true], ['label' => 'Sources', 'numeric' => true], ['label' => 'Best source'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Zone']]
+            : [['label' => 'Source'], ['label' => 'Zone'], ['label' => $filter->view === LootView::Creatures ? 'Level' : 'Looter level', 'numeric' => true], ['label' => $filter->view->opened(), 'numeric' => true], ['label' => 'Items seen', 'numeric' => true], ['label' => 'Most common item'], ['label' => 'Drop rate', 'numeric' => true], ['label' => 'Characters', 'numeric' => true]];
+        $rows = $items ? LootRows::items($table['rows'], true) : LootRows::sources($filter->view, $table['rows'], true);
+        $shown = $items ? ['columns' => $columns, 'rows' => $rows] : LootRows::withoutEmpty($columns, $rows, [2]);
+        $figureRows = [
+            ['label' => 'Corpses looted', 'value' => $figures['corpses']],
+            ['label' => 'Skinned', 'value' => $figures['skinned']],
+            ['label' => 'Sources', 'value' => $figures['sources']],
+            ['label' => 'Items', 'value' => $figures['items']],
+            ['label' => 'Uncommon or better', 'value' => $figures['uncommon']],
+            ['label' => 'Characters', 'value' => $figures['characters']],
+        ];
 
         return [
             'sub' => self::sub($figures, $filter, $zones),
-            'figures' => [
-                ['label' => 'Corpses looted', 'value' => Format::number($figures['corpses'])],
-                ['label' => 'Skinned', 'value' => Format::number($figures['skinned'])],
-                ['label' => 'Sources', 'value' => Format::number($figures['sources'])],
-                ['label' => 'Items', 'value' => Format::number($figures['items'])],
-                ['label' => 'Uncommon or better', 'value' => Format::number($figures['uncommon'])],
-                ['label' => 'Characters', 'value' => Format::number($figures['characters'])],
-            ],
+            'figures' => array_map(fn (array $row): array => ['label' => $row['label'], 'value' => Format::number($row['value'])], array_values(array_filter($figureRows, fn (array $row): bool => $row['value'] > 0))),
             'heading' => $items ? 'Items' : 'Sources',
-            'views' => [...array_map(fn (LootView $view): array => [
-                'label' => $view->label(), 'href' => self::url(['view' => $view === LootView::Creatures ? null : $view->value, ...array_intersect_key($filter->params(), array_flip(['zone', 'q', 'quality']))]), 'on' => $view === $filter->view,
-            ], LootView::cases()), ['label' => 'Group loot', 'href' => '/loot?view=groups', 'on' => false]],
+            'views' => self::views($filter),
             'form' => self::form($filter, $zones),
-            'columns' => $items
-                ? [['label' => 'Item'], ['label' => 'Dropped', 'numeric' => true], ['label' => 'Sources', 'numeric' => true], ['label' => 'Best source'], ['label' => 'Zone']]
-                : [['label' => 'Source'], ['label' => 'Zone'], ['label' => $filter->view === LootView::Creatures ? 'Level' : 'Looter level', 'numeric' => true], ['label' => $filter->view->opened(), 'numeric' => true], ['label' => 'Items seen', 'numeric' => true], ['label' => 'Most common item'], ['label' => 'Characters', 'numeric' => true]],
-            'rows' => $items ? LootRows::items($table['rows'], true) : LootRows::sources($filter->view, $table['rows'], true),
+            'columns' => $shown['columns'],
+            'rows' => $shown['rows'],
             'prev' => $offset > 0 ? self::url([...$filter->params(), 'cursor' => $offset - LootIndex::PAGE > 0 ? Cursor::encode($offset - LootIndex::PAGE) : null]) : null,
             'next' => $table['more'] ? self::url([...$filter->params(), 'cursor' => Cursor::encode($offset + LootIndex::PAGE)]) : null,
             'step' => LootIndex::PAGE,
+            'range' => ($offset + 1).' to '.($offset + count($table['rows'])).($table['more'] ? '' : ' of '.($offset + count($table['rows']))),
             'empty' => $figures['sources'] === 0 && $filter->params() === [] ? 'No loot is recorded yet.' : 'Nothing matches these filters.',
             'fishing' => $figures['fishing'] === 0 ? null : Format::count($figures['fishing'], 'fishing catch', 'fishing catches'),
             'zones' => array_map(fn (array $zone): array => [
                 'label' => $zone['name'] ?? 'Zone '.$zone['id'], 'href' => self::url(['zone' => $zone['id']]),
                 'value' => Format::number($zone['windows']), 'share' => $zone['windows'] / $top * 100,
             ], array_slice($zones, 0, self::ZONES)),
-            'rules' => array_map(fn (array $rule): array => [
+            'rules' => $known === [] ? [] : array_map(fn (array $rule): array => [
                 'label' => $rule['label'], 'href' => '/loot?view=groups', 'value' => Format::number($rule['windows']), 'share' => $rule['windows'] / $mostRule * 100,
             ], $rules),
         ];
+    }
+
+    /**
+     * The tabs of the loot views, with the group loot page as the last.
+     *
+     * @return list<array{label: string, href: string, on: bool}>
+     */
+    public static function views(?LootFilter $filter): array
+    {
+        $carry = $filter === null ? [] : array_intersect_key($filter->params(), array_flip(['zone', 'q', 'quality']));
+
+        return [...array_map(fn (LootView $view): array => [
+            'label' => $view->label(), 'href' => self::url(['view' => $view === LootView::Creatures ? null : $view->value, ...$carry]), 'on' => $filter !== null && $view === $filter->view,
+        ], LootView::cases()), ['label' => 'Group loot', 'href' => '/loot?view=groups', 'on' => $filter === null]];
     }
 
     /**
@@ -95,7 +113,7 @@ final class LootPage
 
     private static function ruleWords(string $rule, ?int $size): string
     {
-        $words = LootRule::words($rule);
+        $words = $rule === LootRule::Unknown->value ? 'Not recorded' : LootRule::words($rule);
 
         return $size === null || $size < 2 || $rule === LootRule::Solo->value ? $words : $words.', '.Format::count($size, 'player');
     }

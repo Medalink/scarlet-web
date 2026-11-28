@@ -30,9 +30,10 @@ final class LootRows
             $top = $row['top'];
             /** @var array{id: int, name: string|null}|null $zone */
             $zone = $row['zone'];
-            $common = $top === null ? '–' : self::rated('/items/'.$top['item_id'], $top['item'] ?? 'Item '.$top['item_id'], $top['estimate']);
             $source = ['text' => $kind->title($row['name'], $id), 'href' => $kind->page($id)];
             if (! $full) {
+                $common = $top === null ? '–' : self::rated('/items/'.$top['item_id'], $top['item'] ?? 'Item '.$top['item_id'], $top['estimate']);
+
                 return ['cells' => [$source, Format::number($row['windows']), $common]];
             }
 
@@ -42,10 +43,29 @@ final class LootRows
                 self::levels($row['level_min'], $row['level_max']),
                 Format::number($row['windows']),
                 Format::number($row['items']),
-                $common,
+                $top === null ? '–' : ['text' => $top['item'] ?? 'Item '.$top['item_id'], 'href' => '/items/'.$top['item_id']],
+                $top === null ? '–' : ['rate' => $top['estimate'], 'counts' => true],
                 Format::number($row['characters']),
             ]];
         }, $rows);
+    }
+
+    /**
+     * Drops the columns of `$only` whose every cell is a dash.
+     *
+     * @param  list<array<string, mixed>>  $columns
+     * @param  list<array{cells: list<array<string, mixed>|string>}>  $rows
+     * @param  list<int>  $only  the column positions that may be dropped
+     * @return array{columns: list<array<string, mixed>>, rows: list<array{cells: list<array<string, mixed>|string>}>}
+     */
+    public static function withoutEmpty(array $columns, array $rows, array $only): array
+    {
+        $drop = array_filter($only, fn (int $i): bool => $rows !== [] && array_reduce($rows, fn (bool $all, array $row): bool => $all && ($row['cells'][$i] ?? '–') === '–', true));
+
+        return [
+            'columns' => array_values(array_diff_key($columns, array_flip($drop))),
+            'rows' => array_map(fn (array $row): array => ['cells' => array_values(array_diff_key($row['cells'], array_flip($drop)))], $rows),
+        ];
     }
 
     /**
@@ -63,13 +83,22 @@ final class LootRows
             $best = $row['best'];
             $kind = $best === null ? null : LootSourceKind::tryFrom($best['source_kind']);
             $item = [...($icons === [] ? [] : ['icon' => $icons[$id] ?? null]), 'text' => $row['name'] ?? 'Item '.$id, 'href' => '/items/'.$id, 'class' => ItemTypes::quality($row['quality'])];
-            $source = $best === null || $kind === null ? '–' : self::rated($kind->page($best['source_id']), $kind->title($best['source'], $best['source_id']), $best['estimate']);
+            $zone = $row['zone'];
             if (! $full) {
+                $source = $best === null || $kind === null ? '–' : self::rated($kind->page($best['source_id']), $kind->title($best['source'], $best['source_id']), $best['estimate']);
+
                 return ['cells' => [$item, Format::number($row['dropped']), $source]];
             }
-            $zone = $row['zone'];
+            $named = $best === null || $kind === null ? null : ($best['source'] === null && $zone !== null
+                ? $kind->kindIn($zone['name'] ?? 'Zone '.$zone['id'])
+                : $kind->title($best['source'], $best['source_id']));
 
-            return ['cells' => [$item, Format::number($row['dropped']), Format::number($row['sources']), $source, $zone === null ? '–' : self::zone($zone)]];
+            return ['cells' => [
+                $item, Format::number($row['dropped']), Format::number($row['sources']),
+                $named === null || $best === null || $kind === null ? '–' : ['text' => $named, 'href' => $kind->page($best['source_id'])],
+                $best === null ? '–' : ['rate' => $best['estimate'], 'counts' => true],
+                $zone === null ? '–' : self::zone($zone),
+            ]];
         }, $rows);
     }
 

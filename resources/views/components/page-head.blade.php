@@ -4,7 +4,7 @@
   <div class="min-w-0">
     <h1 id="h1" @class(['sc-title', $class]) style="font-size:clamp(44px,6vw,60px)">{{ $title }}</h1>
     @isset($body){{ $body }}@endisset
-    @isset($sub)<p class="mt-3 max-w-[62ch] text-[15.5px]">{{ $sub }}</p>@endisset
+    @if (isset($sub) && trim((string) $sub) !== '')<p class="mt-3 max-w-[62ch] text-[15.5px]">{{ $sub }}</p>@endif
   </div>
   @isset($filters)<div class="flex min-w-0 flex-wrap items-center gap-3 md:justify-end">{{ $filters }}</div>@endisset
 </section>

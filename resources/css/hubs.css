@@ -56,6 +56,7 @@
 .mod.w8 { grid-column: span 8; }
 .mod.w7 { grid-column: span 7; }
 .mod.w5 { grid-column: span 5; }
+.mod.w6 { grid-column: span 6; }
 .mod.w12 { grid-column: span 12; }
 .mod.first { padding-left: 0; border-left: 0; }
 .mod.last { padding-right: 0; }
@@ -65,7 +66,7 @@
 .mod-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem 1rem; }
 .mod-head h2 { font-size: 1.9rem; }
 @media (max-width: 900px) {
-.mod, .mod.w8, .mod.w7, .mod.w5, .mod.w12 { grid-column: span 12; padding-inline: 0; border-left: 0; }
+.mod, .mod.w8, .mod.w7, .mod.w6, .mod.w5, .mod.w12 { grid-column: span 12; padding-inline: 0; border-left: 0; }
 }
 .floor { margin-top: 1.2rem; display: grid; grid-template-columns: minmax(0, 1002px) minmax(0, 1fr); gap: 0 2rem; align-items: start; }
 .floor[hidden] { display: none; }
@@ -261,7 +262,7 @@ pre.json i { color: var(--soft); font-style: normal; }
 .benefits td { vertical-align: middle; }
 .benefits td:nth-child(2) { white-space: normal; min-width: 11rem; }
 .buff img, .buff-none { width: 1.6rem; height: 1.6rem; border-radius: 3px; border: 1px solid var(--line2); flex: none; }
-.buff-none { display: inline-block; }
+.buff-none { display: inline-block; border-color: transparent; }
 .rank .who img, .rank .who .buff-none { width: 1.6rem; height: 1.6rem; margin-right: 0.6rem; vertical-align: middle; border-radius: 3px; border: 1px solid var(--line2); }
 dl.pair { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 1.2rem; border-top: 1px solid var(--line2); }
 dl.pair > div { padding: 0.9rem 1rem 0.2rem 0; }
@@ -420,7 +421,8 @@ h2 > .ico, h3 > .ico { width: 0.9em; height: 0.9em; margin-right: 0.45rem; verti
 .refine input { height: 34px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 3px; background: var(--panel); color: var(--fg); font: 400 14px/1 var(--body); }
 .refine input::placeholder { color: var(--muted); }
 .refine input[type="search"] { flex: 1 1 14rem; }
-.refine input[type="number"] { width: 6.5rem; }
+.refine input[type="number"] { width: 4.6rem; }
+.refine .lvl { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
 .sheet { border-top: 1px solid var(--line); margin-top: 8px; }
 .mod { padding: 28px 24px 32px; border-bottom: 1px solid var(--line); }
 .mod > h2, .mod-head h2 { font: 750 28px/1 var(--display); color: var(--fg); }
@@ -626,4 +628,9 @@ pre.json b { color: var(--fg); font-weight: 600; } pre.json i { color: var(--sof
 .ref > div { min-width: 0; }
 .ep h2, .ep > p, .ep td { overflow-wrap: anywhere; }
 .ref-nav > *, .ref-nav a { min-width: 0; overflow-wrap: anywhere; }
+}
+
+@layer components {
+.back { display: inline-block; margin-top: 28px; font-size: 13.5px; color: var(--muted); }
+.back:hover { color: var(--fg); }
 }
