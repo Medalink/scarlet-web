@@ -12,7 +12,7 @@ class TalentSplits
 {
     /**
      * The most common split of points over the talent trees of each spec, from the latest counted build of every
-     * character the spec list counts, with the names of the trees. A split is the points spent in each tree, and the
+     * character the spec list counts for the spec, with the names of the trees. A split is the points spent in each tree, and the
      * most common one is the split most characters of the spec hold; among equals the one that sorts first.
      *
      * @return array{splits: array<string, array<int, int>>, tabs: array<int, string>} the splits by `class slug:spec tab id`, as the points in each tab by tab id
@@ -20,7 +20,7 @@ class TalentSplits
     public function handle(PageScope $scope): array
     {
         $rows = DB::query()->fromSub(LatestTalentBuilds::query($scope), 'l')->join('characters as c', 'c.id', '=', 'l.character_id')
-            ->where('l.counted', true)->whereNotNull('c.class')
+            ->whereNotNull('c.class')
             ->groupBy('c.class', 'l.spec_tab_id', 'l.tab_points')->selectRaw('c.class, l.spec_tab_id, l.tab_points, count(*) as characters')->get();
 
         $held = [];

@@ -11,15 +11,15 @@ use Illuminate\Support\Str;
 class TalentSpecs
 {
     /**
-     * The specs characters play, each with the characters that play it: a character plays the spec of its latest
-     * counted build, the talent tab with the most points. Every character counts on its own. Most played first.
+     * The specs characters play, each with the characters that play it: a character plays every spec it has a counted
+     * build of, by the latest of them, the number the spec page counts for All levels. Most played first.
      *
      * @return list<array{class: string, class_slug: string, tab_id: int, name: string, slug: string, characters: int}>
      */
     public function handle(PageScope $scope): array
     {
         $rows = DB::query()->fromSub(LatestTalentBuilds::query($scope), 'l')->join('characters as c', 'c.id', '=', 'l.character_id')
-            ->where('l.counted', true)->whereNotNull('c.class')
+            ->whereNotNull('c.class')
             ->groupBy('c.class', 'l.spec_tab_id')->selectRaw('c.class, l.spec_tab_id, count(*) as characters')
             ->orderByDesc('characters')->orderBy('c.class')->orderBy('l.spec_tab_id')->get();
 
