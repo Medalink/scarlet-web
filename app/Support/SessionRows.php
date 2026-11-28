@@ -50,7 +50,7 @@ class SessionRows
             'groups' => json_encode($summary['groups'] ?? [], JSON_THROW_ON_ERROR),
             'flags' => json_encode($summary['flags'] ?? [], JSON_THROW_ON_ERROR),
             'counted' => $counted,
-            'extra' => json_encode(array_diff_key($summary, array_flip([...self::COLUMNS, ...self::NOT_EXTRA])), JSON_THROW_ON_ERROR),
+            'extra' => json_encode(self::extra($summary), JSON_THROW_ON_ERROR),
             'decoded_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),
@@ -63,6 +63,26 @@ class SessionRows
         PlaySession::query()->upsert([$row], ['character_id', 'session_start'], array_values(array_diff(array_keys($row), ['character_id', 'session_start', 'created_at'])));
 
         return ['from' => intdiv((int) $summary['start'], 1000), 'until' => intdiv((int) $summary['end'], 1000) + 1];
+    }
+
+    /**
+     * The summary keys that have no column, without the keys of a sharing group the session did not send: the `S` line
+     * is core's and carries the experience bar, which belongs to `xp`.
+     *
+     * @param  array<string, mixed>  $summary
+     * @return array<string, mixed>
+     */
+    private static function extra(array $summary): array
+    {
+        $extra = array_diff_key($summary, array_flip([...self::COLUMNS, ...self::NOT_EXTRA]));
+        $sent = is_array($summary['groups'] ?? null) ? $summary['groups'] : [];
+        foreach (self::GROUP_EXTRA_KEYS as $group => $keys) {
+            if (! in_array($group, $sent, true)) {
+                $extra = array_diff_key($extra, array_flip($keys));
+            }
+        }
+
+        return $extra;
     }
 
     public function delete(int $characterId, int $sessionStart): void

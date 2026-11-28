@@ -5,6 +5,7 @@ namespace App\Actions\Public\Character;
 use App\Actions\Rollups\RulesetSummaries;
 use App\Support\LootVia;
 use App\Support\NameKind;
+use App\Support\SharingGroup;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -100,6 +101,7 @@ class SessionRecords
         $peak = DB::table('money_changes as m')
             ->join('sessions as s', fn ($join) => $join->on('s.character_id', '=', 'm.character_id')->on('s.session_start', '=', 'm.session_start'))
             ->where('m.character_id', $characterId)->where('m.counted', true)->where('s.counted', true)->whereNotNull('m.balance')
+            ->whereRaw('s.groups @> jsonb_build_array(?::text)', [SharingGroup::ECONOMY])
             ->orderByDesc('m.balance')->orderBy('m.at')->select('m.balance', 's.start_at', 's.level_start', 's.level_end')->first();
 
         return $peak === null ? null : [

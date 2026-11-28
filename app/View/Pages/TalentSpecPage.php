@@ -22,6 +22,7 @@ final class TalentSpecPage
      */
     public static function index(array $specs, ?array $splits = null): array
     {
+        $specs = self::bySpecPage($specs);
         $total = array_sum(array_column($specs, 'characters'));
         $top = max([1, ...array_column($specs, 'characters')]);
         $lead = $splits === null ? [] : [['label' => 'Most common split']];
@@ -52,6 +53,32 @@ final class TalentSpecPage
         return implode(' / ', array_map(fn (int $id): string => (string) ($points[$id] ?? 0), array_values(array_filter($order, fn (int $id): bool => isset($points[$id])))));
     }
 
+    /**
+     * One row per spec page: the spec page counts every tab of a class that has the spec's name, so tabs that share a
+     * name add up, and the row keeps the tab with the most characters for its split.
+     *
+     * @param  list<array{class: string, class_slug: string, tab_id: int, name: string, slug: string, characters: int}>  $specs
+     * @return list<array{class: string, class_slug: string, tab_id: int, name: string, slug: string, characters: int}>
+     */
+    private static function bySpecPage(array $specs): array
+    {
+        usort($specs, fn (array $a, array $b): int => [$b['characters'], $a['class'], $a['tab_id']] <=> [$a['characters'], $b['class'], $b['tab_id']]);
+        $pages = [];
+        foreach ($specs as $spec) {
+            $key = $spec['class_slug'].'/'.$spec['slug'];
+            if (! isset($pages[$key])) {
+                $pages[$key] = $spec;
+
+                continue;
+            }
+            $pages[$key]['characters'] += $spec['characters'];
+        }
+        $list = array_values($pages);
+        usort($list, fn (array $a, array $b): int => [$b['characters'], $a['class'], $a['tab_id']] <=> [$a['characters'], $b['class'], $b['tab_id']]);
+
+        return $list;
+    }
+
     /** @return array{bar?: string} */
     private static function bar(int $value, int $top): array
     {
@@ -66,7 +93,7 @@ final class TalentSpecPage
      */
     public static function block(array $specs): array
     {
-        $index = self::index(array_slice($specs, 0, self::BLOCK_ROWS));
+        $index = self::index(array_slice(self::bySpecPage($specs), 0, self::BLOCK_ROWS));
 
         /** @var list<array<string, mixed>> $columns */
         $columns = $index['columns'];
